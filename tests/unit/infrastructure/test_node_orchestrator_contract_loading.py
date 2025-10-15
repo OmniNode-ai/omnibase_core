@@ -218,11 +218,11 @@ class TestNodeOrchestratorReferenceResolution:
             data = {"$ref": "./broken.yaml"}
             base_path = Path("/test/contracts")
 
-            # Should return None on error (fallback behavior)
+            # Should return original data on error (graceful degradation fallback behavior)
             result = orchestrator._resolve_contract_references(
                 data, base_path, mock_resolver
             )
-            assert result is None
+            assert result == data
 
 
 class TestNodeOrchestratorWorkflowExecutionEdgeCases:

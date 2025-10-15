@@ -18,6 +18,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.results.model_onex_message import ModelOnexMessage
 from omnibase_core.models.results.model_onex_message_context import (
     ModelOnexMessageContext,
@@ -184,7 +185,9 @@ class TestModelOnexMessageContextField:
 
     def test_context_field_with_message_context(self):
         """Test context field with ModelOnexMessageContext instance."""
-        context = ModelOnexMessageContext(key="variable_name", value="test_value")
+        context = ModelOnexMessageContext(
+            key="variable_name", value=ModelSchemaValue.from_value("test_value")
+        )
         message = ModelOnexMessage(summary="Context message", context=context)
 
         assert message.context.key == "variable_name"
@@ -424,7 +427,9 @@ class TestModelOnexMessageComplexScenarios:
 
     def test_full_error_message(self):
         """Test fully populated error message."""
-        context = ModelOnexMessageContext(key="line_content", value="def foo():")
+        context = ModelOnexMessageContext(
+            key="line_content", value=ModelSchemaValue.from_value("def foo():")
+        )
         message = ModelOnexMessage(
             summary="Syntax error detected",
             level=EnumLogLevel.ERROR,

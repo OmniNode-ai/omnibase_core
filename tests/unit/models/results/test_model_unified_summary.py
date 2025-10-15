@@ -12,6 +12,7 @@ Tests cover:
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.results.model_unified_summary import ModelUnifiedSummary
 from omnibase_core.models.results.model_unified_summary_details import (
     ModelUnifiedSummaryDetails,
@@ -41,7 +42,9 @@ class TestModelUnifiedSummaryBasicInstantiation:
 
     def test_instantiation_with_all_fields(self):
         """Test creating summary with all fields populated."""
-        details = ModelUnifiedSummaryDetails(key="detail_key", value="detail_value")
+        details = ModelUnifiedSummaryDetails(
+            key="detail_key", value=ModelSchemaValue.from_value("detail_value")
+        )
         notes = ["Note 1", "Note 2"]
 
         summary = ModelUnifiedSummary(
@@ -270,7 +273,9 @@ class TestModelUnifiedSummaryDetailsField:
 
     def test_details_field_with_summary_details(self):
         """Test details field with ModelUnifiedSummaryDetails instance."""
-        details = ModelUnifiedSummaryDetails(key="coverage", value="85.5")
+        details = ModelUnifiedSummaryDetails(
+            key="coverage", value=ModelSchemaValue.from_value("85.5")
+        )
         summary = ModelUnifiedSummary(
             total=100,
             passed=85,

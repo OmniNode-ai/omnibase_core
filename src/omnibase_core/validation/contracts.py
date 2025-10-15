@@ -225,8 +225,8 @@ def validate_contracts_cli() -> int:
 
     args = parser.parse_args()
 
-    # Set up timeout
-    signal.signal(signal.SIGALRM, timeout_handler)
+    # Set up timeout - save original handler for proper cleanup
+    original_handler = signal.signal(signal.SIGALRM, timeout_handler)
     signal.alarm(args.timeout)
 
     try:
@@ -274,7 +274,9 @@ def validate_contracts_cli() -> int:
         print("❌ Validation interrupted by user")
         return 1
     finally:
+        # Clean up signal handling to prevent test pollution
         signal.alarm(0)  # Cancel timeout
+        signal.signal(signal.SIGALRM, original_handler)  # Restore original handler
 
 
 if __name__ == "__main__":

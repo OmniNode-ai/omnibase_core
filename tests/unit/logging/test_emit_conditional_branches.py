@@ -259,12 +259,14 @@ class TestDetectNodeIdContextConditionalBranches:
 class TestRouteToLoggerNodeCacheBranches:
     """Test _route_to_logger_node cache expiration branches."""
 
-    @patch("omnibase_core.logging.emit.time")
-    @patch("omnibase_core.logging.emit._cache_lock")
-    def test_route_to_logger_node_cache_expired(self, mock_lock, mock_time):
+    def test_route_to_logger_node_cache_expired(self):
         """Test _route_to_logger_node when cache is expired."""
-        # Mock time to simulate cache expiration
-        mock_time.time.side_effect = [0, 400]  # 400s > 300s TTL
+        import omnibase_core.logging.emit as emit_module
+
+        # Reset cache state to ensure test isolation
+        emit_module._CACHED_FORMATTER = None
+        emit_module._CACHED_OUTPUT_HANDLER = None
+        emit_module._CACHE_TIMESTAMP = 0.0
 
         correlation_id = uuid4()
         context = ModelLogContext(
@@ -275,19 +277,33 @@ class TestRouteToLoggerNodeCacheBranches:
             node_id=None,
         )
 
-        # Call _route_to_logger_node to trigger cache check
-        _route_to_logger_node(
-            level=LogLevel.INFO,
-            event_type="test",
-            message="test message",
-            node_id=None,
-            correlation_id=correlation_id,
-            context=context,
-            data={},
-            event_bus=None,
-        )
+        # Mock ModelONEXContainer where it's imported inside the function
+        with patch(
+            "omnibase_core.models.container.model_onex_container.ModelONEXContainer"
+        ) as mock_container_class:
+            # Mock container to prevent actual service lookups
+            mock_container = MagicMock()
+            mock_container.get_service.side_effect = Exception("Service unavailable")
+            mock_container_class.return_value = mock_container
 
-        # Should complete without error (cache refresh attempted)
+            # Mock time to simulate cache expiration
+            with patch("omnibase_core.logging.emit.time") as mock_time:
+                # Provide enough time values: initial check + lock check
+                mock_time.time.side_effect = [400, 450]  # Well beyond 300s TTL
+
+                # Call _route_to_logger_node to trigger cache check
+                _route_to_logger_node(
+                    level=LogLevel.INFO,
+                    event_type="test",
+                    message="test message",
+                    node_id=None,
+                    correlation_id=correlation_id,
+                    context=context,
+                    data={},
+                    event_bus=None,
+                )
+
+        # Should complete without error (cache refresh attempted with fallback)
 
     def test_route_to_logger_node_with_formatter_and_handler(self):
         """Test _route_to_logger_node with cached formatter and handler."""

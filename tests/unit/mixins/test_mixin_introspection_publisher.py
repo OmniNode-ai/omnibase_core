@@ -19,6 +19,9 @@ from omnibase_core.mixins.mixin_node_introspection_data import (
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
+from omnibase_core.models.discovery.model_nodeintrospectionevent import (
+    ModelNodeIntrospectionEvent,
+)
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 
@@ -372,11 +375,19 @@ class TestMixinIntrospectionPublisher:
 
         node.event_bus = mock_event_bus
 
-        # Create mock event
-        mock_event = Mock()
-        mock_event.correlation_id = uuid4()
+        # Create real introspection event
+        introspection_event = ModelNodeIntrospectionEvent.create_from_node_info(
+            node_id=node._node_id,
+            node_name="test_node",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            actions=["health_check"],
+            protocols=["event_bus"],
+            metadata={"description": "Test node"},
+            tags=["test"],
+            correlation_id=uuid4(),
+        )
 
-        node._publish_with_retry(mock_event)
+        node._publish_with_retry(introspection_event)
 
         # Verify publish was called
         mock_event_bus.publish.assert_called_once()
@@ -393,11 +404,19 @@ class TestMixinIntrospectionPublisher:
 
         node.event_bus = mock_event_bus
 
-        # Create mock event
-        mock_event = Mock()
-        mock_event.correlation_id = uuid4()
+        # Create real introspection event
+        introspection_event = ModelNodeIntrospectionEvent.create_from_node_info(
+            node_id=node._node_id,
+            node_name="test_node",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            actions=["health_check"],
+            protocols=["event_bus"],
+            metadata={"description": "Test node"},
+            tags=["test"],
+            correlation_id=uuid4(),
+        )
 
-        node._publish_with_retry(mock_event, max_retries=2)
+        node._publish_with_retry(introspection_event, max_retries=2)
 
         # Verify publish was retried
         assert mock_event_bus.publish.call_count == 2
@@ -412,24 +431,40 @@ class TestMixinIntrospectionPublisher:
 
         node.event_bus = mock_event_bus
 
-        # Create mock event
-        mock_event = Mock()
-        mock_event.correlation_id = uuid4()
+        # Create real introspection event
+        introspection_event = ModelNodeIntrospectionEvent.create_from_node_info(
+            node_id=node._node_id,
+            node_name="test_node",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            actions=["health_check"],
+            protocols=["event_bus"],
+            metadata={"description": "Test node"},
+            tags=["test"],
+            correlation_id=uuid4(),
+        )
 
         with pytest.raises(RuntimeError):
-            node._publish_with_retry(mock_event, max_retries=2)
+            node._publish_with_retry(introspection_event, max_retries=2)
 
     def test_publish_with_retry_without_event_bus(self):
         """Test publishing with retry without event bus."""
         node = TestNode()
         node.event_bus = None
 
-        # Create mock event
-        mock_event = Mock()
-        mock_event.correlation_id = uuid4()
+        # Create real introspection event
+        introspection_event = ModelNodeIntrospectionEvent.create_from_node_info(
+            node_id=node._node_id,
+            node_name="test_node",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            actions=["health_check"],
+            protocols=["event_bus"],
+            metadata={"description": "Test node"},
+            tags=["test"],
+            correlation_id=uuid4(),
+        )
 
         # Should not raise
-        node._publish_with_retry(mock_event)
+        node._publish_with_retry(introspection_event)
 
     def test_extract_node_name_exception_handling(self):
         """Test extract_node_name handles exceptions gracefully."""

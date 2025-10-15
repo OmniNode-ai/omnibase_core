@@ -6,6 +6,7 @@ dependency health, and health check configuration validation.
 """
 
 from datetime import datetime, timezone
+from uuid import UUID
 
 import pytest
 from pydantic import ValidationError
@@ -92,13 +93,14 @@ class TestModelNodeHealthStatus:
     def test_valid_node_health_status_creation(self):
         """Test creating a valid node health status."""
         now = datetime.now(timezone.utc)
+        test_uuid = UUID("12345678-1234-5678-1234-567812345678")
         node_health = ModelNodeHealthStatus(
             status=EnumNodeHealthStatus.HEALTHY,
             message="Node is healthy",
             timestamp=now,
             check_duration_ms=500,
             node_type="EFFECT",
-            node_id="node-12345",
+            node_id=test_uuid,
         )
 
         assert node_health.status == EnumNodeHealthStatus.HEALTHY
@@ -106,7 +108,7 @@ class TestModelNodeHealthStatus:
         assert node_health.timestamp == now
         assert node_health.check_duration_ms == 500
         assert node_health.node_type == "EFFECT"
-        assert node_health.node_id == "node-12345"
+        assert node_health.node_id == test_uuid
 
     def test_node_health_status_without_node_id(self):
         """Test node health status without optional node_id."""

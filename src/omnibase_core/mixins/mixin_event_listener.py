@@ -763,6 +763,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 f"Event listener requires proper type conversion."
             )
             raise ModelOnexError(
+                msg,
                 EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             )
 

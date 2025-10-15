@@ -214,11 +214,9 @@ class MixinServiceRegistry:
                 else {}
             )
             event_data = event_data if event_data is not None else {}
-            node_id = (
-                event_data.get("node_name") or envelope.payload.node_id
-                if hasattr(envelope, "payload")
-                else None
-            )
+
+            # Always use payload.node_id as the actual node identifier
+            node_id = envelope.payload.node_id if hasattr(envelope, "payload") else None
             if not node_id:
                 return
 
@@ -234,29 +232,16 @@ class MixinServiceRegistry:
                     return
 
             # Register or update service
-            service_name = event_data.get("node_name", node_id)
+            # Use node_name from data as service name, fallback to node_id
+            service_name = event_data.get("node_name", str(node_id))
 
-            # Convert node_id to UUID if it's a string, or keep as is if already UUID
-            from uuid import UUID as UUIDType
-
-            if isinstance(node_id, str):
-                try:
-                    node_id_uuid = UUIDType(node_id)
-                except (ValueError, AttributeError):
-                    # If not a valid UUID string, generate a new UUID
-                    node_id_uuid = uuid4()
-            elif isinstance(node_id, UUID):
-                node_id_uuid = node_id
-            else:
-                # Fallback for any other type
-                node_id_uuid = uuid4()
-
+            # node_id is already a UUID from envelope.payload.node_id
             # Use string representation for dict key
-            node_id_str = str(node_id_uuid)
+            node_id_str = str(node_id)
 
             if node_id_str not in self.service_registry:
                 entry = MixinServiceRegistryEntry(
-                    node_id=node_id_uuid,
+                    node_id=node_id,
                     service_name=service_name,
                     metadata=event_data.get("metadata", {}),
                 )
@@ -287,18 +272,8 @@ class MixinServiceRegistry:
     def _handle_node_stop(self, envelope: "ModelEventEnvelope") -> None:
         """Handle node stop events - tools going offline."""
         try:
-            # Extract event data from envelope (ENVELOPE-ONLY FLOW)
-            event_data = (
-                envelope.payload.data
-                if hasattr(envelope, "payload") and hasattr(envelope.payload, "data")
-                else {}
-            )
-            event_data = event_data if event_data is not None else {}
-            node_id = (
-                event_data.get("node_name") or envelope.payload.node_id
-                if hasattr(envelope, "payload")
-                else None
-            )
+            # Always use payload.node_id as the actual node identifier
+            node_id = envelope.payload.node_id if hasattr(envelope, "payload") else None
             if node_id:
                 # Ensure node_id is string for dict key
                 node_id_str = (
