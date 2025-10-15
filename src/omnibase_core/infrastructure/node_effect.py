@@ -59,6 +59,7 @@ from omnibase_core.models.operations.model_effect_result import (
     ModelEffectResultList,
     ModelEffectResultStr,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 
 T = TypeVar("T")
@@ -1137,7 +1138,7 @@ class NodeEffect(NodeCoreBase):
                 "configuration_details": configuration_details,
                 "introspection_metadata": {
                     "generated_at": str(time.time()),
-                    "introspection_version": "1.0.0",
+                    "introspection_version": ModelSemVer(major=1, minor=0, patch=0),
                     "node_type": "NodeEffect",
                     "supports_full_introspection": True,
                     "specialization": "side_effect_management_with_transactions_and_circuit_breakers",
@@ -1165,7 +1166,7 @@ class NodeEffect(NodeCoreBase):
                 },
                 "introspection_metadata": {
                     "generated_at": str(time.time()),
-                    "introspection_version": "1.0.0",
+                    "introspection_version": ModelSemVer(major=1, minor=0, patch=0),
                     "supports_full_introspection": False,
                     "fallback_reason": str(e),
                 },
@@ -1202,8 +1203,8 @@ class NodeEffect(NodeCoreBase):
     def _extract_effect_io_specifications(self) -> dict[str, Any]:
         """Extract input/output specifications for effect operations."""
         return {
-            "input_model": "omnibase.core.node_effect.ModelEffectInput",
-            "output_model": "omnibase.core.node_effect.ModelEffectOutput",
+            "input_model": "omnibase_core.models.operations.model_effect_input.ModelEffectInput",
+            "output_model": "omnibase_core.models.operations.model_effect_output.ModelEffectOutput",
             "supports_streaming": False,
             "supports_batch_processing": False,
             "supports_transaction_management": True,
