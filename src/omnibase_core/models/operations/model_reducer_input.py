@@ -1,15 +1,10 @@
-import uuid
-from typing import Generic, TypeVar
-
-from pydantic import Field
-
 """Reducer input model for data aggregation operations."""
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Generic, TypeVar
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_conflict_resolution import EnumConflictResolution
 from omnibase_core.enums.enum_reduction_type import EnumReductionType
@@ -35,7 +30,7 @@ class ModelReducerInput(BaseModel, Generic[T_INPUT]):
     streaming_mode: EnumStreamingMode = EnumStreamingMode.BATCH
     batch_size: int = 1000
     window_size_ms: int = 5000
-    metadata: dict[str, ModelSchemaValue] | None = Field(default_factory=dict)
+    metadata: dict[str, ModelSchemaValue] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)
 
     # Additional fields for reducer operations
