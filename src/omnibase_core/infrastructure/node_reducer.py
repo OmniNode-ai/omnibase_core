@@ -56,6 +56,7 @@ from omnibase_core.models.infrastructure.model_streaming_window import (
 )
 from omnibase_core.models.operations.model_reducer_input import ModelReducerInput
 from omnibase_core.models.operations.model_reducer_output import ModelReducerOutput
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 T_Input = TypeVar("T_Input")
 T_Output = TypeVar("T_Output")
@@ -1306,7 +1307,7 @@ class NodeReducer(NodeCoreBase):
 
     def _detect_dependency_cycles(
         self,
-        graph_data: list[tuple[str, str]],
+        graph_data: list[tuple[str, list[str]]],
     ) -> dict[str, Any]:
         """Detect cycles in dependency graph using DFS."""
         # Build adjacency list
@@ -1485,7 +1486,7 @@ class NodeReducer(NodeCoreBase):
                 "rsd_specific_information": rsd_specific_info,
                 "introspection_metadata": {
                     "generated_at": str(time.time()),
-                    "introspection_version": "1.0.0",
+                    "introspection_version": ModelSemVer(major=1, minor=0, patch=0),
                     "node_type": "NodeReducer",
                     "supports_full_introspection": True,
                     "specialization": "data_aggregation_with_streaming_and_conflict_resolution",
@@ -1512,7 +1513,7 @@ class NodeReducer(NodeCoreBase):
                 },
                 "introspection_metadata": {
                     "generated_at": str(time.time()),
-                    "introspection_version": "1.0.0",
+                    "introspection_version": ModelSemVer(major=1, minor=0, patch=0),
                     "supports_full_introspection": False,
                     "fallback_reason": str(e),
                 },
@@ -1545,8 +1546,8 @@ class NodeReducer(NodeCoreBase):
     def _extract_reducer_io_specifications(self) -> dict[str, Any]:
         """Extract input/output specifications for reducer operations."""
         return {
-            "input_model": "omnibase.core.node_reducer.ModelReducerInput",
-            "output_model": "omnibase.core.node_reducer.ModelReducerOutput",
+            "input_model": "omnibase_core.infrastructure.node_reducer.ModelReducerInput",
+            "output_model": "omnibase_core.infrastructure.node_reducer.ModelReducerOutput",
             "supports_streaming": True,
             "supports_batch_processing": True,
             "supports_incremental_processing": True,

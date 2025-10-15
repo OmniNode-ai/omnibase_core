@@ -253,8 +253,9 @@ class TestModelUnifiedSummaryDetailsSerialization:
 
         assert restored.key == original.key
         assert isinstance(restored.value, ModelSchemaValue)
-        # Note: JSON roundtrip may have nested serialization - just verify the type is correct
-        assert restored.value.value_type in ["string", "object"]
+        # String value should remain string type after roundtrip
+        assert restored.value.value_type == "string"
+        assert restored.value.string_value == "85.5"
 
 
 class TestModelUnifiedSummaryDetailsComplexScenarios:

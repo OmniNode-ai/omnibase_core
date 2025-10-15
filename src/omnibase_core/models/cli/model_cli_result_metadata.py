@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Generic
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.primitives.model_semver import ModelSemVer
@@ -299,21 +299,21 @@ class ModelCliResultMetadata(BaseModel):
         """Check if all compliance flags are True."""
         return all(self.compliance_flags.values()) if self.compliance_flags else True
 
+    @model_validator(mode="before")
     @classmethod
-    def model_validate(
-        cls,
-        obj: Any,
-        *,
-        strict: bool | None = None,
-        from_attributes: bool | None = None,
-        context: Any | None = None,
-        by_alias: bool | None = None,
-        by_name: bool | None = None,
-    ) -> ModelCliResultMetadata:
-        """Custom validation to handle 'labels' field."""
-        if isinstance(obj, dict) and "labels" in obj:
-            # Handle legacy 'labels' field by converting to label_ids/label_names
-            labels = obj.pop("labels")
+    def handle_legacy_labels_field(cls, data: Any) -> Any:
+        """
+        Transform legacy 'labels' field to new label_ids/label_names structure.
+
+        This validator runs before Pydantic validation and handles backward
+        compatibility with old CLI result metadata that used a simple dict[str, str]
+        for labels instead of the new UUID-based dual mapping.
+        """
+        if isinstance(data, dict) and "labels" in data:
+            # Create copy to avoid mutating input
+            data = data.copy()
+            labels = data.pop("labels")
+
             if isinstance(labels, dict):
                 label_ids = {}
                 label_names = {}
@@ -321,18 +321,11 @@ class ModelCliResultMetadata(BaseModel):
                     uuid_id = uuid_from_string(key, "label")
                     label_ids[uuid_id] = value
                     label_names[key] = uuid_id
-                obj["label_ids"] = label_ids
-                obj["label_names"] = label_names
 
-        # Note: 'extra' parameter omitted from super() call as it's handled by model_config
-        return super().model_validate(
-            obj,
-            strict=strict,
-            from_attributes=from_attributes,
-            context=context,
-            by_alias=by_alias,
-            by_name=by_name,
-        )
+                data["label_ids"] = label_ids
+                data["label_names"] = label_names
+
+        return data
 
     model_config = {
         "extra": "ignore",

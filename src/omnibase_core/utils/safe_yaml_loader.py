@@ -4,10 +4,10 @@ from typing import Optional, TypeVar
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
-Safe YAML loading utilities without direct yaml.safe_load usage.
+Safe YAML loading utilities using yaml.safe_load plus Pydantic validation.
 
-This module provides type-safe YAML loading that uses Pydantic model validation
-to ensure proper structure and security without relying on yaml.safe_load.
+This module provides type-safe YAML loading that uses yaml.safe_load for parsing
+combined with Pydantic model validation to ensure proper structure and security.
 
 Author: ONEX Framework Team
 """

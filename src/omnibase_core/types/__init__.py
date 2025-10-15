@@ -33,6 +33,8 @@ from typing import TYPE_CHECKING
 # All constraint imports are now lazy-loaded via __getattr__ to prevent circular imports
 if TYPE_CHECKING:
     from .constraints import (
+        BaseCollection,
+        BaseFactory,
         BasicValueType,
         CollectionItemType,
         ComplexContextValueType,
@@ -328,6 +330,8 @@ def __getattr__(name: str) -> object:
     """
     # List of all constraint exports that should be lazy-loaded
     constraint_exports = {
+        "BaseCollection",
+        "BaseFactory",
         "BasicValueType",
         "CollectionItemType",
         "ComplexContextValueType",

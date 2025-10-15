@@ -105,16 +105,16 @@ class ModelItemSummary(BaseModel):
 
     def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
-        try:
-            for key, value in kwargs.items():
-                if hasattr(self, key):
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                try:
                     setattr(self, key, value)
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+                except Exception as e:
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=f"Failed to set attribute '{key}' to '{value}': {e}",
+                    ) from e
+        return True
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dict[str, Any]ionary (Serializable protocol)."""
@@ -122,15 +122,28 @@ class ModelItemSummary(BaseModel):
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
+        # Validate required fields
+        if not isinstance(self.item_id, UUID):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+                message=f"item_id must be UUID, got {type(self.item_id).__name__}",
+            )
+        if not isinstance(self.item_type, EnumItemType):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"item_type must be EnumItemType, got {type(self.item_type).__name__}",
+            )
+        if not isinstance(self.is_enabled, bool):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"is_enabled must be bool, got {type(self.is_enabled).__name__}",
+            )
+        if not isinstance(self.is_valid, bool):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"is_valid must be bool, got {type(self.is_valid).__name__}",
+            )
+        return True
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

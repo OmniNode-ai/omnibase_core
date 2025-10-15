@@ -64,6 +64,7 @@ from omnibase_core.models.workflows.model_dependency_graph import ModelDependenc
 from omnibase_core.models.workflows.model_workflow_step_execution import (
     ModelWorkflowStepExecution,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class NodeOrchestrator(NodeCoreBase):
@@ -313,13 +314,13 @@ class NodeOrchestrator(NodeCoreBase):
             return data
 
         except Exception as e:
-            # fallback-ok: Contract reference resolution should degrade gracefully, returning None for failed refs to support partial contract loading
+            # fallback-ok: Contract reference resolution should degrade gracefully, returning original data for failed refs to support partial contract loading
             emit_log_event(
                 LogLevel.WARNING,
                 "Failed to resolve contract reference, using original data",
                 {"error": str(e), "error_type": type(e).__name__},
             )
-            return None  # fallback-ok: Intentional silent return to allow workflow to continue with partial contract data
+            return data  # fallback-ok: Return original data for graceful degradation with partial contract data
 
     async def process(
         self,
@@ -1366,7 +1367,7 @@ class NodeOrchestrator(NodeCoreBase):
                 "rsd_specific_information": rsd_specific_info,
                 "introspection_metadata": {
                     "generated_at": str(time.time()),
-                    "introspection_version": "1.0.0",
+                    "introspection_version": ModelSemVer(major=1, minor=0, patch=0),
                     "node_type": "NodeOrchestrator",
                     "supports_full_introspection": True,
                     "specialization": "workflow_coordination_with_thunk_emission_and_parallel_execution",
@@ -1393,7 +1394,7 @@ class NodeOrchestrator(NodeCoreBase):
                 },
                 "introspection_metadata": {
                     "generated_at": str(time.time()),
-                    "introspection_version": "1.0.0",
+                    "introspection_version": ModelSemVer(major=1, minor=0, patch=0),
                     "supports_full_introspection": False,  # fallback-ok: Intentionally returning partial data rather than raising exception
                     "fallback_reason": str(e),
                 },
@@ -1446,8 +1447,8 @@ class NodeOrchestrator(NodeCoreBase):
     def _extract_orchestrator_io_specifications(self) -> dict[str, Any]:
         """Extract input/output specifications for orchestrator operations."""
         return {
-            "input_model": "omnibase.core.node_orchestrator.ModelOrchestratorInput",
-            "output_model": "omnibase.core.node_orchestrator.ModelOrchestratorOutput",
+            "input_model": "omnibase_core.infrastructure.node_orchestrator.ModelOrchestratorInput",
+            "output_model": "omnibase_core.infrastructure.node_orchestrator.ModelOrchestratorOutput",
             "supports_streaming": False,
             "supports_batch_processing": True,
             "supports_parallel_coordination": True,
