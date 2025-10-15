@@ -266,7 +266,7 @@ class TestNodeOrchestratorWorkflowExecution:
 
         assert isinstance(result, ModelOrchestratorOutput)
         assert result.workflow_state == EnumWorkflowState.COMPLETED
-        assert result.metadata.get("execution_mode") == "batch"
+        assert result.metadata.get("execution_mode").string_value == "batch"
 
     @patch(
         "omnibase_core.infrastructure.node_orchestrator.NodeOrchestrator._load_contract_model"

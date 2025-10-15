@@ -197,8 +197,8 @@ class TestReferenceResolutionErrorBranches:
             data, Path("/fake/base"), mock_resolver
         )
 
-        # Should return None as fallback (line 182)
-        assert result is None
+        # Should return original data as fallback for graceful degradation
+        assert result == data
 
     def test_resolve_contract_references_nested_dict_error(self, node_effect):
         """Test reference resolution with nested dict errors."""
@@ -210,13 +210,13 @@ class TestReferenceResolutionErrorBranches:
             "other": "value",
         }
 
-        # Should handle error gracefully - failed refs become None, dict continues
+        # Should handle error gracefully - failed refs return original data, dict continues
         result = node_effect._resolve_contract_references(
             data, Path("/fake/base"), mock_resolver
         )
-        # When nested resolution fails, that value becomes None but dict structure preserved
+        # When nested resolution fails, that value returns original data for graceful degradation
         assert isinstance(result, dict)
-        assert result["nested"] is None
+        assert result["nested"] == {"$ref": "./broken.yaml"}
         assert result["other"] == "value"
 
     def test_resolve_contract_references_list_with_errors(self, node_effect):
@@ -230,11 +230,11 @@ class TestReferenceResolutionErrorBranches:
             data, Path("/fake/base"), mock_resolver
         )
 
-        # Should handle error gracefully - failed refs become None in list
+        # Should handle error gracefully - failed refs return original data for graceful degradation
         assert isinstance(result, list)
         assert len(result) == 2
-        assert result[0] is None
-        assert result[1] is None
+        assert result[0] == {"$ref": "./item1.yaml"}
+        assert result[1] == {"$ref": "./item2.yaml"}
 
     def test_resolve_contract_references_type_error(self, node_effect):
         """Test reference resolution handles TypeError gracefully."""
@@ -251,8 +251,8 @@ class TestReferenceResolutionErrorBranches:
                 data, Path("/fake/base"), mock_resolver
             )
 
-            # Should return None as fallback
-            assert result is None
+            # Should return original data as fallback for graceful degradation
+            assert result == data
 
 
 # ============================================================================
@@ -722,7 +722,7 @@ class TestEdgeCaseBranches:
 
     @pytest.mark.asyncio
     async def test_process_with_none_operation_id_generates_uuid(self, node_effect):
-        """Test process auto-generates operation_id when None and transaction enabled."""
+        """Test process uses auto-generated UUID when operation_id is None and transaction enabled."""
         effect_input = ModelEffectInput(
             effect_type=EnumEffectType.FILE_OPERATION,
             operation_data=_convert_to_scalar_dict({"test": "data"}),
@@ -731,6 +731,8 @@ class TestEdgeCaseBranches:
         )
 
         async def mock_handler(data, transaction):
+            # Verify transaction was created with generated UUID (not None)
+            assert transaction is not None
             return {"success": True}
 
         node_effect.effect_handlers[EnumEffectType.FILE_OPERATION] = mock_handler
@@ -740,8 +742,11 @@ class TestEdgeCaseBranches:
 
         result = await node_effect.process(effect_input)
 
-        # After processing, operation_id should be generated
-        assert effect_input.operation_id is not None
+        # Input object is not mutated - operation_id stays None
+        # (UUID generation happens internally: op_id = input_data.operation_id or uuid4())
+        assert effect_input.operation_id is None
+        # But processing succeeded with internally generated UUID
+        assert result.result.value == {"success": True}
 
     @pytest.mark.asyncio
     async def test_transaction_context_cleanup_on_exception(self, node_effect):
