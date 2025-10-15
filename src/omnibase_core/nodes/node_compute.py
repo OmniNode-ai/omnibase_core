@@ -25,7 +25,7 @@ import asyncio
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Generic, TypeVar
 from uuid import uuid4
 
@@ -37,99 +37,9 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-
-T_Input = TypeVar("T_Input")
-T_Output = TypeVar("T_Output")
-
-
-class ModelComputeInput(BaseModel, Generic[T_Input]):
-    """
-    Input model for NodeCompute operations.
-
-    Strongly typed input wrapper that ensures type safety
-    and provides metadata for computation tracking.
-    """
-
-    data: T_Input
-    operation_id: str = Field(default_factory=lambda: str(uuid4()))
-    computation_type: str = "default"
-    cache_enabled: bool = True
-    parallel_enabled: bool = False
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-
-class ModelComputeOutput(BaseModel, Generic[T_Output]):
-    """
-    Output model for NodeCompute operations.
-
-    Strongly typed output wrapper that includes computation
-    metadata and performance metrics.
-    """
-
-    result: T_Output
-    operation_id: str
-    computation_type: str
-    processing_time_ms: float
-    cache_hit: bool = False
-    parallel_execution_used: bool = False
-    metadata: dict[str, Any] = Field(default_factory=dict)
-
-
-class ComputationCache:
-    """Caching layer for expensive computations with TTL and memory management."""
-
-    def __init__(self, max_size: int = 1000, default_ttl_minutes: int = 30):
-        self.max_size = max_size
-        self.default_ttl_minutes = default_ttl_minutes
-        self._cache: dict[str, tuple[Any, datetime, int]] = {}
-
-    def get(self, cache_key: str) -> Any | None:
-        """Get cached value if valid and not expired."""
-        if cache_key not in self._cache:
-            return None
-
-        value, expiry, access_count = self._cache[cache_key]
-
-        if datetime.now() > expiry:
-            del self._cache[cache_key]
-            return None
-
-        self._cache[cache_key] = (value, expiry, access_count + 1)
-        return value
-
-    def put(self, cache_key: str, value: Any, ttl_minutes: int | None = None) -> None:
-        """Cache value with TTL."""
-        if len(self._cache) >= self.max_size:
-            self._evict_lru()
-
-        ttl = ttl_minutes or self.default_ttl_minutes
-        expiry = datetime.now() + timedelta(minutes=ttl)
-        self._cache[cache_key] = (value, expiry, 1)
-
-    def _evict_lru(self) -> None:
-        """Evict least recently used item."""
-        if not self._cache:
-            return
-
-        lru_key = min(self._cache.keys(), key=lambda k: self._cache[k][2])
-        del self._cache[lru_key]
-
-    def clear(self) -> None:
-        """Clear all cached values."""
-        self._cache.clear()
-
-    def get_stats(self) -> dict[str, int]:
-        """Get cache statistics."""
-        now = datetime.now()
-        expired_count = sum(1 for _, expiry, _ in self._cache.values() if expiry <= now)
-
-        return {
-            "total_entries": len(self._cache),
-            "expired_entries": expired_count,
-            "valid_entries": len(self._cache) - expired_count,
-            "max_size": self.max_size,
-        }
+from omnibase_core.nodes.model_compute_cache import ModelComputeCache
+from omnibase_core.nodes.model_compute_input import ModelComputeInput, T_Input
+from omnibase_core.nodes.model_compute_output import ModelComputeOutput, T_Output
 
 
 class NodeCompute(NodeCoreBase):
@@ -169,7 +79,7 @@ class NodeCompute(NodeCoreBase):
         self.performance_threshold_ms = 100.0
 
         # Initialize caching layer
-        self.computation_cache = ComputationCache(
+        self.computation_cache = ModelComputeCache(
             max_size=1000, default_ttl_minutes=self.cache_ttl_minutes
         )
 
@@ -448,13 +358,21 @@ class NodeCompute(NodeCoreBase):
         def string_uppercase(data: str) -> str:
             """Convert string to uppercase."""
             if not isinstance(data, str):
-                raise ValueError("Input must be a string")
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Input must be a string",
+                    context={"input_type": type(data).__name__}
+                )
             return data.upper()
 
         def sum_numbers(data: list[float]) -> float:
             """Sum list of numbers."""
             if not isinstance(data, (list, tuple)):
-                raise ValueError("Input must be a list or tuple")
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Input must be a list or tuple",
+                    context={"input_type": type(data).__name__}
+                )
             return sum(data)
 
         self.register_computation("default", default_transform)

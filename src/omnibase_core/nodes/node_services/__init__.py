@@ -4,17 +4,19 @@ ONEX Service Wrappers - Pre-Composed Production-Ready Node Classes
 This package provides standard service wrapper compositions that eliminate
 boilerplate by pre-wiring commonly used mixins with ONEX node base classes.
 
-Standard Service Wrappers:
-    - NodeEffectService: Effect + HealthCheck + EventBus + Metrics
-    - NodeComputeService: Compute + HealthCheck + Caching + Metrics
-    - NodeOrchestratorService: Orchestrator + HealthCheck + EventBus + Metrics
-    - NodeReducerService: Reducer + HealthCheck + Caching + Metrics
+Available Now:
+    - ModelServiceEffect: Effect + HealthCheck + EventBus + Metrics
+    - ModelServiceCompute: Compute + HealthCheck + Caching + Metrics
+
+Available After Phase 3:
+    - ModelServiceOrchestrator: Orchestrator + HealthCheck + EventBus + Metrics
+    - ModelServiceReducer: Reducer + HealthCheck + Caching + Metrics
 
 Usage:
     ```python
-    from omnibase_core.nodes.services import NodeEffectService
+    from omnibase_core.nodes.node_services import ModelServiceEffect
 
-    class MyDatabaseWriter(NodeEffectService):
+    class MyDatabaseWriter(ModelServiceEffect):
         async def execute_effect(self, contract):
             # Just write your business logic!
             # Health checks, events, and metrics are automatic
@@ -61,16 +63,16 @@ Available Mixins for Custom Composition:
 See: src/omnibase_core/mixins/mixin_metadata.yaml for detailed mixin capabilities
 """
 
-from omnibase_core.nodes.services.node_compute_service import NodeComputeService
-from omnibase_core.nodes.services.node_effect_service import NodeEffectService
-from omnibase_core.nodes.services.node_orchestrator_service import (
-    NodeOrchestratorService,
+from omnibase_core.nodes.node_services.model_service_compute import (
+    ModelServiceCompute,
 )
-from omnibase_core.nodes.services.node_reducer_service import NodeReducerService
+from omnibase_core.nodes.node_services.model_service_effect import ModelServiceEffect
+
+# NOTE: Available after Phase 3 restoration:
+# from omnibase_core.nodes.node_services.model_service_orchestrator import ModelServiceOrchestrator
+# from omnibase_core.nodes.node_services.model_service_reducer import ModelServiceReducer
 
 __all__ = [
-    "NodeEffectService",
-    "NodeComputeService",
-    "NodeOrchestratorService",
-    "NodeReducerService",
+    "ModelServiceEffect",
+    "ModelServiceCompute",
 ]

@@ -28,7 +28,7 @@ Service wrappers reduce this to **one import, one inheritance**.
 
 **Usage:**
 ```python
-from omnibase_core.nodes.services import NodeEffectService
+from omnibase_core.nodes.node_services import NodeEffectService
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 
 class NodeDatabaseWriterEffect(NodeEffectService):
@@ -69,7 +69,7 @@ class NodeDatabaseWriterEffect(NodeEffectService):
 
 **Usage:**
 ```python
-from omnibase_core.nodes.services import NodeComputeService
+from omnibase_core.nodes.node_services import NodeComputeService
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
 class NodeDataTransformerCompute(NodeComputeService):
@@ -115,7 +115,7 @@ Compute nodes often perform expensive operations (ML inference, complex transfor
 
 **Usage:**
 ```python
-from omnibase_core.nodes.services import NodeOrchestratorService
+from omnibase_core.nodes.node_services import NodeOrchestratorService
 from omnibase_core.models.contracts.model_contract_orchestrator import ModelContractOrchestrator
 
 class NodeWorkflowOrchestrator(NodeOrchestratorService):
@@ -165,7 +165,7 @@ class NodeWorkflowOrchestrator(NodeOrchestratorService):
 
 **Usage:**
 ```python
-from omnibase_core.nodes.services import NodeReducerService
+from omnibase_core.nodes.node_services import NodeReducerService
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
 class NodeMetricsAggregatorReducer(NodeReducerService):
@@ -374,7 +374,7 @@ class MyDatabaseWriter(NodeEffectService):
 ```python
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from omnibase_core.nodes.services import NodeEffectService
+from omnibase_core.nodes.node_services import NodeEffectService
 
 class TestMyDatabaseWriter:
     @pytest.fixture
@@ -402,7 +402,7 @@ class TestMyDatabaseWriter:
 ### Integration Testing with Real Mixins
 ```python
 import pytest
-from omnibase_core.nodes.services import NodeComputeService
+from omnibase_core.nodes.node_services import NodeComputeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 class TestDataTransformerIntegration:

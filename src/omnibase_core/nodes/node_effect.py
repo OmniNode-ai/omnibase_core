@@ -11,7 +11,7 @@ transaction support, retry policies, and circuit breaker patterns.
 Key Capabilities:
 - Side-effect management with external interaction focus
 - I/O operation abstraction (file, database, API calls)
-- Transaction management for rollback support
+- ModelEffectTransaction management for rollback support
 - Retry policies and circuit breaker patterns
 - Event bus publishing for state changes
 - Atomic file operations for data integrity
@@ -27,7 +27,6 @@ import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from enum import Enum
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
@@ -40,197 +39,15 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-
-
-class EffectType(Enum):
-    """Types of side effects that can be managed."""
-
-    FILE_OPERATION = "file_operation"
-    DATABASE_OPERATION = "database_operation"
-    API_CALL = "api_call"
-    EVENT_EMISSION = "event_emission"
-    DIRECTORY_OPERATION = "directory_operation"
-    TICKET_STORAGE = "ticket_storage"
-    METRICS_COLLECTION = "metrics_collection"
-
-
-class TransactionState(Enum):
-    """Transaction state tracking."""
-
-    PENDING = "pending"
-    ACTIVE = "active"
-    COMMITTED = "committed"
-    ROLLED_BACK = "rolled_back"
-    FAILED = "failed"
-
-
-class CircuitBreakerState(Enum):
-    """Circuit breaker states for failure handling."""
-
-    CLOSED = "closed"  # Normal operation
-    OPEN = "open"  # Failing, rejecting requests
-    HALF_OPEN = "half_open"  # Testing if service recovered
-
-
-class ModelEffectInput(BaseModel):
-    """
-    Input model for NodeEffect operations.
-
-    Strongly typed input wrapper for side effect operations
-    with transaction and retry configuration.
-    """
-
-    effect_type: EffectType
-    operation_data: dict[str, Any]
-    operation_id: str = Field(default_factory=lambda: str(uuid4()))
-    transaction_enabled: bool = True
-    retry_enabled: bool = True
-    max_retries: int = 3
-    retry_delay_ms: int = 1000
-    circuit_breaker_enabled: bool = False
-    timeout_ms: int = 30000
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-
-class ModelEffectOutput(BaseModel):
-    """
-    Output model for NodeEffect operations.
-
-    Strongly typed output wrapper with transaction status
-    and side effect execution metadata.
-    """
-
-    result: str | int | float | bool | dict | list
-    operation_id: str
-    effect_type: EffectType
-    transaction_state: TransactionState
-    processing_time_ms: float
-    retry_count: int = 0
-    side_effects_applied: list[str] = Field(default_factory=list)
-    rollback_operations: list[str] = Field(default_factory=list)
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
-
-
-class Transaction:
-    """
-    Transaction management for side effect operations.
-
-    Provides rollback capabilities and operation tracking
-    for complex side effect sequences.
-    """
-
-    def __init__(self, transaction_id: str):
-        self.transaction_id = transaction_id
-        self.state = TransactionState.PENDING
-        self.operations: list[dict[str, Any]] = []
-        self.rollback_operations: list[Callable[..., Any]] = []
-        self.started_at = datetime.now()
-        self.committed_at: datetime | None = None
-
-    def add_operation(
-        self,
-        operation_name: str,
-        operation_data: dict[str, Any],
-        rollback_func: Callable[..., Any] | None = None,
-    ) -> None:
-        """Add operation to transaction with optional rollback function."""
-        self.operations.append(
-            {
-                "name": operation_name,
-                "data": operation_data,
-                "timestamp": datetime.now(),
-            },
-        )
-
-        if rollback_func:
-            self.rollback_operations.append(rollback_func)
-
-    async def commit(self) -> None:
-        """Commit transaction - marks as successful."""
-        self.state = TransactionState.COMMITTED
-        self.committed_at = datetime.now()
-
-    async def rollback(self) -> None:
-        """Rollback transaction - execute all rollback operations."""
-        self.state = TransactionState.ROLLED_BACK
-
-        for rollback_func in reversed(self.rollback_operations):
-            try:
-                if asyncio.iscoroutinefunction(rollback_func):
-                    await rollback_func()
-                else:
-                    rollback_func()
-            except Exception as e:
-                emit_log_event(
-                    LogLevel.ERROR,
-                    f"Rollback operation failed: {e!s}",
-                    {"transaction_id": self.transaction_id, "error": str(e)},
-                )
-
-
-class CircuitBreaker:
-    """
-    Circuit breaker pattern for handling external service failures.
-
-    Prevents cascading failures by temporarily disabling calls to failing services.
-    """
-
-    def __init__(
-        self,
-        failure_threshold: int = 5,
-        recovery_timeout_seconds: int = 60,
-        half_open_max_attempts: int = 3,
-    ):
-        self.failure_threshold = failure_threshold
-        self.recovery_timeout_seconds = recovery_timeout_seconds
-        self.half_open_max_attempts = half_open_max_attempts
-
-        self.state = CircuitBreakerState.CLOSED
-        self.failure_count = 0
-        self.last_failure_time: datetime | None = None
-        self.half_open_attempts = 0
-
-    def can_execute(self) -> bool:
-        """Check if operation can be executed based on circuit breaker state."""
-        now = datetime.now()
-
-        if self.state == CircuitBreakerState.CLOSED:
-            return True
-        if self.state == CircuitBreakerState.OPEN:
-            if self.last_failure_time and now - self.last_failure_time > timedelta(
-                seconds=self.recovery_timeout_seconds,
-            ):
-                self.state = CircuitBreakerState.HALF_OPEN
-                self.half_open_attempts = 0
-                return True
-            return False
-        # HALF_OPEN
-        return self.half_open_attempts < self.half_open_max_attempts
-
-    def record_success(self) -> None:
-        """Record successful operation."""
-        if self.state == CircuitBreakerState.HALF_OPEN:
-            self.state = CircuitBreakerState.CLOSED
-            self.failure_count = 0
-            self.half_open_attempts = 0
-        elif self.state == CircuitBreakerState.CLOSED:
-            self.failure_count = max(0, self.failure_count - 1)
-
-    def record_failure(self) -> None:
-        """Record failed operation."""
-        self.failure_count += 1
-        self.last_failure_time = datetime.now()
-
-        if self.state == CircuitBreakerState.HALF_OPEN:
-            self.state = CircuitBreakerState.OPEN
-            self.half_open_attempts = 0
-        elif (
-            self.state == CircuitBreakerState.CLOSED
-            and self.failure_count >= self.failure_threshold
-        ):
-            self.state = CircuitBreakerState.OPEN
+from omnibase_core.nodes.enum_effect_types import (
+    EnumCircuitBreakerState,
+    EnumEffectType,
+    EnumTransactionState,
+)
+from omnibase_core.nodes.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.nodes.model_effect_input import ModelEffectInput
+from omnibase_core.nodes.model_effect_output import ModelEffectOutput
+from omnibase_core.nodes.model_effect_transaction import ModelEffectTransaction
 
 
 class NodeEffect(NodeCoreBase):
@@ -244,7 +61,7 @@ class NodeEffect(NodeCoreBase):
     event emission, and external service interactions.
 
     Key Features:
-    - Transaction management with rollback support
+    - ModelEffectTransaction management with rollback support
     - Retry policies with exponential backoff
     - Circuit breaker patterns for failure handling
     - Atomic file operations for data integrity
@@ -269,14 +86,14 @@ class NodeEffect(NodeCoreBase):
         self.default_retry_delay_ms = 1000
         self.max_concurrent_effects = 10
 
-        # Transaction management
-        self.active_transactions: dict[str, Transaction] = {}
+        # ModelEffectTransaction management
+        self.active_transactions: dict[str, ModelEffectTransaction] = {}
 
         # Circuit breakers for external services
-        self.circuit_breakers: dict[str, CircuitBreaker] = {}
+        self.circuit_breakers: dict[str, ModelCircuitBreaker] = {}
 
         # Effect handlers registry
-        self.effect_handlers: dict[EffectType, Callable[..., Any]] = {}
+        self.effect_handlers: dict[EnumEffectType, Callable[..., Any]] = {}
 
         # Semaphore for limiting concurrent effects
         self.effect_semaphore = asyncio.Semaphore(self.max_concurrent_effects)
@@ -303,7 +120,7 @@ class NodeEffect(NodeCoreBase):
             ModelOnexError: If side effect execution fails
         """
         start_time = time.time()
-        transaction: Transaction | None = None
+        transaction: ModelEffectTransaction | None = None
         retry_count = 0
 
         try:
@@ -327,8 +144,8 @@ class NodeEffect(NodeCoreBase):
 
             # Create transaction if enabled
             if input_data.transaction_enabled:
-                transaction = Transaction(input_data.operation_id)
-                transaction.state = TransactionState.ACTIVE
+                transaction = ModelEffectTransaction(input_data.operation_id)
+                transaction.state = EnumTransactionState.ACTIVE
                 self.active_transactions[input_data.operation_id] = transaction
 
             # Execute with semaphore limit and retry logic
@@ -357,7 +174,7 @@ class NodeEffect(NodeCoreBase):
                 operation_id=input_data.operation_id,
                 effect_type=input_data.effect_type,
                 transaction_state=(
-                    transaction.state if transaction else TransactionState.COMMITTED
+                    transaction.state if transaction else EnumTransactionState.COMMITTED
                 ),
                 processing_time_ms=processing_time,
                 retry_count=retry_count,
@@ -381,7 +198,7 @@ class NodeEffect(NodeCoreBase):
                 except Exception as rollback_error:
                     emit_log_event(
                         LogLevel.ERROR,
-                        f"Transaction rollback failed: {rollback_error!s}",
+                        f"ModelEffectTransaction rollback failed: {rollback_error!s}",
                         {
                             "node_id": str(self.node_id),
                             "operation_id": input_data.operation_id,
@@ -414,7 +231,7 @@ class NodeEffect(NodeCoreBase):
     @asynccontextmanager
     async def transaction_context(
         self, operation_id: str | None = None
-    ) -> AsyncIterator[Transaction]:
+    ) -> AsyncIterator[ModelEffectTransaction]:
         """
         Async context manager for transaction handling.
 
@@ -422,11 +239,11 @@ class NodeEffect(NodeCoreBase):
             operation_id: Optional operation identifier
 
         Yields:
-            Transaction: Active transaction instance
+            ModelEffectTransaction: Active transaction instance
         """
         transaction_id = operation_id or str(uuid4())
-        transaction = Transaction(transaction_id)
-        transaction.state = TransactionState.ACTIVE
+        transaction = ModelEffectTransaction(transaction_id)
+        transaction.state = EnumTransactionState.ACTIVE
 
         try:
             self.active_transactions[transaction_id] = transaction
@@ -462,7 +279,7 @@ class NodeEffect(NodeCoreBase):
             ModelOnexError: If file operation fails
         """
         effect_input = ModelEffectInput(
-            effect_type=EffectType.FILE_OPERATION,
+            effect_type=EnumEffectType.FILE_OPERATION,
             operation_data={
                 "operation_type": operation_type,
                 "file_path": str(file_path),
@@ -498,7 +315,7 @@ class NodeEffect(NodeCoreBase):
             ModelOnexError: If event emission fails
         """
         effect_input = ModelEffectInput(
-            effect_type=EffectType.EVENT_EMISSION,
+            effect_type=EnumEffectType.EVENT_EMISSION,
             operation_data={
                 "event_type": event_type,
                 "payload": payload,
@@ -517,9 +334,9 @@ class NodeEffect(NodeCoreBase):
         circuit_breaker_metrics = {}
         for service_name, cb in self.circuit_breakers.items():
             circuit_breaker_metrics[f"circuit_breaker_{service_name}"] = {
-                "state": float(1 if cb.state == CircuitBreakerState.CLOSED else 0),
+                "state": float(1 if cb.state == EnumCircuitBreakerState.CLOSED else 0),
                 "failure_count": float(cb.failure_count),
-                "is_open": float(1 if cb.state == CircuitBreakerState.OPEN else 0),
+                "is_open": float(1 if cb.state == EnumCircuitBreakerState.OPEN else 0),
             }
 
         return {
@@ -573,21 +390,21 @@ class NodeEffect(NodeCoreBase):
         """Validate effect input data."""
         super()._validate_input_data(input_data)
 
-        if not isinstance(input_data.effect_type, EffectType):
+        if not isinstance(input_data.effect_type, EnumEffectType):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Effect type must be valid EffectType enum",
+                message="Effect type must be valid EnumEffectType enum",
                 context={"node_id": str(self.node_id)},
             )
 
-    def _get_circuit_breaker(self, service_name: str) -> CircuitBreaker:
+    def _get_circuit_breaker(self, service_name: str) -> ModelCircuitBreaker:
         """Get or create circuit breaker for service."""
         if service_name not in self.circuit_breakers:
-            self.circuit_breakers[service_name] = CircuitBreaker()
+            self.circuit_breakers[service_name] = ModelCircuitBreaker()
         return self.circuit_breakers[service_name]
 
     async def _execute_with_retry(
-        self, input_data: ModelEffectInput, transaction: Transaction | None
+        self, input_data: ModelEffectInput, transaction: ModelEffectTransaction | None
     ) -> Any:
         """Execute effect with retry logic."""
         retry_count = 0
@@ -623,7 +440,7 @@ class NodeEffect(NodeCoreBase):
         raise last_exception
 
     async def _execute_effect(
-        self, input_data: ModelEffectInput, transaction: Transaction | None
+        self, input_data: ModelEffectInput, transaction: ModelEffectTransaction | None
     ) -> Any:
         """Execute the actual effect operation."""
         effect_type = input_data.effect_type
@@ -677,7 +494,7 @@ class NodeEffect(NodeCoreBase):
         """Register built-in effect handlers."""
 
         async def file_operation_handler(
-            operation_data: dict[str, Any], transaction: Transaction | None
+            operation_data: dict[str, Any], transaction: ModelEffectTransaction | None
         ) -> dict[str, Any]:
             """Handle file operations with atomic guarantees."""
             operation_type = operation_data["operation_type"]
@@ -764,7 +581,7 @@ class NodeEffect(NodeCoreBase):
             return result
 
         async def event_emission_handler(
-            operation_data: dict[str, Any], transaction: Transaction | None
+            operation_data: dict[str, Any], transaction: ModelEffectTransaction | None
         ) -> bool:
             """Handle event emission to event bus."""
             event_type = operation_data["event_type"]
@@ -797,7 +614,8 @@ class NodeEffect(NodeCoreBase):
                     f"Event emission failed: {e!s}",
                     {"event_type": event_type, "error": str(e)},
                 )
+                # fallback-ok: event emission is non-critical, graceful failure
                 return False
 
-        self.effect_handlers[EffectType.FILE_OPERATION] = file_operation_handler
-        self.effect_handlers[EffectType.EVENT_EMISSION] = event_emission_handler
+        self.effect_handlers[EnumEffectType.FILE_OPERATION] = file_operation_handler
+        self.effect_handlers[EnumEffectType.EVENT_EMISSION] = event_emission_handler

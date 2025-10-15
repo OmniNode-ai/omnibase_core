@@ -8,6 +8,8 @@ STABILITY GUARANTEE: Node interfaces are frozen for code generation.
 Breaking changes require major version bump.
 """
 
+from omnibase_core.nodes.model_compute_input import ModelComputeInput
+from omnibase_core.nodes.model_compute_output import ModelComputeOutput
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 
@@ -16,6 +18,8 @@ from omnibase_core.nodes.node_effect import NodeEffect
 # from omnibase_core.nodes.node_reducer import NodeReducer
 
 __all__ = [
+    "ModelComputeInput",
+    "ModelComputeOutput",
     "NodeCompute",
     "NodeEffect",
     # "NodeOrchestrator",  # TODO: Phase 2 Agent 3

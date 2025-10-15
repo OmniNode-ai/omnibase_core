@@ -1,5 +1,5 @@
 """
-NodeEffectService - Standard Production-Ready Effect Node
+ModelServiceEffect - Standard Production-Ready Effect Node
 
 Pre-composed with essential mixins for production use:
 - Effect semantics (transaction management, retry, circuit breaker)
@@ -12,11 +12,11 @@ for effect nodes that perform I/O operations, external API calls, or database op
 
 Usage Example:
     ```python
-    from omnibase_core.nodes.services.node_effect_service import NodeEffectService
+    from omnibase_core.nodes.node_services.model_service_effect import ModelServiceEffect
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
     from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 
-    class NodeDatabaseWriterEffect(NodeEffectService):
+    class NodeDatabaseWriterEffect(ModelServiceEffect):
         '''Database writer with automatic health checks, events, and metrics.'''
 
         async def execute_effect(self, contract: ModelContractEffect) -> dict:
@@ -45,6 +45,8 @@ Included Capabilities:
 Node Type: Effect (External I/O, side effects, state changes)
 """
 
+from typing import Any
+
 from omnibase_core.mixins.mixin_event_bus import MixinEventBus
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
@@ -52,10 +54,10 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.nodes.node_effect import NodeEffect
 
 
-class NodeEffectService(
+class ModelServiceEffect(
     NodeEffect,
     MixinHealthCheck,
-    MixinEventBus,
+    MixinEventBus[Any, Any],
     MixinMetrics,
 ):
     """
@@ -68,7 +70,7 @@ class NodeEffectService(
     - Performance metrics (MixinMetrics)
 
     Method Resolution Order (MRO):
-        NodeEffectService → NodeEffect → MixinHealthCheck → MixinEventBus
+        ModelServiceEffect → NodeEffect → MixinHealthCheck → MixinEventBus
         → MixinMetrics → NodeCoreBase → ABC
 
     This composition is optimized for:
@@ -83,7 +85,7 @@ class NodeEffectService(
 
     def __init__(self, container: ModelONEXContainer):
         """
-        Initialize NodeEffectService with container dependency injection.
+        Initialize ModelServiceEffect with container dependency injection.
 
         All mixin initialization is handled automatically via Python's MRO.
         Each mixin's __init__ is called in sequence, setting up:

@@ -635,6 +635,7 @@ class NodeCoreBase(ABC):
             return data
 
         except Exception as e:
+            # fallback-ok: graceful degradation for contract references
             # Log error but don't stop processing - use original data
             emit_log_event(
                 LogLevel.WARNING,

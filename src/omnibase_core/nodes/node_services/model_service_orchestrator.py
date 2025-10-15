@@ -1,5 +1,5 @@
 """
-NodeOrchestratorService - Standard Production-Ready Orchestrator Node
+ModelServiceOrchestrator - Standard Production-Ready Orchestrator Node
 
 Pre-composed with essential mixins for production use:
 - Orchestrator semantics (workflow coordination, dependency management)
@@ -12,11 +12,11 @@ for orchestrator nodes that coordinate multi-node workflows and manage dependenc
 
 Usage Example:
     ```python
-    from omnibase_core.nodes.services.node_orchestrator_service import NodeOrchestratorService
+    from omnibase_core.nodes.node_services.model_service_orchestrator import ModelServiceOrchestrator
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
     from omnibase_core.models.contracts.model_contract_orchestrator import ModelContractOrchestrator
 
-    class NodeWorkflowOrchestrator(NodeOrchestratorService):
+    class NodeWorkflowOrchestrator(ModelServiceOrchestrator):
         '''Workflow orchestrator with automatic event coordination and metrics.'''
 
         async def execute_orchestration(self, contract: ModelContractOrchestrator) -> dict:
@@ -61,7 +61,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 
 
-class NodeOrchestratorService(
+class ModelServiceOrchestrator(
     NodeOrchestrator,
     MixinHealthCheck,
     MixinEventBus,
@@ -77,7 +77,7 @@ class NodeOrchestratorService(
     - Performance metrics (MixinMetrics)
 
     Method Resolution Order (MRO):
-        NodeOrchestratorService → NodeOrchestrator → MixinHealthCheck
+        ModelServiceOrchestrator → NodeOrchestrator → MixinHealthCheck
         → MixinEventBus → MixinMetrics → NodeCoreBase → ABC
 
     This composition is optimized for:
@@ -99,7 +99,7 @@ class NodeOrchestratorService(
 
     def __init__(self, container: ModelONEXContainer):
         """
-        Initialize NodeOrchestratorService with container dependency injection.
+        Initialize ModelServiceOrchestrator with container dependency injection.
 
         All mixin initialization is handled automatically via Python's MRO.
         Each mixin's __init__ is called in sequence, setting up:

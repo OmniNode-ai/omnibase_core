@@ -1,5 +1,5 @@
 """
-NodeReducerService - Standard Production-Ready Reducer Node
+ModelServiceReducer - Standard Production-Ready Reducer Node
 
 Pre-composed with essential mixins for production use:
 - Reducer semantics (aggregation, state management, persistence)
@@ -12,11 +12,11 @@ for reducer nodes that aggregate data, manage state, or persist computed results
 
 Usage Example:
     ```python
-    from omnibase_core.nodes.services.node_reducer_service import NodeReducerService
+    from omnibase_core.nodes.node_services.model_service_reducer import ModelServiceReducer
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
     from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
-    class NodeMetricsAggregatorReducer(NodeReducerService):
+    class NodeMetricsAggregatorReducer(ModelServiceReducer):
         '''Metrics aggregator with automatic caching and health checks.'''
 
         async def execute_reduction(self, contract: ModelContractReducer) -> dict:
@@ -54,14 +54,14 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.nodes.node_reducer import NodeReducer
 
 
-class NodeReducerService(
+class ModelServiceReducer(
     NodeReducer,
     MixinHealthCheck,
     MixinCaching,
     MixinMetrics,
 ):
     """
-    Standard Reducer Node Service.
+    Standard Reducer Node Service following ONEX model naming conventions.
 
     Combines NodeReducer base class with essential production mixins:
     - Reducer semantics (aggregation, state management, persistence)
@@ -70,7 +70,7 @@ class NodeReducerService(
     - Performance metrics (MixinMetrics)
 
     Method Resolution Order (MRO):
-        NodeReducerService → NodeReducer → MixinHealthCheck → MixinCaching
+        ModelServiceReducer → NodeReducer → MixinHealthCheck → MixinCaching
         → MixinMetrics → NodeCoreBase → ABC
 
     This composition is optimized for:
@@ -96,7 +96,7 @@ class NodeReducerService(
 
     def __init__(self, container: ModelONEXContainer):
         """
-        Initialize NodeReducerService with container dependency injection.
+        Initialize ModelServiceReducer with container dependency injection.
 
         All mixin initialization is handled automatically via Python's MRO.
         Each mixin's __init__ is called in sequence, setting up:
@@ -108,3 +108,7 @@ class NodeReducerService(
             container: ONEX container providing service dependencies
         """
         super().__init__(container)
+
+
+# Backward compatibility alias
+ServiceReducerNode = ModelServiceReducer

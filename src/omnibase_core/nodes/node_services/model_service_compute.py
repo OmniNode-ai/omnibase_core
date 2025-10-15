@@ -1,5 +1,5 @@
 """
-NodeComputeService - Standard Production-Ready Compute Node
+ModelServiceCompute - Standard Production-Ready Compute Node
 
 Pre-composed with essential mixins for production use:
 - Compute semantics (pure transformations, deterministic outputs)
@@ -12,11 +12,11 @@ for compute nodes that perform data transformations, calculations, or pure funct
 
 Usage Example:
     ```python
-    from omnibase_core.nodes.services.node_compute_service import NodeComputeService
+    from omnibase_core.nodes.node_services.model_service_compute import ModelServiceCompute
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
     from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
-    class NodeDataTransformerCompute(NodeComputeService):
+    class NodeDataTransformerCompute(ModelServiceCompute):
         '''Data transformer with automatic caching and metrics.'''
 
         async def execute_compute(self, contract: ModelContractCompute) -> dict:
@@ -54,7 +54,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.nodes.node_compute import NodeCompute
 
 
-class NodeComputeService(
+class ModelServiceCompute(
     NodeCompute,
     MixinHealthCheck,
     MixinCaching,
@@ -70,7 +70,7 @@ class NodeComputeService(
     - Performance metrics (MixinMetrics)
 
     Method Resolution Order (MRO):
-        NodeComputeService → NodeCompute → MixinHealthCheck → MixinCaching
+        ModelServiceCompute → NodeCompute → MixinHealthCheck → MixinCaching
         → MixinMetrics → NodeCoreBase → ABC
 
     This composition is optimized for:
@@ -91,7 +91,7 @@ class NodeComputeService(
 
     def __init__(self, container: ModelONEXContainer):
         """
-        Initialize NodeComputeService with container dependency injection.
+        Initialize ModelServiceCompute with container dependency injection.
 
         All mixin initialization is handled automatically via Python's MRO.
         Each mixin's __init__ is called in sequence, setting up:
