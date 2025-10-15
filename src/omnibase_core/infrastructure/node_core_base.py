@@ -500,3 +500,245 @@ class NodeCoreBase(ABC):
                 message="Input data cannot be None",
                 context={"node_id": self.node_id, "node_type": self.__class__.__name__},
             )
+
+    # ========================================================================
+    # ENHANCED BOILERPLATE METHODS - EXTRACTED FROM ARCHIVED NODE TYPES
+    # Agent 1 Extraction: These methods eliminate ~600 lines of duplication
+    # across node_effect.py, node_compute.py, node_orchestrator.py, node_reducer.py
+    # ========================================================================
+
+    def _find_contract_path_unified(self) -> "Path":
+        """
+        Find contract.yaml file using stack frame inspection.
+
+        EXTRACTED BOILERPLATE: This method was duplicated across all 4 node types
+        (Effect, Compute, Orchestrator, Reducer) with identical implementations.
+
+        Uses Python inspect to traverse the call stack and locate the contract.yaml
+        file in the same directory as the calling node class module.
+
+        Returns:
+            Path: Absolute path to contract.yaml file
+
+        Raises:
+            ModelOnexError: If contract file cannot be found
+        """
+        import inspect
+        from pathlib import Path
+
+        from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
+
+        try:
+            # Traverse call stack to find the calling class module
+            frame = inspect.currentframe()
+            while frame:
+                frame = frame.f_back
+                if frame and "self" in frame.f_locals:
+                    caller_self = frame.f_locals["self"]
+                    if hasattr(caller_self, "__module__"):
+                        module = inspect.getmodule(caller_self)
+                        if module and hasattr(module, "__file__") and module.__file__:
+                            module_path = Path(module.__file__)
+                            contract_path = module_path.parent / CONTRACT_FILENAME
+                            if contract_path.exists():
+                                return contract_path
+
+            # Contract file not found in any stack frame
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Could not find {CONTRACT_FILENAME} for {self.__class__.__name__}",
+                context={
+                    "node_type": self.__class__.__name__,
+                    "contract_filename": CONTRACT_FILENAME,
+                },
+            )
+
+        except Exception as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Error finding contract path: {e!s}",
+                context={
+                    "node_id": self.node_id,
+                    "node_type": self.__class__.__name__,
+                },
+            ) from e
+
+    def _resolve_contract_references_unified(
+        self,
+        data: Any,
+        base_path: "Path",
+        reference_resolver: Any,
+    ) -> Any:
+        """
+        Recursively resolve all $ref references in contract data.
+
+        EXTRACTED BOILERPLATE: This method was duplicated across all 4 node types
+        with identical core logic for $ref resolution.
+
+        Handles JSON Pointer-style references ($ref) in YAML contracts,
+        supporting relative paths, absolute paths, and internal references.
+
+        Args:
+            data: Contract data structure (dict, list, or primitive)
+            base_path: Base directory for resolving relative references
+            reference_resolver: Reference resolver utility instance
+
+        Returns:
+            Resolved contract data with all $ref references loaded
+
+        Raises:
+            ModelOnexError: If reference resolution fails critically
+        """
+        try:
+            if isinstance(data, dict):
+                if "$ref" in data:
+                    # Resolve reference to another file
+                    ref_file = data["$ref"]
+                    if ref_file.startswith(("./", "../")):
+                        # Relative path reference
+                        from pathlib import Path
+
+                        ref_path = (base_path / ref_file).resolve()
+                    else:
+                        # Absolute or root-relative reference
+                        from pathlib import Path
+
+                        ref_path = Path(ref_file)
+
+                    return reference_resolver.resolve_reference(
+                        str(ref_path),
+                        base_path,
+                    )
+
+                # Recursively resolve nested dictionaries
+                return {
+                    key: self._resolve_contract_references_unified(
+                        value,
+                        base_path,
+                        reference_resolver,
+                    )
+                    for key, value in data.items()
+                }
+
+            if isinstance(data, list):
+                # Recursively resolve lists
+                return [
+                    self._resolve_contract_references_unified(
+                        item,
+                        base_path,
+                        reference_resolver,
+                    )
+                    for item in data
+                ]
+
+            # Return primitives as-is
+            return data
+
+        except Exception as e:
+            # Log error but don't stop processing - use original data
+            emit_log_event(
+                LogLevel.WARNING,
+                f"Failed to resolve contract reference: {e!s}",
+                {
+                    "node_id": self.node_id,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                },
+            )
+            return data
+
+    def _update_specialized_metrics(
+        self,
+        metrics_dict: dict[str, dict[str, float]],
+        metric_type: str,
+        processing_time_ms: float,
+        success: bool,
+        items_count: int = 1,
+    ) -> None:
+        """
+        Update specialized node-type metrics with rolling averages.
+
+        EXTRACTED BOILERPLATE: This pattern was duplicated across all 4 node types
+        (_update_effect_metrics, _update_computation_metrics, etc.)
+
+        Maintains running statistics for each metric type including:
+        - Total operations and success/error counts
+        - Processing time statistics (avg, min, max)
+        - Rolling average calculation
+        - Items processed tracking
+
+        Args:
+            metrics_dict: Target metrics dictionary to update
+            metric_type: Type key for this metric (e.g., "file_operation", "rsd_priority")
+            processing_time_ms: Time taken for this operation
+            success: Whether operation succeeded
+            items_count: Number of items processed (default 1)
+        """
+        # Initialize metric structure if needed
+        if metric_type not in metrics_dict:
+            metrics_dict[metric_type] = {
+                "total_operations": 0.0,
+                "success_count": 0.0,
+                "error_count": 0.0,
+                "total_items_processed": 0.0,
+                "avg_processing_time_ms": 0.0,
+                "min_processing_time_ms": float("inf"),
+                "max_processing_time_ms": 0.0,
+            }
+
+        metrics = metrics_dict[metric_type]
+        metrics["total_operations"] += 1
+        metrics["total_items_processed"] += items_count
+
+        # Update success/error counters
+        if success:
+            metrics["success_count"] += 1
+        else:
+            metrics["error_count"] += 1
+
+        # Update timing statistics
+        metrics["min_processing_time_ms"] = min(
+            metrics["min_processing_time_ms"],
+            processing_time_ms,
+        )
+        metrics["max_processing_time_ms"] = max(
+            metrics["max_processing_time_ms"],
+            processing_time_ms,
+        )
+
+        # Calculate rolling average of processing time
+        total_ops = metrics["total_operations"]
+        current_avg = metrics["avg_processing_time_ms"]
+        metrics["avg_processing_time_ms"] = (
+            current_avg * (total_ops - 1) + processing_time_ms
+        ) / total_ops
+
+    def _get_health_status_comprehensive(
+        self,
+        health_checks: dict[str, bool],
+    ) -> dict[str, Any]:
+        """
+        Aggregate health status from multiple component checks.
+
+        EXTRACTED BOILERPLATE: This pattern was duplicated across all 4 node types
+        with similar health aggregation logic.
+
+        Args:
+            health_checks: Dictionary of component names to health status
+
+        Returns:
+            Comprehensive health status with details
+        """
+        all_healthy = all(health_checks.values())
+        failing_components = [
+            component for component, healthy in health_checks.items() if not healthy
+        ]
+
+        return {
+            "overall_status": "healthy" if all_healthy else "degraded",
+            "component_checks": health_checks,
+            "failing_components": failing_components,
+            "healthy_count": sum(1 for h in health_checks.values() if h),
+            "total_components": len(health_checks),
+            "timestamp": datetime.now().isoformat(),
+        }
