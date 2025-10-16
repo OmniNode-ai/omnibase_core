@@ -73,23 +73,37 @@ class NodeCoreBase(ABC):
                 context={"node_type": self.__class__.__name__},
             )
 
-        self.container = container
-        self.node_id: UUID = uuid4()
-        self.created_at: datetime = datetime.now()
+        # Call super().__init__() to continue the MRO chain (for Pydantic mixins)
+        # This ensures BaseModel.__init__() is called if in the hierarchy
+        super().__init__()
+
+        # Use object.__setattr__() to bypass Pydantic validation for internal state
+        # These are not Pydantic fields but internal node management attributes
+        object.__setattr__(self, "container", container)
+        node_id_value = uuid4()
+        object.__setattr__(self, "node_id", node_id_value)
+        object.__setattr__(
+            self, "_node_id", node_id_value
+        )  # Alias for mixin compatibility
+        object.__setattr__(self, "created_at", datetime.now())
 
         # Core state tracking
-        self.state: dict[str, str] = {"status": "initialized"}
-        self.metrics: dict[str, float] = {
-            "initialization_time_ms": 0.0,
-            "total_operations": 0.0,
-            "avg_processing_time_ms": 0.0,
-            "error_count": 0.0,
-            "success_count": 0.0,
-        }
+        object.__setattr__(self, "state", {"status": "initialized"})
+        object.__setattr__(
+            self,
+            "metrics",
+            {
+                "initialization_time_ms": 0.0,
+                "total_operations": 0.0,
+                "avg_processing_time_ms": 0.0,
+                "error_count": 0.0,
+                "success_count": 0.0,
+            },
+        )
 
         # Contract and configuration
-        self.contract_data: dict[str, str] | None = None
-        self.version: str = "1.0.0"
+        object.__setattr__(self, "contract_data", None)
+        object.__setattr__(self, "version", "1.0.0")
 
         # Initialize metrics
         self.metrics["initialization_time_ms"] = time.time() * 1000

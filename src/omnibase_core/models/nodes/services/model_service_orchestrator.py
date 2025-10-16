@@ -2,6 +2,7 @@
 ModelServiceOrchestrator - Standard Production-Ready Orchestrator Node
 
 Pre-composed with essential mixins for production use:
+- Persistent service mode (MixinNodeService) - long-lived MCP servers, tool invocation
 - Orchestrator semantics (workflow coordination, dependency management)
 - Health monitoring (MixinHealthCheck)
 - Event publishing (MixinEventBus)
@@ -44,6 +45,8 @@ Usage Example:
     ```
 
 Included Capabilities:
+    - Persistent service mode with TOOL_INVOCATION handling (MixinNodeService)
+    - Service lifecycle management (start_service_mode, stop_service_mode)
     - Workflow coordination with dependency tracking
     - Subnode health aggregation
     - Event emission for workflow lifecycle via MixinEventBus
@@ -57,11 +60,13 @@ Node Type: Orchestrator (Workflow coordination, multi-node management)
 from omnibase_core.mixins.mixin_event_bus import MixinEventBus
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
+from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 
 
 class ModelServiceOrchestrator(
+    MixinNodeService,
     NodeOrchestrator,
     MixinHealthCheck,
     MixinEventBus,
@@ -71,13 +76,14 @@ class ModelServiceOrchestrator(
     Standard Orchestrator Node Service.
 
     Combines NodeOrchestrator base class with essential production mixins:
+    - Persistent service mode (MixinNodeService) - run as long-lived tool service
     - Orchestrator semantics (workflow coordination, dependency management)
     - Health monitoring (MixinHealthCheck) - includes subnode health aggregation
     - Event publishing (MixinEventBus) - critical for workflow coordination
     - Performance metrics (MixinMetrics)
 
     Method Resolution Order (MRO):
-        ModelServiceOrchestrator → NodeOrchestrator → MixinHealthCheck
+        ModelServiceOrchestrator → MixinNodeService → NodeOrchestrator → MixinHealthCheck
         → MixinEventBus → MixinMetrics → NodeCoreBase → ABC
 
     This composition is optimized for:

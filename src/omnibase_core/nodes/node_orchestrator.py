@@ -88,29 +88,34 @@ class NodeOrchestrator(NodeCoreBase):
         """
         super().__init__(container)
 
+        # Use object.__setattr__() to bypass Pydantic validation for internal state
         # Orchestrator-specific configuration
-        self.max_concurrent_workflows = 5
-        self.default_step_timeout_ms = 30000
-        self.thunk_emission_enabled = True
+        object.__setattr__(self, "max_concurrent_workflows", 5)
+        object.__setattr__(self, "default_step_timeout_ms", 30000)
+        object.__setattr__(self, "thunk_emission_enabled", True)
 
         # Active workflows tracking (UUID keys for workflow_id)
-        self.active_workflows: dict[UUID, ModelOrchestratorInput] = {}
-        self.workflow_states: dict[UUID, EnumWorkflowState] = {}
+        object.__setattr__(self, "active_workflows", {})
+        object.__setattr__(self, "workflow_states", {})
 
         # Load balancer for operation distribution
-        self.load_balancer = ModelLoadBalancer(max_concurrent_operations=20)
+        object.__setattr__(
+            self, "load_balancer", ModelLoadBalancer(max_concurrent_operations=20)
+        )
 
         # Thunk emission registry (UUID keys for workflow_id)
-        self.emitted_thunks: dict[UUID, list[ModelThunk]] = {}
+        object.__setattr__(self, "emitted_thunks", {})
 
         # Workflow execution semaphore
-        self.workflow_semaphore = asyncio.Semaphore(self.max_concurrent_workflows)
+        object.__setattr__(
+            self, "workflow_semaphore", asyncio.Semaphore(self.max_concurrent_workflows)
+        )
 
         # Performance tracking
-        self.orchestration_metrics: dict[str, dict[str, float]] = {}
+        object.__setattr__(self, "orchestration_metrics", {})
 
         # Conditional functions registry
-        self.condition_functions: dict[str, Callable[..., Any]] = {}
+        object.__setattr__(self, "condition_functions", {})
 
         # Register built-in condition functions
         self._register_builtin_conditions()

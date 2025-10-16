@@ -53,12 +53,15 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     """
 
     model_config = ConfigDict(
-        extra="forbid",
+        extra="allow",  # Allow dynamic attributes like 'container' from NodeCoreBase
         arbitrary_types_allowed=True,  # Allow threading objects
     )
 
-    # Required fields following ONEX naming conventions
-    node_name: StrictStr = Field(description="Name of this node")
+    # Fields following ONEX naming conventions (node_name computed if empty)
+    node_name: StrictStr = Field(
+        default="",  # Computed in model_post_init if empty
+        description="Name of this node",
+    )
     registry: object | None = Field(
         default=None,
         description="Registry with event bus access",
@@ -80,8 +83,31 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     stop_event: threading.Event | None = Field(default=None, exclude=True)
     event_subscriptions: list[object] = Field(default_factory=list, exclude=True)
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Initialize MixinEventBus with proper BaseModel initialization.
+
+        This ensures __pydantic_extra__ is properly initialized before
+        other mixins try to set attributes. Accepts both positional args
+        (from MRO chain) and keyword args (for BaseModel fields).
+        """
+        # Default node_name if not provided
+        if "node_name" not in kwargs:
+            kwargs["node_name"] = "UnknownNode"
+
+        # Initialize BaseModel with keyword args only
+        # (positional args are passed to next in MRO chain)
+        super().__init__(**kwargs)
+
+        # If there are positional args, they're for the next class in MRO
+        # Let super().__init__() handle them via cooperative inheritance
+
     def model_post_init(self, __context: Any) -> None:
         """Initialize threading objects after Pydantic validation."""
+        # Compute node_name from class name if not provided or empty
+        if not self.node_name or self.node_name == "UnknownNode":
+            object.__setattr__(self, "node_name", self.__class__.__name__)
+
         self.event_listener_thread = None
         self.stop_event = threading.Event()
         self.event_subscriptions = []
@@ -142,6 +168,68 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         return self._get_event_bus() is not None
 
     # --- Event Completion Publishing ----------------------------------------
+
+    async def publish_event(
+        self,
+        event_type: str,
+        payload: dict[str, Any],
+        correlation_id: UUID | None = None,
+    ) -> None:
+        """
+        Publish an event via the event bus (async alias for compatibility).
+
+        This is a simple wrapper that publishes events directly to the event bus.
+
+        Args:
+            event_type: Type of event to publish
+            payload: Event payload data
+            correlation_id: Optional correlation ID for tracking
+        """
+        bus = self._get_event_bus()
+        if bus is None:
+            self._log_warn(
+                "No event bus available for event publishing",
+                pattern="event_bus.missing",
+            )
+            return
+
+        try:
+            # Build event using ModelOnexEvent
+            event = ModelOnexEvent.create_core_event(
+                event_type=event_type,
+                node_id=self.get_node_id(),
+                correlation_id=correlation_id,
+                **payload,
+            )
+
+            # Wrap in envelope
+            from omnibase_core.models.events.model_event_envelope import (
+                ModelEventEnvelope,
+            )
+
+            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
+                payload=event
+            )
+
+            # Publish via event bus
+            if hasattr(bus, "publish_async"):
+                await bus.publish_async(envelope)
+            elif hasattr(bus, "publish"):
+                await bus.publish(event)
+            else:
+                self._log_error(
+                    "Event bus does not support publishing",
+                    "publish_event",
+                )
+
+            self._log_info(f"Published event: {event_type}", event_type)
+
+        except Exception as e:
+            self._log_error(
+                f"Failed to publish event: {e!r}",
+                "publish_event",
+                error=e,
+            )
 
     def publish_completion_event(
         self,

@@ -2,6 +2,7 @@
 ModelServiceReducer - Standard Production-Ready Reducer Node
 
 Pre-composed with essential mixins for production use:
+- Persistent service mode (MixinNodeService) - long-lived MCP servers, tool invocation
 - Reducer semantics (aggregation, state management, persistence)
 - Health monitoring (MixinHealthCheck)
 - Result caching (MixinCaching)
@@ -37,6 +38,8 @@ Usage Example:
     ```
 
 Included Capabilities:
+    - Persistent service mode with TOOL_INVOCATION handling (MixinNodeService)
+    - Service lifecycle management (start_service_mode, stop_service_mode)
     - Aggregation and state management
     - Result caching with configurable TTL (critical for reducers)
     - Health check endpoints via MixinHealthCheck
@@ -50,11 +53,13 @@ Node Type: Reducer (Aggregation, state management, persistence)
 from omnibase_core.mixins.mixin_caching import MixinCaching
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
+from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_reducer import NodeReducer
 
 
 class ModelServiceReducer(
+    MixinNodeService,
     NodeReducer,
     MixinHealthCheck,
     MixinCaching,
@@ -64,14 +69,15 @@ class ModelServiceReducer(
     Standard Reducer Node Service following ONEX model naming conventions.
 
     Combines NodeReducer base class with essential production mixins:
+    - Persistent service mode (MixinNodeService) - run as long-lived tool service
     - Reducer semantics (aggregation, state management, persistence)
     - Health monitoring (MixinHealthCheck) - includes state persistence checks
     - Result caching (MixinCaching) - critical for expensive aggregations
     - Performance metrics (MixinMetrics)
 
     Method Resolution Order (MRO):
-        ModelServiceReducer → NodeReducer → MixinHealthCheck → MixinCaching
-        → MixinMetrics → NodeCoreBase → ABC
+        ModelServiceReducer → MixinNodeService → NodeReducer → MixinHealthCheck
+        → MixinCaching → MixinMetrics → NodeCoreBase → ABC
 
     This composition is optimized for:
     - Data aggregation pipelines benefiting from result caching

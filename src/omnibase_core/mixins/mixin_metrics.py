@@ -30,8 +30,9 @@ class MixinMetrics:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize metrics mixin."""
         super().__init__(*args, **kwargs)
-        self._metrics_enabled = True
-        self._metrics_data: Dict[str, Any] = {}
+        # Use object.__setattr__() to bypass Pydantic validation for internal state
+        object.__setattr__(self, "_metrics_enabled", True)
+        object.__setattr__(self, "_metrics_data", {})
 
     def record_metric(
         self, metric_name: str, value: float, tags: Dict[str, str] | None = None
@@ -45,8 +46,11 @@ class MixinMetrics:
             tags: Optional tags for the metric
         """
         # Stub implementation - metrics will be sent to backend in future
-        if self._metrics_enabled:
-            self._metrics_data[metric_name] = {
+        # Use object.__getattribute__() to access attributes set with object.__setattr__()
+        metrics_enabled = object.__getattribute__(self, "_metrics_enabled")
+        if metrics_enabled:
+            metrics_data = object.__getattribute__(self, "_metrics_data")
+            metrics_data[metric_name] = {
                 "value": value,
                 "tags": tags or {},
             }
@@ -59,9 +63,12 @@ class MixinMetrics:
             counter_name: Name of the counter to increment
             value: Amount to increment by (default: 1)
         """
-        if self._metrics_enabled:
-            current = self._metrics_data.get(counter_name, {"value": 0})["value"]
-            self._metrics_data[counter_name] = {"value": current + value}
+        # Use object.__getattribute__() to access attributes set with object.__setattr__()
+        metrics_enabled = object.__getattribute__(self, "_metrics_enabled")
+        if metrics_enabled:
+            metrics_data = object.__getattribute__(self, "_metrics_data")
+            current = metrics_data.get(counter_name, {"value": 0})["value"]
+            metrics_data[counter_name] = {"value": current + value}
 
     def get_metrics(self) -> Dict[str, Any]:
         """
@@ -70,8 +77,12 @@ class MixinMetrics:
         Returns:
             Dictionary of current metrics
         """
-        return self._metrics_data.copy()
+        # Use object.__getattribute__() to access attributes set with object.__setattr__()
+        metrics_data = object.__getattribute__(self, "_metrics_data")
+        return metrics_data.copy()
 
     def reset_metrics(self) -> None:
         """Reset all metrics data."""
-        self._metrics_data.clear()
+        # Use object.__getattribute__() to access attributes set with object.__setattr__()
+        metrics_data = object.__getattribute__(self, "_metrics_data")
+        metrics_data.clear()

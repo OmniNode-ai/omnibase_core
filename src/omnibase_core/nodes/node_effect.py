@@ -81,25 +81,28 @@ class NodeEffect(NodeCoreBase):
         """
         super().__init__(container)
 
+        # Use object.__setattr__() to bypass Pydantic validation for internal state
         # Effect-specific configuration
-        self.default_timeout_ms = 30000
-        self.default_retry_delay_ms = 1000
-        self.max_concurrent_effects = 10
+        object.__setattr__(self, "default_timeout_ms", 30000)
+        object.__setattr__(self, "default_retry_delay_ms", 1000)
+        object.__setattr__(self, "max_concurrent_effects", 10)
 
         # ModelEffectTransaction management
-        self.active_transactions: dict[UUID, ModelEffectTransaction] = {}
+        object.__setattr__(self, "active_transactions", {})
 
         # Circuit breakers for external services
-        self.circuit_breakers: dict[str, ModelCircuitBreaker] = {}
+        object.__setattr__(self, "circuit_breakers", {})
 
         # Effect handlers registry
-        self.effect_handlers: dict[EnumEffectType, Callable[..., Any]] = {}
+        object.__setattr__(self, "effect_handlers", {})
 
         # Semaphore for limiting concurrent effects
-        self.effect_semaphore = asyncio.Semaphore(self.max_concurrent_effects)
+        object.__setattr__(
+            self, "effect_semaphore", asyncio.Semaphore(self.max_concurrent_effects)
+        )
 
         # Effect-specific metrics
-        self.effect_metrics: dict[str, dict[str, float]] = {}
+        object.__setattr__(self, "effect_metrics", {})
 
         # Register built-in effect handlers
         self._register_builtin_effect_handlers()

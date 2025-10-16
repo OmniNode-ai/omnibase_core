@@ -2,6 +2,7 @@
 ModelServiceEffect - Standard Production-Ready Effect Node
 
 Pre-composed with essential mixins for production use:
+- Persistent service mode (MixinNodeService) - long-lived MCP servers, tool invocation
 - Effect semantics (transaction management, retry, circuit breaker)
 - Health monitoring (MixinHealthCheck)
 - Event publishing (MixinEventBus)
@@ -34,6 +35,8 @@ Usage Example:
     ```
 
 Included Capabilities:
+    - Persistent service mode with TOOL_INVOCATION handling (MixinNodeService)
+    - Service lifecycle management (start_service_mode, stop_service_mode)
     - Transaction management with automatic rollback
     - Circuit breaker for fault tolerance
     - Automatic retry with configurable backoff
@@ -50,11 +53,13 @@ from typing import Any
 from omnibase_core.mixins.mixin_event_bus import MixinEventBus
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
+from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_effect import NodeEffect
 
 
 class ModelServiceEffect(
+    MixinNodeService,
     NodeEffect,
     MixinHealthCheck,
     MixinEventBus[Any, Any],
@@ -64,14 +69,15 @@ class ModelServiceEffect(
     Standard Effect Node Service.
 
     Combines NodeEffect base class with essential production mixins:
+    - Persistent service mode (MixinNodeService) - run as long-lived tool service
     - Effect semantics (transaction mgmt, retry, circuit breaker)
     - Health monitoring (MixinHealthCheck)
     - Event publishing (MixinEventBus)
     - Performance metrics (MixinMetrics)
 
     Method Resolution Order (MRO):
-        ModelServiceEffect → NodeEffect → MixinHealthCheck → MixinEventBus
-        → MixinMetrics → NodeCoreBase → ABC
+        ModelServiceEffect → MixinNodeService → NodeEffect → MixinHealthCheck
+        → MixinEventBus → MixinMetrics → NodeCoreBase → ABC
 
     This composition is optimized for:
     - Database operations requiring transactions

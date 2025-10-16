@@ -2,6 +2,7 @@
 ModelServiceCompute - Standard Production-Ready Compute Node
 
 Pre-composed with essential mixins for production use:
+- Persistent service mode (MixinNodeService) - long-lived MCP servers, tool invocation
 - Compute semantics (pure transformations, deterministic outputs)
 - Health monitoring (MixinHealthCheck)
 - Result caching (MixinCaching)
@@ -37,6 +38,8 @@ Usage Example:
     ```
 
 Included Capabilities:
+    - Persistent service mode with TOOL_INVOCATION handling (MixinNodeService)
+    - Service lifecycle management (start_service_mode, stop_service_mode)
     - Pure function semantics (no side effects)
     - Result caching with configurable TTL
     - Health check endpoints via MixinHealthCheck
@@ -50,11 +53,13 @@ Node Type: Compute (Pure transformations, deterministic outputs)
 from omnibase_core.mixins.mixin_caching import MixinCaching
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
+from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_compute import NodeCompute
 
 
 class ModelServiceCompute(
+    MixinNodeService,
     NodeCompute,
     MixinHealthCheck,
     MixinCaching,
@@ -64,20 +69,27 @@ class ModelServiceCompute(
     Standard Compute Node Service.
 
     Combines NodeCompute base class with essential production mixins:
+    - Persistent service mode (MixinNodeService) - long-lived MCP servers, tool invocation
     - Compute semantics (pure transformations, idempotent operations)
     - Health monitoring (MixinHealthCheck)
     - Result caching (MixinCaching) - critical for expensive computations
     - Performance metrics (MixinMetrics)
 
     Method Resolution Order (MRO):
-        ModelServiceCompute → NodeCompute → MixinHealthCheck → MixinCaching
-        → MixinMetrics → NodeCoreBase → ABC
+        ModelServiceCompute → MixinNodeService → NodeCompute → MixinHealthCheck
+        → MixinCaching → MixinMetrics → NodeCoreBase → ABC
 
     This composition is optimized for:
+    - Long-running compute services (MCP servers, tool providers)
     - Data transformation pipelines benefiting from caching
     - Expensive calculations with repeatable inputs
     - Pure functions requiring performance monitoring
     - Stateless processors with deterministic outputs
+
+    Why MixinNodeService is first:
+        Service mode must be initialized before other mixins to properly
+        establish the persistent service lifecycle. This enables TOOL_INVOCATION
+        handling, long-lived MCP server patterns, and proper service shutdown.
 
     Why MixinCaching is included:
         Compute nodes often perform expensive operations (ML inference,
@@ -95,9 +107,10 @@ class ModelServiceCompute(
 
         All mixin initialization is handled automatically via Python's MRO.
         Each mixin's __init__ is called in sequence, setting up:
-        - Health check framework
-        - Cache service connection and configuration
-        - Metrics collectors
+        - Service mode framework (MixinNodeService)
+        - Health check framework (MixinHealthCheck)
+        - Cache service connection and configuration (MixinCaching)
+        - Metrics collectors (MixinMetrics)
 
         Args:
             container: ONEX container providing service dependencies
