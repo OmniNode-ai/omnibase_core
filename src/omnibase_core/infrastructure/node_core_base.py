@@ -94,7 +94,8 @@ class NodeCoreBase(ABC):
             self,
             "metrics",
             {
-                "initialization_time_ms": 0.0,
+                "initialized_at_ms": 0.0,
+                "initialization_duration_ms": 0.0,
                 "total_operations": 0.0,
                 "avg_processing_time_ms": 0.0,
                 "error_count": 0.0,
@@ -106,8 +107,8 @@ class NodeCoreBase(ABC):
         object.__setattr__(self, "contract_data", None)
         object.__setattr__(self, "version", ModelSemVer(major=1, minor=0, patch=0))
 
-        # Initialize metrics
-        self.metrics["initialization_time_ms"] = time.time() * 1000
+        # Initialize metrics - capture creation timestamp
+        self.metrics["initialized_at_ms"] = time.time() * 1000
 
     @abstractmethod
     async def process(self, input_data: Any) -> Any:
@@ -171,9 +172,9 @@ class NodeCoreBase(ABC):
             # Initialize node-specific resources
             await self._initialize_node_resources()
 
-            # Update metrics
+            # Update metrics - record initialization duration
             initialization_time = (time.time() - start_time) * 1000
-            self.metrics["initialization_time_ms"] = initialization_time
+            self.metrics["initialization_duration_ms"] = initialization_time
 
             # Update state
             self.state["status"] = "ready"
@@ -234,9 +235,7 @@ class NodeCoreBase(ABC):
 
             # Calculate final metrics
             cleanup_time = (time.time() - start_time) * 1000
-            total_lifetime = (time.time() * 1000) - self.metrics[
-                "initialization_time_ms"
-            ]
+            total_lifetime = (time.time() * 1000) - self.metrics["initialized_at_ms"]
 
             # Emit final metrics
             final_metrics = {
@@ -297,7 +296,7 @@ class NodeCoreBase(ABC):
             **self.metrics,
             "success_rate": success_rate,
             "error_rate": error_rate,
-            "uptime_ms": (time.time() * 1000) - self.metrics["initialization_time_ms"],
+            "uptime_ms": (time.time() * 1000) - self.metrics["initialized_at_ms"],
             "node_health_score": max(0.0, 1.0 - error_rate),
         }
 
@@ -414,7 +413,7 @@ class NodeCoreBase(ABC):
                         {
                             "node_id": self.node_id,
                             "contract_keys": (
-                                list[Any](contract_data_raw.keys())
+                                list(contract_data_raw.keys())
                                 if isinstance(contract_data_raw, dict)
                                 else []
                             ),
