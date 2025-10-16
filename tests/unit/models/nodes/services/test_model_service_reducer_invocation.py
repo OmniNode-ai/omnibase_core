@@ -41,10 +41,7 @@ from omnibase_core.models.discovery.model_toolparameters import ModelToolParamet
 from omnibase_core.models.nodes.services.model_service_reducer import (
     ModelServiceReducer,
 )
-from omnibase_core.nodes.enum_reducer_types import (
-    EnumReductionType,
-    EnumStreamingMode,
-)
+from omnibase_core.nodes.enum_reducer_types import EnumReductionType, EnumStreamingMode
 from omnibase_core.nodes.model_reducer_input import ModelReducerInput
 from omnibase_core.nodes.model_reducer_output import ModelReducerOutput
 

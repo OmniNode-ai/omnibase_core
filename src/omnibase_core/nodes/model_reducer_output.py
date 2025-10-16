@@ -12,10 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.nodes.enum_reducer_types import (
-    EnumReductionType,
-    EnumStreamingMode,
-)
+from omnibase_core.nodes.enum_reducer_types import EnumReductionType, EnumStreamingMode
 
 T_Output = TypeVar("T_Output")
 
