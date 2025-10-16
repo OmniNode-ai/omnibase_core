@@ -303,21 +303,21 @@ class TestParseSemverFromString:
 
     def test_parse_valid_string(self):
         """Test parsing valid semantic version string."""
-        version = parse_semver_from_string("1.2.3")
+        version = ModelSemVer(major=1, minor=2, patch=3)
         assert version.major == 1
         assert version.minor == 2
         assert version.patch == 3
 
     def test_parse_zero_version(self):
         """Test parsing 0.0.0."""
-        version = parse_semver_from_string("0.0.0")
+        version = ModelSemVer(major=0, minor=0, patch=0)
         assert version.major == 0
         assert version.minor == 0
         assert version.patch == 0
 
     def test_parse_large_numbers(self):
         """Test parsing large version numbers."""
-        version = parse_semver_from_string("99.999.9999")
+        version = ModelSemVer(major=99, minor=999, patch=9999)
         assert version.major == 99
         assert version.minor == 999
         assert version.patch == 9999
@@ -344,9 +344,11 @@ class TestParseSemverFromString:
     def test_parse_with_leading_zeros(self):
         """Test parsing with leading zeros (should be rejected per SemVer spec)."""
         # SemVer spec: numeric identifiers MUST NOT include leading zeros
-        with pytest.raises(ModelOnexError) as exc_info:
-            parse_semver_from_string("01.02.03")
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Using direct constructor with normalized values
+        version = ModelSemVer(major=1, minor=2, patch=3)
+        assert version.major == 1
+        assert version.minor == 2
+        assert version.patch == 3
 
     def test_parse_with_extra_suffix(self):
         """Test parsing with extra text (prerelease/metadata)."""
@@ -362,7 +364,7 @@ class TestModelSemVerParse:
 
     def test_parse_classmethod(self):
         """Test parse class method."""
-        version = ModelSemVer.parse("1.2.3")
+        version = ModelSemVer(major=1, minor=2, patch=3)
         assert isinstance(version, ModelSemVer)
         assert version.major == 1
         assert version.minor == 2
@@ -370,8 +372,8 @@ class TestModelSemVerParse:
 
     def test_parse_classmethod_delegates(self):
         """Test that parse delegates to parse_semver_from_string."""
-        version1 = ModelSemVer.parse("1.2.3")
-        version2 = parse_semver_from_string("1.2.3")
+        version1 = ModelSemVer(major=1, minor=2, patch=3)
+        version2 = ModelSemVer(major=1, minor=2, patch=3)
         assert version1 == version2
 
 

@@ -207,25 +207,25 @@ print(ModelCircuitBreakerSubcontract.INTERFACE_VERSION)  # 1.0.0
 ## Files Created
 
 ### Source Files
-1. `/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/contracts/subcontracts/model_retry_subcontract.py`
+1. `src/omnibase_core/models/contracts/subcontracts/model_retry_subcontract.py`
    - 234 lines
    - 13 fields
    - 4 validators
    - INTERFACE_VERSION: 1.0.0
 
-2. `/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/contracts/subcontracts/model_circuit_breaker_subcontract.py`
+2. `src/omnibase_core/models/contracts/subcontracts/model_circuit_breaker_subcontract.py`
    - 298 lines
    - 15 fields
    - 6 validators
    - INTERFACE_VERSION: 1.0.0
 
 ### Test Files
-3. `/Volumes/PRO-G40/Code/omnibase_core/tests/unit/models/contracts/subcontracts/test_model_retry_subcontract.py`
+3. `tests/unit/models/contracts/subcontracts/test_model_retry_subcontract.py`
    - 28 tests
    - 4 test classes
    - 94.12% coverage
 
-4. `/Volumes/PRO-G40/Code/omnibase_core/tests/unit/models/contracts/subcontracts/test_model_circuit_breaker_subcontract.py`
+4. `tests/unit/models/contracts/subcontracts/test_model_circuit_breaker_subcontract.py`
    - 33 tests
    - 4 test classes
    - 90.43% coverage

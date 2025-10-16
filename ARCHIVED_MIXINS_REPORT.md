@@ -175,18 +175,18 @@ rm archived/src/omnibase_core/mixin/mixin_registry_injection.py
 
 ```bash
 # Copy the better version
-cp /Volumes/PRO-G40/Code/omnibase_core/archived/src/omnibase_core/mixin/mixin_node_service.py \
-   /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixins/mixin_node_service.py
+cp archived/src/omnibase_core/mixin/mixin_node_service.py \
+   src/omnibase_core/mixins/mixin_node_service.py
 
 # Update import on line 40
 sed -i '' 's/from omnibase_core.mixin.mixin_event_driven_node/from omnibase_core.mixins.mixin_event_driven_node/' \
-   /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixins/mixin_node_service.py
+   src/omnibase_core/mixins/mixin_node_service.py
 ```
 
 ### Step 2: Delete all archived mixins (35 files total)
 
 ```bash
-cd /Volumes/PRO-G40/Code/omnibase_core/archived
+cd archived
 
 # Delete 29 already-unarchived mixins (33 files including duplicates)
 rm src/omnibase_core/mixin/mixin_canonical_serialization.py
@@ -235,10 +235,10 @@ rm src/omnibase_core/mixin/mixin_node_service.py
 
 ```bash
 # Should return empty (no more mixin files in archive)
-find /Volumes/PRO-G40/Code/omnibase_core/archived -name "mixin*.py" -type f
+find archived -name "mixin*.py" -type f
 
 # Verify mixin_node_service.py exists in current
-ls -lh /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixins/mixin_node_service.py
+ls -lh src/omnibase_core/mixins/mixin_node_service.py
 ```
 
 ---

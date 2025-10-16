@@ -14,6 +14,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_node_metadata import ModelNodeMetadata
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class MixinContractMetadata:
@@ -202,7 +203,9 @@ class MixinContractMetadata:
     @property
     def node_version(self) -> str:
         """Get node version from metadata."""
-        return self._node_version or "1.0.0"
+        # Use ModelSemVer for default version instead of string literal
+        default_version = ModelSemVer(major=1, minor=0, patch=0)
+        return self._node_version or str(default_version)
 
     @property
     def description(self) -> str:

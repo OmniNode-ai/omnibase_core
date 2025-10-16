@@ -81,6 +81,12 @@ repos:
         stages: [pre-commit]
         # Note: Takes ~14s on full codebase - consider optimizing script for incremental checks
 
+      # String Version Anti-Pattern Detection
+      # Prevents use of ModelSemVer.parse("X.Y.Z") and direct version string literals
+      # Enforces structured versions: ModelSemVer(1, 0, 0) instead of "1.0.0"
+      # Catches: ModelSemVer.parse(), string literals, flat YAML versions
+      # Allows: Docstrings, regex patterns (r"..."), test fixtures, log messages
+      # See: docs/ANTI_PATTERNS.md#string-version-literals
       - id: validate-string-versions
         name: ONEX String Version Anti-Pattern Detection
         entry: poetry run python scripts/validation/validate-string-versions.py

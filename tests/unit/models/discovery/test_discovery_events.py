@@ -56,7 +56,7 @@ class TestNodeIntrospectionEvent:
         event = ModelNodeIntrospectionEvent.create_from_node_info(
             node_id=node_id,
             node_name="node_generator",
-            version=ModelSemVer.parse("1.2.3"),
+            version=ModelSemVer(major=1, minor=2, patch=3),
             actions=["generate_complete_node", "health_check"],
             protocols=["mcp", "graphql"],
             metadata={"author": "ONEX"},
@@ -121,7 +121,7 @@ class TestToolDiscoveryResponse:
         tool = ModelDiscoveredTool(
             node_id=tool_node_id,
             node_name="node_generator",
-            version=ModelSemVer.parse("1.0.0"),
+            version=ModelSemVer(major=1, minor=0, patch=0),
             actions=["health_check", "generate_complete_node"],
             protocols=["mcp", "event_bus"],
             tags=["generator"],
@@ -154,7 +154,7 @@ class TestToolDiscoveryResponse:
             ModelDiscoveredTool(
                 node_id=tool_node_id,
                 node_name="test_node",
-                version=ModelSemVer.parse("1.0.0"),
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 actions=["test_action"],
                 protocols=["mcp"],
             ),
@@ -271,7 +271,7 @@ def test_all_events_have_correlation_id_support():
     introspection = ModelNodeIntrospectionEvent.create_from_node_info(
         node_id=node_id,
         node_name="test",
-        version=ModelSemVer.parse("1.0.0"),
+        version=ModelSemVer(major=1, minor=0, patch=0),
         actions=["test"],
         correlation_id=correlation_id,
     )

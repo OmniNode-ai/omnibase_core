@@ -10,6 +10,7 @@ from .model_action import ModelAction
 from .model_action_payload import ModelActionPayload
 from .model_circuit_breaker import ModelCircuitBreaker
 from .model_cli_result_data import ModelCliResultData
+from .model_compute_cache import ModelComputeCache
 from .model_conflict_resolver import ModelConflictResolver
 from .model_duration import ModelDuration
 from .model_environment_variables import ModelEnvironmentVariables
@@ -32,6 +33,7 @@ __all__ = [
     "ModelAction",
     "ModelActionPayload",
     "ModelCircuitBreaker",
+    "ModelComputeCache",
     "ModelConflictResolver",
     "ModelCliResultData",
     "ModelDuration",

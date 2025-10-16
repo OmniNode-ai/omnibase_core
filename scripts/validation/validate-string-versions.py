@@ -70,6 +70,7 @@ class PythonASTValidator(ast.NodeVisitor):
         self.file_path = file_path
         self.violations: list[ValidationViolation] = []
         self.imports = set()
+        self.current_call_func = None  # Track current function being called
 
         # Patterns for version fields that should use ModelSemVer
         self.version_patterns = [
@@ -177,6 +178,69 @@ class PythonASTValidator(ast.NodeVisitor):
             )
         self.generic_visit(node)
 
+    def visit_Call(self, node: ast.Call):
+        """Visit function calls to detect ModelSemVer.parse() with string literals."""
+        # Check if this is a call to ModelSemVer.parse or parse_semver_from_string
+        func_name = self._get_call_func_name(node.func)
+
+        if func_name in ("ModelSemVer.parse", "parse_semver_from_string", "parse"):
+            # Check if any arguments are string literals
+            for arg in node.args:
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    if self._is_semantic_version_ast(arg.value):
+                        # Extract version components
+                        parts = arg.value.split(".")
+                        suggestion = f'Use ModelSemVer({parts[0]}, {parts[1]}, {parts[2]}) instead of ModelSemVer.parse("{arg.value}")'
+
+                        self.violations.append(
+                            ValidationViolation(
+                                file_path=self.file_path,
+                                line_number=arg.lineno,
+                                column=arg.col_offset,
+                                field_name=f"<call_to_{func_name}>",
+                                violation_type="semantic_version_string_literal_in_call",
+                                suggestion=suggestion,
+                            )
+                        )
+
+        self.generic_visit(node)
+
+    def visit_Constant(self, node: ast.Constant):
+        """Detect semantic version string literals in inappropriate contexts."""
+        # Skip if not a string
+        if not isinstance(node.value, str):
+            self.generic_visit(node)
+            return
+
+        # Skip if not a semantic version
+        if not self._is_semantic_version_ast(node.value):
+            self.generic_visit(node)
+            return
+
+        # We allow version strings in certain contexts:
+        # 1. Docstrings (handled by skipping all docstrings)
+        # 2. Enum definitions (these are legitimate string values)
+        # 3. Field default values for string-typed version fields (legacy compatibility)
+        # 4. json_schema_extra examples
+        # 5. Test data
+
+        # The main violations we want to catch are in ModelSemVer.parse() calls,
+        # which are handled by visit_Call above.
+        # Any other direct string version literals in non-exempt contexts are suspicious.
+
+        self.generic_visit(node)
+
+    def _get_call_func_name(self, func_node: ast.AST) -> str:
+        """Extract the function name from a call node."""
+        if isinstance(func_node, ast.Name):
+            return func_node.id
+        elif isinstance(func_node, ast.Attribute):
+            # Handle ModelSemVer.parse pattern
+            if isinstance(func_node.value, ast.Name):
+                return f"{func_node.value.id}.{func_node.attr}"
+            return func_node.attr
+        return ""
+
     def _check_field_annotation(
         self, field_name: str, annotation: ast.AST, line_number: int, column: int
     ):
@@ -270,6 +334,39 @@ class PythonASTValidator(ast.NodeVisitor):
             return f"({', '.join(elements)})"
         else:
             return str(type(node).__name__)
+
+    def _is_semantic_version_ast(self, value: str) -> bool:
+        """
+        Use AST-inspired logic to detect semantic versions.
+
+        Checks if a string matches the semantic version pattern X.Y.Z
+        where X, Y, Z are integers.
+        """
+        if not isinstance(value, str) or not value:
+            return False
+
+        # Handle the most common patterns
+        if "." not in value:
+            return False
+
+        # Split on dots and validate each part
+        parts = value.split(".")
+
+        # Must be exactly 3 parts for semantic versioning
+        if len(parts) != 3:
+            return False
+
+        # Each part must be a valid integer (possibly with leading zeros)
+        try:
+            for part in parts:
+                # Must be numeric and not empty
+                if not part or not part.isdigit():
+                    return False
+                # Convert to int to validate (handles leading zeros)
+                int(part)
+            return True
+        except (ValueError, TypeError):
+            return False
 
 
 class StringVersionValidator:

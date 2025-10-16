@@ -39,12 +39,12 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.infrastructure import ModelCircuitBreaker
 from omnibase_core.nodes.enum_effect_types import (
     EnumCircuitBreakerState,
     EnumEffectType,
     EnumTransactionState,
 )
-from omnibase_core.nodes.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.nodes.model_effect_input import ModelEffectInput
 from omnibase_core.nodes.model_effect_output import ModelEffectOutput
 from omnibase_core.nodes.model_effect_transaction import ModelEffectTransaction
@@ -107,6 +107,151 @@ class NodeEffect(NodeCoreBase):
         # Register built-in effect handlers
         self._register_builtin_effect_handlers()
 
+    async def execute_effect(
+        self, contract: "ModelContractEffect"
+    ) -> ModelEffectOutput:
+        """
+        Execute effect based on contract specification.
+
+        REQUIRED INTERFACE: This public method implements the ModelContractEffect interface
+        per ONEX guidelines. Subclasses implementing custom effect nodes should override
+        this method or use the default contract-to-input conversion.
+
+        Args:
+            contract: Effect contract specifying the operation configuration
+
+        Returns:
+            ModelEffectOutput: Operation results with transaction status and metadata
+
+        Raises:
+            ModelOnexError: If effect execution fails or contract is invalid
+        """
+        # Import here to avoid circular dependency
+        from omnibase_core.models.contracts.model_contract_effect import (
+            ModelContractEffect,
+        )
+
+        if not isinstance(contract, ModelContractEffect):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Invalid contract type - must be ModelContractEffect",
+                context={
+                    "node_id": str(self.node_id),
+                    "provided_type": type(contract).__name__,
+                },
+            )
+
+        # Convert contract to ModelEffectInput
+        effect_input = self._contract_to_input(contract)
+
+        # Execute via existing process() method
+        return await self.process(effect_input)
+
+    def _contract_to_input(self, contract: "ModelContractEffect") -> ModelEffectInput:
+        """
+        Convert ModelContractEffect to ModelEffectInput.
+
+        Args:
+            contract: Effect contract to convert
+
+        Returns:
+            ModelEffectInput: Input model for process() method
+
+        Raises:
+            ModelOnexError: If contract has no I/O operations or conversion fails
+        """
+        if not contract.io_operations:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Contract must have at least one I/O operation",
+                context={"node_id": str(self.node_id)},
+            )
+
+        # Use the first I/O operation as the primary operation
+        primary_operation = contract.io_operations[0]
+
+        # Map operation type to EnumEffectType
+        effect_type = self._map_operation_type_to_effect_type(
+            primary_operation.operation_type
+        )
+
+        # Build operation data from contract
+        operation_data: dict[str, Any] = {
+            "operation_type": primary_operation.operation_type,
+            "atomic": primary_operation.atomic,
+            "backup_enabled": primary_operation.backup_enabled,
+            "permissions": primary_operation.permissions,
+            "recursive": primary_operation.recursive,
+            "buffer_size": primary_operation.buffer_size,
+            "timeout_seconds": primary_operation.timeout_seconds,
+            "validation_enabled": primary_operation.validation_enabled,
+        }
+
+        # Merge input state data into operation_data (infrastructure patterns)
+        # This allows file_path and other operation-specific data to be accessible
+        if contract.input_state:
+            operation_data.update(contract.input_state)
+
+        # Add output state and actions if present
+        if contract.output_state:
+            operation_data["output_state"] = contract.output_state
+        if contract.actions:
+            operation_data["actions"] = contract.actions
+
+        # Create ModelEffectInput from contract configuration
+        return ModelEffectInput(
+            effect_type=effect_type,
+            operation_data=operation_data,
+            operation_id=contract.execution_id,
+            transaction_enabled=contract.transaction_management.enabled,
+            retry_enabled=(contract.retry_policies.max_attempts > 1),
+            max_retries=contract.retry_policies.max_attempts,
+            retry_delay_ms=contract.retry_policies.base_delay_ms,
+            circuit_breaker_enabled=contract.retry_policies.circuit_breaker_enabled,
+            timeout_ms=primary_operation.timeout_seconds * 1000,
+            metadata={
+                "correlation_id": str(contract.correlation_id),
+                "idempotent": contract.idempotent_operations,
+                "audit_trail_enabled": contract.audit_trail_enabled,
+                "contract_name": contract.name,
+                "contract_version": str(contract.version),
+            },
+        )
+
+    def _map_operation_type_to_effect_type(self, operation_type: str) -> EnumEffectType:
+        """
+        Map contract operation type to EnumEffectType.
+
+        Args:
+            operation_type: Operation type from contract (e.g., "file_write", "db_query")
+
+        Returns:
+            EnumEffectType: Mapped effect type enum value
+
+        Raises:
+            ModelOnexError: If operation type cannot be mapped
+        """
+        # Map common operation types to EnumEffectType values
+        operation_type_lower = operation_type.lower()
+
+        if any(
+            op in operation_type_lower
+            for op in ["file", "read", "write", "delete", "move"]
+        ):
+            return EnumEffectType.FILE_OPERATION
+
+        if any(op in operation_type_lower for op in ["event", "emit", "publish"]):
+            return EnumEffectType.EVENT_EMISSION
+
+        # Default to FILE_OPERATION for unknown types
+        # This allows custom operation types to be handled by registered handlers
+        emit_log_event(
+            LogLevel.WARNING,
+            f"Unknown operation type '{operation_type}', defaulting to FILE_OPERATION",
+            {"node_id": str(self.node_id), "operation_type": operation_type},
+        )
+        return EnumEffectType.FILE_OPERATION
+
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """
         REQUIRED: Execute side effect operation.
@@ -153,7 +298,9 @@ class NodeEffect(NodeCoreBase):
 
             # Execute with semaphore limit and retry logic
             async with self.effect_semaphore:
-                result = await self._execute_with_retry(input_data, transaction)
+                result, retry_count = await self._execute_with_retry(
+                    input_data, transaction
+                )
 
             # Commit transaction if successful
             if transaction:
@@ -414,8 +561,12 @@ class NodeEffect(NodeCoreBase):
 
     async def _execute_with_retry(
         self, input_data: ModelEffectInput, transaction: ModelEffectTransaction | None
-    ) -> Any:
-        """Execute effect with retry logic."""
+    ) -> tuple[Any, int]:
+        """Execute effect with retry logic.
+
+        Returns:
+            Tuple of (result, retry_count) where retry_count is the actual number of retries performed
+        """
         retry_count = 0
         last_exception: Exception = ModelOnexError(
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -424,7 +575,9 @@ class NodeEffect(NodeCoreBase):
 
         while retry_count <= input_data.max_retries:
             try:
-                return await self._execute_effect(input_data, transaction)
+                result = await self._execute_effect(input_data, transaction)
+
+                return (result, retry_count)
 
             except Exception as e:
                 last_exception = e
@@ -528,6 +681,13 @@ class NodeEffect(NodeCoreBase):
 
             elif operation_type == "write":
                 if atomic:
+                    # Capture state before write to enable proper rollback
+                    pre_existed = file_path.exists()
+                    prev_content: str | None = None
+                    if pre_existed:
+                        with open(file_path, encoding="utf-8") as f:
+                            prev_content = f.read()
+
                     temp_path = file_path.with_suffix(file_path.suffix + ".tmp")
                     try:
                         with open(temp_path, "w", encoding="utf-8") as f:
@@ -537,7 +697,11 @@ class NodeEffect(NodeCoreBase):
                         if transaction:
 
                             def rollback_write() -> None:
-                                if file_path.exists():
+                                # Restore previous content if file existed, delete if it didn't
+                                if pre_existed and prev_content is not None:
+                                    with open(file_path, "w", encoding="utf-8") as f:
+                                        f.write(prev_content)
+                                elif file_path.exists():
                                     file_path.unlink()
 
                             transaction.add_operation(
@@ -566,7 +730,7 @@ class NodeEffect(NodeCoreBase):
                     file_path.unlink()
                     result["deleted"] = True
 
-                    if transaction and backup_content:
+                    if transaction and backup_content is not None:
 
                         def rollback_delete() -> None:
                             with open(file_path, "w", encoding="utf-8") as f:

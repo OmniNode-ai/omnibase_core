@@ -43,16 +43,16 @@ File: `scripts/validation/validate_naming.py`
 
 ```python
 # src/omnibase_core/nodes/node_effect.py:47
-from omnibase_core.nodes.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.infrastructure import ModelCircuitBreaker
 
 # src/omnibase_core/nodes/node_compute.py:40
-from omnibase_core.nodes.model_compute_cache import ModelComputeCache
+from omnibase_core.models.infrastructure import ModelComputeCache
 
 # src/omnibase_core/nodes/node_reducer.py:43
-from omnibase_core.nodes.model_conflict_resolver import ModelConflictResolver
+from omnibase_core.models.infrastructure import ModelConflictResolver
 
 # src/omnibase_core/nodes/node_reducer.py:46
-from omnibase_core.nodes.model_streaming_window import ModelStreamingWindow
+from omnibase_core.models.infrastructure import ModelStreamingWindow
 ```
 
 **Required changes** (import from models/infrastructure/):
@@ -143,39 +143,23 @@ Line 33-35 explicitly states:
 
 Update 4 import statements:
 
-1. **node_effect.py:47**:
+1. **node_effect.py:47**: ✅ FIXED
    ```python
-   # Before
-   from omnibase_core.nodes.model_circuit_breaker import ModelCircuitBreaker
-
-   # After
    from omnibase_core.models.infrastructure import ModelCircuitBreaker
    ```
 
-2. **node_compute.py:40**:
+2. **node_compute.py:40**: ✅ FIXED
    ```python
-   # Before
-   from omnibase_core.nodes.model_compute_cache import ModelComputeCache
-
-   # After
    from omnibase_core.models.infrastructure import ModelComputeCache
    ```
 
-3. **node_reducer.py:43**:
+3. **node_reducer.py:43**: ✅ FIXED
    ```python
-   # Before
-   from omnibase_core.nodes.model_conflict_resolver import ModelConflictResolver
-
-   # After
    from omnibase_core.models.infrastructure import ModelConflictResolver
    ```
 
-4. **node_reducer.py:46**:
+4. **node_reducer.py:46**: ✅ FIXED
    ```python
-   # Before
-   from omnibase_core.nodes.model_streaming_window import ModelStreamingWindow
-
-   # After
    from omnibase_core.models.infrastructure import ModelStreamingWindow
    ```
 

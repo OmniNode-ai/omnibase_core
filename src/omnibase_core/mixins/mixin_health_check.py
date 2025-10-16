@@ -360,7 +360,7 @@ class MixinHealthCheck:
 
     def get_health_status(self) -> dict[str, Any]:
         """
-        Get health status as a dictionary (alias for compatibility).
+        Get health status as a dictionary.
 
         Returns a dictionary with basic health information including:
         - node_id: Node identifier

@@ -78,6 +78,7 @@ class MixinCaching:
         # Stub implementation - returns from in-memory dict
         return self._cache_data.get(cache_key)
 
+    # stub-ok: Intentional stub - full caching backend (Redis/Memcached) in future phase
     async def set_cached(
         self, cache_key: str, value: Any, ttl_seconds: int = 3600
     ) -> None:
@@ -87,7 +88,7 @@ class MixinCaching:
         Args:
             cache_key: Cache key to store under
             value: Value to cache
-            ttl_seconds: Time-to-live in seconds (ignored in stub)
+            ttl_seconds: Time-to-live in seconds (not implemented in current version)
         """
         if self._cache_enabled:
             # Stub implementation - stores in in-memory dict

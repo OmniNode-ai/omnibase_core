@@ -17,6 +17,7 @@ from pathlib import Path
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Type variables for input/output states
 InputStateT = TypeVar("InputStateT")
@@ -349,11 +350,12 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             # Use tool's introspection method
             self.introspect()
         else:
-            # Basic introspection
+            # Basic introspection - use ModelSemVer for default version
+            default_version = ModelSemVer(major=1, minor=0, patch=0)
             {
                 "tool_name": self.__class__.__name__,
                 "description": self.get_cli_description(),
-                "version": getattr(self, "node_version", "1.0.0"),
+                "version": getattr(self, "node_version", str(default_version)),
                 "status": "healthy",
             }
 

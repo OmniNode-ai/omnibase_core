@@ -515,7 +515,7 @@ if self.cache_hit_ratio < 0.5:
 ## Further Reading
 
 - **Mixin Metadata:** `src/omnibase_core/mixins/mixin_metadata.yaml` - Detailed mixin capabilities
-- **ONEX Architecture Patterns:** `/Volumes/PRO-G40/Code/Archon/docs/ONEX_ARCHITECTURE_PATTERNS_COMPLETE.md`
+- **ONEX Architecture Patterns:** See project documentation for ONEX architecture guidelines
 - **Node Base Classes:** `src/omnibase_core/nodes/node_*.py` (created by Agent 2)
 - **Container Documentation:** `src/omnibase_core/models/container/model_onex_container.py`
 

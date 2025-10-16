@@ -2,6 +2,7 @@ import uuid
 from typing import Dict
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 NodeCoreBase - Foundation for 4-Node ModelArchitecture.
@@ -103,7 +104,7 @@ class NodeCoreBase(ABC):
 
         # Contract and configuration
         object.__setattr__(self, "contract_data", None)
-        object.__setattr__(self, "version", "1.0.0")
+        object.__setattr__(self, "version", ModelSemVer(major=1, minor=0, patch=0))
 
         # Initialize metrics
         self.metrics["initialization_time_ms"] = time.time() * 1000
@@ -310,7 +311,7 @@ class NodeCoreBase(ABC):
         return {
             "node_id": self.node_id,
             "node_type": self.__class__.__name__,
-            "version": self.version,
+            "version": str(self.version),
             "created_at": self.created_at.isoformat(),
             "state": self.state.copy(),
             "metrics": await self.get_performance_metrics(),
@@ -327,7 +328,7 @@ class NodeCoreBase(ABC):
         """Get node type classification."""
         return self.__class__.__name__
 
-    def get_version(self) -> str:
+    def get_version(self) -> ModelSemVer:
         """Get node version."""
         return self.version
 
@@ -367,7 +368,13 @@ class NodeCoreBase(ABC):
                         isinstance(contract_data_raw, dict)
                         and "version" in contract_data_raw
                     ):
-                        self.version = contract_data_raw["version"]
+                        version_value = contract_data_raw["version"]
+                        if isinstance(version_value, str):
+                            object.__setattr__(
+                                self, "version", ModelSemVer.parse(version_value)
+                            )
+                        else:
+                            object.__setattr__(self, "version", version_value)
 
                     emit_log_event(
                         LogLevel.INFO,

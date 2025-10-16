@@ -53,7 +53,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     """
 
     model_config = ConfigDict(
-        extra="allow",  # Allow dynamic attributes like 'container' from NodeCoreBase
+        extra="forbid",  # Strict validation, no extra fields
         arbitrary_types_allowed=True,  # Allow threading objects
     )
 
@@ -176,7 +176,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         correlation_id: UUID | None = None,
     ) -> None:
         """
-        Publish an event via the event bus (async alias for compatibility).
+        Publish an event via the event bus.
 
         This is a simple wrapper that publishes events directly to the event bus.
 
@@ -215,7 +215,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             if hasattr(bus, "publish_async"):
                 await bus.publish_async(envelope)
             elif hasattr(bus, "publish"):
-                await bus.publish(event)
+                bus.publish(event)  # Synchronous method - no await
             else:
                 self._log_error(
                     "Event bus does not support publishing",
@@ -272,11 +272,14 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                 payload=event
             )
-            # Use publish_async for envelope publishing
-            if hasattr(bus, "publish_async"):
-                bus.publish_async(envelope)
-            else:
+            # Use synchronous publish method only (this is a sync method)
+            if hasattr(bus, "publish"):
                 bus.publish(event)
+            else:
+                self._log_error(
+                    "Event bus has no synchronous publish method",
+                    "publish_completion",
+                )
             self._log_info(f"Published completion event: {event_type}", event_type)
         except Exception as e:
             self._log_error(
@@ -315,17 +318,17 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 payload=event
             )
 
-            # Check if bus has async methods (async bus or hybrid bus)
-            if hasattr(bus, "apublish") or hasattr(bus, "apublish_async"):
-                if hasattr(bus, "publish_async"):
-                    await bus.publish_async(envelope)  # type: ignore[func-returns-value]  # Protocol method returns None but awaiting is valid for async
-                else:
-                    await bus.publish(event)  # type: ignore[func-returns-value]  # Protocol method returns None but awaiting is valid for async
-            # Synchronous publishing for standard event bus
-            elif hasattr(bus, "publish_async"):
-                bus.publish_async(envelope)
+            # Prefer async publishing if available
+            if hasattr(bus, "publish_async"):
+                await bus.publish_async(envelope)
+            # Fallback to sync method
+            elif hasattr(bus, "publish"):
+                bus.publish(event)  # Synchronous method - no await
             else:
-                bus.publish(event)
+                self._log_error(
+                    "Event bus has no publish method",
+                    "publish_completion",
+                )
 
             self._log_info(f"Published completion event: {event_type}", event_type)
 

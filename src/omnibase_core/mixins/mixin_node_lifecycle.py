@@ -51,7 +51,7 @@ from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
 )
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-from omnibase_core.primitives.model_semver import parse_semver_from_string
+from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -105,9 +105,11 @@ class MixinNodeLifecycle:
                     ModelNodeMetadataBlock,
                 )
 
+                # Use ModelSemVer for version instead of string literal
+                default_version = ModelSemVer(major=1, minor=0, patch=0)
                 metadata_block = ModelNodeMetadataBlock(
                     name=self.__class__.__name__.lower(),
-                    version="1.0.0",
+                    version=default_version,
                     description="Event-driven ONEX node",
                     author="ONEX",
                 )

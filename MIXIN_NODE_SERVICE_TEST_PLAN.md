@@ -974,9 +974,9 @@ def test_handle_tool_invocation_basic(mock_event_bus, tool_invocation_event):
 
 ### 16.1 Related Documentation
 
-- `/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/mixins/mixin_node_service.py`
-- `/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models/nodes/services/`
-- `/Volumes/PRO-G40/Code/omnibase_core/tests/unit/mixins/test_mixin_health_check.py` (reference)
+- `src/omnibase_core/mixins/mixin_node_service.py`
+- `src/omnibase_core/models/nodes/services/`
+- `tests/unit/mixins/test_mixin_health_check.py` (reference)
 
 ### 16.2 Glossary
 

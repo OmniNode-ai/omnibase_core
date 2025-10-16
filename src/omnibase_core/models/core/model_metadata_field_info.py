@@ -14,6 +14,13 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.primitives.model_semver import ModelSemVer
+
+# Default version constants
+DEFAULT_METADATA_VERSION = ModelSemVer(major=0, minor=1, patch=0)
+DEFAULT_PROTOCOL_VERSION = ModelSemVer(major=0, minor=1, patch=0)
+DEFAULT_NODE_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 
 class ModelMetadataFieldInfo(BaseModel):
     """
@@ -94,7 +101,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type="str",
-            default_value="0.1.0",
+            default_value=str(DEFAULT_METADATA_VERSION),
             description="Version of the metadata schema",
         )
 
@@ -108,7 +115,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type="str",
-            default_value="0.1.0",
+            default_value=str(DEFAULT_PROTOCOL_VERSION),
             description="Version of the ONEX protocol",
         )
 
@@ -135,7 +142,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type="str",
-            default_value="1.0.0",
+            default_value=str(DEFAULT_NODE_VERSION),
             description="Version of the node/tool",
         )
 

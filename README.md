@@ -53,7 +53,7 @@ src/omnibase_core/
 
 ### 1. Initialize Git Repository
 ```bash
-cd /Volumes/PRO-G40/Code/omnibase_core
+# From the project root directory
 git init
 git add .
 git commit -m "Initial commit: ONEX core framework implementation"

@@ -3,7 +3,7 @@
 import pytest
 
 from omnibase_core.models.health.model_health_metadata import ModelHealthMetadata
-from omnibase_core.primitives.model_semver import parse_semver_from_string
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestModelHealthMetadataBasics:
@@ -14,7 +14,7 @@ class TestModelHealthMetadataBasics:
         metadata = ModelHealthMetadata()
 
         assert metadata.environment == "unknown"
-        assert metadata.version == parse_semver_from_string("1.0.0")
+        assert metadata.version == ModelSemVer(major=1, minor=0, patch=0)
         assert metadata.check_interval_seconds == 30
         assert metadata.auto_healing_enabled is True
         assert metadata.maintenance_mode is False
@@ -25,7 +25,7 @@ class TestModelHealthMetadataBasics:
 
     def test_custom_initialization(self):
         """Test custom metadata initialization."""
-        version = parse_semver_from_string("2.1.0")
+        version = ModelSemVer(major=2, minor=1, patch=0)
         metadata = ModelHealthMetadata(
             environment="production",
             version=version,

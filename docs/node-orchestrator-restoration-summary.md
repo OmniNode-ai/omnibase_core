@@ -5,7 +5,7 @@
 
 ## Overview
 
-Successfully restored NodeOrchestrator from `/Volumes/PRO-G40/Code/omnibase_core/archived/src/omnibase_core/core/node_orchestrator.py` following the exact modernization pattern used for NodeEffect and NodeCompute.
+Successfully restored NodeOrchestrator from `archived/src/omnibase_core/core/node_orchestrator.py` following the exact modernization pattern used for NodeEffect and NodeCompute.
 
 ## Size Reduction
 
@@ -115,7 +115,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 
 ## __init__.py Updates
 
-Updated `/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/nodes/__init__.py` to export:
+Updated `src/omnibase_core/nodes/__init__.py` to export:
 
 **Node Implementations**:
 - NodeOrchestrator

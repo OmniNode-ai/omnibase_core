@@ -133,7 +133,7 @@ class TestIntrospectionResponseEvent:
             correlation_id=correlation_id,
             node_id=node_id,
             node_name="test_node",
-            version=ModelSemVer.parse("1.0.0"),
+            version=ModelSemVer(major=1, minor=0, patch=0),
             current_status=EnumNodeCurrentStatus.READY,
             capabilities=capabilities,
             response_time_ms=25.5,
@@ -162,7 +162,7 @@ class TestIntrospectionResponseEvent:
             correlation_id=correlation_id,
             node_id=node_id,
             node_name="test_node",
-            version=ModelSemVer.parse("1.0.0"),
+            version=ModelSemVer(major=1, minor=0, patch=0),
             current_status=EnumNodeCurrentStatus.READY,
             capabilities=capabilities,
             response_time_ms=15.0,
@@ -177,7 +177,7 @@ class TestIntrospectionResponseEvent:
             correlation_id=correlation_id,
             node_id=node_id,
             node_name="test_node",
-            version=ModelSemVer.parse("1.0.0"),
+            version=ModelSemVer(major=1, minor=0, patch=0),
             capabilities=capabilities,
             response_time_ms=10.0,
         )
@@ -190,7 +190,7 @@ class TestIntrospectionResponseEvent:
             correlation_id=correlation_id,
             node_id=node_id,
             node_name="test_node",
-            version=ModelSemVer.parse("1.0.0"),
+            version=ModelSemVer(major=1, minor=0, patch=0),
             error_message="Test error",
             response_time_ms=5.0,
         )
@@ -253,7 +253,7 @@ class TestMixinRequestResponseIntrospection:
             def __init__(self):
                 self.node_id = uuid4()
                 self.node_name = "test_node"
-                self.version = ModelSemVer.parse("1.0.0")
+                self.version = ModelSemVer(major=1, minor=0, patch=0)
                 self.tags = ["test", "mcp"]
                 self._event_bus = Mock()
                 self._event_bus.is_connected.return_value = (

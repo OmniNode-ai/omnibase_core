@@ -17,6 +17,7 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_onex_event_metadata import ModelOnexEventMetadata
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class MixinToolExecution:
@@ -210,6 +211,8 @@ class MixinToolExecution:
             )
         )
 
+        # Use ModelSemVer for default version instead of string literal
+        default_version = ModelSemVer(major=1, minor=0, patch=0)
         response_event = ModelOnexEvent(
             event_type="tool.execution.response",
             node_id=node_id_uuid,
@@ -221,7 +224,7 @@ class MixinToolExecution:
                 "result": result,
                 "execution_time": execution_time,
                 "error": error,
-                "tool_version": getattr(self, "version", "1.0.0"),
+                "tool_version": getattr(self, "version", str(default_version)),
             },
             metadata=None,
         )
