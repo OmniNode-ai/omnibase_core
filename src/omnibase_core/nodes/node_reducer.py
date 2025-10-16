@@ -35,17 +35,15 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.infrastructure import (
-    ModelConflictResolver,
-    ModelStreamingWindow,
-)
 from omnibase_core.nodes.enum_reducer_types import (
     EnumConflictResolution,
     EnumReductionType,
     EnumStreamingMode,
 )
+from omnibase_core.nodes.model_conflict_resolver import ModelConflictResolver
 from omnibase_core.nodes.model_reducer_input import ModelReducerInput, T_Input
 from omnibase_core.nodes.model_reducer_output import ModelReducerOutput, T_Output
+from omnibase_core.nodes.model_streaming_window import ModelStreamingWindow
 
 
 class NodeReducer(NodeCoreBase):

@@ -46,7 +46,9 @@ class ModelCacheSettings(BaseModel):
 
     # Cache key settings
     key_prefix: str | None = Field(default=None, description="Cache key prefix")
-    key_hash_algorithm: str = Field(default="md5", description="Key hashing algorithm")
+    key_hash_algorithm: str = Field(
+        default="sha256", description="Key hashing algorithm"
+    )
 
     # Invalidation
     invalidation_enabled: bool = Field(

@@ -188,9 +188,9 @@ class TestModelCacheSettingsEdgeCases:
         assert settings.key_prefix is None
 
     def test_key_hash_algorithm_default(self):
-        """Test key_hash_algorithm defaults to md5."""
+        """Test key_hash_algorithm defaults to sha256."""
         settings = ModelCacheSettings()
-        assert settings.key_hash_algorithm == "md5"
+        assert settings.key_hash_algorithm == "sha256"
 
     def test_max_ttl_none_allows_any(self):
         """Test max_ttl_seconds=None allows any TTL."""

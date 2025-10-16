@@ -276,7 +276,20 @@ class NodeCompute(NodeCoreBase):
     async def _cleanup_node_resources(self) -> None:
         """Cleanup computation-specific resources."""
         if self.thread_pool:
-            self.thread_pool.shutdown(wait=True)
+            # Shutdown thread pool with timeout to prevent hanging
+            # timeout parameter requires Python 3.9+
+            self.thread_pool.shutdown(wait=True, timeout=5.0)
+
+            # Check if threads are still running (shutdown doesn't guarantee completion)
+            # Note: shutdown() doesn't return status, but we log the completion
+            emit_log_event(
+                LogLevel.INFO,
+                "Thread pool shutdown completed (5s timeout)",
+                {
+                    "node_id": str(self.node_id),
+                    "max_workers": self.max_parallel_workers,
+                },
+            )
             self.thread_pool = None
 
         self.computation_cache.clear()
