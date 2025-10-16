@@ -370,11 +370,43 @@ class NodeCoreBase(ABC):
                     ):
                         version_value = contract_data_raw["version"]
                         if isinstance(version_value, str):
-                            object.__setattr__(
-                                self, "version", ModelSemVer.parse(version_value)
-                            )
-                        else:
+                            # Parse version string manually (no ModelSemVer.parse())
+                            try:
+                                parts = version_value.split(".")
+                                if len(parts) >= 2:
+                                    major = int(parts[0])
+                                    minor = int(parts[1])
+                                    patch = int(parts[2]) if len(parts) > 2 else 0
+                                    object.__setattr__(
+                                        self,
+                                        "version",
+                                        ModelSemVer(
+                                            major=major, minor=minor, patch=patch
+                                        ),
+                                    )
+                                else:
+                                    # Invalid version format, keep default
+                                    emit_log_event(
+                                        LogLevel.WARNING,
+                                        f"Invalid version format: {version_value}",
+                                        {"node_id": self.node_id},
+                                    )
+                            except (ValueError, IndexError) as e:
+                                # Parsing failed, keep default
+                                emit_log_event(
+                                    LogLevel.WARNING,
+                                    f"Failed to parse version: {version_value}: {e}",
+                                    {"node_id": self.node_id},
+                                )
+                        elif isinstance(version_value, ModelSemVer):
                             object.__setattr__(self, "version", version_value)
+                        else:
+                            # Invalid version type, keep default
+                            emit_log_event(
+                                LogLevel.WARNING,
+                                f"Invalid version type: {type(version_value)}",
+                                {"node_id": self.node_id},
+                            )
 
                     emit_log_event(
                         LogLevel.INFO,
@@ -528,7 +560,7 @@ class NodeCoreBase(ABC):
     # across node_effect.py, node_compute.py, node_orchestrator.py, node_reducer.py
     # ========================================================================
 
-    def _find_contract_path_unified(self) -> "Path":
+    def _find_contract_path(self) -> "Path":
         """
         Find contract.yaml file using stack frame inspection.
 
@@ -584,7 +616,7 @@ class NodeCoreBase(ABC):
                 },
             ) from e
 
-    def _resolve_contract_references_unified(
+    def _resolve_contract_references(
         self,
         data: Any,
         base_path: "Path",
@@ -610,6 +642,8 @@ class NodeCoreBase(ABC):
         Raises:
             ModelOnexError: If reference resolution fails critically
         """
+        from pathlib import Path
+
         try:
             if isinstance(data, dict):
                 if "$ref" in data:
@@ -617,13 +651,9 @@ class NodeCoreBase(ABC):
                     ref_file = data["$ref"]
                     if ref_file.startswith(("./", "../")):
                         # Relative path reference
-                        from pathlib import Path
-
                         ref_path = (base_path / ref_file).resolve()
                     else:
                         # Absolute or root-relative reference
-                        from pathlib import Path
-
                         ref_path = Path(ref_file)
 
                     return reference_resolver.resolve_reference(
@@ -633,7 +663,7 @@ class NodeCoreBase(ABC):
 
                 # Recursively resolve nested dictionaries
                 return {
-                    key: self._resolve_contract_references_unified(
+                    key: self._resolve_contract_references(
                         value,
                         base_path,
                         reference_resolver,
@@ -644,7 +674,7 @@ class NodeCoreBase(ABC):
             if isinstance(data, list):
                 # Recursively resolve lists
                 return [
-                    self._resolve_contract_references_unified(
+                    self._resolve_contract_references(
                         item,
                         base_path,
                         reference_resolver,
@@ -655,12 +685,26 @@ class NodeCoreBase(ABC):
             # Return primitives as-is
             return data
 
-        except Exception as e:
-            # fallback-ok: graceful degradation for contract references
-            # Log error but don't stop processing - use original data
+        except (FileNotFoundError, OSError, IOError) as e:
+            # fallback-ok: graceful degradation for missing/unreadable reference files
             emit_log_event(
                 LogLevel.WARNING,
-                f"Failed to resolve contract reference: {e!s}",
+                f"Failed to resolve contract reference (file error): {e!s}",
+                {
+                    "node_id": self.node_id,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                    "ref_data": (
+                        str(data) if isinstance(data, dict) and "$ref" in data else None
+                    ),
+                },
+            )
+            return data
+        except (AttributeError, TypeError) as e:
+            # fallback-ok: graceful degradation for resolver errors
+            emit_log_event(
+                LogLevel.WARNING,
+                f"Failed to resolve contract reference (resolver error): {e!s}",
                 {
                     "node_id": self.node_id,
                     "error": str(e),
@@ -668,6 +712,24 @@ class NodeCoreBase(ABC):
                 },
             )
             return data
+        except RecursionError as e:
+            # Circular reference detected - this is a contract authoring error
+            emit_log_event(
+                LogLevel.ERROR,
+                f"Circular reference detected in contract: {e!s}",
+                {
+                    "node_id": self.node_id,
+                    "error": str(e),
+                },
+            )
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Circular reference detected in contract",
+                context={
+                    "node_id": self.node_id,
+                    "node_type": self.__class__.__name__,
+                },
+            ) from e
 
     def _update_specialized_metrics(
         self,
