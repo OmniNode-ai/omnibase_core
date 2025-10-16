@@ -23,17 +23,10 @@ Author: ONEX Framework Team
 """
 
 from datetime import datetime, timedelta
-from enum import Enum
 
-__all__ = ["ModelCircuitBreaker", "CircuitBreakerState"]
+from omnibase_core.nodes.enum_effect_types import EnumCircuitBreakerState
 
-
-class CircuitBreakerState(Enum):
-    """Circuit breaker states for failure handling."""
-
-    CLOSED = "closed"  # Normal operation
-    OPEN = "open"  # Failing, rejecting requests
-    HALF_OPEN = "half_open"  # Testing if service recovered
+__all__ = ["ModelCircuitBreaker"]
 
 
 class ModelCircuitBreaker:
@@ -82,7 +75,7 @@ class ModelCircuitBreaker:
         self.recovery_timeout_seconds = recovery_timeout_seconds
         self.half_open_max_attempts = half_open_max_attempts
 
-        self.state = CircuitBreakerState.CLOSED
+        self.state = EnumCircuitBreakerState.CLOSED
         self.failure_count = 0
         self.last_failure_time: datetime | None = None
         self.half_open_attempts = 0
@@ -101,13 +94,13 @@ class ModelCircuitBreaker:
         """
         now = datetime.now()
 
-        if self.state == CircuitBreakerState.CLOSED:
+        if self.state == EnumCircuitBreakerState.CLOSED:
             return True
-        if self.state == CircuitBreakerState.OPEN:
+        if self.state == EnumCircuitBreakerState.OPEN:
             if self.last_failure_time and now - self.last_failure_time > timedelta(
                 seconds=self.recovery_timeout_seconds,
             ):
-                self.state = CircuitBreakerState.HALF_OPEN
+                self.state = EnumCircuitBreakerState.HALF_OPEN
                 self.half_open_attempts = 0
                 return True
             return False
@@ -122,11 +115,11 @@ class ModelCircuitBreaker:
             - HALF_OPEN -> CLOSED: Service recovered, reset counters
             - CLOSED: Decrement failure count (gradual recovery)
         """
-        if self.state == CircuitBreakerState.HALF_OPEN:
-            self.state = CircuitBreakerState.CLOSED
+        if self.state == EnumCircuitBreakerState.HALF_OPEN:
+            self.state = EnumCircuitBreakerState.CLOSED
             self.failure_count = 0
             self.half_open_attempts = 0
-        elif self.state == CircuitBreakerState.CLOSED:
+        elif self.state == EnumCircuitBreakerState.CLOSED:
             self.failure_count = max(0, self.failure_count - 1)
 
     def record_failure(self) -> None:
@@ -140,11 +133,11 @@ class ModelCircuitBreaker:
         self.failure_count += 1
         self.last_failure_time = datetime.now()
 
-        if self.state == CircuitBreakerState.HALF_OPEN:
-            self.state = CircuitBreakerState.OPEN
+        if self.state == EnumCircuitBreakerState.HALF_OPEN:
+            self.state = EnumCircuitBreakerState.OPEN
             self.half_open_attempts = 0
         elif (
-            self.state == CircuitBreakerState.CLOSED
+            self.state == EnumCircuitBreakerState.CLOSED
             and self.failure_count >= self.failure_threshold
         ):
-            self.state = CircuitBreakerState.OPEN
+            self.state = EnumCircuitBreakerState.OPEN

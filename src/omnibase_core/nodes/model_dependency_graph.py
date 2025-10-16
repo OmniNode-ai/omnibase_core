@@ -1,52 +1,24 @@
-import uuid
-from typing import Any
-
-from pydantic import Field
-
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
-Dependency Graph Model - ONEX Standards Compliant.
-
-Dependency graph for workflow step ordering and execution coordination.
-
-Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
+ModelDependencyGraph - Dependency graph for workflow step ordering.
 """
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from omnibase_core.nodes.enum_orchestrator_types import EnumWorkflowState
+from omnibase_core.nodes.model_workflow_step import ModelWorkflowStep
 
-from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
 
-
-class ModelDependencyGraph(BaseModel):
+class ModelDependencyGraph:
     """
     Dependency graph for workflow step ordering.
-
-    Tracks dependencies between workflow steps and provides
-    topological ordering for execution.
-
-    Note: This is converted from a plain class to Pydantic BaseModel
-    for better type safety and validation.
     """
 
-    nodes: dict[UUID, "ModelWorkflowStepExecution"] = Field(
-        default_factory=dict,
-        description="Map of step_id to WorkflowStepExecution",
-    )
+    def __init__(self) -> None:
+        self.nodes: dict[UUID, ModelWorkflowStep] = {}
+        self.edges: dict[UUID, list[UUID]] = {}  # step_id -> [dependent_step_ids]
+        self.in_degree: dict[UUID, int] = {}
 
-    edges: dict[UUID, list[UUID]] = Field(
-        default_factory=dict,
-        description="Map of step_id to list[Any]of dependent step_ids",
-    )
-
-    in_degree: dict[UUID, int] = Field(
-        default_factory=dict,
-        description="Map of step_id to incoming edge count",
-    )
-
-    def add_step(self, step: "ModelWorkflowStepExecution") -> None:
+    def add_step(self, step: ModelWorkflowStep) -> None:
         """Add step to dependency graph."""
         self.nodes[step.step_id] = step
         if step.step_id not in self.edges:
@@ -101,18 +73,3 @@ class ModelDependencyGraph(BaseModel):
             return False
 
         return any(node not in visited and dfs(node) for node in self.nodes)
-
-    model_config = {
-        "extra": "ignore",
-        "arbitrary_types_allowed": True,  # For WorkflowStepExecution
-        "validate_assignment": True,
-    }
-
-
-# Import here to avoid circular dependency
-from omnibase_core.models.workflows.model_workflow_step_execution import (
-    ModelWorkflowStepExecution,
-)
-
-# Update forward references
-ModelDependencyGraph.model_rebuild()

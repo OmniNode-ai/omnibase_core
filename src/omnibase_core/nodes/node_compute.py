@@ -153,6 +153,7 @@ class NodeCompute(NodeCoreBase):
                     f"Computation exceeded threshold: {processing_time:.2f}ms",
                     {
                         "node_id": str(self.node_id),
+                        "operation_id": str(input_data.operation_id),
                         "computation_type": input_data.computation_type,
                     },
                 )
@@ -199,6 +200,7 @@ class NodeCompute(NodeCoreBase):
                 message=f"Computation failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
+                    "operation_id": str(input_data.operation_id),
                     "computation_type": input_data.computation_type,
                 },
             ) from e
@@ -361,7 +363,7 @@ class NodeCompute(NodeCoreBase):
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Input must be a string",
-                    context={"input_type": type(data).__name__}
+                    context={"input_type": type(data).__name__},
                 )
             return data.upper()
 
@@ -371,7 +373,7 @@ class NodeCompute(NodeCoreBase):
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Input must be a list or tuple",
-                    context={"input_type": type(data).__name__}
+                    context={"input_type": type(data).__name__},
                 )
             return sum(data)
 

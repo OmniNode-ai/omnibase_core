@@ -5,6 +5,7 @@ Provides strongly typed output wrapper with computation metadata and performance
 """
 
 from typing import Any, Generic, TypeVar
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +23,7 @@ class ModelComputeOutput(BaseModel, Generic[T_Output]):
     """
 
     result: T_Output
-    operation_id: str
+    operation_id: UUID
     computation_type: str
     processing_time_ms: float
     cache_hit: bool = False

@@ -87,7 +87,7 @@ class NodeEffect(NodeCoreBase):
         self.max_concurrent_effects = 10
 
         # ModelEffectTransaction management
-        self.active_transactions: dict[str, ModelEffectTransaction] = {}
+        self.active_transactions: dict[UUID, ModelEffectTransaction] = {}
 
         # Circuit breakers for external services
         self.circuit_breakers: dict[str, ModelCircuitBreaker] = {}
@@ -137,7 +137,7 @@ class NodeEffect(NodeCoreBase):
                         message=f"Circuit breaker open for {input_data.effect_type.value}",
                         context={
                             "node_id": str(self.node_id),
-                            "operation_id": input_data.operation_id,
+                            "operation_id": str(input_data.operation_id),
                             "effect_type": input_data.effect_type.value,
                         },
                     )
@@ -201,7 +201,7 @@ class NodeEffect(NodeCoreBase):
                         f"ModelEffectTransaction rollback failed: {rollback_error!s}",
                         {
                             "node_id": str(self.node_id),
-                            "operation_id": input_data.operation_id,
+                            "operation_id": str(input_data.operation_id),
                         },
                     )
 
@@ -223,25 +223,25 @@ class NodeEffect(NodeCoreBase):
                 message=f"Effect execution failed: {e!s}",
                 context={
                     "node_id": str(self.node_id),
-                    "operation_id": input_data.operation_id,
+                    "operation_id": str(input_data.operation_id),
                     "effect_type": input_data.effect_type.value,
                 },
             ) from e
 
     @asynccontextmanager
     async def transaction_context(
-        self, operation_id: str | None = None
+        self, operation_id: UUID | None = None
     ) -> AsyncIterator[ModelEffectTransaction]:
         """
         Async context manager for transaction handling.
 
         Args:
-            operation_id: Optional operation identifier
+            operation_id: Optional operation identifier (UUID)
 
         Yields:
             ModelEffectTransaction: Active transaction instance
         """
-        transaction_id = operation_id or str(uuid4())
+        transaction_id = operation_id or uuid4()
         transaction = ModelEffectTransaction(transaction_id)
         transaction.state = EnumTransactionState.ACTIVE
 
@@ -369,13 +369,19 @@ class NodeEffect(NodeCoreBase):
                 emit_log_event(
                     LogLevel.WARNING,
                     f"Rolled back active transaction during cleanup: {transaction_id}",
-                    {"node_id": str(self.node_id), "transaction_id": transaction_id},
+                    {
+                        "node_id": str(self.node_id),
+                        "transaction_id": str(transaction_id),
+                    },
                 )
             except Exception as e:
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Failed to rollback transaction during cleanup: {e!s}",
-                    {"node_id": str(self.node_id), "transaction_id": transaction_id},
+                    {
+                        "node_id": str(self.node_id),
+                        "transaction_id": str(transaction_id),
+                    },
                 )
 
         self.active_transactions.clear()
@@ -433,7 +439,7 @@ class NodeEffect(NodeCoreBase):
                     f"Effect retry {retry_count}/{input_data.max_retries}: {e!s}",
                     {
                         "node_id": str(self.node_id),
-                        "operation_id": input_data.operation_id,
+                        "operation_id": str(input_data.operation_id),
                     },
                 )
 
@@ -608,13 +614,14 @@ class NodeEffect(NodeCoreBase):
 
                 return False
 
-            except Exception as e:
+            except (
+                Exception
+            ) as e:  # fallback-ok: event emission is non-critical, graceful failure
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Event emission failed: {e!s}",
                     {"event_type": event_type, "error": str(e)},
                 )
-                # fallback-ok: event emission is non-critical, graceful failure
                 return False
 
         self.effect_handlers[EnumEffectType.FILE_OPERATION] = file_operation_handler

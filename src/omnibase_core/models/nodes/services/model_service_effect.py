@@ -12,7 +12,7 @@ for effect nodes that perform I/O operations, external API calls, or database op
 
 Usage Example:
     ```python
-    from omnibase_core.nodes.node_services.model_service_effect import ModelServiceEffect
+    from omnibase_core.models.nodes.services.model_service_effect import ModelServiceEffect
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
     from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 

@@ -11,6 +11,7 @@ import asyncio
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
@@ -27,7 +28,7 @@ class ModelEffectTransaction:
     for complex side effect sequences.
     """
 
-    def __init__(self, transaction_id: str):
+    def __init__(self, transaction_id: UUID):
         self.transaction_id = transaction_id
         self.state = EnumTransactionState.PENDING
         self.operations: list[dict[str, Any]] = []
@@ -72,5 +73,5 @@ class ModelEffectTransaction:
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Rollback operation failed: {e!s}",
-                    {"transaction_id": self.transaction_id, "error": str(e)},
+                    {"transaction_id": str(self.transaction_id), "error": str(e)},
                 )

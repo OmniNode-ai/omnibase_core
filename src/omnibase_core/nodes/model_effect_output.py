@@ -8,6 +8,7 @@ Author: ONEX Framework Team
 
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -28,7 +29,7 @@ class ModelEffectOutput(BaseModel):
     """
 
     result: str | int | float | bool | dict | list
-    operation_id: str
+    operation_id: UUID
     effect_type: EnumEffectType
     transaction_state: EnumTransactionState
     processing_time_ms: float

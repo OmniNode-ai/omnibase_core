@@ -106,7 +106,7 @@ Once `mixin_caching.py` and `mixin_metrics.py` are implemented, all service wrap
 ### Phase 1: Import Tests (Pending Mixins)
 ```bash
 poetry run python -c "
-from omnibase_core.nodes.node_services import (
+from omnibase_core.models.nodes.services import (
     NodeEffectService,
     NodeComputeService,
     NodeOrchestratorService,
@@ -118,7 +118,7 @@ print('✅ All service wrappers import successfully')
 
 ### Phase 2: Instantiation Tests (Pending Mixins + Container)
 ```python
-from omnibase_core.nodes.node_services import NodeEffectService
+from omnibase_core.models.nodes.services import NodeEffectService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 container = ModelONEXContainer.create_default()

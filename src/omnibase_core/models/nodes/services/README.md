@@ -17,7 +17,7 @@ Service wrappers reduce this to **one import, one inheritance**.
 
 ## Standard Service Wrappers
 
-### 1. NodeEffectService
+### 1. ModelServiceEffect
 **Purpose:** Effect nodes performing I/O operations, external API calls, or database operations.
 
 **Included Mixins:**
@@ -28,10 +28,10 @@ Service wrappers reduce this to **one import, one inheritance**.
 
 **Usage:**
 ```python
-from omnibase_core.nodes.node_services import NodeEffectService
+from omnibase_core.models.nodes.services import ModelServiceEffect
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 
-class NodeDatabaseWriterEffect(NodeEffectService):
+class NodeDatabaseWriterEffect(ModelServiceEffect):
     """Database writer with automatic health checks, events, and metrics."""
 
     async def execute_effect(self, contract: ModelContractEffect) -> dict:
@@ -58,7 +58,7 @@ class NodeDatabaseWriterEffect(NodeEffectService):
 
 ---
 
-### 2. NodeComputeService
+### 2. ModelServiceCompute
 **Purpose:** Compute nodes performing pure transformations, calculations, or data processing.
 
 **Included Mixins:**
@@ -69,10 +69,10 @@ class NodeDatabaseWriterEffect(NodeEffectService):
 
 **Usage:**
 ```python
-from omnibase_core.nodes.node_services import NodeComputeService
+from omnibase_core.models.nodes.services import ModelServiceCompute
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
-class NodeDataTransformerCompute(NodeComputeService):
+class NodeDataTransformerCompute(ModelServiceCompute):
     """Data transformer with automatic caching and metrics."""
 
     async def execute_compute(self, contract: ModelContractCompute) -> dict:
@@ -104,7 +104,7 @@ Compute nodes often perform expensive operations (ML inference, complex transfor
 
 ---
 
-### 3. NodeOrchestratorService
+### 3. ModelServiceOrchestrator
 **Purpose:** Orchestrator nodes coordinating multi-node workflows and managing dependencies.
 
 **Included Mixins:**
@@ -115,10 +115,10 @@ Compute nodes often perform expensive operations (ML inference, complex transfor
 
 **Usage:**
 ```python
-from omnibase_core.nodes.node_services import NodeOrchestratorService
+from omnibase_core.models.nodes.services import ModelServiceOrchestrator
 from omnibase_core.models.contracts.model_contract_orchestrator import ModelContractOrchestrator
 
-class NodeWorkflowOrchestrator(NodeOrchestratorService):
+class NodeWorkflowOrchestrator(ModelServiceOrchestrator):
     """Workflow orchestrator with automatic event coordination and metrics."""
 
     async def execute_orchestration(self, contract: ModelContractOrchestrator) -> dict:
@@ -154,7 +154,7 @@ class NodeWorkflowOrchestrator(NodeOrchestratorService):
 
 ---
 
-### 4. NodeReducerService
+### 4. ModelServiceReducer
 **Purpose:** Reducer nodes performing aggregation, state management, or data persistence.
 
 **Included Mixins:**
@@ -165,10 +165,10 @@ class NodeWorkflowOrchestrator(NodeOrchestratorService):
 
 **Usage:**
 ```python
-from omnibase_core.nodes.node_services import NodeReducerService
+from omnibase_core.models.nodes.services import ModelServiceReducer
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
-class NodeMetricsAggregatorReducer(NodeReducerService):
+class NodeMetricsAggregatorReducer(ModelServiceReducer):
     """Metrics aggregator with automatic caching and health checks."""
 
     async def execute_reduction(self, contract: ModelContractReducer) -> dict:
@@ -321,12 +321,12 @@ Python's MRO (Method Resolution Order) determines which method gets called when 
 **Standard Service MRO Examples:**
 
 ```python
-# NodeEffectService MRO
-NodeEffectService → NodeEffect → MixinHealthCheck → MixinEventBus
+# ModelServiceEffect MRO
+ModelServiceEffect → NodeEffect → MixinHealthCheck → MixinEventBus
 → MixinMetrics → NodeCoreBase → ABC
 
-# NodeComputeService MRO
-NodeComputeService → NodeCompute → MixinHealthCheck → MixinCaching
+# ModelServiceCompute MRO
+ModelServiceCompute → NodeCompute → MixinHealthCheck → MixinCaching
 → MixinMetrics → NodeCoreBase → ABC
 ```
 
@@ -351,9 +351,9 @@ class MyDatabaseWriter(NodeEffectExecutor):
 
 ### New Service Wrappers (Recommended)
 ```python
-from omnibase_core.infrastructure.infrastructure_bases import NodeEffectService
+from omnibase_core.models.nodes.services import ModelServiceEffect
 
-class MyDatabaseWriter(NodeEffectService):
+class MyDatabaseWriter(ModelServiceEffect):
     # No __init__ needed! Everything is wired automatically.
     async def execute_effect(self, contract):
         # Just write your business logic
@@ -374,7 +374,7 @@ class MyDatabaseWriter(NodeEffectService):
 ```python
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from omnibase_core.nodes.node_services import NodeEffectService
+from omnibase_core.models.nodes.services import ModelServiceEffect
 
 class TestMyDatabaseWriter:
     @pytest.fixture
@@ -402,7 +402,7 @@ class TestMyDatabaseWriter:
 ### Integration Testing with Real Mixins
 ```python
 import pytest
-from omnibase_core.nodes.node_services import NodeComputeService
+from omnibase_core.models.nodes.services import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 class TestDataTransformerIntegration:
@@ -430,10 +430,10 @@ class TestDataTransformerIntegration:
 
 | Service Wrapper | Overhead per Call | Memory per Instance | Recommended Use Cases |
 |----------------|-------------------|---------------------|----------------------|
-| **NodeEffectService** | ~10-20ms | ~10-20KB | Database adapters, API clients, file I/O |
-| **NodeComputeService** | ~5-15ms | ~15-30KB (with cache) | Data transformers, ML inference, calculations |
-| **NodeOrchestratorService** | ~15-30ms | ~20-40KB | Workflow coordinators, multi-step processes |
-| **NodeReducerService** | ~10-25ms | ~15-35KB (with cache) | Metrics aggregators, log analyzers, analytics |
+| **ModelServiceEffect** | ~10-20ms | ~10-20KB | Database adapters, API clients, file I/O |
+| **ModelServiceCompute** | ~5-15ms | ~15-30KB (with cache) | Data transformers, ML inference, calculations |
+| **ModelServiceOrchestrator** | ~15-30ms | ~20-40KB | Workflow coordinators, multi-step processes |
+| **ModelServiceReducer** | ~10-25ms | ~15-35KB (with cache) | Metrics aggregators, log analyzers, analytics |
 
 **Overhead Breakdown:**
 - Health check: ~5-10ms per check
@@ -450,7 +450,7 @@ Unless you have specific requirements, start with standard service wrappers. The
 
 ### 2. Override Health Checks for Custom Dependencies
 ```python
-class MyApiClient(NodeEffectService):
+class MyApiClient(ModelServiceEffect):
     def get_health_checks(self):
         return [
             self._check_api_availability,
@@ -461,7 +461,7 @@ class MyApiClient(NodeEffectService):
 
 ### 3. Configure Cache TTL Based on Data Staleness
 ```python
-class MyTransformer(NodeComputeService):
+class MyTransformer(ModelServiceCompute):
     async def execute_compute(self, contract):
         # Short TTL for frequently changing data
         await self.set_cached(key, result, ttl_seconds=60)
@@ -472,7 +472,7 @@ class MyTransformer(NodeComputeService):
 
 ### 4. Use Correlation IDs for Event Tracking
 ```python
-class MyWorkflow(NodeOrchestratorService):
+class MyWorkflow(ModelServiceOrchestrator):
     async def execute_orchestration(self, contract):
         # Propagate correlation ID through all events
         await self.publish_event(
@@ -494,7 +494,7 @@ if self.cache_hit_ratio < 0.5:
 
 ## Troubleshooting
 
-### Import Errors: "Cannot import NodeEffectService"
+### Import Errors: "Cannot import ModelServiceEffect"
 **Cause:** Node base classes don't exist yet (waiting for Agent 2).
 **Solution:** Wait for `NodeEffect`, `NodeCompute`, `NodeOrchestrator`, `NodeReducer` to be created in `src/omnibase_core/nodes/`.
 

@@ -13,7 +13,7 @@ Author: ONEX Framework Team
 
 from datetime import datetime
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
@@ -30,7 +30,7 @@ class ModelEffectInput(BaseModel):
 
     effect_type: EnumEffectType
     operation_data: dict[str, Any]
-    operation_id: str = Field(default_factory=lambda: str(uuid4()))
+    operation_id: UUID = Field(default_factory=uuid4)
     transaction_enabled: bool = True
     retry_enabled: bool = True
     max_retries: int = 3

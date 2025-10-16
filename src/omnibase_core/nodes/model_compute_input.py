@@ -6,7 +6,7 @@ Provides type-safe input wrapper with metadata tracking for computation operatio
 
 from datetime import datetime
 from typing import Any, Generic, TypeVar
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
@@ -24,7 +24,7 @@ class ModelComputeInput(BaseModel, Generic[T_Input]):
     """
 
     data: T_Input
-    operation_id: str = Field(default_factory=lambda: str(uuid4()))
+    operation_id: UUID = Field(default_factory=uuid4)
     computation_type: str = "default"
     cache_enabled: bool = True
     parallel_enabled: bool = False

@@ -8,20 +8,51 @@ STABILITY GUARANTEE: Node interfaces are frozen for code generation.
 Breaking changes require major version bump.
 """
 
+from omnibase_core.nodes.enum_orchestrator_types import (
+    EnumBranchCondition,
+    EnumExecutionMode,
+    EnumThunkType,
+    EnumWorkflowState,
+)
+from omnibase_core.nodes.enum_reducer_types import (
+    EnumConflictResolution,
+    EnumReductionType,
+    EnumStreamingMode,
+)
 from omnibase_core.nodes.model_compute_input import ModelComputeInput
 from omnibase_core.nodes.model_compute_output import ModelComputeOutput
+from omnibase_core.nodes.model_orchestrator_input import ModelOrchestratorInput
+from omnibase_core.nodes.model_orchestrator_output import ModelOrchestratorOutput
+from omnibase_core.nodes.model_reducer_input import ModelReducerInput
+from omnibase_core.nodes.model_reducer_output import ModelReducerOutput
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+from omnibase_core.nodes.node_reducer import NodeReducer
 
-# Note: NodeOrchestrator and NodeReducer will be added after Phase 2 Agent 3 completion
-# from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-# from omnibase_core.nodes.node_reducer import NodeReducer
+# NOTE: Internal models like ModelConflictResolver, ModelDependencyGraph, ModelLoadBalancer,
+# ModelStreamingWindow, ModelThunk, ModelWorkflowStep are NOT exported - they are internal
+# implementation details used by the nodes themselves.
 
 __all__ = [
-    "ModelComputeInput",
-    "ModelComputeOutput",
+    # Node implementations (inherit from these)
     "NodeCompute",
     "NodeEffect",
-    # "NodeOrchestrator",  # TODO: Phase 2 Agent 3
-    # "NodeReducer",  # TODO: Phase 2 Agent 3
+    "NodeOrchestrator",
+    "NodeReducer",
+    # Input/Output models (use these for process() calls)
+    "ModelComputeInput",
+    "ModelComputeOutput",
+    "ModelOrchestratorInput",
+    "ModelOrchestratorOutput",
+    "ModelReducerInput",
+    "ModelReducerOutput",
+    # Public enums (use these for configuration)
+    "EnumBranchCondition",
+    "EnumExecutionMode",
+    "EnumThunkType",
+    "EnumWorkflowState",
+    "EnumConflictResolution",
+    "EnumReductionType",
+    "EnumStreamingMode",
 ]
