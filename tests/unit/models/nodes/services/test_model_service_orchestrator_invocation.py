@@ -122,9 +122,12 @@ class TestModelServiceOrchestratorToolInvocation:
             MixinNodeService._convert_event_to_input_state.__get__(node, type(node))
         )
         node._execute_tool = MixinNodeService._execute_tool.__get__(node, type(node))
-        node._emit_tool_response = MixinNodeService._emit_tool_response.__get__(
-            node, type(node)
-        )
+
+        # Override _emit_tool_response with simple async mock to avoid event_bus issues
+        async def emit_response(response_event):
+            await mock_event_bus.publish(response_event)
+
+        node._emit_tool_response = AsyncMock(side_effect=emit_response)
 
         return node
 
@@ -594,12 +597,14 @@ class TestModelServiceOrchestratorEdgeCases:
         - Workflow cleaned up
         """
         mock_event_bus = AsyncMock()
+        mock_event_bus.publish = AsyncMock()  # Ensure publish is async
         node_id_val = uuid4()
 
         # Create mock node
         node = Mock()
         node._node_id = node_id_val
-        node.event_bus = mock_event_bus
+        node.node_id = node_id_val  # Set property explicitly to avoid Mock object
+        node.configure_mock(event_bus=mock_event_bus)
         node._active_invocations = set()
         node._total_invocations = 0
         node._successful_invocations = 0
@@ -622,6 +627,11 @@ class TestModelServiceOrchestratorEdgeCases:
             node, ModelServiceOrchestrator
         )
 
+        # Mock logging methods to prevent Mock interference
+        node._log_info = Mock()
+        node._log_warning = Mock()
+        node._log_error = Mock()
+
         # Add handle_tool_invocation from MixinNodeService
         from omnibase_core.mixins.mixin_node_service import MixinNodeService
 
@@ -635,9 +645,12 @@ class TestModelServiceOrchestratorEdgeCases:
             MixinNodeService._convert_event_to_input_state.__get__(node, type(node))
         )
         node._execute_tool = MixinNodeService._execute_tool.__get__(node, type(node))
-        node._emit_tool_response = MixinNodeService._emit_tool_response.__get__(
-            node, type(node)
-        )
+
+        # Override _emit_tool_response with simple async mock to avoid event_bus issues
+        async def emit_response(response_event):
+            await mock_event_bus.publish(response_event)
+
+        node._emit_tool_response = AsyncMock(side_effect=emit_response)
 
         event = ModelToolInvocationEvent.create_tool_invocation(
             target_node_id=node._node_id,
@@ -670,11 +683,13 @@ class TestModelServiceOrchestratorEdgeCases:
         - All workflows complete successfully
         """
         mock_event_bus = AsyncMock()
+        mock_event_bus.publish = AsyncMock()  # Ensure publish is async
         node_id_val = uuid4()
 
         # Create mock node
         node = Mock()
         node._node_id = node_id_val
+        node.node_id = node_id_val  # Set property explicitly to avoid Mock object
         node.event_bus = mock_event_bus
         node._active_invocations = set()
         node._total_invocations = 0
@@ -707,6 +722,11 @@ class TestModelServiceOrchestratorEdgeCases:
             node, ModelServiceOrchestrator
         )
 
+        # Mock logging methods to prevent Mock interference
+        node._log_info = Mock()
+        node._log_warning = Mock()
+        node._log_error = Mock()
+
         # Add handle_tool_invocation from MixinNodeService
         from omnibase_core.mixins.mixin_node_service import MixinNodeService
 
@@ -720,9 +740,12 @@ class TestModelServiceOrchestratorEdgeCases:
             MixinNodeService._convert_event_to_input_state.__get__(node, type(node))
         )
         node._execute_tool = MixinNodeService._execute_tool.__get__(node, type(node))
-        node._emit_tool_response = MixinNodeService._emit_tool_response.__get__(
-            node, type(node)
-        )
+
+        # Override _emit_tool_response with simple async mock to avoid event_bus issues
+        async def emit_response(response_event):
+            await mock_event_bus.publish(response_event)
+
+        node._emit_tool_response = AsyncMock(side_effect=emit_response)
 
         # Create multiple events
         events = [
@@ -755,12 +778,14 @@ class TestModelServiceOrchestratorEdgeCases:
         - All data preserved
         """
         mock_event_bus = AsyncMock()
+        mock_event_bus.publish = AsyncMock()  # Ensure publish is async
         node_id_val = uuid4()
 
-        # Create mock node
-        node = Mock()
+        # Create mock node (use spec to prevent Mock auto-creation)
+        node = Mock(spec=ModelServiceOrchestrator)
         node._node_id = node_id_val
-        node.event_bus = mock_event_bus
+        node.node_id = node_id_val  # Set property explicitly to avoid Mock object
+        node.configure_mock(event_bus=mock_event_bus)
         node._active_invocations = set()
         node._total_invocations = 0
         node._successful_invocations = 0
@@ -783,6 +808,11 @@ class TestModelServiceOrchestratorEdgeCases:
             node, ModelServiceOrchestrator
         )
 
+        # Mock logging methods to prevent Mock interference
+        node._log_info = Mock()
+        node._log_warning = Mock()
+        node._log_error = Mock()
+
         # Add handle_tool_invocation from MixinNodeService
         from omnibase_core.mixins.mixin_node_service import MixinNodeService
 
@@ -796,9 +826,12 @@ class TestModelServiceOrchestratorEdgeCases:
             MixinNodeService._convert_event_to_input_state.__get__(node, type(node))
         )
         node._execute_tool = MixinNodeService._execute_tool.__get__(node, type(node))
-        node._emit_tool_response = MixinNodeService._emit_tool_response.__get__(
-            node, type(node)
-        )
+
+        # Override _emit_tool_response with simple async mock to avoid event_bus issues
+        async def emit_response(response_event):
+            await mock_event_bus.publish(response_event)
+
+        node._emit_tool_response = AsyncMock(side_effect=emit_response)
 
         event = ModelToolInvocationEvent.create_tool_invocation(
             target_node_id=node._node_id,

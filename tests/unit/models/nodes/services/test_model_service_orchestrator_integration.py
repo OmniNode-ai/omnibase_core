@@ -106,23 +106,45 @@ class TestMROCorrectness:
         service = ModelServiceOrchestrator(mock_container)
         mro = inspect.getmro(ModelServiceOrchestrator)
 
-        # Expected MRO:
+        # Expected MRO (per Python's C3 linearization):
         # ModelServiceOrchestrator → MixinNodeService → NodeOrchestrator →
-        # MixinHealthCheck → MixinEventBus → MixinMetrics → NodeCoreBase → ABC
+        # NodeCoreBase → ABC → MixinHealthCheck → MixinEventBus → (BaseModel/Generic) → MixinMetrics
+        #
+        # Note: NodeCoreBase MUST come immediately after NodeOrchestrator because
+        # NodeOrchestrator inherits from NodeCoreBase. Python's C3 algorithm ensures
+        # a class appears before classes that don't have it as an ancestor.
         expected_classes = [
             ModelServiceOrchestrator,
             MixinNodeService,
             NodeOrchestrator,
-            MixinHealthCheck,
-            MixinEventBus,
-            MixinMetrics,
+            # NodeCoreBase comes here (position 3) because NodeOrchestrator inherits from it
+            # ABC comes next (position 4) because NodeCoreBase inherits from it
+            # Then the remaining mixins: MixinHealthCheck, MixinEventBus, MixinMetrics
         ]
 
+        # Verify the first 3 positions which are deterministic
         for i, expected_class in enumerate(expected_classes):
             assert mro[i] == expected_class, (
                 f"MRO position {i} should be {expected_class.__name__}, "
                 f"but got {mro[i].__name__}"
             )
+
+        # Verify NodeCoreBase comes early (due to NodeOrchestrator inheritance)
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        nodecorebase_index = next(
+            i for i, cls in enumerate(mro) if cls.__name__ == "NodeCoreBase"
+        )
+        assert nodecorebase_index == 3, (
+            f"NodeCoreBase should be at position 3 (after NodeOrchestrator), "
+            f"but found at position {nodecorebase_index}"
+        )
+
+        # Verify all expected mixins are present in MRO
+        mro_names = [cls.__name__ for cls in mro]
+        assert "MixinHealthCheck" in mro_names, "MixinHealthCheck missing from MRO"
+        assert "MixinEventBus" in mro_names, "MixinEventBus missing from MRO"
+        assert "MixinMetrics" in mro_names, "MixinMetrics missing from MRO"
 
     def test_mro_no_diamond_problem(self, mock_container):
         """Test that MRO resolves diamond inheritance correctly."""
@@ -186,13 +208,22 @@ class TestMROCorrectness:
 
     def test_super_call_propagation(self, mock_container):
         """Test that super().__init__() calls propagate through MRO."""
-        with patch.object(
-            NodeOrchestrator, "__init__", wraps=NodeOrchestrator.__init__
-        ) as mock_orch_init:
+        # Track if NodeOrchestrator.__init__ was called
+        original_init = NodeOrchestrator.__init__
+        init_called = []
+
+        def tracking_init(self, container):
+            """Wrapper that tracks calls and properly passes through to original."""
+            init_called.append(True)
+            return original_init(self, container)
+
+        with patch.object(NodeOrchestrator, "__init__", tracking_init):
             service = ModelServiceOrchestrator(mock_container)
 
             # Verify that NodeOrchestrator.__init__ was called via super()
-            assert mock_orch_init.called
+            assert (
+                len(init_called) == 1
+            ), "NodeOrchestrator.__init__ should be called exactly once via super() chain"
 
 
 class TestServiceModeEventBusIntegration:
@@ -581,8 +612,8 @@ class TestToolInvocationWorkflowEventEmission:
         self, service_orchestrator, tool_invocation_event, mock_event_bus
     ):
         """Test that successful workflow execution publishes events."""
-        # Mock container to return event bus
-        service_orchestrator.container.get_service = Mock(return_value=mock_event_bus)
+        # Set event bus directly on service (MixinNodeService uses getattr(self, "event_bus"))
+        object.__setattr__(service_orchestrator, "event_bus", mock_event_bus)
 
         service_orchestrator.run = AsyncMock(
             return_value={"result": "success", "workflow_id": str(uuid4())}
@@ -602,8 +633,8 @@ class TestToolInvocationWorkflowEventEmission:
         self, service_orchestrator, tool_invocation_event, mock_event_bus
     ):
         """Test that failed workflow execution publishes error event."""
-        # Mock container to return event bus
-        service_orchestrator.container.get_service = Mock(return_value=mock_event_bus)
+        # Set event bus directly on service (MixinNodeService uses getattr(self, "event_bus"))
+        object.__setattr__(service_orchestrator, "event_bus", mock_event_bus)
 
         service_orchestrator.run = AsyncMock(side_effect=Exception("Workflow error"))
 

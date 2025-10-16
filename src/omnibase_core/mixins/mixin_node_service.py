@@ -36,6 +36,8 @@ from typing import TYPE_CHECKING, Any
 
 from omnibase_core.constants.event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_shutdown_event import (
@@ -314,10 +316,32 @@ class MixinNodeService:
 
     async def _subscribe_to_tool_invocations(self) -> None:
         """Subscribe to TOOL_INVOCATION events."""
-        event_bus = getattr(self, "event_bus", None)
+        # Try multiple strategies to get event bus (similar to MixinEventBus._get_event_bus)
+        event_bus = None
+
+        # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
+        if hasattr(self, "_get_event_bus"):
+            event_bus = self._get_event_bus()  # type: ignore
+
+        # Strategy 2: Try direct event_bus attribute
         if not event_bus:
-            msg = "Event bus not available for subscription"
-            raise RuntimeError(msg)
+            event_bus = getattr(self, "event_bus", None)
+
+        # Strategy 3: Try container.get_service()
+        if not event_bus and hasattr(self, "container"):
+            try:
+                container = getattr(self, "container")
+                if hasattr(container, "get_service"):
+                    event_bus = container.get_service("event_bus")
+            except Exception:
+                pass
+
+        # Raise error if no event bus found
+        if not event_bus:
+            raise ModelOnexError(
+                message="Event bus not available for subscription",
+                error_code=EnumCoreErrorCode.SERVICE_UNAVAILABLE,
+            )
 
         # Subscribe to tool invocation events
         event_bus.subscribe(self.handle_tool_invocation, TOOL_INVOCATION)
@@ -432,16 +456,20 @@ class MixinNodeService:
                 run_method,
                 input_state,
             )
-        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.exceptions.onex_error import OnexError
-
-        raise OnexError(
-            code=EnumCoreErrorCode.INVALID_OPERATION,
+        raise ModelOnexError(
             message="Node does not have a 'run' method for tool execution",
+            error_code=EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED,
         )
 
     def _serialize_result(self, result: Any) -> dict[str, Any]:
         """Serialize the execution result to a dictionary."""
+        # None results are not allowed - raise validation error
+        if result is None:
+            raise ModelOnexError(
+                message="Tool execution returned None - nodes must return a valid result",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
         if hasattr(result, "model_dump"):
             # Pydantic v2 model - use mode='json' for JSON-serializable output
             return result.model_dump(mode="json")
@@ -458,7 +486,27 @@ class MixinNodeService:
 
     async def _emit_tool_response(self, response_event: ModelToolResponseEvent) -> None:
         """Emit a tool response event."""
-        event_bus = getattr(self, "event_bus", None)
+        # Try multiple strategies to get event bus (similar to _subscribe_to_tool_invocations)
+        event_bus = None
+
+        # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
+        if hasattr(self, "_get_event_bus"):
+            event_bus = self._get_event_bus()  # type: ignore
+
+        # Strategy 2: Try direct event_bus attribute
+        if not event_bus:
+            event_bus = getattr(self, "event_bus", None)
+
+        # Strategy 3: Try container.get_service()
+        if not event_bus and hasattr(self, "container"):
+            try:
+                container = getattr(self, "container")
+                if hasattr(container, "get_service"):
+                    event_bus = container.get_service("event_bus")
+            except Exception:
+                pass
+
+        # Emit event if bus available
         if event_bus:
             await event_bus.publish(response_event)
         else:
@@ -472,7 +520,26 @@ class MixinNodeService:
                 node_name=self._extract_node_name(),
             )
 
-            event_bus = getattr(self, "event_bus", None)
+            # Try multiple strategies to get event bus
+            event_bus = None
+
+            # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
+            if hasattr(self, "_get_event_bus"):
+                event_bus = self._get_event_bus()  # type: ignore
+
+            # Strategy 2: Try direct event_bus attribute
+            if not event_bus:
+                event_bus = getattr(self, "event_bus", None)
+
+            # Strategy 3: Try container.get_service()
+            if not event_bus and hasattr(self, "container"):
+                try:
+                    container = getattr(self, "container")
+                    if hasattr(container, "get_service"):
+                        event_bus = container.get_service("event_bus")
+                except Exception:
+                    pass
+
             if event_bus:
                 await event_bus.publish(shutdown_event)
 

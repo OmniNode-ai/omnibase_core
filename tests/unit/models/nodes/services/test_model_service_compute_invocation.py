@@ -605,19 +605,20 @@ class TestModelServiceComputeResultSerialization:
 
         Scenario:
         - Result is None
-        - Error response generated due to Pydantic validation
+        - Error response generated because None is not a valid result
 
         Expected:
-        - Error response emitted (ModelToolResponseEvent doesn't accept None result)
+        - Error response emitted (nodes must return valid results)
         """
         service_compute.run = AsyncMock(return_value=None)
 
         await service_compute.handle_tool_invocation(tool_invocation_event)
 
         response_event = mock_event_bus.publish.call_args[0][0]
-        # None result causes validation error, so we get error response
+        # None result causes error response
         assert response_event.success is False
-        assert "validation" in response_event.error.lower()
+        assert "none" in response_event.error.lower()
+        assert "valid result" in response_event.error.lower()
 
 
 class TestModelServiceComputeResponseEmission:

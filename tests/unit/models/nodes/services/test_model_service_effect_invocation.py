@@ -630,6 +630,7 @@ class TestModelServiceEffectEdgeCases:
         # Create mock node
         node = Mock()
         node._node_id = node_id_val
+        node.node_id = node_id_val  # Explicitly set property for getattr() calls
         node.event_bus = mock_event_bus
         node._active_invocations = set()
         node._total_invocations = 0
@@ -693,6 +694,7 @@ class TestModelServiceEffectEdgeCases:
         # Create mock node
         node = Mock()
         node._node_id = node_id_val
+        node.node_id = node_id_val  # Explicitly set property for getattr() calls
         node.event_bus = mock_event_bus
         node._active_invocations = set()
         node._total_invocations = 0

@@ -47,9 +47,20 @@ class MixinMetrics:
         """
         # Stub implementation - metrics will be sent to backend in future
         # Use object.__getattribute__() to access attributes set with object.__setattr__()
-        metrics_enabled = object.__getattribute__(self, "_metrics_enabled")
+        # Defensive: Initialize if attributes don't exist
+        try:
+            metrics_enabled = object.__getattribute__(self, "_metrics_enabled")
+        except AttributeError:
+            object.__setattr__(self, "_metrics_enabled", True)
+            metrics_enabled = True
+
         if metrics_enabled:
-            metrics_data = object.__getattribute__(self, "_metrics_data")
+            try:
+                metrics_data = object.__getattribute__(self, "_metrics_data")
+            except AttributeError:
+                object.__setattr__(self, "_metrics_data", {})
+                metrics_data = object.__getattribute__(self, "_metrics_data")
+
             metrics_data[metric_name] = {
                 "value": value,
                 "tags": tags or {},
@@ -64,9 +75,20 @@ class MixinMetrics:
             value: Amount to increment by (default: 1)
         """
         # Use object.__getattribute__() to access attributes set with object.__setattr__()
-        metrics_enabled = object.__getattribute__(self, "_metrics_enabled")
+        # Defensive: Initialize if attributes don't exist
+        try:
+            metrics_enabled = object.__getattribute__(self, "_metrics_enabled")
+        except AttributeError:
+            object.__setattr__(self, "_metrics_enabled", True)
+            metrics_enabled = True
+
         if metrics_enabled:
-            metrics_data = object.__getattribute__(self, "_metrics_data")
+            try:
+                metrics_data = object.__getattribute__(self, "_metrics_data")
+            except AttributeError:
+                object.__setattr__(self, "_metrics_data", {})
+                metrics_data = object.__getattribute__(self, "_metrics_data")
+
             current = metrics_data.get(counter_name, {"value": 0})["value"]
             metrics_data[counter_name] = {"value": current + value}
 
@@ -78,11 +100,21 @@ class MixinMetrics:
             Dictionary of current metrics
         """
         # Use object.__getattribute__() to access attributes set with object.__setattr__()
-        metrics_data = object.__getattribute__(self, "_metrics_data")
+        # Defensive: Initialize _metrics_data if it doesn't exist (e.g., if __init__ wasn't called)
+        try:
+            metrics_data = object.__getattribute__(self, "_metrics_data")
+        except AttributeError:
+            object.__setattr__(self, "_metrics_data", {})
+            metrics_data = object.__getattribute__(self, "_metrics_data")
         return metrics_data.copy()
 
     def reset_metrics(self) -> None:
         """Reset all metrics data."""
         # Use object.__getattribute__() to access attributes set with object.__setattr__()
-        metrics_data = object.__getattribute__(self, "_metrics_data")
+        # Defensive: Initialize if attributes don't exist
+        try:
+            metrics_data = object.__getattribute__(self, "_metrics_data")
+        except AttributeError:
+            object.__setattr__(self, "_metrics_data", {})
+            metrics_data = object.__getattribute__(self, "_metrics_data")
         metrics_data.clear()
