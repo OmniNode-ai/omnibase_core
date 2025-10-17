@@ -67,14 +67,29 @@ class NodeEffect(NodeCoreBase):
     - Atomic file operations for data integrity
     - Event bus integration for state changes
     - Performance monitoring and logging
+
+    Thread Safety:
+        - Circuit breaker state NOT thread-safe (failure counts, timers)
+        - Transactions NOT shareable across threads
+        - Create separate instances per thread for concurrent effects
+        - See docs/THREADING.md for production guidelines and mitigation strategies
     """
 
-    def __init__(self, container: ModelONEXContainer) -> None:
+    def __init__(
+        self,
+        container: ModelONEXContainer,
+        on_rollback_failure: (
+            Callable[[ModelEffectTransaction, list[ModelOnexError]], None] | None
+        ) = None,
+    ) -> None:
         """
         Initialize NodeEffect with ModelONEXContainer dependency injection.
 
         Args:
             container: ONEX container for dependency injection
+            on_rollback_failure: Optional callback invoked on rollback failures.
+                                 Useful for alerting, metrics, or custom recovery logic.
+                                 Signature: (transaction, errors) -> None
 
         Raises:
             ModelOnexError: If container is invalid or initialization fails
@@ -103,6 +118,9 @@ class NodeEffect(NodeCoreBase):
 
         # Effect-specific metrics
         object.__setattr__(self, "effect_metrics", {})
+
+        # Rollback failure callback
+        object.__setattr__(self, "on_rollback_failure", on_rollback_failure)
 
         # Register built-in effect handlers
         self._register_builtin_effect_handlers()
@@ -343,17 +361,55 @@ class NodeEffect(NodeCoreBase):
 
             # Rollback transaction if active
             if transaction:
-                try:
-                    await transaction.rollback()
-                except Exception as rollback_error:
+                success, rollback_errors = await transaction.rollback()
+
+                if not success:
+                    # Rollback failed - this is CRITICAL
                     emit_log_event(
                         LogLevel.ERROR,
-                        f"ModelEffectTransaction rollback failed: {rollback_error!s}",
+                        f"Transaction rollback failed with {len(rollback_errors)} errors",
                         {
                             "node_id": str(self.node_id),
                             "operation_id": str(input_data.operation_id),
+                            "transaction_id": str(transaction.transaction_id),
+                            "rollback_errors": [str(err) for err in rollback_errors],
+                            "original_error": str(e),
                         },
                     )
+
+                    # Invoke callback for critical failures if configured
+                    if self.on_rollback_failure:
+                        try:
+                            self.on_rollback_failure(transaction, rollback_errors)
+                        except Exception as callback_error:
+                            emit_log_event(
+                                LogLevel.ERROR,
+                                f"Rollback failure callback raised exception: {callback_error!s}",
+                                {
+                                    "node_id": str(self.node_id),
+                                    "transaction_id": str(transaction.transaction_id),
+                                    "callback_error": str(callback_error),
+                                },
+                            )
+
+                    # Update rollback failure metrics
+                    await self._update_rollback_failure_metrics(
+                        transaction, rollback_errors
+                    )
+
+                    # Chain the rollback errors to the original exception
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                        message="Effect failed AND rollback failed (data may be inconsistent)",
+                        context={
+                            "node_id": str(self.node_id),
+                            "operation_id": str(input_data.operation_id),
+                            "original_error": str(e),
+                            "rollback_errors": [str(err) for err in rollback_errors],
+                            "transaction_id": str(transaction.transaction_id),
+                            "effect_type": input_data.effect_type.value,
+                        },
+                    ) from e
 
                 if input_data.operation_id in self.active_transactions:
                     del self.active_transactions[input_data.operation_id]
@@ -383,13 +439,16 @@ class NodeEffect(NodeCoreBase):
         self, operation_id: UUID | None = None
     ) -> AsyncIterator[ModelEffectTransaction]:
         """
-        Async context manager for transaction handling.
+        Async context manager for transaction handling with rollback failure detection.
 
         Args:
             operation_id: Optional operation identifier (UUID)
 
         Yields:
             ModelEffectTransaction: Active transaction instance
+
+        Raises:
+            ModelOnexError: If rollback fails during exception handling
         """
         transaction_id = operation_id or uuid4()
         transaction = ModelEffectTransaction(transaction_id)
@@ -399,8 +458,52 @@ class NodeEffect(NodeCoreBase):
             self.active_transactions[transaction_id] = transaction
             yield transaction
             await transaction.commit()
-        except Exception:
-            await transaction.rollback()
+        except Exception as e:
+            success, rollback_errors = await transaction.rollback()
+
+            if not success:
+                emit_log_event(
+                    LogLevel.ERROR,
+                    f"Transaction context rollback failed with {len(rollback_errors)} errors",
+                    {
+                        "node_id": str(self.node_id),
+                        "transaction_id": str(transaction_id),
+                        "rollback_errors": [str(err) for err in rollback_errors],
+                    },
+                )
+
+                # Update rollback failure metrics
+                await self._update_rollback_failure_metrics(
+                    transaction, rollback_errors
+                )
+
+                # Invoke callback if configured
+                if self.on_rollback_failure:
+                    try:
+                        self.on_rollback_failure(transaction, rollback_errors)
+                    except Exception as callback_error:
+                        emit_log_event(
+                            LogLevel.ERROR,
+                            f"Rollback failure callback raised exception: {callback_error!s}",
+                            {
+                                "node_id": str(self.node_id),
+                                "transaction_id": str(transaction_id),
+                                "callback_error": str(callback_error),
+                            },
+                        )
+
+                # Re-raise with context about rollback failure
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                    message="Transaction failed AND rollback failed (data may be inconsistent)",
+                    context={
+                        "node_id": str(self.node_id),
+                        "transaction_id": str(transaction_id),
+                        "original_error": str(e),
+                        "rollback_errors": [str(err) for err in rollback_errors],
+                    },
+                ) from e
+
             raise
         finally:
             if transaction_id in self.active_transactions:
@@ -512,10 +615,11 @@ class NodeEffect(NodeCoreBase):
         )
 
     async def _cleanup_node_resources(self) -> None:
-        """Cleanup effect-specific resources."""
+        """Cleanup effect-specific resources with rollback failure handling."""
         for transaction_id, transaction in list(self.active_transactions.items()):
-            try:
-                await transaction.rollback()
+            success, rollback_errors = await transaction.rollback()
+
+            if success:
                 emit_log_event(
                     LogLevel.WARNING,
                     f"Rolled back active transaction during cleanup: {transaction_id}",
@@ -524,14 +628,20 @@ class NodeEffect(NodeCoreBase):
                         "transaction_id": str(transaction_id),
                     },
                 )
-            except Exception as e:
+            else:
                 emit_log_event(
                     LogLevel.ERROR,
-                    f"Failed to rollback transaction during cleanup: {e!s}",
+                    f"Failed to rollback transaction during cleanup with {len(rollback_errors)} errors",
                     {
                         "node_id": str(self.node_id),
                         "transaction_id": str(transaction_id),
+                        "rollback_errors": [str(e) for e in rollback_errors],
                     },
+                )
+
+                # Update metrics for cleanup rollback failures
+                await self._update_rollback_failure_metrics(
+                    transaction, rollback_errors
                 )
 
         self.active_transactions.clear()
@@ -651,6 +761,63 @@ class NodeEffect(NodeCoreBase):
         metrics["avg_processing_time_ms"] = (
             current_avg * (total_ops - 1) + processing_time_ms
         ) / total_ops
+
+    async def _update_rollback_failure_metrics(
+        self, transaction: ModelEffectTransaction, rollback_errors: list[ModelOnexError]
+    ) -> None:
+        """
+        Update metrics for rollback failures.
+
+        Args:
+            transaction: Transaction that experienced rollback failures
+            rollback_errors: List of errors encountered during rollback
+
+        Metrics Updated:
+            - transaction.rollback_failures_total: Total count of rollback failures
+            - transaction.failed_operation_count: Histogram of failed operation counts per transaction
+        """
+        # Initialize transaction metrics if not exists
+        if "transaction_management" not in self.effect_metrics:
+            self.effect_metrics["transaction_management"] = {
+                "rollback_failures_total": 0.0,
+                "failed_operation_count_min": float("inf"),
+                "failed_operation_count_max": 0.0,
+                "failed_operation_count_avg": 0.0,
+                "failed_operation_count_samples": 0.0,
+            }
+
+        tx_metrics = self.effect_metrics["transaction_management"]
+
+        # Increment total rollback failures
+        tx_metrics["rollback_failures_total"] += 1
+
+        # Update failed operation count histogram
+        failed_count = len(rollback_errors)
+        tx_metrics["failed_operation_count_min"] = min(
+            tx_metrics["failed_operation_count_min"], float(failed_count)
+        )
+        tx_metrics["failed_operation_count_max"] = max(
+            tx_metrics["failed_operation_count_max"], float(failed_count)
+        )
+
+        # Update average
+        samples = tx_metrics["failed_operation_count_samples"]
+        current_avg = tx_metrics["failed_operation_count_avg"]
+        new_samples = samples + 1
+        tx_metrics["failed_operation_count_avg"] = (
+            current_avg * samples + failed_count
+        ) / new_samples
+        tx_metrics["failed_operation_count_samples"] = new_samples
+
+        emit_log_event(
+            LogLevel.INFO,
+            "Rollback failure metrics updated",
+            {
+                "transaction_id": str(transaction.transaction_id),
+                "failed_operations": failed_count,
+                "total_rollback_failures": tx_metrics["rollback_failures_total"],
+            },
+        )
 
     def _register_builtin_effect_handlers(self) -> None:
         """Register built-in effect handlers."""

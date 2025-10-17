@@ -59,6 +59,12 @@ class NodeCompute(NodeCoreBase):
     - Intelligent caching layer for expensive computations
     - Performance monitoring and optimization
     - Type-safe input/output handling
+
+    Thread Safety:
+        - Instance NOT thread-safe due to mutable cache state
+        - Use separate instances per thread OR implement cache locking
+        - Parallel processing via ThreadPoolExecutor is internally managed
+        - See docs/THREADING.md for production guidelines and examples
     """
 
     def __init__(self, container: ModelONEXContainer) -> None:
@@ -73,14 +79,20 @@ class NodeCompute(NodeCoreBase):
         """
         super().__init__(container)
 
+        # Get cache configuration from container
+        cache_config = container.compute_cache_config
+
         # Computation-specific configuration
         self.max_parallel_workers = 4
-        self.cache_ttl_minutes = 30
+        self.cache_ttl_minutes = cache_config.get_ttl_minutes() or 30
         self.performance_threshold_ms = 100.0
 
-        # Initialize caching layer
+        # Initialize caching layer with container configuration
         self.computation_cache = ModelComputeCache(
-            max_size=1000, default_ttl_minutes=self.cache_ttl_minutes
+            max_size=cache_config.max_size,
+            ttl_seconds=cache_config.ttl_seconds,
+            eviction_policy=cache_config.eviction_policy,
+            enable_stats=cache_config.enable_stats,
         )
 
         # Thread pool for parallel execution
@@ -163,7 +175,7 @@ class NodeCompute(NodeCoreBase):
                 self.computation_cache.put(cache_key, result, self.cache_ttl_minutes)
 
             # Update metrics
-            await self._update_specialized_metrics(
+            self._update_specialized_metrics(
                 self.computation_metrics,
                 input_data.computation_type,
                 processing_time,
@@ -187,7 +199,7 @@ class NodeCompute(NodeCoreBase):
         except Exception as e:
             processing_time = (time.time() - start_time) * 1000
 
-            await self._update_specialized_metrics(
+            self._update_specialized_metrics(
                 self.computation_metrics,
                 input_data.computation_type,
                 processing_time,

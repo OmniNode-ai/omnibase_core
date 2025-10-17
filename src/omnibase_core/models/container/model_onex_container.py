@@ -34,6 +34,9 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.configuration.model_compute_cache_config import (
+    ModelComputeCacheConfig,
+)
 from omnibase_spi import ProtocolLogger
 
 # Optional performance enhancements
@@ -86,6 +89,7 @@ class ModelONEXContainer:
         self,
         enable_performance_cache: bool = False,
         cache_dir: Path | None = None,
+        compute_cache_config: ModelComputeCacheConfig | None = None,
     ) -> None:
         """
         Initialize enhanced container with optional performance optimizations.
@@ -93,8 +97,12 @@ class ModelONEXContainer:
         Args:
             enable_performance_cache: Enable memory-mapped tool cache and performance monitoring
             cache_dir: Optional cache directory (defaults to temp directory)
+            compute_cache_config: Cache configuration for NodeCompute instances (uses defaults if None)
         """
         self._base_container = _BaseModelONEXContainer()
+
+        # Initialize cache configuration for NodeCompute
+        self.compute_cache_config = compute_cache_config or ModelComputeCacheConfig()
 
         # Initialize performance tracking
         self._performance_metrics = {
@@ -518,6 +526,7 @@ class ModelONEXContainer:
 async def create_model_onex_container(
     enable_cache: bool = False,
     cache_dir: Path | None = None,
+    compute_cache_config: ModelComputeCacheConfig | None = None,
 ) -> ModelONEXContainer:
     """
     Create and configure model ONEX container with optional performance optimizations.
@@ -525,6 +534,7 @@ async def create_model_onex_container(
     Args:
         enable_cache: Enable memory-mapped tool cache and performance monitoring
         cache_dir: Optional cache directory (defaults to temp directory)
+        compute_cache_config: Cache configuration for NodeCompute instances (uses defaults if None)
 
     Returns:
         ModelONEXContainer: Configured container instance
@@ -532,6 +542,7 @@ async def create_model_onex_container(
     container = ModelONEXContainer(
         enable_performance_cache=enable_cache,
         cache_dir=cache_dir,
+        compute_cache_config=compute_cache_config,
     )
 
     # Load configuration into base container

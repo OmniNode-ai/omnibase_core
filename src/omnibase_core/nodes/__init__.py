@@ -21,6 +21,9 @@ from omnibase_core.nodes.enum_reducer_types import (
 )
 from omnibase_core.nodes.model_compute_input import ModelComputeInput
 from omnibase_core.nodes.model_compute_output import ModelComputeOutput
+from omnibase_core.nodes.model_effect_input import ModelEffectInput
+from omnibase_core.nodes.model_effect_output import ModelEffectOutput
+from omnibase_core.nodes.model_effect_transaction import ModelEffectTransaction
 from omnibase_core.nodes.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.nodes.model_orchestrator_output import ModelOrchestratorOutput
 from omnibase_core.nodes.model_reducer_input import ModelReducerInput
@@ -43,6 +46,9 @@ __all__ = [
     # Input/Output models (use these for process() calls)
     "ModelComputeInput",
     "ModelComputeOutput",
+    "ModelEffectInput",
+    "ModelEffectOutput",
+    "ModelEffectTransaction",  # For rollback failure callback type hints
     "ModelOrchestratorInput",
     "ModelOrchestratorOutput",
     "ModelReducerInput",

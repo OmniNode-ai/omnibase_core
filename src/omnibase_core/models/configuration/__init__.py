@@ -8,10 +8,12 @@ from .model_cli_config import (
     ModelOutputConfig,
     ModelTierConfig,
 )
+from .model_compute_cache_config import ModelComputeCacheConfig
 
 __all__ = [
     "ModelAPIConfig",
     "ModelCLIConfig",
+    "ModelComputeCacheConfig",
     "ModelDatabaseConfig",
     "ModelMonitoringConfig",
     "ModelOutputConfig",

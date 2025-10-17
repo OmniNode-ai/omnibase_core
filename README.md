@@ -49,6 +49,33 @@ src/omnibase_core/
     └── tool_infrastructure_orchestrator/              # ORCHESTRATOR example
 ```
 
+## Concurrency and Thread Safety
+
+⚠️ **Important**: Most ONEX node components are **NOT thread-safe by default**.
+
+For production multi-threaded environments, see **[docs/THREADING.md](docs/THREADING.md)** for:
+
+- **Thread safety guarantees** for each component
+- **Synchronization patterns** and mitigation strategies
+- **Production checklist** for concurrent deployments
+- **Code examples** of thread-safe wrappers
+
+### Key Thread Safety Warnings
+
+| Component | Thread-Safe? | Action Required |
+|-----------|-------------|-----------------|
+| `NodeCompute` | ❌ No | Use thread-local instances or lock cache |
+| `NodeEffect` | ❌ No | Use separate instances per thread |
+| `ModelComputeCache` | ❌ No | Wrap with `threading.Lock` |
+| `ModelCircuitBreaker` | ❌ No | Use thread-local or synchronized wrapper |
+| `ModelEffectTransaction` | ❌ No | Never share across threads |
+| Pydantic Models | ✅ Yes | Immutable after creation |
+| `ModelONEXContainer` | ✅ Yes | Read-only after initialization |
+
+**Critical Rule**: Do NOT share node instances across threads without explicit synchronization.
+
+See [docs/THREADING.md](docs/THREADING.md) for complete guidelines and mitigation strategies.
+
 ## Why Poetry?
 
 **This project uses Poetry as the mandated package manager for all ONEX projects.**
