@@ -31,7 +31,7 @@ in workflow definitions.
 from enum import Enum
 
 
-class EnumGitHubRunnerOS(str, Enum):
+class EnumGithubRunnerOs(str, Enum):
     """GitHub Actions runner operating systems."""
 
     UBUNTU_LATEST = "ubuntu-latest"
@@ -46,6 +46,6 @@ class EnumGitHubRunnerOS(str, Enum):
 
 
 # Compatibility alias
-GitHubRunnerOS = EnumGitHubRunnerOS
+GitHubRunnerOS = EnumGithubRunnerOs
 
-__all__ = ["EnumGitHubRunnerOS", "GitHubRunnerOS"]
+__all__ = ["EnumGithubRunnerOs", "GitHubRunnerOS"]

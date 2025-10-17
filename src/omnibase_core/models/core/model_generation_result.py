@@ -29,7 +29,7 @@ class ModelGenerationResult(BaseModel):
         return len(self.warnings) > 0
 
     @property
-    def severity(self) -> EnumLogLevel:
+    def severity(self) -> EnumEvents:
         """Get overall severity level"""
         if self.has_errors:
             return EnumLogLevel.ERROR

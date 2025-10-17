@@ -7,7 +7,7 @@ Defines supported LLM providers for agent system.
 from enum import Enum
 
 
-class EnumLLMProvider(str, Enum):
+class EnumLlmProvider(str, Enum):
     """Supported LLM providers for agents."""
 
     CLAUDE = "claude"

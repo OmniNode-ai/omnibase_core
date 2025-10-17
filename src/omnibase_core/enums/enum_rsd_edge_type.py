@@ -7,7 +7,7 @@ Defines edge types for RSD (Rapid Service Development) ticket relationships.
 from enum import Enum
 
 
-class EnumRSDEdgeType(str, Enum):
+class EnumRsdEdgeType(str, Enum):
     """Enumeration of RSD edge types for ticket relationships."""
 
     DEPENDS_ON = "depends_on"

@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class EnumIssueTypeEnum(str, Enum):
+class EnumIssueType(str, Enum):
     """Template validation issue types for node generation"""
 
     TEMPLATE_ARTIFACT = "template_artifact"

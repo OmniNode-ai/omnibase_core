@@ -606,8 +606,17 @@ class MixinRequestResponseIntrospection:
                             execution_count=0,  # Could be enhanced with actual metrics
                         ),
                     )
-            except:
-                pass
+            except (AttributeError, TypeError, ValueError) as e:
+                # Registry tool enumeration failed - log for debugging but continue
+                emit_log_event_sync(
+                    LogLevel.DEBUG,
+                    f"Failed to get tool availability from registry: {e}",
+                    {
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                        "node_name": getattr(self, "node_name", "unknown"),
+                    },
+                )
 
         return tools
 
@@ -692,7 +701,16 @@ class MixinRequestResponseIntrospection:
                     # Update the model with additional fields
                     for key, value in additional.items():
                         setattr(additional_info, key, value)
-            except:
-                pass
+            except (AttributeError, TypeError, ValueError) as e:
+                # Additional info gathering failed - log for debugging but continue
+                emit_log_event_sync(
+                    LogLevel.DEBUG,
+                    f"Failed to gather additional introspection info: {e}",
+                    {
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                        "node_name": getattr(self, "node_name", "unknown"),
+                    },
+                )
 
         return additional_info

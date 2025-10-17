@@ -4,70 +4,70 @@ from enum import Enum
 
 import pytest
 
-from omnibase_core.enums.enum_mcp_status import EnumMCPStatus
+from omnibase_core.enums.enum_mcp_status import EnumMcpStatus
 
 
 class TestEnumMCPStatus:
-    """Test cases for EnumMCPStatus"""
+    """Test cases for EnumMcpStatus"""
 
     def test_enum_values(self):
         """Test that all enum values are correct"""
-        assert EnumMCPStatus.SUCCESS == "success"
-        assert EnumMCPStatus.ERROR == "error"
-        assert EnumMCPStatus.HEALTHY == "healthy"
-        assert EnumMCPStatus.DEGRADED == "degraded"
-        assert EnumMCPStatus.UNHEALTHY == "unhealthy"
-        assert EnumMCPStatus.RUNNING == "running"
-        assert EnumMCPStatus.UNKNOWN == "unknown"
-        assert EnumMCPStatus.UNREACHABLE == "unreachable"
+        assert EnumMcpStatus.SUCCESS == "success"
+        assert EnumMcpStatus.ERROR == "error"
+        assert EnumMcpStatus.HEALTHY == "healthy"
+        assert EnumMcpStatus.DEGRADED == "degraded"
+        assert EnumMcpStatus.UNHEALTHY == "unhealthy"
+        assert EnumMcpStatus.RUNNING == "running"
+        assert EnumMcpStatus.UNKNOWN == "unknown"
+        assert EnumMcpStatus.UNREACHABLE == "unreachable"
 
     def test_enum_inheritance(self):
         """Test that enum inherits from str and Enum"""
-        assert issubclass(EnumMCPStatus, str)
-        assert issubclass(EnumMCPStatus, Enum)
+        assert issubclass(EnumMcpStatus, str)
+        assert issubclass(EnumMcpStatus, Enum)
 
     def test_enum_string_behavior(self):
         """Test string behavior of enum values"""
-        assert EnumMCPStatus.SUCCESS == "success"
-        assert EnumMCPStatus.ERROR == "error"
-        assert EnumMCPStatus.HEALTHY == "healthy"
+        assert EnumMcpStatus.SUCCESS == "success"
+        assert EnumMcpStatus.ERROR == "error"
+        assert EnumMcpStatus.HEALTHY == "healthy"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values"""
-        values = list(EnumMCPStatus)
+        values = list(EnumMcpStatus)
         assert len(values) == 8
-        assert EnumMCPStatus.SUCCESS in values
-        assert EnumMCPStatus.UNREACHABLE in values
+        assert EnumMcpStatus.SUCCESS in values
+        assert EnumMcpStatus.UNREACHABLE in values
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumMCPStatus.SUCCESS in EnumMCPStatus
-        assert "success" in EnumMCPStatus
-        assert "invalid_value" not in EnumMCPStatus
+        assert EnumMcpStatus.SUCCESS in EnumMcpStatus
+        assert "success" in EnumMcpStatus
+        assert "invalid_value" not in EnumMcpStatus
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumMCPStatus.SUCCESS == EnumMCPStatus.SUCCESS
-        assert EnumMCPStatus.ERROR != EnumMCPStatus.SUCCESS
-        assert EnumMCPStatus.SUCCESS == "success"
+        assert EnumMcpStatus.SUCCESS == EnumMcpStatus.SUCCESS
+        assert EnumMcpStatus.ERROR != EnumMcpStatus.SUCCESS
+        assert EnumMcpStatus.SUCCESS == "success"
 
     def test_enum_serialization(self):
         """Test enum serialization"""
-        assert EnumMCPStatus.SUCCESS.value == "success"
-        assert EnumMCPStatus.ERROR.value == "error"
+        assert EnumMcpStatus.SUCCESS.value == "success"
+        assert EnumMcpStatus.ERROR.value == "error"
 
     def test_enum_deserialization(self):
         """Test enum deserialization"""
-        assert EnumMCPStatus("success") == EnumMCPStatus.SUCCESS
-        assert EnumMCPStatus("error") == EnumMCPStatus.ERROR
+        assert EnumMcpStatus("success") == EnumMcpStatus.SUCCESS
+        assert EnumMcpStatus("error") == EnumMcpStatus.ERROR
 
     def test_enum_invalid_values(self):
         """Test that invalid values raise ValueError"""
         with pytest.raises(ValueError):
-            EnumMCPStatus("invalid_value")
+            EnumMcpStatus("invalid_value")
 
         with pytest.raises(ValueError):
-            EnumMCPStatus("")
+            EnumMcpStatus("")
 
     def test_enum_all_values(self):
         """Test that all expected values are present"""
@@ -81,49 +81,49 @@ class TestEnumMCPStatus:
             "unknown",
             "unreachable",
         }
-        actual_values = {member.value for member in EnumMCPStatus}
+        actual_values = {member.value for member in EnumMcpStatus}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
         """Test that enum has proper docstring"""
-        assert "Status values for MCP operations" in EnumMCPStatus.__doc__
+        assert "Status values for MCP operations" in EnumMcpStatus.__doc__
 
     def test_enum_status_categories(self):
         """Test specific status categories"""
         # Success states
-        assert EnumMCPStatus.SUCCESS.value == "success"
-        assert EnumMCPStatus.HEALTHY.value == "healthy"
-        assert EnumMCPStatus.RUNNING.value == "running"
+        assert EnumMcpStatus.SUCCESS.value == "success"
+        assert EnumMcpStatus.HEALTHY.value == "healthy"
+        assert EnumMcpStatus.RUNNING.value == "running"
 
         # Error states
-        assert EnumMCPStatus.ERROR.value == "error"
-        assert EnumMCPStatus.UNHEALTHY.value == "unhealthy"
-        assert EnumMCPStatus.UNREACHABLE.value == "unreachable"
+        assert EnumMcpStatus.ERROR.value == "error"
+        assert EnumMcpStatus.UNHEALTHY.value == "unhealthy"
+        assert EnumMcpStatus.UNREACHABLE.value == "unreachable"
 
         # Degraded states
-        assert EnumMCPStatus.DEGRADED.value == "degraded"
+        assert EnumMcpStatus.DEGRADED.value == "degraded"
 
         # Unknown states
-        assert EnumMCPStatus.UNKNOWN.value == "unknown"
+        assert EnumMcpStatus.UNKNOWN.value == "unknown"
 
     def test_enum_health_statuses(self):
         """Test health-related status values"""
         healthy_statuses = {
-            EnumMCPStatus.SUCCESS,
-            EnumMCPStatus.HEALTHY,
-            EnumMCPStatus.RUNNING,
+            EnumMcpStatus.SUCCESS,
+            EnumMcpStatus.HEALTHY,
+            EnumMcpStatus.RUNNING,
         }
 
         unhealthy_statuses = {
-            EnumMCPStatus.ERROR,
-            EnumMCPStatus.UNHEALTHY,
-            EnumMCPStatus.UNREACHABLE,
+            EnumMcpStatus.ERROR,
+            EnumMcpStatus.UNHEALTHY,
+            EnumMcpStatus.UNREACHABLE,
         }
 
-        degraded_statuses = {EnumMCPStatus.DEGRADED}
-        unknown_statuses = {EnumMCPStatus.UNKNOWN}
+        degraded_statuses = {EnumMcpStatus.DEGRADED}
+        unknown_statuses = {EnumMcpStatus.UNKNOWN}
 
-        all_statuses = set(EnumMCPStatus)
+        all_statuses = set(EnumMcpStatus)
         assert (
             healthy_statuses.union(unhealthy_statuses)
             .union(degraded_statuses)
@@ -135,22 +135,22 @@ class TestEnumMCPStatus:
         """Test operation-related status values"""
         # Positive operation statuses
         positive_statuses = {
-            EnumMCPStatus.SUCCESS,
-            EnumMCPStatus.HEALTHY,
-            EnumMCPStatus.RUNNING,
+            EnumMcpStatus.SUCCESS,
+            EnumMcpStatus.HEALTHY,
+            EnumMcpStatus.RUNNING,
         }
 
         # Negative operation statuses
         negative_statuses = {
-            EnumMCPStatus.ERROR,
-            EnumMCPStatus.UNHEALTHY,
-            EnumMCPStatus.UNREACHABLE,
+            EnumMcpStatus.ERROR,
+            EnumMcpStatus.UNHEALTHY,
+            EnumMcpStatus.UNREACHABLE,
         }
 
         # Neutral operation statuses
-        neutral_statuses = {EnumMCPStatus.DEGRADED, EnumMCPStatus.UNKNOWN}
+        neutral_statuses = {EnumMcpStatus.DEGRADED, EnumMcpStatus.UNKNOWN}
 
-        all_statuses = set(EnumMCPStatus)
+        all_statuses = set(EnumMcpStatus)
         assert (
             positive_statuses.union(negative_statuses).union(neutral_statuses)
             == all_statuses

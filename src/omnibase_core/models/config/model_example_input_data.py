@@ -18,7 +18,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_data_type import EnumDataType
-from omnibase_core.enums.enum_io_type import EnumIOType
+from omnibase_core.enums.enum_io_type import EnumIoType
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 
@@ -34,8 +34,8 @@ class ModelExampleInputData(BaseModel):
     """
 
     # Core data fields
-    data_type: EnumIOType = Field(
-        default=EnumIOType.INPUT,
+    data_type: EnumIoType = Field(
+        default=EnumIoType.INPUT,
         description="Type of input data",
     )
     format: EnumDataType = Field(default=EnumDataType.JSON, description="Data format")

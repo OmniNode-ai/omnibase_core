@@ -30,7 +30,7 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
-from omnibase_core.models.nodes.services.model_service_compute import (
+from omnibase_core.models.nodes.node_services.model_service_compute import (
     ModelServiceCompute,
 )
 

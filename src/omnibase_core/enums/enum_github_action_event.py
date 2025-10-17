@@ -31,7 +31,7 @@ in workflow definitions.
 from enum import Enum
 
 
-class EnumGitHubActionEvent(str, Enum):
+class EnumGithubActionEvent(str, Enum):
     """GitHub Actions trigger events."""
 
     PUSH = "push"
@@ -44,6 +44,6 @@ class EnumGitHubActionEvent(str, Enum):
 
 
 # Compatibility alias
-GitHubActionEvent = EnumGitHubActionEvent
+GitHubActionEvent = EnumGithubActionEvent
 
-__all__ = ["EnumGitHubActionEvent", "GitHubActionEvent"]
+__all__ = ["EnumGithubActionEvent", "GitHubActionEvent"]

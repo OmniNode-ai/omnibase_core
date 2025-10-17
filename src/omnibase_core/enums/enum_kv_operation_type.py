@@ -10,7 +10,7 @@ Consul integration and distributed storage systems.
 from enum import Enum
 
 
-class EnumKVOperationType(str, Enum):
+class EnumKvOperationType(str, Enum):
     """Canonical KV operation types for ONEX distributed storage."""
 
     CREATE = "create"

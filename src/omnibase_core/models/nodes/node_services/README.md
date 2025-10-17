@@ -28,7 +28,7 @@ Service wrappers reduce this to **one import, one inheritance**.
 
 **Usage:**
 ```python
-from omnibase_core.models.nodes.services import ModelServiceEffect
+from omnibase_core.models.nodes.node_services import ModelServiceEffect
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 
 class NodeDatabaseWriterEffect(ModelServiceEffect):
@@ -69,7 +69,7 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 
 **Usage:**
 ```python
-from omnibase_core.models.nodes.services import ModelServiceCompute
+from omnibase_core.models.nodes.node_services import ModelServiceCompute
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
 class NodeDataTransformerCompute(ModelServiceCompute):
@@ -115,7 +115,7 @@ Compute nodes often perform expensive operations (ML inference, complex transfor
 
 **Usage:**
 ```python
-from omnibase_core.models.nodes.services import ModelServiceOrchestrator
+from omnibase_core.models.nodes.node_services import ModelServiceOrchestrator
 from omnibase_core.models.contracts.model_contract_orchestrator import ModelContractOrchestrator
 
 class NodeWorkflowOrchestrator(ModelServiceOrchestrator):
@@ -165,7 +165,7 @@ class NodeWorkflowOrchestrator(ModelServiceOrchestrator):
 
 **Usage:**
 ```python
-from omnibase_core.models.nodes.services import ModelServiceReducer
+from omnibase_core.models.nodes.node_services import ModelServiceReducer
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
 class NodeMetricsAggregatorReducer(ModelServiceReducer):
@@ -351,7 +351,7 @@ class MyDatabaseWriter(NodeEffectExecutor):
 
 ### New Service Wrappers (Recommended)
 ```python
-from omnibase_core.models.nodes.services import ModelServiceEffect
+from omnibase_core.models.nodes.node_services import ModelServiceEffect
 
 class MyDatabaseWriter(ModelServiceEffect):
     # No __init__ needed! Everything is wired automatically.
@@ -374,7 +374,7 @@ class MyDatabaseWriter(ModelServiceEffect):
 ```python
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from omnibase_core.models.nodes.services import ModelServiceEffect
+from omnibase_core.models.nodes.node_services import ModelServiceEffect
 
 class TestMyDatabaseWriter:
     @pytest.fixture
@@ -402,7 +402,7 @@ class TestMyDatabaseWriter:
 ### Integration Testing with Real Mixins
 ```python
 import pytest
-from omnibase_core.models.nodes.services import ModelServiceCompute
+from omnibase_core.models.nodes.node_services import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 class TestDataTransformerIntegration:

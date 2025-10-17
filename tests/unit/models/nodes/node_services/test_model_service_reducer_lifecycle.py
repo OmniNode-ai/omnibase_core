@@ -18,7 +18,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
-from omnibase_core.models.nodes.services.model_service_reducer import (
+from omnibase_core.models.nodes.node_services.model_service_reducer import (
     ModelServiceReducer,
 )
 

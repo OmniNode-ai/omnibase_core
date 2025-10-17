@@ -1,5 +1,5 @@
 """
-Health Monitoring and Graceful Shutdown Tests for ModelServiceOrchestrator.
+Health Monitoring and Graceful Shutdown Tests for ModelServiceEffect.
 
 Test suite covering health monitoring and graceful shutdown capabilities:
 - Health status retrieval and metrics calculation
@@ -7,31 +7,29 @@ Test suite covering health monitoring and graceful shutdown capabilities:
 - Graceful shutdown with active invocation handling
 - Shutdown callbacks and signal handlers
 - Resource cleanup and error handling
-- Subnode health aggregation (orchestrator-specific)
 
 Test Plan Reference:
     Section 5.3: Health Monitoring Tests
     Section 5.4: Graceful Shutdown Tests
-    Section 6.4.3: Orchestrator Health Check Integration
 """
 
 import asyncio
 import signal
 import time
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
 from uuid import UUID, uuid4
 
 import pytest
 
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
 )
-from omnibase_core.models.nodes.services.model_service_orchestrator import (
-    ModelServiceOrchestrator,
+from omnibase_core.models.nodes.node_services.model_service_effect import (
+    ModelServiceEffect,
 )
-from omnibase_core.nodes.enum_orchestrator_types import EnumWorkflowState
 
 # ============================================================================
 # Fixtures
@@ -55,15 +53,13 @@ def mock_event_bus() -> AsyncMock:
 
 
 @pytest.fixture
-def service_orchestrator(
-    mock_container: MagicMock, mock_event_bus: AsyncMock
-) -> MagicMock:
-    """Create mock ModelServiceOrchestrator instance for testing."""
-    # Create a mock that mimics ModelServiceOrchestrator behavior
-    service = MagicMock(spec=ModelServiceOrchestrator)
+def service_effect(mock_container: MagicMock, mock_event_bus: AsyncMock) -> MagicMock:
+    """Create mock ModelServiceEffect instance for testing."""
+    # Create a mock that mimics ModelServiceEffect behavior
+    service = MagicMock(spec=ModelServiceEffect)
     service._node_id = uuid4()
     service.event_bus = mock_event_bus
-    service._extract_node_name = Mock(return_value="TestServiceOrchestrator")
+    service._extract_node_name = Mock(return_value="TestServiceEffect")
     service._publish_introspection_event = Mock()
     service.cleanup_event_handlers = Mock()
 
@@ -80,12 +76,6 @@ def service_orchestrator(
     service._successful_invocations = 0
     service._failed_invocations = 0
     service._start_time = None
-
-    # Initialize orchestrator-specific attributes
-    service.active_workflows = {}
-    service.workflow_states = {}
-    service.emitted_thunks = {}
-    service.max_concurrent_workflows = 5
 
     # Bind real methods from MixinNodeService
     from omnibase_core.mixins.mixin_node_service import MixinNodeService
@@ -118,36 +108,6 @@ def service_orchestrator(
 
     service.stop_service_mode = async_stop_service_mode
 
-    # Add orchestrator-specific health method
-    def get_workflow_state_health():
-        """Get health status of workflow state (orchestrator-specific)."""
-        return {
-            "active_workflows": len(service.active_workflows),
-            "max_concurrent_workflows": service.max_concurrent_workflows,
-            "workflow_states": {
-                "running": sum(
-                    1
-                    for state in service.workflow_states.values()
-                    if state == EnumWorkflowState.RUNNING
-                ),
-                "completed": sum(
-                    1
-                    for state in service.workflow_states.values()
-                    if state == EnumWorkflowState.COMPLETED
-                ),
-                "failed": sum(
-                    1
-                    for state in service.workflow_states.values()
-                    if state == EnumWorkflowState.FAILED
-                ),
-            },
-            "total_thunks_emitted": sum(
-                len(thunks) for thunks in service.emitted_thunks.values()
-            ),
-        }
-
-    service.get_workflow_state_health = get_workflow_state_health
-
     return service
 
 
@@ -167,7 +127,7 @@ class TestServiceHealthRetrieval:
 
     @pytest.mark.asyncio
     async def test_get_service_health_basic(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test basic health status retrieval.
@@ -182,7 +142,7 @@ class TestServiceHealthRetrieval:
         - Status is "unhealthy" (not started)
         - Counters initialized to zero
         """
-        health = service_orchestrator.get_service_health()
+        health = service_effect.get_service_health()
 
         assert isinstance(health, dict)
         assert "status" in health
@@ -198,7 +158,7 @@ class TestServiceHealthRetrieval:
 
     @pytest.mark.asyncio
     async def test_get_service_health_status_healthy(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test healthy status when service is running.
@@ -211,16 +171,16 @@ class TestServiceHealthRetrieval:
         Expected:
         - Status is "healthy"
         """
-        service_orchestrator._service_running = True
-        service_orchestrator._shutdown_requested = False
+        service_effect._service_running = True
+        service_effect._shutdown_requested = False
 
-        health = service_orchestrator.get_service_health()
+        health = service_effect.get_service_health()
 
         assert health["status"] == "healthy"
 
     @pytest.mark.asyncio
     async def test_get_service_health_status_unhealthy(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test unhealthy status when shutdown requested.
@@ -233,16 +193,16 @@ class TestServiceHealthRetrieval:
         Expected:
         - Status is "unhealthy"
         """
-        service_orchestrator._service_running = True
-        service_orchestrator._shutdown_requested = True
+        service_effect._service_running = True
+        service_effect._shutdown_requested = True
 
-        health = service_orchestrator.get_service_health()
+        health = service_effect.get_service_health()
 
         assert health["status"] == "unhealthy"
 
     @pytest.mark.asyncio
     async def test_get_service_health_uptime_calculation(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test uptime calculation with mocked time.
@@ -259,14 +219,14 @@ class TestServiceHealthRetrieval:
         current_time = 1045.5  # 45.5 seconds later
 
         with patch("time.time", return_value=current_time):
-            service_orchestrator._start_time = start_time
-            health = service_orchestrator.get_service_health()
+            service_effect._start_time = start_time
+            health = service_effect.get_service_health()
 
         assert health["uptime_seconds"] == 45  # int(45.5) = 45
 
     @pytest.mark.asyncio
     async def test_get_service_health_active_invocations(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test active invocations count in health status.
@@ -279,15 +239,15 @@ class TestServiceHealthRetrieval:
         - Count matches _active_invocations set size
         """
         # Add some correlation IDs to active invocations
-        service_orchestrator._active_invocations = {uuid4(), uuid4(), uuid4()}
+        service_effect._active_invocations = {uuid4(), uuid4(), uuid4()}
 
-        health = service_orchestrator.get_service_health()
+        health = service_effect.get_service_health()
 
         assert health["active_invocations"] == 3
 
     @pytest.mark.asyncio
     async def test_get_service_health_success_rate(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test success rate calculation.
@@ -300,17 +260,17 @@ class TestServiceHealthRetrieval:
         Expected:
         - Success rate calculated as (successful / total)
         """
-        service_orchestrator._total_invocations = 100
-        service_orchestrator._successful_invocations = 85
-        service_orchestrator._failed_invocations = 15
+        service_effect._total_invocations = 100
+        service_effect._successful_invocations = 85
+        service_effect._failed_invocations = 15
 
-        health = service_orchestrator.get_service_health()
+        health = service_effect.get_service_health()
 
         assert health["success_rate"] == 0.85  # 85/100
 
     @pytest.mark.asyncio
     async def test_get_service_health_success_rate_zero_invocations(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test success rate with zero invocations.
@@ -322,17 +282,17 @@ class TestServiceHealthRetrieval:
         Expected:
         - Success rate is 1.0 (100%)
         """
-        service_orchestrator._total_invocations = 0
-        service_orchestrator._successful_invocations = 0
-        service_orchestrator._failed_invocations = 0
+        service_effect._total_invocations = 0
+        service_effect._successful_invocations = 0
+        service_effect._failed_invocations = 0
 
-        health = service_orchestrator.get_service_health()
+        health = service_effect.get_service_health()
 
         assert health["success_rate"] == 1.0
 
     @pytest.mark.asyncio
     async def test_get_service_health_before_start(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test health status before service started.
@@ -344,9 +304,9 @@ class TestServiceHealthRetrieval:
         Expected:
         - uptime_seconds is 0
         """
-        service_orchestrator._start_time = None
+        service_effect._start_time = None
 
-        health = service_orchestrator.get_service_health()
+        health = service_effect.get_service_health()
 
         assert health["uptime_seconds"] == 0
 
@@ -361,7 +321,7 @@ class TestHealthMonitoringLoop:
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_runs_while_active(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test health monitoring loop runs during service lifetime.
@@ -375,11 +335,11 @@ class TestHealthMonitoringLoop:
         - get_service_health called during monitoring
         - Loop continues while service running
         """
-        service_orchestrator._service_running = True
-        service_orchestrator._shutdown_requested = False
+        service_effect._service_running = True
+        service_effect._shutdown_requested = False
 
         # Mock get_service_health to track calls
-        original_get_health = service_orchestrator.get_service_health
+        original_get_health = service_effect.get_service_health
         call_count = 0
 
         def mock_get_health():
@@ -387,21 +347,21 @@ class TestHealthMonitoringLoop:
             call_count += 1
             if call_count >= 2:
                 # Stop after 2 calls to prevent infinite loop
-                service_orchestrator._shutdown_requested = True
+                service_effect._shutdown_requested = True
             return original_get_health()
 
-        service_orchestrator.get_service_health = mock_get_health
+        service_effect.get_service_health = mock_get_health
 
         # Run health monitor loop with mocked sleep
         with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-            await service_orchestrator._health_monitor_loop()
+            await service_effect._health_monitor_loop()
 
         assert call_count >= 2
         assert mock_sleep.called
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_logs_periodically(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test periodic health logging every 100 invocations.
@@ -414,23 +374,23 @@ class TestHealthMonitoringLoop:
         Expected:
         - Health info logged when total_invocations % 100 == 0
         """
-        service_orchestrator._service_running = True
-        service_orchestrator._shutdown_requested = False
-        service_orchestrator._total_invocations = 100
+        service_effect._service_running = True
+        service_effect._shutdown_requested = False
+        service_effect._total_invocations = 100
 
         # Mock _log_info to track calls
-        with patch.object(service_orchestrator, "_log_info") as mock_log_info:
+        with patch.object(service_effect, "_log_info") as mock_log_info:
             # Stop immediately after first health check
-            original_get_health = service_orchestrator.get_service_health
+            original_get_health = service_effect.get_service_health
 
             def mock_get_health():
-                service_orchestrator._shutdown_requested = True
+                service_effect._shutdown_requested = True
                 return original_get_health()
 
-            service_orchestrator.get_service_health = mock_get_health
+            service_effect.get_service_health = mock_get_health
 
             with patch("asyncio.sleep", new_callable=AsyncMock):
-                await service_orchestrator._health_monitor_loop()
+                await service_effect._health_monitor_loop()
 
         # Check that health was logged
         logged_health = any(
@@ -440,7 +400,7 @@ class TestHealthMonitoringLoop:
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_sleep_interval(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test sleep interval between health checks.
@@ -452,8 +412,8 @@ class TestHealthMonitoringLoop:
         Expected:
         - Sleep called with 30 second interval
         """
-        service_orchestrator._service_running = True
-        service_orchestrator._shutdown_requested = False
+        service_effect._service_running = True
+        service_effect._shutdown_requested = False
 
         # Stop after first iteration
         iteration_count = 0
@@ -462,17 +422,17 @@ class TestHealthMonitoringLoop:
             nonlocal iteration_count
             iteration_count += 1
             if iteration_count >= 1:
-                service_orchestrator._shutdown_requested = True
+                service_effect._shutdown_requested = True
 
         with patch("asyncio.sleep", side_effect=mock_sleep) as mock_sleep_call:
-            await service_orchestrator._health_monitor_loop()
+            await service_effect._health_monitor_loop()
 
         # Check that sleep was called with 30 seconds
         mock_sleep_call.assert_called_with(30)
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_handles_cancellation(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test health monitor loop handles CancelledError gracefully.
@@ -485,12 +445,12 @@ class TestHealthMonitoringLoop:
         - CancelledError caught and logged
         - No exception propagated
         """
-        service_orchestrator._service_running = True
+        service_effect._service_running = True
 
         # Mock sleep to raise CancelledError
         with patch("asyncio.sleep", side_effect=asyncio.CancelledError):
-            with patch.object(service_orchestrator, "_log_info") as mock_log_info:
-                await service_orchestrator._health_monitor_loop()
+            with patch.object(service_effect, "_log_info") as mock_log_info:
+                await service_effect._health_monitor_loop()
 
         # Check that cancellation was logged
         cancellation_logged = any(
@@ -501,7 +461,7 @@ class TestHealthMonitoringLoop:
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_handles_exceptions(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test health monitor loop handles exceptions gracefully.
@@ -515,19 +475,19 @@ class TestHealthMonitoringLoop:
         - Exception caught and logged
         - No exception propagated
         """
-        service_orchestrator._service_running = True
-        service_orchestrator._shutdown_requested = False
+        service_effect._service_running = True
+        service_effect._shutdown_requested = False
 
         # Mock get_service_health to raise exception
         def mock_get_health():
-            service_orchestrator._shutdown_requested = True
+            service_effect._shutdown_requested = True
             raise RuntimeError("Health check failed")
 
-        service_orchestrator.get_service_health = mock_get_health
+        service_effect.get_service_health = mock_get_health
 
-        with patch.object(service_orchestrator, "_log_error") as mock_log_error:
+        with patch.object(service_effect, "_log_error") as mock_log_error:
             with patch("asyncio.sleep", new_callable=AsyncMock):
-                await service_orchestrator._health_monitor_loop()
+                await service_effect._health_monitor_loop()
 
         # Check that error was logged
         assert mock_log_error.called
@@ -539,7 +499,7 @@ class TestHealthMonitoringLoop:
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_stops_on_shutdown(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test health monitor loop exits on shutdown.
@@ -551,12 +511,12 @@ class TestHealthMonitoringLoop:
         Expected:
         - Loop terminates gracefully
         """
-        service_orchestrator._service_running = True
-        service_orchestrator._shutdown_requested = True
+        service_effect._service_running = True
+        service_effect._shutdown_requested = True
 
         # Health monitor should exit immediately
         with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-            await service_orchestrator._health_monitor_loop()
+            await service_effect._health_monitor_loop()
 
         # Should not sleep if shutdown already requested
         assert not mock_sleep.called
@@ -572,7 +532,7 @@ class TestGracefulShutdown:
 
     @pytest.mark.asyncio
     async def test_wait_for_active_invocations_none(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test wait with no active invocations.
@@ -584,10 +544,10 @@ class TestGracefulShutdown:
         Expected:
         - Returns immediately
         """
-        service_orchestrator._active_invocations = set()
+        service_effect._active_invocations = set()
 
         start_time = time.time()
-        await service_orchestrator._wait_for_active_invocations(timeout_ms=5000)
+        await service_effect._wait_for_active_invocations(timeout_ms=5000)
         elapsed = time.time() - start_time
 
         # Should return almost immediately
@@ -595,7 +555,7 @@ class TestGracefulShutdown:
 
     @pytest.mark.asyncio
     async def test_wait_for_active_invocations_completes_in_time(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test wait for invocations that complete within timeout.
@@ -608,27 +568,27 @@ class TestGracefulShutdown:
         - Returns when all invocations complete
         """
         correlation_id = uuid4()
-        service_orchestrator._active_invocations = {correlation_id}
+        service_effect._active_invocations = {correlation_id}
 
         # Simulate invocation completing after short delay
         async def remove_invocation():
             await asyncio.sleep(0.2)
-            service_orchestrator._active_invocations.discard(correlation_id)
+            service_effect._active_invocations.discard(correlation_id)
 
         # Start task to remove invocation
         asyncio.create_task(remove_invocation())
 
         start_time = time.time()
-        await service_orchestrator._wait_for_active_invocations(timeout_ms=5000)
+        await service_effect._wait_for_active_invocations(timeout_ms=5000)
         elapsed = time.time() - start_time
 
         # Should complete after ~0.2 seconds
         assert 0.15 < elapsed < 0.5
-        assert len(service_orchestrator._active_invocations) == 0
+        assert len(service_effect._active_invocations) == 0
 
     @pytest.mark.asyncio
     async def test_wait_for_active_invocations_timeout(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test timeout with active invocations still pending.
@@ -642,10 +602,10 @@ class TestGracefulShutdown:
         - Returns after timeout
         """
         correlation_id = uuid4()
-        service_orchestrator._active_invocations = {correlation_id}
+        service_effect._active_invocations = {correlation_id}
 
-        with patch.object(service_orchestrator, "_log_warning") as mock_log_warning:
-            await service_orchestrator._wait_for_active_invocations(timeout_ms=100)
+        with patch.object(service_effect, "_log_warning") as mock_log_warning:
+            await service_effect._wait_for_active_invocations(timeout_ms=100)
 
         # Warning should be logged about timeout
         assert mock_log_warning.called
@@ -656,11 +616,11 @@ class TestGracefulShutdown:
         assert warning_logged
 
         # Invocation should still be active
-        assert correlation_id in service_orchestrator._active_invocations
+        assert correlation_id in service_effect._active_invocations
 
     @pytest.mark.asyncio
     async def test_wait_for_active_invocations_partial_completion(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test partial completion before timeout.
@@ -676,25 +636,25 @@ class TestGracefulShutdown:
         """
         correlation_id_1 = uuid4()
         correlation_id_2 = uuid4()
-        service_orchestrator._active_invocations = {correlation_id_1, correlation_id_2}
+        service_effect._active_invocations = {correlation_id_1, correlation_id_2}
 
         # Simulate one invocation completing
         async def remove_one_invocation():
             await asyncio.sleep(0.05)
-            service_orchestrator._active_invocations.discard(correlation_id_1)
+            service_effect._active_invocations.discard(correlation_id_1)
 
         asyncio.create_task(remove_one_invocation())
 
-        with patch.object(service_orchestrator, "_log_warning") as mock_log_warning:
-            await service_orchestrator._wait_for_active_invocations(timeout_ms=100)
+        with patch.object(service_effect, "_log_warning") as mock_log_warning:
+            await service_effect._wait_for_active_invocations(timeout_ms=100)
 
         # Should log warning about 1 remaining invocation
         assert mock_log_warning.called
-        assert len(service_orchestrator._active_invocations) == 1
+        assert len(service_effect._active_invocations) == 1
 
     @pytest.mark.asyncio
     async def test_wait_for_active_invocations_custom_timeout(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test custom timeout value respected.
@@ -708,10 +668,10 @@ class TestGracefulShutdown:
         - Returns after custom timeout
         """
         correlation_id = uuid4()
-        service_orchestrator._active_invocations = {correlation_id}
+        service_effect._active_invocations = {correlation_id}
 
         start_time = time.time()
-        await service_orchestrator._wait_for_active_invocations(timeout_ms=200)
+        await service_effect._wait_for_active_invocations(timeout_ms=200)
         elapsed = time.time() - start_time
 
         # Should timeout after ~0.2 seconds
@@ -728,7 +688,7 @@ class TestShutdownEventEmission:
 
     @pytest.mark.asyncio
     async def test_emit_shutdown_event_success(
-        self, service_orchestrator: ModelServiceOrchestrator, mock_event_bus: AsyncMock
+        self, service_effect: ModelServiceEffect, mock_event_bus: AsyncMock
     ) -> None:
         """
         Test successful shutdown event emission.
@@ -741,7 +701,7 @@ class TestShutdownEventEmission:
         - Event published with correct data
         - Event type is NODE_SHUTDOWN
         """
-        await service_orchestrator._emit_shutdown_event()
+        await service_effect._emit_shutdown_event()
 
         # Check that publish was called
         assert mock_event_bus.publish.called
@@ -750,11 +710,11 @@ class TestShutdownEventEmission:
         published_event = mock_event_bus.publish.call_args[0][0]
 
         assert isinstance(published_event, ModelNodeShutdownEvent)
-        assert published_event.node_id == service_orchestrator._node_id
+        assert published_event.node_id == service_effect._node_id
 
     @pytest.mark.asyncio
     async def test_emit_shutdown_event_without_event_bus(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test shutdown event emission without event bus.
@@ -767,14 +727,14 @@ class TestShutdownEventEmission:
         - No crash
         - No exception raised
         """
-        service_orchestrator.event_bus = None
+        service_effect.event_bus = None
 
         # Should not raise exception
-        await service_orchestrator._emit_shutdown_event()
+        await service_effect._emit_shutdown_event()
 
     @pytest.mark.asyncio
     async def test_emit_shutdown_event_failure(
-        self, service_orchestrator: ModelServiceOrchestrator, mock_event_bus: AsyncMock
+        self, service_effect: ModelServiceEffect, mock_event_bus: AsyncMock
     ) -> None:
         """
         Test shutdown event emission failure handling.
@@ -789,9 +749,9 @@ class TestShutdownEventEmission:
         """
         mock_event_bus.publish.side_effect = RuntimeError("Event bus publish failed")
 
-        with patch.object(service_orchestrator, "_log_error") as mock_log_error:
+        with patch.object(service_effect, "_log_error") as mock_log_error:
             # Should not raise exception
-            await service_orchestrator._emit_shutdown_event()
+            await service_effect._emit_shutdown_event()
 
         # Error should be logged
         assert mock_log_error.called
@@ -807,7 +767,7 @@ class TestShutdownCallbacks:
 
     @pytest.mark.asyncio
     async def test_add_shutdown_callback(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test adding shutdown callback.
@@ -820,13 +780,13 @@ class TestShutdownCallbacks:
         - Callback stored
         """
         callback = Mock()
-        service_orchestrator.add_shutdown_callback(callback)
+        service_effect.add_shutdown_callback(callback)
 
-        assert callback in service_orchestrator._shutdown_callbacks
+        assert callback in service_effect._shutdown_callbacks
 
     @pytest.mark.asyncio
     async def test_add_multiple_shutdown_callbacks(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test adding multiple callbacks.
@@ -842,18 +802,18 @@ class TestShutdownCallbacks:
         callback2 = Mock()
         callback3 = Mock()
 
-        service_orchestrator.add_shutdown_callback(callback1)
-        service_orchestrator.add_shutdown_callback(callback2)
-        service_orchestrator.add_shutdown_callback(callback3)
+        service_effect.add_shutdown_callback(callback1)
+        service_effect.add_shutdown_callback(callback2)
+        service_effect.add_shutdown_callback(callback3)
 
-        assert len(service_orchestrator._shutdown_callbacks) == 3
-        assert callback1 in service_orchestrator._shutdown_callbacks
-        assert callback2 in service_orchestrator._shutdown_callbacks
-        assert callback3 in service_orchestrator._shutdown_callbacks
+        assert len(service_effect._shutdown_callbacks) == 3
+        assert callback1 in service_effect._shutdown_callbacks
+        assert callback2 in service_effect._shutdown_callbacks
+        assert callback3 in service_effect._shutdown_callbacks
 
     @pytest.mark.asyncio
     async def test_shutdown_callbacks_executed(
-        self, service_orchestrator: ModelServiceOrchestrator, mock_event_bus: AsyncMock
+        self, service_effect: ModelServiceEffect, mock_event_bus: AsyncMock
     ) -> None:
         """
         Test callbacks executed on shutdown.
@@ -869,21 +829,21 @@ class TestShutdownCallbacks:
         callback1 = Mock()
         callback2 = Mock()
 
-        service_orchestrator.add_shutdown_callback(callback1)
-        service_orchestrator.add_shutdown_callback(callback2)
+        service_effect.add_shutdown_callback(callback1)
+        service_effect.add_shutdown_callback(callback2)
 
-        service_orchestrator._service_running = True
-        service_orchestrator._active_invocations = set()
-        service_orchestrator.cleanup_event_handlers = Mock()
+        service_effect._service_running = True
+        service_effect._active_invocations = set()
+        service_effect.cleanup_event_handlers = Mock()
 
-        await service_orchestrator.stop_service_mode()
+        await service_effect.stop_service_mode()
 
         assert callback1.called
         assert callback2.called
 
     @pytest.mark.asyncio
     async def test_shutdown_callbacks_execution_order(
-        self, service_orchestrator: ModelServiceOrchestrator, mock_event_bus: AsyncMock
+        self, service_effect: ModelServiceEffect, mock_event_bus: AsyncMock
     ) -> None:
         """
         Test callbacks executed in registration order.
@@ -907,21 +867,21 @@ class TestShutdownCallbacks:
         def callback3():
             call_order.append(3)
 
-        service_orchestrator.add_shutdown_callback(callback1)
-        service_orchestrator.add_shutdown_callback(callback2)
-        service_orchestrator.add_shutdown_callback(callback3)
+        service_effect.add_shutdown_callback(callback1)
+        service_effect.add_shutdown_callback(callback2)
+        service_effect.add_shutdown_callback(callback3)
 
-        service_orchestrator._service_running = True
-        service_orchestrator._active_invocations = set()
-        service_orchestrator.cleanup_event_handlers = Mock()
+        service_effect._service_running = True
+        service_effect._active_invocations = set()
+        service_effect.cleanup_event_handlers = Mock()
 
-        await service_orchestrator.stop_service_mode()
+        await service_effect.stop_service_mode()
 
         assert call_order == [1, 2, 3]
 
     @pytest.mark.asyncio
     async def test_shutdown_callback_exception_handling(
-        self, service_orchestrator: ModelServiceOrchestrator, mock_event_bus: AsyncMock
+        self, service_effect: ModelServiceEffect, mock_event_bus: AsyncMock
     ) -> None:
         """
         Test exception in callback doesn't stop other callbacks.
@@ -939,16 +899,16 @@ class TestShutdownCallbacks:
         callback2 = Mock(side_effect=RuntimeError("Callback failed"))
         callback3 = Mock()
 
-        service_orchestrator.add_shutdown_callback(callback1)
-        service_orchestrator.add_shutdown_callback(callback2)
-        service_orchestrator.add_shutdown_callback(callback3)
+        service_effect.add_shutdown_callback(callback1)
+        service_effect.add_shutdown_callback(callback2)
+        service_effect.add_shutdown_callback(callback3)
 
-        service_orchestrator._service_running = True
-        service_orchestrator._active_invocations = set()
-        service_orchestrator.cleanup_event_handlers = Mock()
+        service_effect._service_running = True
+        service_effect._active_invocations = set()
+        service_effect.cleanup_event_handlers = Mock()
 
-        with patch.object(service_orchestrator, "_log_error") as mock_log_error:
-            await service_orchestrator.stop_service_mode()
+        with patch.object(service_effect, "_log_error") as mock_log_error:
+            await service_effect.stop_service_mode()
 
         # All callbacks should be called
         assert callback1.called
@@ -969,7 +929,7 @@ class TestSignalHandlers:
 
     @pytest.mark.asyncio
     async def test_register_signal_handlers_success(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test successful signal handler registration.
@@ -982,7 +942,7 @@ class TestSignalHandlers:
         - signal.signal called for SIGTERM and SIGINT
         """
         with patch("signal.signal") as mock_signal:
-            service_orchestrator._register_signal_handlers()
+            service_effect._register_signal_handlers()
 
         # Should register both SIGTERM and SIGINT
         assert mock_signal.call_count == 2
@@ -992,7 +952,7 @@ class TestSignalHandlers:
 
     @pytest.mark.asyncio
     async def test_register_signal_handlers_failure(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test signal handler registration failure.
@@ -1006,14 +966,14 @@ class TestSignalHandlers:
         - No exception propagated
         """
         with patch("signal.signal", side_effect=RuntimeError("Cannot register signal")):
-            with patch.object(service_orchestrator, "_log_warning") as mock_log_warning:
-                service_orchestrator._register_signal_handlers()
+            with patch.object(service_effect, "_log_warning") as mock_log_warning:
+                service_effect._register_signal_handlers()
 
         assert mock_log_warning.called
 
     @pytest.mark.asyncio
     async def test_signal_handler_sets_shutdown_flag(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test signal handler sets shutdown flag.
@@ -1033,18 +993,18 @@ class TestSignalHandlers:
             captured_handler = handler
 
         with patch("signal.signal", side_effect=capture_handler):
-            service_orchestrator._register_signal_handlers()
+            service_effect._register_signal_handlers()
 
         # Invoke the captured handler
         assert captured_handler is not None
-        service_orchestrator._shutdown_requested = False
+        service_effect._shutdown_requested = False
         captured_handler(signal.SIGTERM, None)
 
-        assert service_orchestrator._shutdown_requested is True
+        assert service_effect._shutdown_requested is True
 
     @pytest.mark.asyncio
     async def test_signal_handler_logs_signal(
-        self, service_orchestrator: ModelServiceOrchestrator
+        self, service_effect: ModelServiceEffect
     ) -> None:
         """
         Test signal handler logs the received signal.
@@ -1064,9 +1024,9 @@ class TestSignalHandlers:
             captured_handler = handler
 
         with patch("signal.signal", side_effect=capture_handler):
-            service_orchestrator._register_signal_handlers()
+            service_effect._register_signal_handlers()
 
-        with patch.object(service_orchestrator, "_log_info") as mock_log_info:
+        with patch.object(service_effect, "_log_info") as mock_log_info:
             captured_handler(signal.SIGTERM, None)
 
         # Check that signal was logged
@@ -1085,7 +1045,7 @@ class TestShutdownIntegration:
 
     @pytest.mark.asyncio
     async def test_shutdown_during_active_invocation(
-        self, service_orchestrator: ModelServiceOrchestrator, mock_event_bus: AsyncMock
+        self, service_effect: ModelServiceEffect, mock_event_bus: AsyncMock
     ) -> None:
         """
         Test shutdown with active invocation in progress.
@@ -1100,25 +1060,25 @@ class TestShutdownIntegration:
         - Service stops gracefully
         """
         correlation_id = uuid4()
-        service_orchestrator._service_running = True
-        service_orchestrator._active_invocations = {correlation_id}
-        service_orchestrator.cleanup_event_handlers = Mock()
+        service_effect._service_running = True
+        service_effect._active_invocations = {correlation_id}
+        service_effect.cleanup_event_handlers = Mock()
 
         # Simulate invocation completing during wait
         async def remove_invocation():
             await asyncio.sleep(0.1)
-            service_orchestrator._active_invocations.discard(correlation_id)
+            service_effect._active_invocations.discard(correlation_id)
 
         asyncio.create_task(remove_invocation())
 
-        await service_orchestrator.stop_service_mode()
+        await service_effect.stop_service_mode()
 
-        assert service_orchestrator._service_running is False
-        assert len(service_orchestrator._active_invocations) == 0
+        assert service_effect._service_running is False
+        assert len(service_effect._active_invocations) == 0
 
     @pytest.mark.asyncio
     async def test_health_task_cancellation(
-        self, service_orchestrator: ModelServiceOrchestrator, mock_event_bus: AsyncMock
+        self, service_effect: ModelServiceEffect, mock_event_bus: AsyncMock
     ) -> None:
         """
         Test health task cancellation during shutdown.
@@ -1137,19 +1097,19 @@ class TestShutdownIntegration:
         health_task.done = Mock(return_value=False)
         health_task.cancel = Mock()
 
-        service_orchestrator._service_running = True
-        service_orchestrator._health_task = health_task
-        service_orchestrator._active_invocations = set()
-        service_orchestrator.cleanup_event_handlers = Mock()
+        service_effect._service_running = True
+        service_effect._health_task = health_task
+        service_effect._active_invocations = set()
+        service_effect.cleanup_event_handlers = Mock()
 
-        await service_orchestrator.stop_service_mode()
+        await service_effect.stop_service_mode()
 
         # Health task should be cancelled
         assert health_task.cancel.called
 
     @pytest.mark.asyncio
     async def test_resource_cleanup(
-        self, service_orchestrator: ModelServiceOrchestrator, mock_event_bus: AsyncMock
+        self, service_effect: ModelServiceEffect, mock_event_bus: AsyncMock
     ) -> None:
         """
         Test complete resource cleanup during shutdown.
@@ -1164,129 +1124,17 @@ class TestShutdownIntegration:
         - Service flag cleared
         - Shutdown event emitted
         """
-        service_orchestrator._service_running = True
-        service_orchestrator._active_invocations = set()
-        service_orchestrator.cleanup_event_handlers = Mock()
+        service_effect._service_running = True
+        service_effect._active_invocations = set()
+        service_effect.cleanup_event_handlers = Mock()
 
-        await service_orchestrator.stop_service_mode()
+        await service_effect.stop_service_mode()
 
         # Check cleanup was called
-        assert service_orchestrator.cleanup_event_handlers.called
+        assert service_effect.cleanup_event_handlers.called
 
         # Service should be stopped
-        assert service_orchestrator._service_running is False
+        assert service_effect._service_running is False
 
         # Shutdown event should be emitted
         assert mock_event_bus.publish.called
-
-
-# ============================================================================
-# Subnode Health Aggregation Tests (Orchestrator-Specific)
-# ============================================================================
-
-
-class TestSubnodeHealthAggregation:
-    """Test subnode health aggregation (orchestrator-specific)."""
-
-    @pytest.mark.asyncio
-    async def test_workflow_state_health_basic(
-        self, service_orchestrator: ModelServiceOrchestrator
-    ) -> None:
-        """
-        Test basic workflow state health retrieval.
-
-        Scenario:
-        - Orchestrator has workflow state
-        - Workflow health status requested
-
-        Expected:
-        - Dict returned with workflow-specific fields
-        - Active workflows count
-        - Workflow states breakdown
-        """
-        state_health = service_orchestrator.get_workflow_state_health()
-
-        assert isinstance(state_health, dict)
-        assert "active_workflows" in state_health
-        assert "max_concurrent_workflows" in state_health
-        assert "workflow_states" in state_health
-        assert "total_thunks_emitted" in state_health
-
-    @pytest.mark.asyncio
-    async def test_workflow_state_health_with_active_workflows(
-        self, service_orchestrator: ModelServiceOrchestrator
-    ) -> None:
-        """
-        Test workflow state health with active workflows.
-
-        Scenario:
-        - Orchestrator has active workflows
-        - Workflow health status requested
-
-        Expected:
-        - Active workflows count matches
-        - Workflow states reflect current state
-        """
-        workflow_id_1 = uuid4()
-        workflow_id_2 = uuid4()
-
-        service_orchestrator.active_workflows[workflow_id_1] = Mock()
-        service_orchestrator.active_workflows[workflow_id_2] = Mock()
-        service_orchestrator.workflow_states[workflow_id_1] = EnumWorkflowState.RUNNING
-        service_orchestrator.workflow_states[workflow_id_2] = (
-            EnumWorkflowState.COMPLETED
-        )
-
-        state_health = service_orchestrator.get_workflow_state_health()
-
-        assert state_health["active_workflows"] == 2
-        assert state_health["workflow_states"]["running"] == 1
-        assert state_health["workflow_states"]["completed"] == 1
-        assert state_health["workflow_states"]["failed"] == 0
-
-    @pytest.mark.asyncio
-    async def test_workflow_state_health_with_emitted_thunks(
-        self, service_orchestrator: ModelServiceOrchestrator
-    ) -> None:
-        """
-        Test workflow state health with emitted thunks.
-
-        Scenario:
-        - Orchestrator has emitted thunks
-        - Workflow health status requested
-
-        Expected:
-        - Total thunks emitted count matches
-        """
-        workflow_id = uuid4()
-        service_orchestrator.emitted_thunks[workflow_id] = [Mock(), Mock(), Mock()]
-
-        state_health = service_orchestrator.get_workflow_state_health()
-
-        assert state_health["total_thunks_emitted"] == 3
-
-    @pytest.mark.asyncio
-    async def test_workflow_state_health_empty_state(
-        self, service_orchestrator: ModelServiceOrchestrator
-    ) -> None:
-        """
-        Test workflow state health with empty state.
-
-        Scenario:
-        - Orchestrator has no active workflows
-        - Workflow health status requested
-
-        Expected:
-        - All counts are zero
-        """
-        service_orchestrator.active_workflows = {}
-        service_orchestrator.workflow_states = {}
-        service_orchestrator.emitted_thunks = {}
-
-        state_health = service_orchestrator.get_workflow_state_health()
-
-        assert state_health["active_workflows"] == 0
-        assert state_health["workflow_states"]["running"] == 0
-        assert state_health["workflow_states"]["completed"] == 0
-        assert state_health["workflow_states"]["failed"] == 0
-        assert state_health["total_thunks_emitted"] == 0

@@ -34,10 +34,10 @@ and compliance with one-model-per-file naming conventions.
 """
 
 from omnibase_core.enums.enum_github_action_event import (
-    EnumGitHubActionEvent,
+    EnumGithubActionEvent,
     GitHubActionEvent,
 )
-from omnibase_core.enums.enum_github_runner_os import EnumGitHubRunnerOS, GitHubRunnerOS
+from omnibase_core.enums.enum_github_runner_os import EnumGithubRunnerOs, GitHubRunnerOS
 
 from .model_git_hub_actions_workflow import ModelGitHubActionsWorkflow
 from .model_job import ModelJob
@@ -67,9 +67,9 @@ __all__ = [
     "GitHubActionsWorkflow",
     "GitHubRunnerOS",
     "Job",
-    "EnumGitHubActionEvent",
+    "EnumGithubActionEvent",
     "ModelGitHubActionsWorkflow",
-    "EnumGitHubRunnerOS",
+    "EnumGithubRunnerOs",
     "ModelJob",
     "ModelPullRequestTrigger",
     "ModelPushTrigger",

@@ -43,8 +43,8 @@ from .enum_execution import EnumExecutionMode, EnumOperationStatus
 from .enum_function_language import EnumFunctionLanguage
 
 # GitHub Actions enums
-from .enum_github_action_event import EnumGitHubActionEvent
-from .enum_github_runner_os import EnumGitHubRunnerOS
+from .enum_github_action_event import EnumGithubActionEvent
+from .enum_github_runner_os import EnumGithubRunnerOs
 
 # Group and organization enums
 from .enum_group_status import EnumGroupStatus
@@ -151,7 +151,7 @@ from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 
 
 # Event and logging enums
-# from .events import EnumLogLevel  # Conflicts with enum_log_level.EnumLogLevel
+# from .events import EnumEvents  # Conflicts with enum_log_level.EnumEvents
 
 
 __all__ = [
@@ -167,7 +167,7 @@ __all__ = [
     "EnumErrorSeverity",
     # Execution domain
     "EnumExecutionMode",
-    # Events domain
+    # Log level domain
     "EnumLogLevel",
     # Health and status domain
     "EnumHealthCheckType",
@@ -248,8 +248,8 @@ __all__ = [
     "EnumToolCategory",
     "EnumToolType",
     # GitHub Actions domain
-    "EnumGitHubActionEvent",
-    "EnumGitHubRunnerOS",
+    "EnumGithubActionEvent",
+    "EnumGithubRunnerOs",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

@@ -41,7 +41,9 @@ class MixinNodeSetup:
                     mod = __import__(cls.__module__, fromlist=["__file__"])
                     if mod.__file__ is not None:
                         return Path(mod.__file__).parent
-                except Exception:
+                except (
+                    Exception
+                ):  # fallback-ok: module introspection may fail, try next class in MRO
                     continue
         # Fallback to mixin's own directory
         return Path(__file__).parent

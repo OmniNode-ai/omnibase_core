@@ -5,7 +5,7 @@ Enum for MCP operation status values.
 from enum import Enum
 
 
-class EnumMCPStatus(str, Enum):
+class EnumMcpStatus(str, Enum):
     """Status values for MCP operations."""
 
     SUCCESS = "success"

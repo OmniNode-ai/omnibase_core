@@ -660,7 +660,7 @@ class ModelBatch{i:02d}(BaseModel):
                 f'''
 from enum import Enum
 
-class EnumType{i:02d}(str, Enum):
+class EnumTaskTypes{i:02d}(str, Enum):
     """Type enumeration {i}."""
     TYPE_A = "type_a_{i}"
     TYPE_B = "type_b_{i}"

@@ -7,7 +7,7 @@ Defines trigger types for RSD (Rapid Service Development) algorithm.
 from enum import Enum
 
 
-class EnumRSDTriggerType(str, Enum):
+class EnumRsdTriggerType(str, Enum):
     """Enumeration of RSD trigger types."""
 
     EVENT_DRIVEN = "event_driven"

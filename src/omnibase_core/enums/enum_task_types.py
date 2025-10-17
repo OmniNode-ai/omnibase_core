@@ -9,7 +9,7 @@ ONEX-compliant enums for task types to replace string literals.
 from enum import Enum
 
 
-class EnumType(str, Enum):
+class EnumTaskTypes(str, Enum):
     """[Any]type enumeration."""
 
     DOCUMENT_ANALYSIS = "document_analysis"

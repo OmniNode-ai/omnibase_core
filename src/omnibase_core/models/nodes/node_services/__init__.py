@@ -14,7 +14,7 @@ Available After Phase 3:
 
 Usage:
     ```python
-    from omnibase_core.models.nodes.services import ModelServiceEffect
+    from omnibase_core.models.nodes.node_services import ModelServiceEffect
 
     class MyDatabaseWriter(ModelServiceEffect):
         async def execute_effect(self, contract):
@@ -63,14 +63,16 @@ Available Mixins for Custom Composition:
 See: src/omnibase_core/mixins/mixin_metadata.yaml for detailed mixin capabilities
 """
 
-from omnibase_core.models.nodes.services.model_service_compute import (
+from omnibase_core.models.nodes.node_services.model_service_compute import (
     ModelServiceCompute,
 )
-from omnibase_core.models.nodes.services.model_service_effect import ModelServiceEffect
+from omnibase_core.models.nodes.node_services.model_service_effect import (
+    ModelServiceEffect,
+)
 
 # NOTE: Available after Phase 3 restoration:
-# from omnibase_core.models.nodes.services.model_service_orchestrator import ModelServiceOrchestrator
-# from omnibase_core.models.nodes.services.model_service_reducer import ModelServiceReducer
+# from omnibase_core.models.nodes.node_services.model_service_orchestrator import ModelServiceOrchestrator
+# from omnibase_core.models.nodes.node_services.model_service_reducer import ModelServiceReducer
 
 __all__ = [
     "ModelServiceEffect",

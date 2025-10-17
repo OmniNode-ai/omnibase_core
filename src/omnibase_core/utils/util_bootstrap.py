@@ -41,7 +41,9 @@ def get_service(protocol_type: type[T]) -> T | None:
         registry = _get_registry_node()
         if registry:
             return registry.get_service(protocol_type)
-    except Exception:
+    except (
+        Exception
+    ):  # fallback-ok: bootstrap service discovery, fallback to minimal services
         # Registry not available, try fallback
         pass
 
@@ -88,7 +90,9 @@ def emit_log_event(
         logging_service = get_logging_service()
         if hasattr(logging_service, "emit_log_event"):
             return logging_service.emit_log_event(level, event_type, message, **kwargs)
-    except Exception:
+    except (
+        Exception
+    ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
         # Log to stderr as fallback when structured logging fails
         pass
 
@@ -115,7 +119,9 @@ def emit_log_event_sync(
                 event_type,
                 **kwargs,
             )
-    except Exception:
+    except (
+        Exception
+    ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
         pass
 
     # Fallback to stderr when structured logging unavailable
@@ -196,7 +202,9 @@ def get_available_services() -> list[str]:
         registry = _get_registry_node()
         if registry and hasattr(registry, "list_services"):
             return registry.list_services()
-    except Exception:
+    except (
+        Exception
+    ):  # fallback-ok: bootstrap registry unavailable, return minimal services
         pass
 
     # Return minimal list[Any]for bootstrap

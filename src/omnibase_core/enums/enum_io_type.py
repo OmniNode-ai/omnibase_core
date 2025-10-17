@@ -11,7 +11,7 @@ from enum import Enum, unique
 
 
 @unique
-class EnumIOType(str, Enum):
+class EnumIoType(str, Enum):
     """Strongly typed input/output type values."""
 
     INPUT = "input"
@@ -22,4 +22,4 @@ class EnumIOType(str, Enum):
 
 
 # Export for use
-__all__ = ["EnumIOType"]
+__all__ = ["EnumIoType"]

@@ -8,7 +8,7 @@ Provides type-safe error handling throughout the system.
 from enum import Enum
 
 
-class EnumDocumentFreshnessErrorCodes(str, Enum):
+class EnumDocumentFreshnessErrors(str, Enum):
     """
     Standardized error codes for document freshness monitoring.
 

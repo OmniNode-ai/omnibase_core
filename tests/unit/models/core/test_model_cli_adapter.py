@@ -85,7 +85,7 @@ class TestExitWithStatus:
 
         mock_emit.assert_called_once()
         call_args = mock_emit.call_args
-        assert call_args.kwargs["level"] == EnumLogLevel.ERROR
+        assert call_args.kwargs["level"] == EnumEvents.ERROR
         assert call_args.kwargs["message"] == message
         assert call_args.kwargs["event_type"] == "cli_exit_error"
         assert call_args.kwargs["data"]["status"] == EnumOnexStatus.ERROR.value
@@ -105,7 +105,7 @@ class TestExitWithStatus:
 
         mock_emit.assert_called_once()
         call_args = mock_emit.call_args
-        assert call_args.kwargs["level"] == EnumLogLevel.WARNING
+        assert call_args.kwargs["level"] == EnumEvents.WARNING
         assert call_args.kwargs["message"] == message
         assert call_args.kwargs["event_type"] == "cli_exit_warning"
 
@@ -123,7 +123,7 @@ class TestExitWithStatus:
 
         mock_emit.assert_called_once()
         call_args = mock_emit.call_args
-        assert call_args.kwargs["level"] == EnumLogLevel.INFO
+        assert call_args.kwargs["level"] == EnumEvents.INFO
         assert call_args.kwargs["message"] == message
         assert call_args.kwargs["event_type"] == "cli_exit_info"
 
@@ -164,7 +164,7 @@ class TestExitWithError:
 
         mock_emit.assert_called_once()
         call_args = mock_emit.call_args
-        assert call_args.kwargs["level"] == EnumLogLevel.ERROR
+        assert call_args.kwargs["level"] == EnumEvents.ERROR
         assert "Test error" in call_args.kwargs["message"]
         assert call_args.kwargs["event_type"] == "cli_exit_with_error"
         assert call_args.kwargs["correlation_id"] == correlation_id
@@ -296,7 +296,7 @@ class TestAdapterIntegration:
         ModelCLIAdapter.exit_with_error(error)
 
         call_args = mock_emit.call_args.kwargs
-        assert call_args["level"] == EnumLogLevel.ERROR
+        assert call_args["level"] == EnumEvents.ERROR
         assert "Complete error test" in call_args["message"]
         assert call_args["event_type"] == "cli_exit_with_error"
         assert call_args["correlation_id"] == correlation_id

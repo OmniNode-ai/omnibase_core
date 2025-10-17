@@ -4,69 +4,69 @@ from enum import Enum
 
 import pytest
 
-from omnibase_core.enums.enum_llm_provider import EnumLLMProvider
+from omnibase_core.enums.enum_llm_provider import EnumLlmProvider
 
 
 class TestEnumLLMProvider:
-    """Test cases for EnumLLMProvider"""
+    """Test cases for EnumLlmProvider"""
 
     def test_enum_values(self):
         """Test that all enum values are correct"""
-        assert EnumLLMProvider.CLAUDE == "claude"
-        assert EnumLLMProvider.OLLAMA == "ollama"
-        assert EnumLLMProvider.OPENAI == "openai"
-        assert EnumLLMProvider.GEMINI == "gemini"
-        assert EnumLLMProvider.ANTHROPIC == "anthropic"
-        assert EnumLLMProvider.LOCAL == "local"
-        assert EnumLLMProvider.LITELLM == "litellm"
+        assert EnumLlmProvider.CLAUDE == "claude"
+        assert EnumLlmProvider.OLLAMA == "ollama"
+        assert EnumLlmProvider.OPENAI == "openai"
+        assert EnumLlmProvider.GEMINI == "gemini"
+        assert EnumLlmProvider.ANTHROPIC == "anthropic"
+        assert EnumLlmProvider.LOCAL == "local"
+        assert EnumLlmProvider.LITELLM == "litellm"
 
     def test_enum_inheritance(self):
         """Test that enum inherits from str and Enum"""
-        assert issubclass(EnumLLMProvider, str)
-        assert issubclass(EnumLLMProvider, Enum)
+        assert issubclass(EnumLlmProvider, str)
+        assert issubclass(EnumLlmProvider, Enum)
 
     def test_enum_string_behavior(self):
         """Test string behavior of enum values"""
-        assert EnumLLMProvider.CLAUDE == "claude"
-        assert EnumLLMProvider.OPENAI == "openai"
-        assert EnumLLMProvider.GEMINI == "gemini"
+        assert EnumLlmProvider.CLAUDE == "claude"
+        assert EnumLlmProvider.OPENAI == "openai"
+        assert EnumLlmProvider.GEMINI == "gemini"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values"""
-        values = list(EnumLLMProvider)
+        values = list(EnumLlmProvider)
         assert len(values) == 7
-        assert EnumLLMProvider.CLAUDE in values
-        assert EnumLLMProvider.LITELLM in values
+        assert EnumLlmProvider.CLAUDE in values
+        assert EnumLlmProvider.LITELLM in values
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumLLMProvider.CLAUDE in EnumLLMProvider
-        assert "claude" in EnumLLMProvider
-        assert "invalid_value" not in EnumLLMProvider
+        assert EnumLlmProvider.CLAUDE in EnumLlmProvider
+        assert "claude" in EnumLlmProvider
+        assert "invalid_value" not in EnumLlmProvider
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumLLMProvider.CLAUDE == EnumLLMProvider.CLAUDE
-        assert EnumLLMProvider.OPENAI != EnumLLMProvider.CLAUDE
-        assert EnumLLMProvider.CLAUDE == "claude"
+        assert EnumLlmProvider.CLAUDE == EnumLlmProvider.CLAUDE
+        assert EnumLlmProvider.OPENAI != EnumLlmProvider.CLAUDE
+        assert EnumLlmProvider.CLAUDE == "claude"
 
     def test_enum_serialization(self):
         """Test enum serialization"""
-        assert EnumLLMProvider.CLAUDE.value == "claude"
-        assert EnumLLMProvider.OPENAI.value == "openai"
+        assert EnumLlmProvider.CLAUDE.value == "claude"
+        assert EnumLlmProvider.OPENAI.value == "openai"
 
     def test_enum_deserialization(self):
         """Test enum deserialization"""
-        assert EnumLLMProvider("claude") == EnumLLMProvider.CLAUDE
-        assert EnumLLMProvider("openai") == EnumLLMProvider.OPENAI
+        assert EnumLlmProvider("claude") == EnumLlmProvider.CLAUDE
+        assert EnumLlmProvider("openai") == EnumLlmProvider.OPENAI
 
     def test_enum_invalid_values(self):
         """Test that invalid values raise ValueError"""
         with pytest.raises(ValueError):
-            EnumLLMProvider("invalid_value")
+            EnumLlmProvider("invalid_value")
 
         with pytest.raises(ValueError):
-            EnumLLMProvider("")
+            EnumLlmProvider("")
 
     def test_enum_all_values(self):
         """Test that all expected values are present"""
@@ -79,70 +79,70 @@ class TestEnumLLMProvider:
             "local",
             "litellm",
         }
-        actual_values = {member.value for member in EnumLLMProvider}
+        actual_values = {member.value for member in EnumLlmProvider}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
         """Test that enum has proper docstring"""
-        assert "Supported LLM providers" in EnumLLMProvider.__doc__
+        assert "Supported LLM providers" in EnumLlmProvider.__doc__
 
     def test_enum_provider_categories(self):
         """Test specific provider categories"""
         # Commercial providers
-        assert EnumLLMProvider.CLAUDE.value == "claude"
-        assert EnumLLMProvider.OPENAI.value == "openai"
-        assert EnumLLMProvider.GEMINI.value == "gemini"
-        assert EnumLLMProvider.ANTHROPIC.value == "anthropic"
+        assert EnumLlmProvider.CLAUDE.value == "claude"
+        assert EnumLlmProvider.OPENAI.value == "openai"
+        assert EnumLlmProvider.GEMINI.value == "gemini"
+        assert EnumLlmProvider.ANTHROPIC.value == "anthropic"
 
         # Local providers
-        assert EnumLLMProvider.OLLAMA.value == "ollama"
-        assert EnumLLMProvider.LOCAL.value == "local"
-        assert EnumLLMProvider.LITELLM.value == "litellm"
+        assert EnumLlmProvider.OLLAMA.value == "ollama"
+        assert EnumLlmProvider.LOCAL.value == "local"
+        assert EnumLlmProvider.LITELLM.value == "litellm"
 
     def test_is_local_method(self):
         """Test the is_local method"""
         # Local providers
-        assert EnumLLMProvider.OLLAMA.is_local() is True
-        assert EnumLLMProvider.LOCAL.is_local() is True
-        assert EnumLLMProvider.LITELLM.is_local() is True
+        assert EnumLlmProvider.OLLAMA.is_local() is True
+        assert EnumLlmProvider.LOCAL.is_local() is True
+        assert EnumLlmProvider.LITELLM.is_local() is True
 
         # Non-local providers
-        assert EnumLLMProvider.CLAUDE.is_local() is False
-        assert EnumLLMProvider.OPENAI.is_local() is False
-        assert EnumLLMProvider.GEMINI.is_local() is False
-        assert EnumLLMProvider.ANTHROPIC.is_local() is False
+        assert EnumLlmProvider.CLAUDE.is_local() is False
+        assert EnumLlmProvider.OPENAI.is_local() is False
+        assert EnumLlmProvider.GEMINI.is_local() is False
+        assert EnumLlmProvider.ANTHROPIC.is_local() is False
 
     def test_requires_api_key_method(self):
         """Test the requires_api_key method"""
         # Providers that require API keys
-        assert EnumLLMProvider.CLAUDE.requires_api_key() is True
-        assert EnumLLMProvider.OPENAI.requires_api_key() is True
-        assert EnumLLMProvider.GEMINI.requires_api_key() is True
-        assert EnumLLMProvider.ANTHROPIC.requires_api_key() is True
+        assert EnumLlmProvider.CLAUDE.requires_api_key() is True
+        assert EnumLlmProvider.OPENAI.requires_api_key() is True
+        assert EnumLlmProvider.GEMINI.requires_api_key() is True
+        assert EnumLlmProvider.ANTHROPIC.requires_api_key() is True
 
         # Providers that don't require API keys
-        assert EnumLLMProvider.OLLAMA.requires_api_key() is False
-        assert EnumLLMProvider.LOCAL.requires_api_key() is False
-        assert EnumLLMProvider.LITELLM.requires_api_key() is False
+        assert EnumLlmProvider.OLLAMA.requires_api_key() is False
+        assert EnumLlmProvider.LOCAL.requires_api_key() is False
+        assert EnumLlmProvider.LITELLM.requires_api_key() is False
 
     def test_enum_provider_types(self):
         """Test provider type categorization"""
         # Commercial API providers
         commercial_providers = {
-            EnumLLMProvider.CLAUDE,
-            EnumLLMProvider.OPENAI,
-            EnumLLMProvider.GEMINI,
-            EnumLLMProvider.ANTHROPIC,
+            EnumLlmProvider.CLAUDE,
+            EnumLlmProvider.OPENAI,
+            EnumLlmProvider.GEMINI,
+            EnumLlmProvider.ANTHROPIC,
         }
 
         # Local/self-hosted providers
         local_providers = {
-            EnumLLMProvider.OLLAMA,
-            EnumLLMProvider.LOCAL,
-            EnumLLMProvider.LITELLM,
+            EnumLlmProvider.OLLAMA,
+            EnumLlmProvider.LOCAL,
+            EnumLlmProvider.LITELLM,
         }
 
-        all_providers = set(EnumLLMProvider)
+        all_providers = set(EnumLlmProvider)
         assert commercial_providers.union(local_providers) == all_providers
 
         # Verify all commercial providers require API keys

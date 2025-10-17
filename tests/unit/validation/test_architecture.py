@@ -221,7 +221,7 @@ from enum import Enum
 class EnumStatus(Enum):
     ACTIVE = "active"
 
-class EnumType(Enum):
+class EnumTaskTypes(Enum):
     USER = "user"
 """
         )
