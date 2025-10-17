@@ -63,6 +63,7 @@ def service_orchestrator(
     service = MagicMock(spec=ModelServiceOrchestrator)
     service._node_id = uuid4()
     service.event_bus = mock_event_bus
+    service._get_event_bus = Mock(return_value=mock_event_bus)  # Fix: return AsyncMock
     service._extract_node_name = Mock(return_value="TestServiceOrchestrator")
     service._publish_introspection_event = Mock()
     service.cleanup_event_handlers = Mock()

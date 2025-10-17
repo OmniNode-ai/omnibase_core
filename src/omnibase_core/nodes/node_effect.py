@@ -401,14 +401,12 @@ class NodeEffect(NodeCoreBase):
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.OPERATION_FAILED,
                         message="Effect failed AND rollback failed (data may be inconsistent)",
-                        context={
-                            "node_id": str(self.node_id),
-                            "operation_id": str(input_data.operation_id),
-                            "original_error": str(e),
-                            "rollback_errors": [str(err) for err in rollback_errors],
-                            "transaction_id": str(transaction.transaction_id),
-                            "effect_type": input_data.effect_type.value,
-                        },
+                        node_id=str(self.node_id),
+                        operation_id=str(input_data.operation_id),
+                        original_error=str(e),
+                        rollback_errors=[str(err) for err in rollback_errors],
+                        transaction_id=str(transaction.transaction_id),
+                        effect_type=input_data.effect_type.value,
                     ) from e
 
                 if input_data.operation_id in self.active_transactions:
@@ -496,12 +494,10 @@ class NodeEffect(NodeCoreBase):
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,
                     message="Transaction failed AND rollback failed (data may be inconsistent)",
-                    context={
-                        "node_id": str(self.node_id),
-                        "transaction_id": str(transaction_id),
-                        "original_error": str(e),
-                        "rollback_errors": [str(err) for err in rollback_errors],
-                    },
+                    node_id=str(self.node_id),
+                    transaction_id=str(transaction_id),
+                    original_error=str(e),
+                    rollback_errors=[str(err) for err in rollback_errors],
                 ) from e
 
             raise
@@ -592,14 +588,22 @@ class NodeEffect(NodeCoreBase):
                 "is_open": float(1 if cb.state == EnumCircuitBreakerState.OPEN else 0),
             }
 
-        return {
-            **self.effect_metrics,
-            **circuit_breaker_metrics,
-            "transaction_management": {
+        # Merge stored transaction metrics with real-time transaction stats
+        transaction_mgmt_metrics = self.effect_metrics.get(
+            "transaction_management", {}
+        ).copy()
+        transaction_mgmt_metrics.update(
+            {
                 "active_transactions": float(len(self.active_transactions)),
                 "max_concurrent_effects": float(self.max_concurrent_effects),
                 "semaphore_available": float(self.effect_semaphore._value),
-            },
+            }
+        )
+
+        return {
+            **self.effect_metrics,
+            **circuit_breaker_metrics,
+            "transaction_management": transaction_mgmt_metrics,
         }
 
     async def _initialize_node_resources(self) -> None:

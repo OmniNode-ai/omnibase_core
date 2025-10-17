@@ -295,7 +295,7 @@ class TestServiceModeEventBusIntegration:
         async def mock_run(input_state):
             return {"status": "success", "workflow_id": str(uuid4())}
 
-        service_orchestrator.run = mock_run
+        object.__setattr__(service_orchestrator, "run", mock_run)
 
         # Handle tool invocation
         await service_orchestrator.handle_tool_invocation(tool_invocation_event)
@@ -479,7 +479,7 @@ class TestServiceModeHealthCheckIntegration:
             await asyncio.sleep(0.2)
             return {"status": "success", "workflow_id": str(uuid4())}
 
-        service_orchestrator.run = slow_run
+        object.__setattr__(service_orchestrator, "run", slow_run)
 
         # Start invocation in background
         invocation_task = asyncio.create_task(
@@ -524,8 +524,10 @@ class TestServiceModeMetricsIntegration:
             parameters={"workflow_id": str(uuid4()), "steps": []},
         )
 
-        service_orchestrator.run = AsyncMock(
-            return_value={"status": "success", "workflow_id": str(uuid4())}
+        object.__setattr__(
+            service_orchestrator,
+            "run",
+            AsyncMock(return_value={"status": "success", "workflow_id": str(uuid4())}),
         )
         await service_orchestrator.handle_tool_invocation(event)
 
@@ -614,9 +616,14 @@ class TestToolInvocationWorkflowEventEmission:
         """Test that successful workflow execution publishes events."""
         # Set event bus directly on service (MixinNodeService uses getattr(self, "event_bus"))
         object.__setattr__(service_orchestrator, "event_bus", mock_event_bus)
+        object.__setattr__(
+            service_orchestrator, "_get_event_bus", Mock(return_value=mock_event_bus)
+        )
 
-        service_orchestrator.run = AsyncMock(
-            return_value={"result": "success", "workflow_id": str(uuid4())}
+        object.__setattr__(
+            service_orchestrator,
+            "run",
+            AsyncMock(return_value={"result": "success", "workflow_id": str(uuid4())}),
         )
 
         await service_orchestrator.handle_tool_invocation(tool_invocation_event)
@@ -635,8 +642,15 @@ class TestToolInvocationWorkflowEventEmission:
         """Test that failed workflow execution publishes error event."""
         # Set event bus directly on service (MixinNodeService uses getattr(self, "event_bus"))
         object.__setattr__(service_orchestrator, "event_bus", mock_event_bus)
+        object.__setattr__(
+            service_orchestrator, "_get_event_bus", Mock(return_value=mock_event_bus)
+        )
 
-        service_orchestrator.run = AsyncMock(side_effect=Exception("Workflow error"))
+        object.__setattr__(
+            service_orchestrator,
+            "run",
+            AsyncMock(side_effect=Exception("Workflow error")),
+        )
 
         await service_orchestrator.handle_tool_invocation(tool_invocation_event)
 
@@ -908,8 +922,12 @@ class TestEndToEndWorkflow:
             },
         )
 
-        service_orchestrator.run = AsyncMock(
-            return_value={"result": "success", "workflow_id": str(workflow_id)}
+        object.__setattr__(
+            service_orchestrator,
+            "run",
+            AsyncMock(
+                return_value={"result": "success", "workflow_id": str(workflow_id)}
+            ),
         )
 
         # Step 3: Handle invocation
@@ -967,7 +985,7 @@ class TestEndToEndWorkflow:
             await asyncio.sleep(0.2)
             return {"result": "success", "workflow_id": str(uuid4())}
 
-        service_orchestrator.run = slow_run
+        object.__setattr__(service_orchestrator, "run", slow_run)
 
         # Start service
         start_task = asyncio.create_task(service_orchestrator.start_service_mode())

@@ -129,6 +129,8 @@ class ModelOnexError(Exception):
                 simple_context["module_name"] = context["module_name"]
             if context.get("stack_trace") is not None:
                 simple_context["stack_trace"] = context["stack_trace"]
+            if context.get("rollback_errors") is not None:
+                simple_context["rollback_errors"] = context["rollback_errors"]
 
             additional_ctx = {
                 k: v
@@ -141,6 +143,7 @@ class ModelOnexError(Exception):
                     "function_name",
                     "module_name",
                     "stack_trace",
+                    "rollback_errors",
                 }
             }
             if additional_ctx:

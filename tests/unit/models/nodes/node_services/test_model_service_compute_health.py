@@ -82,14 +82,6 @@ class ComputeNodeForHealthTesting(ModelServiceCompute):
 
 
 @pytest.fixture
-def mock_container():
-    """Create mock ModelONEXContainer for dependency injection."""
-    container = Mock(spec=ModelONEXContainer)
-    container.get_service = Mock(return_value=None)
-    return container
-
-
-@pytest.fixture
 def mock_event_bus():
     """Create mock event bus for publish/subscribe."""
     event_bus = AsyncMock()

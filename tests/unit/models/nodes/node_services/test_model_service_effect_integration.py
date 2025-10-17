@@ -224,6 +224,9 @@ class TestServiceModeEventBusIntegration:
         """Test that service subscribes to TOOL_INVOCATION events on startup."""
         # Inject mock event bus
         service_effect.event_bus = mock_event_bus
+        object.__setattr__(
+            service_effect, "_get_event_bus", Mock(return_value=mock_event_bus)
+        )
 
         # Start service mode
         start_task = asyncio.create_task(service_effect.start_service_mode())
@@ -250,12 +253,15 @@ class TestServiceModeEventBusIntegration:
         """Test that tool responses are published via EventBus."""
         # Inject mock event bus
         service_effect.event_bus = mock_event_bus
+        object.__setattr__(
+            service_effect, "_get_event_bus", Mock(return_value=mock_event_bus)
+        )
 
-        # Mock the run method to return a result
+        # Mock the run method to return a result (use object.__setattr__ to bypass Pydantic)
         async def mock_run(input_state):
             return {"status": "success", "data": "test_result"}
 
-        service_effect.run = mock_run
+        object.__setattr__(service_effect, "run", mock_run)
 
         # Handle tool invocation
         await service_effect.handle_tool_invocation(tool_invocation_event)
@@ -330,7 +336,7 @@ class TestServiceModeHealthCheckIntegration:
             await asyncio.sleep(0.2)
             return {"status": "success"}
 
-        service_effect.run = slow_run
+        object.__setattr__(service_effect, "run", slow_run)
 
         # Start invocation in background
         invocation_task = asyncio.create_task(
@@ -373,7 +379,9 @@ class TestServiceModeMetricsIntegration:
             parameters={},
         )
 
-        service_effect.run = AsyncMock(return_value={"status": "success"})
+        object.__setattr__(
+            service_effect, "run", AsyncMock(return_value={"status": "success"})
+        )
         await service_effect.handle_tool_invocation(event)
 
         # Verify count increased
@@ -395,7 +403,9 @@ class TestServiceModeMetricsIntegration:
             parameters={},
         )
 
-        service_effect.run = AsyncMock(return_value={"status": "success"})
+        object.__setattr__(
+            service_effect, "run", AsyncMock(return_value={"status": "success"})
+        )
         await service_effect.handle_tool_invocation(event)
 
         health = service_effect.get_service_health()
@@ -422,8 +432,13 @@ class TestToolInvocationEventPublishing:
         """Test that successful tool invocation publishes success event."""
         # Inject mock event bus
         service_effect.event_bus = mock_event_bus
+        object.__setattr__(
+            service_effect, "_get_event_bus", Mock(return_value=mock_event_bus)
+        )
 
-        service_effect.run = AsyncMock(return_value={"result": "success"})
+        object.__setattr__(
+            service_effect, "run", AsyncMock(return_value={"result": "success"})
+        )
 
         await service_effect.handle_tool_invocation(tool_invocation_event)
 
@@ -441,7 +456,12 @@ class TestToolInvocationEventPublishing:
         """Test that failed tool invocation publishes error event."""
         # Inject mock event bus
         service_effect.event_bus = mock_event_bus
-        service_effect.run = AsyncMock(side_effect=Exception("Test error"))
+        object.__setattr__(
+            service_effect, "_get_event_bus", Mock(return_value=mock_event_bus)
+        )
+        object.__setattr__(
+            service_effect, "run", AsyncMock(side_effect=Exception("Test error"))
+        )
 
         await service_effect.handle_tool_invocation(tool_invocation_event)
 
@@ -641,6 +661,9 @@ class TestEndToEndWorkflow:
         """Test complete lifecycle: start → invoke → respond → stop."""
         # Inject event bus before starting service
         service_effect.event_bus = mock_event_bus
+        object.__setattr__(
+            service_effect, "_get_event_bus", Mock(return_value=mock_event_bus)
+        )
 
         # Step 1: Start service
         start_task = asyncio.create_task(service_effect.start_service_mode())
@@ -662,7 +685,9 @@ class TestEndToEndWorkflow:
             parameters={"data": "test"},
         )
 
-        service_effect.run = AsyncMock(return_value={"result": "success"})
+        object.__setattr__(
+            service_effect, "run", AsyncMock(return_value={"result": "success"})
+        )
 
         # Step 3: Handle invocation
         await service_effect.handle_tool_invocation(event)
@@ -692,13 +717,16 @@ class TestEndToEndWorkflow:
         """Test that graceful shutdown waits for active invocations."""
         # Inject event bus before starting service
         service_effect.event_bus = mock_event_bus
+        object.__setattr__(
+            service_effect, "_get_event_bus", Mock(return_value=mock_event_bus)
+        )
 
         # Create slow operation
         async def slow_run(input_state):
             await asyncio.sleep(0.2)
             return {"result": "success"}
 
-        service_effect.run = slow_run
+        object.__setattr__(service_effect, "run", slow_run)
 
         # Start service
         start_task = asyncio.create_task(service_effect.start_service_mode())

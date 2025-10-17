@@ -111,14 +111,13 @@ class ModelEffectTransaction:
 
             except Exception as e:
                 error = ModelOnexError(
-                    message=f"Rollback failed for operation: {operation_name}",
+                    message=f"Rollback failed for operation: {operation_name} - {e!s}",
                     error_code="ROLLBACK_FAILURE",
-                    cause=e,
-                    context={
-                        "operation": operation_name,
-                        "transaction_id": str(self.transaction_id),
-                        "operation_index": idx,
-                    },
+                    operation=operation_name,
+                    transaction_id=str(self.transaction_id),
+                    operation_index=idx,
+                    original_error=str(e),
+                    original_error_type=type(e).__name__,
                 )
                 failures.append(error)
 

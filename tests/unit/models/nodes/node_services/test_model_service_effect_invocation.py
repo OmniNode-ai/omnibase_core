@@ -58,6 +58,7 @@ class TestModelServiceEffectToolInvocation:
         node = Mock(spec=ModelServiceEffect)
         node._node_id = node_id
         node.event_bus = mock_event_bus
+        node._get_event_bus = Mock(return_value=mock_event_bus)  # Fix: return AsyncMock
         node._active_invocations = set()
         node._total_invocations = 0
         node._successful_invocations = 0
@@ -634,6 +635,7 @@ class TestModelServiceEffectEdgeCases:
         node._node_id = node_id_val
         node.node_id = node_id_val  # Explicitly set property for getattr() calls
         node.event_bus = mock_event_bus
+        node._get_event_bus = Mock(return_value=mock_event_bus)  # Fix: return AsyncMock
         node._active_invocations = set()
         node._total_invocations = 0
         node._successful_invocations = 0
@@ -698,6 +700,7 @@ class TestModelServiceEffectEdgeCases:
         node._node_id = node_id_val
         node.node_id = node_id_val  # Explicitly set property for getattr() calls
         node.event_bus = mock_event_bus
+        node._get_event_bus = Mock(return_value=mock_event_bus)  # Fix: return AsyncMock
         node._active_invocations = set()
         node._total_invocations = 0
         node._successful_invocations = 0

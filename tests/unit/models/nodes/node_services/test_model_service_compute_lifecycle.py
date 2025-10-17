@@ -65,14 +65,6 @@ class ComputeNodeForTesting(ModelServiceCompute):
 
 
 @pytest.fixture
-def mock_container():
-    """Create mock ONEX container."""
-    container = Mock(spec=ModelONEXContainer)
-    # Add any required container attributes/methods
-    return container
-
-
-@pytest.fixture
 def mock_event_bus():
     """Create mock event bus."""
     event_bus = AsyncMock()

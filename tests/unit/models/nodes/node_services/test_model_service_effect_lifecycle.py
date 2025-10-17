@@ -35,14 +35,6 @@ from omnibase_core.models.nodes.node_services.model_service_effect import (
 
 # Test Fixtures
 @pytest.fixture
-def mock_container():
-    """Create mock ONEX container with all necessary dependencies."""
-    container = Mock(spec=ModelONEXContainer)
-    container.get_service = Mock(return_value=None)
-    return container
-
-
-@pytest.fixture
 def mock_event_bus():
     """Create mock event bus for testing event subscriptions and publications."""
     event_bus = AsyncMock()

@@ -6,8 +6,14 @@ Provides cleanup utilities to prevent async task warnings and memory leaks.
 
 import asyncio
 import contextlib
+from unittest.mock import Mock
 
 import pytest
+
+from omnibase_core.models.configuration.model_compute_cache_config import (
+    ModelComputeCacheConfig,
+)
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -148,3 +154,28 @@ def service_cleanup(request):
     request.addfinalizer(finalizer)
 
     return helper
+
+
+@pytest.fixture
+def mock_container():
+    """
+    Create mock ModelONEXContainer for dependency injection.
+
+    Provides all required attributes that ModelONEXContainer instances have,
+    including compute_cache_config and other container-specific attributes.
+
+    This shared fixture prevents AttributeError: Mock object has no attribute 'compute_cache_config'
+    errors across all service tests.
+    """
+    container = Mock(spec=ModelONEXContainer)
+
+    # Add required ModelONEXContainer attributes
+    container.compute_cache_config = ModelComputeCacheConfig()
+    container.enable_performance_cache = False
+    container.tool_cache = None
+    container.performance_monitor = None
+
+    # Add common methods
+    container.get_service = Mock(return_value=None)
+
+    return container

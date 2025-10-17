@@ -27,4 +27,5 @@ class TypedDictBasicErrorContext(TypedDict, total=False):
     function_name: str
     module_name: str
     stack_trace: str
+    rollback_errors: list[str]
     additional_context: dict[str, Any]
