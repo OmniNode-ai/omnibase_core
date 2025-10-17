@@ -81,5 +81,5 @@ class ModelOnexInternalInputState(BaseModel):
             timestamp=boundary_state.timestamp or datetime.now(UTC),
             node_name=boundary_state.node_name or "unknown",
             node_version=boundary_state.node_version
-            or parse_semver_from_string("1.0.0"),
+            or ModelSemVer(major=1, minor=0, patch=0),
         )

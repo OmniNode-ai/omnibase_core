@@ -49,6 +49,7 @@ from omnibase_core.mixins.mixin_node_lifecycle import MixinNodeLifecycle
 from omnibase_core.mixins.mixin_request_response_introspection import (
     MixinRequestResponseIntrospection,
 )
+from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_spi.protocols.event_bus import ProtocolEventBus
 from omnibase_spi.protocols.schema import ProtocolSchemaLoader
 
@@ -137,7 +138,9 @@ class MixinEventDrivenNode(
                 metadata = metadata_loader.metadata
                 if metadata and hasattr(metadata, "version"):
                     return str(metadata.version)
-            return "0.0.0"  # Default version if metadata unavailable
+            # Use ModelSemVer for default version instead of string literal
+            default_version = ModelSemVer(major=0, minor=0, patch=0)
+            return str(default_version)
         except Exception as e:
             msg = f"Failed to load node version from metadata: {e}"
             raise ModelOnexError(

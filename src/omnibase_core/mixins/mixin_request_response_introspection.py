@@ -266,7 +266,9 @@ class MixinRequestResponseIntrospection:
                 correlation_id=request_event.correlation_id,
                 node_id=getattr(self, "node_id", uuid4()),
                 node_name=getattr(self, "node_name", "unknown_node"),
-                version=getattr(self, "version", parse_semver_from_string("1.0.0")),
+                version=getattr(
+                    self, "version", ModelSemVer(major=1, minor=0, patch=0)
+                ),
                 current_status=current_status,
                 capabilities=capabilities,
                 response_time_ms=response_time_ms,
@@ -407,7 +409,9 @@ class MixinRequestResponseIntrospection:
                     correlation_id=event.correlation_id,
                     node_id=getattr(self, "node_id", uuid4()),
                     node_name=getattr(self, "node_name", "unknown_node"),
-                    version=getattr(self, "version", parse_semver_from_string("1.0.0")),
+                    version=getattr(
+                        self, "version", ModelSemVer(major=1, minor=0, patch=0)
+                    ),
                     error_message=str(e),
                     response_time_ms=response_time_ms,
                 )

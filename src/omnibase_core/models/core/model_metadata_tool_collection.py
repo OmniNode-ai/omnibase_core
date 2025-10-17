@@ -257,7 +257,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                     description="",
                     documentation="",
                     author="Unknown",
-                    version=parse_semver_from_string("1.0.0"),
+                    version=ModelSemVer(major=1, minor=0, patch=0),
                     security_level="standard",
                     replaces=None,
                 )
@@ -632,7 +632,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                     complexity=EnumMetadataToolComplexity.SIMPLE,
                     documentation="",
                     author="Unknown",
-                    version=parse_semver_from_string("1.0.0"),
+                    version=ModelSemVer(major=1, minor=0, patch=0),
                     security_level="standard",
                     replaces=None,
                 )

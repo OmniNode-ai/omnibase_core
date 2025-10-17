@@ -1,38 +1,42 @@
 """
 Infrastructure Base Classes
 
-Consolidated imports for all infrastructure node base classes.
+Consolidated imports for all infrastructure node base classes and service wrappers.
 Eliminates boilerplate initialization across the infrastructure tool group.
+
+Service Wrappers (Standard Production-Ready Compositions):
+    Service wrappers provide pre-configured mixin compositions for production use:
+    - ModelServiceEffect: Effect + HealthCheck + EventBus + Metrics
+    - ModelServiceCompute: Compute + HealthCheck + Caching + Metrics
 
 Usage Examples:
     from omnibase_core.infrastructure.infrastructure_bases import (
-        NodeEffectExecutor,
-        NodeComputeEngine,
-        NodeReducerProcessor,
-        NodeOrchestratorManager
+        ModelServiceEffect,
+        ModelServiceCompute,
     )
 
-    class MyEffectNode(NodeEffectExecutor):
-        def __init__(self, container):
-            super().__init__(container)  # All setup handled!
+    class MyDatabaseWriter(ModelServiceEffect):
+        async def execute_effect(self, contract):
+            # Health checks, events, and metrics included automatically!
+            result = await self.database.write(contract.input_data)
+            await self.publish_event("write_completed", {...})
+            return result
+
+Note: ModelServiceOrchestrator and ModelServiceReducer will be available after
+      NodeOrchestrator and NodeReducer are restored in Phase 3.
 """
 
-from omnibase_core.infrastructure.node_compute_engine import NodeComputeEngine
-
-# Infrastructure base classes - eliminate boilerplate
-from omnibase_core.infrastructure.node_effect_executor import NodeEffectExecutor
-from omnibase_core.infrastructure.node_orchestrator_manager import (
-    NodeOrchestratorManager,
+# Standard service wrappers - production-ready mixin compositions
+from omnibase_core.models.nodes.services.model_service_compute import (
+    ModelServiceCompute,
 )
-from omnibase_core.infrastructure.node_reducer_processor import NodeReducerProcessor
+from omnibase_core.models.nodes.services.model_service_effect import ModelServiceEffect
 
-# Infrastructure container - available via canary implementation
-from omnibase_core.nodes.canary.container import create_infrastructure_container
+# NOTE: Available after Phase 3 restoration:
+# from omnibase_core.models.nodes.services.model_service_orchestrator import ModelServiceOrchestrator
+# from omnibase_core.models.nodes.services.model_service_reducer import ModelServiceReducer
 
 __all__ = [
-    "NodeComputeEngine",
-    "NodeEffectExecutor",
-    "NodeOrchestratorManager",
-    "NodeReducerProcessor",
-    "create_infrastructure_container",
+    "ModelServiceEffect",
+    "ModelServiceCompute",
 ]

@@ -24,7 +24,7 @@ from omnibase_core.models.nodes.model_node_capabilities_info import (
 from omnibase_core.models.nodes.model_node_configuration import ModelNodeConfiguration
 from omnibase_core.models.nodes.model_node_core_info import ModelNodeCoreInfo
 from omnibase_core.models.nodes.model_node_information import ModelNodeInformation
-from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestModelNodeInformation:
@@ -35,7 +35,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -48,7 +48,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         capabilities = ModelNodeCapabilitiesInfo()
         configuration = ModelNodeConfiguration()
@@ -68,7 +68,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -79,7 +79,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -92,7 +92,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -103,7 +103,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -115,7 +115,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.METHOD,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -126,7 +126,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -135,7 +135,7 @@ class TestModelNodeInformation:
 
     def test_node_version_property_get(self):
         """Test node_version property delegation."""
-        version = parse_semver_from_string("2.1.3")
+        version = ModelSemVer(major=2, minor=1, patch=3)
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
@@ -150,11 +150,11 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
-        new_version = parse_semver_from_string("2.0.0")
+        new_version = ModelSemVer(major=2, minor=0, patch=0)
         info.node_version = new_version
         assert info.core_info.node_version == new_version
 
@@ -163,7 +163,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
             description="Test description",
         )
         info = ModelNodeInformation(core_info=core_info)
@@ -175,7 +175,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -187,7 +187,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -198,7 +198,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -211,7 +211,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -225,7 +225,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -238,7 +238,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -250,7 +250,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -261,7 +261,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -273,7 +273,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -284,7 +284,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -296,7 +296,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
         info.capabilities.add_operation("op1")
@@ -308,7 +308,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
         dep = uuid4()
@@ -321,7 +321,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -334,7 +334,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -346,7 +346,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
         info.status = EnumMetadataNodeStatus.ACTIVE
@@ -358,7 +358,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
         info.health = EnumRegistryStatus.HEALTHY
@@ -370,7 +370,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
         info.add_capability("cap1")
@@ -382,7 +382,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -394,7 +394,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -406,7 +406,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -419,7 +419,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -434,7 +434,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
             description="Description",
         )
         info = ModelNodeInformation(
@@ -450,7 +450,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -461,7 +461,7 @@ class TestModelNodeInformation:
         info = ModelNodeInformation.create_simple(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
             description="Test description",
         )
 
@@ -474,7 +474,7 @@ class TestModelNodeInformation:
         info = ModelNodeInformation.create_with_capabilities(
             node_name="test_node",
             node_type=EnumMetadataNodeType.METHOD,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
             capabilities=["cap1", "cap2"],
             operations=["op1"],
         )
@@ -488,7 +488,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -500,7 +500,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 
@@ -513,7 +513,7 @@ class TestModelNodeInformation:
         core_info = ModelNodeCoreInfo.create_streamlined(
             node_name="test_node",
             node_type=EnumMetadataNodeType.FUNCTION,
-            node_version=parse_semver_from_string("1.0.0"),
+            node_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         info = ModelNodeInformation(core_info=core_info)
 

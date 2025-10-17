@@ -2,6 +2,7 @@ import uuid
 from typing import Dict
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 """
 NodeCoreBase - Foundation for 4-Node ModelArchitecture.
@@ -73,26 +74,41 @@ class NodeCoreBase(ABC):
                 context={"node_type": self.__class__.__name__},
             )
 
-        self.container = container
-        self.node_id: UUID = uuid4()
-        self.created_at: datetime = datetime.now()
+        # Call super().__init__() to continue the MRO chain (for Pydantic mixins)
+        # This ensures BaseModel.__init__() is called if in the hierarchy
+        super().__init__()
+
+        # Use object.__setattr__() to bypass Pydantic validation for internal state
+        # These are not Pydantic fields but internal node management attributes
+        object.__setattr__(self, "container", container)
+        node_id_value = uuid4()
+        object.__setattr__(self, "node_id", node_id_value)
+        object.__setattr__(
+            self, "_node_id", node_id_value
+        )  # Alias for mixin compatibility
+        object.__setattr__(self, "created_at", datetime.now())
 
         # Core state tracking
-        self.state: dict[str, str] = {"status": "initialized"}
-        self.metrics: dict[str, float] = {
-            "initialization_time_ms": 0.0,
-            "total_operations": 0.0,
-            "avg_processing_time_ms": 0.0,
-            "error_count": 0.0,
-            "success_count": 0.0,
-        }
+        object.__setattr__(self, "state", {"status": "initialized"})
+        object.__setattr__(
+            self,
+            "metrics",
+            {
+                "initialized_at_ms": 0.0,
+                "initialization_duration_ms": 0.0,
+                "total_operations": 0.0,
+                "avg_processing_time_ms": 0.0,
+                "error_count": 0.0,
+                "success_count": 0.0,
+            },
+        )
 
         # Contract and configuration
-        self.contract_data: dict[str, str] | None = None
-        self.version: str = "1.0.0"
+        object.__setattr__(self, "contract_data", None)
+        object.__setattr__(self, "version", ModelSemVer(major=1, minor=0, patch=0))
 
-        # Initialize metrics
-        self.metrics["initialization_time_ms"] = time.time() * 1000
+        # Initialize metrics - capture creation timestamp
+        self.metrics["initialized_at_ms"] = time.time() * 1000
 
     @abstractmethod
     async def process(self, input_data: Any) -> Any:
@@ -156,9 +172,9 @@ class NodeCoreBase(ABC):
             # Initialize node-specific resources
             await self._initialize_node_resources()
 
-            # Update metrics
+            # Update metrics - record initialization duration
             initialization_time = (time.time() - start_time) * 1000
-            self.metrics["initialization_time_ms"] = initialization_time
+            self.metrics["initialization_duration_ms"] = initialization_time
 
             # Update state
             self.state["status"] = "ready"
@@ -219,9 +235,7 @@ class NodeCoreBase(ABC):
 
             # Calculate final metrics
             cleanup_time = (time.time() - start_time) * 1000
-            total_lifetime = (time.time() * 1000) - self.metrics[
-                "initialization_time_ms"
-            ]
+            total_lifetime = (time.time() * 1000) - self.metrics["initialized_at_ms"]
 
             # Emit final metrics
             final_metrics = {
@@ -282,7 +296,7 @@ class NodeCoreBase(ABC):
             **self.metrics,
             "success_rate": success_rate,
             "error_rate": error_rate,
-            "uptime_ms": (time.time() * 1000) - self.metrics["initialization_time_ms"],
+            "uptime_ms": (time.time() * 1000) - self.metrics["initialized_at_ms"],
             "node_health_score": max(0.0, 1.0 - error_rate),
         }
 
@@ -296,7 +310,7 @@ class NodeCoreBase(ABC):
         return {
             "node_id": self.node_id,
             "node_type": self.__class__.__name__,
-            "version": self.version,
+            "version": str(self.version),
             "created_at": self.created_at.isoformat(),
             "state": self.state.copy(),
             "metrics": await self.get_performance_metrics(),
@@ -313,7 +327,7 @@ class NodeCoreBase(ABC):
         """Get node type classification."""
         return self.__class__.__name__
 
-    def get_version(self) -> str:
+    def get_version(self) -> ModelSemVer:
         """Get node version."""
         return self.version
 
@@ -353,7 +367,45 @@ class NodeCoreBase(ABC):
                         isinstance(contract_data_raw, dict)
                         and "version" in contract_data_raw
                     ):
-                        self.version = contract_data_raw["version"]
+                        version_value = contract_data_raw["version"]
+                        if isinstance(version_value, str):
+                            # Parse version string manually (no ModelSemVer.parse())
+                            try:
+                                parts = version_value.split(".")
+                                if len(parts) >= 2:
+                                    major = int(parts[0])
+                                    minor = int(parts[1])
+                                    patch = int(parts[2]) if len(parts) > 2 else 0
+                                    object.__setattr__(
+                                        self,
+                                        "version",
+                                        ModelSemVer(
+                                            major=major, minor=minor, patch=patch
+                                        ),
+                                    )
+                                else:
+                                    # Invalid version format, keep default
+                                    emit_log_event(
+                                        LogLevel.WARNING,
+                                        f"Invalid version format: {version_value}",
+                                        {"node_id": self.node_id},
+                                    )
+                            except (ValueError, IndexError) as e:
+                                # Parsing failed, keep default
+                                emit_log_event(
+                                    LogLevel.WARNING,
+                                    f"Failed to parse version: {version_value}: {e}",
+                                    {"node_id": self.node_id},
+                                )
+                        elif isinstance(version_value, ModelSemVer):
+                            object.__setattr__(self, "version", version_value)
+                        else:
+                            # Invalid version type, keep default
+                            emit_log_event(
+                                LogLevel.WARNING,
+                                f"Invalid version type: {type(version_value)}",
+                                {"node_id": self.node_id},
+                            )
 
                     emit_log_event(
                         LogLevel.INFO,
@@ -361,7 +413,7 @@ class NodeCoreBase(ABC):
                         {
                             "node_id": self.node_id,
                             "contract_keys": (
-                                list[Any](contract_data_raw.keys())
+                                list(contract_data_raw.keys())
                                 if isinstance(contract_data_raw, dict)
                                 else []
                             ),
@@ -500,3 +552,276 @@ class NodeCoreBase(ABC):
                 message="Input data cannot be None",
                 context={"node_id": self.node_id, "node_type": self.__class__.__name__},
             )
+
+    # ========================================================================
+    # ENHANCED BOILERPLATE METHODS - EXTRACTED FROM ARCHIVED NODE TYPES
+    # Agent 1 Extraction: These methods eliminate ~600 lines of duplication
+    # across node_effect.py, node_compute.py, node_orchestrator.py, node_reducer.py
+    # ========================================================================
+
+    def _find_contract_path(self) -> "Path":
+        """
+        Find contract.yaml file using stack frame inspection.
+
+        EXTRACTED BOILERPLATE: This method was duplicated across all 4 node types
+        (Effect, Compute, Orchestrator, Reducer) with identical implementations.
+
+        Uses Python inspect to traverse the call stack and locate the contract.yaml
+        file in the same directory as the calling node class module.
+
+        Returns:
+            Path: Absolute path to contract.yaml file
+
+        Raises:
+            ModelOnexError: If contract file cannot be found
+        """
+        import inspect
+        from pathlib import Path
+
+        from omnibase_core.constants.contract_constants import CONTRACT_FILENAME
+
+        try:
+            # Traverse call stack to find the calling class module
+            frame = inspect.currentframe()
+            while frame:
+                frame = frame.f_back
+                if frame and "self" in frame.f_locals:
+                    caller_self = frame.f_locals["self"]
+                    if hasattr(caller_self, "__module__"):
+                        module = inspect.getmodule(caller_self)
+                        if module and hasattr(module, "__file__") and module.__file__:
+                            module_path = Path(module.__file__)
+                            contract_path = module_path.parent / CONTRACT_FILENAME
+                            if contract_path.exists():
+                                return contract_path
+
+            # Contract file not found in any stack frame
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Could not find {CONTRACT_FILENAME} for {self.__class__.__name__}",
+                context={
+                    "node_type": self.__class__.__name__,
+                    "contract_filename": CONTRACT_FILENAME,
+                },
+            )
+
+        except Exception as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Error finding contract path: {e!s}",
+                context={
+                    "node_id": self.node_id,
+                    "node_type": self.__class__.__name__,
+                },
+            ) from e
+
+    def _resolve_contract_references(
+        self,
+        data: Any,
+        base_path: "Path",
+        reference_resolver: Any,
+    ) -> Any:
+        """
+        Recursively resolve all $ref references in contract data.
+
+        EXTRACTED BOILERPLATE: This method was duplicated across all 4 node types
+        with identical core logic for $ref resolution.
+
+        Handles JSON Pointer-style references ($ref) in YAML contracts,
+        supporting relative paths, absolute paths, and internal references.
+
+        Args:
+            data: Contract data structure (dict, list, or primitive)
+            base_path: Base directory for resolving relative references
+            reference_resolver: Reference resolver utility instance
+
+        Returns:
+            Resolved contract data with all $ref references loaded
+
+        Raises:
+            ModelOnexError: If reference resolution fails critically
+        """
+        from pathlib import Path
+
+        try:
+            if isinstance(data, dict):
+                if "$ref" in data:
+                    # Resolve reference to another file
+                    ref_file = data["$ref"]
+                    if ref_file.startswith(("./", "../")):
+                        # Relative path reference
+                        ref_path = (base_path / ref_file).resolve()
+                    else:
+                        # Absolute or root-relative reference
+                        ref_path = Path(ref_file)
+
+                    return reference_resolver.resolve_reference(
+                        str(ref_path),
+                        base_path,
+                    )
+
+                # Recursively resolve nested dictionaries
+                return {
+                    key: self._resolve_contract_references(
+                        value,
+                        base_path,
+                        reference_resolver,
+                    )
+                    for key, value in data.items()
+                }
+
+            if isinstance(data, list):
+                # Recursively resolve lists
+                return [
+                    self._resolve_contract_references(
+                        item,
+                        base_path,
+                        reference_resolver,
+                    )
+                    for item in data
+                ]
+
+            # Return primitives as-is
+            return data
+
+        except (FileNotFoundError, OSError, IOError) as e:
+            # fallback-ok: graceful degradation for missing/unreadable reference files
+            emit_log_event(
+                LogLevel.WARNING,
+                f"Failed to resolve contract reference (file error): {e!s}",
+                {
+                    "node_id": self.node_id,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                    "ref_data": (
+                        str(data) if isinstance(data, dict) and "$ref" in data else None
+                    ),
+                },
+            )
+            return data
+        except (AttributeError, TypeError) as e:
+            # fallback-ok: graceful degradation for resolver errors
+            emit_log_event(
+                LogLevel.WARNING,
+                f"Failed to resolve contract reference (resolver error): {e!s}",
+                {
+                    "node_id": self.node_id,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                },
+            )
+            return data
+        except RecursionError as e:
+            # Circular reference detected - this is a contract authoring error
+            emit_log_event(
+                LogLevel.ERROR,
+                f"Circular reference detected in contract: {e!s}",
+                {
+                    "node_id": self.node_id,
+                    "error": str(e),
+                },
+            )
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Circular reference detected in contract",
+                context={
+                    "node_id": self.node_id,
+                    "node_type": self.__class__.__name__,
+                },
+            ) from e
+
+    def _update_specialized_metrics(
+        self,
+        metrics_dict: dict[str, dict[str, float]],
+        metric_type: str,
+        processing_time_ms: float,
+        success: bool,
+        items_count: int = 1,
+    ) -> None:
+        """
+        Update specialized node-type metrics with rolling averages.
+
+        EXTRACTED BOILERPLATE: This pattern was duplicated across all 4 node types
+        (_update_effect_metrics, _update_computation_metrics, etc.)
+
+        Maintains running statistics for each metric type including:
+        - Total operations and success/error counts
+        - Processing time statistics (avg, min, max)
+        - Rolling average calculation
+        - Items processed tracking
+
+        Args:
+            metrics_dict: Target metrics dictionary to update
+            metric_type: Type key for this metric (e.g., "file_operation", "rsd_priority")
+            processing_time_ms: Time taken for this operation
+            success: Whether operation succeeded
+            items_count: Number of items processed (default 1)
+        """
+        # Initialize metric structure if needed
+        if metric_type not in metrics_dict:
+            metrics_dict[metric_type] = {
+                "total_operations": 0.0,
+                "success_count": 0.0,
+                "error_count": 0.0,
+                "total_items_processed": 0.0,
+                "avg_processing_time_ms": 0.0,
+                "min_processing_time_ms": float("inf"),
+                "max_processing_time_ms": 0.0,
+            }
+
+        metrics = metrics_dict[metric_type]
+        metrics["total_operations"] += 1
+        metrics["total_items_processed"] += items_count
+
+        # Update success/error counters
+        if success:
+            metrics["success_count"] += 1
+        else:
+            metrics["error_count"] += 1
+
+        # Update timing statistics
+        metrics["min_processing_time_ms"] = min(
+            metrics["min_processing_time_ms"],
+            processing_time_ms,
+        )
+        metrics["max_processing_time_ms"] = max(
+            metrics["max_processing_time_ms"],
+            processing_time_ms,
+        )
+
+        # Calculate rolling average of processing time
+        total_ops = metrics["total_operations"]
+        current_avg = metrics["avg_processing_time_ms"]
+        metrics["avg_processing_time_ms"] = (
+            current_avg * (total_ops - 1) + processing_time_ms
+        ) / total_ops
+
+    def _get_health_status_comprehensive(
+        self,
+        health_checks: dict[str, bool],
+    ) -> dict[str, Any]:
+        """
+        Aggregate health status from multiple component checks.
+
+        EXTRACTED BOILERPLATE: This pattern was duplicated across all 4 node types
+        with similar health aggregation logic.
+
+        Args:
+            health_checks: Dictionary of component names to health status
+
+        Returns:
+            Comprehensive health status with details
+        """
+        all_healthy = all(health_checks.values())
+        failing_components = [
+            component for component, healthy in health_checks.items() if not healthy
+        ]
+
+        return {
+            "overall_status": "healthy" if all_healthy else "degraded",
+            "component_checks": health_checks,
+            "failing_components": failing_components,
+            "healthy_count": sum(1 for h in health_checks.values() if h),
+            "total_components": len(health_checks),
+            "timestamp": datetime.now().isoformat(),
+        }

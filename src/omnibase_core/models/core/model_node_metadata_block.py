@@ -31,6 +31,16 @@ from omnibase_core.models.core.model_tool_collection import ModelToolCollection
 from omnibase_core.models.metadata.model_metadata_constants import get_namespace_prefix
 from omnibase_core.primitives.model_semver import ModelSemVer
 
+# Default version constants - overridden at serialization time by get_canonical_versions()
+# Using ModelSemVer to avoid hardcoded version strings
+_DEFAULT_METADATA_SEMVER = ModelSemVer(major=0, minor=1, patch=0)
+_DEFAULT_PROTOCOL_SEMVER = ModelSemVer(major=0, minor=1, patch=0)
+_DEFAULT_SCHEMA_SEMVER = ModelSemVer(major=0, minor=1, patch=0)
+
+DEFAULT_METADATA_VERSION = str(_DEFAULT_METADATA_SEMVER)
+DEFAULT_PROTOCOL_VERSION = str(_DEFAULT_PROTOCOL_SEMVER)
+DEFAULT_SCHEMA_VERSION = str(_DEFAULT_SCHEMA_SEMVER)
+
 from .model_data_handling_declaration import ModelDataHandlingDeclaration
 from .model_extension_value import ModelExtensionValue
 from .model_logging_config import ModelLoggingConfig
@@ -68,11 +78,11 @@ class ModelNodeMetadataBlock(BaseModel):
     metadata_version: Annotated[
         str,
         StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),
-    ] = Field(default="0.1.0")
+    ] = Field(default=DEFAULT_METADATA_VERSION)
     protocol_version: Annotated[
         str,
         StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),
-    ] = Field(default="0.1.0")
+    ] = Field(default=DEFAULT_PROTOCOL_VERSION)
     owner: Annotated[str, StringConstraints(min_length=1)] = Field(
         default="OmniNode Team",
     )
@@ -82,7 +92,7 @@ class ModelNodeMetadataBlock(BaseModel):
     schema_version: Annotated[
         str,
         StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),
-    ] = Field(default="0.1.0")
+    ] = Field(default=DEFAULT_SCHEMA_VERSION)
     name: Annotated[str, StringConstraints(min_length=1)]
     version: ModelSemVer = Field(default=ModelSemVer(major=0, minor=1, patch=0))
     uuid: Annotated[

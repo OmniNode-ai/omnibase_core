@@ -49,69 +49,64 @@ src/omnibase_core/
     └── tool_infrastructure_orchestrator/              # ORCHESTRATOR example
 ```
 
+## Why Poetry?
+
+**This project uses Poetry as the mandated package manager for all ONEX projects.**
+
+### Benefits:
+- **Dependency Isolation**: Poetry manages virtual environments automatically
+- **Reproducible Builds**: Lock file ensures consistency across all environments
+- **Unified Tooling**: Single tool for dependency management, virtual environments, and task execution
+- **ONEX Standards**: Required for all ONEX framework projects
+
+### Key Principles:
+✅ **ALWAYS use `poetry run` for Python commands**
+✅ **ALWAYS use `poetry add` for dependencies**
+✅ **ALWAYS use `poetry install` for setup**
+
+❌ **NEVER use `pip install`**
+❌ **NEVER use direct `python` commands**
+❌ **NEVER manually manage virtual environments**
+
+## Quick Start
+
+```bash
+# Install all dependencies (including dev dependencies)
+poetry install
+
+# Run tests
+poetry run pytest tests/
+
+# Run type checking
+poetry run mypy src/omnibase_core/
+
+# Run code formatting
+poetry run black src/ tests/
+poetry run isort src/ tests/
+
+# Add a new dependency
+poetry add package-name
+
+# Add a dev dependency
+poetry add --group dev package-name
+```
+
 ## Setup Tasks
 
 ### 1. Initialize Git Repository
 ```bash
-cd /Volumes/PRO-G40/Code/omnibase_core
+# From the project root directory
 git init
 git add .
 git commit -m "Initial commit: ONEX core framework implementation"
 ```
 
-### 2. Create Python Packaging
-Create `pyproject.toml`:
-```toml
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "omnibase_core"
-version = "0.1.0"
-description = "ONEX Core Framework - Base classes and essential implementations"
-authors = [{name = "OmniNode Team", email = "team@omninode.ai"}]
-license = {text = "MIT"}
-requires-python = ">=3.11"
-dependencies = [
-    "omnibase_spi>=0.1.0",
-    "pydantic>=2.0.0",
-    "llama-index>=0.10.0",
-    "fastapi>=0.100.0",
-    "uvicorn>=0.20.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.21.0",
-    "mypy>=1.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "ruff>=0.1.0",
-]
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-dir]
-"" = "src"
-
-[tool.ruff]
-target-version = "py311"
-line-length = 88
-
-[tool.ruff.lint]
-select = ["E", "F", "W", "C90", "I", "N", "UP", "YTT", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "EM", "EXE", "ISC", "ICN", "G", "INP", "PIE", "T20", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "ARG", "PTH", "ERA", "PD", "PGH", "PL", "TRY", "NPY", "RUF"]
-ignore = ["S101"]  # Allow assert statements in tests
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-asyncio_mode = "auto"
-```
+### 2. Python Packaging Configuration
+The project uses Poetry for package management. Configuration is in `pyproject.toml` with Poetry-specific sections for:
+- Build system configuration
+- Project metadata and dependencies
+- Development dependencies
+- Tool configurations (ruff, pytest, mypy, etc.)
 
 ### 3. Strip Legacy Registry Dependencies from ONEXContainer
 **Current Issue**: ONEXContainer still has references to legacy registries that need removal:
@@ -140,13 +135,14 @@ find src/omnibase -type d -exec touch {}/__init__.py \;
 
 ### 5. Set Up Development Environment
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate
+# Install all dependencies (Poetry manages virtual environment automatically)
+poetry install
 
-# Install dependencies (after omnibase_spi is packaged)
-pip install -e ../omnibase_spi
-pip install -e .[dev]
+# Alternatively, activate Poetry's virtual environment shell
+poetry shell
+
+# Add local dependencies (if omnibase_spi is a local package)
+poetry add ../omnibase_spi --editable
 ```
 
 ### 6. Configure Testing Framework
@@ -157,6 +153,18 @@ touch tests/__init__.py
 touch tests/test_node_services.py
 touch tests/test_onex_container.py
 touch tests/test_error_handling.py
+```
+
+Run tests with Poetry:
+```bash
+# Run all tests
+poetry run pytest tests/
+
+# Run specific test file
+poetry run pytest tests/unit/test_node_services.py -v
+
+# Run with coverage
+poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 ```
 
 ### 7. Validate Example Node Implementations
@@ -279,13 +287,13 @@ class EventBusService(ProtocolEventBus):
 ### Immediate Tasks (Required for functionality)
 1. **Strip legacy registry dependencies** from ONEXContainer
 2. **Create complete package structure** with all __init__.py files
-3. **Set up Python packaging** (pyproject.toml)
+3. **Verify Python packaging** - Poetry configuration in pyproject.toml is already set up
 4. **Initialize git repository** and commit current state
 
 ### Development Setup (Required for development)
-5. **Set up development environment** with proper dependencies
+5. **Set up development environment** with `poetry install`
 6. **Create test framework** for validating base classes and DI container
-7. **Configure code quality tools** (ruff, mypy, black)
+7. **Run code quality tools** - `poetry run mypy`, `poetry run black`, etc.
 
 ### Documentation and Examples (Enhancement)
 8. **Create comprehensive tests** for all base classes and error handling

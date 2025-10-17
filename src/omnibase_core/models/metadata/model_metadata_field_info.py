@@ -19,10 +19,16 @@ from pydantic import BaseModel
 from omnibase_core.enums.enum_field_type import EnumFieldType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 from .model_field_identity import ModelFieldIdentity
 from .model_field_validation_rules import ModelFieldValidationRules
+
+# Default version constants
+DEFAULT_METADATA_VERSION = ModelSemVer(major=0, minor=1, patch=0)
+DEFAULT_PROTOCOL_VERSION = ModelSemVer(major=0, minor=1, patch=0)
+DEFAULT_NODE_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class ModelMetadataFieldInfo(BaseModel):
@@ -93,7 +99,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type=EnumFieldType.STRING,
-            default_value=ModelCliValue.from_string("0.1.0"),
+            default_value=ModelCliValue.from_string(str(DEFAULT_METADATA_VERSION)),
         )
 
     @classmethod
@@ -112,7 +118,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type=EnumFieldType.STRING,
-            default_value=ModelCliValue.from_string("0.1.0"),
+            default_value=ModelCliValue.from_string(str(DEFAULT_PROTOCOL_VERSION)),
         )
 
     @classmethod
@@ -149,7 +155,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type=EnumFieldType.STRING,
-            default_value=ModelCliValue.from_string("1.0.0"),
+            default_value=ModelCliValue.from_string(str(DEFAULT_NODE_VERSION)),
         )
 
     @classmethod

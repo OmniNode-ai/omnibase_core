@@ -82,7 +82,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
     success: bool = Field(
         default=..., description="Whether the tool execution was successful"
     )
-    result: dict[str, str | int | float | bool | list[Any]] | None = Field(
+    result: dict[str, Any] | None = Field(
         default=None,
         description="Tool execution result data (if successful)",
     )
@@ -145,7 +145,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
         source_node_name: str,
         tool_name: str,
         action: str,
-        result: dict[str, str | int | float | bool | list[Any]],
+        result: dict[str, Any],
         execution_time_ms: int,
         target_node_id: str | UUID,
         requester_id: str | UUID,

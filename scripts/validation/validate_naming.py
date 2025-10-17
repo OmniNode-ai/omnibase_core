@@ -296,6 +296,13 @@ class NamingConventionValidator:
         if category == "nodes" and self._is_basemodel_class(node):
             return
 
+        # Skip Model* prefixed classes when validating nodes category
+        # Per ONEX standards: "only nodes need node prefixes, otherwise they are models"
+        # Helper models in nodes/ directory (ModelEffectTransaction, ModelLoadBalancer, etc.)
+        # are correctly named with Model* prefix and should not be required to use Node* prefix
+        if category == "nodes" and class_name.startswith("Model"):
+            return
+
         # Skip Enum classes when validating non-enum categories
         # Enum classes should only be validated in the enums category
         if category != "enums" and self._is_enum_class(node):

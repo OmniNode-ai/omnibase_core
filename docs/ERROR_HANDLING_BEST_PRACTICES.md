@@ -718,7 +718,7 @@ class CircuitBreakerTimeoutError(CircuitBreakerError):
         )
 
 # Usage Example
-class ExternalServiceEffectNode(NodeEffectService):
+class ExternalServiceEffectNode(ModelServiceEffect):
     """EFFECT node with circuit breaker protection."""
 
     def __init__(self, container: ONEXContainer):

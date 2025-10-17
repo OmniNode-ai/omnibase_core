@@ -358,6 +358,30 @@ class MixinHealthCheck:
             cpu_usage_percent=0.0,
         )
 
+    def get_health_status(self) -> dict[str, Any]:
+        """
+        Get health status as a dictionary.
+
+        Returns a dictionary with basic health information including:
+        - node_id: Node identifier
+        - is_healthy: Boolean health status
+        - message: Health status message
+
+        Returns:
+            Dictionary with health status information
+        """
+        # Call the proper health_check method
+        health = self.health_check()
+
+        # Convert to dictionary format expected by tests
+        return {
+            "node_id": getattr(self, "node_id", "unknown"),
+            "is_healthy": health.status == EnumNodeHealthStatus.HEALTHY,
+            "status": health.status.value,
+            "message": health.message,
+            "timestamp": health.timestamp,
+        }
+
     def check_dependency_health(
         self,
         dependency_name: str,

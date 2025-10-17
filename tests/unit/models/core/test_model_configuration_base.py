@@ -10,7 +10,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core import ModelConfigurationBase, ModelTypedConfiguration
-from omnibase_core.primitives.model_semver import parse_semver_from_string
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class SampleConfigData(BaseModel):
@@ -101,7 +101,7 @@ class TestModelConfigurationBase:
         config.enabled = False
         assert config.is_enabled() is False
 
-        config.version = parse_semver_from_string("2.0.0")
+        config.version = ModelSemVer(major=2, minor=0, patch=0)
         assert config.get_version_or_default() == "2.0.0"
 
     def test_timestamp_update(self):
@@ -482,7 +482,7 @@ class TestConfigurationBaseEdgeCases:
         """Test serialize method returns proper dictionary."""
         data = SampleConfigData(endpoint="http://localhost", port=9000)
         config = ModelConfigurationBase.create_with_data("test", data)
-        config.version = parse_semver_from_string("1.2.3")
+        config.version = ModelSemVer(major=1, minor=2, patch=3)
 
         serialized = config.serialize()
 
@@ -545,7 +545,7 @@ class TestConfigurationBaseEdgeCases:
     def test_version_or_default_with_set_version(self):
         """Test get_version_or_default returns actual version when set."""
         config = ModelConfigurationBase[SampleConfigData](name="test")
-        config.version = parse_semver_from_string("3.2.1")
+        config.version = ModelSemVer(major=3, minor=2, patch=1)
 
         assert config.get_version_or_default() == "3.2.1"
 
