@@ -8,7 +8,7 @@ Defines log levels for ONEX logging systems.
 from enum import Enum
 
 
-class EnumEvents(str, Enum):
+class EnumLogLevel(str, Enum):
     """
     Logging level enumeration for ONEX logging systems.
 

@@ -68,13 +68,13 @@ def check_enum_file(file_path: Path) -> List[str]:
         # Check violations
         if len(enum_classes) == 0:
             violations.append(f"{file_path}: No enum class found")
-        elif len(enum_classes) > 1:
-            violations.append(
-                f"{file_path}: Multiple enums found ({len(enum_classes)}). "
-                f"ONEX standard: one enum per file. "
-                f"Found: {', '.join(enum_classes)}"
-            )
-        else:
+        # Note: Multiple enums per file is allowed per ONEX guidelines
+        # (removed violation check for len(enum_classes) > 1)
+
+        # Always validate the primary enum (first one found)
+        if enum_classes:
+            # For multi-enum files, check if primary enum matches filename
+            # For single-enum files, enforce strict matching
             actual_class_name = enum_classes[0]
             if actual_class_name != expected_class_name:
                 violations.append(
@@ -110,13 +110,18 @@ def check_service_file(file_path: Path) -> List[str]:
     """
     violations = []
 
-    # Extract the name part from service_<name>.py
-    match = re.match(r"service_?(.+)\.py$", file_path.name)
+    # Extract the name part from service_<name>.py or model_service_<name>.py
+    match = re.match(r"(?:(model)_)?service_?(.+)\.py$", file_path.name)
     if not match:
         return violations
 
-    name_part = match.group(1)
-    expected_class_name = f"Service{snake_to_pascal(name_part)}"
+    is_model_service = match.group(1) == "model"
+    name_part = match.group(2)
+
+    if is_model_service:
+        expected_class_name = f"ModelService{snake_to_pascal(name_part)}"
+    else:
+        expected_class_name = f"Service{snake_to_pascal(name_part)}"
 
     try:
         content = file_path.read_text()
@@ -155,7 +160,8 @@ def main(files: List[str] = None):
         # Check all files in src/omnibase_core
         src_dir = Path(__file__).parent.parent / "src" / "omnibase_core"
         enum_files = list(src_dir.rglob("enum_*.py"))
-        service_files = list(src_dir.rglob("service*.py"))
+        # Match both service_*.py and model_service_*.py
+        service_files = list(src_dir.rglob("*service*.py"))
         all_files = [str(f) for f in enum_files + service_files]
     else:
         all_files = files

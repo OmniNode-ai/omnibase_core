@@ -55,16 +55,28 @@ def extract_enum_class_code(file_path: Path, class_name: str) -> Tuple[str, List
 
     class_code = "\n".join(lines[class_start:class_end])
 
-    # Determine required imports
-    imports = ["from enum import Enum"]
+    # Determine required imports based on bases and code content
+    import_set = set()
 
-    # Check if class inherits from str, Enum, etc.
+    # Check class bases for special enum types
     for base in class_node.bases:
         if isinstance(base, ast.Name):
-            if base.id == "str" and "str" not in class_code:
-                # str is built-in, no import needed
-                pass
-        # Add other import logic if needed
+            if base.id in ("Enum", "StrEnum", "IntEnum"):
+                import_set.add(base.id)
+        elif isinstance(base, ast.Attribute):
+            if base.attr in ("Enum", "StrEnum", "IntEnum"):
+                import_set.add(base.attr)
+
+    # Check if auto() is used in the class code
+    if "auto()" in class_code:
+        import_set.add("auto")
+
+    # Build import statement
+    if not import_set:
+        # Fallback: assume basic Enum
+        imports = ["from enum import Enum"]
+    else:
+        imports = [f"from enum import {', '.join(sorted(import_set))}"]
 
     return class_code, imports
 

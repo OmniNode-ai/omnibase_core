@@ -23,6 +23,8 @@ Author: ONEX Framework Team
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_cache_eviction_policy import EnumCacheEvictionPolicy
+
 __all__ = ["ModelComputeCacheConfig"]
 
 
@@ -64,9 +66,8 @@ class ModelComputeCacheConfig(BaseModel):
         description="Time-to-live for cached entries in seconds. None = no expiration.",
     )
 
-    eviction_policy: str = Field(
-        default="lru",
-        pattern="^(lru|lfu|fifo)$",
+    eviction_policy: EnumCacheEvictionPolicy = Field(
+        default=EnumCacheEvictionPolicy.LRU,
         description="Cache eviction policy: lru (least recently used), lfu (least frequently used), fifo",
     )
 

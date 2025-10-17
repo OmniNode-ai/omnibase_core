@@ -32,6 +32,9 @@ class ExceptionHandlingValidator:
         Returns:
             True if valid, False if issues found
         """
+        # Track starting error count to return per-file validity
+        starting_error_count = len(self.errors)
+
         try:
             content = file_path.read_text()
             lines = content.split("\n")
@@ -82,7 +85,8 @@ class ExceptionHandlingValidator:
                             )
                         )
 
-            return len(self.errors) == 0
+            # Return True only if no NEW errors were added for this file
+            return len(self.errors) == starting_error_count
 
         except Exception as e:
             print(f"Error processing {file_path}: {e}", file=sys.stderr)

@@ -23,7 +23,10 @@ Author: ONEX Framework Team
 """
 
 from datetime import datetime, timedelta
+from time import monotonic
 from typing import Any
+
+from omnibase_core.enums.enum_cache_eviction_policy import EnumCacheEvictionPolicy
 
 __all__ = ["ModelComputeCache"]
 
@@ -55,7 +58,7 @@ class ModelComputeCache:
         max_size: int = 1000,
         default_ttl_minutes: int = 30,
         ttl_seconds: int | None = None,
-        eviction_policy: str = "lru",
+        eviction_policy: EnumCacheEvictionPolicy | str = EnumCacheEvictionPolicy.LRU,
         enable_stats: bool = True,
     ):
         """
@@ -65,23 +68,32 @@ class ModelComputeCache:
             max_size: Maximum number of cache entries (default: 1000)
             default_ttl_minutes: Default TTL in minutes (default: 30)
             ttl_seconds: TTL in seconds (overrides default_ttl_minutes if provided)
-            eviction_policy: Eviction policy - lru/lfu/fifo (default: lru)
+            eviction_policy: Eviction policy - EnumCacheEvictionPolicy or "lru"/"lfu"/"fifo" (default: LRU)
             enable_stats: Enable cache hit/miss statistics (default: True)
         """
         self.max_size = max_size
-        self.eviction_policy = eviction_policy
+        # Normalize eviction_policy to enum
+        if isinstance(eviction_policy, str):
+            self.eviction_policy = EnumCacheEvictionPolicy(eviction_policy)
+        else:
+            self.eviction_policy = eviction_policy
         self.enable_stats = enable_stats
 
-        # TTL handling: prefer seconds, fallback to minutes
+        # TTL handling: store as timedelta for precision
         if ttl_seconds is not None:
-            self.ttl_seconds = ttl_seconds
+            self.ttl = timedelta(seconds=ttl_seconds)
             self.default_ttl_minutes = ttl_seconds // 60 if ttl_seconds > 0 else 0
         else:
+            self.ttl = timedelta(minutes=default_ttl_minutes)
             self.default_ttl_minutes = default_ttl_minutes
-            self.ttl_seconds = default_ttl_minutes * 60
 
-        # Cache storage: key -> (value, expiry, access_count/frequency/insert_order)
-        self._cache: dict[str, tuple[Any, datetime, int]] = {}
+        # Cache storage: key -> (value, expiry, last_access_time|access_count)
+        # For LRU: last_access_time (float from monotonic())
+        # For LFU/FIFO: access_count (int)
+        self._cache: dict[str, tuple[Any, datetime, float | int]] = {}
+
+        # FIFO insertion counter
+        self._insert_order = 0
 
         # Statistics tracking
         self._stats = {
@@ -110,7 +122,7 @@ class ModelComputeCache:
                 self._stats["misses"] += 1
             return None
 
-        value, expiry, access_count = self._cache[cache_key]
+        value, expiry, access_metric = self._cache[cache_key]
 
         if datetime.now() > expiry:
             del self._cache[cache_key]
@@ -119,12 +131,14 @@ class ModelComputeCache:
                 self._stats["expirations"] += 1
             return None
 
-        # Update access count/frequency based on eviction policy
-        if self.eviction_policy == "lru":
-            self._cache[cache_key] = (value, expiry, access_count + 1)
-        elif self.eviction_policy == "lfu":
-            self._cache[cache_key] = (value, expiry, access_count + 1)
-        # FIFO doesn't update access count
+        # Update access metric based on eviction policy
+        if self.eviction_policy == EnumCacheEvictionPolicy.LRU:
+            # LRU: Update last access time (timestamp)
+            self._cache[cache_key] = (value, expiry, monotonic())
+        elif self.eviction_policy == EnumCacheEvictionPolicy.LFU:
+            # LFU: Increment access count
+            self._cache[cache_key] = (value, expiry, int(access_metric) + 1)
+        # FIFO doesn't update access metric
 
         if self.enable_stats:
             self._stats["hits"] += 1
@@ -143,24 +157,34 @@ class ModelComputeCache:
         if len(self._cache) >= self.max_size:
             self._evict()
 
-        ttl = ttl_minutes or self.default_ttl_minutes
-        expiry = datetime.now() + timedelta(minutes=ttl)
-        self._cache[cache_key] = (value, expiry, 1)
+        ttl = timedelta(minutes=ttl_minutes) if ttl_minutes is not None else self.ttl
+        expiry = datetime.now() + ttl
+
+        # Set initial access metric based on eviction policy
+        if self.eviction_policy == EnumCacheEvictionPolicy.LRU:
+            access_metric = monotonic()  # Current timestamp
+        elif self.eviction_policy == EnumCacheEvictionPolicy.LFU:
+            access_metric = 1  # Initial access count
+        else:  # FIFO
+            self._insert_order += 1
+            access_metric = self._insert_order  # Insertion order
+
+        self._cache[cache_key] = (value, expiry, access_metric)
 
     def _evict(self) -> None:
         """Evict item based on configured eviction policy."""
         if not self._cache:
             return
 
-        if self.eviction_policy == "lru":
-            # Evict least recently used (lowest access count)
+        if self.eviction_policy == EnumCacheEvictionPolicy.LRU:
+            # Evict least recently used (smallest timestamp = oldest access)
             evict_key = min(self._cache.keys(), key=lambda k: self._cache[k][2])
-        elif self.eviction_policy == "lfu":
-            # Evict least frequently used (lowest frequency count)
+        elif self.eviction_policy == EnumCacheEvictionPolicy.LFU:
+            # Evict least frequently used (lowest access count)
             evict_key = min(self._cache.keys(), key=lambda k: self._cache[k][2])
-        else:  # fifo
-            # Evict first in (oldest insertion)
-            evict_key = next(iter(self._cache))
+        else:  # FIFO
+            # Evict first in (lowest insertion order)
+            evict_key = min(self._cache.keys(), key=lambda k: self._cache[k][2])
 
         del self._cache[evict_key]
 

@@ -10,7 +10,6 @@ from typing import Dict
 
 # Map of incorrect class names to correct class names for simple renames
 SIMPLE_RENAMES: Dict[str, str] = {
-    "EnumLogLevel": "EnumEvents",
     "EnumGitHubRunnerOS": "EnumGithubRunnerOs",
     "EnumIOType": "EnumIoType",
     "EnumRSDTriggerType": "EnumRsdTriggerType",

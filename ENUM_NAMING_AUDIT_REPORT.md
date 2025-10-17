@@ -18,8 +18,8 @@ Total violations fixed: **83** (includes simple renames + casing fixes)
 - `EnumKVOperationType` → `EnumKvOperationType`
 - `EnumIssueTypeEnum` → `EnumIssueType`
 
-#### 2. Simple Enum Renames (8 fixes, 78 files updated)
-- `EnumLogLevel` → `EnumEvents` (61 files updated)
+#### 2. Simple Enum Renames (7 fixes, 17 files updated)
+- ~~`EnumLogLevel` → `EnumEvents` (61 files updated)~~ **REVERTED** - This was an incorrect rename. The class represents log levels, not events. Reverted in commits 5c0505d5 and 46e07720.
 - `EnumGitHubRunnerOS` → `EnumGithubRunnerOs` (3 files)
 - `EnumIOType` → `EnumIoType` (3 files)
 - `EnumRSDTriggerType` → `EnumRsdTriggerType` (1 file)
