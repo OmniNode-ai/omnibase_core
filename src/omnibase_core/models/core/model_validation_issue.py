@@ -11,5 +11,5 @@ class ModelValidationIssue(BaseModel):
     line_number: int
     issue_type: EnumIssueType
     description: str
-    severity: EnumEvents
+    severity: EnumLogLevel
     suggested_fix: str = ""

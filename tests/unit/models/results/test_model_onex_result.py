@@ -64,15 +64,15 @@ class TestModelOnexResultBasicInstantiation:
     def test_instantiation_with_messages(self):
         """Test creating result with messages list."""
         messages = [
-            ModelOnexMessage(summary="Test passed", level=EnumEvents.INFO),
-            ModelOnexMessage(summary="Warning found", level=EnumEvents.WARNING),
+            ModelOnexMessage(summary="Test passed", level=EnumLogLevel.INFO),
+            ModelOnexMessage(summary="Warning found", level=EnumLogLevel.WARNING),
         ]
 
         result = ModelOnexResult(status=EnumOnexStatus.SUCCESS, messages=messages)
 
         assert len(result.messages) == 2
         assert result.messages[0].summary == "Test passed"
-        assert result.messages[1].level == EnumEvents.WARNING
+        assert result.messages[1].level == EnumLogLevel.WARNING
 
 
 class TestModelOnexResultFieldValidation:

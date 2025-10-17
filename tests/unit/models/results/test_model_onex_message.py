@@ -4,7 +4,7 @@ Comprehensive tests for ModelOnexMessage.
 Tests cover:
 - Basic instantiation with required fields
 - Optional field handling
-- EnumEvents integration
+- EnumLogLevel integration
 - File location fields (file, line, column)
 - Context field with ModelOnexMessageContext
 - Timestamp handling
@@ -33,29 +33,29 @@ class TestModelOnexMessageBasicInstantiation:
         message = ModelOnexMessage(summary="Test message")
 
         assert message.summary == "Test message"
-        assert message.level == EnumEvents.INFO  # Default level
+        assert message.level == EnumLogLevel.INFO  # Default level
         assert message.suggestions is None
         assert message.remediation is None
 
     def test_instantiation_with_summary_and_level(self):
         """Test creating message with summary and level."""
-        message = ModelOnexMessage(summary="Error occurred", level=EnumEvents.ERROR)
+        message = ModelOnexMessage(summary="Error occurred", level=EnumLogLevel.ERROR)
 
         assert message.summary == "Error occurred"
-        assert message.level == EnumEvents.ERROR
+        assert message.level == EnumLogLevel.ERROR
 
 
 class TestModelOnexMessageLevelField:
-    """Test level field with EnumEvents."""
+    """Test level field with EnumLogLevel."""
 
     def test_all_log_levels(self):
-        """Test instantiation with all EnumEvents values."""
+        """Test instantiation with all EnumLogLevel values."""
         levels = [
-            EnumEvents.DEBUG,
-            EnumEvents.INFO,
-            EnumEvents.WARNING,
-            EnumEvents.ERROR,
-            EnumEvents.CRITICAL,
+            EnumLogLevel.DEBUG,
+            EnumLogLevel.INFO,
+            EnumLogLevel.WARNING,
+            EnumLogLevel.ERROR,
+            EnumLogLevel.CRITICAL,
         ]
 
         for level in levels:
@@ -65,10 +65,10 @@ class TestModelOnexMessageLevelField:
     def test_level_defaults_to_info(self):
         """Test that level defaults to INFO."""
         message = ModelOnexMessage(summary="Test")
-        assert message.level == EnumEvents.INFO
+        assert message.level == EnumLogLevel.INFO
 
     def test_level_must_be_valid_enum(self):
-        """Test that level must be valid EnumEvents value."""
+        """Test that level must be valid EnumLogLevel value."""
         with pytest.raises(ValidationError):
             ModelOnexMessage(summary="Test", level="invalid_level")
 
@@ -312,19 +312,19 @@ class TestModelOnexMessageSeverityField:
     """Test severity field (in addition to level)."""
 
     def test_severity_field_with_log_level(self):
-        """Test severity field using EnumEvents."""
+        """Test severity field using EnumLogLevel."""
         message = ModelOnexMessage(
             summary="Critical issue",
-            level=EnumEvents.ERROR,
-            severity=EnumEvents.CRITICAL,
+            level=EnumLogLevel.ERROR,
+            severity=EnumLogLevel.CRITICAL,
         )
 
-        assert message.level == EnumEvents.ERROR
-        assert message.severity == EnumEvents.CRITICAL
+        assert message.level == EnumLogLevel.ERROR
+        assert message.severity == EnumLogLevel.CRITICAL
 
     def test_severity_field_optional(self):
         """Test that severity field is optional."""
-        message = ModelOnexMessage(summary="Info message", level=EnumEvents.INFO)
+        message = ModelOnexMessage(summary="Info message", level=EnumLogLevel.INFO)
         assert message.severity is None
 
 
@@ -379,7 +379,7 @@ class TestModelOnexMessageSerialization:
         """Test model_dump() produces correct dictionary."""
         message = ModelOnexMessage(
             summary="Test message",
-            level=EnumEvents.WARNING,
+            level=EnumLogLevel.WARNING,
             file="test.py",
             line=10,
         )
@@ -387,13 +387,13 @@ class TestModelOnexMessageSerialization:
         dumped = message.model_dump()
 
         assert dumped["summary"] == "Test message"
-        assert dumped["level"] == EnumEvents.WARNING
+        assert dumped["level"] == EnumLogLevel.WARNING
         assert dumped["file"] == "test.py"
         assert dumped["line"] == 10
 
     def test_model_dump_exclude_none(self):
         """Test model_dump(exclude_none=True) removes None fields."""
-        message = ModelOnexMessage(summary="Test", level=EnumEvents.INFO)
+        message = ModelOnexMessage(summary="Test", level=EnumLogLevel.INFO)
 
         dumped = message.model_dump(exclude_none=True)
 
@@ -406,7 +406,7 @@ class TestModelOnexMessageSerialization:
         """Test JSON serialization roundtrip."""
         original = ModelOnexMessage(
             summary="Test message",
-            level=EnumEvents.ERROR,
+            level=EnumLogLevel.ERROR,
             file="src/main.py",
             line=42,
             code="E001",
@@ -432,8 +432,8 @@ class TestModelOnexMessageComplexScenarios:
         )
         message = ModelOnexMessage(
             summary="Syntax error detected",
-            level=EnumEvents.ERROR,
-            severity=EnumEvents.CRITICAL,
+            level=EnumLogLevel.ERROR,
+            severity=EnumLogLevel.CRITICAL,
             file="src/main.py",
             line=42,
             column=15,
@@ -449,7 +449,7 @@ class TestModelOnexMessageComplexScenarios:
         )
 
         assert message.summary == "Syntax error detected"
-        assert message.level == EnumEvents.ERROR
+        assert message.level == EnumLogLevel.ERROR
         assert message.file == "src/main.py"
         assert message.line == 42
         assert message.fixable is True
@@ -459,7 +459,7 @@ class TestModelOnexMessageComplexScenarios:
         """Test warning message with documentation."""
         message = ModelOnexMessage(
             summary="Deprecated API usage",
-            level=EnumEvents.WARNING,
+            level=EnumLogLevel.WARNING,
             file="src/api.py",
             line=100,
             details="This API will be removed in version 2.0",
@@ -467,7 +467,7 @@ class TestModelOnexMessageComplexScenarios:
             suggestions=["Use new API v2"],
         )
 
-        assert message.level == EnumEvents.WARNING
+        assert message.level == EnumLogLevel.WARNING
         assert message.doc_link is not None
         assert "docs.example.com" in message.doc_link
 

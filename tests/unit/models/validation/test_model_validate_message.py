@@ -15,7 +15,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums import EnumEvents
+from omnibase_core.enums import EnumLogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
 # Import from actual implementation files for proper coverage tracking
@@ -143,7 +143,7 @@ class TestModelValidateMessageInstantiation:
         """Test ModelValidateMessage with only required message field."""
         msg = ModelValidateMessage(message="Test error")
         assert msg.message == "Test error"
-        assert msg.severity == EnumEvents.ERROR
+        assert msg.severity == EnumLogLevel.ERROR
         assert msg.code == "unknown"
         assert msg.file is None
         assert msg.line is None
@@ -163,7 +163,7 @@ class TestModelValidateMessageInstantiation:
             message="Username is required",
             file="/path/to/file.py",
             line=42,
-            severity=EnumEvents.CRITICAL,
+            severity=EnumLogLevel.CRITICAL,
             code="ERR_001",
             context=context,
         )
@@ -171,7 +171,7 @@ class TestModelValidateMessageInstantiation:
         assert msg.message == "Username is required"
         assert msg.file == "/path/to/file.py"
         assert msg.line == 42
-        assert msg.severity == EnumEvents.CRITICAL
+        assert msg.severity == EnumLogLevel.CRITICAL
         assert msg.code == "ERR_001"
         assert msg.context is not None
         assert msg.context.field == "username"
@@ -179,7 +179,7 @@ class TestModelValidateMessageInstantiation:
     def test_default_severity(self):
         """Test default severity is ERROR."""
         msg = ModelValidateMessage(message="Test")
-        assert msg.severity == EnumEvents.ERROR
+        assert msg.severity == EnumLogLevel.ERROR
 
     def test_default_code(self):
         """Test default code is 'unknown'."""
@@ -202,11 +202,11 @@ class TestModelValidateMessageInstantiation:
     def test_various_severity_levels(self):
         """Test message with various severity levels."""
         for level in [
-            EnumEvents.DEBUG,
-            EnumEvents.INFO,
-            EnumEvents.WARNING,
-            EnumEvents.ERROR,
-            EnumEvents.CRITICAL,
+            EnumLogLevel.DEBUG,
+            EnumLogLevel.INFO,
+            EnumLogLevel.WARNING,
+            EnumLogLevel.ERROR,
+            EnumLogLevel.CRITICAL,
         ]:
             msg = ModelValidateMessage(message="Test", severity=level)
             assert msg.severity == level
@@ -257,8 +257,8 @@ class TestModelValidateMessageComputeHash:
 
     def test_compute_hash_includes_severity(self):
         """Test hash includes severity."""
-        msg1 = ModelValidateMessage(message="Test", severity=EnumEvents.ERROR)
-        msg2 = ModelValidateMessage(message="Test", severity=EnumEvents.WARNING)
+        msg1 = ModelValidateMessage(message="Test", severity=EnumLogLevel.ERROR)
+        msg2 = ModelValidateMessage(message="Test", severity=EnumLogLevel.WARNING)
 
         hash1 = msg1.compute_hash()
         hash2 = msg2.compute_hash()
@@ -342,7 +342,7 @@ class TestModelValidateMessageToJson:
             message="Test message",
             file="test.py",
             line=10,
-            severity=EnumEvents.WARNING,
+            severity=EnumLogLevel.WARNING,
             code="WARN_001",
             context=ctx,
         ).with_hash()
@@ -370,7 +370,7 @@ class TestModelValidateMessageToText:
 
     def test_to_text_includes_severity(self):
         """Test to_text includes severity."""
-        msg = ModelValidateMessage(message="Test error", severity=EnumEvents.ERROR)
+        msg = ModelValidateMessage(message="Test error", severity=EnumLogLevel.ERROR)
         text = msg.to_text()
 
         assert "ERROR" in text
@@ -442,7 +442,7 @@ class TestModelValidateMessageToCi:
 
     def test_to_ci_includes_severity(self):
         """Test to_ci includes severity level."""
-        msg = ModelValidateMessage(message="Test error", severity=EnumEvents.ERROR)
+        msg = ModelValidateMessage(message="Test error", severity=EnumLogLevel.ERROR)
         ci_str = msg.to_ci()
 
         assert "error" in ci_str
@@ -477,7 +477,7 @@ class TestModelValidateMessageToCi:
             message="Validation failed",
             file="src/main.py",
             line=10,
-            severity=EnumEvents.ERROR,
+            severity=EnumLogLevel.ERROR,
         )
         ci_str = msg.to_ci()
 
@@ -797,7 +797,7 @@ class TestValidationModelsIntegration:
             message="Email validation failed",
             file="user.py",
             line=42,
-            severity=EnumEvents.ERROR,
+            severity=EnumLogLevel.ERROR,
             code="VALIDATION_EMAIL",
             context=ctx1,
         ).with_hash()
@@ -806,7 +806,7 @@ class TestValidationModelsIntegration:
             message="Age validation failed",
             file="user.py",
             line=45,
-            severity=EnumEvents.ERROR,
+            severity=EnumLogLevel.ERROR,
             code="VALIDATION_AGE",
             context=ctx2,
         ).with_hash()
@@ -840,7 +840,7 @@ class TestValidationModelsIntegration:
         """Test validation result with warnings."""
         msg = ModelValidateMessage(
             message="Deprecated field usage",
-            severity=EnumEvents.WARNING,
+            severity=EnumLogLevel.WARNING,
             code="DEPRECATED",
         )
 
@@ -852,7 +852,7 @@ class TestValidationModelsIntegration:
 
         assert result.status == EnumOnexStatus.WARNING
         assert len(result.messages) == 1
-        assert result.messages[0].severity == EnumEvents.WARNING
+        assert result.messages[0].severity == EnumLogLevel.WARNING
 
     def test_serialization_round_trip_complete(self):
         """Test complete serialization round trip."""

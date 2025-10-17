@@ -13,7 +13,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.enums.enum_events import EnumEvents as LogLevel
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_service_mode import EnumServiceMode
 from omnibase_core.models.service.model_event_bus_config import ModelEventBusConfig
 from omnibase_core.models.service.model_health_check_config import (

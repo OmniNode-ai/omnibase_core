@@ -10,7 +10,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from omnibase_core.enums import EnumEvents
+from omnibase_core.enums import EnumLogLevel
 from omnibase_core.models.core.model_base_error import ModelBaseError
 
 from .model_validate_message_context import ModelValidateMessageContext

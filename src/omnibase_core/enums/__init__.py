@@ -151,7 +151,7 @@ from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 
 
 # Event and logging enums
-# from .events import EnumEvents  # Conflicts with enum_log_level.EnumEvents
+# from .events import EnumLogLevel  # Conflicts with enum_log_level.EnumLogLevel
 
 
 __all__ = [
