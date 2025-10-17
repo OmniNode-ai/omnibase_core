@@ -31,7 +31,7 @@ class ModelEffectTransaction:
     Rollback Semantics:
         - Rollback failures are logged and returned, never silently swallowed
         - Partial rollback failures are captured with details of which operations failed
-        - Original exception is preserved via exception chaining
+        - Original exception details are captured in error context (no re-raise here)
         - All rollback attempts are made even if some fail
     """
 
@@ -83,10 +83,9 @@ class ModelEffectTransaction:
 
         Behavior:
             - Attempts ALL rollbacks even if some fail (no fail-fast)
-            - State set to ROLLED_BACK regardless of partial failures
+            - State set to ROLLED_BACK only if all rollbacks succeed, FAILED otherwise
             - Rollback failures captured in rollback_failures field
         """
-        self.state = EnumTransactionState.ROLLED_BACK
         failures: list[ModelOnexError] = []
 
         for idx, rollback_func in enumerate(reversed(self.rollback_operations)):
@@ -158,5 +157,12 @@ class ModelEffectTransaction:
                     "total_operations": len(self.rollback_operations),
                 },
             )
+
+        # Set final state based on rollback success
+        self.state = (
+            EnumTransactionState.ROLLED_BACK
+            if not failures
+            else EnumTransactionState.FAILED
+        )
 
         return (len(failures) == 0, failures)

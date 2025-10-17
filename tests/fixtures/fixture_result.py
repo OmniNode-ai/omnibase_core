@@ -105,8 +105,13 @@ class ResultFixtures(TestFixtureBase):
         defaults = {
             "exit_code": 0,
             "success": True,
-            "errors": [],
             "metadata": None,
         }
         defaults.update(base_fields)
-        return TestFixtureBase.construct_many(ModelBaseResult, count=count, **defaults)
+        return [
+            TestFixtureBase.construct(
+                ModelBaseResult,
+                **{**defaults, "errors": []},
+            )
+            for _ in range(count)
+        ]

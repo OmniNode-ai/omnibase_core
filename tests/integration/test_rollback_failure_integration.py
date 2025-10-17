@@ -204,62 +204,41 @@ class TestRollbackFailureIntegration:
     async def test_cleanup_handles_rollback_failures(self, container):
         """Test that node cleanup handles rollback failures gracefully."""
 
-        cleanup_rollback_failures = []
+        node_effect = NodeEffect(container)
 
-        def track_cleanup_failures(transaction, errors):
-            cleanup_rollback_failures.append(len(errors))
-
-        node_effect = NodeEffect(container, on_rollback_failure=track_cleanup_failures)
-
-        # Create a transaction but don't commit it
-        transaction_id = uuid4()
-
-        async def handler_with_pending_transaction(operation_data, transaction):
-            # Add operation that will fail on rollback
-            def failing_rollback():
-                raise ValueError("Rollback failed during cleanup")
-
-            if transaction:
-                transaction.add_operation("op", operation_data, failing_rollback)
-
-            # Return without raising - transaction remains active
-            return {"success": True}
-
-        node_effect.effect_handlers[EnumEffectType.FILE_OPERATION] = (
-            handler_with_pending_transaction
+        # Get baseline metrics before triggering rollback failure
+        baseline_metrics = await node_effect.get_effect_metrics()
+        baseline_rollback_failures = baseline_metrics["transaction_management"].get(
+            "rollback_failures_total", 0.0
         )
 
-        # Execute operation that leaves transaction active
-        effect_input = ModelEffectInput(
-            effect_type=EnumEffectType.FILE_OPERATION,
-            operation_data={"test": "data"},
-            transaction_enabled=True,
-            retry_enabled=False,
-        )
+        # Use transaction_context with failing rollback
+        # Raise exception to trigger rollback which will fail
+        try:
+            async with node_effect.transaction_context() as tx:
 
-        # This will leave an active transaction
-        # (In real scenario, this shouldn't happen, but testing cleanup)
-        # We need to manually leave a transaction active for this test
-        # Let's use transaction_context instead
-        async with node_effect.transaction_context() as tx:
+                def failing_rollback():
+                    raise ValueError("Cleanup rollback failed")
 
-            def failing_rollback():
-                raise ValueError("Cleanup rollback failed")
+                tx.add_operation("test", {"data": "test"}, failing_rollback)
 
-            tx.add_operation("test", {"data": "test"}, failing_rollback)
+                # Raise exception to trigger rollback
+                raise RuntimeError("Trigger rollback")
+        except ModelOnexError:
+            # Expected - rollback failed
+            pass
 
-            # Add to active transactions manually to simulate incomplete transaction
-            # (this simulates a bug where transaction wasn't cleaned up)
-
-        # Now cleanup the node
+        # Call cleanup to ensure any remaining state is cleaned up
         await node_effect.cleanup()
 
-        # Verify metrics tracked cleanup rollback failures
-        # Note: cleanup doesn't trigger callback by default, but it does update metrics
+        # Verify metrics tracked the rollback failure
         metrics = await node_effect.get_effect_metrics()
+        tx_metrics = metrics["transaction_management"]
 
-        # The context manager above should have triggered rollback
-        # If there were active transactions during cleanup, they would be rolled back
+        # Assert rollback failures increased by 1
+        assert tx_metrics["rollback_failures_total"] == baseline_rollback_failures + 1.0
+        # Verify at least one operation failed during rollback
+        assert tx_metrics["failed_operation_count_min"] >= 1.0
 
     @pytest.mark.asyncio
     async def test_async_rollback_failure_handling(self, container):

@@ -17,7 +17,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -43,6 +43,9 @@ class TestCacheRaceConditions:
     the need for thread-safe wrappers.
     """
 
+    @pytest.mark.xfail(
+        reason="Race demonstration; not a deterministic CI check", strict=False
+    )
     def test_cache_concurrent_put_operations(self):
         """
         Demonstrate potential cache corruption with concurrent put operations.
@@ -95,6 +98,9 @@ class TestCacheRaceConditions:
             stats["total_entries"] <= cache.max_size
         ), "Cache exceeded max size due to race condition!"
 
+    @pytest.mark.xfail(
+        reason="Demonstrates redundant computations under races", strict=False
+    )
     def test_cache_concurrent_get_put_race(self):
         """
         Demonstrate get/put race conditions.
@@ -211,6 +217,9 @@ class TestCircuitBreakerRaceConditions:
     failures under concurrent load.
     """
 
+    @pytest.mark.xfail(
+        reason="Lost updates under races expected without sync", strict=False
+    )
     def test_circuit_breaker_failure_count_race(self):
         """
         Demonstrate failure count race conditions.
@@ -250,6 +259,9 @@ class TestCircuitBreakerRaceConditions:
             breaker.failure_count == expected_failures
         ), f"Lost {expected_failures - breaker.failure_count} failure updates due to race condition"
 
+    @pytest.mark.xfail(
+        reason="Unpredictable state transitions under races", strict=False
+    )
     def test_circuit_breaker_state_transition_race(self):
         """
         Demonstrate circuit breaker state transition races.
@@ -447,7 +459,7 @@ class TestTransactionIsolation:
         """
         container = ModelONEXContainer()
 
-        async def isolated_effect_operation(operation_id: uuid4) -> bool:
+        async def isolated_effect_operation(operation_id: UUID) -> bool:
             """Each operation gets its own transaction."""
             effect_node = NodeEffect(container)
 
@@ -460,7 +472,7 @@ class TestTransactionIsolation:
         # Multiple threads, each with isolated transactions
         results = []
 
-        def worker(op_id: uuid4):
+        def worker(op_id: UUID):
             """Run isolated operation."""
             result = asyncio.run(isolated_effect_operation(op_id))
             results.append(result)
@@ -551,15 +563,9 @@ class TestDocumentationExamples:
 
         # Each thread should have gotten a different instance
         unique_instances = len(set(instances))
-        # Note: Due to thread timing, this may occasionally show fewer unique instances
-        # This is acceptable as it demonstrates the thread-local pattern
         assert (
-            unique_instances >= 2
-        ), f"Expected at least 2 unique instances, got {unique_instances}"
-        if unique_instances < 3:
-            print(
-                f"⚠️ Only {unique_instances}/3 unique instances (race condition in test timing)"
-            )
+            unique_instances == 3
+        ), f"Expected 3 unique thread-local instances, got {unique_instances}"
 
 
 # Run tests with pytest

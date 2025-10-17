@@ -11,6 +11,7 @@ import time
 
 import pytest
 
+from omnibase_core.enums.enum_cache_eviction_policy import EnumCacheEvictionPolicy
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
@@ -48,7 +49,7 @@ class TestCacheConfigIntegration:
         custom_config = ModelComputeCacheConfig(
             max_size=512,
             ttl_seconds=7200,
-            eviction_policy="lfu",
+            eviction_policy=EnumCacheEvictionPolicy.LFU,
             enable_stats=True,
         )
 
@@ -60,13 +61,16 @@ class TestCacheConfigIntegration:
         # Verify custom config
         assert container.compute_cache_config.max_size == 512
         assert container.compute_cache_config.ttl_seconds == 7200
-        assert container.compute_cache_config.eviction_policy == "lfu"
+        assert (
+            container.compute_cache_config.eviction_policy
+            == EnumCacheEvictionPolicy.LFU
+        )
 
         # Create NodeCompute and verify it uses custom config
         node = NodeCompute(container)
         assert node.computation_cache.max_size == 512
         assert node.computation_cache.ttl_seconds == 7200
-        assert node.computation_cache.eviction_policy == "lfu"
+        assert node.computation_cache.eviction_policy == EnumCacheEvictionPolicy.LFU
         assert node.computation_cache.enable_stats is True
 
     @pytest.mark.asyncio
@@ -74,7 +78,7 @@ class TestCacheConfigIntegration:
         """Test that different TTL configurations affect cache expiration behavior."""
         # Config 1: Short TTL (60 seconds = 1 minute, cache uses minute granularity)
         short_ttl_config = ModelComputeCacheConfig(
-            max_size=100, ttl_seconds=60, eviction_policy="lru"
+            max_size=100, ttl_seconds=60, eviction_policy=EnumCacheEvictionPolicy.LRU
         )
 
         container1 = await create_model_onex_container(
@@ -85,7 +89,7 @@ class TestCacheConfigIntegration:
 
         # Config 2: Long TTL (3600 seconds = 1 hour)
         long_ttl_config = ModelComputeCacheConfig(
-            max_size=100, ttl_seconds=3600, eviction_policy="lru"
+            max_size=100, ttl_seconds=3600, eviction_policy=EnumCacheEvictionPolicy.LRU
         )
 
         container2 = await create_model_onex_container(
@@ -190,12 +194,18 @@ class TestCacheConfigIntegration:
         """Test that LRU and LFU eviction policies behave differently."""
         # LRU config (evict least recently used)
         lru_config = ModelComputeCacheConfig(
-            max_size=2, ttl_seconds=3600, eviction_policy="lru", enable_stats=True
+            max_size=2,
+            ttl_seconds=3600,
+            eviction_policy=EnumCacheEvictionPolicy.LRU,
+            enable_stats=True,
         )
 
         # LFU config (evict least frequently used)
         lfu_config = ModelComputeCacheConfig(
-            max_size=2, ttl_seconds=3600, eviction_policy="lfu", enable_stats=True
+            max_size=2,
+            ttl_seconds=3600,
+            eviction_policy=EnumCacheEvictionPolicy.LFU,
+            enable_stats=True,
         )
 
         container_lru = await create_model_onex_container(
@@ -276,7 +286,7 @@ class TestCacheConfigIntegration:
         """Test that multiple NodeCompute instances share container cache config."""
         # Create single container with custom config
         custom_config = ModelComputeCacheConfig(
-            max_size=256, ttl_seconds=1800, eviction_policy="fifo"
+            max_size=256, ttl_seconds=1800, eviction_policy=EnumCacheEvictionPolicy.FIFO
         )
 
         container = await create_model_onex_container(
@@ -293,9 +303,9 @@ class TestCacheConfigIntegration:
         assert node2.computation_cache.max_size == 256
         assert node3.computation_cache.max_size == 256
 
-        assert node1.computation_cache.eviction_policy == "fifo"
-        assert node2.computation_cache.eviction_policy == "fifo"
-        assert node3.computation_cache.eviction_policy == "fifo"
+        assert node1.computation_cache.eviction_policy == EnumCacheEvictionPolicy.FIFO
+        assert node2.computation_cache.eviction_policy == EnumCacheEvictionPolicy.FIFO
+        assert node3.computation_cache.eviction_policy == EnumCacheEvictionPolicy.FIFO
 
         # Note: Each node has its own cache instance (not shared)
         # This is expected - they share CONFIG, not cache state
@@ -325,7 +335,7 @@ class TestCacheConfigIntegration:
         production_config = ModelComputeCacheConfig(
             max_size=512,
             ttl_seconds=3600,  # 1 hour
-            eviction_policy="lru",
+            eviction_policy=EnumCacheEvictionPolicy.LRU,
             enable_stats=True,
         )
 

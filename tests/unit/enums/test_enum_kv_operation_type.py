@@ -7,7 +7,7 @@ import pytest
 from omnibase_core.enums.enum_kv_operation_type import EnumKvOperationType
 
 
-class TestEnumKVOperationType:
+class TestEnumKvOperationType:
     """Test cases for EnumKvOperationType"""
 
     def test_enum_values(self):

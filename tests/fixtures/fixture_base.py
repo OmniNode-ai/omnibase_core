@@ -6,6 +6,7 @@ NEVER import or use these patterns in production code (src/).
 The pre-commit hook 'no-pydantic-bypass-in-prod' enforces this restriction.
 """
 
+from copy import deepcopy
 from typing import Type, TypeVar
 
 from pydantic import BaseModel
@@ -89,7 +90,7 @@ class TestFixtureBase:
         """Construct many model instances efficiently.
 
         Creates multiple instances with incremental IDs for list-based tests.
-        All instances share the same base field values except for 'id'.
+        Each instance gets a deep copy of base_fields to avoid shared state.
 
         Args:
             model_class: The Pydantic model class
@@ -112,4 +113,12 @@ class TestFixtureBase:
             - Useful for batch processing tests
             - ~10-1000μs for 100 models (vs ~10-100ms with validation)
         """
-        return [model_class.model_construct(**base_fields, id=i) for i in range(count)]
+        items: list[T] = []
+        model_fields = getattr(model_class, "model_fields", {}) or {}
+        has_id_field = "id" in model_fields
+        for i in range(count):
+            fields = deepcopy(base_fields)
+            if has_id_field:
+                fields["id"] = i
+            items.append(model_class.model_construct(**fields))
+        return items

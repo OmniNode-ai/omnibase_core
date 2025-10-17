@@ -26,8 +26,10 @@ Exit Codes:
 
 import re
 import sys
+import tokenize
+from io import StringIO
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Set, Tuple
 
 # Patterns that indicate Pydantic validation bypass
 BYPASS_PATTERNS = [
@@ -57,8 +59,85 @@ EXCLUDED_FILES = [
 ]
 
 
+def get_string_and_comment_ranges(content: str) -> dict[int, list[tuple[int, int]]]:
+    """Use tokenize to identify character ranges that are strings or comments.
+
+    Args:
+        content: File content as string
+
+    Returns:
+        Dictionary mapping line numbers (1-indexed) to list of (start_col, end_col)
+        tuples indicating character ranges that are strings or comments
+    """
+    string_comment_ranges: dict[int, list[tuple[int, int]]] = {}
+
+    try:
+        tokens = tokenize.generate_tokens(StringIO(content).readline)
+        for token in tokens:
+            if token.type in (tokenize.STRING, tokenize.COMMENT):
+                start_line, start_col = token.start
+                end_line, end_col = token.end
+
+                # For single-line tokens
+                if start_line == end_line:
+                    if start_line not in string_comment_ranges:
+                        string_comment_ranges[start_line] = []
+                    string_comment_ranges[start_line].append((start_col, end_col))
+                else:
+                    # For multi-line tokens (docstrings), mark entire lines
+                    for line_num in range(start_line, end_line + 1):
+                        if line_num not in string_comment_ranges:
+                            string_comment_ranges[line_num] = []
+                        # For first and last line, use actual positions
+                        if line_num == start_line:
+                            string_comment_ranges[line_num].append((start_col, 9999))
+                        elif line_num == end_line:
+                            string_comment_ranges[line_num].append((0, end_col))
+                        else:
+                            # Middle lines - entire line is in string
+                            string_comment_ranges[line_num].append((0, 9999))
+    except tokenize.TokenError:
+        # If tokenization fails (e.g., incomplete file), fall back to empty dict
+        # This means we'll check all lines, which is safer than skipping them
+        pass
+
+    return string_comment_ranges
+
+
+def is_match_in_string_or_comment(
+    line_num: int,
+    match_start: int,
+    match_end: int,
+    ranges: dict[int, list[tuple[int, int]]],
+) -> bool:
+    """Check if a regex match is inside a string or comment.
+
+    Args:
+        line_num: Line number (1-indexed)
+        match_start: Start column of match
+        match_end: End column of match
+        ranges: Dictionary of string/comment ranges from get_string_and_comment_ranges()
+
+    Returns:
+        True if the match overlaps with any string or comment range
+    """
+    if line_num not in ranges:
+        return False
+
+    for start_col, end_col in ranges[line_num]:
+        # Check if match overlaps with this string/comment range
+        if not (match_end <= start_col or match_start >= end_col):
+            return True
+
+    return False
+
+
 def is_allowed_context(line: str) -> bool:
-    """Check if line is in an allowed context (comment, docstring, string)."""
+    """Check if line is in an allowed context (comment, docstring, string).
+
+    DEPRECATED: This function is kept for backward compatibility but is no longer
+    used. Use get_string_and_comment_lines() with tokenize instead.
+    """
     for pattern in ALLOWED_PATTERNS:
         if re.search(pattern, line):
             return True
@@ -67,6 +146,8 @@ def is_allowed_context(line: str) -> bool:
 
 def check_file(filepath: Path) -> List[Tuple[int, str, str]]:
     """Check file for Pydantic bypass patterns.
+
+    Uses tokenize module to skip strings and comments, avoiding false positives.
 
     Args:
         filepath: Path to Python file to check
@@ -87,6 +168,9 @@ def check_file(filepath: Path) -> List[Tuple[int, str, str]]:
     except Exception as e:
         print(f"Error reading {filepath}: {e}", file=sys.stderr)
         return violations
+
+    # Build character-range map of strings and comments using tokenize
+    string_comment_ranges = get_string_and_comment_ranges(content)
 
     lines = content.splitlines()
     in_init_method = False
@@ -128,13 +212,16 @@ def check_file(filepath: Path) -> List[Tuple[int, str, str]]:
             if current_indent == init_indent and re.search(r"^\s*def\s+\w+\s*\(", line):
                 in_init_method = False
 
-        # Skip if line is in allowed context
-        if is_allowed_context(line):
-            continue
-
         # Check for bypass patterns
         for pattern, description in BYPASS_PATTERNS:
-            if re.search(pattern, line):
+            match = re.search(pattern, line)
+            if match:
+                # Check if match is inside a string or comment using tokenize
+                if is_match_in_string_or_comment(
+                    line_num, match.start(), match.end(), string_comment_ranges
+                ):
+                    continue
+
                 # Allow object.__setattr__ in __init__ methods and Pydantic validators
                 if pattern == r"object\.__setattr__\s*\(" and (
                     in_init_method or in_validator
