@@ -606,7 +606,9 @@ class MixinRequestResponseIntrospection:
                             execution_count=0,  # Could be enhanced with actual metrics
                         ),
                     )
-            except (AttributeError, TypeError, ValueError) as e:
+            except (
+                Exception
+            ) as e:  # fallback-ok: tool availability optional, returns partial results
                 # Registry tool enumeration failed - log for debugging but continue
                 emit_log_event_sync(
                     LogLevel.DEBUG,
@@ -701,7 +703,9 @@ class MixinRequestResponseIntrospection:
                     # Update the model with additional fields
                     for key, value in additional.items():
                         setattr(additional_info, key, value)
-            except (AttributeError, TypeError, ValueError) as e:
+            except (
+                Exception
+            ) as e:  # fallback-ok: additional info optional, returns partial results
                 # Additional info gathering failed - log for debugging but continue
                 emit_log_event_sync(
                     LogLevel.DEBUG,

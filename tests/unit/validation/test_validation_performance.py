@@ -104,7 +104,7 @@ class ModelTest{i:04d}(BaseModel):
         validate_assignment=True,
     )
 
-    def get_summary_{i}(self) -> Dict[str, any]:
+    def get_summary_{i}(self) -> Dict[str, Any]:
         """Get summary for model {i}."""
         return {{
             "id": self.id_{i},

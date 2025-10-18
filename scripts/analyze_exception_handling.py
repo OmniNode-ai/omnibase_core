@@ -11,7 +11,17 @@ This script identifies problematic exception handling patterns:
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Literal, Tuple, TypedDict
+
+
+class Issue(TypedDict):
+    """Structured issue type for exception handling violations."""
+
+    file: str
+    line: int
+    type: Literal["bare_except", "unlogged_exception", "unused_exception_var"]
+    severity: Literal["high", "medium", "low"]
+    line_content: str
 
 
 class ExceptionPatternAnalyzer:
@@ -19,7 +29,7 @@ class ExceptionPatternAnalyzer:
 
     def __init__(self, root_dir: Path):
         self.root_dir = root_dir
-        self.issues: List[Dict[str, Any]] = []
+        self.issues: List[Issue] = []
 
     def analyze_file(self, file_path: Path) -> None:
         """Analyze a single Python file for exception handling issues."""

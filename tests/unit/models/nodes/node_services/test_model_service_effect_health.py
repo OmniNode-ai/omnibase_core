@@ -59,7 +59,9 @@ def service_effect(mock_container: MagicMock, mock_event_bus: AsyncMock) -> Magi
     service = MagicMock(spec=ModelServiceEffect)
     service._node_id = uuid4()
     service.event_bus = mock_event_bus
-    service._get_event_bus = Mock(return_value=mock_event_bus)  # Fix: return AsyncMock
+    service._get_event_bus = Mock(
+        return_value=mock_event_bus
+    )  # Mock event bus resolution
     service._extract_node_name = Mock(return_value="TestServiceEffect")
     service._publish_introspection_event = Mock()
     service.cleanup_event_handlers = Mock()

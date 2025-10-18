@@ -4,7 +4,7 @@ Pre-commit hook to validate ONEX enum naming conventions.
 
 This script validates:
 1. Enum files follow pattern: enum_<name>.py → Enum<Name> (PascalCase)
-2. Service files follow pattern: service_<name>.py → Service<Name> (PascalCase)
+2. Service files follow pattern: model_service_<name>.py → ModelService<Name> (PascalCase)
 3. No acronyms in uppercase (RSD→Rsd, LLM→Llm, etc.)
 4. No redundant suffixes (EnumIssueTypeEnum → EnumIssueType)
 
@@ -85,8 +85,8 @@ def check_enum_file(file_path: Path) -> List[str]:
 
             # Check ALL enums for acronym and suffix violations
             for actual_class_name in enum_classes:
-                # Check for acronym violations (all uppercase in class name)
-                if re.search(r"[A-Z]{3,}", actual_class_name):
+                # Check for acronym violations (2+ uppercase letters in class name)
+                if re.search(r"[A-Z]{2,}", actual_class_name):
                     violations.append(
                         f"{file_path}: Class name contains uppercase acronym. "
                         f"Use PascalCase: {actual_class_name}"

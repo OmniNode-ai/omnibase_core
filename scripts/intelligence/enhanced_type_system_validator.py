@@ -16,7 +16,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple
 
 
 @dataclass
@@ -289,7 +289,7 @@ class ComprehensiveTypeSystemValidator:
         self.files_with_violations: int = 0
         self.violation_stats = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
 
-    def validate_all_files(self) -> dict[str, any]:
+    def validate_all_files(self) -> dict[str, Any]:
         """Run comprehensive type system validation."""
         print("🚀 Enhanced ONEX Type System Validation")
         print("=" * 80)

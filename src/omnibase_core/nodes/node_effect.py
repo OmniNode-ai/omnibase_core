@@ -116,6 +116,9 @@ class NodeEffect(NodeCoreBase):
             self, "effect_semaphore", asyncio.Semaphore(self.max_concurrent_effects)
         )
 
+        # Track active effects count (don't access semaphore._value)
+        object.__setattr__(self, "_active_effects_count", 0)
+
         # Effect-specific metrics
         object.__setattr__(self, "effect_metrics", {})
 
@@ -285,7 +288,7 @@ class NodeEffect(NodeCoreBase):
         Raises:
             ModelOnexError: If side effect execution fails
         """
-        start_time = time.time()
+        start_time = time.perf_counter()
         transaction: ModelEffectTransaction | None = None
         retry_count = 0
 
@@ -316,16 +319,20 @@ class NodeEffect(NodeCoreBase):
 
             # Execute with semaphore limit and retry logic
             async with self.effect_semaphore:
-                result, retry_count = await self._execute_with_retry(
-                    input_data, transaction
-                )
+                self._active_effects_count += 1
+                try:
+                    result, retry_count = await self._execute_with_retry(
+                        input_data, transaction
+                    )
+                finally:
+                    self._active_effects_count -= 1
 
             # Commit transaction if successful
             if transaction:
                 await transaction.commit()
                 del self.active_transactions[input_data.operation_id]
 
-            processing_time = (time.time() - start_time) * 1000
+            processing_time = (time.perf_counter() - start_time) * 1000
 
             # Record success in circuit breaker
             if input_data.circuit_breaker_enabled:
@@ -357,7 +364,7 @@ class NodeEffect(NodeCoreBase):
             )
 
         except Exception as e:
-            processing_time = (time.time() - start_time) * 1000
+            processing_time = (time.perf_counter() - start_time) * 1000
 
             # Rollback transaction if active
             if transaction:
@@ -596,7 +603,10 @@ class NodeEffect(NodeCoreBase):
             {
                 "active_transactions": float(len(self.active_transactions)),
                 "max_concurrent_effects": float(self.max_concurrent_effects),
-                "semaphore_available": float(self.effect_semaphore._value),
+                "active_effects": float(self._active_effects_count),
+                "semaphore_available": float(
+                    self.max_concurrent_effects - self._active_effects_count
+                ),
             }
         )
 

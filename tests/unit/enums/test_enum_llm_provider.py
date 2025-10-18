@@ -7,7 +7,7 @@ import pytest
 from omnibase_core.enums.enum_llm_provider import EnumLlmProvider
 
 
-class TestEnumLLMProvider:
+class TestEnumLlmProvider:
     """Test cases for EnumLlmProvider"""
 
     def test_enum_values(self):

@@ -8,9 +8,8 @@ This script fixes:
 """
 
 import re
-import subprocess
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 # Map of incorrect class names to correct class names
 SIMPLE_FIXES: Dict[str, str] = {
@@ -25,14 +24,16 @@ SIMPLE_FIXES: Dict[str, str] = {
 
 
 def find_all_occurrences(src_dir: Path, old_name: str) -> List[Path]:
-    """Find all files containing the old enum name."""
-    result = subprocess.run(
-        ["grep", "-r", "-l", old_name, str(src_dir)], capture_output=True, text=True
-    )
-    if result.returncode != 0:
-        return []
-
-    return [Path(line) for line in result.stdout.strip().split("\n") if line]
+    """Find all files containing the old enum name (portable)."""
+    matches: List[Path] = []
+    for p in src_dir.rglob("*.py"):
+        try:
+            if old_name in p.read_text():
+                matches.append(p)
+        except Exception:
+            # Skip files that can't be read (permissions, encoding, etc.)
+            pass
+    return matches
 
 
 def replace_in_file(file_path: Path, old_name: str, new_name: str) -> bool:

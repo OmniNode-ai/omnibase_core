@@ -227,7 +227,7 @@ repos:
 
       - id: no-pydantic-bypass-in-prod
         name: ONEX Pydantic Bypass Prevention
-        entry: poetry run python scripts/validation/validate_no_pydantic_bypass.py
+        entry: poetry run python scripts/validation/validate-no-pydantic-bypass.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$

@@ -57,12 +57,17 @@ from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_effect import NodeEffect
 
+# Type aliases for flexible state handling in generic service effects
+# Concrete implementations should override with specific state types
+ServiceInputState = Any  # Input state type (override in subclasses)
+ServiceOutputState = Any  # Output state type (override in subclasses)
+
 
 class ModelServiceEffect(
     MixinNodeService,
     NodeEffect,
     MixinHealthCheck,
-    MixinEventBus[Any, Any],
+    MixinEventBus[ServiceInputState, ServiceOutputState],
     MixinMetrics,
 ):
     """

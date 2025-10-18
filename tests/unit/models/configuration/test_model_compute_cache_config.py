@@ -7,6 +7,7 @@ Comprehensive tests for compute cache configuration model.
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_cache_eviction_policy import EnumCacheEvictionPolicy
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
@@ -22,7 +23,7 @@ class TestModelComputeCacheConfigInitialization:
         assert isinstance(config, ModelComputeCacheConfig)
         assert config.max_size == 128
         assert config.ttl_seconds == 3600
-        assert config.eviction_policy == "lru"
+        assert config.eviction_policy == EnumCacheEvictionPolicy.LRU
         assert config.enable_stats is True
 
     def test_config_with_custom_values(self):
@@ -30,12 +31,12 @@ class TestModelComputeCacheConfigInitialization:
         config = ModelComputeCacheConfig(
             max_size=512,
             ttl_seconds=7200,
-            eviction_policy="lfu",
+            eviction_policy=EnumCacheEvictionPolicy.LFU,
             enable_stats=False,
         )
         assert config.max_size == 512
         assert config.ttl_seconds == 7200
-        assert config.eviction_policy == "lfu"
+        assert config.eviction_policy == EnumCacheEvictionPolicy.LFU
         assert config.enable_stats is False
 
     def test_config_inheritance(self):
@@ -67,12 +68,14 @@ class TestModelComputeCacheConfigValidation:
         # Below minimum
         with pytest.raises(ValidationError) as exc_info:
             ModelComputeCacheConfig(max_size=0)
-        assert "greater than or equal to 1" in str(exc_info.value)
+        errors = exc_info.value.errors()
+        assert any(e.get("type") == "greater_than_equal" for e in errors)
 
         # Above maximum
         with pytest.raises(ValidationError) as exc_info:
             ModelComputeCacheConfig(max_size=10001)
-        assert "less than or equal to 10000" in str(exc_info.value)
+        errors = exc_info.value.errors()
+        assert any(e.get("type") == "less_than_equal" for e in errors)
 
     def test_ttl_seconds_validation(self):
         """Test ttl_seconds field validation."""
@@ -92,12 +95,17 @@ class TestModelComputeCacheConfigValidation:
         # Below minimum (when not None)
         with pytest.raises(ValidationError) as exc_info:
             ModelComputeCacheConfig(ttl_seconds=0)
-        assert "greater than or equal to 1" in str(exc_info.value)
+        errors = exc_info.value.errors()
+        assert any(e.get("type") == "greater_than_equal" for e in errors)
 
     def test_eviction_policy_validation(self):
         """Test eviction_policy field validation."""
         # Valid policies
-        for policy in ["lru", "lfu", "fifo"]:
+        for policy in [
+            EnumCacheEvictionPolicy.LRU,
+            EnumCacheEvictionPolicy.LFU,
+            EnumCacheEvictionPolicy.FIFO,
+        ]:
             config = ModelComputeCacheConfig(eviction_policy=policy)
             assert config.eviction_policy == policy
 
@@ -106,8 +114,9 @@ class TestModelComputeCacheConfigValidation:
         # Invalid policy
         with pytest.raises(ValidationError) as exc_info:
             ModelComputeCacheConfig(eviction_policy="invalid")
-        # Pydantic v2 uses "enum" in error message, not "pattern"
-        assert "enum" in str(exc_info.value).lower()
+        errors = exc_info.value.errors()
+        # Check for enum validation error (Pydantic v2)
+        assert any(e.get("type") in ("enum", "literal_error") for e in errors)
 
     def test_enable_stats_validation(self):
         """Test enable_stats field validation."""
@@ -126,14 +135,14 @@ class TestModelComputeCacheConfigSerialization:
         config = ModelComputeCacheConfig(
             max_size=512,
             ttl_seconds=7200,
-            eviction_policy="lfu",
+            eviction_policy=EnumCacheEvictionPolicy.LFU,
             enable_stats=False,
         )
         data = config.model_dump()
         assert isinstance(data, dict)
         assert data["max_size"] == 512
         assert data["ttl_seconds"] == 7200
-        assert data["eviction_policy"] == "lfu"
+        assert data["eviction_policy"] == EnumCacheEvictionPolicy.LFU
         assert data["enable_stats"] is False
 
     def test_config_deserialization(self):
@@ -141,13 +150,13 @@ class TestModelComputeCacheConfigSerialization:
         data = {
             "max_size": 1024,
             "ttl_seconds": 3600,
-            "eviction_policy": "lru",
+            "eviction_policy": "lru",  # String input for deserialization
             "enable_stats": True,
         }
         config = ModelComputeCacheConfig.model_validate(data)
         assert config.max_size == 1024
         assert config.ttl_seconds == 3600
-        assert config.eviction_policy == "lru"
+        assert config.eviction_policy == EnumCacheEvictionPolicy.LRU
         assert config.enable_stats is True
 
     def test_config_json_serialization(self):
@@ -164,7 +173,7 @@ class TestModelComputeCacheConfigSerialization:
         original = ModelComputeCacheConfig(
             max_size=2048,
             ttl_seconds=1800,
-            eviction_policy="fifo",
+            eviction_policy=EnumCacheEvictionPolicy.FIFO,
             enable_stats=True,
         )
         data = original.model_dump()
@@ -267,7 +276,7 @@ class TestModelComputeCacheConfigEdgeCases:
     def test_lru_policy_by_default(self):
         """Test LRU is default eviction policy."""
         config = ModelComputeCacheConfig()
-        assert config.eviction_policy == "lru"
+        assert config.eviction_policy == EnumCacheEvictionPolicy.LRU
 
     def test_ttl_none_for_no_expiration(self):
         """Test ttl_seconds=None for no expiration."""
@@ -335,26 +344,26 @@ class TestModelComputeCacheConfigProductionScenarios:
     def test_small_workload_config(self):
         """Test configuration for small workloads."""
         config = ModelComputeCacheConfig(
-            max_size=128, ttl_seconds=1800, eviction_policy="lru"
+            max_size=128, ttl_seconds=1800, eviction_policy=EnumCacheEvictionPolicy.LRU
         )
         memory = config.validate_memory_requirements()
-        assert memory["estimated_memory_mb"] < 1.0  # Less than 1MB
+        assert memory["estimated_memory_mb"] == pytest.approx(0.12, abs=0.1)
 
     def test_medium_workload_config(self):
         """Test configuration for medium workloads."""
         config = ModelComputeCacheConfig(
-            max_size=512, ttl_seconds=3600, eviction_policy="lru"
+            max_size=512, ttl_seconds=3600, eviction_policy=EnumCacheEvictionPolicy.LRU
         )
         memory = config.validate_memory_requirements()
-        assert 0.4 <= memory["estimated_memory_mb"] <= 0.6  # ~0.5MB
+        assert memory["estimated_memory_mb"] == pytest.approx(0.5, abs=0.1)
 
     def test_large_workload_config(self):
         """Test configuration for large workloads."""
         config = ModelComputeCacheConfig(
-            max_size=2048, ttl_seconds=7200, eviction_policy="lfu"
+            max_size=2048, ttl_seconds=7200, eviction_policy=EnumCacheEvictionPolicy.LFU
         )
         memory = config.validate_memory_requirements()
-        assert 1.5 <= memory["estimated_memory_mb"] <= 2.5  # ~2MB
+        assert memory["estimated_memory_mb"] == pytest.approx(2.0, abs=0.5)
 
     def test_no_expiration_config(self):
         """Test configuration with no expiration for immutable data."""

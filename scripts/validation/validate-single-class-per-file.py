@@ -17,6 +17,7 @@ import ast
 import sys
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 
 class ClassDefinitionDetector(ast.NodeVisitor):
@@ -49,7 +50,7 @@ class ClassDefinitionDetector(ast.NodeVisitor):
         return False
 
 
-def check_file(filepath: Path) -> dict[str, any]:
+def check_file(filepath: Path) -> dict[str, Any]:
     """
     Check a Python file for single-class-per-file violations.
 

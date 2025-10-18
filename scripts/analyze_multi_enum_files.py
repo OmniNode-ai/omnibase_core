@@ -12,7 +12,7 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 
 def snake_to_pascal(snake_str: str) -> str:
@@ -20,12 +20,12 @@ def snake_to_pascal(snake_str: str) -> str:
     return "".join(word.capitalize() for word in snake_str.split("_"))
 
 
-def get_enum_classes(file_path: Path) -> List[Tuple[str, bool]]:
+def get_enum_classes(file_path: Path) -> List[str]:
     """
     Get all enum classes in a file.
 
     Returns:
-        List of (class_name, is_enum) tuples
+        List of enum class names
     """
     try:
         content = file_path.read_text()
@@ -46,7 +46,7 @@ def get_enum_classes(file_path: Path) -> List[Tuple[str, bool]]:
                             break
 
                 if is_enum:
-                    classes.append((node.name, True))
+                    classes.append(node.name)
 
         return classes
     except Exception as e:
@@ -79,7 +79,7 @@ def analyze_file(file_path: Path) -> Dict:
         "file_path": str(file_path),
         "file_name": file_path.name,
         "expected_class": expected_class_name,
-        "actual_classes": [c[0] for c in enum_classes],
+        "actual_classes": enum_classes,
         "num_enums": len(enum_classes),
         "has_all_export": has_all,
     }

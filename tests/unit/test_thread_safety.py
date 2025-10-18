@@ -16,7 +16,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from uuid import UUID, uuid4
 
 import pytest
@@ -341,6 +341,35 @@ class TestThreadSafeWrappers:
                 with self._lock:
                     return self._cache.get_stats()
 
+            def compute_if_absent(
+                self,
+                key: str,
+                compute_fn: Callable[[str], Any],
+                ttl_minutes: int | None = None,
+            ) -> Any:
+                """
+                Atomically compute and cache value if absent.
+
+                This method prevents race conditions by holding the lock
+                during both the cache check and computation.
+
+                Args:
+                    key: Cache key
+                    compute_fn: Function to compute value if absent (receives key as arg)
+                    ttl_minutes: Optional TTL override
+
+                Returns:
+                    Cached or newly computed value
+                """
+                with self._lock:
+                    cached = self._cache.get(key)
+                    if cached is not None:
+                        return cached
+
+                    result = compute_fn(key)
+                    self._cache.put(key, result, ttl_minutes)
+                    return result
+
         # Use thread-safe wrapper
         cache = ThreadSafeComputeCache(max_size=10)
         computation_count = {"count": 0}
@@ -354,15 +383,8 @@ class TestThreadSafeWrappers:
             return f"computed_{key}"
 
         def compute_with_safe_cache(key: str) -> str:
-            """Correctly synchronized cache usage."""
-            # Atomic cache check and update
-            cached = cache.get(key)
-            if cached is not None:
-                return cached
-
-            result = expensive_computation(key)
-            cache.put(key, result)
-            return result
+            """Correctly synchronized cache usage with atomic compute_if_absent."""
+            return cache.compute_if_absent(key, expensive_computation)
 
         # Multiple threads requesting same key
         results = []

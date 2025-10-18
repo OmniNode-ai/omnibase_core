@@ -341,7 +341,7 @@ class TestCacheConfigIntegration:
 
         # Validate memory before deployment
         memory = production_config.validate_memory_requirements()
-        assert memory["estimated_memory_mb"] < 1.0  # Should be ~0.5MB
+        assert memory["estimated_memory_mb"] == pytest.approx(0.5, abs=0.3)
 
         # Create production container
         container = await create_model_onex_container(

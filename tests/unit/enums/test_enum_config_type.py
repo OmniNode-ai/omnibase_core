@@ -18,7 +18,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_config_type import EnumConfigType
 
 
-class TestEnumConfigTypeBasics:
+class TestEnumConfigType:
     """Test basic enum functionality."""
 
     def test_enum_values_core(self):

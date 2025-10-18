@@ -14,7 +14,7 @@
 
 ### Need Reference?
 → **Templates**: [Node Templates](reference/templates/)
-→ **Architecture**: [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md)
+→ **Architecture**: [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 
 ## 📚 Documentation Structure
 
@@ -84,9 +84,9 @@ omnibase_core/docs/
 | Document | Description | Status |
 |----------|-------------|--------|
 | [Architecture Overview](architecture/overview.md) | High-level system design | 🚧 Coming Soon |
-| [**Four-Node Pattern**](ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX architecture ⭐ **Excellent!** | ✅ Complete |
+| [**Four-Node Pattern**](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX architecture ⭐ **Excellent!** | ✅ Complete |
 | [Dependency Injection](architecture/dependency-injection.md) | ModelONEXContainer patterns | 🚧 Coming Soon |
-| [Contract System](architecture/contract-system.md) | Contract architecture | See [SUBCONTRACT_ARCHITECTURE.md](SUBCONTRACT_ARCHITECTURE.md) |
+| [Contract System](architecture/contract-system.md) | Contract architecture | See [SUBCONTRACT_ARCHITECTURE.md](architecture/SUBCONTRACT_ARCHITECTURE.md) |
 | [Type System](architecture/type-system.md) | Typing patterns and conventions | 🚧 Coming Soon |
 
 ---
@@ -111,7 +111,7 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [API Documentation](API_DOCUMENTATION.md) | Core API reference | ✅ Available |
+| [API Documentation](reference/API_DOCUMENTATION.md) | Core API reference | ✅ Available |
 | [Nodes API](reference/api/nodes.md) | Node class APIs | 🚧 Coming Soon |
 | [Models API](reference/api/models.md) | Model class APIs | 🚧 Coming Soon |
 | [Enums API](reference/api/enums.md) | Enumeration reference | 🚧 Coming Soon |
@@ -144,39 +144,39 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [**Error Handling Best Practices**](ERROR_HANDLING_BEST_PRACTICES.md) | Comprehensive error handling guide | ✅ Excellent |
-| [Anti-Patterns](ANTI_PATTERNS.md) | What to avoid | ✅ Available |
+| [**Error Handling Best Practices**](conventions/ERROR_HANDLING_BEST_PRACTICES.md) | Comprehensive error handling guide | ✅ Excellent |
+| [Anti-Patterns](patterns/ANTI_PATTERNS.md) | What to avoid | ✅ Available |
 
 ### Concurrency & Threading
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [**Threading Guide**](THREADING.md) | Thread safety and concurrency | ✅ Excellent |
+| [**Threading Guide**](reference/THREADING.md) | Thread safety and concurrency | ✅ Excellent |
 
 ### Architecture Patterns
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [**Subcontract Architecture**](SUBCONTRACT_ARCHITECTURE.md) | Contract system design | ✅ Excellent |
-| [Union Patterns Guide](UNION_PATTERNS_GUIDE.md) | Type union patterns | ✅ Available |
-| [TypedDict Consolidation](TYPEDDICT_CONSOLIDATION.md) | TypedDict usage | ✅ Available |
+| [**Subcontract Architecture**](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design | ✅ Excellent |
+| [Union Patterns Guide](patterns/UNION_PATTERNS_GUIDE.md) | Type union patterns | ✅ Available |
+| [TypedDict Consolidation](migration/TYPEDDICT_CONSOLIDATION.md) | TypedDict usage | ✅ Available |
 
 ### Migration & Updates
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [Migration Guide](MIGRATION_GUIDE.md) | Version migration guide | ✅ Available |
-| [Import Migration Patterns](IMPORT_MIGRATION_PATTERNS.md) | Import organization | ✅ Available |
-| [Validation Integration Guide](VALIDATION_INTEGRATION_GUIDE.md) | Validation patterns | ✅ Available |
+| [Migration Guide](migration/MIGRATION_GUIDE.md) | Version migration guide | ✅ Available |
+| [Import Migration Patterns](migration/IMPORT_MIGRATION_PATTERNS.md) | Import organization | ✅ Available |
+| [Validation Integration Guide](planning/VALIDATION_INTEGRATION_GUIDE.md) | Validation patterns | ✅ Available |
 
 ### Project Documentation
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [Production Cache Tuning](PRODUCTION_CACHE_TUNING.md) | Cache optimization | ✅ Available |
-| [Documentation Validation Report](DOCUMENTATION_VALIDATION_REPORT.md) | Doc quality report | ✅ Available |
-| [Runtime Validation Analysis](RUNTIME_VALIDATION_ANALYSIS.md) | Validation analysis | ✅ Available |
-| [Naming Convention Analysis](NAMING_CONVENTION_ANALYSIS.md) | Naming standards | ✅ Available |
+| [Production Cache Tuning](reference/PRODUCTION_CACHE_TUNING.md) | Cache optimization | ✅ Available |
+| [Documentation Validation Report](quality/DOCUMENTATION_VALIDATION_REPORT.md) | Doc quality report | ✅ Available |
+| [Runtime Validation Analysis](quality/RUNTIME_VALIDATION_ANALYSIS.md) | Validation analysis | ✅ Available |
+| [Naming Convention Analysis](conventions/NAMING_CONVENTION_ANALYSIS.md) | Naming standards | ✅ Available |
 
 ---
 
@@ -202,13 +202,13 @@ omnibase_core/docs/
 | **Build my first node** | [Node Building Guide](guides/node-building/README.md) → [COMPUTE Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) |
 | **Understand node types** | [Node Types](guides/node-building/02_NODE_TYPES.md) |
 | **Use a production template** | [Node Templates](reference/templates/) |
-| **Handle errors properly** | [Error Handling Best Practices](ERROR_HANDLING_BEST_PRACTICES.md) |
-| **Make nodes thread-safe** | [Threading Guide](THREADING.md) |
-| **Understand the architecture** | [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md) |
+| **Handle errors properly** | [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md) |
+| **Make nodes thread-safe** | [Threading Guide](reference/THREADING.md) |
+| **Understand the architecture** | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
 | **Test my node** | [Testing Guide](guides/node-building/08-testing-guide.md) (coming soon) |
 | **Debug an issue** | [Debugging Guide](guides/debugging-guide.md) (coming soon) |
-| **Migrate code** | [Migration Guide](MIGRATION_GUIDE.md) |
-| **Understand contracts** | [Subcontract Architecture](SUBCONTRACT_ARCHITECTURE.md) |
+| **Migrate code** | [Migration Guide](migration/MIGRATION_GUIDE.md) |
+| **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
 
 ---
 
@@ -281,7 +281,7 @@ omnibase_core/docs/
 1. [Node Building Guide](guides/node-building/README.md) → Choose tutorial → Build
 
 **Architect**:
-1. [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md) → [Architecture Research](reference/architecture-research/)
+1. [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) → [Architecture Research](reference/architecture-research/)
 
 **AI Agent**:
 1. [Node Building Guide](guides/node-building/README.md) → [Agent Templates](guides/node-building/10-agent-templates.md)
@@ -295,13 +295,13 @@ omnibase_core/docs/
 
 **Learning**:
 - Concepts: [What is a Node?](guides/node-building/01_WHAT_IS_A_NODE.md)
-- Architecture: [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md)
+- Architecture: [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 - Patterns: [Patterns Catalog](guides/node-building/07-patterns-catalog.md)
 
 **Debugging**:
-- Errors: [Error Handling](ERROR_HANDLING_BEST_PRACTICES.md)
-- Performance: [Production Cache Tuning](PRODUCTION_CACHE_TUNING.md)
-- Threading: [Threading Guide](THREADING.md)
+- Errors: [Error Handling](conventions/ERROR_HANDLING_BEST_PRACTICES.md)
+- Performance: [Production Cache Tuning](reference/PRODUCTION_CACHE_TUNING.md)
+- Threading: [Threading Guide](reference/THREADING.md)
 
 ---
 
@@ -324,7 +324,7 @@ omnibase_core/docs/
 
 ## 📚 Documentation Architecture
 
-See [Documentation Architecture](DOCUMENTATION_ARCHITECTURE.md) for information about:
+See [Documentation Architecture](architecture/DOCUMENTATION_ARCHITECTURE.md) for information about:
 - Documentation organization
 - Writing standards
 - Maintenance strategy

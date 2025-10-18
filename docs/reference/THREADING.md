@@ -31,7 +31,8 @@ Example of thread-safe cache wrapper:
 
 ```python
 from threading import Lock
-from omnibase_core.models.infrastructure import ModelComputeCache
+from typing import Any
+from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
 
 class ThreadSafeComputeCache:
     """Thread-safe wrapper for ModelComputeCache.
@@ -59,7 +60,7 @@ class ThreadSafeComputeCache:
         with self._lock:
             self._cache.clear()
 
-    def get_stats(self) -> dict[str, int]:
+    def get_stats(self) -> dict[str, int | float]:
         """Thread-safe cache statistics."""
         with self._lock:
             return self._cache.get_stats()
@@ -104,6 +105,8 @@ compute_node.computation_cache = ThreadSafeComputeCache(
 
 # Now safe to share across threads
 ```
+
+**Important Atomicity Limitation**: While the `ThreadSafeComputeCache` wrapper makes individual `get()` and `put()` operations thread-safe, the common cache pattern of "check cache → compute if missing → cache result" is **NOT atomic** across these operations. If you need atomicity for the entire compute-and-cache sequence, use Option 1 (per-thread instances) or implement additional application-level locking around the computation logic.
 
 ## NodeEffect Thread Safety
 

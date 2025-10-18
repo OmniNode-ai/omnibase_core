@@ -56,6 +56,22 @@ class ExceptionHandlingValidator:
                             )
                         )
 
+                # Check for except BaseException:
+                elif re.search(r"^\s*except\s+BaseException\s*:", line):
+                    # BaseException should be rare and always justified
+                    context_start = max(0, i - 3)
+                    context_end = min(len(lines), i + 2)
+                    context = "\n".join(lines[context_start:context_end])
+
+                    if "# fallback-ok" not in context:
+                        self.errors.append(
+                            (
+                                str(file_path),
+                                i,
+                                f"except BaseException: without fallback-ok comment: {line.strip()}",
+                            )
+                        )
+
                 # Check for except Exception: without as e
                 elif re.search(r"^\s*except\s+Exception\s*:", line):
                     # Check if there's proper logging or fallback-ok in the next few lines
@@ -72,6 +88,8 @@ class ExceptionHandlingValidator:
                         for l in next_lines
                     )
                     has_fallback_ok = any("# fallback-ok" in l for l in next_lines)
+
+                    # Flag handlers that only have 'pass' and don't log, raise, or return
                     has_pass_only = "pass" in "\n".join(next_lines) and not any(
                         other in "\n".join(next_lines)
                         for other in ["return", "raise", "emit"]

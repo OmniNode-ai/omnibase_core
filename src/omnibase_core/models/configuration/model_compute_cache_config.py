@@ -51,7 +51,7 @@ class ModelComputeCacheConfig(BaseModel):
         enable_stats: Enable cache hit/miss statistics tracking
     """
 
-    model_config = ConfigDict(frozen=False, validate_assignment=True)
+    model_config = ConfigDict(frozen=False, validate_assignment=True, extra="forbid")
 
     max_size: int = Field(
         default=128,

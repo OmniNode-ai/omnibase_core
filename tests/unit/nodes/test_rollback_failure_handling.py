@@ -112,7 +112,7 @@ class TestModelEffectTransactionRollbackFailures:
         transaction = ModelEffectTransaction(uuid4())
 
         async def async_rollback():
-            await asyncio.sleep(0.001)
+            await asyncio.sleep(0)  # Yield without delay
             raise ValueError("Async rollback failed")
 
         def sync_rollback():

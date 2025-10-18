@@ -28,6 +28,15 @@ class ModelEffectTransaction:
     Provides rollback capabilities and operation tracking
     for complex side effect sequences.
 
+    Attributes:
+        transaction_id: Unique identifier for this transaction
+        state: Current transaction state (PENDING, COMMITTED, ROLLED_BACK, FAILED)
+        operations: List of operations performed during this transaction
+        rollback_operations: List of (operation_name, rollback_function) tuples
+        rollback_failures: List of error messages from failed rollback operations
+        started_at: Timestamp when transaction was created
+        committed_at: Timestamp when transaction was committed (None if not committed)
+
     Rollback Semantics:
         - Rollback failures are logged and returned, never silently swallowed
         - Partial rollback failures are captured with details of which operations failed
@@ -39,8 +48,9 @@ class ModelEffectTransaction:
         self.transaction_id = transaction_id
         self.state = EnumTransactionState.PENDING
         self.operations: list[dict[str, Any]] = []
-        self.rollback_operations: list[Callable[..., Any]] = []
+        self.rollback_operations: list[tuple[str, Callable[..., Any]]] = []
         self.rollback_failures: list[str] = []  # Track which rollbacks failed
+        self._rollback_errors: list[ModelOnexError] = []  # Structured error tracking
         self.started_at = datetime.now()
         self.committed_at: datetime | None = None
 
@@ -60,7 +70,7 @@ class ModelEffectTransaction:
         )
 
         if rollback_func:
-            self.rollback_operations.append(rollback_func)
+            self.rollback_operations.append((operation_name, rollback_func))
 
     async def commit(self) -> None:
         """Commit ModelEffectTransaction - marks as successful."""
@@ -88,11 +98,9 @@ class ModelEffectTransaction:
         """
         failures: list[ModelOnexError] = []
 
-        for idx, rollback_func in enumerate(reversed(self.rollback_operations)):
-            operation_name = (
-                f"rollback_operation_{len(self.rollback_operations) - idx - 1}"
-            )
-
+        for idx, (operation_name, rollback_func) in enumerate(
+            reversed(self.rollback_operations)
+        ):
             try:
                 if asyncio.iscoroutinefunction(rollback_func):
                     await rollback_func()
@@ -131,8 +139,9 @@ class ModelEffectTransaction:
                     },
                 )
 
-        # Store failure messages for inspection
+        # Store failure messages and structured errors for inspection
         self.rollback_failures = [f.message for f in failures]
+        self._rollback_errors = failures
 
         # Log final summary
         if failures:
@@ -166,3 +175,13 @@ class ModelEffectTransaction:
         )
 
         return (len(failures) == 0, failures)
+
+    @property
+    def rollback_errors(self) -> list[ModelOnexError]:
+        """
+        Expose structured rollback errors for external inspection.
+
+        Returns:
+            List of ModelOnexError objects from failed rollback operations
+        """
+        return self._rollback_errors
