@@ -243,22 +243,22 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
-      # Fast test execution - only run affected tests (5-30s)
-      # Uses pytest-testmon to intelligently select tests based on code changes
-      - id: pytest-testmon
-        name: Run Affected Tests (pytest-testmon)
+      # Smoke tests - fast critical path validation (~3s)
+      # Runs foundational tests (enums, errors) for immediate feedback
+      # Full test suite (10k+ tests) runs in CI with parallel execution
+      - id: pytest-smoke-tests
+        name: Run Smoke Tests (enums + errors)
         entry: poetry run pytest
         language: system
         pass_filenames: false
         always_run: true
         args:
-          - --testmon
-          - --testmon-noselect
-          - -n
-          - auto
+          - tests/unit/enums
+          - tests/unit/errors
           - --maxfail=5
           - -x
           - --tb=short
+          - -q
         stages: [pre-commit]
 
     # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
