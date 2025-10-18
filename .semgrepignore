@@ -1,9 +1,0 @@
-# Ignore all Docker Compose security warnings - our configurations are correct
-# We use correct Docker Compose security syntax but Semgrep expects deprecated formats
-docker-compose.yml
-docker-compose.dev.yml
-docker-compose.canary-test.yml
-
-# Ignore curl-pipe-bash warnings in installation scripts
-# These are standard installation patterns for legitimate tools (Homebrew, Poetry, Docker)
-scripts/install.sh

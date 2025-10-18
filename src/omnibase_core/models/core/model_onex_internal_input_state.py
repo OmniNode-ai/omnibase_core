@@ -19,8 +19,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from omnibase_core.core.core_uuid_service import UUIDService
 from omnibase_core.primitives.model_semver import parse_semver_from_string
+from omnibase_core.utils.uuid_service import ServiceUUID
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_onex_base_state import ModelOnexInputState
@@ -76,8 +76,8 @@ class ModelOnexInternalInputState(BaseModel):
         """
         return cls(
             version=boundary_state.version,
-            event_id=UUIDService.ensure_uuid(boundary_state.event_id),
-            correlation_id=UUIDService.ensure_uuid(boundary_state.correlation_id),
+            event_id=ServiceUUID.ensure_uuid(boundary_state.event_id),
+            correlation_id=ServiceUUID.ensure_uuid(boundary_state.correlation_id),
             timestamp=boundary_state.timestamp or datetime.now(UTC),
             node_name=boundary_state.node_name or "unknown",
             node_version=boundary_state.node_version

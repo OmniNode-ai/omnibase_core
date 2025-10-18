@@ -1,1 +1,0 @@
-"""Pre-commit checker models."""
