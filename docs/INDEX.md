@@ -57,15 +57,15 @@ omnibase_core/docs/
 | 1 | [What is a Node?](guides/node-building/01-what-is-a-node.md) | Fundamentals and concepts | 5 min | ✅ Complete |
 | 2 | [Node Types](guides/node-building/02-node-types.md) | EFFECT, COMPUTE, REDUCER, ORCHESTRATOR | 10 min | ✅ Complete |
 | 3 | [COMPUTE Node Tutorial](guides/node-building/03-compute-node-tutorial.md) | Build a price calculator | 30 min | ✅ Complete |
-| 4 | [EFFECT Node Tutorial](guides/node-building/04-effect-node-tutorial.md) | Build a database node | 30 min | 🚧 Placeholder |
-| 5 | [REDUCER Node Tutorial](guides/node-building/05-reducer-node-tutorial.md) | Build a data aggregator | 30 min | 🚧 Placeholder |
+| 4 | [EFFECT Node Tutorial](guides/node-building/04-effect-node-tutorial.md) | Build a file backup system | 30 min | ✅ Complete (Phase 2) |
+| 5 | [REDUCER Node Tutorial](guides/node-building/05-reducer-node-tutorial.md) | Build a metrics aggregator | 30 min | ✅ Complete (Phase 2) |
 | 6 | [ORCHESTRATOR Node Tutorial](guides/node-building/06-orchestrator-node-tutorial.md) | Build a workflow coordinator | 45 min | 🚧 Placeholder |
 | 7 | [Patterns Catalog](guides/node-building/07-patterns-catalog.md) | Common patterns library | 20 min | 🚧 Coming Soon |
 | 8 | [Testing Guide](guides/node-building/08-testing-guide.md) | Testing each node type | 20 min | 🚧 Coming Soon |
 | 9 | [Common Pitfalls](guides/node-building/09-common-pitfalls.md) | What to avoid | 15 min | 🚧 Coming Soon |
 | 10 | [Agent Templates](guides/node-building/10-agent-templates.md) | Agent-friendly templates | 15 min | 🚧 Coming Soon |
 
-**Progress**: 4 of 11 complete (36%)
+**Progress**: 6 of 11 complete (55%) - Phase 2 Complete
 
 ### Other Guides
 

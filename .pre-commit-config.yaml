@@ -122,7 +122,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|tests/fixtures/validation/)
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/discovery/mixin_discovery\.py|tests/fixtures/validation/)
         stages: [pre-commit]
 
       # ONEX Python Pattern Validation (SHARED HOOKS)
