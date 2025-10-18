@@ -245,9 +245,9 @@ docs_private/
 .onex_cache/
 docs_archived/
 
-# Codanna index files (keep configuration, ignore generated index data)
-.codanna/index/*
-.serena/cache/*
+# AI IDE tools (entire directories ignored)
+.codanna/
+.serena/
 
 # AI Tools and Generated Content
 .hive-mind/
