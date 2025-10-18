@@ -2,7 +2,7 @@
 
 **Reading Time**: 30 minutes
 **Difficulty**: Intermediate
-**Prerequisites**: [What is a Node?](01-what-is-a-node.md), [EFFECT Node Tutorial](04-effect-node-tutorial.md)
+**Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md), [EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md)
 
 ## What You'll Build
 
@@ -674,7 +674,7 @@ EnumConflictResolution.MERGE        # Merge lists/objects
 ✅ **Congratulations!** You've built a production-ready REDUCER node!
 
 **Continue your journey**:
-- [ORCHESTRATOR Node Tutorial](06-orchestrator-node-tutorial.md) - Master workflow coordination
+- [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Master workflow coordination
 - [Patterns Catalog](07-patterns-catalog.md) - Common REDUCER patterns
 - [Testing Guide](08-testing-guide.md) - Advanced testing strategies
 

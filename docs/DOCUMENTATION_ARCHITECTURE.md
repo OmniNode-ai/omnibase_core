@@ -32,12 +32,12 @@ docs/
 ├── guides/                           # Developer guides and tutorials
 │   ├── node-building/                # **CRITICAL PRIORITY**
 │   │   ├── README.md                 # Node building guide overview
-│   │   ├── 01-what-is-a-node.md      # Fundamentals
-│   │   ├── 02-node-types.md          # EFFECT, COMPUTE, REDUCER, ORCHESTRATOR
-│   │   ├── 03-compute-node-tutorial.md   # Step-by-step COMPUTE
-│   │   ├── 04-effect-node-tutorial.md    # Step-by-step EFFECT
-│   │   ├── 05-reducer-node-tutorial.md   # Step-by-step REDUCER
-│   │   ├── 06-orchestrator-node-tutorial.md  # Step-by-step ORCHESTRATOR
+│   │   ├── 01_WHAT_IS_A_NODE.md      # Fundamentals
+│   │   ├── 02_NODE_TYPES.md          # EFFECT, COMPUTE, REDUCER, ORCHESTRATOR
+│   │   ├── 03_COMPUTE_NODE_TUTORIAL.md   # Step-by-step COMPUTE
+│   │   ├── 04_EFFECT_NODE_TUTORIAL.md    # Step-by-step EFFECT
+│   │   ├── 05_REDUCER_NODE_TUTORIAL.md   # Step-by-step REDUCER
+│   │   ├── 06_ORCHESTRATOR_NODE_TUTORIAL.md  # Step-by-step ORCHESTRATOR
 │   │   ├── 07-patterns-catalog.md    # Common patterns library
 │   │   ├── 08-testing-guide.md       # Testing each node type
 │   │   ├── 09-common-pitfalls.md     # What to avoid
@@ -133,12 +133,12 @@ The node building guide is the **highest priority** deliverable. It must be:
 ```
 guides/node-building/
 ├── README.md                           # Overview and navigation
-├── 01-what-is-a-node.md                # Definition, purpose, role in ONEX
-├── 02-node-types.md                    # EFFECT, COMPUTE, REDUCER, ORCHESTRATOR
-├── 03-compute-node-tutorial.md         # Step-by-step COMPUTE
-├── 04-effect-node-tutorial.md          # Step-by-step EFFECT
-├── 05-reducer-node-tutorial.md         # Step-by-step REDUCER
-├── 06-orchestrator-node-tutorial.md    # Step-by-step ORCHESTRATOR
+├── 01_WHAT_IS_A_NODE.md                # Definition, purpose, role in ONEX
+├── 02_NODE_TYPES.md                    # EFFECT, COMPUTE, REDUCER, ORCHESTRATOR
+├── 03_COMPUTE_NODE_TUTORIAL.md         # Step-by-step COMPUTE
+├── 04_EFFECT_NODE_TUTORIAL.md          # Step-by-step EFFECT
+├── 05_REDUCER_NODE_TUTORIAL.md         # Step-by-step REDUCER
+├── 06_ORCHESTRATOR_NODE_TUTORIAL.md    # Step-by-step ORCHESTRATOR
 ├── 07-patterns-catalog.md              # Common patterns with code
 ├── 08-testing-guide.md                 # Testing each node type
 ├── 09-common-pitfalls.md               # What to avoid
@@ -163,7 +163,7 @@ Each tutorial must include:
 ### File Naming
 
 - Use lowercase with hyphens: `node-building-guide.md`
-- Number tutorial sequences: `01-what-is-a-node.md`
+- Number tutorial sequences: `01_WHAT_IS_A_NODE.md`
 - Descriptive names: `compute-node-tutorial.md` not `tutorial1.md`
 
 ### Code Examples

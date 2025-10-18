@@ -2,7 +2,7 @@
 
 **Reading Time**: 30 minutes
 **Difficulty**: Intermediate
-**Prerequisites**: [What is a Node?](01-what-is-a-node.md), [Node Types](02-node-types.md)
+**Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md), [Node Types](02_NODE_TYPES.md)
 
 ## What You'll Build
 
@@ -907,8 +907,8 @@ await node.transaction_context(operation_id)  # Transaction mgmt
 ✅ **Congratulations!** You've built a production-ready EFFECT node!
 
 **Continue your journey**:
-- [REDUCER Node Tutorial](05-reducer-node-tutorial.md) - Learn data aggregation
-- [ORCHESTRATOR Node Tutorial](06-orchestrator-node-tutorial.md) - Master workflow coordination
+- [REDUCER Node Tutorial](05_REDUCER_NODE_TUTORIAL.md) - Learn data aggregation
+- [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Master workflow coordination
 - [Patterns Catalog](07-patterns-catalog.md) - Common EFFECT patterns
 - [Testing Guide](08-testing-guide.md) - Advanced testing strategies
 

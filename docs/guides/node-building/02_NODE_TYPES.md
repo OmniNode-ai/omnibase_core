@@ -1,8 +1,8 @@
 # Node Types
 
 **Reading Time**: 10 minutes
-**Prerequisites**: [What is a Node?](01-what-is-a-node.md)
-**Next**: [COMPUTE Node Tutorial](03-compute-node-tutorial.md)
+**Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md)
+**Next**: [COMPUTE Node Tutorial](03_COMPUTE_NODE_TUTORIAL.md)
 
 ## Overview
 
@@ -702,12 +702,12 @@ result = await orchestrator.process(input)
 
 Ready to build your first node? Start with a COMPUTE node tutorial:
 
-→ [Next: COMPUTE Node Tutorial](03-compute-node-tutorial.md)
+→ [Next: COMPUTE Node Tutorial](03_COMPUTE_NODE_TUTORIAL.md)
 
 Or jump to a specific tutorial:
-- [EFFECT Node Tutorial](04-effect-node-tutorial.md)
-- [REDUCER Node Tutorial](05-reducer-node-tutorial.md)
-- [ORCHESTRATOR Node Tutorial](06-orchestrator-node-tutorial.md)
+- [EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md)
+- [REDUCER Node Tutorial](05_REDUCER_NODE_TUTORIAL.md)
+- [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md)
 
 ## Quick Reference
 

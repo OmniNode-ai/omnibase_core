@@ -21,17 +21,17 @@ This comprehensive guide teaches you how to build production-ready nodes for the
 
 ### 1. Fundamentals
 
-- [01. What is a Node?](01-what-is-a-node.md) - Definition, purpose, and role in ONEX
-- [02. Node Types](02-node-types.md) - EFFECT, COMPUTE, REDUCER, ORCHESTRATOR explained
+- [01. What is a Node?](01_WHAT_IS_A_NODE.md) - Definition, purpose, and role in ONEX
+- [02. Node Types](02_NODE_TYPES.md) - EFFECT, COMPUTE, REDUCER, ORCHESTRATOR explained
 
 ### 2. Step-by-Step Tutorials
 
 Each tutorial takes you from zero to a working, tested node:
 
-- [03. COMPUTE Node Tutorial](03-compute-node-tutorial.md) - Build a data transformation node
-- [04. EFFECT Node Tutorial](04-effect-node-tutorial.md) - Build a database interaction node
-- [05. REDUCER Node Tutorial](05-reducer-node-tutorial.md) - Build a data aggregation node
-- [06. ORCHESTRATOR Node Tutorial](06-orchestrator-node-tutorial.md) - Build a workflow coordination node
+- [03. COMPUTE Node Tutorial](03_COMPUTE_NODE_TUTORIAL.md) - Build a data transformation node
+- [04. EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md) - Build a database interaction node
+- [05. REDUCER Node Tutorial](05_REDUCER_NODE_TUTORIAL.md) - Build a data aggregation node
+- [06. ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Build a workflow coordination node
 
 ### 3. Advanced Topics
 
@@ -44,9 +44,9 @@ Each tutorial takes you from zero to a working, tested node:
 
 **Never built a node before?** Start here:
 
-1. Read [What is a Node?](01-what-is-a-node.md) (5 min)
-2. Read [Node Types](02-node-types.md) (10 min)
-3. Follow the [COMPUTE Node Tutorial](03-compute-node-tutorial.md) (30 min)
+1. Read [What is a Node?](01_WHAT_IS_A_NODE.md) (5 min)
+2. Read [Node Types](02_NODE_TYPES.md) (10 min)
+3. Follow the [COMPUTE Node Tutorial](03_COMPUTE_NODE_TUTORIAL.md) (30 min)
 4. Test your node and celebrate! 🎉
 
 **Built nodes before?** Jump to:
@@ -108,11 +108,11 @@ poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ om
 ### Beginner Path (First Time Building Nodes)
 
 1. **Foundations** (30 min)
-   - Read: [What is a Node?](01-what-is-a-node.md)
-   - Read: [Node Types](02-node-types.md)
+   - Read: [What is a Node?](01_WHAT_IS_A_NODE.md)
+   - Read: [Node Types](02_NODE_TYPES.md)
 
 2. **First Node** (1-2 hours)
-   - Tutorial: [COMPUTE Node](03-compute-node-tutorial.md)
+   - Tutorial: [COMPUTE Node](03_COMPUTE_NODE_TUTORIAL.md)
    - Practice: Build a simple calculator node
 
 3. **Testing** (30 min)
@@ -130,7 +130,7 @@ poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ om
    - Identify patterns for your use case
 
 2. **Build Complex Node** (2-4 hours)
-   - Tutorial: [ORCHESTRATOR Node](06-orchestrator-node-tutorial.md)
+   - Tutorial: [ORCHESTRATOR Node](06_ORCHESTRATOR_NODE_TUTORIAL.md)
    - Practice: Build workflow coordinator
 
 3. **Avoid Pitfalls** (30 min)
@@ -208,8 +208,8 @@ Found a better pattern? Want to share a tutorial? Contributions welcome!
 
 Ready to start building? Choose your path:
 
-- **New to nodes?** → [What is a Node?](01-what-is-a-node.md)
-- **Know the basics?** → [COMPUTE Node Tutorial](03-compute-node-tutorial.md)
+- **New to nodes?** → [What is a Node?](01_WHAT_IS_A_NODE.md)
+- **Know the basics?** → [COMPUTE Node Tutorial](03_COMPUTE_NODE_TUTORIAL.md)
 - **Need patterns?** → [Patterns Catalog](07-patterns-catalog.md)
 - **Ready to test?** → [Testing Guide](08-testing-guide.md)
 

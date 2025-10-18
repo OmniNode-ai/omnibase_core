@@ -1,0 +1,106 @@
+# Reference Update Plan
+# Files that contain references to files being renamed
+
+# === HIGH PRIORITY: Documentation Index Files ===
+
+./docs/INDEX.md
+  References to update:
+  - 01-what-is-a-node.md → 01_WHAT_IS_A_NODE.md (12 occurrences)
+  - 02-node-types.md → 02_NODE_TYPES.md (10 occurrences)
+  - 03-compute-node-tutorial.md → 03_COMPUTE_NODE_TUTORIAL.md (8 occurrences)
+  - 04-effect-node-tutorial.md → 04_EFFECT_NODE_TUTORIAL.md (6 occurrences)
+  - 05-reducer-node-tutorial.md → 05_REDUCER_NODE_TUTORIAL.md (6 occurrences)
+  - 06-orchestrator-node-tutorial.md → 06_ORCHESTRATOR_NODE_TUTORIAL.md (6 occurrences)
+  - naming-convention-analysis.md → NAMING_CONVENTION_ANALYSIS.md (1 occurrence)
+  - onex_mixin_architecture_patterns.md → ONEX_MIXIN_ARCHITECTURE_PATTERNS.md (1 occurrence)
+  - circuit_breaker_pattern.md → CIRCUIT_BREAKER_PATTERN.md (1 occurrence)
+  - configuration_management.md → CONFIGURATION_MANAGEMENT.md (1 occurrence)
+  - performance-benchmarks.md → PERFORMANCE_BENCHMARKS.md (1 occurrence)
+
+./README.md
+  References to update:
+  - 01-what-is-a-node.md → 01_WHAT_IS_A_NODE.md (2 occurrences)
+  - 02-node-types.md → 02_NODE_TYPES.md (2 occurrences)
+  - 03-compute-node-tutorial.md → 03_COMPUTE_NODE_TUTORIAL.md (4 occurrences)
+  - 04-effect-node-tutorial.md → 04_EFFECT_NODE_TUTORIAL.md (1 occurrence)
+  - 05-reducer-node-tutorial.md → 05_REDUCER_NODE_TUTORIAL.md (1 occurrence)
+  - 06-orchestrator-node-tutorial.md → 06_ORCHESTRATOR_NODE_TUTORIAL.md (1 occurrence)
+
+./docs/guides/node-building/README.md
+  References to update:
+  - 01-what-is-a-node.md → 01_WHAT_IS_A_NODE.md (5 occurrences)
+  - 02-node-types.md → 02_NODE_TYPES.md (5 occurrences)
+  - 03-compute-node-tutorial.md → 03_COMPUTE_NODE_TUTORIAL.md (5 occurrences)
+  - 04-effect-node-tutorial.md → 04_EFFECT_NODE_TUTORIAL.md (2 occurrences)
+  - 05-reducer-node-tutorial.md → 05_REDUCER_NODE_TUTORIAL.md (2 occurrences)
+  - 06-orchestrator-node-tutorial.md → 06_ORCHESTRATOR_NODE_TUTORIAL.md (3 occurrences)
+
+# === MEDIUM PRIORITY: Tutorial Cross-References ===
+
+./docs/guides/node-building/01-what-is-a-node.md
+  References to update:
+  - 02-node-types.md → 02_NODE_TYPES.md (3 occurrences)
+
+./docs/guides/node-building/02-node-types.md
+  References to update:
+  - 01-what-is-a-node.md → 01_WHAT_IS_A_NODE.md (1 occurrence)
+  - 03-compute-node-tutorial.md → 03_COMPUTE_NODE_TUTORIAL.md (2 occurrences)
+  - 04-effect-node-tutorial.md → 04_EFFECT_NODE_TUTORIAL.md (1 occurrence)
+  - 05-reducer-node-tutorial.md → 05_REDUCER_NODE_TUTORIAL.md (1 occurrence)
+  - 06-orchestrator-node-tutorial.md → 06_ORCHESTRATOR_NODE_TUTORIAL.md (1 occurrence)
+
+./docs/guides/node-building/03-compute-node-tutorial.md
+  References to update:
+  - 01-what-is-a-node.md → 01_WHAT_IS_A_NODE.md (1 occurrence)
+  - 02-node-types.md → 02_NODE_TYPES.md (1 occurrence)
+  - 04-effect-node-tutorial.md → 04_EFFECT_NODE_TUTORIAL.md (2 occurrences)
+  - 05-reducer-node-tutorial.md → 05_REDUCER_NODE_TUTORIAL.md (1 occurrence)
+  - 06-orchestrator-node-tutorial.md → 06_ORCHESTRATOR_NODE_TUTORIAL.md (1 occurrence)
+
+./docs/guides/node-building/04-effect-node-tutorial.md
+  References to update:
+  - 01-what-is-a-node.md → 01_WHAT_IS_A_NODE.md (1 occurrence)
+  - 02-node-types.md → 02_NODE_TYPES.md (1 occurrence)
+  - 05-reducer-node-tutorial.md → 05_REDUCER_NODE_TUTORIAL.md (1 occurrence)
+  - 06-orchestrator-node-tutorial.md → 06_ORCHESTRATOR_NODE_TUTORIAL.md (1 occurrence)
+
+./docs/guides/node-building/05-reducer-node-tutorial.md
+  References to update:
+  - 01-what-is-a-node.md → 01_WHAT_IS_A_NODE.md (1 occurrence)
+  - 04-effect-node-tutorial.md → 04_EFFECT_NODE_TUTORIAL.md (1 occurrence)
+  - 06-orchestrator-node-tutorial.md → 06_ORCHESTRATOR_NODE_TUTORIAL.md (1 occurrence)
+
+./docs/guides/node-building/06-orchestrator-node-tutorial.md
+  References to update:
+  - 02-node-types.md → 02_NODE_TYPES.md (1 occurrence)
+
+# === LOW PRIORITY: Historical/Summary Documents ===
+
+./docs/DOCUMENTATION_OVERHAUL_SUMMARY.md
+  References to update:
+  - 01-what-is-a-node.md → 01_WHAT_IS_A_NODE.md (4 occurrences)
+  - 02-node-types.md → 02_NODE_TYPES.md (4 occurrences)
+  - 03-compute-node-tutorial.md → 03_COMPUTE_NODE_TUTORIAL.md (4 occurrences)
+  - 04-effect-node-tutorial.md → 04_EFFECT_NODE_TUTORIAL.md (3 occurrences)
+  - 05-reducer-node-tutorial.md → 05_REDUCER_NODE_TUTORIAL.md (3 occurrences)
+  - 06-orchestrator-node-tutorial.md → 06_ORCHESTRATOR_NODE_TUTORIAL.md (3 occurrences)
+
+./docs/PHASE_2_COMPLETION_REPORT.md
+  References to update:
+  - 04-effect-node-tutorial.md → 04_EFFECT_NODE_TUTORIAL.md (2 occurrences)
+  - 05-reducer-node-tutorial.md → 05_REDUCER_NODE_TUTORIAL.md (2 occurrences)
+  - 06-orchestrator-node-tutorial.md → 06_ORCHESTRATOR_NODE_TUTORIAL.md (1 occurrence)
+
+./docs/DOCUMENTATION_ARCHITECTURE.md
+  References to update:
+  - 01-what-is-a-node.md → 01_WHAT_IS_A_NODE.md (4 occurrences)
+  - 02-node-types.md → 02_NODE_TYPES.md (3 occurrences)
+  - 03-compute-node-tutorial.md → 03_COMPUTE_NODE_TUTORIAL.md (3 occurrences)
+  - 04-effect-node-tutorial.md → 04_EFFECT_NODE_TUTORIAL.md (3 occurrences)
+  - 05-reducer-node-tutorial.md → 05_REDUCER_NODE_TUTORIAL.md (3 occurrences)
+  - 06-orchestrator-node-tutorial.md → 06_ORCHESTRATOR_NODE_TUTORIAL.md (3 occurrences)
+
+# === SUMMARY ===
+# Total files to rename: 26
+# Total files with references to update: 13
+# Total reference updates needed: ~150+

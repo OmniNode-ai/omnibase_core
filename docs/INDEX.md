@@ -54,12 +54,12 @@ omnibase_core/docs/
 | # | Document | Description | Time | Status |
 |---|----------|-------------|------|--------|
 | 0 | [Node Building Overview](guides/node-building/README.md) | Guide navigation and overview | 5 min | ✅ Complete |
-| 1 | [What is a Node?](guides/node-building/01-what-is-a-node.md) | Fundamentals and concepts | 5 min | ✅ Complete |
-| 2 | [Node Types](guides/node-building/02-node-types.md) | EFFECT, COMPUTE, REDUCER, ORCHESTRATOR | 10 min | ✅ Complete |
-| 3 | [COMPUTE Node Tutorial](guides/node-building/03-compute-node-tutorial.md) | Build a price calculator | 30 min | ✅ Complete |
-| 4 | [EFFECT Node Tutorial](guides/node-building/04-effect-node-tutorial.md) | Build a file backup system | 30 min | ✅ Complete (Phase 2) |
-| 5 | [REDUCER Node Tutorial](guides/node-building/05-reducer-node-tutorial.md) | Build a metrics aggregator | 30 min | ✅ Complete (Phase 2) |
-| 6 | [ORCHESTRATOR Node Tutorial](guides/node-building/06-orchestrator-node-tutorial.md) | Build a workflow coordinator | 45 min | 🚧 Placeholder |
+| 1 | [What is a Node?](guides/node-building/01_WHAT_IS_A_NODE.md) | Fundamentals and concepts | 5 min | ✅ Complete |
+| 2 | [Node Types](guides/node-building/02_NODE_TYPES.md) | EFFECT, COMPUTE, REDUCER, ORCHESTRATOR | 10 min | ✅ Complete |
+| 3 | [COMPUTE Node Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) | Build a price calculator | 30 min | ✅ Complete |
+| 4 | [EFFECT Node Tutorial](guides/node-building/04_EFFECT_NODE_TUTORIAL.md) | Build a file backup system | 30 min | ✅ Complete (Phase 2) |
+| 5 | [REDUCER Node Tutorial](guides/node-building/05_REDUCER_NODE_TUTORIAL.md) | Build a metrics aggregator | 30 min | ✅ Complete (Phase 2) |
+| 6 | [ORCHESTRATOR Node Tutorial](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) | Build a workflow coordinator | 45 min | 🚧 Placeholder |
 | 7 | [Patterns Catalog](guides/node-building/07-patterns-catalog.md) | Common patterns library | 20 min | 🚧 Coming Soon |
 | 8 | [Testing Guide](guides/node-building/08-testing-guide.md) | Testing each node type | 20 min | 🚧 Coming Soon |
 | 9 | [Common Pitfalls](guides/node-building/09-common-pitfalls.md) | What to avoid | 15 min | 🚧 Coming Soon |
@@ -124,15 +124,15 @@ omnibase_core/docs/
 | [Reference Overview](reference/README.md) | Reference materials overview | ✅ Available |
 | [ONEX Mixin System Research](reference/architecture-research/ONEX_MIXIN_SYSTEM_RESEARCH.md) | Mixin architecture | ✅ Available |
 | [4-Node Architecture Research](reference/architecture-research/RESEARCH_REPORT_4_NODE_ARCHITECTURE.md) | Architecture research | ✅ Available |
-| [Mixin Architecture Patterns](reference/mixin-architecture/onex_mixin_architecture_patterns.md) | Mixin patterns | ✅ Available |
+| [Mixin Architecture Patterns](reference/mixin-architecture/ONEX_MIXIN_ARCHITECTURE_PATTERNS.md) | Mixin patterns | ✅ Available |
 
 ### Design Patterns
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [Circuit Breaker Pattern](reference/patterns/circuit_breaker_pattern.md) | Circuit breaker implementation | ✅ Available |
-| [Configuration Management](reference/patterns/configuration_management.md) | Config patterns | ✅ Available |
-| [Performance Benchmarks](reference/performance-benchmarks.md) | Performance testing | ✅ Available |
+| [Circuit Breaker Pattern](reference/patterns/CIRCUIT_BREAKER_PATTERN.md) | Circuit breaker implementation | ✅ Available |
+| [Configuration Management](reference/patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns | ✅ Available |
+| [Performance Benchmarks](reference/PERFORMANCE_BENCHMARKS.md) | Performance testing | ✅ Available |
 
 ---
 
@@ -176,7 +176,7 @@ omnibase_core/docs/
 | [Production Cache Tuning](PRODUCTION_CACHE_TUNING.md) | Cache optimization | ✅ Available |
 | [Documentation Validation Report](DOCUMENTATION_VALIDATION_REPORT.md) | Doc quality report | ✅ Available |
 | [Runtime Validation Analysis](RUNTIME_VALIDATION_ANALYSIS.md) | Validation analysis | ✅ Available |
-| [Naming Convention Analysis](naming-convention-analysis.md) | Naming standards | ✅ Available |
+| [Naming Convention Analysis](NAMING_CONVENTION_ANALYSIS.md) | Naming standards | ✅ Available |
 
 ---
 
@@ -199,8 +199,8 @@ omnibase_core/docs/
 
 | Task | Go To |
 |------|-------|
-| **Build my first node** | [Node Building Guide](guides/node-building/README.md) → [COMPUTE Tutorial](guides/node-building/03-compute-node-tutorial.md) |
-| **Understand node types** | [Node Types](guides/node-building/02-node-types.md) |
+| **Build my first node** | [Node Building Guide](guides/node-building/README.md) → [COMPUTE Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) |
+| **Understand node types** | [Node Types](guides/node-building/02_NODE_TYPES.md) |
 | **Use a production template** | [Node Templates](reference/templates/) |
 | **Handle errors properly** | [Error Handling Best Practices](ERROR_HANDLING_BEST_PRACTICES.md) |
 | **Make nodes thread-safe** | [Threading Guide](THREADING.md) |
@@ -224,13 +224,13 @@ omnibase_core/docs/
 
 ### Agent Workflow
 
-1. Read [What is a Node?](guides/node-building/01-what-is-a-node.md) for concepts
-2. Read [Node Types](guides/node-building/02-node-types.md) to choose type
+1. Read [What is a Node?](guides/node-building/01_WHAT_IS_A_NODE.md) for concepts
+2. Read [Node Types](guides/node-building/02_NODE_TYPES.md) to choose type
 3. Follow type-specific tutorial:
-   - [COMPUTE](guides/node-building/03-compute-node-tutorial.md) ✅
-   - [EFFECT](guides/node-building/04-effect-node-tutorial.md) (coming soon)
-   - [REDUCER](guides/node-building/05-reducer-node-tutorial.md) (coming soon)
-   - [ORCHESTRATOR](guides/node-building/06-orchestrator-node-tutorial.md) (coming soon)
+   - [COMPUTE](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) ✅
+   - [EFFECT](guides/node-building/04_EFFECT_NODE_TUTORIAL.md) (coming soon)
+   - [REDUCER](guides/node-building/05_REDUCER_NODE_TUTORIAL.md) (coming soon)
+   - [ORCHESTRATOR](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) (coming soon)
 4. Use [Patterns Catalog](guides/node-building/07-patterns-catalog.md) for common patterns (coming soon)
 5. Test with [Testing Guide](guides/node-building/08-testing-guide.md) (coming soon)
 
@@ -291,10 +291,10 @@ omnibase_core/docs/
 **Building**:
 - Nodes: [Node Building Guide](guides/node-building/README.md)
 - Tests: [Testing Guide](guides/testing-guide.md)
-- Workflows: [ORCHESTRATOR Tutorial](guides/node-building/06-orchestrator-node-tutorial.md)
+- Workflows: [ORCHESTRATOR Tutorial](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md)
 
 **Learning**:
-- Concepts: [What is a Node?](guides/node-building/01-what-is-a-node.md)
+- Concepts: [What is a Node?](guides/node-building/01_WHAT_IS_A_NODE.md)
 - Architecture: [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md)
 - Patterns: [Patterns Catalog](guides/node-building/07-patterns-catalog.md)
 

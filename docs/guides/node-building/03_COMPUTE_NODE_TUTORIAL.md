@@ -1,7 +1,7 @@
 # COMPUTE Node Tutorial
 
 **Reading Time**: 30 minutes
-**Prerequisites**: [What is a Node?](01-what-is-a-node.md), [Node Types](02-node-types.md)
+**Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md), [Node Types](02_NODE_TYPES.md)
 **What You'll Build**: A price calculation node with tax, discounts, and caching
 
 ## Overview
@@ -793,9 +793,9 @@ You've successfully built a COMPUTE node! Now:
 
 ## Related Tutorials
 
-- [EFFECT Node Tutorial](04-effect-node-tutorial.md) - Build a database interaction node
-- [REDUCER Node Tutorial](05-reducer-node-tutorial.md) - Build a data aggregation node
-- [ORCHESTRATOR Node Tutorial](06-orchestrator-node-tutorial.md) - Coordinate workflows
+- [EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md) - Build a database interaction node
+- [REDUCER Node Tutorial](05_REDUCER_NODE_TUTORIAL.md) - Build a data aggregation node
+- [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Coordinate workflows
 - [Patterns Catalog](07-patterns-catalog.md) - Reusable patterns
 - [Testing Guide](08-testing-guide.md) - Advanced testing strategies
 
@@ -836,4 +836,4 @@ You've learned:
 
 **Congratulations!** You've built a production-ready COMPUTE node! 🎉
 
-**Next**: [EFFECT Node Tutorial](04-effect-node-tutorial.md) →
+**Next**: [EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md) →

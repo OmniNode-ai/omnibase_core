@@ -114,9 +114,9 @@ See [docs/THREADING.md](docs/THREADING.md) for complete guidelines and mitigatio
 
 Complete guide to building ONEX nodes - perfect for developers and AI agents:
 
-1. [What is a Node?](docs/guides/node-building/01-what-is-a-node.md) (5 min)
-2. [Node Types](docs/guides/node-building/02-node-types.md) (10 min)
-3. [COMPUTE Node Tutorial](docs/guides/node-building/03-compute-node-tutorial.md) (30 min)
+1. [What is a Node?](docs/guides/node-building/01_WHAT_IS_A_NODE.md) (5 min)
+2. [Node Types](docs/guides/node-building/02_NODE_TYPES.md) (10 min)
+3. [COMPUTE Node Tutorial](docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) (30 min)
 4. [EFFECT, REDUCER, ORCHESTRATOR Tutorials](docs/guides/node-building/) (coming soon)
 
 **See [Documentation Index](docs/INDEX.md) for complete navigation.**
@@ -162,7 +162,7 @@ class NodeMyServiceCompute(NodeCoreBase):
         return {"result": result}
 ```
 
-**Next**: Follow the [COMPUTE Node Tutorial](docs/guides/node-building/03-compute-node-tutorial.md) for a complete walkthrough.
+**Next**: Follow the [COMPUTE Node Tutorial](docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) for a complete walkthrough.
 
 ## Setup Tasks
 
@@ -360,11 +360,11 @@ class EventBusService(ProtocolEventBus):
 ### Beginner Path (First Time with ONEX)
 
 1. **Understand Basics** (30 min)
-   - Read: [What is a Node?](docs/guides/node-building/01-what-is-a-node.md)
-   - Read: [Node Types](docs/guides/node-building/02-node-types.md)
+   - Read: [What is a Node?](docs/guides/node-building/01_WHAT_IS_A_NODE.md)
+   - Read: [Node Types](docs/guides/node-building/02_NODE_TYPES.md)
 
 2. **Build Your First Node** (30 min)
-   - Tutorial: [COMPUTE Node Tutorial](docs/guides/node-building/03-compute-node-tutorial.md)
+   - Tutorial: [COMPUTE Node Tutorial](docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md)
    - Practice: Build a simple calculator node
 
 3. **Explore Architecture** (30 min)
@@ -373,9 +373,9 @@ class EventBusService(ProtocolEventBus):
 ### Intermediate Path
 
 1. **Master All Node Types** (2-3 hours)
-   - [EFFECT Node Tutorial](docs/guides/node-building/04-effect-node-tutorial.md) (coming soon)
-   - [REDUCER Node Tutorial](docs/guides/node-building/05-reducer-node-tutorial.md) (coming soon)
-   - [ORCHESTRATOR Node Tutorial](docs/guides/node-building/06-orchestrator-node-tutorial.md) (coming soon)
+   - [EFFECT Node Tutorial](docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md) (coming soon)
+   - [REDUCER Node Tutorial](docs/guides/node-building/05_REDUCER_NODE_TUTORIAL.md) (coming soon)
+   - [ORCHESTRATOR Node Tutorial](docs/guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) (coming soon)
 
 2. **Best Practices** (1 hour)
    - [Error Handling Best Practices](docs/ERROR_HANDLING_BEST_PRACTICES.md)

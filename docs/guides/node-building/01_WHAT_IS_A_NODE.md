@@ -2,7 +2,7 @@
 
 **Reading Time**: 5 minutes
 **Prerequisites**: None
-**Next**: [Node Types](02-node-types.md)
+**Next**: [Node Types](02_NODE_TYPES.md)
 
 ## Definition
 
@@ -359,7 +359,7 @@ Don't create a node when:
 
 Now that you understand what nodes are, learn about the **four node types** and when to use each:
 
-→ [Next: Node Types](02-node-types.md)
+→ [Next: Node Types](02_NODE_TYPES.md)
 
 ## Quick Reference
 
@@ -389,4 +389,4 @@ class NodeMyServiceCompute(NodeCoreBase):
 - `ModelOnexError` - Structured error handling
 - `EnumCoreErrorCode` - Error code enumeration
 
-**Next step**: [Learn about the four node types →](02-node-types.md)
+**Next step**: [Learn about the four node types →](02_NODE_TYPES.md)
