@@ -59,8 +59,9 @@ class ExceptionHandlingValidator:
                 # Check for except Exception: without as e
                 elif re.search(r"^\s*except\s+Exception\s*:", line):
                     # Check if there's proper logging or fallback-ok in the next few lines
-                    next_lines_start = i
-                    next_lines_end = min(len(lines), i + 6)
+                    # Convert from 1-indexed line number to 0-indexed array position
+                    next_lines_start = i - 1
+                    next_lines_end = min(len(lines), i + 5)
                     next_lines = lines[next_lines_start:next_lines_end]
 
                     has_logging = any(

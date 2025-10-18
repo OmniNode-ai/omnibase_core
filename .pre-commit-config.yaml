@@ -243,6 +243,24 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
+      # Fast test execution - only run affected tests (5-30s)
+      # Uses pytest-testmon to intelligently select tests based on code changes
+      - id: pytest-testmon
+        name: Run Affected Tests (pytest-testmon)
+        entry: poetry run pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        args:
+          - --testmon
+          - --testmon-noselect
+          - -n
+          - auto
+          - --maxfail=5
+          - -x
+          - --tb=short
+        stages: [pre-commit]
+
     # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
     # This demonstrates how other repositories would use the shared validation
     # - id: validate-onex-standards

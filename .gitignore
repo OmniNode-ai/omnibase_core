@@ -52,6 +52,7 @@ coverage.xml
 # ONEX cache directories
 .onex_cache/
 .pytest_cache/
+.testmondata
 cover/
 
 # Translations

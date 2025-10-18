@@ -12,16 +12,60 @@ env:
   PYTHON_VERSION: "3.12"
 
 jobs:
-  unit-tests:
-    name: Unit Tests
+  # Quick smoke test - fails fast on basic issues (5-10s)
+  smoke-test:
+    name: Smoke Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20  # Increased from 15 to accommodate 10k+ tests
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Configure git for private dependencies
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+
+      - name: Install dependencies
+        run: poetry install --no-interaction || { echo "❌ Install failed"; exit 1; }
+
+      - name: Run smoke tests
+        run: |
+          poetry run pytest tests/unit/enums/ tests/unit/errors/ \
+            -n auto \
+            --maxfail=5 \
+            -x \
+            --tb=short
+
+  # Parallel test execution - split into 5 groups for speed
+  test-parallel:
+    name: Tests (Split ${{ matrix.split }}/5)
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        split: [1, 2, 3, 4, 5]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for better coverage analysis
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -56,16 +100,79 @@ jobs:
       - name: Install project
         run: poetry install --no-interaction || { echo "❌ Project install failed"; exit 1; }
 
-      - name: Run unit tests with coverage
+      - name: Run test split ${{ matrix.split }}/5
         run: |
-          poetry run pytest tests/unit \
+          poetry run pytest tests/ \
+            --splits 5 \
+            --group ${{ matrix.split }} \
+            -n auto \
+            --tb=short \
+            --junitxml=junit-${{ matrix.split }}.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.split }}
+          path: junit-${{ matrix.split }}.xml
+          retention-days: 7
+
+  # Coverage report (only runs on main branch to save CI time)
+  coverage:
+    name: Coverage Report
+    if: github.ref == 'refs/heads/main'
+    needs: test-parallel
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Configure git for private dependencies
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
+        run: poetry install --no-interaction
+
+      - name: Run tests with coverage
+        run: |
+          poetry run pytest tests/ \
             -n auto \
             --cov=src/omnibase_core \
             --cov-report=term-missing \
             --cov-report=xml \
             --cov-report=html \
             --cov-fail-under=49 \
-            -v \
             --tb=short
 
       - name: Upload coverage reports
@@ -138,18 +245,22 @@ jobs:
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [unit-tests, lint]
+    needs: [smoke-test, test-parallel, lint]
     if: always()
 
     steps:
       - name: Check test results
         run: |
-          if [[ "${{ needs.unit-tests.result }}" == "success" ]] && [[ "${{ needs.lint.result }}" == "success" ]]; then
+          if [[ "${{ needs.smoke-test.result }}" == "success" ]] && [[ "${{ needs.test-parallel.result }}" == "success" ]] && [[ "${{ needs.lint.result }}" == "success" ]]; then
             echo "✅ All tests passed successfully"
+            echo "Smoke Tests: ✅ Passed"
+            echo "Parallel Tests (5 splits): ✅ Passed"
+            echo "Code Quality: ✅ Passed"
             exit 0
           else
             echo "❌ Tests failed"
-            echo "Unit Tests: ${{ needs.unit-tests.result }}"
+            echo "Smoke Tests: ${{ needs.smoke-test.result }}"
+            echo "Parallel Tests: ${{ needs.test-parallel.result }}"
             echo "Lint: ${{ needs.lint.result }}"
             exit 1
           fi

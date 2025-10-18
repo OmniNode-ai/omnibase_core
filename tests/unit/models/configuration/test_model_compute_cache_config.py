@@ -106,7 +106,8 @@ class TestModelComputeCacheConfigValidation:
         # Invalid policy
         with pytest.raises(ValidationError) as exc_info:
             ModelComputeCacheConfig(eviction_policy="invalid")
-        assert "pattern" in str(exc_info.value).lower()
+        # Pydantic v2 uses "enum" in error message, not "pattern"
+        assert "enum" in str(exc_info.value).lower()
 
     def test_enable_stats_validation(self):
         """Test enable_stats field validation."""

@@ -48,14 +48,20 @@ def extract_enum_class_code(file_path: Path, class_name: str) -> Tuple[str, List
     if not class_node:
         raise ValueError(f"Class {class_name} not found in {file_path}")
 
-    # Extract the class code
+    # Extract the class code (including decorators)
     lines = content.split("\n")
-    class_start = class_node.lineno - 1
+
+    # Find decorator start line (if any)
+    decorator_start = class_node.lineno - 1
+    if class_node.decorator_list:
+        # Get the first decorator's line number
+        decorator_start = class_node.decorator_list[0].lineno - 1
+
     class_end = class_node.end_lineno
 
-    class_code = "\n".join(lines[class_start:class_end])
+    class_code = "\n".join(lines[decorator_start:class_end])
 
-    # Determine required imports based on bases and code content
+    # Determine required imports based on bases, decorators, and code content
     import_set = set()
 
     # Check class bases for special enum types
@@ -66,6 +72,15 @@ def extract_enum_class_code(file_path: Path, class_name: str) -> Tuple[str, List
         elif isinstance(base, ast.Attribute):
             if base.attr in ("Enum", "StrEnum", "IntEnum"):
                 import_set.add(base.attr)
+
+    # Check decorators for enum-specific decorators like @unique
+    for decorator in class_node.decorator_list:
+        if isinstance(decorator, ast.Name):
+            if decorator.id in ("unique",):
+                import_set.add(decorator.id)
+        elif isinstance(decorator, ast.Attribute):
+            if decorator.attr in ("unique",):
+                import_set.add(decorator.attr)
 
     # Check if auto() is used in the class code
     if "auto()" in class_code:

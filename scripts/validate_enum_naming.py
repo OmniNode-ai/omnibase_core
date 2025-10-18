@@ -71,29 +71,32 @@ def check_enum_file(file_path: Path) -> List[str]:
         # Note: Multiple enums per file is allowed per ONEX guidelines
         # (removed violation check for len(enum_classes) > 1)
 
-        # Always validate the primary enum (first one found)
+        # Validate enum class names
         if enum_classes:
-            # For multi-enum files, check if primary enum matches filename
-            # For single-enum files, enforce strict matching
-            actual_class_name = enum_classes[0]
-            if actual_class_name != expected_class_name:
-                violations.append(
-                    f"{file_path}: Expected class '{expected_class_name}', "
-                    f"found '{actual_class_name}'"
-                )
+            # For SINGLE-enum files, enforce strict filename matching
+            # For MULTI-enum files, skip filename matching (they're allowed to differ)
+            if len(enum_classes) == 1:
+                actual_class_name = enum_classes[0]
+                if actual_class_name != expected_class_name:
+                    violations.append(
+                        f"{file_path}: Expected class '{expected_class_name}', "
+                        f"found '{actual_class_name}'"
+                    )
 
-            # Check for acronym violations (all uppercase in class name)
-            if re.search(r"[A-Z]{3,}", actual_class_name):
-                violations.append(
-                    f"{file_path}: Class name contains uppercase acronym. "
-                    f"Use PascalCase: {actual_class_name}"
-                )
+            # Check ALL enums for acronym and suffix violations
+            for actual_class_name in enum_classes:
+                # Check for acronym violations (all uppercase in class name)
+                if re.search(r"[A-Z]{3,}", actual_class_name):
+                    violations.append(
+                        f"{file_path}: Class name contains uppercase acronym. "
+                        f"Use PascalCase: {actual_class_name}"
+                    )
 
-            # Check for redundant suffix
-            if actual_class_name.endswith("Enum") and actual_class_name != "Enum":
-                violations.append(
-                    f"{file_path}: Redundant 'Enum' suffix in '{actual_class_name}'"
-                )
+                # Check for redundant suffix
+                if actual_class_name.endswith("Enum") and actual_class_name != "Enum":
+                    violations.append(
+                        f"{file_path}: Redundant 'Enum' suffix in '{actual_class_name}'"
+                    )
 
     except Exception as e:
         violations.append(f"{file_path}: Parse error - {e}")
@@ -111,7 +114,7 @@ def check_service_file(file_path: Path) -> List[str]:
     violations = []
 
     # Extract the name part from service_<name>.py or model_service_<name>.py
-    match = re.match(r"(?:(model)_)?service_?(.+)\.py$", file_path.name)
+    match = re.match(r"(?:(model)_)?service_(.+)\.py$", file_path.name)
     if not match:
         return violations
 
@@ -160,8 +163,10 @@ def main(files: List[str] = None):
         # Check all files in src/omnibase_core
         src_dir = Path(__file__).parent.parent / "src" / "omnibase_core"
         enum_files = list(src_dir.rglob("enum_*.py"))
-        # Match both service_*.py and model_service_*.py
-        service_files = list(src_dir.rglob("*service*.py"))
+        # Match both service_*.py and model_service_*.py specifically
+        service_files = list(src_dir.rglob("service_*.py")) + list(
+            src_dir.rglob("model_service_*.py")
+        )
         all_files = [str(f) for f in enum_files + service_files]
     else:
         all_files = files
@@ -177,7 +182,7 @@ def main(files: List[str] = None):
         if file_path.name.startswith("enum_"):
             violations = check_enum_file(file_path)
             all_violations.extend(violations)
-        elif file_path.name.startswith("service"):
+        elif file_path.name.startswith(("service_", "model_service_")):
             violations = check_service_file(file_path)
             all_violations.extend(violations)
 

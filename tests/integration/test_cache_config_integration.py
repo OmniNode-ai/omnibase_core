@@ -40,7 +40,7 @@ class TestCacheConfigIntegration:
         # Create NodeCompute and verify it uses container config
         node = NodeCompute(container)
         assert node.computation_cache.max_size == 128
-        assert node.computation_cache.ttl_seconds == 3600
+        assert node.computation_cache.ttl.total_seconds() == 3600
 
     @pytest.mark.asyncio
     async def test_container_to_node_compute_custom_config(self):
@@ -69,7 +69,7 @@ class TestCacheConfigIntegration:
         # Create NodeCompute and verify it uses custom config
         node = NodeCompute(container)
         assert node.computation_cache.max_size == 512
-        assert node.computation_cache.ttl_seconds == 7200
+        assert node.computation_cache.ttl.total_seconds() == 7200
         assert node.computation_cache.eviction_policy == EnumCacheEvictionPolicy.LFU
         assert node.computation_cache.enable_stats is True
 
@@ -127,8 +127,8 @@ class TestCacheConfigIntegration:
         assert stats2["total_entries"] == 1
 
         # Verify TTL settings
-        assert node1.computation_cache.ttl_seconds == 60
-        assert node2.computation_cache.ttl_seconds == 3600
+        assert node1.computation_cache.ttl.total_seconds() == 60
+        assert node2.computation_cache.ttl.total_seconds() == 3600
 
         # Cleanup
         await node1.cleanup()
@@ -324,8 +324,8 @@ class TestCacheConfigIntegration:
         assert config.get_ttl_minutes() == 30
         assert node.cache_ttl_minutes == 30
 
-        # Verify cache uses seconds
-        assert node.computation_cache.ttl_seconds == 1800
+        # Verify cache uses timedelta (stores as seconds internally)
+        assert node.computation_cache.ttl.total_seconds() == 1800
         assert node.computation_cache.default_ttl_minutes == 30
 
     @pytest.mark.asyncio
