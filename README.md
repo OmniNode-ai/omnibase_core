@@ -95,6 +95,32 @@ See [docs/THREADING.md](docs/THREADING.md) for complete guidelines and mitigatio
 ❌ **NEVER use direct `python` commands**
 ❌ **NEVER manually manage virtual environments**
 
+## Documentation
+
+**📚 Complete Documentation**: [docs/INDEX.md](docs/INDEX.md)
+
+### Quick Links
+
+| For... | Start Here | Time |
+|--------|-----------|------|
+| **New Developers** | [Getting Started Guide](docs/getting-started/) | 15 min |
+| **Building Nodes** | [Node Building Guide](docs/guides/node-building/README.md) ⭐ | 30-60 min |
+| **Understanding Architecture** | [ONEX Four-Node Architecture](docs/ONEX_FOUR_NODE_ARCHITECTURE.md) | 30 min |
+| **Reference & Templates** | [Node Templates](docs/reference/templates/) | - |
+| **Error Handling** | [Error Handling Best Practices](docs/ERROR_HANDLING_BEST_PRACTICES.md) | 20 min |
+| **Thread Safety** | [Threading Guide](docs/THREADING.md) | 15 min |
+
+### Node Building Guide ⭐ **Recommended Starting Point**
+
+Complete guide to building ONEX nodes - perfect for developers and AI agents:
+
+1. [What is a Node?](docs/guides/node-building/01-what-is-a-node.md) (5 min)
+2. [Node Types](docs/guides/node-building/02-node-types.md) (10 min)
+3. [COMPUTE Node Tutorial](docs/guides/node-building/03-compute-node-tutorial.md) (30 min)
+4. [EFFECT, REDUCER, ORCHESTRATOR Tutorials](docs/guides/node-building/) (coming soon)
+
+**See [Documentation Index](docs/INDEX.md) for complete navigation.**
+
 ## Quick Start
 
 ```bash
@@ -117,6 +143,26 @@ poetry add package-name
 # Add a dev dependency
 poetry add --group dev package-name
 ```
+
+### Your First Node
+
+```python
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+class NodeMyServiceCompute(NodeCoreBase):
+    """My first COMPUTE node."""
+
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+
+    async def process(self, input_data):
+        """Transform input data."""
+        result = input_data.value * 2  # Simple computation
+        return {"result": result}
+```
+
+**Next**: Follow the [COMPUTE Node Tutorial](docs/guides/node-building/03-compute-node-tutorial.md) for a complete walkthrough.
 
 ## Setup Tasks
 
@@ -309,23 +355,53 @@ class EventBusService(ProtocolEventBus):
         # Concrete implementation
 ```
 
+## Learning Path
+
+### Beginner Path (First Time with ONEX)
+
+1. **Understand Basics** (30 min)
+   - Read: [What is a Node?](docs/guides/node-building/01-what-is-a-node.md)
+   - Read: [Node Types](docs/guides/node-building/02-node-types.md)
+
+2. **Build Your First Node** (30 min)
+   - Tutorial: [COMPUTE Node Tutorial](docs/guides/node-building/03-compute-node-tutorial.md)
+   - Practice: Build a simple calculator node
+
+3. **Explore Architecture** (30 min)
+   - Read: [ONEX Four-Node Architecture](docs/ONEX_FOUR_NODE_ARCHITECTURE.md)
+
+### Intermediate Path
+
+1. **Master All Node Types** (2-3 hours)
+   - [EFFECT Node Tutorial](docs/guides/node-building/04-effect-node-tutorial.md) (coming soon)
+   - [REDUCER Node Tutorial](docs/guides/node-building/05-reducer-node-tutorial.md) (coming soon)
+   - [ORCHESTRATOR Node Tutorial](docs/guides/node-building/06-orchestrator-node-tutorial.md) (coming soon)
+
+2. **Best Practices** (1 hour)
+   - [Error Handling Best Practices](docs/ERROR_HANDLING_BEST_PRACTICES.md)
+   - [Threading Guide](docs/THREADING.md)
+   - [Patterns Catalog](docs/guides/node-building/07-patterns-catalog.md) (coming soon)
+
+### Advanced Path
+
+1. **Deep Dives**
+   - [Subcontract Architecture](docs/SUBCONTRACT_ARCHITECTURE.md)
+   - [Mixin System](docs/reference/architecture-research/)
+   - Production Templates: [Node Templates](docs/reference/templates/)
+
 ## Next Steps
 
-### Immediate Tasks (Required for functionality)
-1. **Strip legacy registry dependencies** from ONEXContainer
-2. **Create complete package structure** with all __init__.py files
-3. **Verify Python packaging** - Poetry configuration in pyproject.toml is already set up
-4. **Initialize git repository** and commit current state
+### Immediate Tasks (For New Projects)
+1. **Install omnibase_core**: `poetry add omnibase_core`
+2. **Follow Quick Start**: Build your first node (above)
+3. **Read Documentation**: [Node Building Guide](docs/guides/node-building/README.md)
 
-### Development Setup (Required for development)
-5. **Set up development environment** with `poetry install`
-6. **Create test framework** for validating base classes and DI container
-7. **Run code quality tools** - `poetry run mypy`, `poetry run black`, etc.
+### For Contributors
 
-### Documentation and Examples (Enhancement)
-8. **Create comprehensive tests** for all base classes and error handling
-9. **Document canonical patterns** from example implementations
-10. **Create migration guide** for converting existing tools to new architecture
+1. **Development Setup**: `poetry install`
+2. **Run Tests**: `poetry run pytest tests/`
+3. **Quality Tools**: `poetry run mypy src/`, `poetry run black src/`
+4. **See**: [Development Workflow](docs/guides/development-workflow.md) (coming soon)
 
 ## Architecture Benefits
 
@@ -336,4 +412,11 @@ class EventBusService(ProtocolEventBus):
 - **Zero Registry Coupling**: Clean protocol-based dependencies
 
 This repository provides the foundational layer that makes ONEX tool development fast, type-safe, and consistent across the entire ecosystem.
-# Test change
+
+---
+
+**Ready to build?** → [Node Building Guide](docs/guides/node-building/README.md) ⭐
+
+**Need help?** → [Documentation Index](docs/INDEX.md)
+
+**Want to contribute?** → [Contributing Guide](CONTRIBUTING.md) (coming soon)
