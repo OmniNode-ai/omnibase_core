@@ -7,8 +7,8 @@ Provides consistent UUID generation across the ONEX system.
 from uuid import UUID, uuid4
 
 
-class ServiceUUID:
-    """Centralized UUID generation and validation service."""
+class UtilUUID:
+    """Centralized UUID generation and validation utility."""
 
     @staticmethod
     def generate() -> UUID:

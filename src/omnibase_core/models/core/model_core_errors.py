@@ -63,7 +63,7 @@ from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 # This file appears to be a legacy/duplicate file that's not imported anywhere
 # TODO: Consider removing this file entirely in favor of error_codes.py
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.uuid_service import ServiceUUID
+from omnibase_core.utils.uuid_service import UtilUUID
 
 
 class EnumCLIExitCode(int, Enum):

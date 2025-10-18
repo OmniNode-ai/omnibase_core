@@ -15,7 +15,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from omnibase_core.utils.uuid_service import ServiceUUID
+from omnibase_core.utils.uuid_service import UtilUUID
 
 
 class ModelOnexInternalProcessingContext(BaseModel):
@@ -77,9 +77,9 @@ class ModelOnexInternalProcessingContext(BaseModel):
             ModelOnexInternalProcessingContext: Context with all required UUIDs populated
         """
         return cls(
-            correlation_id=correlation_id or ServiceUUID.generate_correlation_id(),
-            event_id=event_id or ServiceUUID.generate_event_id(),
-            session_id=session_id or ServiceUUID.generate_session_id(),
+            correlation_id=correlation_id or UtilUUID.generate_correlation_id(),
+            event_id=event_id or UtilUUID.generate_event_id(),
+            session_id=session_id or UtilUUID.generate_session_id(),
             node_name=node_name,
             operation=operation,
             additional_data=additional_data,
