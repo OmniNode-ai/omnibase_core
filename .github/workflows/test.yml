@@ -53,6 +53,61 @@ jobs:
       - name: Install project
         run: poetry install --no-interaction || { echo "❌ Project install failed"; exit 1; }
 
+      - name: Run smoke tests
+        run: |
+          poetry run pytest tests/unit/enums tests/unit/errors \
+            --maxfail=5 \
+            -x \
+            --tb=short
+
+  # Parallel test execution - split into 5 groups for speed
+  test-parallel:
+    name: Tests (Split ${{ matrix.split }}/5)
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        split: [1, 2, 3, 4, 5]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      # Note: omnibase_spi is now public - no auth required
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root || { echo "❌ Dependency install failed"; exit 1; }
+
+      - name: Install project
+        run: poetry install --no-interaction || { echo "❌ Project install failed"; exit 1; }
+
       - name: Run test split ${{ matrix.split }}/5
         run: |
           poetry run pytest tests/ \
