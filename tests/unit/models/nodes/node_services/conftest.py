@@ -51,26 +51,21 @@ def cleanup_pending_tasks():
                     if not task.done():
                         task.cancel()
 
-                # Wait for all tasks to finish cancellation with timeout
+                # Give tasks a moment to process cancellation
+                # Use a short sleep to allow CancelledError to propagate
+                try:
+                    loop.run_until_complete(asyncio.sleep(0.1))
+                except Exception:
+                    pass
+
+                # Now gather all the cancelled tasks
                 try:
                     loop.run_until_complete(
-                        asyncio.wait_for(
-                            asyncio.gather(*pending, return_exceptions=True),
-                            timeout=2.0,
-                        )
+                        asyncio.gather(*pending, return_exceptions=True)
                     )
-                except asyncio.TimeoutError:
-                    # Some tasks didn't cancel in time - force them
-                    for task in pending:
-                        if not task.done():
-                            task.cancel()
-                            # Try one more time to let them clean up
-                            try:
-                                loop.run_until_complete(
-                                    asyncio.wait({task}, timeout=0.1)
-                                )
-                            except Exception:
-                                pass
+                except Exception:
+                    # Best effort - some tasks may still be pending
+                    pass
     except RuntimeError:
         # No event loop or loop already closed - this is fine
         pass

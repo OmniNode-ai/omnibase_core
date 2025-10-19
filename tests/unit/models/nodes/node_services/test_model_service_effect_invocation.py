@@ -13,6 +13,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 from omnibase_core.models.discovery.model_tool_invocation_event import (
@@ -385,7 +386,7 @@ class TestModelServiceEffectToolInvocation:
         Test error when node has no run method.
 
         Expected:
-        - RuntimeError raised
+        - ModelOnexError raised
         """
         # Create mock node without run method
         # Use spec=[] to ensure no attributes by default
@@ -412,7 +413,7 @@ class TestModelServiceEffectToolInvocation:
             requester_node_id=uuid4(),
         )
 
-        with pytest.raises(RuntimeError, match="does not have a 'run' method"):
+        with pytest.raises(ModelOnexError, match="does not have a 'run' method"):
             await node._execute_tool(input_state, event)
 
     @pytest.mark.asyncio

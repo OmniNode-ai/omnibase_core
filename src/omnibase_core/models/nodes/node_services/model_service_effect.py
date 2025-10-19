@@ -57,10 +57,18 @@ from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_effect import NodeEffect
 
-# Type aliases for flexible state handling in generic service effects
-# Concrete implementations should override with specific state types
-ServiceInputState = Any  # Input state type (override in subclasses)
-ServiceOutputState = Any  # Output state type (override in subclasses)
+# Type aliases for MixinEventBus generic parameters
+# These use Any for flexibility in the base ModelServiceEffect class.
+# Concrete implementations SHOULD override with specific state types for type safety.
+#
+# Example override in subclass:
+#   from omnibase_core.models.state.model_database_state import ModelDatabaseState
+#   ServiceInputState = ModelDatabaseState
+#   ServiceOutputState = ModelDatabaseState
+#
+# This provides type checking for event payloads while keeping the base class flexible.
+ServiceInputState = Any
+ServiceOutputState = Any
 
 
 class ModelServiceEffect(
@@ -108,3 +116,18 @@ class ModelServiceEffect(
             container: ONEX container providing service dependencies
         """
         super().__init__(container)
+
+    def cleanup_event_handlers(self) -> None:
+        """
+        Clean up event handlers during service shutdown.
+
+        This method is called by MixinNodeService during stop_service_mode()
+        to allow cleanup of any event subscriptions or handlers. Override this
+        method in subclasses to add custom cleanup logic.
+
+        Default implementation does nothing as MixinEventBus manages its own
+        event subscriptions internally.
+        """
+        # Default implementation - no cleanup needed as MixinEventBus manages itself
+        # Subclasses can override this to add custom event handler cleanup
+        return None

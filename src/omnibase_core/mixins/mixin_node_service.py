@@ -374,11 +374,16 @@ class MixinNodeService:
                         f"Health: {health['active_invocations']} active, {health['success_rate']:.2%} success rate",
                     )
 
-                # Wait before next health check
-                await asyncio.sleep(30)  # Check every 30 seconds
+                # Wait before next health check (use small intervals to respond to shutdown faster)
+                # Total wait is 30 seconds, but check shutdown flag every 0.5 seconds
+                for _ in range(60):  # 60 * 0.5s = 30s
+                    if not self._service_running or self._shutdown_requested:
+                        break
+                    await asyncio.sleep(0.5)
 
         except asyncio.CancelledError:
             self._log_info("Health monitor cancelled")
+            raise  # Re-raise to ensure proper task cancellation
         except Exception as e:
             self._log_error(f"Health monitor error: {e}")
 

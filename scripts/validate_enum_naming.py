@@ -114,16 +114,17 @@ def check_service_file(file_path: Path) -> List[str]:
     violations = []
 
     # Extract the name part from service_<name>.py or model_service_<name>.py
-    match = re.match(r"(?:(model)_)?service_(.+)\.py$", file_path.name)
-    if not match:
-        return violations
-
-    is_model_service = match.group(1) == "model"
-    name_part = match.group(2)
-
-    if is_model_service:
+    # Check for model_service_*.py pattern first (more specific)
+    match = re.match(r"model_service_(.+)\.py$", file_path.name)
+    if match:
+        name_part = match.group(1)
         expected_class_name = f"ModelService{snake_to_pascal(name_part)}"
     else:
+        # Check for service_*.py pattern
+        match = re.match(r"service_(.+)\.py$", file_path.name)
+        if not match:
+            return violations
+        name_part = match.group(1)
         expected_class_name = f"Service{snake_to_pascal(name_part)}"
 
     try:

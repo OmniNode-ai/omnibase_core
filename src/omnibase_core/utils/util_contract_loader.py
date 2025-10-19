@@ -247,6 +247,7 @@ class ProtocolContractLoader:
                     dependencies = []
                     for dep_item in deps_data:
                         if isinstance(dep_item, dict):
+                            # Version string conversion handled by Pydantic validator
                             dependencies.append(ModelContractDependency(**dep_item))
 
             # Parse node type (default to COMPUTE if not specified)

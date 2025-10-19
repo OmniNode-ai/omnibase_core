@@ -705,9 +705,7 @@ class TestValidationErrors:
     """Test validation error handling."""
 
     def test_create_plan_protocol_without_file_path(self, tmp_path: Path) -> None:
-        """Test creating plan with protocol missing file_path raises error."""
-        from omnibase_core.errors.model_onex_error import ModelOnexError
-
+        """Test creating plan with protocol missing file_path returns error result."""
         migrator = ProtocolMigrator()
 
         # Protocol without file_path
@@ -723,15 +721,14 @@ class TestValidationErrors:
             ),
         ]
 
-        with pytest.raises(ModelOnexError) as exc_info:
-            migrator.create_migration_plan(protocols=invalid_protocols)
+        plan = migrator.create_migration_plan(protocols=invalid_protocols)
 
-        assert "file_path" in str(exc_info.value.message).lower()
+        assert plan.success is False
+        assert len(plan.recommendations) > 0
+        assert any("file_path" in rec.lower() for rec in plan.recommendations)
 
     def test_create_plan_protocol_without_name(self, tmp_path: Path) -> None:
-        """Test creating plan with protocol missing name raises error."""
-        from omnibase_core.errors.model_onex_error import ModelOnexError
-
+        """Test creating plan with protocol missing name returns error result."""
         migrator = ProtocolMigrator()
 
         # Protocol without name
@@ -747,10 +744,11 @@ class TestValidationErrors:
             ),
         ]
 
-        with pytest.raises(ModelOnexError) as exc_info:
-            migrator.create_migration_plan(protocols=invalid_protocols)
+        plan = migrator.create_migration_plan(protocols=invalid_protocols)
 
-        assert "name" in str(exc_info.value.message).lower()
+        assert plan.success is False
+        assert len(plan.recommendations) > 0
+        assert any("name" in rec.lower() for rec in plan.recommendations)
 
     def test_create_plan_with_conflicts_includes_recommendation(
         self, tmp_path: Path

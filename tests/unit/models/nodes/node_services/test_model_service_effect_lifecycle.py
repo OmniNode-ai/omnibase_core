@@ -115,13 +115,14 @@ def service_effect(request, mock_container, mock_event_bus, service_cleanup):
     object.__setattr__(service, "effect_metrics", {})
 
     # Bind instance methods (needed for proper method calls)
-    service._extract_node_name = lambda: "test_effect_node"
-    service._publish_introspection_event = Mock()
-    service.cleanup_event_handlers = Mock()
-    service._log_warning = Mock()
-    service._log_info = Mock()
-    service._log_error = Mock()
-    service.run = AsyncMock(return_value={"result": "executed", "action": "test"})
+    object.__setattr__(service, "_extract_node_name", lambda: "test_effect_node")
+    object.__setattr__(service, "_publish_introspection_event", Mock())
+    object.__setattr__(service, "_log_warning", Mock())
+    object.__setattr__(service, "_log_info", Mock())
+    object.__setattr__(service, "_log_error", Mock())
+    object.__setattr__(
+        service, "run", AsyncMock(return_value={"result": "executed", "action": "test"})
+    )
 
     # Register for automatic cleanup
     service_cleanup.register(service)
@@ -214,6 +215,9 @@ class TestModelServiceEffectStartup:
             # Verify introspection was published
             service_effect._publish_introspection_event.assert_called_once()
 
+            # Cleanup: stop service to cancel health monitor task
+            await service_effect.stop_service_mode()
+
     @pytest.mark.asyncio
     async def test_start_service_mode_subscribes_to_tool_invocation(
         self, service_effect, mock_event_bus
@@ -229,6 +233,9 @@ class TestModelServiceEffectStartup:
                 service_effect.handle_tool_invocation,
                 TOOL_INVOCATION,
             )
+
+            # Cleanup: stop service to cancel health monitor task
+            await service_effect.stop_service_mode()
 
     @pytest.mark.asyncio
     async def test_start_service_mode_starts_health_monitoring(self, service_effect):
@@ -274,22 +281,38 @@ class TestModelServiceEffectStartup:
             # Let it run briefly
             await asyncio.sleep(0.01)
 
+        # Mock health monitor to prevent background task issues
+        async def mock_health_monitor():
+            while (
+                service_effect._service_running
+                and not service_effect._shutdown_requested
+            ):
+                await asyncio.sleep(0.1)
+
         with patch.object(
             service_effect, "_service_event_loop", side_effect=mock_event_loop
         ):
-            # Start service in background
-            service_task = asyncio.create_task(service_effect.start_service_mode())
+            with patch.object(
+                service_effect, "_health_monitor_loop", side_effect=mock_health_monitor
+            ):
+                # Start service in background
+                service_task = asyncio.create_task(service_effect.start_service_mode())
 
-            # Wait for event loop to be called
-            await asyncio.wait_for(event_loop_called.wait(), timeout=1.0)
+                # Wait for event loop to be called
+                await asyncio.wait_for(event_loop_called.wait(), timeout=1.0)
 
-            # Verify service is running
-            assert service_effect._service_running is True
-            assert service_effect._start_time is not None
+                # Verify service is running
+                assert service_effect._service_running is True
+                assert service_effect._start_time is not None
 
-            # Stop the service
-            service_effect._shutdown_requested = True
-            await service_task
+                # Properly stop the service (this will cancel the health task)
+                await service_effect.stop_service_mode()
+
+                # Wait for service task to complete
+                try:
+                    await asyncio.wait_for(service_task, timeout=2.0)
+                except asyncio.CancelledError:
+                    pass  # Expected when service stops
 
     @pytest.mark.asyncio
     async def test_start_service_mode_error_handling(
@@ -321,6 +344,9 @@ class TestModelServiceEffectStartup:
             await service_effect.start_service_mode()
 
             # Should not raise error, just ignore
+
+            # Cleanup: stop service to cancel health monitor task
+            await service_effect.stop_service_mode()
 
 
 class TestModelServiceEffectShutdown:
@@ -429,7 +455,7 @@ class TestModelServiceEffectEventHandling:
 
         # Mock the run method
         mock_result = {"status": "success", "data": "test_result"}
-        service_effect.run = AsyncMock(return_value=mock_result)
+        object.__setattr__(service_effect, "run", AsyncMock(return_value=mock_result))
 
         await service_effect.handle_tool_invocation(tool_invocation_event)
 
@@ -459,7 +485,7 @@ class TestModelServiceEffectEventHandling:
             await asyncio.sleep(0.01)
             return {"status": "success"}
 
-        service_effect.run = slow_run
+        object.__setattr__(service_effect, "run", slow_run)
 
         await service_effect.handle_tool_invocation(tool_invocation_event)
 
@@ -480,8 +506,10 @@ class TestModelServiceEffectEventHandling:
         tool_invocation_event.target_node_id = service_effect._node_id
 
         # Mock run to raise exception
-        service_effect.run = AsyncMock(
-            side_effect=RuntimeError("Tool execution failed")
+        object.__setattr__(
+            service_effect,
+            "run",
+            AsyncMock(side_effect=RuntimeError("Tool execution failed")),
         )
 
         await service_effect.handle_tool_invocation(tool_invocation_event)

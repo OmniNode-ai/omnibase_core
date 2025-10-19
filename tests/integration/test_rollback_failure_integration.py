@@ -249,7 +249,7 @@ class TestRollbackFailureIntegration:
         async def handler_with_async_rollback(operation_data, transaction):
 
             async def async_failing_rollback():
-                await asyncio.sleep(0.001)  # Simulate async work
+                await asyncio.sleep(0)  # Yield to event loop
                 raise ValueError("Async rollback failed")
 
             if transaction:

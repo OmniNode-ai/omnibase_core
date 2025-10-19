@@ -30,8 +30,10 @@ The `ModelComputeCache` LRU cache operations are not atomic:
 Example of thread-safe cache wrapper:
 
 ```python
+from collections.abc import Callable
 from threading import Lock
 from typing import Any
+
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
 
 class ThreadSafeComputeCache:
@@ -64,6 +66,35 @@ class ThreadSafeComputeCache:
         """Thread-safe cache statistics."""
         with self._lock:
             return self._cache.get_stats()
+
+    def compute_if_absent(
+        self,
+        key: str,
+        compute_fn: Callable[[str], Any],
+        ttl_minutes: int | None = None,
+    ) -> Any:
+        """
+        Atomically compute and cache value if absent.
+
+        This method prevents race conditions by holding the lock
+        during both the cache check and computation.
+
+        Args:
+            key: Cache key
+            compute_fn: Function to compute value if absent (receives key as arg)
+            ttl_minutes: Optional TTL override
+
+        Returns:
+            Cached or newly computed value
+        """
+        with self._lock:
+            cached = self._cache.get(key)
+            if cached is not None:
+                return cached
+
+            result = compute_fn(key)
+            self._cache.put(key, result, ttl_minutes)
+            return result
 ```
 
 ### Cache Synchronization Strategies
@@ -106,7 +137,7 @@ compute_node.computation_cache = ThreadSafeComputeCache(
 # Now safe to share across threads
 ```
 
-**Important Atomicity Limitation**: While the `ThreadSafeComputeCache` wrapper makes individual `get()` and `put()` operations thread-safe, the common cache pattern of "check cache → compute if missing → cache result" is **NOT atomic** across these operations. If you need atomicity for the entire compute-and-cache sequence, use Option 1 (per-thread instances) or implement additional application-level locking around the computation logic.
+**Important Atomicity Note**: While the `ThreadSafeComputeCache` wrapper makes individual `get()` and `put()` operations thread-safe, the common cache pattern of "check cache → compute if missing → cache result" requires special handling. For atomic compute-and-cache operations, use the `compute_if_absent()` method (shown above), which holds the lock during the entire check-compute-cache sequence. Alternatively, use Option 1 (per-thread instances) to avoid coordination overhead entirely.
 
 ## NodeEffect Thread Safety
 

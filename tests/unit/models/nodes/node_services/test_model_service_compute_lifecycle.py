@@ -15,6 +15,7 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.constants.event_types import TOOL_INVOCATION
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.discovery.model_node_shutdown_event import (
@@ -285,7 +286,9 @@ class TestModelServiceComputeLifecycle:
         compute_node.event_bus = None
 
         # Attempt to start service should fail
-        with pytest.raises(RuntimeError, match="Event bus not available"):
+        with pytest.raises(
+            ModelOnexError, match="Event bus not available for subscription"
+        ):
             await compute_node.start_service_mode()
 
         # Verify service stopped

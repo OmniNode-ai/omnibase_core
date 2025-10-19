@@ -336,7 +336,7 @@ class TestThreadSafeWrappers:
                 with self._lock:
                     self._cache.put(key, value, ttl_minutes)
 
-            def get_stats(self) -> dict[str, int]:
+            def get_stats(self) -> dict[str, int | float]:
                 """Thread-safe stats."""
                 with self._lock:
                     return self._cache.get_stats()
@@ -433,15 +433,18 @@ class TestThreadSafeWrappers:
             return thread_local.compute_node
 
         # Track which instances were created
-        instance_ids = []
+        # IMPORTANT: Store actual instances, not just IDs, to prevent GC and memory reuse
+        instances = []
+        lock = threading.Lock()
 
         def worker(thread_id: int):
             """Each thread gets its own NodeCompute instance."""
             # Get thread-local instance
             compute_node = get_thread_local_compute()
 
-            # Record the instance ID to verify uniqueness
-            instance_ids.append(id(compute_node))
+            # Record the instance (not just ID) to prevent GC while verifying
+            with lock:
+                instances.append(compute_node)
 
         # Launch multiple threads, each with its own node instance
         threads = []
@@ -456,6 +459,8 @@ class TestThreadSafeWrappers:
             thread.join()
 
         # Each thread should have gotten a unique instance
+        # Check using id() now that all instances are kept alive
+        instance_ids = [id(inst) for inst in instances]
         assert len(instance_ids) == num_threads, "All threads should complete"
         assert (
             len(set(instance_ids)) == num_threads
@@ -542,7 +547,7 @@ class TestDocumentationExamples:
                 with self._lock:
                     self._cache.clear()
 
-            def get_stats(self) -> dict[str, int]:
+            def get_stats(self) -> dict[str, int | float]:
                 with self._lock:
                     return self._cache.get_stats()
 
@@ -565,6 +570,7 @@ class TestDocumentationExamples:
             return thread_local.compute_node
 
         # Test that each thread gets its own instance
+        # IMPORTANT: Store actual instances, not just IDs, to prevent GC and memory reuse
         instances = []
         lock = threading.Lock()
 
@@ -572,7 +578,7 @@ class TestDocumentationExamples:
             time.sleep(0.001)  # Small delay to ensure threads don't overlap
             node = get_compute_node(container)
             with lock:
-                instances.append(id(node))  # Store instance ID
+                instances.append(node)  # Store actual instance, not just ID
 
         threads = []
         for _ in range(3):
@@ -584,7 +590,9 @@ class TestDocumentationExamples:
             thread.join()
 
         # Each thread should have gotten a different instance
-        unique_instances = len(set(instances))
+        # Check using id() now that all instances are kept alive
+        instance_ids = [id(inst) for inst in instances]
+        unique_instances = len(set(instance_ids))
         assert (
             unique_instances == 3
         ), f"Expected 3 unique thread-local instances, got {unique_instances}"

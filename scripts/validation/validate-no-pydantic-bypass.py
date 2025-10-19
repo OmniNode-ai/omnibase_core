@@ -29,7 +29,7 @@ import sys
 import tokenize
 from io import StringIO
 from pathlib import Path
-from typing import List, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 # Patterns that indicate Pydantic validation bypass
 BYPASS_PATTERNS = [
@@ -39,12 +39,24 @@ BYPASS_PATTERNS = [
 ]
 
 # Patterns that are acceptable (false positives to ignore)
+# NOTE: This is deprecated in favor of tokenize-based detection,
+# but kept for backward compatibility
 ALLOWED_PATTERNS = [
-    r"#.*model_construct",  # Comments mentioning it
-    r'""".*model_construct.*"""',  # Docstrings mentioning it
-    r"'''.*model_construct.*'''",  # Docstrings mentioning it
-    r'"[^"]*model_construct[^"]*"',  # String literals
-    r"'[^']*model_construct[^']*'",  # String literals
+    r"#.*model_construct",  # Comments mentioning model_construct
+    r'""".*model_construct.*"""',  # Docstrings mentioning model_construct
+    r"'''.*model_construct.*'''",  # Docstrings mentioning model_construct
+    r'"[^"]*model_construct[^"]*"',  # String literals with model_construct
+    r"'[^']*model_construct[^']*'",  # String literals with model_construct
+    r"#.*__dict__",  # Comments mentioning __dict__
+    r'""".*__dict__.*"""',  # Docstrings mentioning __dict__
+    r"'''.*__dict__.*'''",  # Docstrings mentioning __dict__
+    r'"[^"]*__dict__[^"]*"',  # String literals with __dict__
+    r"'[^']*__dict__[^']*'",  # String literals with __dict__
+    r"#.*object\.__setattr__",  # Comments mentioning object.__setattr__
+    r'""".*object\.__setattr__.*"""',  # Docstrings mentioning object.__setattr__
+    r"'''.*object\.__setattr__.*'''",  # Docstrings mentioning object.__setattr__
+    r'"[^"]*object\.__setattr__[^"]*"',  # String literals with object.__setattr__
+    r"'[^']*object\.__setattr__[^']*'",  # String literals with object.__setattr__
 ]
 
 # Files with existing violations (technical debt) - tracked in GitHub issues
@@ -144,7 +156,7 @@ def is_allowed_context(line: str) -> bool:
     return False
 
 
-def check_file(filepath: Path) -> List[Tuple[int, str, str]]:
+def check_file(filepath: Path) -> Tuple[List[Tuple[int, str, str]], Optional[str]]:
     """Check file for Pydantic bypass patterns.
 
     Uses tokenize module to skip strings and comments, avoiding false positives.
@@ -153,7 +165,9 @@ def check_file(filepath: Path) -> List[Tuple[int, str, str]]:
         filepath: Path to Python file to check
 
     Returns:
-        List of tuples (line_number, line_content, violation_description)
+        Tuple of (violations_list, error_message)
+        - violations_list: List of tuples (line_number, line_content, violation_description)
+        - error_message: Error message if file couldn't be read, None otherwise
     """
     violations = []
 
@@ -161,13 +175,12 @@ def check_file(filepath: Path) -> List[Tuple[int, str, str]]:
     filepath_str = str(filepath)
     for excluded in EXCLUDED_FILES:
         if filepath_str.endswith(excluded) or excluded in filepath_str:
-            return violations
+            return (violations, None)
 
     try:
         content = filepath.read_text()
     except Exception as e:
-        print(f"Error reading {filepath}: {e}", file=sys.stderr)
-        return violations
+        return ([], f"Error reading {filepath}: {e}")
 
     # Build character-range map of strings and comments using tokenize
     string_comment_ranges = get_string_and_comment_ranges(content)
@@ -229,37 +242,46 @@ def check_file(filepath: Path) -> List[Tuple[int, str, str]]:
                     continue
                 violations.append((line_num, line.strip(), description))
 
-    return violations
+    return (violations, None)
 
 
-def check_path(path: Path) -> List[Tuple[Path, int, str, str]]:
+def check_path(
+    path: Path,
+) -> Tuple[List[Tuple[Path, int, str, str]], List[str]]:
     """Check path (file or directory) for violations.
 
     Args:
         path: Path to check (file or directory)
 
     Returns:
-        List of tuples (filepath, line_number, line_content, violation_description)
+        Tuple of (violations_list, errors_list)
+        - violations_list: List of tuples (filepath, line_number, line_content, violation_description)
+        - errors_list: List of error messages for unreadable files
     """
     all_violations = []
+    all_errors = []
 
     if path.is_file():
         if path.suffix == ".py":
-            violations = check_file(path)
+            violations, error = check_file(path)
+            if error:
+                all_errors.append(error)
             all_violations.extend(
                 (path, line_num, line, desc) for line_num, line, desc in violations
             )
     elif path.is_dir():
         # Recursively check all Python files in directory
         for py_file in path.rglob("*.py"):
-            violations = check_file(py_file)
+            violations, error = check_file(py_file)
+            if error:
+                all_errors.append(error)
             all_violations.extend(
                 (py_file, line_num, line, desc) for line_num, line, desc in violations
             )
     else:
         print(f"Warning: {path} is not a file or directory", file=sys.stderr)
 
-    return all_violations
+    return (all_violations, all_errors)
 
 
 def main() -> int:
@@ -270,16 +292,18 @@ def main() -> int:
         print("These patterns are only allowed in tests/fixtures/.")
         return 2
 
-    # Collect all violations
+    # Collect all violations and errors
     all_violations = []
+    all_errors = []
     for arg in sys.argv[1:]:
         path = Path(arg)
         if not path.exists():
             print(f"Error: {path} does not exist", file=sys.stderr)
             return 2
 
-        violations = check_path(path)
+        violations, errors = check_path(path)
         all_violations.extend(violations)
+        all_errors.extend(errors)
 
     # Report results
     if all_violations:
@@ -317,6 +341,21 @@ def main() -> int:
         print()
         print(f"Total violations: {len(all_violations)}")
         return 1
+
+    # Report any file reading errors
+    if all_errors:
+        print("=" * 80)
+        print("⚠️  FILE READING ERRORS")
+        print("=" * 80)
+        print()
+        for error in all_errors:
+            print(f"  {error}")
+        print()
+        print(f"Total files with errors: {len(all_errors)}")
+        print("=" * 80)
+        print()
+        # Don't fail on read errors, just warn
+        # return 2
 
     print("✅ No Pydantic bypass patterns found in production code")
     return 0

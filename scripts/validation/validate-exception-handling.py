@@ -89,18 +89,24 @@ class ExceptionHandlingValidator:
                     )
                     has_fallback_ok = any("# fallback-ok" in l for l in next_lines)
 
-                    # Flag handlers that only have 'pass' and don't log, raise, or return
-                    has_pass_only = "pass" in "\n".join(next_lines) and not any(
-                        other in "\n".join(next_lines)
-                        for other in ["return", "raise", "emit"]
+                    # Flag handlers with no logging AND no control flow
+                    # Control flow: return, raise, break, continue, or any function call
+                    handler_content = "\n".join(next_lines)
+                    has_control_flow = any(
+                        keyword in handler_content
+                        for keyword in ["return", "raise", "break", "continue"]
+                    ) or (
+                        # Check for function calls (contains parentheses with content)
+                        re.search(r"\w+\s*\([^)]*\)", handler_content)
+                        is not None
                     )
 
-                    if not has_logging and not has_fallback_ok and has_pass_only:
+                    if not has_logging and not has_fallback_ok and not has_control_flow:
                         self.errors.append(
                             (
                                 str(file_path),
                                 i,
-                                f"except Exception: without logging or fallback-ok: {line.strip()}",
+                                f"except Exception: without logging or control flow: {line.strip()}",
                             )
                         )
 

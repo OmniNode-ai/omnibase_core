@@ -14,7 +14,6 @@ Key Capabilities:
 - LRU eviction policy for memory management
 - Access count tracking
 - Cache statistics and monitoring
-- Thread-safe operations
 
 STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
 Code generators can target this stable interface.

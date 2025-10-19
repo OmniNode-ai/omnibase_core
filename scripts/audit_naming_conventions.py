@@ -47,15 +47,21 @@ def check_enum_file(file_path: Path) -> List[Tuple[str, str, str]]:
         # Find all class definitions
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef):
-                # Check if it's an Enum class (inherits from Enum or StrEnum)
+                # Check if it's an Enum class (inherits from Enum, StrEnum, IntEnum, Flag, or IntFlag)
                 is_enum = False
                 for base in node.bases:
                     if isinstance(base, ast.Name):
-                        if base.id in ("Enum", "StrEnum", "IntEnum"):
+                        if base.id in ("Enum", "StrEnum", "IntEnum", "Flag", "IntFlag"):
                             is_enum = True
                             break
                     elif isinstance(base, ast.Attribute):
-                        if base.attr in ("Enum", "StrEnum", "IntEnum"):
+                        if base.attr in (
+                            "Enum",
+                            "StrEnum",
+                            "IntEnum",
+                            "Flag",
+                            "IntFlag",
+                        ):
                             is_enum = True
                             break
 

@@ -74,22 +74,34 @@ class ProtocolMigrator:
         Returns:
             ModelMigrationPlan with detailed migration strategy
         """
+        validation_errors = []
+
         # Get protocols from source repository OR use provided protocols
         if protocols is not None:
             # Validate that provided protocols have valid path format and required metadata
             for protocol in protocols:
                 if not protocol.file_path:
-                    raise ModelOnexError(
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                        message="Protocol must have a file_path specified",
+                    validation_errors.append(
+                        f"Protocol '{protocol.name or 'unnamed'}' must have a file_path specified"
                     )
                 if not protocol.name:
-                    raise ModelOnexError(
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                        message="Protocol must have a name specified",
-                    )
+                    validation_errors.append("Protocol must have a name specified")
                 # Note: File existence is not required for planning phase
                 # Actual file validation occurs during execution
+
+            # If validation errors exist, return failed plan
+            if validation_errors:
+                return ModelMigrationPlan(
+                    success=False,
+                    source_repository=self.source_repository,
+                    target_repository="omnibase_spi",
+                    protocols_to_migrate=[],
+                    conflicts_detected=[],
+                    migration_steps=[],
+                    estimated_time_minutes=0,
+                    recommendations=validation_errors,
+                )
+
             # Use the explicitly provided protocols
             source_protocols = protocols
         else:
@@ -419,22 +431,39 @@ class ProtocolMigrator:
                 ],
             )
 
-        try:
-            # Restore deleted files from backup
-            # Delete created files
-            for file_path in result.files_created:
-                file_to_delete = Path(file_path)
-                if file_to_delete.exists():
-                    file_to_delete.unlink()
+        errors = []
 
-            return ValidationResult(
-                success=True,
-                errors=[],
-            )
+        # Restore deleted files from backup
+        # Delete created files
+        for file_path in result.files_created:
+            file_to_delete = Path(file_path)
+            if file_to_delete.exists():
+                try:
+                    if file_to_delete.is_dir():
+                        # Migration should only create files, not directories
+                        # Finding a directory is an error condition
+                        errors.append(
+                            f"Cannot rollback directory {file_path} - "
+                            "migration should only create files"
+                        )
+                    else:
+                        # Handle file deletion
+                        file_to_delete.unlink()
+                except PermissionError as e:
+                    # Handle permission errors gracefully
+                    errors.append(f"Permission denied deleting {file_path}: {e}")
+                except OSError as e:
+                    # Handle other OS errors gracefully
+                    errors.append(f"Failed to delete {file_path}: {e}")
 
-        except Exception as e:
-            # Re-raise rollback errors with context
+        if errors:
+            # Return failed result with error details
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.MIGRATION_ERROR,
-                message=f"Rollback failed: {e}",
-            ) from e
+                message=f"Rollback failed: {'; '.join(errors)}",
+            )
+
+        return ValidationResult(
+            success=True,
+            errors=[],
+        )

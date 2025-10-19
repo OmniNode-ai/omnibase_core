@@ -34,14 +34,15 @@ class ModelEffectTransaction:
         operations: List of operations performed during this transaction
         rollback_operations: List of (operation_name, rollback_function) tuples
         rollback_failures: List of error messages from failed rollback operations
+        rollback_errors: List of structured ModelOnexError objects with full context
         started_at: Timestamp when transaction was created
         committed_at: Timestamp when transaction was committed (None if not committed)
 
     Rollback Semantics:
-        - Rollback failures are logged and returned, never silently swallowed
+        - Rollback failures are logged and returned via structured ModelOnexError objects
         - Partial rollback failures are captured with details of which operations failed
-        - Original exception details are captured in error context (no re-raise here)
-        - All rollback attempts are made even if some fail
+        - Original exception details preserved in ModelOnexError context (operation, type, message)
+        - All rollback attempts are made even if some fail (no fail-fast behavior)
     """
 
     def __init__(self, transaction_id: UUID):
@@ -126,6 +127,8 @@ class ModelEffectTransaction:
                     original_error=str(e),
                     original_error_type=type(e).__name__,
                 )
+                # Use native exception chaining to preserve the original exception
+                error.__cause__ = e
                 failures.append(error)
 
                 emit_log_event(

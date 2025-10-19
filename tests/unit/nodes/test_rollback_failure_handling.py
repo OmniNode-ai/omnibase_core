@@ -131,7 +131,7 @@ class TestModelEffectTransactionRollbackFailures:
 
     @pytest.mark.asyncio
     async def test_rollback_preserves_exception_cause_chain(self):
-        """Test rollback preserves exception cause via chaining."""
+        """Test rollback preserves exception cause via native exception chaining."""
         transaction = ModelEffectTransaction(uuid4())
 
         original_error = ValueError("Original failure")
@@ -144,12 +144,12 @@ class TestModelEffectTransactionRollbackFailures:
         # Execute rollback
         success, errors = await transaction.rollback()
 
-        # Verify cause is preserved in context
+        # Verify cause is preserved via native exception chaining (__cause__)
         assert not success
         assert len(errors) == 1
-        # Cause is stored in additional_context by ModelOnexError
-        additional_ctx = errors[0].context.get("additional_context", {})
-        assert additional_ctx.get("cause") is original_error
+        assert isinstance(errors[0], ModelOnexError)
+        # Verify the original error is chained as __cause__
+        assert errors[0].__cause__ is original_error
 
 
 class TestNodeEffectRollbackFailures:
@@ -197,11 +197,9 @@ class TestNodeEffectRollbackFailures:
         error = exc_info.value
         assert "rollback failed" in error.message.lower()
         assert "data may be inconsistent" in error.message.lower()
-        # Context is nested under additional_context in ModelOnexError
-        additional_ctx = error.context.get("additional_context", {})
-        context_data = additional_ctx.get("context", {})
-        assert "rollback_errors" in context_data
-        assert len(context_data["rollback_errors"]) > 0
+        # rollback_errors is directly in the error context
+        assert "rollback_errors" in error.context
+        assert len(error.context["rollback_errors"]) > 0
 
     @pytest.mark.asyncio
     async def test_rollback_failure_callback_invoked(self, container):
@@ -351,7 +349,5 @@ class TestNodeEffectRollbackFailures:
         # Verify error indicates rollback failure
         error = exc_info.value
         assert "rollback failed" in error.message.lower()
-        # Context is nested under additional_context in ModelOnexError
-        additional_ctx = error.context.get("additional_context", {})
-        context_data = additional_ctx.get("context", {})
-        assert "rollback_errors" in context_data
+        # rollback_errors is directly in the error context
+        assert "rollback_errors" in error.context

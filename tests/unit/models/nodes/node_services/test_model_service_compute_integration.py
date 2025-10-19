@@ -18,6 +18,9 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from omnibase_core.models.configuration.model_compute_cache_config import (
+    ModelComputeCacheConfig,
+)
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.discovery.model_tool_invocation_event import (
@@ -81,6 +84,12 @@ class TestModelServiceComputeIntegration:
     def mock_container(self):
         """Create mock ModelONEXContainer."""
         container = Mock(spec=ModelONEXContainer)
+        # Add compute_cache_config attribute with proper configuration
+        container.compute_cache_config = ModelComputeCacheConfig(
+            max_size=128,
+            ttl_seconds=3600,
+            enable_stats=True,
+        )
         return container
 
     @pytest.fixture
@@ -652,6 +661,12 @@ class TestModelServiceComputeMRODetails:
         """
         # Use the test node class which properly initializes all mixins
         container = Mock(spec=ModelONEXContainer)
+        # Add compute_cache_config attribute with proper configuration
+        container.compute_cache_config = ModelComputeCacheConfig(
+            max_size=128,
+            ttl_seconds=3600,
+            enable_stats=True,
+        )
         event_bus = AsyncMock()
         event_bus.subscribe = Mock()
         event_bus.publish = AsyncMock()
