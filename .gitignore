@@ -278,3 +278,5 @@ examples_*.py
 factory_pattern_analysis.md
 migration_guide_*.md
 coverage.json
+.test_durations
+junit-*.xml
