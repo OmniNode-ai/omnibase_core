@@ -2,9 +2,9 @@ name: Test Suite
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   workflow_dispatch:
 
 env:
@@ -42,16 +42,26 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root || { echo "❌ Dependency install failed"; exit 1; }
+        run: |
+          poetry install --no-interaction --no-root || {
+            echo "❌ Dependency install failed"
+            exit 1
+          }
 
       - name: Install project
-        run: poetry install --no-interaction || { echo "❌ Project install failed"; exit 1; }
+        run: |
+          poetry install --no-interaction || {
+            echo "❌ Project install failed"
+            exit 1
+          }
 
       - name: Run smoke tests
         run: |
@@ -97,16 +107,26 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root || { echo "❌ Dependency install failed"; exit 1; }
+        run: |
+          poetry install --no-interaction --no-root || {
+            echo "❌ Dependency install failed"
+            exit 1
+          }
 
       - name: Install project
-        run: poetry install --no-interaction || { echo "❌ Project install failed"; exit 1; }
+        run: |
+          poetry install --no-interaction || {
+            echo "❌ Project install failed"
+            exit 1
+          }
 
       - name: Run test split ${{ matrix.split }}/5
         run: |
@@ -159,7 +179,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
 
@@ -226,7 +248,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
 
@@ -243,11 +267,13 @@ jobs:
       - name: Check isort import sorting
         run: poetry run isort --check-only src/ tests/
 
-      # MyPy disabled: 234 type errors, >45s execution time
-      # Same as pre-commit configuration (see .pre-commit-config.yaml line 52-61)
-      # TODO: Re-enable after fixing mixin Protocol definitions and import errors
-      # - name: Run mypy type checking
-      #   run: poetry run mypy src/omnibase_core
+    # MyPy disabled: 234 type errors, >45s execution time
+    # Same as pre-commit configuration
+    # (see .pre-commit-config.yaml line 52-61)
+    # TODO: Re-enable after fixing mixin Protocol definitions
+    # and import errors
+    # - name: Run mypy type checking
+    #   run: poetry run mypy src/omnibase_core
 
   test-summary:
     name: Test Summary
@@ -258,7 +284,13 @@ jobs:
     steps:
       - name: Check test results
         run: |
-          if [[ "${{ needs.smoke-test.result }}" == "success" ]] && [[ "${{ needs.test-parallel.result }}" == "success" ]] && [[ "${{ needs.lint.result }}" == "success" ]]; then
+          smoke="${{ needs.smoke-test.result }}"
+          parallel="${{ needs.test-parallel.result }}"
+          lint="${{ needs.lint.result }}"
+
+          if [[ "$smoke" == "success" ]] && \
+             [[ "$parallel" == "success" ]] && \
+             [[ "$lint" == "success" ]]; then
             echo "✅ All tests passed successfully"
             echo "Smoke Tests: ✅ Passed"
             echo "Parallel Tests (5 splits): ✅ Passed"
@@ -266,8 +298,8 @@ jobs:
             exit 0
           else
             echo "❌ Tests failed"
-            echo "Smoke Tests: ${{ needs.smoke-test.result }}"
-            echo "Parallel Tests: ${{ needs.test-parallel.result }}"
-            echo "Lint: ${{ needs.lint.result }}"
+            echo "Smoke Tests: $smoke"
+            echo "Parallel Tests: $parallel"
+            echo "Lint: $lint"
             exit 1
           fi
