@@ -70,9 +70,9 @@ class ModelContractContent(BaseModel):
     main_tool_class: str | None = Field(
         default=None, description="Main tool class name"
     )
-    dependencies: list[ModelContractDependency] | list[str] | None = Field(
+    dependencies: list[ModelContractDependency] | None = Field(
         default=None,
-        description="Contract dependencies (can be ModelContractDependency objects or strings)",
+        description="Contract dependencies - strongly typed per ONEX Phase 0",
     )
     actions: list[dict[str, Any]] | None = Field(
         default=None,

@@ -243,6 +243,17 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
+      # ONEX Model-Primitive Union Prevention (PR#59 follow-up)
+      # Prevents Union types mixing models and primitives that cause Pydantic
+      # validation race conditions in parallel execution (pytest-xdist)
+      - id: validate-no-model-primitive-unions
+        name: ONEX Model-Primitive Union Prevention
+        entry: ./scripts/validate-no-model-primitive-unions.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       # Smoke tests - fast critical path validation (~3s)
       # Runs foundational tests (enums, errors) for immediate feedback
       # Full test suite (10k+ tests) runs in CI with parallel execution
