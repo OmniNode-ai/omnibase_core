@@ -9,7 +9,7 @@ ZERO TOLERANCE: No Any types allowed.
 
 import json
 from typing import Any
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from uuid import uuid4
 
 import pytest
@@ -55,10 +55,10 @@ class MockTool(MixinHybridExecution[SimpleInputState, SimpleInputState]):
         workflow = Mock()
         workflow._steps_executed = 3
 
-        async def run(input_data: SimpleInputState) -> SimpleInputState:
-            return SimpleInputState(value=f"workflow: {input_data.value}")
-
-        workflow.run = run
+        # Use AsyncMock with return_value to properly handle async execution
+        workflow.run = AsyncMock(
+            return_value=SimpleInputState(value=f"workflow: {input_state.value}")
+        )
         workflow.__class__.__name__ = "MockWorkflow"
         return workflow
 

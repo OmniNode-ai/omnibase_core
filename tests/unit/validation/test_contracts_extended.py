@@ -1058,12 +1058,15 @@ operations: []
 
         monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
 
-        # Mock validate_contracts_directory to raise KeyboardInterrupt
-        with patch(
-            "omnibase_core.validation.contracts.validate_contracts_directory",
+        # Patch within the contracts module's local namespace
+        import omnibase_core.validation.contracts as contracts_module
+
+        with patch.object(
+            contracts_module,
+            "validate_contracts_directory",
             side_effect=KeyboardInterrupt,
         ):
-            exit_code = validate_contracts_cli()
+            exit_code = contracts_module.validate_contracts_cli()
 
         assert exit_code == 1
         captured = capsys.readouterr()
@@ -1160,15 +1163,18 @@ operations: []
 
         monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
 
-        # Mock validate_contracts_directory to raise timeout error
-        with patch(
-            "omnibase_core.validation.contracts.validate_contracts_directory",
+        # Patch within the contracts module's local namespace
+        import omnibase_core.validation.contracts as contracts_module
+
+        with patch.object(
+            contracts_module,
+            "validate_contracts_directory",
             side_effect=ModelOnexError(
                 error_code=EnumCoreErrorCode.TIMEOUT_ERROR,
                 message="Validation timed out",
             ),
         ):
-            exit_code = validate_contracts_cli()
+            exit_code = contracts_module.validate_contracts_cli()
 
         assert exit_code == 1
         captured = capsys.readouterr()
@@ -1200,15 +1206,18 @@ operations: []
 
         monkeypatch.setattr(sys, "argv", ["validate_contracts", str(tmp_path)])
 
-        # Mock validate_contracts_directory to raise generic error
-        with patch(
-            "omnibase_core.validation.contracts.validate_contracts_directory",
+        # Patch within the contracts module's local namespace
+        import omnibase_core.validation.contracts as contracts_module
+
+        with patch.object(
+            contracts_module,
+            "validate_contracts_directory",
             side_effect=ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Generic validation error",
             ),
         ):
-            exit_code = validate_contracts_cli()
+            exit_code = contracts_module.validate_contracts_cli()
 
         assert exit_code == 1
         captured = capsys.readouterr()

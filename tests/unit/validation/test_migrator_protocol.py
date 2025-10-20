@@ -849,6 +849,7 @@ class TestProtocol(Protocol):
 
     def test_rollback_migration_with_error(self, tmp_path: Path) -> None:
         """Test rollback handling when file deletion fails."""
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
         from omnibase_core.errors.model_onex_error import ModelOnexError
 
         migrator = ProtocolMigrator()
@@ -877,4 +878,8 @@ class TestProtocol(Protocol):
         with pytest.raises(ModelOnexError) as exc_info:
             migrator.rollback_migration(result)
 
+        # Verify error code matches expected MIGRATION_ERROR
+        assert exc_info.value.error_code == EnumCoreErrorCode.MIGRATION_ERROR
+        # Verify error message contains expected text
         assert "rollback failed" in str(exc_info.value.message).lower()
+        assert "cannot rollback directory" in str(exc_info.value.message).lower()
