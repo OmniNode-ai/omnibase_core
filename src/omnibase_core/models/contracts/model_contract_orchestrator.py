@@ -27,6 +27,9 @@ from pydantic import ConfigDict, Field, field_validator
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.contracts.model_action_emission_config import (
+    ModelActionEmissionConfig,
+)
 from omnibase_core.models.contracts.model_branching_config import ModelBranchingConfig
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_event_coordination_config import (
@@ -38,9 +41,6 @@ from omnibase_core.models.contracts.model_event_registry_config import (
 )
 from omnibase_core.models.contracts.model_event_subscription import (
     ModelEventSubscription,
-)
-from omnibase_core.models.contracts.model_thunk_emission_config import (
-    ModelThunkEmissionConfig,
 )
 from omnibase_core.models.contracts.model_workflow_config import ModelWorkflowConfig
 from omnibase_core.models.core.model_workflow import ModelWorkflow
@@ -73,8 +73,8 @@ class ModelContractOrchestrator(ModelContractBase):
     )
 
     # Orchestration configuration
-    thunk_emission: ModelThunkEmissionConfig = Field(
-        default_factory=ModelThunkEmissionConfig,
+    action_emission: ModelActionEmissionConfig = Field(
+        default_factory=ModelActionEmissionConfig,
         description="Thunk emission patterns and rules",
     )
 
@@ -142,8 +142,8 @@ class ModelContractOrchestrator(ModelContractBase):
         """
         # Validate thunk emission configuration
         if (
-            self.thunk_emission.emission_strategy == "batch"
-            and self.thunk_emission.batch_size < 1
+            self.action_emission.emission_strategy == "batch"
+            and self.action_emission.batch_size < 1
         ):
             msg = "Batch emission strategy requires positive batch_size"
             raise ModelOnexError(

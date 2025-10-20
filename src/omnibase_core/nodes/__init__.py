@@ -9,9 +9,9 @@ Breaking changes require major version bump.
 """
 
 from omnibase_core.nodes.enum_orchestrator_types import (
+    EnumActionType,
     EnumBranchCondition,
     EnumExecutionMode,
-    EnumThunkType,
     EnumWorkflowState,
 )
 from omnibase_core.nodes.enum_reducer_types import (
@@ -34,7 +34,7 @@ from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.nodes.node_reducer import NodeReducer
 
 # NOTE: Internal models like ModelConflictResolver, ModelDependencyGraph, ModelLoadBalancer,
-# ModelStreamingWindow, ModelThunk, ModelWorkflowStep are NOT exported - they are internal
+# ModelStreamingWindow, ModelAction, ModelWorkflowStep are NOT exported - they are internal
 # implementation details used by the nodes themselves.
 
 __all__ = [
@@ -54,9 +54,9 @@ __all__ = [
     "ModelReducerInput",
     "ModelReducerOutput",
     # Public enums (use these for configuration)
+    "EnumActionType",
     "EnumBranchCondition",
     "EnumExecutionMode",
-    "EnumThunkType",
     "EnumWorkflowState",
     "EnumConflictResolution",
     "EnumReductionType",

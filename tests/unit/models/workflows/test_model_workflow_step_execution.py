@@ -18,7 +18,7 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
-from omnibase_core.models.orchestrator.model_thunk import ModelThunk
+from omnibase_core.models.orchestrator.model_action import ModelThunk
 from omnibase_core.models.workflows.model_workflow_step_execution import (
     ModelWorkflowStepExecution,
 )

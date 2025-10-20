@@ -38,16 +38,16 @@ from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.enum_orchestrator_types import (
+    EnumActionType,
     EnumBranchCondition,
     EnumExecutionMode,
-    EnumThunkType,
     EnumWorkflowState,
 )
+from omnibase_core.nodes.model_action import ModelAction
 from omnibase_core.nodes.model_dependency_graph import ModelDependencyGraph
 from omnibase_core.nodes.model_load_balancer import ModelLoadBalancer
 from omnibase_core.nodes.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.nodes.model_orchestrator_output import ModelOrchestratorOutput
-from omnibase_core.nodes.model_thunk import ModelThunk
 from omnibase_core.nodes.model_workflow_step import ModelWorkflowStep
 
 
@@ -92,7 +92,7 @@ class NodeOrchestrator(NodeCoreBase):
         # Orchestrator-specific configuration
         object.__setattr__(self, "max_concurrent_workflows", 5)
         object.__setattr__(self, "default_step_timeout_ms", 30000)
-        object.__setattr__(self, "thunk_emission_enabled", True)
+        object.__setattr__(self, "action_emission_enabled", True)
 
         # Active workflows tracking (UUID keys for workflow_id)
         object.__setattr__(self, "active_workflows", {})
@@ -313,13 +313,13 @@ class NodeOrchestrator(NodeCoreBase):
 
     async def emit_thunk(
         self,
-        thunk_type: EnumThunkType,
+        thunk_type: EnumActionType,
         target_node_type: str,
         operation_data: dict[str, Any],
         dependencies: list[UUID] | None = None,
         priority: int = 1,
         timeout_ms: int = 30000,
-    ) -> ModelThunk:
+    ) -> ModelAction:
         """
         Emit thunk for deferred execution.
 
@@ -334,7 +334,7 @@ class NodeOrchestrator(NodeCoreBase):
         Returns:
             Created thunk instance
         """
-        thunk = ModelThunk(
+        thunk = ModelAction(
             thunk_id=uuid4(),
             thunk_type=thunk_type,
             target_node_type=target_node_type,
@@ -456,7 +456,7 @@ class NodeOrchestrator(NodeCoreBase):
             {
                 "node_id": str(self.node_id),
                 "max_concurrent_workflows": self.max_concurrent_workflows,
-                "thunk_emission_enabled": self.thunk_emission_enabled,
+                "action_emission_enabled": self.action_emission_enabled,
             },
         )
 
@@ -565,7 +565,7 @@ class NodeOrchestrator(NodeCoreBase):
                 "execution_mode", EnumExecutionMode.SEQUENTIAL
             ),
             thunks=[
-                ModelThunk(**thunk_dict) for thunk_dict in step_dict.get("thunks", [])
+                ModelAction(**thunk_dict) for thunk_dict in step_dict.get("actions", [])
             ],
             condition=step_dict.get("condition"),
             timeout_ms=step_dict.get("timeout_ms", 30000),
@@ -622,7 +622,7 @@ class NodeOrchestrator(NodeCoreBase):
                 # Execute step thunks
                 step_results = []
                 for thunk in step.thunks:
-                    if self.thunk_emission_enabled:
+                    if self.action_emission_enabled:
                         emitted_thunk = await self.emit_thunk(
                             thunk.thunk_type,
                             thunk.target_node_type,
@@ -726,7 +726,7 @@ class NodeOrchestrator(NodeCoreBase):
 
                         # Collect thunks
                         for thunk in step.thunks:
-                            if self.thunk_emission_enabled:
+                            if self.action_emission_enabled:
                                 emitted_thunk = await self.emit_thunk(
                                     thunk.thunk_type,
                                     thunk.target_node_type,
@@ -916,10 +916,10 @@ class NodeOrchestrator(NodeCoreBase):
         steps = []
 
         # Step 1: Validate current state
-        validate_thunk_id = uuid4()
-        validate_thunk = ModelThunk(
-            thunk_id=validate_thunk_id,
-            thunk_type=EnumThunkType.COMPUTE,
+        validate_action_id = uuid4()
+        validate_action = ModelAction(
+            thunk_id=validate_action_id,
+            thunk_type=EnumActionType.COMPUTE,
             target_node_type="NodeCompute",
             operation_data={
                 "computation_type": "state_validation",
@@ -938,24 +938,24 @@ class NodeOrchestrator(NodeCoreBase):
             "step_id": str(uuid4()),
             "step_name": "Validate Current State",
             "execution_mode": EnumExecutionMode.SEQUENTIAL,
-            "thunks": [validate_thunk.model_dump()],
+            "actions": [validate_action.model_dump()],
         }
         steps.append(validate_step)
 
         # Step 2: Check dependencies
-        dep_thunk_id = None
+        dep_action_id = None
         if dependencies:
-            dep_thunk_id = uuid4()
-            dep_thunk = ModelThunk(
-                thunk_id=dep_thunk_id,
-                thunk_type=EnumThunkType.REDUCE,
+            dep_action_id = uuid4()
+            dep_action = ModelAction(
+                thunk_id=dep_action_id,
+                thunk_type=EnumActionType.REDUCE,
                 target_node_type="NodeReducer",
                 operation_data={
                     "reduction_type": "dependency_check",
                     "ticket_id": str(ticket_id),
                     "dependencies": [str(dep) for dep in dependencies],
                 },
-                dependencies=[validate_thunk_id],
+                dependencies=[validate_action_id],
                 priority=1,
                 timeout_ms=10000,
                 retry_count=0,
@@ -967,18 +967,18 @@ class NodeOrchestrator(NodeCoreBase):
                 "step_id": str(uuid4()),
                 "step_name": "Check Dependencies",
                 "execution_mode": EnumExecutionMode.SEQUENTIAL,
-                "thunks": [dep_thunk.model_dump()],
+                "actions": [dep_action.model_dump()],
             }
             steps.append(dep_step)
 
         # Step 3: Execute state transition
-        transition_deps = [validate_thunk_id]
-        if dep_thunk_id:
-            transition_deps.append(dep_thunk_id)
+        transition_deps = [validate_action_id]
+        if dep_action_id:
+            transition_deps.append(dep_action_id)
 
-        transition_thunk = ModelThunk(
+        transition_action = ModelAction(
             thunk_id=uuid4(),
-            thunk_type=EnumThunkType.EFFECT,
+            thunk_type=EnumActionType.EFFECT,
             target_node_type="NodeEffect",
             operation_data={
                 "effect_type": "ticket_state_transition",
@@ -998,7 +998,7 @@ class NodeOrchestrator(NodeCoreBase):
             "step_id": str(uuid4()),
             "step_name": "Execute State Transition",
             "execution_mode": EnumExecutionMode.SEQUENTIAL,
-            "thunks": [transition_thunk.model_dump()],
+            "actions": [transition_action.model_dump()],
         }
         steps.append(transition_step)
 

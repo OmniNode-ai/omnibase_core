@@ -12,7 +12,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.nodes.enum_orchestrator_types import EnumWorkflowState
-from omnibase_core.nodes.model_thunk import ModelThunk
+from omnibase_core.nodes.model_action import ModelAction
 
 
 class ModelOrchestratorOutput(BaseModel):
@@ -32,8 +32,8 @@ class ModelOrchestratorOutput(BaseModel):
         ..., description="Number of successfully completed steps"
     )
     steps_failed: int = Field(..., description="Number of failed steps")
-    thunks_emitted: list[ModelThunk] = Field(
-        default_factory=list, description="List of emitted thunks"
+    actions_emitted: list[ModelAction] = Field(
+        default_factory=list, description="List of emitted actions"
     )
     processing_time_ms: float = Field(
         ..., description="Total processing time in milliseconds"

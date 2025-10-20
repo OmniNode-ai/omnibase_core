@@ -2,7 +2,7 @@
 Workflow Execution Enums - ONEX Standards Compliant.
 
 Enums for workflow orchestration including states, execution modes,
-thunk types, and branch conditions.
+action types, and branch conditions.
 
 Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
 """
@@ -31,8 +31,8 @@ class EnumExecutionMode(Enum):
     STREAMING = "streaming"
 
 
-class EnumThunkType(Enum):
-    """Types of thunks for deferred execution."""
+class EnumActionType(Enum):
+    """Types of Actions for orchestrated execution."""
 
     COMPUTE = "compute"
     EFFECT = "effect"

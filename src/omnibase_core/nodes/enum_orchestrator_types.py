@@ -28,8 +28,8 @@ class EnumExecutionMode(Enum):
     STREAMING = "streaming"
 
 
-class EnumThunkType(Enum):
-    """Types of thunks for deferred execution."""
+class EnumActionType(Enum):
+    """Types of Actions for orchestrated execution."""
 
     COMPUTE = "compute"
     EFFECT = "effect"

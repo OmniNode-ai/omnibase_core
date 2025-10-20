@@ -14,7 +14,7 @@ from typing import Any
 from pydantic import BaseModel
 
 
-class ModelThunkEmissionConfig(BaseModel):
+class ModelActionEmissionConfig(BaseModel):
     """
     Thunk emission patterns and deferred execution rules.
 

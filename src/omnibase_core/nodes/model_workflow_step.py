@@ -14,7 +14,7 @@ from omnibase_core.nodes.enum_orchestrator_types import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
-from omnibase_core.nodes.model_thunk import ModelThunk
+from omnibase_core.nodes.model_action import ModelAction
 
 
 class ModelWorkflowStep(BaseModel):
@@ -30,7 +30,7 @@ class ModelWorkflowStep(BaseModel):
     execution_mode: EnumExecutionMode = Field(
         ..., description="Execution mode for step"
     )
-    thunks: list[ModelThunk] = Field(
+    thunks: list[ModelAction] = Field(
         default_factory=list, description="List of thunks to execute"
     )
     condition: EnumBranchCondition | None = Field(

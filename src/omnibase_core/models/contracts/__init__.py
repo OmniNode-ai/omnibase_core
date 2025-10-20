@@ -9,6 +9,7 @@ Models for validating various contract formats and subcontract compositions.
 """
 
 from . import subcontracts
+from .model_action_emission_config import ModelActionEmissionConfig
 from .model_algorithm_config import ModelAlgorithmConfig
 from .model_algorithm_factor_config import ModelAlgorithmFactorConfig
 from .model_backup_config import ModelBackupConfig
@@ -40,7 +41,6 @@ from .model_parallel_config import ModelParallelConfig
 from .model_performance_requirements import ModelPerformanceRequirements
 from .model_reduction_config import ModelReductionConfig
 from .model_streaming_config import ModelStreamingConfig
-from .model_thunk_emission_config import ModelThunkEmissionConfig
 from .model_transaction_config import ModelTransactionConfig
 from .model_trigger_mappings import ModelTriggerMappings
 from .model_validation_rules import ModelValidationRules
@@ -81,7 +81,7 @@ __all__ = [
     "ModelPerformanceRequirements",
     "ModelReductionConfig",
     "ModelStreamingConfig",
-    "ModelThunkEmissionConfig",
+    "ModelActionEmissionConfig",
     "ModelTransactionConfig",
     "ModelValidationRules",
     # Workflow models
