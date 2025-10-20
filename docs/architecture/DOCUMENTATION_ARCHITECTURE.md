@@ -257,9 +257,9 @@ Before publishing documentation:
 ## Related Documents
 
 - [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md) - Core architecture
-- [Threading Guide](THREADING.md) - Thread safety
-- [Error Handling](ERROR_HANDLING_BEST_PRACTICES.md) - Error patterns
-- [API Documentation](API_DOCUMENTATION.md) - API reference
+- [Threading Guide](../reference/THREADING.md) - Thread safety
+- [Error Handling](../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error patterns
+- [API Documentation](../reference/API_DOCUMENTATION.md) - API reference
 
 ---
 

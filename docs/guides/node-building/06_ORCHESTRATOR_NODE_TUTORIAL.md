@@ -1721,7 +1721,7 @@ Congratulations! You've completed the ORCHESTRATOR node tutorial. You now know h
 ### Related Documentation
 
 - [Node Types Overview](02_NODE_TYPES.md) - Understanding the 4-node architecture
-- [ONEX Four-Node Architecture](../../ONEX_FOUR_NODE_ARCHITECTURE.md) - Complete architecture guide
+- [ONEX Four-Node Architecture](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - Complete architecture guide
 - [ORCHESTRATOR Node Template](../../reference/templates/ORCHESTRATOR_NODE_TEMPLATE.md) - Production template
 - [Patterns Catalog](07-patterns-catalog.md) - Common orchestration patterns
 

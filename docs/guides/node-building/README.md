@@ -140,7 +140,7 @@ poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ om
 ### Advanced Path (Experienced Developer)
 
 1. **Deep Dive**
-   - Review: [ONEX_FOUR_NODE_ARCHITECTURE.md](../../ONEX_FOUR_NODE_ARCHITECTURE.md)
+   - Review: [ONEX_FOUR_NODE_ARCHITECTURE.md](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
    - Study: Real implementations in `src/omnibase_core/nodes/`
 
 2. **Custom Patterns**
