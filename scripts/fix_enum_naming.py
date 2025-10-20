@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""
+Script to fix ONEX enum naming convention violations.
+
+This script fixes:
+1. Acronym casing (RSD→Rsd, LLM→Llm, KV→Kv)
+2. Redundant suffixes (EnumIssueTypeEnum→EnumIssueType)
+"""
+
+import re
+from pathlib import Path
+from typing import Dict, List
+
+# Map of incorrect class names to correct class names
+SIMPLE_FIXES: Dict[str, str] = {
+    # Acronym casing fixes
+    "EnumRSDEdgeType": "EnumRsdEdgeType",
+    "EnumRSDAgentRequestType": "EnumRsdAgentRequestType",
+    "EnumLLMProvider": "EnumLlmProvider",
+    "EnumKVOperationType": "EnumKvOperationType",
+    # Redundant suffix fixes
+    "EnumIssueTypeEnum": "EnumIssueType",
+}
+
+
+def find_all_occurrences(src_dir: Path, old_name: str) -> List[Path]:
+    """Find all files containing the old enum name (portable)."""
+    matches: List[Path] = []
+    for p in src_dir.rglob("*.py"):
+        try:
+            if old_name in p.read_text():
+                matches.append(p)
+        except Exception:
+            # Skip files that can't be read (permissions, encoding, etc.)
+            pass
+    return matches
+
+
+def replace_in_file(file_path: Path, old_name: str, new_name: str) -> bool:
+    """Replace old enum name with new name in file."""
+    try:
+        content = file_path.read_text()
+
+        # Only replace if it's a whole word (not part of another identifier)
+        pattern = r"\b" + re.escape(old_name) + r"\b"
+        new_content = re.sub(pattern, new_name, content)
+
+        if new_content != content:
+            file_path.write_text(new_content)
+            return True
+        return False
+    except Exception as e:
+        print(f"Error processing {file_path}: {e}")
+        return False
+
+
+def main():
+    """Main fixing function."""
+    src_dir = Path(__file__).parent.parent / "src" / "omnibase_core"
+    tests_dir = Path(__file__).parent.parent / "tests"
+
+    print("Fixing simple enum naming violations...")
+    print()
+
+    total_files_changed = 0
+
+    for old_name, new_name in SIMPLE_FIXES.items():
+        print(f"Fixing: {old_name} → {new_name}")
+
+        # Find all occurrences in src and tests
+        src_files = find_all_occurrences(src_dir, old_name)
+        test_files = find_all_occurrences(tests_dir, old_name)
+        all_files = src_files + test_files
+
+        print(f"  Found in {len(all_files)} files")
+
+        files_changed = 0
+        for file_path in all_files:
+            if replace_in_file(file_path, old_name, new_name):
+                files_changed += 1
+                print(f"    ✓ {file_path}")
+
+        total_files_changed += files_changed
+        print(f"  Changed {files_changed} files")
+        print()
+
+    print(f"Total files changed: {total_files_changed}")
+    print()
+    print(
+        "Simple fixes complete! Now run the audit script to see remaining violations."
+    )
+
+
+if __name__ == "__main__":
+    main()

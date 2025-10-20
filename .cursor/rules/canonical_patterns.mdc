@@ -1,0 +1,405 @@
+---
+globs: *.py
+alwaysApply: false
+---
+# Cursor Rule: ONEX Core Canonical Patterns
+
+> **Status:** Canonical
+> **Last Updated:** 2025-01-27
+> **Purpose:** Definitive reference for all ONEX Core canonical patterns with current pre-commit validation rules
+
+## Rule
+
+All code in this repository must follow the canonical patterns established in the reference implementations and pass all pre-commit validation hooks. When implementing any subsystem, use these exact patterns and file structures. Deviations require explicit justification and maintainer approval.
+
+## 🏗️ ONEX Core Architecture
+
+### Current Repository Structure
+**Primary Reference:** `src/omnibase_core/`
+**Core Components:** Models, Enums, Infrastructure, Validation, Utils
+
+```
+src/omnibase_core/
+├── constants/           # Core constants and event types
+├── container/          # Service resolution and container patterns
+├── decorators/         # ONEX-specific decorators
+├── enums/             # 298+ enum definitions (canonical reference)
+├── errors/            # Error handling and error codes
+├── exceptions/        # Exception definitions
+├── infrastructure/    # Node architecture and compute engines
+├── logging/           # Structured logging and JSON encoding
+├── mixins/            # Reusable mixins for nodes and models
+├── models/            # Pydantic models organized by domain
+│   ├── base/          # Base model patterns
+│   ├── cli/           # CLI-related models
+│   ├── common/        # Shared model patterns
+│   ├── config/        # Configuration models
+│   ├── core/          # Core domain models
+│   ├── contracts/     # Contract definitions
+│   ├── discovery/     # Discovery and tool models
+│   ├── health/        # Health check models
+│   ├── infrastructure/ # Infrastructure models
+│   ├── logging/       # Logging models
+│   ├── metadata/      # Metadata models
+│   ├── nodes/         # Node-specific models
+│   ├── operations/    # Operation models
+│   ├── results/       # Result models
+│   ├── security/      # Security models
+│   ├── service/       # Service models
+│   ├── tools/         # Tool models
+│   ├── validation/    # Validation models
+│   └── workflows/   # Workflow models
+├── nodes/            # Node implementations (minimal)
+├── primitives/       # Core primitives (ModelSemVer, etc.)
+├── types/            # TypedDict definitions
+├── utils/            # Utility functions
+└── validation/       # Validation framework
+```
+
+## 🔧 Pre-commit Validation Rules
+
+### Current Validation Hooks (2025-01-27)
+
+#### **1. String Version Anti-Pattern Detection**
+```yaml
+- id: validate-string-versions
+  name: ONEX String Version Anti-Pattern Detection
+```
+**Enforces:**
+- Use `ModelSemVer` instead of string versions in YAML contracts
+- Remove `__version__` from `__init__.py` files
+- Use `UUID` instead of `str` for ID fields
+- Use `ModelSemVer` instead of `str` for version fields
+
+#### **2. Backward Compatibility Anti-Pattern Detection**
+```yaml
+- id: validate-no-backward-compatibility
+  name: ONEX Backward Compatibility Anti-Pattern Detection
+```
+**Enforces:**
+- Remove all backward compatibility patterns
+- No legacy support code
+- Use proper ONEX patterns from day one
+
+#### **3. No Fallback Patterns Validation**
+```yaml
+- id: check-no-fallbacks
+  name: ONEX No Fallback Patterns Validation
+```
+**Enforces:**
+- No `id(self)` usage in `get_id()` methods
+- No `if 'field' in info.data` patterns in validators
+- No `except ValueError: ... = Enum.UNKNOWN` patterns
+- No bare `except:` without re-raise
+- No `.get(key, default)` on enum mappings without error handling
+
+#### **4. Single Class Per File Validation**
+```yaml
+- id: onex-single-class-per-file
+  name: ONEX Single Class Per File
+```
+**Enforces:**
+- One non-enum class per file
+- Multiple enums in one file are allowed (enum collections)
+- Test files and `__init__.py` files are excluded
+
+#### **5. Error Raising Validation**
+```yaml
+- id: check-error-raising
+  name: ONEX Error Raising Validation
+```
+**Enforces:**
+- Use `ModelOnexError` instead of standard Python exceptions
+- Raise explicit errors instead of silent fallbacks
+- Proper error code usage with `EnumCoreErrorCode`
+
+#### **6. Pydantic Pattern Validation**
+```yaml
+- id: validate-pydantic-patterns
+  name: ONEX Pydantic Pattern Validation
+```
+**Enforces:**
+- Use `@model_validator(mode='after')` instead of `@field_validator`
+- Direct field access instead of `info.data` fallbacks
+- Proper Pydantic model inheritance patterns
+
+#### **7. Union Usage Validation**
+```yaml
+- id: validate-union-usage
+  name: ONEX Union Usage Validation
+```
+**Enforces:**
+- Proper union type usage
+- Discriminated unions where appropriate
+- Type safety in union definitions
+
+#### **8. Enum/Model Import Prevention**
+```yaml
+- id: validate-enum-model-imports
+  name: ONEX Enum/Model Import Prevention
+```
+**Enforces:**
+- No cross-imports between enum and model modules
+- Clean separation of concerns
+- Proper module boundaries
+
+## 📊 Model Architecture Patterns
+
+### Canonical Model Patterns
+**Reference:** `src/omnibase_core/models/core/`
+
+#### **1. Base Model Pattern**
+```python
+from pydantic import BaseModel
+
+class ModelNodeStatus(BaseModel):
+    """Generic nodestatus model for common use."""
+    # Model fields here
+```
+
+#### **2. Error Model Pattern**
+**Reference:** `src/omnibase_core/errors/model_onex_error.py`
+
+```python
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
+# Use ModelOnexError for all custom exceptions
+raise ModelOnexError(
+    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+    message="Clear error message"
+)
+```
+
+#### **3. Validation Pattern**
+**Reference:** `src/omnibase_core/models/config/model_property_value.py`
+
+```python
+from pydantic import BaseModel, Field, model_validator
+
+class ModelPropertyValue(BaseModel):
+    value: PropertyValueType = Field(...)
+    value_type: EnumPropertyType = Field(...)
+
+    @model_validator(mode='after')
+    def validate_value_type(self) -> 'ModelPropertyValue':
+        """Validate that value matches its declared type."""
+        # Direct field access - no info.data fallbacks
+        if self.value_type != self.value.value_type:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Value type mismatch"
+            )
+        return self
+```
+
+#### **4. Enum Pattern**
+**Reference:** `src/omnibase_core/enums/`
+
+```python
+from enum import Enum
+
+class EnumAcknowledgmentType(str, Enum):
+    """Canonical acknowledgment types for ONEX discovery."""
+
+    BOOTSTRAP_ACK = "bootstrap_ack"
+    DISCOVERY_ACK = "discovery_ack"
+    # ... more values
+```
+
+#### **5. Primitive Pattern**
+**Reference:** `src/omnibase_core/primitives/model_semver.py`
+
+```python
+from pydantic import BaseModel, Field
+
+class ModelSemVer(BaseModel):
+    """Semantic version model."""
+    major: int = Field(..., ge=0)
+    minor: int = Field(..., ge=0)
+    patch: int = Field(..., ge=0)
+```
+
+## 🏗️ Infrastructure Patterns
+
+### Node Architecture
+**Reference:** `src/omnibase_core/infrastructure/node_base.py`
+
+```python
+from omnibase_core.models.infrastructure.model_node_state import ModelNodeState
+from omnibase_core.primitives.model_semver import ModelSemVer
+
+class NodeBase:
+    """Base node implementation with ONEX patterns."""
+
+    def __init__(self, node_id: UUID, version: ModelSemVer):
+        self.node_id = node_id
+        self.version = version
+```
+
+### Container Patterns
+**Reference:** `src/omnibase_core/models/container/`
+
+```python
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+class ModelONEXContainer(BaseModel):
+    """ONEX container model."""
+    # Container-specific fields
+```
+
+## 🧪 Testing Patterns
+
+### Test File Structure
+**Reference:** `tests/unit/`
+
+```
+tests/unit/
+├── enums/              # Enum tests (298+ test files)
+├── models/            # Model tests
+│   ├── core/          # Core model tests
+│   ├── logging/       # Logging model tests
+│   └── validation/    # Validation model tests
+├── mixins/            # Mixin tests
+└── utils/             # Utility tests
+```
+
+### Test Pattern
+```python
+import pytest
+from omnibase_core.enums.enum_acknowledgment_type import EnumAcknowledgmentType
+
+class TestEnumAcknowledgmentType:
+    def test_enum_values(self):
+        """Test enum values exist."""
+        assert EnumAcknowledgmentType.BOOTSTRAP_ACK == "bootstrap_ack"
+
+    def test_enum_inheritance(self):
+        """Test enum inheritance."""
+        assert issubclass(EnumAcknowledgmentType, str)
+        assert issubclass(EnumAcknowledgmentType, Enum)
+```
+
+## 🔍 Validation Framework
+
+### Validation Architecture
+**Reference:** `src/omnibase_core/validation/`
+
+```python
+from omnibase_core.validation.architecture import ModelCounter
+from omnibase_core.validation.validation_utils import ValidationResult
+
+class ValidationFramework:
+    """ONEX validation framework."""
+
+    def validate_model(self, model: BaseModel) -> ValidationResult:
+        """Validate model against ONEX patterns."""
+        # Validation logic here
+```
+
+## 🚫 Anti-Patterns (DO NOT USE)
+
+### ❌ String Version Patterns
+```python
+# DON'T: Use string versions
+version: str = "1.0.0"
+__version__ = "1.0.0"
+
+# DO: Use ModelSemVer
+version: ModelSemVer = ModelSemVer(major=1, minor=0, patch=0)
+```
+
+### ❌ Fallback Patterns
+```python
+# DON'T: Silent fallbacks
+try:
+    value = enum_value(value)
+except ValueError:
+    value = Enum.UNKNOWN  # Silent fallback
+
+# DO: Explicit error raising
+try:
+    value = enum_value(value)
+except ValueError as e:
+    raise ModelOnexError(
+        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        message=f"Invalid enum value: {e}"
+    ) from e
+```
+
+### ❌ Field Validator Patterns
+```python
+# DON'T: Use field_validator with info.data
+@field_validator("value")
+def validate_value(cls, value, info):
+    if "value_type" in info.data:
+        # Fallback pattern
+
+# DO: Use model_validator with direct access
+@model_validator(mode='after')
+def validate_value_type(self) -> 'ModelType':
+    if self.value_type != self.value.value_type:
+        # Direct field access
+```
+
+### ❌ Multiple Classes Per File
+```python
+# DON'T: Multiple non-enum classes in one file
+class ModelA(BaseModel):
+    pass
+
+class ModelB(BaseModel):  # Violation
+    pass
+
+# DO: One class per file
+# model_a.py
+class ModelA(BaseModel):
+    pass
+
+# model_b.py
+class ModelB(BaseModel):
+    pass
+```
+
+## 🔧 Migration Checklist
+
+When updating existing code to follow canonical patterns:
+
+1. **String Versions**: ✅ Replace string versions with `ModelSemVer`
+2. **ID Fields**: ✅ Use `UUID` instead of `str` for ID fields
+3. **Error Handling**: ✅ Use `ModelOnexError` instead of standard exceptions
+4. **Validation**: ✅ Use `@model_validator(mode='after')` instead of `@field_validator`
+5. **Fallbacks**: ✅ Remove all fallback patterns, raise explicit errors
+6. **Single Class**: ✅ One non-enum class per file
+7. **Imports**: ✅ Clean separation between enum and model modules
+8. **Testing**: ✅ Comprehensive test coverage for all patterns
+
+## 📚 Quick Reference
+
+| Subsystem | Canonical Example | Key Pattern |
+|-----------|------------------|-------------|
+| **Models** | `models/core/model_node_status.py` | Simple BaseModel inheritance |
+| **Enums** | `enums/enum_acknowledgment_type.py` | `str, Enum` inheritance |
+| **Errors** | `errors/model_onex_error.py` | `ModelOnexError` with error codes |
+| **Validation** | `models/config/model_property_value.py` | `@model_validator(mode='after')` |
+| **Primitives** | `primitives/model_semver.py` | `ModelSemVer` for versions |
+| **Infrastructure** | `infrastructure/node_base.py` | Node base patterns |
+| **Testing** | `tests/unit/enums/` | Comprehensive enum testing |
+
+## 🎯 Enforcement
+
+- **Pre-commit Hooks**: All validation rules enforced automatically
+- **Code Review**: All PRs must pass pre-commit validation
+- **CI/CD**: Automated validation in continuous integration
+- **Documentation**: Any deviation requires explicit justification
+
+## 📖 Related Rules
+
+- [Pre-commit Configuration](.pre-commit-config.yaml) - Current validation hooks
+- [Validation Scripts](scripts/validation/) - Validation implementation
+- [Model Architecture](src/omnibase_core/models/) - Model patterns
+- [Enum Architecture](src/omnibase_core/enums/) - Enum patterns
+
+---
+
+**Remember**: When in doubt, follow the pre-commit validation rules. These patterns are enforced automatically and ensure consistency across the entire ONEX Core ecosystem.
