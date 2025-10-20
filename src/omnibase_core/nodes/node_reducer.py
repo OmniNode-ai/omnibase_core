@@ -644,34 +644,6 @@ class NodeReducer(NodeCoreBase):
             return final_result, total_processed, windows_processed
         return None, 0, 0
 
-    # DEPRECATED: Pure FSM Pattern - No mutable state or side effects
-    async def _update_reduction_metrics(  # stub-ok: Deprecated for pure FSM migration
-        self,
-        reduction_type: str,
-        processing_time_ms: float,
-        success: bool,
-        items_processed: int,
-    ) -> None:
-        """
-        DEPRECATED: Violates pure FSM pattern (has side effects).
-
-        Use Intent emission instead:
-            ModelIntent(intent_type="log_metric", target="metrics_service", ...)
-        """
-        raise NotImplementedError(  # error-ok: Deprecated method for pure FSM migration
-            "Pure FSM pattern: Emit ModelIntent instead of direct metric updates"
-        )
-
-    # DEPRECATED: Pure FSM Pattern - No mutable state
-    def _register_builtin_reducers(self) -> None:  # stub-ok: Deprecated for pure FSM
-        """
-        DEPRECATED: Violates pure FSM pattern (mutable state).
-
-        Reduction functions are now stateless and passed explicitly.
-        All reduction logic has been moved to stateless implementations.
-        """
-        pass
-
     def _detect_dependency_cycles(
         self,
         graph_data: list[tuple[str, Any]],
