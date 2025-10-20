@@ -15,7 +15,7 @@ Author: ONEX Framework Team
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.core.model_contract_definitions import (
@@ -216,3 +216,34 @@ class ModelContractContent(BaseModel):
         default=None,
         description="Original dependencies (deprecated)",
     )
+
+    @field_validator("dependencies", mode="before")
+    @classmethod
+    def convert_dependency_dicts(
+        cls, v: object
+    ) -> list[ModelContractDependency] | None:
+        """Convert dict dependencies to ModelContractDependency instances.
+
+        This prevents Pydantic re-validation issues in parallel execution by
+        ensuring all dependencies are properly instantiated before field validation.
+
+        Args:
+            v: Dependencies value (list of dicts, ModelContractDependency, or None)
+
+        Returns:
+            List of ModelContractDependency instances or None
+        """
+        if v is None:
+            return None
+        if not isinstance(v, list):
+            return None
+
+        result: list[ModelContractDependency] = []
+        for item in v:
+            if isinstance(item, dict):
+                # Convert dict to ModelContractDependency (triggers its field validators)
+                result.append(ModelContractDependency.model_validate(item))
+            elif isinstance(item, ModelContractDependency):
+                # Already a ModelContractDependency instance
+                result.append(item)
+        return result

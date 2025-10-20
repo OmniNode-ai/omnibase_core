@@ -45,11 +45,6 @@ from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract im
 from omnibase_core.models.utils.model_subcontract_constraint_validator import (
     ModelSubcontractConstraintValidator,
 )
-
-# Import centralized ValidationRulesInput type - simplified from overly broad union
-from omnibase_core.models.utils.model_validation_rules_converter import (
-    ModelValidationRulesInputValue,
-)
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Import configuration models from individual files
@@ -278,9 +273,15 @@ class ModelContractCompute(ModelContractBase):
     @classmethod
     def validate_validation_rules_flexible(
         cls,
-        v: ModelValidationRulesInputValue,
+        v: object,
     ) -> ModelValidationRules:
         """Validate and convert flexible validation rules format using shared utility."""
+        # If already a ModelValidationRules instance, return it directly
+        # This handles re-validation in pytest-xdist workers where isinstance checks may fail
+        # due to module import isolation (each worker has different class objects)
+        if isinstance(v, ModelValidationRules):
+            return v
+
         # Local import to avoid circular import
         from omnibase_core.models.utils.model_validation_rules_converter import (
             ModelValidationRulesConverter,

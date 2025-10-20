@@ -185,6 +185,12 @@ class ModelContractEffect(ModelContractBase):
     @classmethod
     def validate_validation_rules_flexible(cls, v: object) -> ModelValidationRules:
         """Validate and convert flexible validation rules format using shared utility."""
+        # If already a ModelValidationRules instance, return it directly
+        # This handles re-validation in pytest-xdist workers where isinstance checks may fail
+        # due to module import isolation (each worker has different class objects)
+        if isinstance(v, ModelValidationRules):
+            return v
+
         # Local import to avoid circular import
         from omnibase_core.models.utils.model_validation_rules_converter import (
             ModelValidationRulesConverter,

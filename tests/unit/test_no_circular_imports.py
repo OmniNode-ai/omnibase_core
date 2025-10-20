@@ -393,3 +393,74 @@ def test_error_codes_safe_imports() -> None:
         if required not in imported_modules:
             msg = f"error_codes should import {required}"
             raise AssertionError(msg)
+
+
+def test_contracts_no_circular_imports() -> None:
+    """
+    Verify that contract models don't create circular imports.
+
+    This test specifically checks for the circular import that was found in PR #65
+    where model_contract_compute.py was importing model_validation_rules_converter
+    at module level, which created a circular dependency:
+
+    model_contract_compute → model_validation_rules_converter
+    → model_validation_rules → contracts/__init__ → model_contract_compute
+
+    The fix is to use lazy imports (local imports in field validators) instead
+    of module-level imports.
+    """
+    # Clear module cache
+    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
+    for module in modules_to_remove:
+        del sys.modules[module]
+
+    # Try to import the contract models in the order that would trigger circular import
+    try:
+        # Import model_contract_compute first
+        # Import contracts __init__ (aggregates all contract models)
+        import omnibase_core.models.contracts
+        import omnibase_core.models.contracts.model_contract_compute
+
+        # Import model_validation_rules
+        import omnibase_core.models.contracts.model_validation_rules
+
+        # Import model_validation_rules_converter
+        import omnibase_core.models.utils.model_validation_rules_converter
+
+        # If we got here, no circular imports!
+        print("✓ No circular dependencies in contracts modules")
+
+    except ImportError as e:
+        # Circular import would raise ImportError
+        raise AssertionError(f"Circular import detected in contracts: {e}") from e
+
+
+def test_contract_compute_uses_lazy_import() -> None:
+    """
+    Verify that model_contract_compute uses lazy imports for ValidationRulesConverter.
+
+    This ensures that ValidationRulesConverter is only imported inside the
+    field validator function, not at module level.
+    """
+    # Clear module cache
+    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
+    for module in modules_to_remove:
+        del sys.modules[module]
+
+    # Import model_contract_compute
+    import omnibase_core.models.contracts.model_contract_compute
+
+    # Check what modules were imported
+    imported_modules = [key for key in sys.modules if key.startswith("omnibase_core")]
+
+    # model_validation_rules_converter should NOT be imported at module load time
+    # (it should only be imported when the field validator is actually called)
+    if (
+        "omnibase_core.models.utils.model_validation_rules_converter"
+        in imported_modules
+    ):
+        msg = (
+            "model_contract_compute has runtime import of model_validation_rules_converter "
+            "at module level - this creates circular import! Use lazy import in field validator instead."
+        )
+        raise AssertionError(msg)
