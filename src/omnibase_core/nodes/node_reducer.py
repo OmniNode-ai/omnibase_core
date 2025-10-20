@@ -41,6 +41,7 @@ from omnibase_core.nodes.enum_reducer_types import (
     EnumStreamingMode,
 )
 from omnibase_core.nodes.model_conflict_resolver import ModelConflictResolver
+from omnibase_core.nodes.model_intent import ModelIntent
 from omnibase_core.nodes.model_reducer_input import ModelReducerInput, T_Input
 from omnibase_core.nodes.model_reducer_output import ModelReducerOutput, T_Output
 from omnibase_core.nodes.model_streaming_window import ModelStreamingWindow
@@ -75,6 +76,9 @@ class NodeReducer(NodeCoreBase):
         """
         Initialize NodeReducer with ModelONEXContainer dependency injection.
 
+        PURE FSM PATTERN: No mutable instance state.
+        All state is passed through input/output, side effects emitted as Intents.
+
         Args:
             container: ONEX container for dependency injection
 
@@ -83,22 +87,15 @@ class NodeReducer(NodeCoreBase):
         """
         super().__init__(container)
 
-        # Reducer-specific configuration
+        # Configuration only (immutable)
         self.default_batch_size = 1000
         self.max_memory_usage_mb = 512
         self.streaming_buffer_size = 10000
 
-        # Reduction function registry
-        self.reduction_functions: dict[EnumReductionType, Any] = {}
-
-        # Performance tracking for reductions
-        self.reduction_metrics: dict[str, dict[str, float]] = {}
-
-        # Streaming windows for real-time processing
-        self.active_windows: dict[str, ModelStreamingWindow] = {}
-
-        # Register built-in reduction functions
-        self._register_builtin_reducers()
+        # PURE FSM: No mutable state
+        # - No self.reduction_functions (use static registry)
+        # - No self.reduction_metrics (emit Intents instead)
+        # - No self.active_windows (pass through state)
 
     async def process(
         self,
@@ -158,16 +155,47 @@ class NodeReducer(NodeCoreBase):
 
             processing_time = (time.time() - start_time) * 1000
 
-            # Update metrics
-            await self._update_reduction_metrics(
-                input_data.reduction_type.value,
-                processing_time,
-                True,
-                items_processed,
-            )
-            await self._update_processing_metrics(processing_time, True)
+            # PURE FSM: Emit Intents for side effects instead of direct execution
+            intents: list[ModelIntent] = []
 
-            # Create output
+            # Intent to log metrics
+            intents.append(
+                ModelIntent(
+                    intent_type="log_metric",
+                    target="metrics_service",
+                    payload={
+                        "metric_type": "reduction_metrics",
+                        "reduction_type": input_data.reduction_type.value,
+                        "processing_time_ms": processing_time,
+                        "success": True,
+                        "items_processed": items_processed,
+                    },
+                    priority=3,
+                )
+            )
+
+            # Intent to log completion event
+            intents.append(
+                ModelIntent(
+                    intent_type="log_event",
+                    target="logging_service",
+                    payload={
+                        "level": "INFO",
+                        "message": f"Reduction completed: {input_data.reduction_type.value}",
+                        "context": {
+                            "node_id": str(self.node_id),
+                            "operation_id": str(input_data.operation_id),
+                            "processing_time_ms": processing_time,
+                            "items_processed": items_processed,
+                            "conflicts_resolved": conflict_resolver.conflicts_count,
+                            "batches_processed": batches_processed,
+                        },
+                    },
+                    priority=2,
+                )
+            )
+
+            # Create output with intents
             output = ModelReducerOutput(
                 result=result,
                 operation_id=input_data.operation_id,
@@ -177,23 +205,11 @@ class NodeReducer(NodeCoreBase):
                 conflicts_resolved=conflict_resolver.conflicts_count,
                 streaming_mode=input_data.streaming_mode,
                 batches_processed=batches_processed,
+                intents=intents,  # Emit intents for Effect node
                 metadata={
                     "batch_size": str(input_data.batch_size),
                     "window_size_ms": str(input_data.window_size_ms),
                     "conflict_strategy": input_data.conflict_resolution.value,
-                },
-            )
-
-            emit_log_event(
-                LogLevel.INFO,
-                f"Reduction completed: {input_data.reduction_type.value}",
-                {
-                    "node_id": str(self.node_id),
-                    "operation_id": str(input_data.operation_id),
-                    "processing_time_ms": processing_time,
-                    "items_processed": items_processed,
-                    "conflicts_resolved": conflict_resolver.conflicts_count,
-                    "batches_processed": batches_processed,
                 },
             )
 
@@ -202,14 +218,9 @@ class NodeReducer(NodeCoreBase):
         except Exception as e:
             processing_time = (time.time() - start_time) * 1000
 
-            # Update error metrics
-            await self._update_reduction_metrics(
-                input_data.reduction_type.value,
-                processing_time,
-                False,
-                0,
-            )
-            await self._update_processing_metrics(processing_time, False)
+            # PURE FSM: Even errors emit Intents instead of side effects
+            # Note: Intents would be lost on error, so we still raise
+            # but document that a proper implementation would capture these
 
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -220,6 +231,17 @@ class NodeReducer(NodeCoreBase):
                     "reduction_type": input_data.reduction_type.value,
                     "processing_time_ms": processing_time,
                     "error": str(e),
+                    # Future: Include intents for error metrics
+                    "suggested_intent": {
+                        "type": "log_metric",
+                        "target": "metrics_service",
+                        "payload": {
+                            "metric_type": "reduction_error",
+                            "reduction_type": input_data.reduction_type.value,
+                            "processing_time_ms": processing_time,
+                            "success": False,
+                        },
+                    },
                 },
             ) from e
 
@@ -622,218 +644,33 @@ class NodeReducer(NodeCoreBase):
             return final_result, total_processed, windows_processed
         return None, 0, 0
 
-    async def _update_reduction_metrics(
+    # DEPRECATED: Pure FSM Pattern - No mutable state or side effects
+    async def _update_reduction_metrics(  # stub-ok: Deprecated for pure FSM migration
         self,
         reduction_type: str,
         processing_time_ms: float,
         success: bool,
         items_processed: int,
     ) -> None:
-        """Update reduction-specific metrics."""
-        if reduction_type not in self.reduction_metrics:
-            self.reduction_metrics[reduction_type] = {
-                "total_operations": 0.0,
-                "success_count": 0.0,
-                "error_count": 0.0,
-                "total_items_processed": 0.0,
-                "avg_processing_time_ms": 0.0,
-                "avg_items_per_operation": 0.0,
-                "min_processing_time_ms": float("inf"),
-                "max_processing_time_ms": 0.0,
-            }
+        """
+        DEPRECATED: Violates pure FSM pattern (has side effects).
 
-        metrics = self.reduction_metrics[reduction_type]
-        metrics["total_operations"] += 1
-        metrics["total_items_processed"] += items_processed
-
-        if success:
-            metrics["success_count"] += 1
-        else:
-            metrics["error_count"] += 1
-
-        # Update timing metrics
-        metrics["min_processing_time_ms"] = min(
-            metrics["min_processing_time_ms"],
-            processing_time_ms,
-        )
-        metrics["max_processing_time_ms"] = max(
-            metrics["max_processing_time_ms"],
-            processing_time_ms,
+        Use Intent emission instead:
+            ModelIntent(intent_type="log_metric", target="metrics_service", ...)
+        """
+        raise NotImplementedError(  # error-ok: Deprecated method for pure FSM migration
+            "Pure FSM pattern: Emit ModelIntent instead of direct metric updates"
         )
 
-        # Update rolling averages
-        total_ops = metrics["total_operations"]
-        current_avg_time = metrics["avg_processing_time_ms"]
-        metrics["avg_processing_time_ms"] = (
-            current_avg_time * (total_ops - 1) + processing_time_ms
-        ) / total_ops
+    # DEPRECATED: Pure FSM Pattern - No mutable state
+    def _register_builtin_reducers(self) -> None:  # stub-ok: Deprecated for pure FSM
+        """
+        DEPRECATED: Violates pure FSM pattern (mutable state).
 
-        metrics["avg_items_per_operation"] = (
-            metrics["total_items_processed"] / total_ops
-        )
-
-    def _register_builtin_reducers(self) -> None:
-        """Register built-in reduction functions."""
-
-        async def fold_reducer(
-            data: list[Any],
-            input_data: ModelReducerInput[Any],
-            conflict_resolver: ModelConflictResolver,
-        ) -> Any:
-            """Fold/reduce data to single value."""
-            if not data:
-                return None
-
-            # Default sum for numeric data
-            if all(isinstance(x, int | float) for x in data):
-                return sum(data)
-            return data[-1] if data else None
-
-        async def aggregate_reducer(
-            data: list[Any],
-            input_data: ModelReducerInput[Any],
-            conflict_resolver: ModelConflictResolver,
-        ) -> dict[str, Any]:
-            """Aggregate data by groups with statistics."""
-            if not data:
-                return {}
-
-            # Group data
-            groups: dict[str, list[Any]] = defaultdict(list)
-            metadata = input_data.metadata or {}
-            group_key_str = metadata.get("group_by", "default")
-
-            for item in data:
-                if isinstance(item, dict):
-                    key = str(item.get(str(group_key_str), "default"))
-                else:
-                    key = "default"
-                groups[key].append(item)
-
-            # Apply aggregation functions
-            result: dict[str, Any] = {}
-            for group, items in groups.items():
-                group_stats: dict[str, Any] = {"count": len(items), "items": items}
-
-                # Add numeric aggregations if applicable
-                numeric_fields: list[str] = []
-                if items and isinstance(items[0], dict):
-                    for field, value in items[0].items():
-                        if isinstance(value, int | float):
-                            numeric_fields.append(field)
-
-                for field in numeric_fields:
-                    values = [
-                        item[field]
-                        for item in items
-                        if field in item and isinstance(item[field], int | float)
-                    ]
-                    if values:
-                        group_stats[f"{field}_sum"] = sum(values)
-                        group_stats[f"{field}_avg"] = sum(values) / len(values)
-                        group_stats[f"{field}_min"] = min(values)
-                        group_stats[f"{field}_max"] = max(values)
-
-                result[str(group)] = group_stats
-
-            return result
-
-        async def normalize_reducer(
-            data: list[Any],
-            input_data: ModelReducerInput[Any],
-            conflict_resolver: ModelConflictResolver,
-        ) -> list[Any]:
-            """Normalize scores and create rankings."""
-            if not data:
-                return []
-
-            metadata = input_data.metadata or {}
-            score_field = str(metadata.get("score_field", "score"))
-            method = str(metadata.get("normalization_method", "min_max"))
-
-            # Extract scores
-            scores: list[float] = []
-            items_with_indices: list[tuple[int, Any, float]] = []
-            for i, item in enumerate(data):
-                if isinstance(item, dict) and score_field in item:
-                    score = item[score_field]
-                    if isinstance(score, int | float):
-                        scores.append(float(score))
-                        items_with_indices.append((i, item, float(score)))
-
-            if not scores:
-                return data
-
-            # Apply normalization
-            if method == "min_max":
-                min_score = min(scores)
-                max_score = max(scores)
-                score_range = max_score - min_score
-
-                for _i, item, score in items_with_indices:
-                    if score_range > 0:
-                        normalized = (score - min_score) / score_range
-                    else:
-                        normalized = 0.5
-                    item[f"{score_field}_normalized"] = normalized
-
-            elif method == "rank":
-                # Sort by score descending and assign ranks
-                sorted_items = sorted(
-                    items_with_indices,
-                    key=lambda x: x[2],
-                    reverse=True,
-                )
-                for rank, (_i, item, _score) in enumerate(sorted_items, 1):
-                    item[f"{score_field}_rank"] = rank
-                    item[f"{score_field}_percentile"] = (
-                        len(sorted_items) - rank + 1
-                    ) / len(sorted_items)
-
-            return data
-
-        async def merge_reducer(
-            data: list[Any],
-            input_data: ModelReducerInput[Any],
-            conflict_resolver: ModelConflictResolver,
-        ) -> Any:
-            """Merge multiple datasets with conflict resolution."""
-            if not data:
-                return {}
-
-            # Handle dependency graph cycle detection
-            metadata = input_data.metadata or {}
-            if metadata.get("graph_operation") == "cycle_detection":
-                return self._detect_dependency_cycles(data)
-
-            # General merge operation
-            if all(isinstance(item, dict) for item in data):
-                merged: dict[str, Any] = {}
-                for item in data:
-                    for key, value in item.items():
-                        if key in merged:
-                            merged[key] = conflict_resolver.resolve(
-                                merged[key],
-                                value,
-                                key,
-                            )
-                        else:
-                            merged[key] = value
-                return merged
-
-            if all(isinstance(item, list) for item in data):
-                merged_list: list[Any] = []
-                for item in data:
-                    merged_list.extend(item)
-                return merged_list
-
-            return data[-1] if data else None
-
-        # Register reducers
-        self.reduction_functions[EnumReductionType.FOLD] = fold_reducer
-        self.reduction_functions[EnumReductionType.AGGREGATE] = aggregate_reducer
-        self.reduction_functions[EnumReductionType.NORMALIZE] = normalize_reducer
-        self.reduction_functions[EnumReductionType.MERGE] = merge_reducer
+        Reduction functions are now stateless and passed explicitly.
+        All reduction logic has been moved to stateless implementations.
+        """
+        pass
 
     def _detect_dependency_cycles(
         self,
