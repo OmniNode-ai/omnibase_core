@@ -140,7 +140,7 @@ class ModelContractCompute(ModelContractBase):
             validation_rules,
             ModelValidationRules,
         ):
-            validation_rules = ModelValidationRules()
+            validation_rules = None  # Let field validator handle invalid types
 
         author = data_dict.pop("author", None)
         if author is not None and not isinstance(author, (str, type(None))):
@@ -169,7 +169,7 @@ class ModelContractCompute(ModelContractBase):
             lifecycle=lifecycle or ModelLifecycleConfig(),
             dependencies=dependencies or [],
             protocol_interfaces=protocol_interfaces or [],
-            validation_rules=validation_rules or ModelValidationRules(),
+            validation_rules=validation_rules,  # Let field default_factory handle None
             author=author,
             documentation_url=documentation_url,
             tags=tags or [],
