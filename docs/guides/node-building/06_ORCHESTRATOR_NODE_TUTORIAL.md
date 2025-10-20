@@ -10,7 +10,7 @@ In this tutorial, you'll build a production-ready **Data Processing Pipeline Orc
 
 ✅ Coordinates multiple nodes (COMPUTE, EFFECT, REDUCER) in a workflow
 ✅ Supports three execution modes: SEQUENTIAL, PARALLEL, BATCH
-✅ Implements thunk emission for deferred execution
+✅ Implements action emission for deferred execution
 ✅ Manages dependencies between workflow steps
 ✅ Handles conditional branching and error recovery
 ✅ Provides comprehensive workflow monitoring
@@ -26,7 +26,7 @@ ORCHESTRATOR nodes coordinate complex workflows in the ONEX architecture:
 - Error recovery and compensation logic
 
 **Tutorial Structure**:
-1. Understand orchestration concepts (thunks, workflows, execution modes)
+1. Understand orchestration concepts (actions, workflows, execution modes)
 2. Define workflow models and configuration
 3. Implement the ORCHESTRATOR node with three execution modes
 4. Add conditional branching and error handling
@@ -55,46 +55,109 @@ poetry run pytest tests/unit/nodes/test_node_orchestrator.py -v --maxfail=1
 
 ## Orchestration Concepts
 
-### What is a Thunk?
+### What is an Action?
 
-A **thunk** is a deferred execution unit that represents work to be done by a specific node type:
+An **action** is an Orchestrator-issued command that represents work to be done by a specific node type. Actions replace the legacy "thunk" terminology and include lease management for single-writer semantics:
 
 ```python
-from omnibase_core.nodes.model_thunk import ModelThunk
-from omnibase_core.nodes.enum_orchestrator_types import EnumThunkType
+from omnibase_core.nodes.model_action import ModelAction
+from omnibase_core.nodes.enum_orchestrator_types import EnumActionType
 
-# Example: Thunk for COMPUTE operation
-compute_thunk = ModelThunk(
-    thunk_id=uuid4(),
-    thunk_type=EnumThunkType.COMPUTE,
+# Example: Action for COMPUTE operation
+compute_action = ModelAction(
+    action_id=uuid4(),
+    action_type=EnumActionType.COMPUTE,
     target_node_type="NodeDataValidator",
     operation_data={"data": input_data},
     dependencies=[],  # No dependencies
     priority=1,
     timeout_ms=5000,
+    lease_id=uuid4(),  # Orchestrator ownership proof
+    epoch=1,  # Optimistic concurrency control
 )
 
-# Example: Thunk for EFFECT operation with dependency
-effect_thunk = ModelThunk(
-    thunk_id=uuid4(),
-    thunk_type=EnumThunkType.EFFECT,
+# Example: Action for EFFECT operation with dependency
+effect_action = ModelAction(
+    action_id=uuid4(),
+    action_type=EnumActionType.EFFECT,
     target_node_type="NodeDatabaseWriter",
     operation_data={"data": processed_data},
-    dependencies=[compute_thunk.thunk_id],  # Depends on compute
+    dependencies=[compute_action.action_id],  # Depends on compute
     priority=2,
     timeout_ms=10000,
+    lease_id=uuid4(),  # Orchestrator ownership proof
+    epoch=1,  # Optimistic concurrency control
 )
 ```
 
 **Key Points**:
-- Thunks represent "units of work" to be executed
-- They can have dependencies on other thunks
-- The orchestrator emits thunks and coordinates execution
-- Thunks enable deferred, dependency-aware execution
+- Actions represent "units of work" issued by the Orchestrator
+- They can have dependencies on other actions
+- The orchestrator emits actions and coordinates execution
+- Actions enable deferred, dependency-aware execution
+- Each action has a `lease_id` proving Orchestrator ownership
+- The `epoch` field enables optimistic concurrency control
+
+### Action Lease Management
+
+Actions include **lease management** fields to ensure single-writer semantics and prevent concurrent modification conflicts:
+
+**lease_id (UUID)**:
+- Proves which Orchestrator instance owns this action
+- Generated when the Orchestrator creates the action
+- Must match for any updates or state changes
+- Enables **single-writer semantics**: only the owning Orchestrator can modify the action
+- Prevents multiple Orchestrators from conflicting on the same action
+
+**epoch (int)**:
+- Enables **optimistic concurrency control**
+- Incremented each time the action is updated
+- Prevents lost updates in distributed scenarios
+- Must match expected value for updates to succeed
+
+**Usage Example**:
+```python
+from uuid import uuid4
+
+# Orchestrator creates action with initial lease and epoch
+orchestrator_lease_id = uuid4()
+action = ModelAction(
+    action_id=uuid4(),
+    action_type=EnumActionType.COMPUTE,
+    target_node_type="NodeDataProcessor",
+    operation_data={"task": "process"},
+    lease_id=orchestrator_lease_id,  # Ownership proof
+    epoch=1,  # Initial epoch
+)
+
+# Only the owning Orchestrator can update
+action_update = ModelAction(
+    action_id=action.action_id,
+    action_type=action.action_type,
+    target_node_type=action.target_node_type,
+    operation_data={"task": "process", "status": "in_progress"},
+    lease_id=orchestrator_lease_id,  # Must match!
+    epoch=2,  # Incremented epoch
+)
+
+# Another Orchestrator cannot modify (lease_id mismatch)
+# This update would be rejected:
+# invalid_update = ModelAction(
+#     action_id=action.action_id,
+#     lease_id=uuid4(),  # Different lease_id - REJECTED!
+#     epoch=2,
+# )
+```
+
+**Benefits**:
+- **Safety**: Prevents concurrent modification by multiple Orchestrators
+- **Consistency**: Ensures only authorized updates succeed
+- **Traceability**: Lease ID tracks which Orchestrator owns each action
+- **Conflict Prevention**: Epoch detects and prevents lost updates
 
 ### Workflow Steps
 
-A **workflow step** groups related thunks together:
+A **workflow step** groups related actions together:
 
 ```python
 from omnibase_core.nodes.model_workflow_step import ModelWorkflowStep
@@ -103,7 +166,7 @@ step = ModelWorkflowStep(
     step_id=uuid4(),
     step_name="Validate and Process Data",
     execution_mode=EnumExecutionMode.SEQUENTIAL,
-    thunks=[validation_thunk, processing_thunk],
+    actions=[validation_action, processing_action],
     timeout_ms=30000,
 )
 ```
@@ -245,7 +308,7 @@ class ModelPipelineOrchestratorInput(BaseModel):
 Data Processing Pipeline Orchestrator Node.
 
 Coordinates multi-step data pipeline with validation, fetching,
-processing, and storage via thunk emission and workflow coordination.
+processing, and storage via action emission and workflow coordination.
 """
 
 from uuid import UUID, uuid4
@@ -256,10 +319,10 @@ from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.enum_orchestrator_types import (
     EnumExecutionMode,
-    EnumThunkType,
+    EnumActionType,
     EnumWorkflowState,
 )
-from omnibase_core.nodes.model_thunk import ModelThunk
+from omnibase_core.nodes.model_action import ModelAction
 from omnibase_core.nodes.model_workflow_step import ModelWorkflowStep
 from omnibase_core.nodes.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.nodes.model_orchestrator_output import ModelOrchestratorOutput
@@ -300,7 +363,7 @@ class NodePipelineOrchestrator(NodeCoreBase):
 
         # Workflow tracking
         object.__setattr__(self, "active_workflows", {})
-        object.__setattr__(self, "emitted_thunks", {})
+        object.__setattr__(self, "emitted_actions", {})
 
         emit_log_event(
             LogLevel.INFO,
@@ -315,14 +378,14 @@ class NodePipelineOrchestrator(NodeCoreBase):
         """
         Process data through the pipeline workflow.
 
-        Creates workflow steps with thunks, coordinates execution
+        Creates workflow steps with actions, coordinates execution
         based on the specified execution mode, and returns results.
 
         Args:
             input_data: Pipeline configuration and input data
 
         Returns:
-            Workflow execution results with emitted thunks
+            Workflow execution results with emitted actions
 
         Raises:
             ModelOnexError: If workflow coordination fails
@@ -392,22 +455,23 @@ class NodePipelineOrchestrator(NodeCoreBase):
         """
         Create workflow steps for the data pipeline.
 
-        Each step contains thunks representing operations to perform.
-        Dependencies between thunks ensure correct execution order.
+        Each step contains actions representing operations to perform.
+        Dependencies between actions ensure correct execution order.
 
         Args:
             input_data: Pipeline configuration
 
         Returns:
-            List of workflow steps with thunks
+            List of workflow steps with actions
         """
         steps = []
+        orchestrator_lease_id = uuid4()  # Single lease for this orchestrator instance
 
         # Step 1: Validation (if enabled)
         if input_data.config.validate_input:
-            validation_thunk = ModelThunk(
-                thunk_id=uuid4(),
-                thunk_type=EnumThunkType.COMPUTE,
+            validation_action = ModelAction(
+                action_id=uuid4(),
+                action_type=EnumActionType.COMPUTE,
                 target_node_type="NodeDataValidatorCompute",
                 operation_data={
                     "data": input_data.input_data,
@@ -422,27 +486,29 @@ class NodePipelineOrchestrator(NodeCoreBase):
                 retry_count=0,
                 metadata={"step_type": "validation"},
                 created_at=datetime.now(),
+                lease_id=orchestrator_lease_id,
+                epoch=1,
             )
 
             validation_step = ModelWorkflowStep(
                 step_id=uuid4(),
                 step_name="Validate Input Data",
                 execution_mode=EnumExecutionMode.SEQUENTIAL,
-                thunks=[validation_thunk],
+                actions=[validation_action],
                 timeout_ms=self.default_step_timeout_ms,
                 metadata={"step_type": "validation"},
             )
             steps.append(validation_step)
 
         # Step 2: Data Fetching
-        fetch_thunk_id = uuid4()
+        fetch_action_id = uuid4()
         fetch_dependencies = (
-            [steps[0].thunks[0].thunk_id] if input_data.config.validate_input else []
+            [steps[0].actions[0].action_id] if input_data.config.validate_input else []
         )
 
-        fetch_thunk = ModelThunk(
-            thunk_id=fetch_thunk_id,
-            thunk_type=EnumThunkType.EFFECT,
+        fetch_action = ModelAction(
+            action_id=fetch_action_id,
+            action_type=EnumActionType.EFFECT,
             target_node_type="NodeDataFetcherEffect",
             operation_data={
                 "source": input_data.config.data_source,
@@ -454,96 +520,104 @@ class NodePipelineOrchestrator(NodeCoreBase):
             retry_count=2,
             metadata={"step_type": "fetch"},
             created_at=datetime.now(),
+            lease_id=orchestrator_lease_id,
+            epoch=1,
         )
 
         fetch_step = ModelWorkflowStep(
             step_id=uuid4(),
             step_name="Fetch Data from Source",
             execution_mode=EnumExecutionMode.SEQUENTIAL,
-            thunks=[fetch_thunk],
+            actions=[fetch_action],
             timeout_ms=self.default_step_timeout_ms,
             metadata={"step_type": "fetch"},
         )
         steps.append(fetch_step)
 
         # Step 3: Data Processing
-        process_thunk_id = uuid4()
-        process_thunk = ModelThunk(
-            thunk_id=process_thunk_id,
-            thunk_type=EnumThunkType.COMPUTE,
+        process_action_id = uuid4()
+        process_action = ModelAction(
+            action_id=process_action_id,
+            action_type=EnumActionType.COMPUTE,
             target_node_type="NodeDataProcessorCompute",
             operation_data={
                 "operation": "transform",
                 "enable_caching": input_data.config.enable_caching,
             },
-            dependencies=[fetch_thunk_id],
+            dependencies=[fetch_action_id],
             priority=1,
             timeout_ms=15000,
             retry_count=1,
             metadata={"step_type": "processing"},
             created_at=datetime.now(),
+            lease_id=orchestrator_lease_id,
+            epoch=1,
         )
 
         process_step = ModelWorkflowStep(
             step_id=uuid4(),
             step_name="Process Fetched Data",
             execution_mode=EnumExecutionMode.SEQUENTIAL,
-            thunks=[process_thunk],
+            actions=[process_action],
             timeout_ms=self.default_step_timeout_ms,
             metadata={"step_type": "processing"},
         )
         steps.append(process_step)
 
         # Step 4: Data Aggregation
-        aggregate_thunk_id = uuid4()
-        aggregate_thunk = ModelThunk(
-            thunk_id=aggregate_thunk_id,
-            thunk_type=EnumThunkType.REDUCE,
+        aggregate_action_id = uuid4()
+        aggregate_action = ModelAction(
+            action_id=aggregate_action_id,
+            action_type=EnumActionType.REDUCE,
             target_node_type="NodeMetricsAggregatorReducer",
             operation_data={
                 "aggregation_type": "sum",
                 "group_by": "category",
             },
-            dependencies=[process_thunk_id],
+            dependencies=[process_action_id],
             priority=1,
             timeout_ms=10000,
             retry_count=0,
             metadata={"step_type": "aggregation"},
             created_at=datetime.now(),
+            lease_id=orchestrator_lease_id,
+            epoch=1,
         )
 
         aggregate_step = ModelWorkflowStep(
             step_id=uuid4(),
             step_name="Aggregate Processed Data",
             execution_mode=EnumExecutionMode.SEQUENTIAL,
-            thunks=[aggregate_thunk],
+            actions=[aggregate_action],
             timeout_ms=self.default_step_timeout_ms,
             metadata={"step_type": "aggregation"},
         )
         steps.append(aggregate_step)
 
         # Step 5: Save Results
-        save_thunk = ModelThunk(
-            thunk_id=uuid4(),
-            thunk_type=EnumThunkType.EFFECT,
+        save_action = ModelAction(
+            action_id=uuid4(),
+            action_type=EnumActionType.EFFECT,
             target_node_type="NodeDatabaseWriterEffect",
             operation_data={
                 "destination": "processed_data_table",
                 "mode": "upsert",
             },
-            dependencies=[aggregate_thunk_id],
+            dependencies=[aggregate_action_id],
             priority=2,
             timeout_ms=10000,
             retry_count=3,
             metadata={"step_type": "storage"},
             created_at=datetime.now(),
+            lease_id=orchestrator_lease_id,
+            epoch=1,
         )
 
         save_step = ModelWorkflowStep(
             step_id=uuid4(),
             step_name="Save Aggregated Results",
             execution_mode=EnumExecutionMode.SEQUENTIAL,
-            thunks=[save_thunk],
+            actions=[save_action],
             timeout_ms=self.default_step_timeout_ms,
             metadata={"step_type": "storage"},
         )
@@ -591,7 +665,7 @@ class NodePipelineOrchestrator(NodeCoreBase):
     async def _cleanup_node_resources(self) -> None:
         """Cleanup orchestrator-specific resources."""
         self.active_workflows.clear()
-        self.emitted_thunks.clear()
+        self.emitted_actions.clear()
 
         emit_log_event(
             LogLevel.INFO,
@@ -602,11 +676,13 @@ class NodePipelineOrchestrator(NodeCoreBase):
 
 **Key Implementation Points**:
 
-1. **Thunk Creation**: Each workflow step contains thunks representing operations
-2. **Dependency Management**: Thunks specify dependencies via `dependencies` field
-3. **Execution Mode Support**: The orchestrator supports SEQUENTIAL, PARALLEL, BATCH modes
-4. **Delegation Pattern**: Complex orchestration logic is delegated to `NodeOrchestrator` base class
-5. **Type Safety**: All thunks use `EnumThunkType` for type specification
+1. **Action Creation**: Each workflow step contains actions representing operations
+2. **Dependency Management**: Actions specify dependencies via `dependencies` field
+3. **Lease Management**: All actions share the same `lease_id` from the orchestrator instance
+4. **Epoch Control**: Each action starts at epoch 1 for optimistic concurrency
+5. **Execution Mode Support**: The orchestrator supports SEQUENTIAL, PARALLEL, BATCH modes
+6. **Delegation Pattern**: Complex orchestration logic is delegated to `NodeOrchestrator` base class
+7. **Type Safety**: All actions use `EnumActionType` for type specification
 
 ---
 
@@ -670,9 +746,10 @@ class NodeConditionalPipelineOrchestrator(NodePipelineOrchestrator):
         input_data: ModelPipelineOrchestratorInput,
     ) -> ModelWorkflowStep:
         """Create step for quality assessment."""
-        quality_thunk = ModelThunk(
-            thunk_id=uuid4(),
-            thunk_type=EnumThunkType.COMPUTE,
+        orchestrator_lease_id = uuid4()
+        quality_action = ModelAction(
+            action_id=uuid4(),
+            action_type=EnumActionType.COMPUTE,
             target_node_type="NodeQualityAssessorCompute",
             operation_data={
                 "threshold": input_data.config.quality_threshold,
@@ -683,13 +760,15 @@ class NodeConditionalPipelineOrchestrator(NodePipelineOrchestrator):
             retry_count=0,
             metadata={"step_type": "quality_check"},
             created_at=datetime.now(),
+            lease_id=orchestrator_lease_id,
+            epoch=1,
         )
 
         return ModelWorkflowStep(
             step_id=uuid4(),
             step_name="Assess Data Quality",
             execution_mode=EnumExecutionMode.SEQUENTIAL,
-            thunks=[quality_thunk],
+            actions=[quality_action],
             timeout_ms=self.default_step_timeout_ms,
             metadata={"step_type": "quality_check"},
         )
@@ -699,9 +778,10 @@ class NodeConditionalPipelineOrchestrator(NodePipelineOrchestrator):
         input_data: ModelPipelineOrchestratorInput,
     ) -> ModelWorkflowStep:
         """Create fast-track step for high-quality data."""
-        fast_track_thunk = ModelThunk(
-            thunk_id=uuid4(),
-            thunk_type=EnumThunkType.EFFECT,
+        orchestrator_lease_id = uuid4()
+        fast_track_action = ModelAction(
+            action_id=uuid4(),
+            action_type=EnumActionType.EFFECT,
             target_node_type="NodeFastTrackWriterEffect",
             operation_data={
                 "destination": "fast_track_table",
@@ -712,13 +792,15 @@ class NodeConditionalPipelineOrchestrator(NodePipelineOrchestrator):
             retry_count=1,
             metadata={"step_type": "fast_track"},
             created_at=datetime.now(),
+            lease_id=orchestrator_lease_id,
+            epoch=1,
         )
 
         return ModelWorkflowStep(
             step_id=uuid4(),
             step_name="Fast Track Storage",
             execution_mode=EnumExecutionMode.SEQUENTIAL,
-            thunks=[fast_track_thunk],
+            actions=[fast_track_action],
             timeout_ms=self.default_step_timeout_ms,
             metadata={"step_type": "fast_track"},
         )
@@ -961,7 +1043,7 @@ class NodeResilientPipelineOrchestrator(NodePipelineOrchestrator):
                 workflow_state=EnumWorkflowState.PARTIAL_SUCCESS,
                 steps_completed=0,
                 steps_failed=1,
-                thunks_emitted=[],
+                actions_emitted=[],
                 processing_time_ms=0.0,
                 results=[],
                 metadata={"recovery_strategy": "partial_results"},
@@ -1031,7 +1113,7 @@ async def test_sequential_execution(orchestrator):
     assert result.workflow_state == EnumWorkflowState.COMPLETED
     assert result.steps_completed >= 4  # At least 4 steps executed
     assert result.steps_failed == 0
-    assert len(result.thunks_emitted) >= 4
+    assert len(result.actions_emitted) >= 4
     assert result.processing_time_ms > 0
 
 
@@ -1168,8 +1250,8 @@ async def test_dependency_resolution(orchestrator):
 
 
 @pytest.mark.asyncio
-async def test_thunk_emission(orchestrator):
-    """Test thunk creation and emission."""
+async def test_action_emission(orchestrator):
+    """Test action creation and emission."""
     # Arrange
     input_data = ModelPipelineOrchestratorInput(
         workflow_id=uuid4(),
@@ -1184,13 +1266,15 @@ async def test_thunk_emission(orchestrator):
     result = await orchestrator.process(input_data)
 
     # Assert
-    assert len(result.thunks_emitted) > 0
-    # Verify thunk structure
-    for thunk in result.thunks_emitted:
-        assert thunk.thunk_id is not None
-        assert thunk.thunk_type is not None
-        assert thunk.target_node_type is not None
-        assert thunk.operation_data is not None
+    assert len(result.actions_emitted) > 0
+    # Verify action structure
+    for action in result.actions_emitted:
+        assert action.action_id is not None
+        assert action.action_type is not None
+        assert action.target_node_type is not None
+        assert action.operation_data is not None
+        assert action.lease_id is not None  # Verify lease management
+        assert action.epoch >= 1  # Verify epoch control
 ```
 
 **Test Coverage**:
@@ -1200,7 +1284,7 @@ async def test_thunk_emission(orchestrator):
 - ✅ Conditional branching
 - ✅ Error recovery
 - ✅ Dependency resolution
-- ✅ Thunk emission
+- ✅ Action emission
 
 ---
 
@@ -1232,7 +1316,7 @@ result = await orchestrator.process(input_data)
 
 print(f"ETL completed: {result.steps_completed} steps")
 print(f"Processing time: {result.processing_time_ms}ms")
-print(f"Thunks emitted: {len(result.thunks_emitted)}")
+print(f"Actions emitted: {len(result.actions_emitted)}")
 ```
 
 ### Example 2: Real-Time Data Processing
@@ -1303,36 +1387,42 @@ Execute multiple operations in parallel, then aggregate:
 ```python
 """Fan-out/fan-in pattern for parallel data processing."""
 
+orchestrator_lease_id = uuid4()
+
 # Step 1: Fan-out (parallel fetches from multiple sources)
 fetch_steps = []
 for source in ["db1", "db2", "db3"]:
-    fetch_thunk = ModelThunk(
-        thunk_id=uuid4(),
-        thunk_type=EnumThunkType.EFFECT,
+    fetch_action = ModelAction(
+        action_id=uuid4(),
+        action_type=EnumActionType.EFFECT,
         target_node_type="NodeDataFetcherEffect",
         operation_data={"source": source},
         dependencies=[],  # No dependencies - can run in parallel
         priority=1,
         timeout_ms=10000,
+        lease_id=orchestrator_lease_id,
+        epoch=1,
     )
     step = ModelWorkflowStep(
         step_id=uuid4(),
         step_name=f"Fetch from {source}",
-        thunks=[fetch_thunk],
+        actions=[fetch_action],
     )
     fetch_steps.append(step)
 
 # Step 2: Fan-in (aggregate all results)
-fan_in_dependencies = [step.thunks[0].thunk_id for step in fetch_steps]
+fan_in_dependencies = [step.actions[0].action_id for step in fetch_steps]
 
-aggregate_thunk = ModelThunk(
-    thunk_id=uuid4(),
-    thunk_type=EnumThunkType.REDUCE,
+aggregate_action = ModelAction(
+    action_id=uuid4(),
+    action_type=EnumActionType.REDUCE,
     target_node_type="NodeDataAggregatorReducer",
     operation_data={"operation": "merge"},
     dependencies=fan_in_dependencies,  # Wait for all fetches
     priority=2,
     timeout_ms=15000,
+    lease_id=orchestrator_lease_id,
+    epoch=1,
 )
 
 # Execute with PARALLEL mode for optimal performance
@@ -1358,8 +1448,8 @@ class NodeCircuitBreakerOrchestrator(NodePipelineOrchestrator):
         # Check circuit state for each target service
         for step_dict in orchestrator_input.steps:
             step = self._dict_to_workflow_step(step_dict)
-            for thunk in step.thunks:
-                service = thunk.target_node_type
+            for action in step.actions:
+                service = action.target_node_type
 
                 # Check if circuit is open
                 if self._is_circuit_open(service):
@@ -1377,16 +1467,16 @@ class NodeCircuitBreakerOrchestrator(NodePipelineOrchestrator):
             # Reset circuit on success
             for step_dict in orchestrator_input.steps:
                 step = self._dict_to_workflow_step(step_dict)
-                for thunk in step.thunks:
-                    self._reset_circuit(thunk.target_node_type)
+                for action in step.actions:
+                    self._reset_circuit(action.target_node_type)
             return result
 
         except Exception as e:
             # Record failure and potentially open circuit
             for step_dict in orchestrator_input.steps:
                 step = self._dict_to_workflow_step(step_dict)
-                for thunk in step.thunks:
-                    self._record_failure(thunk.target_node_type)
+                for action in step.actions:
+                    self._record_failure(action.target_node_type)
             raise
 
     def _is_circuit_open(self, service: str) -> bool:
@@ -1453,8 +1543,8 @@ class NodeSagaOrchestrator(NodePipelineOrchestrator):
         if step.metadata.get("step_type") == "storage":
             return {
                 "action": "delete",
-                "target": step.thunks[0].operation_data.get("destination"),
-                "thunk_id": step.thunks[0].thunk_id,
+                "target": step.actions[0].operation_data.get("destination"),
+                "action_id": step.actions[0].action_id,
             }
         return None
 
@@ -1482,7 +1572,7 @@ class NodeSagaOrchestrator(NodePipelineOrchestrator):
 **Problem**: Workflow doesn't complete and appears stuck.
 
 **Solution**:
-1. Check for circular dependencies in thunk dependency graph
+1. Check for circular dependencies in action dependency graph
 2. Verify timeout values are appropriate
 3. Enable debug logging to see step execution:
 
@@ -1503,7 +1593,7 @@ emit_log_event_sync(
 **Problem**: Workflow steps don't respect dependencies.
 
 **Solution**:
-1. Verify `dependencies` field in thunks is correctly set
+1. Verify `dependencies` field in actions is correctly set
 2. Enable dependency resolution: `dependency_resolution_enabled=True`
 3. Use SEQUENTIAL mode to force serial execution during debugging
 
@@ -1547,7 +1637,7 @@ input_data = ModelPipelineOrchestratorInput(
 async def _cleanup_node_resources(self):
     """Cleanup orchestrator resources."""
     self.active_workflows.clear()
-    self.emitted_thunks.clear()
+    self.emitted_actions.clear()
     self.workflow_states.clear()
 ```
 
@@ -1557,7 +1647,7 @@ async def _cleanup_node_resources(self):
 
 ### Optional: LlamaIndex Workflow Integration
 
-While ORCHESTRATOR nodes primarily use thunk emission for coordination, you can optionally integrate LlamaIndex workflows via the `MixinHybridExecution` mixin:
+While ORCHESTRATOR nodes primarily use action emission for coordination, you can optionally integrate LlamaIndex workflows via the `MixinHybridExecution` mixin:
 
 ```python
 """Optional LlamaIndex workflow integration."""
@@ -1596,12 +1686,12 @@ class NodeHybridOrchestrator(MixinHybridExecution, NodePipelineOrchestrator):
         return MyLlamaIndexWorkflow()
 
     def determine_execution_mode(self, input_state):
-        """Decide between thunk-based and LlamaIndex execution."""
+        """Decide between action-based and LlamaIndex execution."""
         complexity = self._calculate_complexity(input_state)
 
         if complexity > 0.8:
             return "workflow"  # Use LlamaIndex
-        return "direct"  # Use thunk-based orchestration
+        return "direct"  # Use action-based orchestration
 ```
 
 **When to use LlamaIndex workflows**:
@@ -1609,7 +1699,7 @@ class NodeHybridOrchestrator(MixinHybridExecution, NodePipelineOrchestrator):
 - Integration with LlamaIndex AI capabilities
 - Advanced workflow visualization needs
 
-**When to use thunk-based orchestration** (recommended):
+**When to use action-based orchestration** (recommended):
 - Standard ONEX workflow coordination
 - Dependency-based execution ordering
 - Multi-mode execution (SEQUENTIAL, PARALLEL, BATCH)
@@ -1622,7 +1712,8 @@ class NodeHybridOrchestrator(MixinHybridExecution, NodePipelineOrchestrator):
 Congratulations! You've completed the ORCHESTRATOR node tutorial. You now know how to:
 
 ✅ Build multi-step workflow orchestrators
-✅ Use thunk emission for deferred execution
+✅ Use action emission for deferred execution
+✅ Implement lease management for single-writer semantics
 ✅ Implement SEQUENTIAL, PARALLEL, and BATCH execution modes
 ✅ Add conditional branching and error recovery
 ✅ Test orchestrator nodes comprehensively

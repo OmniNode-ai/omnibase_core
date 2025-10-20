@@ -1,8 +1,15 @@
-# REDUCER Node Template
+# REDUCER Node Template - Pure FSM Pattern
 
 ## Overview
 
-This template provides the unified architecture pattern for ONEX REDUCER nodes. REDUCER nodes are responsible for aggregating, consolidating, and reducing data from multiple sources within the ONEX ecosystem.
+This template provides the **pure FSM architecture pattern** for ONEX REDUCER nodes. REDUCER nodes aggregate, consolidate, and reduce data from multiple sources using **immutable state** and **Intent emission** for all side effects.
+
+## Core FSM Principles
+
+1. **Immutable State**: `__init__()` contains ONLY immutable configuration
+2. **Pure Functions**: `process()` is a pure function returning `(result, intents)`
+3. **Intent Emission**: ALL side effects emitted as Intents (logging, metrics, caching, persistence)
+4. **No Direct Mutations**: No state changes within the node
 
 ## Key Characteristics
 
@@ -10,7 +17,7 @@ This template provides the unified architecture pattern for ONEX REDUCER nodes. 
 - **Statistical Reduction**: Perform statistical operations on data sets
 - **Pattern Recognition**: Identify patterns across multiple data sources
 - **Stream Processing**: Handle continuous data streams with windowing
-- **Memory Efficiency**: Optimize memory usage for large data processing
+- **Pure Reduction Logic**: All business logic is side-effect-free
 
 ## Directory Structure
 
@@ -22,8 +29,8 @@ This template provides the unified architecture pattern for ONEX REDUCER nodes. 
 │           └── node_{DOMAIN}_{MICROSERVICE_NAME}_reducer/
 │               └── v1_0_0/
 │                   ├── __init__.py
-│                   ├── node.py
-│                   ├── config.py
+│                   ├── node.py                  # Pure FSM implementation
+│                   ├── config.py                # Immutable configuration
 │                   ├── contracts/
 │                   │   ├── __init__.py
 │                   │   ├── reducer_contract.py
@@ -43,10 +50,9 @@ This template provides the unified architecture pattern for ONEX REDUCER nodes. 
 │                   │   └── enum_{DOMAIN}_{MICROSERVICE_NAME}_aggregation_strategy.py
 │                   ├── utils/
 │                   │   ├── __init__.py
-│                   │   ├── data_aggregator.py
-│                   │   ├── stream_processor.py
-│                   │   ├── pattern_detector.py
-│                   │   └── memory_optimizer.py
+│                   │   ├── data_aggregator.py   # Pure functions
+│                   │   ├── stream_processor.py  # Pure functions
+│                   │   └── pattern_detector.py  # Pure functions
 │                   └── manifest.yaml
 └── tests/
     └── {REPOSITORY_NAME}/
@@ -61,303 +67,436 @@ This template provides the unified architecture pattern for ONEX REDUCER nodes. 
 
 ## Template Files
 
-### 1. Node Implementation (`node.py`)
+### 1. Pure FSM Node Implementation (`node.py`)
 
 ```python
-"""ONEX REDUCER node for {DOMAIN} {MICROSERVICE_NAME} operations."""
+"""Pure FSM REDUCER node for {DOMAIN} {MICROSERVICE_NAME} operations."""
 
 import asyncio
-from typing import Any, Dict, List, Optional, Union
-from uuid import UUID, uuid4
 import time
-from contextlib import asynccontextmanager
-from collections import defaultdict
-import statistics
+from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
 
 from pydantic import ValidationError
-from omnibase_core.nodes.base.node_reducer_service import NodeReducerService
-from omnibase_core.models.model_onex_error import ModelONEXError
-from omnibase_core.models.model_onex_warning import ModelONEXWarning
+
+from omnibase_core.nodes.base.node_core_base import NodeCoreBase
+from omnibase_core.models.model_onex_container import ModelONEXContainer
+from omnibase_core.models.model_intent import ModelIntent
+from omnibase_core.models.model_reducer_output import ModelReducerOutput
+from omnibase_core.enums.enum_intent_type import EnumIntentType
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer
-from omnibase_core.utils.circuit_breaker import CircuitBreakerMixin
 
 from .config import {DomainCamelCase}{MicroserviceCamelCase}ReducerConfig
 from .models.model_{DOMAIN}_{MICROSERVICE_NAME}_reducer_input import Model{DomainCamelCase}{MicroserviceCamelCase}ReducerInput
 from .models.model_{DOMAIN}_{MICROSERVICE_NAME}_reducer_output import Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput
 from .enums.enum_{DOMAIN}_{MICROSERVICE_NAME}_reduction_type import Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType
 from .enums.enum_{DOMAIN}_{MICROSERVICE_NAME}_aggregation_strategy import Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy
-from .utils.data_aggregator import DataAggregator
-from .utils.stream_processor import StreamProcessor
-from .utils.pattern_detector import PatternDetector
-from .utils.memory_optimizer import MemoryOptimizer
+from .utils.data_aggregator import aggregate_data
+from .utils.stream_processor import process_stream_window
+from .utils.pattern_detector import detect_patterns
 
 
-class Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(
-    NodeReducerService[
-        Model{DomainCamelCase}{MicroserviceCamelCase}ReducerInput,
-        Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput,
-        {DomainCamelCase}{MicroserviceCamelCase}ReducerConfig
-    ],
-    CircuitBreakerMixin
-):
-    """REDUCER node for {DOMAIN} {MICROSERVICE_NAME} data reduction operations.
+class Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(NodeCoreBase):
+    """Pure FSM REDUCER node for {DOMAIN} {MICROSERVICE_NAME} data reduction.
 
-    This node provides high-performance data aggregation and reduction services
-    for {DOMAIN} domain operations, focusing on {MICROSERVICE_NAME} data processing.
+    This node implements pure functional reduction logic with Intent emission
+    for all side effects. NO mutable state is maintained within the node.
+
+    FSM Compliance:
+    - ✅ Immutable configuration only
+    - ✅ Pure process() function
+    - ✅ Intent emission for side effects
+    - ✅ No direct state mutations
 
     Key Features:
     - Sub-{PERFORMANCE_TARGET}ms reduction performance
     - Memory-efficient large dataset processing
     - Stream processing with configurable windows
     - Pattern detection and statistical analysis
-    - Circuit breaker protection
+    - Intent-based observability
     """
 
-    def __init__(self, config: {DomainCamelCase}{MicroserviceCamelCase}ReducerConfig):
-        """Initialize the REDUCER node with configuration.
+    def __init__(self, container: ModelONEXContainer):
+        """Initialize the REDUCER node with immutable configuration.
 
         Args:
-            config: Configuration for the reduction operations
+            container: ONEX container with dependency injection
+
+        FSM Rules:
+            - ONLY immutable configuration allowed
+            - NO mutable state (lists, dicts, counters)
+            - Configuration values are read-only
         """
-        super().__init__(config)
-        CircuitBreakerMixin.__init__(
-            self,
-            failure_threshold=config.circuit_breaker_threshold,
-            recovery_timeout=config.circuit_breaker_timeout,
-            expected_exception=Exception
-        )
+        super().__init__(container)
 
-        # Initialize reduction components
-        self._aggregator = DataAggregator(config.aggregation_config)
-        self._stream_processor = StreamProcessor(config.stream_config)
-        self._pattern_detector = PatternDetector(config.pattern_config)
-        self._memory_optimizer = MemoryOptimizer(config.memory_config)
+        # ✅ CORRECT: Immutable configuration
+        self.batch_size: int = 1000
+        self.performance_threshold_ms: float = 5000.0
+        self.max_input_sources: int = 10000
+        self.enable_pattern_detection: bool = True
+        self.aggregation_timeout_ms: float = 10000.0
+
+        # ❌ FORBIDDEN: Mutable state
+        # self.metrics = []              # VIOLATION: Mutable list
+        # self.cache = {}                # VIOLATION: Mutable dict
+        # self.counter = 0               # VIOLATION: Mutable counter
+        # self.active_streams = set()    # VIOLATION: Mutable set
+
+        # Error sanitizer (stateless utility)
         self._error_sanitizer = ErrorSanitizer()
-
-        # Processing state
-        self._active_streams = {}
-        self._reduction_metrics = []
-        self._pattern_cache = {}
-        self._memory_usage_tracker = defaultdict(list)
-
-    @asynccontextmanager
-    async def _performance_tracking(self, reduction_type: Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType):
-        """Track performance metrics for reductions."""
-        start_time = time.perf_counter()
-        initial_memory = self._memory_optimizer.get_current_usage_mb()
-
-        try:
-            yield
-        finally:
-            end_time = time.perf_counter()
-            duration_ms = (end_time - start_time) * 1000
-            final_memory = self._memory_optimizer.get_current_usage_mb()
-
-            self._reduction_metrics.append({
-                "reduction_type": reduction_type,
-                "duration_ms": duration_ms,
-                "memory_delta_mb": final_memory - initial_memory,
-                "timestamp": time.time()
-            })
 
     async def process(
         self,
         input_data: Model{DomainCamelCase}{MicroserviceCamelCase}ReducerInput
-    ) -> Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput:
-        """Process {DOMAIN} {MICROSERVICE_NAME} reduction with typed interface.
+    ) -> ModelReducerOutput:
+        """Pure reduction function with Intent emission.
 
-        This is the business logic interface that provides type-safe reduction
-        processing without ONEX infrastructure concerns.
+        This is the core business logic interface providing type-safe reduction
+        processing without state mutations. ALL side effects are emitted as Intents.
 
         Args:
             input_data: Validated input data for reduction
 
         Returns:
-            Reduced output data with aggregated results
+            ModelReducerOutput with result and Intents for side effects
 
         Raises:
             ValidationError: If input validation fails
             ReductionError: If reduction logic fails
-            MemoryError: If processing exceeds memory limits
+
+        FSM Guarantees:
+            - No state mutations
+            - Pure function behavior
+            - All side effects via Intents
+            - Idempotent for same inputs
         """
-        async with self._performance_tracking(input_data.reduction_type):
-            try:
-                # Pre-processing memory optimization
-                await self._memory_optimizer.optimize_for_dataset(input_data.dataset_info)
+        start_time = time.perf_counter()
+        intents: List[ModelIntent] = []
 
-                # Execute core reduction logic
-                reduction_result = await self._execute_reduction(input_data)
+        try:
+            # Emit pre-processing Intent
+            intents.append(ModelIntent(
+                intent_type=EnumIntentType.LOG,
+                target="logger",
+                payload={
+                    "level": "info",
+                    "message": f"Starting reduction: {input_data.reduction_type.value}",
+                    "correlation_id": str(input_data.correlation_id),
+                    "input_sources": len(input_data.data_sources)
+                }
+            ))
 
-                # Pattern detection on results
-                patterns = await self._pattern_detector.detect_patterns(
+            # Execute pure reduction logic (no side effects)
+            reduction_result = await self._execute_pure_reduction(input_data)
+
+            # Pattern detection (pure function)
+            patterns = []
+            if self.enable_pattern_detection and input_data.pattern_detection_enabled:
+                patterns = detect_patterns(
                     reduction_result,
-                    input_data.pattern_detection_enabled
+                    min_confidence=0.7
                 )
 
-                # Post-processing optimization
-                optimized_result = await self._memory_optimizer.optimize_output(reduction_result)
+            # Calculate metrics (pure computation)
+            end_time = time.perf_counter()
+            duration_ms = (end_time - start_time) * 1000
 
-                return Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput(
-                    reduction_type=input_data.reduction_type,
-                    aggregation_strategy=input_data.aggregation_strategy,
-                    reduced_data=optimized_result,
-                    patterns_detected=patterns,
-                    success=True,
-                    correlation_id=input_data.correlation_id,
-                    timestamp=time.time(),
-                    processing_time_ms=(
-                        self._reduction_metrics[-1]["duration_ms"]
-                        if self._reduction_metrics else 0.0
-                    ),
-                    input_record_count=len(input_data.data_sources),
-                    output_record_count=self._get_output_record_count(optimized_result),
-                    memory_efficiency=self._calculate_memory_efficiency(),
-                    metadata={
-                        "aggregation_applied": True,
-                        "patterns_found": len(patterns) if patterns else 0,
-                        "memory_optimization": True,
-                        "compression_ratio": self._calculate_compression_ratio(input_data, optimized_result)
+            # Emit performance metrics Intent
+            intents.append(ModelIntent(
+                intent_type=EnumIntentType.METRIC,
+                target="metrics_collector",
+                payload={
+                    "metric_name": "reduction_duration_ms",
+                    "value": duration_ms,
+                    "tags": {
+                        "reduction_type": input_data.reduction_type.value,
+                        "aggregation_strategy": input_data.aggregation_strategy.value,
+                        "input_count": len(input_data.data_sources)
                     }
-                )
+                }
+            ))
 
-            except ValidationError as e:
-                sanitized_error = self._error_sanitizer.sanitize_validation_error(str(e))
-                return Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput(
-                    reduction_type=input_data.reduction_type,
-                    aggregation_strategy=input_data.aggregation_strategy,
-                    success=False,
-                    error_message=f"Input validation failed: {sanitized_error}",
-                    correlation_id=input_data.correlation_id,
-                    timestamp=time.time(),
-                    processing_time_ms=0.0,
-                    input_record_count=len(input_data.data_sources) if input_data.data_sources else 0,
-                    output_record_count=0
-                )
+            # Emit caching Intent (if applicable)
+            if self._should_cache_result(input_data, reduction_result):
+                intents.append(ModelIntent(
+                    intent_type=EnumIntentType.CACHE_WRITE,
+                    target="result_cache",
+                    payload={
+                        "cache_key": self._generate_cache_key(input_data),
+                        "value": reduction_result,
+                        "ttl_seconds": 3600,
+                        "tags": ["reduction", input_data.reduction_type.value]
+                    }
+                ))
 
-            except MemoryError:
-                await self._memory_optimizer.emergency_cleanup()
-                return Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput(
-                    reduction_type=input_data.reduction_type,
-                    aggregation_strategy=input_data.aggregation_strategy,
-                    success=False,
-                    error_message="Memory limit exceeded during reduction",
-                    correlation_id=input_data.correlation_id,
-                    timestamp=time.time(),
-                    processing_time_ms=self.config.reduction_timeout_ms,
-                    input_record_count=len(input_data.data_sources) if input_data.data_sources else 0,
-                    output_record_count=0
-                )
+            # Emit pattern detection Intent (if patterns found)
+            if patterns:
+                intents.append(ModelIntent(
+                    intent_type=EnumIntentType.EVENT,
+                    target="pattern_analyzer",
+                    payload={
+                        "event_type": "patterns_detected",
+                        "patterns": [p.dict() for p in patterns],
+                        "reduction_type": input_data.reduction_type.value,
+                        "correlation_id": str(input_data.correlation_id)
+                    }
+                ))
 
-            except asyncio.TimeoutError:
-                return Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput(
-                    reduction_type=input_data.reduction_type,
-                    aggregation_strategy=input_data.aggregation_strategy,
-                    success=False,
-                    error_message="Reduction timeout exceeded",
-                    correlation_id=input_data.correlation_id,
-                    timestamp=time.time(),
-                    processing_time_ms=self.config.reduction_timeout_ms,
-                    input_record_count=len(input_data.data_sources) if input_data.data_sources else 0,
-                    output_record_count=0
-                )
+            # Build pure output model
+            output = Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput(
+                reduction_type=input_data.reduction_type,
+                aggregation_strategy=input_data.aggregation_strategy,
+                reduced_data=reduction_result,
+                patterns_detected=patterns,
+                success=True,
+                correlation_id=input_data.correlation_id,
+                timestamp=time.time(),
+                processing_time_ms=duration_ms,
+                input_record_count=len(input_data.data_sources),
+                output_record_count=self._calculate_output_count(reduction_result),
+                metadata={
+                    "aggregation_applied": True,
+                    "patterns_found": len(patterns),
+                    "cache_eligible": self._should_cache_result(input_data, reduction_result)
+                }
+            )
 
-            except Exception as e:
-                sanitized_error = self._error_sanitizer.sanitize_error(str(e))
-                return Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput(
-                    reduction_type=input_data.reduction_type,
-                    aggregation_strategy=input_data.aggregation_strategy,
-                    success=False,
-                    error_message=f"Reduction failed: {sanitized_error}",
-                    correlation_id=input_data.correlation_id,
-                    timestamp=time.time(),
-                    processing_time_ms=0.0,
-                    input_record_count=len(input_data.data_sources) if input_data.data_sources else 0,
-                    output_record_count=0
-                )
+            # Return output with Intents
+            return ModelReducerOutput(
+                result=output,
+                intents=intents,
+                success=True
+            )
 
-    async def _execute_reduction(
+        except ValidationError as e:
+            sanitized_error = self._error_sanitizer.sanitize_validation_error(str(e))
+
+            # Emit error Intent
+            intents.append(ModelIntent(
+                intent_type=EnumIntentType.LOG,
+                target="logger",
+                payload={
+                    "level": "error",
+                    "message": f"Validation failed: {sanitized_error}",
+                    "correlation_id": str(input_data.correlation_id),
+                    "error_type": "ValidationError"
+                }
+            ))
+
+            error_output = Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput(
+                reduction_type=input_data.reduction_type,
+                aggregation_strategy=input_data.aggregation_strategy,
+                success=False,
+                error_message=f"Input validation failed: {sanitized_error}",
+                correlation_id=input_data.correlation_id,
+                timestamp=time.time(),
+                processing_time_ms=0.0,
+                input_record_count=len(input_data.data_sources),
+                output_record_count=0
+            )
+
+            return ModelReducerOutput(
+                result=error_output,
+                intents=intents,
+                success=False
+            )
+
+        except asyncio.TimeoutError:
+            # Emit timeout Intent
+            intents.append(ModelIntent(
+                intent_type=EnumIntentType.LOG,
+                target="logger",
+                payload={
+                    "level": "warning",
+                    "message": "Reduction timeout exceeded",
+                    "correlation_id": str(input_data.correlation_id),
+                    "timeout_ms": self.aggregation_timeout_ms
+                }
+            ))
+
+            timeout_output = Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput(
+                reduction_type=input_data.reduction_type,
+                aggregation_strategy=input_data.aggregation_strategy,
+                success=False,
+                error_message="Reduction timeout exceeded",
+                correlation_id=input_data.correlation_id,
+                timestamp=time.time(),
+                processing_time_ms=self.aggregation_timeout_ms,
+                input_record_count=len(input_data.data_sources),
+                output_record_count=0
+            )
+
+            return ModelReducerOutput(
+                result=timeout_output,
+                intents=intents,
+                success=False
+            )
+
+        except Exception as e:
+            sanitized_error = self._error_sanitizer.sanitize_error(str(e))
+
+            # Emit exception Intent
+            intents.append(ModelIntent(
+                intent_type=EnumIntentType.LOG,
+                target="logger",
+                payload={
+                    "level": "error",
+                    "message": f"Reduction failed: {sanitized_error}",
+                    "correlation_id": str(input_data.correlation_id),
+                    "error_type": type(e).__name__
+                }
+            ))
+
+            error_output = Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput(
+                reduction_type=input_data.reduction_type,
+                aggregation_strategy=input_data.aggregation_strategy,
+                success=False,
+                error_message=f"Reduction failed: {sanitized_error}",
+                correlation_id=input_data.correlation_id,
+                timestamp=time.time(),
+                processing_time_ms=0.0,
+                input_record_count=len(input_data.data_sources),
+                output_record_count=0
+            )
+
+            return ModelReducerOutput(
+                result=error_output,
+                intents=intents,
+                success=False
+            )
+
+    async def _execute_pure_reduction(
         self,
         input_data: Model{DomainCamelCase}{MicroserviceCamelCase}ReducerInput
     ) -> Any:
-        """Execute the core reduction logic.
+        """Execute pure reduction logic without side effects.
+
+        This function delegates to pure utility functions based on reduction type.
+        NO state mutations occur here.
 
         Args:
             input_data: Input data for reduction
 
         Returns:
-            Reduced result data
+            Pure reduction result
+
+        Raises:
+            ValueError: If reduction type is unsupported
         """
-        # Apply circuit breaker protection
-        async with self.circuit_breaker():
-            if input_data.reduction_type == Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.AGGREGATE:
-                return await self._aggregator.aggregate(
-                    input_data.data_sources,
-                    input_data.aggregation_strategy,
-                    input_data.aggregation_parameters
-                )
+        # Apply timeout wrapper (pure async operation)
+        try:
+            return await asyncio.wait_for(
+                self._reduce_by_type(input_data),
+                timeout=self.aggregation_timeout_ms / 1000.0
+            )
+        except asyncio.TimeoutError:
+            raise
 
-            elif input_data.reduction_type == Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.STATISTICAL:
-                return await self._perform_statistical_reduction(
-                    input_data.data_sources,
-                    input_data.statistical_operations
-                )
+    async def _reduce_by_type(
+        self,
+        input_data: Model{DomainCamelCase}{MicroserviceCamelCase}ReducerInput
+    ) -> Any:
+        """Route reduction to appropriate pure function.
 
-            elif input_data.reduction_type == Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.WINDOW:
-                return await self._stream_processor.process_window(
-                    input_data.data_sources,
-                    input_data.window_config
-                )
+        Args:
+            input_data: Input data for reduction
 
-            elif input_data.reduction_type == Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.FILTER:
-                return await self._apply_filter_reduction(
-                    input_data.data_sources,
-                    input_data.filter_criteria
-                )
+        Returns:
+            Pure reduction result
+        """
+        if input_data.reduction_type == Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.AGGREGATE:
+            # Pure aggregation function (from utils)
+            return await aggregate_data(
+                data_sources=input_data.data_sources,
+                strategy=input_data.aggregation_strategy,
+                parameters=input_data.aggregation_parameters
+            )
 
-            elif input_data.reduction_type == Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.GROUP:
-                return await self._perform_group_reduction(
-                    input_data.data_sources,
-                    input_data.grouping_keys,
-                    input_data.aggregation_strategy
-                )
+        elif input_data.reduction_type == Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.STATISTICAL:
+            # Pure statistical reduction
+            return self._compute_statistics(
+                input_data.data_sources,
+                input_data.statistical_operations
+            )
 
-            else:
-                raise ValueError(f"Unsupported reduction type: {input_data.reduction_type}")
+        elif input_data.reduction_type == Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.WINDOW:
+            # Pure stream window processing (from utils)
+            return await process_stream_window(
+                data_sources=input_data.data_sources,
+                window_config=input_data.window_config
+            )
 
-    async def _perform_statistical_reduction(
+        elif input_data.reduction_type == Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.FILTER:
+            # Pure filter reduction
+            return self._apply_filter(
+                input_data.data_sources,
+                input_data.filter_criteria
+            )
+
+        elif input_data.reduction_type == Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.GROUP:
+            # Pure group reduction
+            return self._group_and_aggregate(
+                input_data.data_sources,
+                input_data.grouping_keys,
+                input_data.aggregation_strategy
+            )
+
+        else:
+            raise ValueError(f"Unsupported reduction type: {input_data.reduction_type}")
+
+    def _compute_statistics(
         self,
         data_sources: List[Dict[str, Any]],
-        statistical_operations: List[str]
+        operations: List[str]
     ) -> Dict[str, Any]:
-        """Perform statistical reduction operations."""
+        """Pure statistical computation.
+
+        Args:
+            data_sources: Input data sources
+            operations: Statistical operations to perform
+
+        Returns:
+            Statistical results dictionary
+        """
+        import statistics
+
+        # Extract all numeric values (pure operation)
         all_values = []
         for source in data_sources:
             if isinstance(source.get('values'), list):
-                all_values.extend([v for v in source['values'] if isinstance(v, (int, float))])
+                all_values.extend([
+                    v for v in source['values']
+                    if isinstance(v, (int, float))
+                ])
 
         if not all_values:
-            return {"error": "No numerical values found for statistical reduction"}
+            return {"error": "No numerical values found"}
 
+        # Compute statistics (pure functions)
         results = {}
 
-        if "mean" in statistical_operations:
+        if "mean" in operations:
             results["mean"] = statistics.mean(all_values)
 
-        if "median" in statistical_operations:
+        if "median" in operations:
             results["median"] = statistics.median(all_values)
 
-        if "std_dev" in statistical_operations:
-            results["standard_deviation"] = statistics.stdev(all_values) if len(all_values) > 1 else 0.0
+        if "std_dev" in operations:
+            results["standard_deviation"] = (
+                statistics.stdev(all_values) if len(all_values) > 1 else 0.0
+            )
 
-        if "variance" in statistical_operations:
-            results["variance"] = statistics.variance(all_values) if len(all_values) > 1 else 0.0
+        if "variance" in operations:
+            results["variance"] = (
+                statistics.variance(all_values) if len(all_values) > 1 else 0.0
+            )
 
-        if "min_max" in statistical_operations:
+        if "min_max" in operations:
             results["minimum"] = min(all_values)
             results["maximum"] = max(all_values)
             results["range"] = max(all_values) - min(all_values)
 
-        if "percentiles" in statistical_operations:
+        if "percentiles" in operations:
             sorted_values = sorted(all_values)
             results["percentiles"] = {
                 "p25": statistics.quantiles(sorted_values, n=4)[0] if len(sorted_values) > 1 else sorted_values[0],
@@ -371,493 +510,428 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(
 
         return results
 
-    async def _apply_filter_reduction(
+    def _apply_filter(
         self,
         data_sources: List[Dict[str, Any]],
         filter_criteria: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
-        """Apply filter criteria to reduce data sources."""
-        filtered_results = []
+        """Pure filter operation.
 
-        for source in data_sources:
-            if self._matches_filter_criteria(source, filter_criteria):
-                filtered_results.append(source)
+        Args:
+            data_sources: Input data sources
+            filter_criteria: Filter criteria dictionary
 
-        return filtered_results
+        Returns:
+            Filtered data sources
+        """
+        return [
+            source for source in data_sources
+            if self._matches_criteria(source, filter_criteria)
+        ]
 
-    def _matches_filter_criteria(
+    def _matches_criteria(
         self,
         data_item: Dict[str, Any],
-        filter_criteria: Dict[str, Any]
+        criteria: Dict[str, Any]
     ) -> bool:
-        """Check if data item matches filter criteria."""
-        for key, expected_value in filter_criteria.items():
+        """Pure predicate for filter matching.
+
+        Args:
+            data_item: Data item to check
+            criteria: Matching criteria
+
+        Returns:
+            True if item matches all criteria
+        """
+        for key, expected in criteria.items():
             if key not in data_item:
                 return False
 
-            item_value = data_item[key]
+            value = data_item[key]
 
-            # Handle different filter types
-            if isinstance(expected_value, dict):
-                # Range filter: {"min": 10, "max": 100}
-                if "min" in expected_value and item_value < expected_value["min"]:
+            # Range filter
+            if isinstance(expected, dict):
+                if "min" in expected and value < expected["min"]:
                     return False
-                if "max" in expected_value and item_value > expected_value["max"]:
+                if "max" in expected and value > expected["max"]:
                     return False
-                # Regex filter: {"pattern": ".*@company.com"}
-                if "pattern" in expected_value:
+                if "pattern" in expected:
                     import re
-                    if not re.match(expected_value["pattern"], str(item_value)):
+                    if not re.match(expected["pattern"], str(value)):
                         return False
-            elif isinstance(expected_value, list):
-                # In list filter
-                if item_value not in expected_value:
+            # List membership
+            elif isinstance(expected, list):
+                if value not in expected:
                     return False
+            # Exact match
             else:
-                # Exact match
-                if item_value != expected_value:
+                if value != expected:
                     return False
 
         return True
 
-    async def _perform_group_reduction(
+    def _group_and_aggregate(
         self,
         data_sources: List[Dict[str, Any]],
         grouping_keys: List[str],
-        aggregation_strategy: Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy
+        strategy: Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy
     ) -> Dict[str, Any]:
-        """Perform group-based reduction."""
+        """Pure group-based aggregation.
+
+        Args:
+            data_sources: Input data sources
+            grouping_keys: Keys to group by
+            strategy: Aggregation strategy
+
+        Returns:
+            Grouped and aggregated results
+        """
+        from collections import defaultdict
+
+        # Group data (pure operation)
         groups = defaultdict(list)
-
-        # Group data by keys
         for source in data_sources:
-            group_key = tuple(str(source.get(key, "null")) for key in grouping_keys)
-            groups[group_key].append(source)
+            key = tuple(str(source.get(k, "null")) for k in grouping_keys)
+            groups[key].append(source)
 
-        # Apply aggregation to each group
+        # Aggregate each group (pure)
         results = {}
         for group_key, group_data in groups.items():
             group_name = "_".join(group_key)
 
-            if aggregation_strategy == Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy.COUNT:
+            if strategy == Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy.COUNT:
                 results[group_name] = len(group_data)
 
-            elif aggregation_strategy == Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy.SUM:
-                # Sum numeric fields
+            elif strategy == Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy.SUM:
                 numeric_sum = {}
                 for item in group_data:
-                    for key, value in item.items():
-                        if isinstance(value, (int, float)):
-                            numeric_sum[key] = numeric_sum.get(key, 0) + value
+                    for k, v in item.items():
+                        if isinstance(v, (int, float)):
+                            numeric_sum[k] = numeric_sum.get(k, 0) + v
                 results[group_name] = numeric_sum
 
-            elif aggregation_strategy == Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy.AVERAGE:
-                # Average numeric fields
-                numeric_avg = {}
-                field_counts = {}
+            elif strategy == Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy.AVERAGE:
+                numeric_sum = {}
+                counts = {}
                 for item in group_data:
-                    for key, value in item.items():
-                        if isinstance(value, (int, float)):
-                            numeric_avg[key] = numeric_avg.get(key, 0) + value
-                            field_counts[key] = field_counts.get(key, 0) + 1
+                    for k, v in item.items():
+                        if isinstance(v, (int, float)):
+                            numeric_sum[k] = numeric_sum.get(k, 0) + v
+                            counts[k] = counts.get(k, 0) + 1
 
-                for key in numeric_avg:
-                    if field_counts[key] > 0:
-                        numeric_avg[key] = numeric_avg[key] / field_counts[key]
-
+                numeric_avg = {
+                    k: numeric_sum[k] / counts[k]
+                    for k in numeric_sum if counts[k] > 0
+                }
                 results[group_name] = numeric_avg
 
-            elif aggregation_strategy == Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy.FIRST:
+            elif strategy == Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy.FIRST:
                 results[group_name] = group_data[0] if group_data else None
 
-            elif aggregation_strategy == Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy.LAST:
+            elif strategy == Enum{DomainCamelCase}{MicroserviceCamelCase}AggregationStrategy.LAST:
                 results[group_name] = group_data[-1] if group_data else None
 
         return results
 
-    def _get_output_record_count(self, result_data: Any) -> int:
-        """Calculate output record count from result data."""
-        if isinstance(result_data, list):
-            return len(result_data)
-        elif isinstance(result_data, dict):
-            return len(result_data)
-        else:
-            return 1 if result_data is not None else 0
-
-    def _calculate_memory_efficiency(self) -> float:
-        """Calculate memory efficiency score."""
-        if not self._memory_usage_tracker:
-            return 1.0
-
-        recent_usage = list(self._memory_usage_tracker.values())[-10:]  # Last 10 operations
-        if not recent_usage:
-            return 1.0
-
-        avg_usage = sum(recent_usage) / len(recent_usage)
-        memory_limit = self.config.memory_config.max_memory_mb
-
-        return max(0.0, 1.0 - (avg_usage / memory_limit))
-
-    def _calculate_compression_ratio(
-        self,
-        input_data: Model{DomainCamelCase}{MicroserviceCamelCase}ReducerInput,
-        output_data: Any
-    ) -> float:
-        """Calculate data compression ratio."""
-        input_size = len(str(input_data.data_sources)) if input_data.data_sources else 0
-        output_size = len(str(output_data))
-
-        if input_size == 0:
-            return 1.0
-
-        return output_size / input_size if output_size < input_size else 1.0
-
-    async def get_performance_metrics(self) -> Dict[str, Any]:
-        """Get current performance metrics for monitoring."""
-        if not self._reduction_metrics:
-            return {
-                "total_reductions": 0,
-                "average_duration_ms": 0.0,
-                "memory_efficiency": 1.0,
-                "active_streams": 0
-            }
-
-        total_reductions = len(self._reduction_metrics)
-        average_duration = sum(m["duration_ms"] for m in self._reduction_metrics) / total_reductions
-        average_memory_delta = sum(m["memory_delta_mb"] for m in self._reduction_metrics) / total_reductions
-
-        return {
-            "total_reductions": total_reductions,
-            "average_duration_ms": round(average_duration, 2),
-            "max_duration_ms": max(m["duration_ms"] for m in self._reduction_metrics),
-            "min_duration_ms": min(m["duration_ms"] for m in self._reduction_metrics),
-            "average_memory_delta_mb": round(average_memory_delta, 2),
-            "memory_efficiency": self._calculate_memory_efficiency(),
-            "active_streams": len(self._active_streams),
-            "pattern_cache_size": len(self._pattern_cache),
-            "circuit_breaker_status": self.circuit_breaker_status
-        }
-
-    async def health_check(self) -> Dict[str, Any]:
-        """Perform comprehensive health check."""
-        try:
-            # Test core components
-            aggregator_healthy = await self._aggregator.health_check()
-            stream_processor_healthy = await self._stream_processor.health_check()
-            pattern_detector_healthy = await self._pattern_detector.health_check()
-            memory_optimizer_healthy = await self._memory_optimizer.health_check()
-
-            # Check memory usage
-            current_memory_mb = self._memory_optimizer.get_current_usage_mb()
-            memory_healthy = current_memory_mb < self.config.memory_config.max_memory_mb * 0.8
-
-            # Check performance metrics
-            recent_metrics = [
-                m for m in self._reduction_metrics
-                if time.time() - m["timestamp"] < 300  # Last 5 minutes
-            ]
-
-            avg_performance = (
-                sum(m["duration_ms"] for m in recent_metrics) / len(recent_metrics)
-                if recent_metrics else 0.0
-            )
-
-            performance_healthy = avg_performance < self.config.performance_threshold_ms
-
-            overall_healthy = all([
-                aggregator_healthy,
-                stream_processor_healthy,
-                pattern_detector_healthy,
-                memory_optimizer_healthy,
-                memory_healthy,
-                performance_healthy
-            ])
-
-            return {
-                "status": "healthy" if overall_healthy else "degraded",
-                "components": {
-                    "aggregator": "healthy" if aggregator_healthy else "unhealthy",
-                    "stream_processor": "healthy" if stream_processor_healthy else "unhealthy",
-                    "pattern_detector": "healthy" if pattern_detector_healthy else "unhealthy",
-                    "memory_optimizer": "healthy" if memory_optimizer_healthy else "unhealthy"
-                },
-                "performance": {
-                    "average_duration_ms": round(avg_performance, 2),
-                    "threshold_ms": self.config.performance_threshold_ms,
-                    "recent_reductions": len(recent_metrics)
-                },
-                "memory": {
-                    "current_usage_mb": round(current_memory_mb, 2),
-                    "limit_mb": self.config.memory_config.max_memory_mb,
-                    "utilization_percent": round((current_memory_mb / self.config.memory_config.max_memory_mb) * 100, 2)
-                },
-                "circuit_breaker": self.circuit_breaker_status,
-                "active_streams": len(self._active_streams)
-            }
-
-        except Exception as e:
-            sanitized_error = self._error_sanitizer.sanitize_error(str(e))
-            return {
-                "status": "unhealthy",
-                "error": sanitized_error,
-                "timestamp": time.time()
-            }
-```
-
-### 2. Configuration (`config.py`)
-
-```python
-"""Configuration for {DOMAIN} {MICROSERVICE_NAME} REDUCER node."""
-
-from typing import Any, Dict, List, Optional, Type, TypeVar
-from pydantic import BaseModel, Field, validator
-
-from omnibase_core.config.base_node_config import BaseNodeConfig
-
-ConfigT = TypeVar('ConfigT', bound='BaseNodeConfig')
-
-
-class AggregationConfig(BaseModel):
-    """Configuration for data aggregation operations."""
-
-    max_input_sources: int = Field(default=1000, ge=1, description="Maximum number of input data sources")
-    batch_size: int = Field(default=100, ge=1, le=1000, description="Batch size for processing")
-    parallel_aggregation: bool = Field(default=True, description="Enable parallel aggregation processing")
-    aggregation_timeout_ms: float = Field(default=10000.0, ge=100.0, description="Aggregation timeout in milliseconds")
-    enable_compression: bool = Field(default=True, description="Enable result compression")
-
-
-class StreamConfig(BaseModel):
-    """Configuration for stream processing operations."""
-
-    window_size_ms: int = Field(default=10000, ge=1000, le=3600000, description="Stream window size in milliseconds")
-    max_windows_active: int = Field(default=10, ge=1, le=100, description="Maximum active windows")
-    watermark_delay_ms: int = Field(default=5000, ge=0, description="Watermark delay for late data")
-    allow_late_data: bool = Field(default=True, description="Allow processing of late arriving data")
-    checkpoint_interval_ms: int = Field(default=30000, ge=1000, description="Stream checkpoint interval")
-
-
-class PatternConfig(BaseModel):
-    """Configuration for pattern detection."""
-
-    enable_pattern_detection: bool = Field(default=True, description="Enable automatic pattern detection")
-    pattern_cache_size: int = Field(default=1000, ge=10, description="Pattern cache size")
-    min_pattern_confidence: float = Field(default=0.7, ge=0.0, le=1.0, description="Minimum pattern confidence")
-    max_patterns_per_result: int = Field(default=10, ge=1, le=50, description="Maximum patterns per result")
-    pattern_types: List[str] = Field(default=["trend", "anomaly", "cycle"], description="Enabled pattern types")
-
-
-class MemoryConfig(BaseModel):
-    """Configuration for memory optimization."""
-
-    max_memory_mb: float = Field(default=1024.0, ge=128.0, le=8192.0, description="Maximum memory usage in MB")
-    cleanup_threshold_percent: float = Field(default=80.0, ge=50.0, le=95.0, description="Memory cleanup threshold percentage")
-    garbage_collection_frequency: int = Field(default=10, ge=1, le=100, description="GC frequency (every N operations)")
-    enable_memory_monitoring: bool = Field(default=True, description="Enable memory usage monitoring")
-    swap_to_disk_threshold_mb: float = Field(default=512.0, ge=0.0, description="Threshold to swap data to disk")
-
-
-class {DomainCamelCase}{MicroserviceCamelCase}ReducerConfig(BaseNodeConfig):
-    """Configuration for {DOMAIN} {MICROSERVICE_NAME} REDUCER operations."""
-
-    # Core reduction settings
-    reduction_timeout_ms: float = Field(
-        default=30000.0,
-        ge=1000.0,
-        le=300000.0,
-        description="Maximum reduction processing time in milliseconds"
-    )
-
-    performance_threshold_ms: float = Field(
-        default=5000.0,
-        ge=100.0,
-        le=30000.0,
-        description="Performance threshold for health checks"
-    )
-
-    max_concurrent_reductions: int = Field(
-        default=20,
-        ge=1,
-        le=100,
-        description="Maximum concurrent reduction operations"
-    )
-
-    # Component configurations
-    aggregation_config: AggregationConfig = Field(default_factory=AggregationConfig)
-    stream_config: StreamConfig = Field(default_factory=StreamConfig)
-    pattern_config: PatternConfig = Field(default_factory=PatternConfig)
-    memory_config: MemoryConfig = Field(default_factory=MemoryConfig)
-
-    # Circuit breaker settings
-    circuit_breaker_threshold: int = Field(
-        default=5,
-        ge=1,
-        le=100,
-        description="Circuit breaker failure threshold"
-    )
-
-    circuit_breaker_timeout: int = Field(
-        default=60,
-        ge=1,
-        le=3600,
-        description="Circuit breaker recovery timeout in seconds"
-    )
-
-    # Data processing settings
-    enable_data_validation: bool = Field(
-        default=True,
-        description="Enable input data validation"
-    )
-
-    enable_result_caching: bool = Field(
-        default=True,
-        description="Enable reduction result caching"
-    )
-
-    cache_ttl_seconds: int = Field(
-        default=3600,
-        ge=60,
-        le=86400,
-        description="Cache TTL in seconds"
-    )
-
-    # Domain-specific settings
-    domain_specific_config: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Domain-specific configuration parameters"
-    )
-
-    @validator('reduction_timeout_ms')
-    def validate_timeout(cls, v, values):
-        """Ensure reduction timeout is reasonable for the performance threshold."""
-        threshold = values.get('performance_threshold_ms', 5000.0)
-        if v < threshold:
-            raise ValueError(f"Reduction timeout ({v}ms) must be >= performance threshold ({threshold}ms)")
-        return v
-
-    @validator('max_concurrent_reductions')
-    def validate_concurrency(cls, v, values):
-        """Ensure concurrency settings are appropriate for memory limits."""
-        if 'memory_config' in values:
-            memory_limit = values['memory_config'].max_memory_mb
-            estimated_memory_per_reduction = 50.0  # MB estimate per reduction
-            max_by_memory = int(memory_limit / estimated_memory_per_reduction)
-            if v > max_by_memory:
-                raise ValueError(f"Concurrent reductions ({v}) may exceed memory limit. Max recommended: {max_by_memory}")
-        return v
-
-    @validator('aggregation_config')
-    def validate_aggregation_config(cls, v, values):
-        """Validate aggregation configuration consistency."""
-        if v.aggregation_timeout_ms > values.get('reduction_timeout_ms', 30000.0):
-            raise ValueError("Aggregation timeout cannot exceed reduction timeout")
-        return v
-
-    @classmethod
-    def for_environment(cls: Type[ConfigT], environment: str) -> ConfigT:
-        """Create environment-specific configuration.
+    def _calculate_output_count(self, result: Any) -> int:
+        """Pure computation of output record count.
 
         Args:
-            environment: Environment name (development, staging, production)
+            result: Reduction result
 
         Returns:
-            Environment-optimized configuration
+            Record count
         """
-        if environment == "production":
-            return cls(
-                reduction_timeout_ms=15000.0,
-                performance_threshold_ms=2000.0,
-                max_concurrent_reductions=50,
-                aggregation_config=AggregationConfig(
-                    max_input_sources=5000,
-                    batch_size=500,
-                    parallel_aggregation=True,
-                    aggregation_timeout_ms=10000.0
-                ),
-                memory_config=MemoryConfig(
-                    max_memory_mb=2048.0,
-                    cleanup_threshold_percent=75.0,
-                    garbage_collection_frequency=5,
-                    swap_to_disk_threshold_mb=1024.0
-                ),
-                pattern_config=PatternConfig(
-                    pattern_cache_size=5000,
-                    min_pattern_confidence=0.8
-                ),
-                circuit_breaker_threshold=3,
-                circuit_breaker_timeout=30,
-                enable_result_caching=True,
-                cache_ttl_seconds=7200
-            )
+        if isinstance(result, list):
+            return len(result)
+        elif isinstance(result, dict):
+            return len(result)
+        else:
+            return 1 if result is not None else 0
 
-        elif environment == "staging":
-            return cls(
-                reduction_timeout_ms=30000.0,
-                performance_threshold_ms=5000.0,
-                max_concurrent_reductions=20,
-                aggregation_config=AggregationConfig(
-                    max_input_sources=2000,
-                    batch_size=200
-                ),
-                memory_config=MemoryConfig(
-                    max_memory_mb=1024.0,
-                    cleanup_threshold_percent=80.0
-                )
-            )
+    def _should_cache_result(
+        self,
+        input_data: Model{DomainCamelCase}{MicroserviceCamelCase}ReducerInput,
+        result: Any
+    ) -> bool:
+        """Pure predicate for cache eligibility.
 
-        else:  # development
-            return cls(
-                reduction_timeout_ms=60000.0,
-                performance_threshold_ms=10000.0,
-                max_concurrent_reductions=10,
-                aggregation_config=AggregationConfig(
-                    max_input_sources=500,
-                    batch_size=50,
-                    parallel_aggregation=False
-                ),
-                memory_config=MemoryConfig(
-                    max_memory_mb=512.0,
-                    cleanup_threshold_percent=85.0,
-                    enable_memory_monitoring=True
-                ),
-                pattern_config=PatternConfig(
-                    pattern_cache_size=100,
-                    min_pattern_confidence=0.6
-                ),
-                enable_data_validation=True,
-                enable_result_caching=False
-            )
+        Args:
+            input_data: Input data
+            result: Reduction result
+
+        Returns:
+            True if result should be cached
+        """
+        # Pure business logic for cache decision
+        return (
+            len(input_data.data_sources) >= 100 and  # Large dataset
+            self._calculate_output_count(result) > 0 and  # Valid result
+            input_data.reduction_type in [
+                Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.AGGREGATE,
+                Enum{DomainCamelCase}{MicroserviceCamelCase}ReductionType.STATISTICAL
+            ]
+        )
+
+    def _generate_cache_key(
+        self,
+        input_data: Model{DomainCamelCase}{MicroserviceCamelCase}ReducerInput
+    ) -> str:
+        """Pure cache key generation.
+
+        Args:
+            input_data: Input data
+
+        Returns:
+            Cache key string
+        """
+        import hashlib
+        import json
+
+        # Pure deterministic key generation
+        key_data = {
+            "reduction_type": input_data.reduction_type.value,
+            "aggregation_strategy": input_data.aggregation_strategy.value,
+            "source_count": len(input_data.data_sources),
+            "parameters": input_data.aggregation_parameters
+        }
+
+        key_str = json.dumps(key_data, sort_keys=True)
+        return f"reduction:{hashlib.sha256(key_str.encode()).hexdigest()[:16]}"
+```
+
+### 2. Output Model with Intents (`model_{DOMAIN}_{MICROSERVICE_NAME}_reducer_output.py`)
+
+```python
+"""Output model for {DOMAIN} {MICROSERVICE_NAME} REDUCER operations."""
+
+from typing import Any, Dict, List, Optional
+from uuid import UUID
+from pydantic import BaseModel, Field
+
+
+class Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput(BaseModel):
+    """Output model for reduction operations.
+
+    This model represents the pure result of reduction logic
+    without side effects or state mutations.
+    """
+
+    # Core reduction results
+    reduction_type: str = Field(..., description="Type of reduction performed")
+    aggregation_strategy: str = Field(..., description="Aggregation strategy used")
+    reduced_data: Any = Field(..., description="Reduced result data")
+    patterns_detected: Optional[List[Dict[str, Any]]] = Field(
+        default=None,
+        description="Patterns detected in reduction results"
+    )
+
+    # Status and metadata
+    success: bool = Field(..., description="Whether reduction succeeded")
+    error_message: Optional[str] = Field(
+        default=None,
+        description="Error message if reduction failed"
+    )
+    correlation_id: UUID = Field(..., description="Request correlation ID")
+    timestamp: float = Field(..., description="Processing timestamp")
+    processing_time_ms: float = Field(..., description="Processing duration in milliseconds")
+
+    # Metrics
+    input_record_count: int = Field(..., description="Number of input records")
+    output_record_count: int = Field(..., description="Number of output records")
+    metadata: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Additional processing metadata"
+    )
 
     class Config:
         """Pydantic configuration."""
         validate_assignment = True
         extra = "forbid"
-        schema_extra = {
-            "example": {
-                "reduction_timeout_ms": 30000.0,
-                "performance_threshold_ms": 5000.0,
-                "max_concurrent_reductions": 20,
-                "aggregation_config": {
-                    "max_input_sources": 1000,
-                    "batch_size": 100,
-                    "parallel_aggregation": True
-                },
-                "memory_config": {
-                    "max_memory_mb": 1024.0,
-                    "cleanup_threshold_percent": 80.0,
-                    "enable_memory_monitoring": True
-                },
-                "pattern_config": {
-                    "enable_pattern_detection": True,
-                    "pattern_cache_size": 1000,
-                    "min_pattern_confidence": 0.7
-                }
-            }
+```
+
+### 3. Pure Utility Functions (`utils/data_aggregator.py`)
+
+```python
+"""Pure aggregation functions for REDUCER operations."""
+
+from typing import Any, Dict, List
+import asyncio
+
+
+async def aggregate_data(
+    data_sources: List[Dict[str, Any]],
+    strategy: str,
+    parameters: Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """Pure aggregation function.
+
+    This function performs aggregation without any side effects or state mutations.
+
+    Args:
+        data_sources: List of data sources to aggregate
+        strategy: Aggregation strategy (COUNT, SUM, AVERAGE, etc.)
+        parameters: Optional aggregation parameters
+
+    Returns:
+        Aggregated result dictionary
+
+    FSM Guarantees:
+        - No side effects
+        - Deterministic for same inputs
+        - No external dependencies
+        - Pure computation only
+    """
+    if not data_sources:
+        return {"count": 0, "result": None}
+
+    if strategy == "COUNT":
+        return {
+            "count": len(data_sources),
+            "timestamp": parameters.get("timestamp") if parameters else None
+        }
+
+    elif strategy == "SUM":
+        # Pure summation
+        totals = {}
+        for source in data_sources:
+            for key, value in source.items():
+                if isinstance(value, (int, float)):
+                    totals[key] = totals.get(key, 0) + value
+
+        return {
+            "count": len(data_sources),
+            "sums": totals
+        }
+
+    elif strategy == "AVERAGE":
+        # Pure averaging
+        totals = {}
+        counts = {}
+
+        for source in data_sources:
+            for key, value in source.items():
+                if isinstance(value, (int, float)):
+                    totals[key] = totals.get(key, 0) + value
+                    counts[key] = counts.get(key, 0) + 1
+
+        averages = {
+            key: totals[key] / counts[key]
+            for key in totals if counts[key] > 0
+        }
+
+        return {
+            "count": len(data_sources),
+            "averages": averages
+        }
+
+    else:
+        return {
+            "error": f"Unsupported aggregation strategy: {strategy}"
         }
 ```
 
-This template continues the unified architecture pattern for REDUCER nodes. The complete template would include the remaining files (input/output models, enums, subcontracts, and manifest) following the same patterns established in the EFFECT and COMPUTE templates. Let me continue with the ORCHESTRATOR template to complete the full set:
+## FSM Compliance Checklist
 
-<function_calls>
-<invoke name="TodoWrite">
-<parameter name="todos">[{"content": "Create omnibase_core enhancement document", "status": "completed", "activeForm": "Creating omnibase_core changes document"}, {"content": "Create omnibase_infra enhancement document", "status": "completed", "activeForm": "Creating omnibase_infra changes document"}, {"content": "Extend patterns to other node types (COMPUTE, REDUCER, ORCHESTRATOR)", "status": "completed", "activeForm": "Extending patterns to other node types"}, {"content": "Validate unified architecture across all node types", "status": "in_progress", "activeForm": "Validating unified architecture"}]
+- ✅ **Immutable State**: Only read-only configuration in `__init__()`
+- ✅ **Pure Functions**: `process()` returns `(result, intents)` without mutations
+- ✅ **Intent Emission**: All side effects (logging, metrics, caching) via Intents
+- ✅ **No Direct Mutations**: No instance variables modified during processing
+- ✅ **Utility Purity**: All utility functions are pure (no side effects)
+- ✅ **Deterministic**: Same inputs always produce same outputs (excluding timestamps)
+
+## Anti-Patterns to Avoid
+
+### ❌ Mutable State in __init__
+
+```python
+# WRONG: Mutable state
+def __init__(self, container):
+    super().__init__(container)
+    self.metrics = []           # ❌ Mutable list
+    self.cache = {}             # ❌ Mutable dict
+    self.counter = 0            # ❌ Mutable counter
+```
+
+### ❌ Direct Side Effects in process()
+
+```python
+# WRONG: Direct side effects
+async def process(self, input_data):
+    # ❌ Direct logging
+    logger.info("Processing reduction")
+
+    # ❌ Direct metrics
+    self.metrics.append({"duration": 100})
+
+    # ❌ Direct caching
+    self.cache[key] = result
+
+    return result
+```
+
+### ❌ State Mutations
+
+```python
+# WRONG: State mutation
+async def process(self, input_data):
+    # ❌ Modifying instance state
+    self.counter += 1
+    self.active_streams.add(stream_id)
+
+    return result
+```
+
+## Migration Guide
+
+To migrate existing REDUCER nodes to pure FSM:
+
+1. **Audit __init__**: Remove ALL mutable state, keep only configuration
+2. **Extract Side Effects**: Convert all logging, metrics, caching to Intents
+3. **Pure Utility Functions**: Move business logic to pure functions in utils/
+4. **Update Output Model**: Add `intents: List[ModelIntent]` field
+5. **Return ModelReducerOutput**: Return `ModelReducerOutput(result, intents, success)`
+
+## Testing Pure FSM Reducers
+
+```python
+async def test_pure_reducer_no_side_effects():
+    """Verify reducer has no side effects."""
+    container = ModelONEXContainer(...)
+    reducer = Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(container)
+
+    input_data = Model{DomainCamelCase}{MicroserviceCamelCase}ReducerInput(...)
+
+    # Call twice with same input
+    result1 = await reducer.process(input_data)
+    result2 = await reducer.process(input_data)
+
+    # Results should be identical (excluding timestamps)
+    assert result1.result.reduced_data == result2.result.reduced_data
+    assert len(result1.intents) == len(result2.intents)
+
+
+async def test_reducer_emits_intents():
+    """Verify reducer emits proper Intents."""
+    container = ModelONEXContainer(...)
+    reducer = Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(container)
+
+    input_data = Model{DomainCamelCase}{MicroserviceCamelCase}ReducerInput(...)
+
+    output = await reducer.process(input_data)
+
+    # Verify Intents were emitted
+    assert len(output.intents) > 0
+
+    # Check for expected Intent types
+    intent_types = {intent.intent_type for intent in output.intents}
+    assert EnumIntentType.LOG in intent_types
+    assert EnumIntentType.METRIC in intent_types
+```
+
+## References
+
+- **Core Patterns**: `/docs/architecture/ONEX_PATTERNS.md`
+- **Intent System**: `/docs/architecture/INTENT_SYSTEM.md`
+- **FSM Architecture**: `/docs/architecture/FSM_ARCHITECTURE.md`
+- **Testing Guide**: `/docs/testing/REDUCER_TESTING.md`

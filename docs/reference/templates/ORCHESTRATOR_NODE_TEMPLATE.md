@@ -12,6 +12,37 @@ This template provides the unified architecture pattern for ONEX ORCHESTRATOR no
 - **Error Recovery**: Handle failures and implement retry/compensation logic
 - **Performance Monitoring**: Track end-to-end workflow performance
 
+## Action Pattern & Lease Management
+
+ORCHESTRATOR nodes use the **Action pattern** for delegating work to other nodes:
+
+- **ModelAction**: Encapsulates a unit of work with ownership and execution metadata
+- **lease_id**: UUID proving orchestrator ownership - prevents other nodes from claiming the action
+- **epoch**: Integer counter for optimistic concurrency - detects conflicting updates
+- **action_type**: Specifies the type of work (EXECUTE_WORKFLOW, EXECUTE_COMPUTATION, etc.)
+- **payload**: Contains the actual work data and parameters
+
+### Lease Management Benefits
+
+1. **Ownership Tracking**: Each action has a unique lease_id from the creating orchestrator
+2. **Conflict Detection**: Epoch increments after each workflow, enabling stale update detection
+3. **Distributed Safety**: Multiple orchestrators can coordinate without race conditions
+4. **Audit Trail**: Clear provenance of who created and owns each action
+
+### Example Action Creation
+
+```python
+action = ModelAction(
+    action_id=uuid4(),
+    action_type=EnumActionType.EXECUTE_WORKFLOW,
+    target_node_type="NodeCompute",
+    payload={"data": value},
+    lease_id=self.lease_id,  # Orchestrator ownership
+    epoch=self.current_epoch,  # Optimistic concurrency
+    priority=5,
+)
+```
+
 ## Directory Structure
 
 ```
@@ -123,6 +154,12 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(
     - State persistence and recovery
     - Comprehensive error handling and retries
     - Performance monitoring and optimization
+
+    Action Pattern & Lease Management:
+    - Creates Actions for delegating work to other nodes
+    - lease_id: Unique identifier proving this orchestrator owns the action
+    - epoch: Optimistic concurrency counter to detect conflicting updates
+    - Actions encapsulate work units with ownership and execution tracking
     """
 
     def __init__(self, config: {DomainCamelCase}{MicroserviceCamelCase}OrchestratorConfig):
@@ -152,6 +189,10 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(
         self._workflow_metrics = []
         self._node_health_cache = {}
         self._performance_stats = {"total_workflows": 0, "successful_workflows": 0}
+
+        # Lease management for action ownership
+        self.lease_id = uuid4()  # Unique lease ID for this orchestrator instance
+        self.current_epoch = 0  # Optimistic concurrency control counter
 
     @asynccontextmanager
     async def _workflow_tracking(self, workflow_type: Enum{DomainCamelCase}{MicroserviceCamelCase}WorkflowType):
@@ -412,13 +453,25 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(
         workflow_state: ModelWorkflowState,
         step_input: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Execute a single workflow step."""
+        """Execute a single workflow step using Action-based delegation.
+
+        Actions encapsulate work to be performed by other nodes, with lease
+        management ensuring orchestrator ownership and optimistic concurrency.
+        """
+
+        # Create action for this workflow step
+        action = await self._create_action_for_step(
+            step_definition,
+            workflow_state,
+            step_input
+        )
 
         # Prepare step input with workflow context
         enriched_input = {
             **step_input,
             "workflow_context": workflow_state.context,
-            "correlation_id": str(workflow_state.workflow_id)
+            "correlation_id": str(workflow_state.workflow_id),
+            "action": action  # Pass action to node for execution tracking
         }
 
         # Execute based on node type
@@ -453,6 +506,60 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(
 
         else:
             raise ValueError(f"Unsupported node type: {step_definition.node_type}")
+
+    async def _create_action_for_step(
+        self,
+        step_definition: Any,
+        workflow_state: ModelWorkflowState,
+        step_input: Dict[str, Any]
+    ) -> "ModelAction":
+        """Create an Action for workflow step delegation with lease management.
+
+        Actions encapsulate work units with ownership tracking and optimistic
+        concurrency control, enabling safe distributed workflow execution.
+
+        Returns:
+            ModelAction with lease_id and epoch for orchestrator ownership
+        """
+        from omnibase_core.models.model_action import ModelAction
+        from omnibase_core.enums.enum_action_type import EnumActionType
+
+        # Map step definition to action type
+        action_type_mapping = {
+            "COMPUTE": EnumActionType.EXECUTE_COMPUTATION,
+            "EFFECT": EnumActionType.EXECUTE_SIDE_EFFECT,
+            "REDUCER": EnumActionType.EXECUTE_AGGREGATION,
+            "ORCHESTRATOR": EnumActionType.EXECUTE_WORKFLOW
+        }
+
+        action_type = action_type_mapping.get(
+            step_definition.node_type,
+            EnumActionType.EXECUTE_WORKFLOW
+        )
+
+        # Create action with lease management
+        action = ModelAction(
+            action_id=uuid4(),
+            action_type=action_type,
+            target_node_type=step_definition.node_type,
+            payload={
+                "step_name": step_definition.name,
+                "step_input": step_input,
+                "workflow_id": str(workflow_state.workflow_id),
+                "step_index": workflow_state.current_step_index
+            },
+            lease_id=self.lease_id,  # Orchestrator owns this action - prevents other nodes from claiming it
+            epoch=self.current_epoch,  # Optimistic concurrency - detects conflicting updates
+            priority=step_definition.priority if hasattr(step_definition, 'priority') else 5,
+            created_at=time.time(),
+            metadata={
+                "workflow_type": str(workflow_state.workflow_type),
+                "correlation_id": str(workflow_state.workflow_id),
+                "timeout_ms": step_definition.timeout_ms
+            }
+        )
+
+        return action
 
     async def _retry_step(
         self,
@@ -536,7 +643,51 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(
         if workflow_id_str in self._active_workflows:
             del self._active_workflows[workflow_id_str]
 
+        # Increment epoch for next workflow - optimistic concurrency
+        self._increment_epoch()
+
         return workflow_state
+
+    def _increment_epoch(self):
+        """Increment epoch counter for optimistic concurrency control.
+
+        The epoch counter is incremented after each workflow execution,
+        ensuring that any Actions created in the next workflow will have
+        a higher epoch value. This enables detection of stale or conflicting
+        updates in distributed systems.
+        """
+        self.current_epoch += 1
+
+    def _validate_action_ownership(self, action: "ModelAction") -> bool:
+        """Validate that this orchestrator owns the given action.
+
+        Checks lease_id to ensure the action was created by this orchestrator
+        instance and validates epoch to detect stale actions.
+
+        Args:
+            action: The action to validate
+
+        Returns:
+            True if action is owned by this orchestrator and epoch is valid
+
+        Raises:
+            ValueError: If lease_id doesn't match or epoch is too old
+        """
+        # Verify lease ownership
+        if action.lease_id != self.lease_id:
+            raise ValueError(
+                f"Action lease_id mismatch: expected {self.lease_id}, "
+                f"got {action.lease_id}"
+            )
+
+        # Verify epoch is not stale (allow current or future epochs)
+        if action.epoch < self.current_epoch:
+            raise ValueError(
+                f"Stale action detected: action epoch {action.epoch} < "
+                f"current epoch {self.current_epoch}"
+            )
+
+        return True
 
     async def _compensate_workflow(self, workflow_id: str):
         """Perform compensation actions for failed workflow."""

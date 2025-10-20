@@ -1,34 +1,119 @@
-# REDUCER Node Tutorial: Build a Metrics Aggregator
+# REDUCER Node Tutorial: Build a Pure FSM Metrics Aggregator
 
-**Reading Time**: 30 minutes
+**Reading Time**: 35 minutes
 **Difficulty**: Intermediate
 **Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md), [EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md)
 
 ## What You'll Build
 
-In this tutorial, you'll build a production-ready **Metrics Aggregation Node** that:
+In this tutorial, you'll build a production-ready **Metrics Aggregation Node** as a **pure FSM** that:
 
-✅ Aggregates metrics data from multiple sources
+✅ Aggregates metrics data from multiple sources as pure state transitions
 ✅ Supports multiple reduction types (fold, aggregate, merge, normalize)
 ✅ Handles streaming for large datasets
 ✅ Implements conflict resolution strategies
-✅ Provides incremental and windowed processing
+✅ **Emits Intents for side effects** (no direct execution)
+✅ **Maintains no mutable state** (pure functional pattern)
 
-**Why REDUCER Nodes?**
+**Why Pure FSM REDUCER Nodes?**
 
-REDUCER nodes handle data aggregation and transformation in the ONEX architecture:
-- Merging data from multiple sources
-- Aggregating metrics and statistics
-- Normalizing data for analysis
-- Conflict resolution during merges
-- State reduction operations
+REDUCER nodes in ONEX are **pure finite state machines**:
+- **Input → (Output, Intents)**: Pure function transformation
+- **No Mutable State**: All state flows through input/output
+- **Intent Emission**: Describe side effects, don't execute them
+- **Effect Delegation**: Let Effect nodes handle I/O, logging, metrics
+
+**Core Concept**:
+```
+δ(state, action) → (new_state, intents[])
+```
 
 **Tutorial Structure**:
-1. Define aggregation models
-2. Implement the REDUCER node
-3. Add streaming support
-4. Write comprehensive tests
-5. See real-world usage examples
+1. Understand pure FSM vs. stateful patterns
+2. Define aggregation models with Intent support
+3. Implement pure REDUCER node
+4. Add Intent emission for side effects
+5. Write comprehensive tests
+6. See real-world usage examples
+
+---
+
+## Pure FSM Pattern: Key Principles
+
+### ❌ Old Pattern (Stateful, Side Effects)
+```python
+class NodeMetricsAggregatorReducer(NodeReducer):
+    def __init__(self, container):
+        super().__init__(container)
+        # ❌ WRONG: Mutable state
+        self.aggregation_stats = {"total": 0}
+        self.active_windows = {}
+
+    async def aggregate_metrics(self, input_data):
+        result = await self._aggregate(input_data)
+
+        # ❌ WRONG: Direct state mutation
+        self.aggregation_stats["total"] += 1
+
+        # ❌ WRONG: Direct side effect execution
+        emit_log_event(LogLevel.INFO, "Aggregation complete")
+
+        return result
+```
+
+### ✅ New Pattern (Pure FSM, Intent Emission)
+```python
+class NodeMetricsAggregatorReducer(NodeReducer):
+    def __init__(self, container):
+        super().__init__(container)
+        # ✅ CORRECT: No mutable state
+
+    async def aggregate_metrics(
+        self,
+        input_data: ModelMetricsAggregationInput,
+    ) -> ModelMetricsAggregationOutput:
+        """Pure function: input → (result, intents)"""
+
+        # ✅ Pure transformation
+        aggregated_data = self._reduce_data(input_data.data_sources)
+
+        # ✅ Describe side effects as Intents
+        intents = [
+            ModelIntent(
+                intent_type="log_event",
+                target="logging_service",
+                payload={
+                    "level": "INFO",
+                    "message": "Aggregation complete",
+                    "context": {"items": len(aggregated_data)},
+                },
+                priority=3,
+            ),
+            ModelIntent(
+                intent_type="record_metric",
+                target="metrics_service",
+                payload={
+                    "metric_name": "aggregations_completed",
+                    "value": 1,
+                    "tags": {"strategy": input_data.aggregation_strategy},
+                },
+                priority=2,
+            ),
+        ]
+
+        # ✅ Return result + intents (no execution)
+        return ModelMetricsAggregationOutput(
+            aggregated_data=aggregated_data,
+            sources_processed=len(input_data.data_sources),
+            items_processed=len(aggregated_data),
+            intents=intents,  # Side effects described, not executed
+        )
+```
+
+**Key Difference**:
+- **Reducer**: Describes what side effects *should* happen (Intents)
+- **Effect Node**: Executes those side effects
+- **Orchestrator**: Routes Intents to appropriate Effect nodes
 
 ---
 
@@ -49,6 +134,8 @@ poetry run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1
 ---
 
 ## Step 1: Define Input/Output Models
+
+### Input Model
 
 **File**: `src/your_project/nodes/model_metrics_aggregation_input.py`
 
@@ -77,6 +164,8 @@ class ModelMetricsAggregationInput(BaseModel):
 
     Defines how multiple data sources should be aggregated
     with conflict resolution and streaming support.
+
+    NOTE: Immutable input - Reducer maintains no state.
     """
 
     # Data to aggregate
@@ -135,6 +224,8 @@ class ModelMetricsAggregationInput(BaseModel):
         frozen = True
 ```
 
+### Output Model with Intent Support
+
 **File**: `src/your_project/nodes/model_metrics_aggregation_output.py`
 
 ```python
@@ -145,12 +236,48 @@ from pydantic import BaseModel, Field
 from uuid import UUID
 
 
+class ModelIntent(BaseModel):
+    """
+    Intent for side effects.
+
+    Reducer nodes emit Intents describing side effects.
+    Effect nodes execute them.
+    """
+
+    intent_type: str = Field(
+        ...,
+        description="Type of intent (log_event, record_metric, etc.)",
+    )
+
+    target: str = Field(
+        ...,
+        description="Target service/node for execution",
+    )
+
+    payload: dict[str, object] = Field(
+        ...,
+        description="Intent payload data",
+    )
+
+    priority: int = Field(
+        default=5,
+        ge=1,
+        le=10,
+        description="Execution priority (1=highest, 10=lowest)",
+    )
+
+    class Config:
+        frozen = True
+
+
 class ModelMetricsAggregationOutput(BaseModel):
     """
     Results from metrics aggregation operations.
 
     Provides comprehensive aggregation results with
-    processing statistics and conflict resolution details.
+    processing statistics and Intent emission.
+
+    NOTE: Pure output - contains result + intents, no state mutation.
     """
 
     # Aggregation results
@@ -209,6 +336,12 @@ class ModelMetricsAggregationOutput(BaseModel):
         description="Completion timestamp",
     )
 
+    # Intent emission (NEW)
+    intents: list[ModelIntent] = Field(
+        default_factory=list,
+        description="Side effects to be executed by Effect nodes",
+    )
+
 
     class Config:
         """Pydantic configuration."""
@@ -218,19 +351,25 @@ class ModelMetricsAggregationOutput(BaseModel):
 
 ---
 
-## Step 2: Implement the REDUCER Node
+## Step 2: Implement Pure FSM REDUCER Node
 
 **File**: `src/your_project/nodes/node_metrics_aggregator_reducer.py`
 
 ```python
 """
-Metrics Aggregator REDUCER Node - Production Implementation.
+Metrics Aggregator REDUCER Node - Pure FSM Implementation.
 
-Demonstrates REDUCER capabilities:
+Demonstrates pure FSM REDUCER capabilities:
+- Pure state transformations (no mutable state)
+- Intent emission for side effects
 - Multiple aggregation strategies
 - Conflict resolution
 - Streaming support for large datasets
-- Incremental and windowed processing
+
+CRITICAL: This is a PURE FUNCTION node:
+- No mutable instance state (self.*)
+- No direct side effects (logging, metrics)
+- Returns (result, intents) tuple concept
 """
 
 import time
@@ -246,8 +385,6 @@ from omnibase_core.nodes.enum_reducer_types import (
 )
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 from your_project.nodes.model_metrics_aggregation_input import (
     ModelMetricsAggregationInput,
@@ -255,34 +392,36 @@ from your_project.nodes.model_metrics_aggregation_input import (
 )
 from your_project.nodes.model_metrics_aggregation_output import (
     ModelMetricsAggregationOutput,
+    ModelIntent,
 )
 
 
 class NodeMetricsAggregatorReducer(NodeReducer):
     """
-    Metrics Aggregator REDUCER Node.
+    Metrics Aggregator REDUCER Node - Pure FSM Implementation.
 
-    Aggregates metrics from multiple sources with configurable
-    strategies, streaming support, and conflict resolution.
+    Key Principles:
+    ✅ Pure state transformations: input → (result, intents)
+    ✅ No mutable state (no self.* accumulation)
+    ✅ Intent emission for side effects
+    ✅ Effect delegation (not direct execution)
 
-    Key Features:
-    - Multiple aggregation strategies (sum, avg, max, min, latest)
-    - Conflict resolution for data merges
-    - Streaming support for large datasets
-    - Incremental and windowed processing modes
-    - Performance tracking and statistics
+    This node demonstrates the core ONEX pattern:
+    - Reducer: Transforms data, emits Intents
+    - Effect: Executes Intents (logging, metrics, I/O)
+    - Orchestrator: Routes Intents to Effect nodes
     """
 
     def __init__(self, container: ModelONEXContainer) -> None:
-        """Initialize metrics aggregator REDUCER node."""
-        super().__init__(container)
+        """
+        Initialize pure FSM metrics aggregator.
 
-        # Track aggregation statistics
-        self.aggregation_stats = {
-            "total_aggregations": 0,
-            "total_items_processed": 0,
-            "total_conflicts_resolved": 0,
-        }
+        NOTE: No mutable state initialized.
+        All state flows through input/output.
+        """
+        super().__init__(container)
+        # ✅ CORRECT: No mutable state
+        # (No self.aggregation_stats, no self.active_windows)
 
 
     async def aggregate_metrics(
@@ -290,13 +429,18 @@ class NodeMetricsAggregatorReducer(NodeReducer):
         input_data: ModelMetricsAggregationInput,
     ) -> ModelMetricsAggregationOutput:
         """
-        Aggregate metrics from multiple data sources.
+        Pure FSM aggregation: input → (result, intents).
+
+        This is a PURE FUNCTION:
+        - Same input always produces same output
+        - No mutable state access/mutation
+        - Side effects described as Intents, not executed
 
         Args:
-            input_data: Aggregation configuration
+            input_data: Immutable aggregation configuration
 
         Returns:
-            ModelMetricsAggregationOutput: Aggregation results
+            ModelMetricsAggregationOutput: Result + Intents
         """
         start_time = time.time()
 
@@ -317,7 +461,14 @@ class NodeMetricsAggregatorReducer(NodeReducer):
                 if processing_time_s > 0 else 0
             )
 
-            # Build output
+            # ✅ CORRECT: Emit Intents for side effects
+            intents = self._create_intents(
+                input_data=input_data,
+                reducer_output=reducer_output,
+                aggregated_data=aggregated_data,
+            )
+
+            # Build pure output
             output = ModelMetricsAggregationOutput(
                 aggregated_data=aggregated_data,
                 sources_processed=len(input_data.data_sources),
@@ -327,23 +478,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
                 processing_time_ms=reducer_output.processing_time_ms,
                 throughput_items_per_sec=throughput,
                 operation_id=input_data.operation_id,
-            )
-
-            # Update statistics
-            self.aggregation_stats["total_aggregations"] += 1
-            self.aggregation_stats["total_items_processed"] += output.items_processed
-            self.aggregation_stats["total_conflicts_resolved"] += output.conflicts_resolved
-
-            emit_log_event(
-                LogLevel.INFO,
-                f"Metrics aggregation completed: {output.sources_processed} sources",
-                {
-                    "node_id": str(self.node_id),
-                    "operation_id": str(input_data.operation_id),
-                    "items_processed": output.items_processed,
-                    "conflicts_resolved": output.conflicts_resolved,
-                    "processing_time_ms": output.processing_time_ms,
-                },
+                intents=intents,  # Side effects described, not executed
             )
 
             return output
@@ -365,11 +500,112 @@ class NodeMetricsAggregatorReducer(NodeReducer):
             ) from e
 
 
+    def _create_intents(
+        self,
+        input_data: ModelMetricsAggregationInput,
+        reducer_output,
+        aggregated_data: dict[str, object],
+    ) -> list[ModelIntent]:
+        """
+        Create Intents for side effects.
+
+        This is where Reducer describes what should happen,
+        without executing it directly.
+
+        Intents will be routed to Effect nodes for execution:
+        - log_event → LoggingEffectNode
+        - record_metric → MetricsEffectNode
+        - persist_data → DatabaseEffectNode
+        """
+        intents = []
+
+        # Intent: Log completion event
+        intents.append(
+            ModelIntent(
+                intent_type="log_event",
+                target="logging_service",
+                payload={
+                    "level": "INFO",
+                    "message": f"Metrics aggregation completed: {len(input_data.data_sources)} sources",
+                    "context": {
+                        "node_id": str(self.node_id),
+                        "operation_id": str(input_data.operation_id),
+                        "items_processed": reducer_output.items_processed,
+                        "conflicts_resolved": reducer_output.conflicts_resolved,
+                        "processing_time_ms": reducer_output.processing_time_ms,
+                    },
+                },
+                priority=3,
+            )
+        )
+
+        # Intent: Record metrics
+        intents.append(
+            ModelIntent(
+                intent_type="record_metric",
+                target="metrics_service",
+                payload={
+                    "metrics": [
+                        {
+                            "name": "aggregations_completed_total",
+                            "value": 1,
+                            "tags": {
+                                "strategy": input_data.aggregation_strategy.value,
+                                "streaming": str(input_data.enable_streaming),
+                            },
+                        },
+                        {
+                            "name": "aggregation_items_processed",
+                            "value": reducer_output.items_processed,
+                            "tags": {"operation_id": str(input_data.operation_id)},
+                        },
+                        {
+                            "name": "aggregation_conflicts_resolved",
+                            "value": reducer_output.conflicts_resolved,
+                            "tags": {"strategy": input_data.aggregation_strategy.value},
+                        },
+                        {
+                            "name": "aggregation_processing_time_ms",
+                            "value": reducer_output.processing_time_ms,
+                            "tags": {"batches": str(reducer_output.batches_processed)},
+                        },
+                    ],
+                },
+                priority=2,
+            )
+        )
+
+        # Intent: Persist aggregation result (if needed)
+        if input_data.metadata.get("persist_result") == "true":
+            intents.append(
+                ModelIntent(
+                    intent_type="persist_aggregation",
+                    target="database_service",
+                    payload={
+                        "operation_id": str(input_data.operation_id),
+                        "aggregated_data": aggregated_data,
+                        "metadata": {
+                            "sources_count": len(input_data.data_sources),
+                            "strategy": input_data.aggregation_strategy.value,
+                            "completed_at": reducer_output.completed_at.isoformat() if hasattr(reducer_output, 'completed_at') else None,
+                        },
+                    },
+                    priority=1,  # Highest priority for persistence
+                )
+            )
+
+        return intents
+
+
     def _convert_to_reducer_input(
         self,
         input_data: ModelMetricsAggregationInput,
     ) -> ModelReducerInput:
-        """Convert domain model to ModelReducerInput."""
+        """
+        Convert domain model to ModelReducerInput.
+
+        This is a pure transformation - no state mutation.
+        """
 
         # Map aggregation strategy to conflict resolution
         conflict_resolution_map = {
@@ -415,27 +651,125 @@ class NodeMetricsAggregatorReducer(NodeReducer):
                 **input_data.metadata,
             },
         )
-
-
-    def get_aggregation_stats(self) -> dict[str, int | float]:
-        """Get aggregation statistics for monitoring."""
-        return {
-            **self.aggregation_stats,
-            "avg_items_per_aggregation": (
-                self.aggregation_stats["total_items_processed"] /
-                max(self.aggregation_stats["total_aggregations"], 1)
-            ),
-        }
 ```
 
 ---
 
-## Step 3: Write Comprehensive Tests
+## Step 3: Intent Execution Pattern
+
+### How Intents Flow to Effect Nodes
+
+```python
+"""
+Intent Flow Example:
+
+1. Reducer emits Intents:
+   result = await reducer.aggregate_metrics(input_data)
+   intents = result.intents  # List of ModelIntent
+
+2. Orchestrator routes Intents to Effect nodes:
+   for intent in intents:
+       if intent.intent_type == "log_event":
+           await logging_effect_node.execute(intent)
+       elif intent.intent_type == "record_metric":
+           await metrics_effect_node.execute(intent)
+       elif intent.intent_type == "persist_aggregation":
+           await database_effect_node.execute(intent)
+
+3. Effect nodes execute side effects:
+   class LoggingEffectNode(NodeEffect):
+       async def execute(self, intent: ModelIntent):
+           # NOW we execute the side effect
+           emit_log_event(
+               intent.payload["level"],
+               intent.payload["message"],
+               intent.payload["context"],
+           )
+"""
+```
+
+### Effect Node for Intent Execution
+
+**File**: `src/your_project/nodes/node_intent_executor_effect.py`
+
+```python
+"""Effect node that executes Intents from Reducer nodes."""
+
+from omnibase_core.nodes.node_effect import NodeEffect
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+
+from your_project.nodes.model_metrics_aggregation_output import ModelIntent
+
+
+class NodeIntentExecutorEffect(NodeEffect):
+    """
+    Intent Executor Effect Node.
+
+    Executes side effects described by Reducer-emitted Intents.
+    This is where actual I/O, logging, metrics happen.
+    """
+
+    async def execute_intent(self, intent: ModelIntent) -> None:
+        """Execute a single Intent."""
+
+        if intent.intent_type == "log_event":
+            self._execute_log_event(intent)
+        elif intent.intent_type == "record_metric":
+            self._execute_record_metric(intent)
+        elif intent.intent_type == "persist_aggregation":
+            await self._execute_persist_aggregation(intent)
+        else:
+            # Unknown intent type - log warning
+            emit_log_event(
+                LogLevel.WARNING,
+                f"Unknown intent type: {intent.intent_type}",
+                {"intent": intent.dict()},
+            )
+
+    def _execute_log_event(self, intent: ModelIntent) -> None:
+        """Execute logging Intent."""
+        payload = intent.payload
+
+        level_map = {
+            "DEBUG": LogLevel.DEBUG,
+            "INFO": LogLevel.INFO,
+            "WARNING": LogLevel.WARNING,
+            "ERROR": LogLevel.ERROR,
+        }
+
+        level = level_map.get(payload["level"], LogLevel.INFO)
+        message = payload["message"]
+        context = payload.get("context", {})
+
+        # NOW we execute the side effect
+        emit_log_event(level, message, context)
+
+    def _execute_record_metric(self, intent: ModelIntent) -> None:
+        """Execute metrics recording Intent."""
+        payload = intent.payload
+
+        # Send metrics to monitoring system
+        for metric in payload.get("metrics", []):
+            # In real implementation, send to Prometheus, Datadog, etc.
+            print(f"📊 Metric: {metric['name']} = {metric['value']} {metric.get('tags', {})}")
+
+    async def _execute_persist_aggregation(self, intent: ModelIntent) -> None:
+        """Execute database persistence Intent."""
+        payload = intent.payload
+
+        # In real implementation, write to database
+        print(f"💾 Persisting aggregation: {payload['operation_id']}")
+```
+
+---
+
+## Step 4: Write Comprehensive Tests
 
 **File**: `tests/unit/nodes/test_node_metrics_aggregator_reducer.py`
 
 ```python
-"""Tests for NodeMetricsAggregatorReducer."""
+"""Tests for Pure FSM NodeMetricsAggregatorReducer."""
 
 import pytest
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -462,6 +796,89 @@ def aggregator_node(container):
 
 
 @pytest.mark.asyncio
+async def test_pure_fsm_no_mutable_state(aggregator_node):
+    """Test that node maintains no mutable state."""
+    # First call
+    input_1 = ModelMetricsAggregationInput(
+        data_sources=[
+            {"metric_a": 10},
+            {"metric_a": 20},
+        ],
+        aggregation_strategy=EnumAggregationStrategy.SUM,
+    )
+
+    result_1 = await aggregator_node.aggregate_metrics(input_1)
+
+    # Second call with same input
+    result_2 = await aggregator_node.aggregate_metrics(input_1)
+
+    # ✅ VERIFY: Pure function - same input produces same result
+    assert result_1.sources_processed == result_2.sources_processed
+    assert result_1.items_processed == result_2.items_processed
+
+    # ✅ VERIFY: No mutable state leaked between calls
+    # (If there was mutable state, results might differ)
+
+
+@pytest.mark.asyncio
+async def test_intent_emission(aggregator_node):
+    """Test that Intents are emitted for side effects."""
+    input_data = ModelMetricsAggregationInput(
+        data_sources=[
+            {"value": 10},
+            {"value": 20},
+        ],
+        aggregation_strategy=EnumAggregationStrategy.SUM,
+    )
+
+    result = await aggregator_node.aggregate_metrics(input_data)
+
+    # ✅ VERIFY: Intents emitted
+    assert len(result.intents) > 0
+
+    # ✅ VERIFY: Logging intent present
+    log_intents = [i for i in result.intents if i.intent_type == "log_event"]
+    assert len(log_intents) >= 1
+
+    # ✅ VERIFY: Metrics intent present
+    metric_intents = [i for i in result.intents if i.intent_type == "record_metric"]
+    assert len(metric_intents) >= 1
+
+    # ✅ VERIFY: Intent structure
+    log_intent = log_intents[0]
+    assert log_intent.target == "logging_service"
+    assert "message" in log_intent.payload
+    assert "context" in log_intent.payload
+
+
+@pytest.mark.asyncio
+async def test_persistence_intent_when_requested(aggregator_node):
+    """Test conditional Intent emission for persistence."""
+    input_data = ModelMetricsAggregationInput(
+        data_sources=[
+            {"value": 10},
+        ],
+        aggregation_strategy=EnumAggregationStrategy.SUM,
+        metadata={"persist_result": "true"},  # Request persistence
+    )
+
+    result = await aggregator_node.aggregate_metrics(input_data)
+
+    # ✅ VERIFY: Persistence intent emitted when requested
+    persist_intents = [
+        i for i in result.intents
+        if i.intent_type == "persist_aggregation"
+    ]
+    assert len(persist_intents) == 1
+
+    # ✅ VERIFY: Intent has correct payload
+    persist_intent = persist_intents[0]
+    assert persist_intent.target == "database_service"
+    assert "aggregated_data" in persist_intent.payload
+    assert persist_intent.priority == 1  # Highest priority
+
+
+@pytest.mark.asyncio
 async def test_simple_sum_aggregation(aggregator_node):
     """Test simple numeric sum aggregation."""
     input_data = ModelMetricsAggregationInput(
@@ -477,7 +894,7 @@ async def test_simple_sum_aggregation(aggregator_node):
 
     assert result.sources_processed == 3
     assert result.items_processed > 0
-    # Results stored in aggregated_data field
+    assert len(result.intents) > 0  # Intents emitted
 
 
 @pytest.mark.asyncio
@@ -553,36 +970,37 @@ async def test_streaming_aggregation(aggregator_node):
 
 
 @pytest.mark.asyncio
-async def test_statistics_tracking(aggregator_node):
-    """Test aggregation statistics tracking."""
-    initial_stats = aggregator_node.get_aggregation_stats()
-
+async def test_intent_priority_ordering(aggregator_node):
+    """Test that Intents have correct priority ordering."""
     input_data = ModelMetricsAggregationInput(
-        data_sources=[
-            {"a": 1},
-            {"a": 2},
-        ],
+        data_sources=[{"value": 10}],
         aggregation_strategy=EnumAggregationStrategy.SUM,
+        metadata={"persist_result": "true"},
     )
 
-    await aggregator_node.aggregate_metrics(input_data)
+    result = await aggregator_node.aggregate_metrics(input_data)
 
-    final_stats = aggregator_node.get_aggregation_stats()
+    # ✅ VERIFY: High-priority intents first
+    persist_intents = [
+        i for i in result.intents
+        if i.intent_type == "persist_aggregation"
+    ]
 
-    assert final_stats["total_aggregations"] == initial_stats["total_aggregations"] + 1
-    assert final_stats["total_items_processed"] > initial_stats["total_items_processed"]
+    if persist_intents:
+        assert persist_intents[0].priority == 1  # Highest priority
 ```
 
 ---
 
-## Step 4: Usage Examples
+## Step 5: Usage Examples
 
-### Basic Metrics Aggregation
+### Basic Metrics Aggregation with Intent Execution
 
 ```python
 import asyncio
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from your_project.nodes.node_metrics_aggregator_reducer import NodeMetricsAggregatorReducer
+from your_project.nodes.node_intent_executor_effect import NodeIntentExecutorEffect
 from your_project.nodes.model_metrics_aggregation_input import (
     ModelMetricsAggregationInput,
     EnumAggregationStrategy,
@@ -590,10 +1008,20 @@ from your_project.nodes.model_metrics_aggregation_input import (
 
 
 async def aggregate_server_metrics():
-    """Aggregate server metrics from multiple sources."""
+    """
+    Demonstrate pure FSM pattern:
+    1. Reducer transforms data + emits Intents
+    2. Effect executor executes Intents
+    """
     container = ModelONEXContainer()
+
+    # Pure FSM Reducer node
     aggregator = NodeMetricsAggregatorReducer(container)
 
+    # Effect node for Intent execution
+    intent_executor = NodeIntentExecutorEffect(container)
+
+    # Input data
     input_data = ModelMetricsAggregationInput(
         data_sources=[
             {"cpu_usage": 45.2, "memory_usage": 60.5, "disk_io": 120},
@@ -601,8 +1029,10 @@ async def aggregate_server_metrics():
             {"cpu_usage": 38.7, "memory_usage": 62.1, "disk_io": 95},
         ],
         aggregation_strategy=EnumAggregationStrategy.AVERAGE,
+        metadata={"persist_result": "true"},
     )
 
+    # Step 1: Pure transformation (Reducer)
     result = await aggregator.aggregate_metrics(input_data)
 
     print(f"📊 Metrics Aggregation Complete:")
@@ -610,6 +1040,13 @@ async def aggregate_server_metrics():
     print(f"   Items: {result.items_processed}")
     print(f"   Time: {result.processing_time_ms:.2f}ms")
     print(f"   Throughput: {result.throughput_items_per_sec:.1f} items/sec")
+    print(f"   Intents Emitted: {len(result.intents)}")
+
+    # Step 2: Execute Intents (Effect)
+    print(f"\n🎯 Executing {len(result.intents)} Intents:")
+    for intent in sorted(result.intents, key=lambda i: i.priority):
+        print(f"   - {intent.intent_type} (priority {intent.priority})")
+        await intent_executor.execute_intent(intent)
 
     return result.aggregated_data
 
@@ -617,43 +1054,92 @@ async def aggregate_server_metrics():
 asyncio.run(aggregate_server_metrics())
 ```
 
-### Streaming Large Dataset
+### Orchestrator Pattern for Full Workflow
 
 ```python
-async def aggregate_large_dataset(data_sources: list[dict]):
-    """Aggregate very large dataset with streaming."""
+"""
+Full orchestration pattern showing Reducer → Effect flow.
+"""
+
+class MetricsAggregationOrchestrator:
+    """Orchestrates Reducer + Effect nodes for metrics aggregation."""
+
+    def __init__(self, container: ModelONEXContainer):
+        self.reducer = NodeMetricsAggregatorReducer(container)
+        self.effect_executor = NodeIntentExecutorEffect(container)
+
+    async def aggregate_and_execute(
+        self,
+        input_data: ModelMetricsAggregationInput,
+    ) -> ModelMetricsAggregationOutput:
+        """
+        Full workflow:
+        1. Reducer: Transform data + emit Intents
+        2. Effect: Execute Intents
+        3. Return final result
+        """
+        # Step 1: Pure transformation (Reducer)
+        result = await self.reducer.aggregate_metrics(input_data)
+
+        # Step 2: Execute Intents (Effect)
+        # Sort by priority (1=highest, 10=lowest)
+        sorted_intents = sorted(result.intents, key=lambda i: i.priority)
+
+        for intent in sorted_intents:
+            try:
+                await self.effect_executor.execute_intent(intent)
+            except Exception as e:
+                # Log Intent execution failure, but continue
+                print(f"⚠️  Intent execution failed: {intent.intent_type} - {e}")
+
+        return result
+
+
+# Usage
+async def main():
     container = ModelONEXContainer()
-    aggregator = NodeMetricsAggregatorReducer(container)
+    orchestrator = MetricsAggregationOrchestrator(container)
 
     input_data = ModelMetricsAggregationInput(
-        data_sources=data_sources,
+        data_sources=[
+            {"requests": 1000, "errors": 5},
+            {"requests": 1500, "errors": 8},
+        ],
         aggregation_strategy=EnumAggregationStrategy.SUM,
-        enable_streaming=True,
-        batch_size=5000,
     )
 
-    result = await aggregator.aggregate_metrics(input_data)
+    result = await orchestrator.aggregate_and_execute(input_data)
+    print(f"✅ Aggregation complete: {result.items_processed} items")
 
-    print(f"\n📈 Large Dataset Aggregation:")
-    print(f"   Total Items: {result.items_processed:,}")
-    print(f"   Batches: {result.batches_processed}")
-    print(f"   Conflicts: {result.conflicts_resolved}")
-    print(f"   Time: {result.processing_time_ms:,.0f}ms")
+
+asyncio.run(main())
 ```
 
 ---
 
 ## Quick Reference
 
-### REDUCER Capabilities
+### Pure FSM REDUCER Pattern
 
-| Feature | Purpose | Example |
-|---------|---------|---------|
-| **Fold** | Reduce to single value | Sum all numbers |
-| **Aggregate** | Group and summarize | Group by user_id |
-| **Merge** | Combine datasets | Merge user profiles |
-| **Normalize** | Scale data | Min-max normalization |
-| **Streaming** | Handle large data | Process in batches |
+| Concept | Implementation | Example |
+|---------|----------------|---------|
+| **Pure Function** | Same input → same output | `aggregate_metrics(input)` |
+| **No Mutable State** | No `self.*` accumulation | No `self.stats = {}` |
+| **Intent Emission** | Describe side effects | `intents.append(ModelIntent(...))` |
+| **Effect Delegation** | Let Effect nodes execute | `await effect.execute_intent(intent)` |
+
+### Intent Types
+
+```python
+# Common Intent types for Reducer nodes
+INTENT_TYPES = {
+    "log_event": "Logging Effect Node",
+    "record_metric": "Metrics Effect Node",
+    "persist_data": "Database Effect Node",
+    "send_notification": "Notification Effect Node",
+    "trigger_workflow": "Workflow Orchestrator Node",
+}
+```
 
 ### Conflict Resolution Strategies
 
@@ -669,19 +1155,71 @@ EnumConflictResolution.MERGE        # Merge lists/objects
 
 ---
 
-## Next Steps
+## Key Takeaways
 
-✅ **Congratulations!** You've built a production-ready REDUCER node!
+### ✅ Pure FSM Pattern Benefits
 
-**Continue your journey**:
-- [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Master workflow coordination
-- [Patterns Catalog](07-patterns-catalog.md) - Common REDUCER patterns
-- [Testing Guide](08-testing-guide.md) - Advanced testing strategies
+1. **Predictable**: Same input always produces same output
+2. **Testable**: No hidden state, easy to test
+3. **Composable**: Reducers can be chained without side effects
+4. **Debuggable**: All state transitions visible in input/output
+5. **Parallelizable**: Pure functions safe for concurrent execution
 
-**Challenge**: Add custom aggregation functions for domain-specific metrics!
+### ✅ Intent Emission Benefits
+
+1. **Separation of Concerns**: Reducer describes, Effect executes
+2. **Testability**: Test Intent emission without executing side effects
+3. **Flexibility**: Route Intents to different Effect implementations
+4. **Observability**: Track all side effects through Intent logs
+5. **Retry Logic**: Re-execute Intents without re-running Reducer
+
+### ❌ Anti-Patterns to Avoid
+
+```python
+# ❌ WRONG: Mutable state
+class NodeBadReducer(NodeReducer):
+    def __init__(self, container):
+        super().__init__(container)
+        self.total_count = 0  # WRONG!
+
+    async def process(self, input_data):
+        self.total_count += 1  # WRONG!
+        return result
+
+# ❌ WRONG: Direct side effects
+async def process(self, input_data):
+    result = self._aggregate(input_data)
+    emit_log_event(LogLevel.INFO, "Done")  # WRONG!
+    return result
+
+# ✅ CORRECT: Pure FSM with Intents
+async def process(self, input_data):
+    result = self._aggregate(input_data)
+    intents = [
+        ModelIntent(
+            intent_type="log_event",
+            target="logging_service",
+            payload={"level": "INFO", "message": "Done"},
+        )
+    ]
+    return ModelOutput(result=result, intents=intents)
+```
 
 ---
 
-**Last Updated**: 2025-01-18
+## Next Steps
+
+✅ **Congratulations!** You've built a pure FSM REDUCER node with Intent emission!
+
+**Continue your journey**:
+- [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Master workflow coordination
+- [Intent Routing Patterns](07-intent-routing-patterns.md) - Advanced Intent handling
+- [Testing Pure FSM Nodes](08-testing-pure-fsm.md) - Testing strategies
+
+**Challenge**: Build an Effect node that executes Intents with retry logic and circuit breakers!
+
+---
+
+**Last Updated**: 2025-01-20
 **Framework Version**: omnibase_core 2.0+
-**Tutorial Status**: ✅ Complete
+**Tutorial Status**: ✅ Complete (Pure FSM Pattern)

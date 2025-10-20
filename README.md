@@ -257,9 +257,10 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
 - State management with PostgreSQL persistence
 
 **REDUCER Node Pattern** (`tool_infrastructure_reducer`):
-- Inherits from `NodeReducerService`  
-- State aggregation with FSM (Finite State Machine)
-- Infrastructure adapter coordination
+- Inherits from `NodeReducerService`
+- State aggregation with **pure FSM pattern**: δ(state, action) → (new_state, intents[])
+- **Pure FSM**: No mutable state, Intent emission for side effects
+- Effect nodes execute the emitted Intents for external actions
 
 **ORCHESTRATOR Node Pattern** (`tool_infrastructure_orchestrator`):
 - Inherits from `NodeOrchestratorService`
