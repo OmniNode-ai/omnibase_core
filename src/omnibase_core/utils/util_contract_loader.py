@@ -236,19 +236,16 @@ class ProtocolContractLoader:
             definitions = ModelContractDefinitions()
 
             # Parse dependencies section (optional, for Phase 0 pattern)
+            # Pass raw dictionaries to ModelContractContent and let Pydantic handle validation
             dependencies = None
             if "dependencies" in raw_content:
-                from omnibase_core.models.core.model_contract_dependency import (
-                    ModelContractDependency,
-                )
-
                 deps_data = raw_content["dependencies"]
                 if isinstance(deps_data, list):
                     dependencies = []
                     for dep_item in deps_data:
                         if isinstance(dep_item, dict):
-                            # Version string conversion handled by Pydantic validator
-                            dependencies.append(ModelContractDependency(**dep_item))
+                            # Keep as dict - Pydantic will validate and convert to ModelContractDependency
+                            dependencies.append(dep_item)
 
             # Parse node type (default to COMPUTE if not specified)
             node_type_str = raw_content.get("node_type", "COMPUTE")
