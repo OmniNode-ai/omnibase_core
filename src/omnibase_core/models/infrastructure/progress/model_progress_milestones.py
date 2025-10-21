@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from pydantic import Field, field_validator
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -12,7 +10,6 @@ Progress Milestones Model.
 Milestone management and tracking for progress monitoring.
 Follows ONEX one-model-per-file architecture.
 """
-
 
 from typing import Any
 

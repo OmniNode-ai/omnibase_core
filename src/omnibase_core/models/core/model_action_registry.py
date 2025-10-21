@@ -1,4 +1,4 @@
-from typing import Any, Generic, List
+from typing import Any, Generic
 
 """
 Action Registry for Dynamic CLI Action Discovery.
@@ -11,6 +11,7 @@ from pathlib import Path
 
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+from omnibase_core.utils.singleton_holders import _ActionRegistryHolder
 
 from .model_cli_action import ModelCliAction
 
@@ -209,21 +210,34 @@ class ModelActionRegistry:
         }
 
 
-# Global registry instance
-_global_action_registry: ModelActionRegistry | None = None
-
-
 def get_action_registry() -> ModelActionRegistry:
-    """Get the global action registry instance."""
-    global _global_action_registry
-    if _global_action_registry is None:
-        _global_action_registry = ModelActionRegistry()
-        # Bootstrap core actions
-        _global_action_registry.bootstrap_core_actions()
-    return _global_action_registry
+    """Get the global action registry instance (now via DI container)."""
+    # Try to get from container first
+    try:
+        from omnibase_core.models.container.model_onex_container import (
+            get_model_onex_container_sync,
+        )
+
+        container = get_model_onex_container_sync()
+        registry = container.action_registry()
+
+        # Ensure core actions are bootstrapped (idempotent)
+        if len(registry.get_all_actions()) == 0:
+            registry.bootstrap_core_actions()
+
+        return registry
+    except (
+        Exception
+    ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
+        # Fallback to singleton holder for edge cases
+        registry = _ActionRegistryHolder.get()
+        if registry is None:
+            registry = ModelActionRegistry()
+            registry.bootstrap_core_actions()
+            _ActionRegistryHolder.set(registry)
+        return registry
 
 
 def reset_action_registry() -> None:
     """Reset the global action registry (for testing)."""
-    global _global_action_registry
-    _global_action_registry = None
+    _ActionRegistryHolder.set(None)

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from pydantic import Field
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -12,7 +10,6 @@ Examples collection summary model.
 Clean, strongly-typed replacement for the horrible union return type.
 Follows ONEX one-model-per-file naming conventions.
 """
-
 
 from datetime import datetime
 from typing import Any

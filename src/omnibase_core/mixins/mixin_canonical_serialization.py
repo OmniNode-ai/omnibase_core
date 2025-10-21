@@ -21,9 +21,8 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-
 import json
-from typing import TYPE_CHECKING, Any, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from pydantic import Field
 
@@ -303,7 +302,6 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 continue
             # PATCH: Flatten entrypoint to URI string
             if k == "entrypoint":
-
                 if isinstance(v, EntrypointBlock):
                     filtered_dict[k] = v.to_uri()
                 elif isinstance(v, dict) and "type" in v and "target" in v:

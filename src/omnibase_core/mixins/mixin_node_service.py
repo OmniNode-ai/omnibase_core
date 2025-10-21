@@ -71,7 +71,19 @@ class MixinNodeService:
     - Support asyncio event loop for concurrent operations
     """
 
-    def __init__(self, *args, **kwargs):
+    # Type annotations for attributes set via object.__setattr__()
+    _service_running: bool
+    _service_task: asyncio.Task[None] | None
+    _health_task: asyncio.Task[None] | None
+    _active_invocations: set["UUID"]
+    _total_invocations: int
+    _successful_invocations: int
+    _failed_invocations: int
+    _start_time: float | None
+    _shutdown_requested: bool
+    _shutdown_callbacks: list[Callable[[], None]]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the service mixin."""
         # Pass all arguments through to super() for proper MRO
         super().__init__(*args, **kwargs)
@@ -171,7 +183,7 @@ class MixinNodeService:
 
             # Cleanup event handlers if available
             if hasattr(self, "cleanup_event_handlers"):
-                self.cleanup_event_handlers()  # type: ignore
+                self.cleanup_event_handlers()  # type: ignore[attr-defined]
 
             self._service_running = False
             self._log_info("Service stopped successfully")
@@ -321,7 +333,7 @@ class MixinNodeService:
 
         # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
         if hasattr(self, "_get_event_bus"):
-            event_bus = self._get_event_bus()  # type: ignore
+            event_bus = self._get_event_bus()  # type: ignore[attr-defined]
 
         # Strategy 2: Try direct event_bus attribute
         if not event_bus:
@@ -378,7 +390,7 @@ class MixinNodeService:
                 # Total wait is 30 seconds, but check shutdown flag every 0.5 seconds
                 for _ in range(60):  # 60 * 0.5s = 30s
                     if not self._service_running or self._shutdown_requested:
-                        break
+                        break  # type: ignore[unreachable]
                     await asyncio.sleep(0.5)
 
         except asyncio.CancelledError:
@@ -417,10 +429,10 @@ class MixinNodeService:
 
         if input_state_class:
             # Create input state with action and parameters
-            params_dict = (
-                event.parameters.get_parameter_dict()
+            params_dict: dict[str, Any] = (
+                event.parameters.get_parameter_dict()  # type: ignore[union-attr]
                 if hasattr(event.parameters, "get_parameter_dict")
-                else event.parameters
+                else event.parameters  # type: ignore[assignment]
             )
             state_data = {"action": event.action, **params_dict}
             return input_state_class(**state_data)
@@ -428,9 +440,9 @@ class MixinNodeService:
         from types import SimpleNamespace
 
         params_dict = (
-            event.parameters.get_parameter_dict()
+            event.parameters.get_parameter_dict()  # type: ignore[union-attr]
             if hasattr(event.parameters, "get_parameter_dict")
-            else event.parameters
+            else event.parameters  # type: ignore[assignment]
         )
         return SimpleNamespace(action=event.action, **params_dict)
 
@@ -496,7 +508,7 @@ class MixinNodeService:
 
         # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
         if hasattr(self, "_get_event_bus"):
-            event_bus = self._get_event_bus()  # type: ignore
+            event_bus = self._get_event_bus()  # type: ignore[attr-defined]
 
         # Strategy 2: Try direct event_bus attribute
         if not event_bus:
@@ -530,7 +542,7 @@ class MixinNodeService:
 
             # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
             if hasattr(self, "_get_event_bus"):
-                event_bus = self._get_event_bus()  # type: ignore
+                event_bus = self._get_event_bus()  # type: ignore[attr-defined]
 
             # Strategy 2: Try direct event_bus attribute
             if not event_bus:
@@ -575,7 +587,7 @@ class MixinNodeService:
         """Register signal handlers for graceful shutdown."""
         try:
 
-            def signal_handler(signum, frame):
+            def signal_handler(signum: int, frame: Any) -> None:
                 self._log_info(
                     f"Received signal {signum}, initiating graceful shutdown",
                 )
@@ -591,7 +603,7 @@ class MixinNodeService:
         """Extract node name from class name."""
         # Try common methods first
         if hasattr(self, "get_node_name"):
-            return self.get_node_name()  # type: ignore
+            return self.get_node_name()  # type: ignore[attr-defined]
         # Fallback to class name
         return self.__class__.__name__
 

@@ -4,9 +4,8 @@ from __future__ import annotations
 TypedDict for collections of statistics.
 """
 
-
 from datetime import datetime
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 from .typed_dict_execution_stats import TypedDictExecutionStats
 from .typed_dict_health_status import TypedDictHealthStatus

@@ -69,7 +69,7 @@ class ModelOnexMetadata(BaseModel):
         default=None,
         description="Optional list[Any]of dependencies",
     )
-    config: "ModelMetadataConfig" | None = Field(
+    config: "ModelMetadataConfig | None" = Field(
         default=None,
         description="Optional config model",
     )
@@ -81,13 +81,12 @@ class ModelOnexMetadata(BaseModel):
         default_factory=lambda: EnumRuntimeLanguage.UNKNOWN,
         description="Runtime language hint",
     )
-    tools: "ToolCollection" | None = None
+    tools: "ToolCollection | None" = None
     lifecycle: "EnumLifecycle" = Field(default_factory=lambda: EnumLifecycle.ACTIVE)
 
     @field_validator("metadata_version")
     @classmethod
     def check_metadata_version(cls, v: str) -> str:
-
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             msg = "metadata_version must be a semver string, e.g., '0.1.0'"
             raise ModelOnexError(
@@ -99,7 +98,6 @@ class ModelOnexMetadata(BaseModel):
     @field_validator("name")
     @classmethod
     def check_name(cls, v: str) -> str:
-
         if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", v):
             msg = f"Invalid name: {v}"
             raise ModelOnexError(EnumCoreErrorCode.VALIDATION_ERROR, msg)
@@ -108,7 +106,6 @@ class ModelOnexMetadata(BaseModel):
     @field_validator("namespace", mode="before")
     @classmethod
     def check_namespace(cls, v: Any) -> Any:
-
         if isinstance(v, Namespace):
             return v
         if isinstance(v, str):
@@ -124,7 +121,6 @@ class ModelOnexMetadata(BaseModel):
     @field_validator("version")
     @classmethod
     def check_version(cls, v: str) -> str:
-
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             msg = f"Invalid version: {v}"
             raise ModelOnexError(EnumCoreErrorCode.VALIDATION_ERROR, msg)
@@ -133,7 +129,6 @@ class ModelOnexMetadata(BaseModel):
     @field_validator("protocols_supported", mode="before")
     @classmethod
     def check_protocols_supported(cls, v: list[str] | str) -> list[str]:
-
         if isinstance(v, str):
             # Try to parse as list[Any]from string
             import ast

@@ -5,7 +5,7 @@ Provides standardized mapping between JSON schema types and Python types.
 """
 
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any
 
 
 class EnumSchemaTypes(str, Enum):
@@ -89,4 +89,4 @@ class EnumPythonTypes(str, Enum):
     MODEL_CONTRACT_DOCUMENT = "ModelContractDocument"
 
     # Complex object placeholder (will be replaced by specific types)
-    MODEL_COMPLEX_OBJECT = "ModelObjectData"
+    MODEL_COMPLEX_OBJECT = MODEL_OBJECT_DATA  # Explicit alias

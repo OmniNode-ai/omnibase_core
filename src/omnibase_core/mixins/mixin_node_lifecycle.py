@@ -452,7 +452,7 @@ class MixinNodeLifecycle:
         # Clean up event handlers if available
         if hasattr(self, "cleanup_event_handlers"):
             try:
-                self.cleanup_event_handlers()  # type: ignore
+                self.cleanup_event_handlers()  # type: ignore[attr-defined]
             except Exception as e:
                 node_id = _get_node_id_as_uuid(self)
                 context = ModelLogContext(

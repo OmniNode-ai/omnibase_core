@@ -819,11 +819,10 @@ class TestProtocol(Protocol):
         unreadable_file.write_text("# This file will have read issues")
 
         # Make file unreadable by changing permissions (Unix-like systems)
-        import os
         import platform
 
         if platform.system() != "Windows":
-            os.chmod(unreadable_file, 0o000)
+            Path(unreadable_file).chmod(0o000)
 
         migrator = ProtocolMigrator(source_path=str(source_path))
 
@@ -845,7 +844,7 @@ class TestProtocol(Protocol):
         finally:
             # Restore permissions for cleanup
             if platform.system() != "Windows":
-                os.chmod(unreadable_file, 0o644)
+                Path(unreadable_file).chmod(0o644)
 
     def test_rollback_migration_with_error(self, tmp_path: Path) -> None:
         """Test rollback handling when file deletion fails."""

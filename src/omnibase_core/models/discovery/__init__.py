@@ -41,7 +41,7 @@ from .model_container_adapter_io import (
 from .model_current_tool_availability import ModelCurrentToolAvailability
 
 # New discovery models for Workflow orchestration
-from .model_discovery_config import *
+from .model_discovery_config import ModelDiscoveryConfig
 from .model_event_descriptor import ModelEventDescriptor
 from .model_event_discovery_request import ModelEventDiscoveryRequest
 from .model_event_discovery_response import ModelEventDiscoveryResponse
@@ -63,10 +63,10 @@ from .model_node_shutdown_event import ModelNodeShutdownEvent
 from .model_performance_metrics import ModelPerformanceMetrics
 from .model_request_introspection_event import ModelRequestIntrospectionEvent
 from .model_resource_usage import ModelResourceUsage
-from .model_tool_discovery_error import *
+from .model_tool_discovery_error import ModelToolDiscoveryError
 from .model_tool_discovery_request import ModelDiscoveryFilters
 from .model_tool_discovery_response import ModelDiscoveredTool
-from .model_tool_discovery_result import *
+from .model_tool_discovery_result import ModelToolDiscoveryResult
 from .model_tooldiscoveryrequest import ModelToolDiscoveryRequest
 from .model_tooldiscoveryresponse import ModelToolDiscoveryResponse
 

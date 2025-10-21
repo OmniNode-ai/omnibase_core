@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Dict, Generic, TypedDict
+from typing import Generic, TypedDict
 
 """
 Capability Factory Pattern for Model Creation.
 
 Specialized factory for capability-type models with standardized naming and metadata.
 """
-
 
 from typing import TypeVar, Unpack
 

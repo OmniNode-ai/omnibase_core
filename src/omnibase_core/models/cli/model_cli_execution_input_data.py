@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import List
 
 from pydantic import Field, ValidationInfo, field_validator
 
@@ -13,7 +12,6 @@ CLI Execution Input Data Model.
 Represents input data for CLI execution with proper validation.
 Replaces dict[str, Any] for input data with structured typing.
 """
-
 
 from pathlib import Path
 from typing import Any

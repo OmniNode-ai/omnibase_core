@@ -1,6 +1,5 @@
-from typing import List
-
 "\nNode Shutdown Event Model\n\nEvent published by nodes when they are shutting down to enable\ngraceful deregistration from the service registry.\n"
+
 from datetime import datetime
 from typing import Any
 from uuid import UUID

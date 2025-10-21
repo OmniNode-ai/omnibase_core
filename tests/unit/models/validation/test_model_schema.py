@@ -33,9 +33,6 @@ class TestModelSchemaModule:
 
     def test_compatibility_aliases(self):
         """Test that compatibility aliases point to correct classes."""
-        from omnibase_core.models.validation.model_required_fields_model import (
-            ModelRequiredFieldsModel,
-        )
         from omnibase_core.models.validation.model_schema import (
             ModelRequiredFieldsModel,
             ModelSchema,
@@ -44,10 +41,6 @@ class TestModelSchemaModule:
             SchemaModel,
             SchemaPropertiesModel,
             SchemaPropertyModel,
-        )
-        from omnibase_core.models.validation.model_schema_class import ModelSchema
-        from omnibase_core.models.validation.model_schema_properties_model import (
-            ModelSchemaPropertiesModel,
         )
 
         # Import the actual classes to compare

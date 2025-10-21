@@ -111,7 +111,7 @@ def create_specific_action_payload(
     # Use category-based mapping
     payload_class = category_to_payload_map.get(action_type.category)
     if payload_class:
-        return payload_class(action_type=action_type, **kwargs)  # type: ignore
+        return payload_class(action_type=action_type, **kwargs)  # type: ignore[misc]
 
     msg = f"Unknown action type: {action_type.name}"
     raise ModelOnexError(

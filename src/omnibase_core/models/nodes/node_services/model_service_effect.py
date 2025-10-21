@@ -71,7 +71,7 @@ ServiceInputState = Any
 ServiceOutputState = Any
 
 
-class ModelServiceEffect(
+class ModelServiceEffect(  # type: ignore[misc]
     MixinNodeService,
     NodeEffect,
     MixinHealthCheck,

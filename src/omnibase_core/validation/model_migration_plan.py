@@ -7,7 +7,6 @@ Migration plan model for protocol migration operations.
 """
 
 from dataclasses import dataclass
-from typing import Dict
 
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,

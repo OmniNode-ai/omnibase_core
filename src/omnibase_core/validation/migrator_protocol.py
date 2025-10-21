@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Dict, TypedDict, Union
+from typing import TypedDict, Union
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Protocol migrator for safe migration of protocols to omnibase_spi.
 """
-
 
 import shutil
 from pathlib import Path

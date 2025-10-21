@@ -20,6 +20,7 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_audit_entry import ModelAuditEntry
 from omnibase_core.models.core.model_function_tool import ModelFunctionTool
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 from .model_metadata_tool_analytics import ModelMetadataToolAnalytics
 from .model_metadata_tool_info import ModelMetadataToolInfo

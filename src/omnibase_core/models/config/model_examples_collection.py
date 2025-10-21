@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Dict, Generic, List
+from typing import Generic
 
 from pydantic import Field
 
@@ -11,7 +11,6 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 """
 Examples collection model.
 """
-
 
 from datetime import UTC
 from typing import Any

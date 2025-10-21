@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Dict
-
 from pydantic import Field
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -12,7 +10,6 @@ Timeout data model.
 Typed data model for ModelTimeout serialization.
 Follows ONEX one-model-per-file naming conventions.
 """
-
 
 from typing import Any
 

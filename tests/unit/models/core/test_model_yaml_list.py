@@ -100,7 +100,7 @@ class TestModelYamlList:
         model = ModelYamlList(data=["item1"], extra_field="extra_value")
 
         assert model.root_list == ["item1"]
-        assert model.extra_field == "extra_value"  # type: ignore
+        assert model.extra_field == "extra_value"
 
     def test_model_dump(self):
         """Test model serialization."""
@@ -264,14 +264,14 @@ class TestModelYamlListEdgeCases:
     def test_initialization_not_list(self):
         """Test initialization with non-list data."""
         # When data is not a list, should use default initialization
-        model = ModelYamlList(data="not a list")  # type: ignore
+        model = ModelYamlList(data="not a list")
 
         # Should have empty list since data wasn't a list
         assert model.root_list == []
 
     def test_initialization_dict_data(self):
         """Test initialization with dict data (not a list)."""
-        model = ModelYamlList(data={"key": "value"})  # type: ignore
+        model = ModelYamlList(data={"key": "value"})
 
         # Should use default since data is not a list
         assert model.root_list == []

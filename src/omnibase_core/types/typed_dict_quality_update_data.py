@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 """
 Typed structure for quality data updates.
 """
-
 
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 
@@ -19,4 +18,4 @@ class TypedDictQualityUpdateData(TypedDict, total=False):
     maintainability_index: float
 
 
-__all__ = ["ModelTypedDictQualityUpdateData"]
+__all__ = ["TypedDictQualityUpdateData"]

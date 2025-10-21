@@ -529,8 +529,9 @@ class TestServiceReducerGracefulShutdown:
             await asyncio.sleep(0.2)
             service_reducer._active_invocations.discard(correlation_id)
 
-        # Start task to remove invocation
-        asyncio.create_task(remove_invocation())
+        # Start task to remove invocation (store reference to prevent garbage collection)
+        task = asyncio.create_task(remove_invocation())
+        assert task is not None  # Keep reference alive
 
         # Act
         start_time = time.time()
@@ -580,7 +581,9 @@ class TestServiceReducerGracefulShutdown:
             await asyncio.sleep(0.05)
             service_reducer._active_invocations.discard(correlation_id_1)
 
-        asyncio.create_task(remove_one_invocation())
+        # Store reference to prevent garbage collection
+        task = asyncio.create_task(remove_one_invocation())
+        assert task is not None  # Keep reference alive
 
         # Act
         with patch.object(service_reducer, "_log_warning") as mock_log_warning:

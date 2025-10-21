@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 """
 Typed structure for core data updates.
@@ -16,4 +16,4 @@ class TypedDictCoreData(TypedDict, total=False):
     disabled_nodes: int
 
 
-__all__ = ["ModelTypedDictCoreData"]
+__all__ = ["TypedDictCoreData"]

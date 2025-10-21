@@ -142,6 +142,11 @@ def should_exclude_file(filepath: Path) -> bool:
     if "/scripts/validation/" in path_str:
         return True
 
+    # Exclude singleton_holders.py - shared infrastructure module
+    # that consolidates singleton holder classes by design
+    if filepath.name == "singleton_holders.py":
+        return True
+
     return False
 
 

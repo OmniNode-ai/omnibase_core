@@ -1,13 +1,9 @@
-from typing import List
-
 from pydantic import Field
 
 """Event Registry Coordinator Output model for ONEX Discovery & Integration Event Registry.
 
 This module defines the output model for Event Registry Coordinator operations.
 """
-
-from typing import Dict
 
 from pydantic import BaseModel, ConfigDict
 

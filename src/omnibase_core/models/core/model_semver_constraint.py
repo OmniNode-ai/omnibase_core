@@ -1,6 +1,6 @@
 """ModelSemVerConstraint - Strongly typed semantic version constraints."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 

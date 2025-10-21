@@ -542,7 +542,7 @@ class ModelSecretConfig(BaseModel):
     def create_for_kubernetes(
         cls,
         namespace: str = "default",
-        secret_name: str = "onex-secrets",
+        secret_name: str = "onex-secrets",  # noqa: S107 - config name, not a password
     ) -> "ModelSecretConfig":
         """Create configuration for Kubernetes environment."""
         return cls(

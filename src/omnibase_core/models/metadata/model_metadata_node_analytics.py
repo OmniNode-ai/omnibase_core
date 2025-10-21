@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 from pydantic import Field
 
@@ -13,7 +13,6 @@ Metadata Node Analytics Model.
 Analytics and metrics for metadata node collections with
 performance tracking and health monitoring.
 """
-
 
 from datetime import UTC
 from uuid import UUID

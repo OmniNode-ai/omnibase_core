@@ -55,7 +55,7 @@ class ServiceMinimalLogging:
         return func
 
     @staticmethod
-    def tool_logger_performance_metrics(threshold_ms: int = 1000) -> Any:
+    def tool_logger_performance_metrics(_threshold_ms: int = 1000) -> Any:
         """Minimal tool logger performance metrics decorator."""
 
         def decorator(func: Any) -> Any:

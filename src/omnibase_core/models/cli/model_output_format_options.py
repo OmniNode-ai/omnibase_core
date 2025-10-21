@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
-from typing import Dict, TypedDict, TypeVar
+from typing import TypedDict, TypeVar
 
 from pydantic import Field
 
@@ -15,7 +15,6 @@ Structured replacement for dict[str, str] output format options with proper typi
 Follows ONEX one-model-per-file naming conventions.
 """
 
-
 from collections.abc import Callable as CallableABC
 from typing import Any, cast
 
@@ -24,7 +23,6 @@ from pydantic import BaseModel
 from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
 
 # Removed Any import - using object for ONEX compliance
-
 
 # Decorator to allow dict[str, Any] usage with justification
 F = TypeVar("F", bound=Callable[..., object])

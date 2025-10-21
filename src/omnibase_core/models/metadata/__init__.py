@@ -1,4 +1,4 @@
-from typing import Dict, Generic, TypedDict
+from typing import Generic, TypedDict
 
 from pydantic import Field
 

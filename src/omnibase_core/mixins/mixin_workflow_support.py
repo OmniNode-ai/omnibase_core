@@ -47,9 +47,9 @@ class MixinDagSupport:
         """
         # Check for Workflow environment variables
         workflow_context = (
-            os.environ.get("ONEX_Workflow_EXECUTION", "false").lower() == "true"
+            os.environ.get("ONEX_WORKFLOW_EXECUTION", "false").lower() == "true"
         )
-        dag_correlation_id = os.environ.get("ONEX_Workflow_CORRELATION_ID")
+        dag_correlation_id = os.environ.get("ONEX_WORKFLOW_CORRELATION_ID")
 
         # Check for Workflow correlation ID set by scenario runner
         has_correlation_id = (
@@ -88,7 +88,7 @@ class MixinDagSupport:
 
         # Get correlation and node IDs
         correlation_id = self._dag_correlation_id or os.environ.get(
-            "ONEX_Workflow_CORRELATION_ID",
+            "ONEX_WORKFLOW_CORRELATION_ID",
             str(uuid.uuid4()),
         )
         node_id = self._workflow_node_id or getattr(self, "node_id", "unknown_tool")
@@ -149,7 +149,7 @@ class MixinDagSupport:
             return
 
         correlation_id = self._dag_correlation_id or os.environ.get(
-            "ONEX_Workflow_CORRELATION_ID",
+            "ONEX_WORKFLOW_CORRELATION_ID",
             str(uuid.uuid4()),
         )
         node_id = self._workflow_node_id or getattr(self, "node_id", "unknown_tool")

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 """
 Typed structure for performance data updates.
@@ -15,4 +15,4 @@ class TypedDictPerformanceData(TypedDict, total=False):
     total_invocations: int
 
 
-__all__ = ["ModelTypedDictPerformanceData"]
+__all__ = ["TypedDictPerformanceData"]

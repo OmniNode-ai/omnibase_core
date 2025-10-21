@@ -69,10 +69,10 @@ class ModelSchemaValueGeneric(BaseModel, Generic[T]):
             type_name = "object"
         else:
             # Unknown type - convert to string
-            value = str(value)  # type: ignore
+            value = str(value)  # type: ignore[assignment]
             type_name = "string"
 
-        return cls(value=value, value_type=type_name)  # type: ignore
+        return cls(value=value, value_type=type_name)
 
     def to_value(self) -> T:
         """Extract value."""
@@ -176,7 +176,7 @@ def test_generic_approach_wrong_type_string_for_int():
             # This should fail Pydantic validation
             typed_value: ModelSchemaValueGeneric[int] = ModelSchemaValueGeneric[int](
                 value=agent_generated_timeout,
-                value_type="number",  # type: ignore
+                value_type="number",
             )
             print(f"   ❌ UNEXPECTED: Validation passed with value {typed_value.value}")
         except ValidationError as e:
@@ -323,7 +323,7 @@ def test_current_approach_nested_type_errors():
             print("\n   Data preservation analysis:")
             for i, (orig, rt) in enumerate(
                 zip(agent_generated_values, round_trip, strict=False)
-            ):  # type: ignore
+            ):
                 if type(orig) == type(rt):
                     print(f"     [{i}] ✅ Type preserved: {type(orig).__name__}")
                 else:
@@ -447,15 +447,15 @@ def test_current_approach_serialization_safety():
                 print(f"   Final type: {type(final_value)}")
                 print(
                     f"   Keys preserved: {set(agent_config.keys()) == set(final_value.keys())}"
-                )  # type: ignore
+                )
 
                 # Check unknown field handling
                 print("\n   Unknown object handling:")
                 print(f"   Original: {agent_config['unknown_field']}")
-                print(f"   Final: {final_value['unknown_field']}")  # type: ignore
+                print(f"   Final: {final_value['unknown_field']}")
                 print(
                     f"   Converted to string? {isinstance(final_value['unknown_field'], str)}"
-                )  # type: ignore
+                )
 
             except Exception as recreate_e:
                 print(f"   ❌ Deserialization failed: {recreate_e}")
@@ -587,7 +587,7 @@ def test_generic_approach_error_messages():
     try:
         schema_value: ModelSchemaValueGeneric[int] = ModelSchemaValueGeneric[int](
             value="30 seconds",
-            value_type="number",  # type: ignore
+            value_type="number",
         )
         print(f"  Unexpected success: {schema_value}")
     except ValidationError as e:

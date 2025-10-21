@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any
 
 from omnibase_core.models.core.model_status_migrator import ModelEnumStatusMigrator
 from omnibase_core.types import TypedDictStatusMigrationResult

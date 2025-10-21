@@ -1,5 +1,3 @@
-from typing import Dict
-
 """
 TypedDict for model capability factory parameters.
 

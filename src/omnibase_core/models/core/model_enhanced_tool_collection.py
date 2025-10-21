@@ -446,6 +446,10 @@ ToolPerformanceMetrics = ModelToolPerformanceMetrics
 ToolValidationResult = ModelToolValidationResult
 ToolMetadata = ModelToolMetadata
 ToolCollection = ModelToolCollection
+ToolCapabilityLevel = EnumToolCapabilityLevel
+ToolCategory = EnumToolCategory
+ToolCompatibilityMode = EnumToolCompatibilityMode
+ToolRegistrationStatus = EnumToolRegistrationStatus
 
 # Re-export for current standards
 __all__ = [

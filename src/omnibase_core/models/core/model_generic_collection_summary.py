@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Dict, Generic
+from typing import Generic
 
 from pydantic import Field
 
@@ -14,7 +14,6 @@ Generic collection summary model.
 Strongly-typed summary for generic collections that replaces Dict[str, Any]
 anti-pattern with proper type safety.
 """
-
 
 from datetime import datetime
 from typing import Any

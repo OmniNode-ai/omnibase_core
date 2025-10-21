@@ -18,6 +18,10 @@ from omnibase_core.models.validation.model_validation_container import (
 )
 
 
+class SerializationTestError(Exception):
+    """Custom exception for serialization test scenarios."""
+
+
 # Test fixture models
 class SimpleTestModel(ModelValidationBase):
     """Simple test model for basic validation tests."""
@@ -270,7 +274,7 @@ class TestModelValidationBaseValidateModelDataBranches:
         original_model_dump = model.model_dump
 
         def mock_model_dump(*args, **kwargs):
-            raise Exception("Serialization error")
+            raise SerializationTestError("Serialization error")
 
         # Use object.__setattr__ to bypass Pydantic
         object.__setattr__(model, "model_dump", mock_model_dump)

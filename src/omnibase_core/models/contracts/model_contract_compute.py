@@ -18,7 +18,7 @@ Specialized contract model for NodeCompute implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, ClassVar, Dict, Optional
+from typing import Any, ClassVar, Optional
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -164,7 +164,8 @@ class ModelContractCompute(ModelContractBase):
             lifecycle=lifecycle or ModelLifecycleConfig(),
             dependencies=dependencies or [],
             protocol_interfaces=protocol_interfaces or [],
-            validation_rules=validation_rules,  # Let field default_factory handle None
+            validation_rules=validation_rules
+            or ModelValidationRules(),  # Use default if None
             author=author,
             documentation_url=documentation_url,
             tags=tags or [],

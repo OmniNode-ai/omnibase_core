@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Dict, List
 from uuid import UUID
 
 from pydantic import Field
@@ -28,7 +27,6 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 # namespace: onex.stamped.error_codes
 # meta_type: tool
 # === /OmniNode:Metadata ===
-
 
 """
 Shared error codes and exit code mapping for all ONEX nodes.
@@ -153,7 +151,6 @@ class EnumOnexErrorCode(str, Enum):
 
 # EnumCoreErrorCode is imported from canonical location at line 8
 # Removed duplicate definition - use the imported version from omnibase_core.errors.error_codes
-
 
 # Mapping from core error codes to exit codes
 CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
@@ -282,7 +279,6 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
 
 # ModelOnexError is now defined in omnibase_core.errors.error_codes
 # Import from there instead of duplicating the definition
-
 
 # Import extracted classes instead of duplicating definitions
 from omnibase_core.models.common.model_onex_warning import ModelOnexWarning

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Dict, TypedDict, Union
+from typing import TypedDict, Union
 
 from pydantic import model_validator
 
@@ -19,7 +19,6 @@ Usage:
     python -m omnibase_core.validation.cli union-usage --strict
     python -m omnibase_core.validation.cli all
 """
-
 
 import argparse
 import sys

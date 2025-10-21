@@ -7,7 +7,7 @@ This model represents state transitions that can be defined in contracts
 to specify how state should change in response to actions.
 """
 
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, model_validator

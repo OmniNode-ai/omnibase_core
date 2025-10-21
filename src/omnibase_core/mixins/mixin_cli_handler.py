@@ -170,9 +170,6 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
         elif args.input_file:
             input_path = Path(args.input_file)
             if not input_path.exists():
-                from omnibase_core.errors.core_error_code import EnumCoreErrorCode
-                from omnibase_core.errors.onex_error import ModelOnexError
-
                 raise ModelOnexError(
                     message=f"Input file not found: {args.input_file}",
                     error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
@@ -220,7 +217,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
         return data
 
-    def format_output(self, output: OutputStateT, format: str) -> str:
+    def format_output(self, output: OutputStateT, output_format: str) -> str:
         """Format output based on requested format."""
         # Convert output to dict
         if hasattr(output, "model_dump"):
@@ -233,7 +230,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             output_dict = {"result": str(output)}
 
         # Format as requested
-        if format == "yaml":
+        if output_format == "yaml":
             from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
 
             return serialize_data_to_yaml(output_dict, default_flow_style=False)

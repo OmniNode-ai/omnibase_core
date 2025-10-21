@@ -2,8 +2,6 @@ from typing import Any
 
 """Model for managing sets of strings."""
 
-from typing import List
-
 from pydantic import BaseModel, Field
 
 

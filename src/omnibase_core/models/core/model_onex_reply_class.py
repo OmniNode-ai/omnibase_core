@@ -79,7 +79,7 @@ class ModelOnexReply(BaseModel):
     )
 
     # === METADATA ===
-    metadata: "ModelOnexMetadata" | None = Field(
+    metadata: "ModelOnexMetadata | None" = Field(
         default=None,
         description="Additional reply metadata",
     )
@@ -181,7 +181,7 @@ class ModelOnexReply(BaseModel):
         data: BaseModel,
         correlation_id: UUID,
         data_type: str | None = None,
-        metadata: "ModelOnexMetadata" | None = None,
+        metadata: "ModelOnexMetadata | None" = None,
         performance_metrics: ModelOnexPerformanceMetrics | None = None,
     ) -> "ModelOnexReply":
         """
@@ -215,7 +215,7 @@ class ModelOnexReply(BaseModel):
         error_code: str | None = None,
         error_type: str = "general_error",
         additional_context: dict[str, str] | None = None,
-        metadata: "ModelOnexMetadata" | None = None,
+        metadata: "ModelOnexMetadata | None" = None,
     ) -> "ModelOnexReply":
         """
         Create an error Onex reply.
@@ -251,7 +251,7 @@ class ModelOnexReply(BaseModel):
         cls,
         correlation_id: UUID,
         validation_errors: list[str],
-        metadata: "ModelOnexMetadata" | None = None,
+        metadata: "ModelOnexMetadata | None" = None,
     ) -> "ModelOnexReply":
         """
         Create a validation error Onex reply.

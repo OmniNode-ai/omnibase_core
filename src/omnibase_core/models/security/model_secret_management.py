@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError

@@ -8,7 +8,6 @@ ZERO TOLERANCE: Validation must remain fast even with complex patterns.
 """
 
 import time
-from typing import List
 
 import pytest
 

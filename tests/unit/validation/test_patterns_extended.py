@@ -1088,7 +1088,7 @@ class ModelUser(BaseModel):
         (src_dir / "test.py").write_text("# Test file")
 
         # Change working directory
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
         try:
             os.chdir(tmp_path)
 

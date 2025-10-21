@@ -1,5 +1,3 @@
-from typing import Dict, List
-
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 """

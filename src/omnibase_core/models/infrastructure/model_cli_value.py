@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from pydantic import Field, ValidationInfo, field_validator
 
@@ -22,7 +22,6 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 # Note: Previously had type alias (CliDictValueType)
 # Removed to comply with ONEX strong typing standards.
 # Now uses dict[str, ModelSchemaValue] for strong typing.
-
 
 # CLI raw values use discriminated union pattern with runtime validation
 

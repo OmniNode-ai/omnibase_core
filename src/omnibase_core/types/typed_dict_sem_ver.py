@@ -4,8 +4,7 @@ from __future__ import annotations
 TypedDict for semantic version structure following SemVer specification.
 """
 
-
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 
 class TypedDictSemVer(TypedDict):

@@ -112,7 +112,7 @@ class TestModelCliExecutionInputDataValueValidation:
 
     def test_validate_path_value_type_valid(self):
         """Test validation passes for matching Path value type."""
-        path = Path("/tmp/test")
+        path = Path("/tmp/test")  # noqa: S108 - Test data, not actual temp file usage
         data = ModelCliExecutionInputData(
             key="test_key",
             value_type=EnumCliInputValueType.PATH,
@@ -127,7 +127,7 @@ class TestModelCliExecutionInputDataValueValidation:
             ModelCliExecutionInputData(
                 key="test_key",
                 value_type=EnumCliInputValueType.PATH,
-                value="/tmp/test",  # Invalid: string instead of Path
+                value="/tmp/test",  # noqa: S108 - Test data (invalid type demonstration), not actual temp file usage
                 data_type=EnumDataType.TEXT,
             )
         assert "Path value type must contain Path data" in str(exc_info.value)
@@ -318,7 +318,7 @@ class TestModelCliExecutionInputDataFactoryMethods:
 
     def test_from_path_minimal(self):
         """Test creating input data from Path with minimal parameters."""
-        path = Path("/tmp/test")
+        path = Path("/tmp/test")  # noqa: S108 - Test data, not actual temp file usage
         data = ModelCliExecutionInputData.from_path("test_key", path)
 
         assert data.key == "test_key"
@@ -327,7 +327,7 @@ class TestModelCliExecutionInputDataFactoryMethods:
 
     def test_from_path_with_kwargs(self):
         """Test creating input data from Path with all kwargs."""
-        path = Path("/tmp/test")
+        path = Path("/tmp/test")  # noqa: S108 - Test data, not actual temp file usage
         data = ModelCliExecutionInputData.from_path(
             "test_key",
             path,
@@ -424,9 +424,11 @@ class TestModelCliExecutionInputDataHelperMethods:
 
     def test_get_string_value_from_path(self):
         """Test getting string representation of Path value."""
-        path = Path("/tmp/test")
+        path = Path("/tmp/test")  # noqa: S108 - Test data, not actual temp file usage
         data = ModelCliExecutionInputData.from_path("test_key", path)
-        assert data.get_string_value() == "/tmp/test"
+        assert (
+            data.get_string_value() == "/tmp/test"
+        )  # noqa: S108 - Test assertion value
 
     def test_get_string_value_from_uuid(self):
         """Test getting string representation of UUID value."""
@@ -454,13 +456,15 @@ class TestModelCliExecutionInputDataHelperMethods:
 
     def test_is_path_value_true(self):
         """Test is_path_value returns True for Path values."""
-        path = Path("/tmp/test")
+        path = Path("/tmp/test")  # noqa: S108 - Test data, not actual temp file usage
         data = ModelCliExecutionInputData.from_path("test_key", path)
         assert data.is_path_value() is True
 
     def test_is_path_value_false(self):
         """Test is_path_value returns False for non-Path values."""
-        data = ModelCliExecutionInputData.from_string("test_key", "/tmp/test")
+        data = ModelCliExecutionInputData.from_string(
+            "test_key", "/tmp/test"
+        )  # noqa: S108 - Test data string, not actual temp file usage
         assert data.is_path_value() is False
 
     def test_is_uuid_value_true(self):

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from pydantic import Field
 
 """
@@ -10,7 +8,6 @@ Strongly-typed mixed input value model.
 Represents mixed data inputs combining structured and primitive data.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
-
 
 from typing import Any
 

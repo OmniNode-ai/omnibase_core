@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import List
 
 from pydantic import Field, ValidationInfo, field_validator
 
@@ -13,7 +12,6 @@ CLI Command Option Model.
 Represents command-line options and flags with proper validation.
 Replaces dict[str, Any] for command options with structured typing.
 """
-
 
 from typing import Any
 

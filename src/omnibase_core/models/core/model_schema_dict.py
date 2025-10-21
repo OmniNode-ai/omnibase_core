@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 from pydantic import Field
 
@@ -88,7 +88,7 @@ class ModelSchemaDict(BaseModel):
         description="Object properties",
     )
     required: list[str] | None = Field(default=None, description="Required properties")
-    additional_properties: bool | "ModelSchemaDict" | None = Field(
+    additional_properties: "bool | ModelSchemaDict | None" = Field(
         default=None,
         alias="additionalProperties",
         description="Additional properties constraint",

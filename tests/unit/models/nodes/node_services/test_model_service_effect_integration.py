@@ -47,6 +47,10 @@ from omnibase_core.nodes.model_effect_input import ModelEffectInput
 from omnibase_core.nodes.node_effect import NodeEffect
 
 
+class SimulatedTestError(Exception):
+    """Custom exception for test scenarios."""
+
+
 @pytest.fixture
 def mock_container():
     """Create a mock ModelONEXContainer."""
@@ -481,7 +485,10 @@ class TestEffectSemanticsServiceMode:
         """Test that transactions are created for transactional operations."""
         effect_input = ModelEffectInput(
             effect_type=EnumEffectType.FILE_OPERATION,
-            operation_data={"operation_type": "read", "file_path": "/tmp/test.txt"},
+            operation_data={
+                "operation_type": "read",
+                "file_path": "/tmp/test.txt",
+            },  # noqa: S108 - Test data, not actual temp file usage
             transaction_enabled=True,
             retry_enabled=False,
         )
@@ -553,7 +560,10 @@ class TestCircuitBreakerServiceMode:
         """Test that circuit breaker prevents execution when open."""
         effect_input = ModelEffectInput(
             effect_type=EnumEffectType.FILE_OPERATION,
-            operation_data={"operation_type": "read", "file_path": "/tmp/test.txt"},
+            operation_data={
+                "operation_type": "read",
+                "file_path": "/tmp/test.txt",
+            },  # noqa: S108 - Test data, not actual temp file usage
             circuit_breaker_enabled=True,
             retry_enabled=False,
         )
@@ -629,7 +639,7 @@ class TestRetryLogicServiceMode:
 
         async def failing_handler(operation_data, transaction):
             call_times.append(asyncio.get_event_loop().time())
-            raise Exception("Simulated failure")
+            raise SimulatedTestError("Simulated failure")
 
         service_effect.effect_handlers[EnumEffectType.FILE_OPERATION] = failing_handler
 

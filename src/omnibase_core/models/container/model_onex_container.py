@@ -1,6 +1,6 @@
 import uuid
 from collections.abc import Callable
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from pydantic import BaseModel
 
@@ -37,6 +37,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
+from omnibase_core.utils.singleton_holders import _ContainerHolder
 from omnibase_spi import ProtocolLogger
 
 # Optional performance enhancements
@@ -63,9 +64,7 @@ except ImportError:
 ProtocolDatabaseConnection = Any
 ProtocolServiceDiscovery = Any
 
-
 T = TypeVar("T")
-
 
 # === CORE CONTAINER DEFINITION ===
 
@@ -165,6 +164,26 @@ class ModelONEXContainer:
     def workflow_coordinator(self) -> Any:
         """Access to workflow coordinator."""
         return self._base_container.workflow_coordinator
+
+    @property
+    def action_registry(self) -> Any:
+        """Access to action registry."""
+        return self._base_container.action_registry
+
+    @property
+    def event_type_registry(self) -> Any:
+        """Access to event type registry."""
+        return self._base_container.event_type_registry
+
+    @property
+    def command_registry(self) -> Any:
+        """Access to command registry."""
+        return self._base_container.command_registry
+
+    @property
+    def secret_manager(self) -> Any:
+        """Access to secret manager."""
+        return self._base_container.secret_manager
 
     async def get_service_async(
         self,
@@ -519,7 +538,6 @@ class ModelONEXContainer:
 # === HELPER FUNCTIONS ===
 # Helper functions moved to base_model_onex_container.py
 
-
 # === CONTAINER FACTORY ===
 
 
@@ -586,15 +604,14 @@ async def create_model_onex_container(
 
 # === GLOBAL ENHANCED CONTAINER ===
 
-_model_onex_container: ModelONEXContainer | None = None
-
 
 async def get_model_onex_container() -> ModelONEXContainer:
     """Get or create global enhanced container instance."""
-    global _model_onex_container
-    if _model_onex_container is None:
-        _model_onex_container = await create_model_onex_container()
-    return _model_onex_container
+    container = _ContainerHolder.get()
+    if container is None:
+        container = await create_model_onex_container()
+        _ContainerHolder.set(container)
+    return container
 
 
 def get_model_onex_container_sync() -> ModelONEXContainer:

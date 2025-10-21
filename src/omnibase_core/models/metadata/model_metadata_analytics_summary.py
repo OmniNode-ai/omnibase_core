@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 from pydantic import Field
 
@@ -12,7 +12,6 @@ Metadata Analytics Summary Model (Composed).
 
 Composed model that combines focused analytics components.
 """
-
 
 from datetime import datetime
 from typing import Any

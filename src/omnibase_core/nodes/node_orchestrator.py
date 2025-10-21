@@ -57,12 +57,12 @@ class NodeOrchestrator(NodeCoreBase):
 
     Workflow coordination node for control flow management.
 
-    Implements workflow coordination with thunk emission for deferred execution,
+    Implements workflow coordination with action emission for deferred execution,
     conditional branching, and parallel coordination. Optimized for RSD workflow
     management including ticket lifecycle transitions and dependency-aware ordering.
 
     Key Features:
-    - Thunk emission patterns for deferred execution
+    - Action emission patterns for deferred execution
     - Conditional branching based on runtime state
     - Parallel execution coordination with load balancing
     - Dependency-aware execution ordering
@@ -75,6 +75,18 @@ class NodeOrchestrator(NodeCoreBase):
     - Batch processing coordination with load balancing
     - Error recovery and partial failure handling
     """
+
+    # Class attribute declarations for mypy
+    max_concurrent_workflows: int
+    default_step_timeout_ms: int
+    action_emission_enabled: bool
+    active_workflows: dict[UUID, ModelOrchestratorInput]
+    workflow_states: dict[UUID, EnumWorkflowState]
+    load_balancer: ModelLoadBalancer
+    emitted_actions: dict[UUID, list[ModelAction]]
+    workflow_semaphore: asyncio.Semaphore
+    orchestration_metrics: dict[str, dict[str, float]]
+    condition_functions: dict[str, Callable[..., Any]]
 
     def __init__(self, container: ModelONEXContainer) -> None:
         """
@@ -103,8 +115,8 @@ class NodeOrchestrator(NodeCoreBase):
             self, "load_balancer", ModelLoadBalancer(max_concurrent_operations=20)
         )
 
-        # Thunk emission registry (UUID keys for workflow_id)
-        object.__setattr__(self, "emitted_thunks", {})
+        # Action emission registry (UUID keys for workflow_id)
+        object.__setattr__(self, "emitted_actions", {})
 
         # Workflow execution semaphore
         object.__setattr__(
@@ -214,7 +226,7 @@ class NodeOrchestrator(NodeCoreBase):
                         "operation_id": str(input_data.operation_id),
                         "processing_time_ms": processing_time,
                         "steps_completed": result.steps_completed,
-                        "thunks_emitted": len(result.thunks_emitted),
+                        "actions_emitted": len(result.actions_emitted),
                     },
                 )
 
@@ -307,41 +319,47 @@ class NodeOrchestrator(NodeCoreBase):
             "state_transition": f"{current_state} -> {target_state}",
             "steps_completed": result.steps_completed,
             "processing_time_ms": result.processing_time_ms,
-            "thunks_emitted": len(result.thunks_emitted),
+            "actions_emitted": len(result.actions_emitted),
             "success": result.workflow_state == EnumWorkflowState.COMPLETED,
         }
 
-    async def emit_thunk(
+    async def emit_action(
         self,
-        thunk_type: EnumActionType,
+        action_type: EnumActionType,
         target_node_type: str,
-        operation_data: dict[str, Any],
+        payload: dict[str, Any],
         dependencies: list[UUID] | None = None,
         priority: int = 1,
         timeout_ms: int = 30000,
+        lease_id: UUID | None = None,
+        epoch: int = 0,
     ) -> ModelAction:
         """
-        Emit thunk for deferred execution.
+        Emit action for deferred execution.
 
         Args:
-            thunk_type: Type of thunk to emit
+            action_type: Type of action to emit
             target_node_type: Target node type for execution
-            operation_data: Data for the operation
-            dependencies: List of dependency thunk IDs (UUIDs)
+            payload: Data payload for the operation
+            dependencies: List of dependency action IDs (UUIDs)
             priority: Execution priority (higher = more urgent)
             timeout_ms: Execution timeout in milliseconds
+            lease_id: Lease ID for ownership tracking (auto-generated if None)
+            epoch: Version number for action (default 0)
 
         Returns:
-            Created thunk instance
+            Created action instance
         """
-        thunk = ModelAction(
-            thunk_id=uuid4(),
-            thunk_type=thunk_type,
+        action = ModelAction(
+            action_id=uuid4(),
+            action_type=action_type,
             target_node_type=target_node_type,
-            operation_data=operation_data,
+            payload=payload,
             dependencies=dependencies or [],
             priority=priority,
             timeout_ms=timeout_ms,
+            lease_id=lease_id or uuid4(),
+            epoch=epoch,
             retry_count=0,
             metadata={
                 "emitted_by": str(self.node_id),
@@ -350,8 +368,8 @@ class NodeOrchestrator(NodeCoreBase):
             created_at=datetime.now(),
         )
 
-        # Store emitted thunk (workflow_id should be UUID from operation_data)
-        workflow_id_value = operation_data.get("workflow_id")
+        # Store emitted action (workflow_id should be UUID from payload)
+        workflow_id_value = payload.get("workflow_id")
         if workflow_id_value is not None:
             # Ensure workflow_id is UUID type
             if isinstance(workflow_id_value, str):
@@ -359,24 +377,24 @@ class NodeOrchestrator(NodeCoreBase):
             else:
                 workflow_id = workflow_id_value
 
-            if workflow_id not in self.emitted_thunks:
-                self.emitted_thunks[workflow_id] = []
-            self.emitted_thunks[workflow_id].append(thunk)
+            if workflow_id not in self.emitted_actions:
+                self.emitted_actions[workflow_id] = []
+            self.emitted_actions[workflow_id].append(action)
 
         emit_log_event(
             LogLevel.INFO,
-            f"Thunk emitted: {thunk_type.value} -> {target_node_type}",
+            f"Action emitted: {action_type.value} -> {target_node_type}",
             {
                 "node_id": str(self.node_id),
-                "thunk_id": str(thunk.thunk_id),
-                "thunk_type": thunk_type.value,
+                "action_id": str(action.action_id),
+                "action_type": action_type.value,
                 "target_node_type": target_node_type,
                 "priority": priority,
                 "dependencies": len(dependencies or []),
             },
         )
 
-        return thunk
+        return action
 
     def register_condition_function(
         self,
@@ -441,8 +459,8 @@ class NodeOrchestrator(NodeCoreBase):
             "workflow_management": {
                 "active_workflows": float(len(self.active_workflows)),
                 "max_concurrent_workflows": float(self.max_concurrent_workflows),
-                "total_thunks_emitted": float(
-                    sum(len(thunks) for thunks in self.emitted_thunks.values()),
+                "total_actions_emitted": float(
+                    sum(len(actions) for actions in self.emitted_actions.values()),
                 ),
                 "condition_functions_registered": float(len(self.condition_functions)),
             },
@@ -472,7 +490,7 @@ class NodeOrchestrator(NodeCoreBase):
             )
 
         self.active_workflows.clear()
-        self.emitted_thunks.clear()
+        self.emitted_actions.clear()
 
         emit_log_event(
             LogLevel.INFO,
@@ -535,13 +553,13 @@ class NodeOrchestrator(NodeCoreBase):
         for step in workflow_steps:
             graph.add_step(step)
 
-        # Add dependencies based on thunk dependencies
+        # Add dependencies based on action dependencies
         for step in workflow_steps:
-            for thunk in step.thunks:
-                for dep_id in thunk.dependencies:
-                    # Find step containing dependency thunk
+            for action in step.thunks:
+                for dep_id in action.dependencies:
+                    # Find step containing dependency action
                     for other_step in workflow_steps:
-                        if any(t.thunk_id == dep_id for t in other_step.thunks):
+                        if any(a.action_id == dep_id for a in other_step.thunks):
                             graph.add_dependency(other_step.step_id, step.step_id)
                             break
 
@@ -568,9 +586,13 @@ class NodeOrchestrator(NodeCoreBase):
                 ModelAction(**thunk_dict) for thunk_dict in step_dict.get("actions", [])
             ],
             condition=step_dict.get("condition"),
+            condition_function=None,
             timeout_ms=step_dict.get("timeout_ms", 30000),
             retry_count=step_dict.get("retry_count", 0),
             metadata=step_dict.get("metadata", {}),
+            started_at=None,
+            completed_at=None,
+            error=None,
         )
 
     async def _execute_sequential_workflow(
@@ -581,7 +603,7 @@ class NodeOrchestrator(NodeCoreBase):
         """Execute workflow steps sequentially."""
         steps_completed = 0
         steps_failed = 0
-        all_thunks = []
+        all_actions = []
         all_results: list[Any] = []
 
         # Convert dict steps to ModelWorkflowStep
@@ -619,26 +641,28 @@ class NodeOrchestrator(NodeCoreBase):
                 step.state = EnumWorkflowState.RUNNING
                 step.started_at = datetime.now()
 
-                # Execute step thunks
+                # Execute step actions
                 step_results = []
-                for thunk in step.thunks:
+                for action in step.thunks:
                     if self.action_emission_enabled:
-                        emitted_thunk = await self.emit_thunk(
-                            thunk.thunk_type,
-                            thunk.target_node_type,
+                        emitted_action = await self.emit_action(
+                            action.action_type,
+                            action.target_node_type,
                             {
-                                **thunk.operation_data,
+                                **action.payload,
                                 "workflow_id": input_data.workflow_id,
                             },
-                            thunk.dependencies,
-                            thunk.priority,
-                            thunk.timeout_ms,
+                            action.dependencies,
+                            action.priority,
+                            action.timeout_ms,
+                            action.lease_id,
+                            action.epoch,
                         )
-                        all_thunks.append(emitted_thunk)
+                        all_actions.append(emitted_action)
 
-                    # Simulate thunk execution result
+                    # Simulate action execution result
                     step_results.append(
-                        {"thunk_id": str(thunk.thunk_id), "status": "executed"},
+                        {"action_id": str(action.action_id), "status": "executed"},
                     )
 
                 step.results = step_results
@@ -670,7 +694,7 @@ class NodeOrchestrator(NodeCoreBase):
             ),
             steps_completed=steps_completed,
             steps_failed=steps_failed,
-            thunks_emitted=all_thunks,
+            actions_emitted=all_actions,
             processing_time_ms=(time.time() * 1000)
             - (input_data.timestamp.timestamp() * 1000),
             results=all_results,
@@ -685,7 +709,7 @@ class NodeOrchestrator(NodeCoreBase):
         """Execute workflow steps in parallel respecting dependencies."""
         steps_completed = 0
         steps_failed = 0
-        all_thunks = []
+        all_actions = []
         all_results = []
         parallel_executions = 0
 
@@ -724,21 +748,23 @@ class NodeOrchestrator(NodeCoreBase):
                         all_results.extend(step_result)
                         dependency_graph.mark_completed(step.step_id)
 
-                        # Collect thunks
-                        for thunk in step.thunks:
+                        # Collect actions
+                        for action in step.thunks:
                             if self.action_emission_enabled:
-                                emitted_thunk = await self.emit_thunk(
-                                    thunk.thunk_type,
-                                    thunk.target_node_type,
+                                emitted_action = await self.emit_action(
+                                    action.action_type,
+                                    action.target_node_type,
                                     {
-                                        **thunk.operation_data,
+                                        **action.payload,
                                         "workflow_id": input_data.workflow_id,
                                     },
-                                    thunk.dependencies,
-                                    thunk.priority,
-                                    thunk.timeout_ms,
+                                    action.dependencies,
+                                    action.priority,
+                                    action.timeout_ms,
+                                    action.lease_id,
+                                    action.epoch,
                                 )
-                                all_thunks.append(emitted_thunk)
+                                all_actions.append(emitted_action)
 
                     except Exception as e:
                         step.state = EnumWorkflowState.FAILED
@@ -782,7 +808,7 @@ class NodeOrchestrator(NodeCoreBase):
             ),
             steps_completed=steps_completed,
             steps_failed=steps_failed,
-            thunks_emitted=all_thunks,
+            actions_emitted=all_actions,
             processing_time_ms=(time.time() * 1000)
             - (input_data.timestamp.timestamp() * 1000),
             parallel_executions=parallel_executions,
@@ -835,12 +861,12 @@ class NodeOrchestrator(NodeCoreBase):
         step.started_at = datetime.now()
 
         results = []
-        for thunk in step.thunks:
-            # Simulate thunk execution
+        for action in step.thunks:
+            # Simulate action execution
             result = {
-                "thunk_id": str(thunk.thunk_id),
-                "thunk_type": thunk.thunk_type.value,
-                "target_node_type": thunk.target_node_type,
+                "action_id": str(action.action_id),
+                "action_type": action.action_type.value,
+                "target_node_type": action.target_node_type,
                 "status": "executed",
                 "execution_time": datetime.now().isoformat(),
             }
@@ -893,12 +919,12 @@ class NodeOrchestrator(NodeCoreBase):
         self,
         steps: list[ModelWorkflowStep],
     ) -> dict[str, list[ModelWorkflowStep]]:
-        """Group steps by their thunk types for batch processing."""
+        """Group steps by their action types for batch processing."""
         groups: dict[str, list[ModelWorkflowStep]] = {}
         for step in steps:
-            # Group by first thunk type
+            # Group by first action type
             if step.thunks:
-                group_key = step.thunks[0].thunk_type.value
+                group_key = step.thunks[0].action_type.value
                 if group_key not in groups:
                     groups[group_key] = []
                 groups[group_key].append(step)
@@ -918,10 +944,10 @@ class NodeOrchestrator(NodeCoreBase):
         # Step 1: Validate current state
         validate_action_id = uuid4()
         validate_action = ModelAction(
-            thunk_id=validate_action_id,
-            thunk_type=EnumActionType.COMPUTE,
+            action_id=validate_action_id,
+            action_type=EnumActionType.COMPUTE,
             target_node_type="NodeCompute",
-            operation_data={
+            payload={
                 "computation_type": "state_validation",
                 "ticket_id": str(ticket_id),
                 "current_state": current_state,
@@ -929,6 +955,8 @@ class NodeOrchestrator(NodeCoreBase):
             dependencies=[],
             priority=1,
             timeout_ms=5000,
+            lease_id=uuid4(),
+            epoch=0,
             retry_count=0,
             metadata={},
             created_at=datetime.now(),
@@ -947,10 +975,10 @@ class NodeOrchestrator(NodeCoreBase):
         if dependencies:
             dep_action_id = uuid4()
             dep_action = ModelAction(
-                thunk_id=dep_action_id,
-                thunk_type=EnumActionType.REDUCE,
+                action_id=dep_action_id,
+                action_type=EnumActionType.REDUCE,
                 target_node_type="NodeReducer",
-                operation_data={
+                payload={
                     "reduction_type": "dependency_check",
                     "ticket_id": str(ticket_id),
                     "dependencies": [str(dep) for dep in dependencies],
@@ -958,6 +986,8 @@ class NodeOrchestrator(NodeCoreBase):
                 dependencies=[validate_action_id],
                 priority=1,
                 timeout_ms=10000,
+                lease_id=uuid4(),
+                epoch=0,
                 retry_count=0,
                 metadata={},
                 created_at=datetime.now(),
@@ -977,10 +1007,10 @@ class NodeOrchestrator(NodeCoreBase):
             transition_deps.append(dep_action_id)
 
         transition_action = ModelAction(
-            thunk_id=uuid4(),
-            thunk_type=EnumActionType.EFFECT,
+            action_id=uuid4(),
+            action_type=EnumActionType.EFFECT,
             target_node_type="NodeEffect",
-            operation_data={
+            payload={
                 "effect_type": "ticket_state_transition",
                 "ticket_id": str(ticket_id),
                 "from_state": current_state,
@@ -989,6 +1019,8 @@ class NodeOrchestrator(NodeCoreBase):
             dependencies=transition_deps,
             priority=2,
             timeout_ms=15000,
+            lease_id=uuid4(),
+            epoch=0,
             retry_count=1,
             metadata={},
             created_at=datetime.now(),

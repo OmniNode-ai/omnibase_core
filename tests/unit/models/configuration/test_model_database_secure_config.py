@@ -1077,7 +1077,7 @@ class TestFactoryMethods:
             port=5433,
             database="mydb",
             username="pguser",
-            password="pgpass",
+            password="pgpass",  # noqa: S106 - Test data, not actual password
         )
         assert config.driver == "postgresql"
         assert config.host == "pg.example.com"
@@ -1102,7 +1102,7 @@ class TestFactoryMethods:
             port=3307,
             database="mydb",
             username="mysqluser",
-            password="mysqlpass",
+            password="mysqlpass",  # noqa: S106 - Test data, not actual password
         )
         assert config.driver == "mysql"
         assert config.host == "mysql.example.com"
@@ -1120,7 +1120,7 @@ class TestFactoryMethods:
             host="prod.example.com",
             database="prod_db",
             username="prod_user",
-            password="very_secure_password",
+            password="very_secure_password",  # noqa: S106 - Test data, not actual password
             ssl_cert_path="/certs/client.crt",
             ssl_key_path="/certs/client.key",
             ssl_ca_path="/certs/ca.crt",

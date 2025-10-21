@@ -19,6 +19,7 @@ import pytest
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.emit import (
+    LogCodeBlock,
     _create_log_context_from_frame,
     _detect_node_id_from_context,
     _sanitize_data_dict,
@@ -27,7 +28,6 @@ from omnibase_core.logging.emit import (
     emit_log_event_async,
     emit_log_event_sync,
     emit_log_event_with_new_correlation,
-    log_code_block,
     log_performance_metrics,
     trace_function_lifecycle,
 )
@@ -430,39 +430,39 @@ class TestTraceFunctionLifecycle:
 
 
 class TestLogCodeBlock:
-    """Test log_code_block context manager."""
+    """Test LogCodeBlock context manager."""
 
     def test_log_code_block_success(self):
-        """Test log_code_block with successful execution."""
+        """Test LogCodeBlock with successful execution."""
         correlation_id = uuid4()
 
-        with log_code_block("test_block", correlation_id=correlation_id):
+        with LogCodeBlock("test_block", correlation_id=correlation_id):
             x = 1 + 1
 
         assert x == 2
 
     def test_log_code_block_with_exception(self):
-        """Test log_code_block with exception."""
+        """Test LogCodeBlock with exception."""
         correlation_id = uuid4()
 
         with pytest.raises(ValueError):
-            with log_code_block("failing_block", correlation_id=correlation_id):
+            with LogCodeBlock("failing_block", correlation_id=correlation_id):
                 raise ValueError("Test error")
 
     def test_log_code_block_with_data(self):
-        """Test log_code_block with additional data."""
+        """Test LogCodeBlock with additional data."""
         correlation_id = uuid4()
 
-        with log_code_block(
+        with LogCodeBlock(
             "data_block", correlation_id=correlation_id, data={"key": "value"}
         ):
             pass
 
     def test_log_code_block_custom_level(self):
-        """Test log_code_block with custom log level."""
+        """Test LogCodeBlock with custom log level."""
         correlation_id = uuid4()
 
-        with log_code_block(
+        with LogCodeBlock(
             "custom_level_block", correlation_id=correlation_id, level=LogLevel.WARNING
         ):
             pass

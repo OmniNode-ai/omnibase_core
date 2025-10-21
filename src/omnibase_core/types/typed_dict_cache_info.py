@@ -4,8 +4,7 @@ from __future__ import annotations
 TypedDict for cache information.
 """
 
-
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 
 class TypedDictCacheInfo(TypedDict):

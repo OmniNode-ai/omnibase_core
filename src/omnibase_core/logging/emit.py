@@ -1,7 +1,7 @@
 import uuid
 from collections.abc import Callable
 from datetime import datetime
-from typing import Dict, TypeVar
+from typing import TypeVar
 
 """
 Core emit_log_event utility for ONEX structured logging.
@@ -300,12 +300,12 @@ def trace_function_lifecycle(func: F) -> F:
     return wrapper  # type: ignore[return-value]
 
 
-class log_code_block:
+class LogCodeBlock:
     """
     Context manager for logging code block execution.
 
     Usage:
-        with log_code_block("processing_data", correlation_id=some_uuid):
+        with LogCodeBlock("processing_data", correlation_id=some_uuid):
             # code block
             pass
     """
@@ -323,7 +323,7 @@ class log_code_block:
         self.data = data or {}
         self.start_time: datetime | None = None
 
-    def __enter__(self) -> "log_code_block":
+    def __enter__(self) -> "LogCodeBlock":
         self.start_time = datetime.now(UTC)
 
         emit_log_event(
@@ -438,19 +438,13 @@ def log_performance_metrics(threshold_ms: int = 1000) -> Callable[[F], F]:
 
 # Private helper functions
 
-import threading
+# Sensitive data patterns for sanitization
+import re
 
 # Global cache for protocol services to reduce lookup overhead
 import time
 
-_CACHED_FORMATTER = None
-_CACHED_OUTPUT_HANDLER = None
-_CACHE_TIMESTAMP = 0.0
-_CACHE_TTL = 300  # 5 minutes TTL
-_CACHE_LOCK = threading.Lock()  # Initialize lock at module level
-
-# Sensitive data patterns for sanitization
-import re
+from omnibase_core.utils.singleton_holders import _ProtocolCacheHolder as _ProtocolCache
 
 _SENSITIVE_PATTERNS = [
     (re.compile(r"\b[A-Za-z0-9+/]{20,}={0,2}\b"), "[REDACTED_TOKEN]"),  # Base64 tokens
@@ -706,27 +700,29 @@ def _route_to_logger_node(
     Args:
         node_id: Validated UUID or None (validated via _validate_node_id).
     """
-    global _CACHED_FORMATTER, _CACHED_OUTPUT_HANDLER, _CACHE_TIMESTAMP, _CACHE_TTL, _CACHE_LOCK
-
     try:
         # Check cache with TTL validation
         current_time = time.time()
-        cache_expired = (current_time - _CACHE_TIMESTAMP) > _CACHE_TTL
+        cache_expired = (
+            current_time - _ProtocolCache.get_timestamp()
+        ) > _ProtocolCache.get_ttl()
 
-        formatter = _CACHED_FORMATTER
-        output_handler = _CACHED_OUTPUT_HANDLER
+        formatter = _ProtocolCache.get_formatter()
+        output_handler = _ProtocolCache.get_output_handler()
 
         # If not cached or cache expired, perform lookup with locking
         if formatter is None or output_handler is None or cache_expired:  # type: ignore[unreachable]
-            with _CACHE_LOCK:
+            with _ProtocolCache._lock:
                 # Double-check after acquiring lock
                 current_time = time.time()
-                cache_expired = (current_time - _CACHE_TIMESTAMP) > _CACHE_TTL
+                cache_expired = (
+                    current_time - _ProtocolCache.get_timestamp()
+                ) > _ProtocolCache.get_ttl()
 
                 # Re-check after lock acquisition (may have changed)
                 if (
-                    _CACHED_FORMATTER is None  # type: ignore[unreachable]
-                    or _CACHED_OUTPUT_HANDLER is None
+                    _ProtocolCache.get_formatter() is None  # type: ignore[unreachable]
+                    or _ProtocolCache.get_output_handler() is None
                     or cache_expired
                 ):
                     from omnibase_core.models.container.model_onex_container import (
@@ -742,21 +738,21 @@ def _route_to_logger_node(
                     # Try to get logger components from container
                     try:
                         container = ModelONEXContainer()
-                        _CACHED_FORMATTER = container.get_service(
-                            ProtocolSmartLogFormatter,
+                        _ProtocolCache.set_formatter(
+                            container.get_service(ProtocolSmartLogFormatter)
                         )
-                        _CACHED_OUTPUT_HANDLER = container.get_service(
-                            ProtocolContextAwareOutputHandler,
+                        _ProtocolCache.set_output_handler(
+                            container.get_service(ProtocolContextAwareOutputHandler)
                         )
-                        _CACHE_TIMESTAMP = current_time
+                        _ProtocolCache.set_timestamp(current_time)
                     except Exception:
                         # If container fails, use None to trigger fallback logging
-                        _CACHED_FORMATTER = None
-                        _CACHED_OUTPUT_HANDLER = None
-                        _CACHE_TIMESTAMP = current_time
+                        _ProtocolCache.set_formatter(None)
+                        _ProtocolCache.set_output_handler(None)
+                        _ProtocolCache.set_timestamp(current_time)
 
-                formatter = _CACHED_FORMATTER
-                output_handler = _CACHED_OUTPUT_HANDLER
+                formatter = _ProtocolCache.get_formatter()
+                output_handler = _ProtocolCache.get_output_handler()
 
         if formatter and output_handler:
             # Format the log event using protocol

@@ -7,7 +7,7 @@ a structured representation of error context data.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 

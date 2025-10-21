@@ -4,9 +4,8 @@ from __future__ import annotations
 Legacy health input structure for converter functions.
 """
 
-
 from datetime import datetime
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 
 class TypedDictLegacyHealth(TypedDict, total=False):

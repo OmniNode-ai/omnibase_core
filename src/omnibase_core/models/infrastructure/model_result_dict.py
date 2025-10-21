@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Dict
-
 from pydantic import Field
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -11,7 +9,6 @@ Result Dictionary Model.
 
 Clean Pydantic model for Result serialization following ONEX one-model-per-file architecture.
 """
-
 
 from typing import Any
 
@@ -88,7 +85,6 @@ class ModelResultDict(BaseModel):
 ModelResultData = dict[
     str, ModelCliValue
 ]  # Strongly-typed dict[str, Any]for common data
-
 
 # Export for use
 __all__ = ["ModelResultData", "ModelResultDict"]

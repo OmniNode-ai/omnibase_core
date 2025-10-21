@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 from pydantic import Field, model_validator
 
@@ -12,7 +12,6 @@ Connection Security Model.
 SSL/TLS and security configuration for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
-
 
 from pathlib import Path
 from typing import Any

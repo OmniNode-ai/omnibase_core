@@ -247,7 +247,6 @@ class TestRollbackFailureIntegration:
         node_effect = NodeEffect(container)
 
         async def handler_with_async_rollback(operation_data, transaction):
-
             async def async_failing_rollback():
                 await asyncio.sleep(0)  # Yield to event loop
                 raise ValueError("Async rollback failed")

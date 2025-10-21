@@ -4,9 +4,8 @@ from __future__ import annotations
 TypedDict for execution statistics.
 """
 
-
 from datetime import datetime
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 
 class TypedDictExecutionStats(TypedDict):

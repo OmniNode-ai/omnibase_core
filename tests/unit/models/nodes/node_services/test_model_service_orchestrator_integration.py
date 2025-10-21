@@ -735,15 +735,15 @@ class TestOrchestratorSemanticsServiceMode:
 
         # Create thunk manually
         thunk = await service_orchestrator.emit_thunk(
-            thunk_type=EnumThunkType.COMPUTE,
+            thunk_type=EnumActionType.COMPUTE,
             target_node_type="NodeCompute",
             operation_data={"workflow_id": str(workflow_id), "test": "data"},
             priority=1,
         )
 
         # Verify thunk was created and stored
-        assert thunk.thunk_id is not None
-        assert thunk.thunk_type == EnumThunkType.COMPUTE
+        assert thunk.action_id is not None
+        assert thunk.action_type == EnumActionType.COMPUTE
         assert workflow_id in service_orchestrator.emitted_thunks
         assert len(service_orchestrator.emitted_thunks[workflow_id]) == 1
 

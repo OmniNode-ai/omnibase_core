@@ -6,7 +6,7 @@ import enum
 import json
 import uuid
 from pathlib import Path
-from typing import Annotated, Any, ClassVar, Dict, Optional, TypeAlias, cast
+from typing import Annotated, Any, ClassVar, Optional, TypeAlias, cast
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
@@ -255,7 +255,7 @@ class ModelNodeMetadataBlock(BaseModel):
                 d[k] = v.to_uri()
                 continue
             # Namespace as URI string (always)
-            if k == "namespace" and isinstance(v, Namespace):  # type: ignore[misc]
+            if k == "namespace" and isinstance(v, ModelNamespace):
                 d[k] = str(v)
                 continue
             # PATCH: Omit tools if None, empty dict[str, Any], or empty ToolCollection (protocol rule)
@@ -290,20 +290,20 @@ class ModelNodeMetadataBlock(BaseModel):
     def validate_namespace_field(cls, value: object) -> Any:
         # Recursively flatten any dict[str, Any]or Namespace to a plain string
         def flatten_namespace(val: object) -> str:
-            if isinstance(val, Namespace):  # type: ignore[misc]
+            if isinstance(val, ModelNamespace):
                 return val.value
             if isinstance(val, str):
                 # Normalize scheme if present
                 if "://" in val:
                     scheme, rest = val.split("://", 1)
-                    scheme = Namespace.normalize_scheme(scheme)
+                    scheme = ModelNamespace.normalize_scheme(scheme)
                     return f"{scheme}://{rest}"
                 return val
             if isinstance(val, dict) and "value" in val:
                 return flatten_namespace(val["value"])
             return str(val)
 
-        return Namespace(value=flatten_namespace(value))
+        return ModelNamespace(value=flatten_namespace(value))
 
     @field_validator("x_extensions", mode="before")
     @classmethod
@@ -312,12 +312,12 @@ class ModelNodeMetadataBlock(BaseModel):
             return v
         out = {}
         for k, val in v.items():
-            if isinstance(val, ExtensionValueModel):  # type: ignore[misc]
+            if isinstance(val, ModelExtensionValue):
                 out[k] = val
             elif isinstance(val, dict):
-                out[k] = ExtensionValueModel(**val)
+                out[k] = ModelExtensionValue(**val)
             else:
-                out[k] = ExtensionValueModel(value=val)
+                out[k] = ModelExtensionValue(value=val)
         return out
 
     def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Generic, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
@@ -13,7 +13,6 @@ This module provides validation functions for proper type usage:
 - Pydantic pattern validation
 - Generic type validation
 """
-
 
 import argparse
 import ast

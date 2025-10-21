@@ -7,14 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2025-10-20
+## [0.1.0] - 2025-10-21
 
 ### Added
 
 #### Core Architecture
 - **4-Node ONEX Pattern**: Complete implementation of EFFECT → COMPUTE → REDUCER → ORCHESTRATOR workflow architecture
-- **Protocol-Driven Dependency Injection**: ONEXContainer with `container.get_service("ProtocolName")` pattern
-- **Mixin System**: 15+ reusable behavior mixins for cross-cutting concerns
+- **Protocol-Driven Dependency Injection**: ModelONEXContainer with `container.get_service("ProtocolName")` pattern
+- **Mixin/Subcontract System**: 38 specialized mixins for reusable behavior and cross-cutting concerns
+- **Contract-Driven Development**: 17 comprehensive contracts for type-safe node development
 - **Event-Driven Communication**: ModelEventEnvelope for inter-service messaging with correlation tracking
 - **FSM-Based State Management**: Pure finite state machine implementation for Intent → Action workflows
 
@@ -76,9 +77,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **MyPy Strict Mode**: Full static type checking compliance (in progress)
 
 #### Developer Experience
-- **Pre-commit Hooks**: 27 custom ONEX validation hooks for code quality
+- **Comprehensive Validation Scripts**: 42 validators across architecture, naming, patterns, and compliance
+- **Pre-commit Hooks**: 27 custom ONEX validation hooks for code quality enforcement
 - **Pattern Validation**: Automatic detection of anti-patterns and violations
 - **Naming Conventions**: Enforced ONEX naming standards (SUFFIX-based)
+- **Professional README**: Complete with badges for License (MIT), Python 3.12+, Black, MyPy, Pre-commit, and Framework status
 - **Documentation**: Comprehensive inline documentation and docstrings
 
 #### Testing Infrastructure
@@ -86,6 +89,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Integration Tests**: Multi-node workflow testing
 - **Performance Tests**: Baseline and optimization testing
 - **Edge Case Coverage**: Extensive edge case and error scenario testing
+
+#### Documentation
+- **78+ Documentation Files**: Comprehensive documentation covering all aspects of the framework
+- **Node-Building Guide Series**: Complete tutorials for building EFFECT, COMPUTE, REDUCER, and ORCHESTRATOR nodes
+- **Mixin Development Guides**: Detailed guides for creating and composing mixins
+- **Architecture Documentation**: In-depth architectural principles and design patterns
+- **API Reference**: Complete API documentation with examples and usage patterns
+- **Migration Guides**: Step-by-step migration instructions for breaking changes
+- **CONTRIBUTING.md**: Comprehensive contribution guidelines following ONEX standards
+- **README.md**: Professional project overview with architecture principles and quick start
+
+#### Legal & Licensing
+- **MIT LICENSE**: Open-source license granting broad permissions for use, modification, and distribution
+- **Copyright Notices**: Proper attribution and copyright headers throughout codebase
 
 ### Changed
 
@@ -111,6 +128,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Import Organization**: Consistent isort configuration across codebase
 - **Type Annotations**: Enhanced type coverage (ongoing)
 - **Error Messages**: Improved error context and debugging information
+
+#### Repository Management
+- **Fresh Git History**: Clean git history established after migration from development backup
+- **Conventional Commits**: Standardized commit message format for clarity
+- **Branch Strategy**: Established main branch as primary development branch
 
 ### Deprecated
 - **Backward Compatibility Methods in Reducer**: Removed all compatibility methods for previous state management

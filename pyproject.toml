@@ -2,28 +2,34 @@
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry]
+[project]
 name = "omnibase_core"
 version = "0.1.0"
 description = "ONEX Core Framework - Base classes and essential implementations"
-authors = ["OmniNode Team <team@omninode.ai>"]
-license = "MIT"
+authors = [
+    {name = "OmniNode Team", email = "team@omninode.ai"}
+]
+license = {text = "MIT"}
 readme = "README.md"
+requires-python = ">=3.12"
+dynamic = ["dependencies"]
+
+[project.scripts]
+omni-agent = "omnibase_core.cli.commands:cli"
+
+[project.optional-dependencies]
+cli = ["psutil"]
+monitoring = ["prometheus-client", "sentry-sdk"]
+kubernetes = ["kubernetes"]
+full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
+
+[tool.poetry]
 packages = [{include = "omnibase_core", from = "src"}]
 include = [
     "scripts/validation/*.py",
     "scripts/validation/*.json",
     "scripts/validation/*.md"
 ]
-
-[tool.poetry.scripts]
-omni-agent = "omnibase_core.cli.commands:cli"
-
-[tool.poetry.extras]
-cli = ["psutil"]
-monitoring = ["prometheus-client", "sentry-sdk"]
-kubernetes = ["kubernetes"]
-full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
 
 [tool.poetry.dependencies]
 python = "^3.12"

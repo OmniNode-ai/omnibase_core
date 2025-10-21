@@ -160,7 +160,8 @@ class MixinEventDrivenNode(
         """Get introspection data."""
         try:
             # Use the method from MixinIntrospectionPublisher
-            return self._gather_introspection_data()  # type: ignore
+            data = self._gather_introspection_data()  # type: ignore[attr-defined]
+            return data.model_dump() if hasattr(data, "model_dump") else data  # type: ignore[return-value]
         except (
             Exception
         ):  # fallback-ok: introspection is non-critical, return minimal metadata
@@ -177,19 +178,19 @@ class MixinEventDrivenNode(
         """Clean up all event handlers and resources."""
         # Clean up request-response introspection
         try:
-            self._teardown_request_response_introspection()  # type: ignore
+            self._teardown_request_response_introspection()  # type: ignore[attr-defined]
         except AttributeError:
             pass
 
         # Clean up event handlers from parent mixins
         try:
             # Call cleanup from MixinEventHandler if available
-            super().cleanup_event_handlers()  # type: ignore
+            super().cleanup_event_handlers()  # type: ignore[attr-defined]
         except AttributeError:
             pass
 
         # Clean up lifecycle resources from MixinNodeLifecycle
         try:
-            self.cleanup_lifecycle_resources()  # type: ignore
+            self.cleanup_lifecycle_resources()  # type: ignore[attr-defined]
         except AttributeError:
             pass

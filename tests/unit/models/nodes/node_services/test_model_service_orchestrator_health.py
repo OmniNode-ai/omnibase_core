@@ -618,8 +618,9 @@ class TestGracefulShutdown:
             await asyncio.sleep(0.2)
             service_orchestrator._active_invocations.discard(correlation_id)
 
-        # Start task to remove invocation
-        asyncio.create_task(remove_invocation())
+        # Start task to remove invocation (store reference to prevent garbage collection)
+        task = asyncio.create_task(remove_invocation())
+        assert task is not None  # Keep reference alive
 
         start_time = time.time()
         await service_orchestrator._wait_for_active_invocations(timeout_ms=5000)
@@ -686,7 +687,9 @@ class TestGracefulShutdown:
             await asyncio.sleep(0.05)
             service_orchestrator._active_invocations.discard(correlation_id_1)
 
-        asyncio.create_task(remove_one_invocation())
+        # Store reference to prevent garbage collection
+        task = asyncio.create_task(remove_one_invocation())
+        assert task is not None  # Keep reference alive
 
         with patch.object(service_orchestrator, "_log_warning") as mock_log_warning:
             await service_orchestrator._wait_for_active_invocations(timeout_ms=100)
@@ -1112,7 +1115,9 @@ class TestShutdownIntegration:
             await asyncio.sleep(0.1)
             service_orchestrator._active_invocations.discard(correlation_id)
 
-        asyncio.create_task(remove_invocation())
+        # Store reference to prevent garbage collection
+        task = asyncio.create_task(remove_invocation())
+        assert task is not None  # Keep reference alive
 
         await service_orchestrator.stop_service_mode()
 

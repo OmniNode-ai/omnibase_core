@@ -189,9 +189,9 @@ class NodeBase(
             name_hash = hashlib.sha256(contract_content.node_name.encode()).digest()[
                 :16
             ]
-            from uuid import UUID as UUIDType
+            from uuid import UUID
 
-            node_id = UUIDType(bytes=name_hash)
+            node_id = UUID(bytes=name_hash)
 
         self.node_id = node_id
 
@@ -220,8 +220,8 @@ class NodeBase(
                 # Process each dependency
                 for dependency in contract_content.dependencies:
                     # Handle both string and ModelContractDependency types
-                    if isinstance(dependency, str):
-                        emit_log_event(
+                    if isinstance(dependency, str):  # type: ignore[unreachable]
+                        emit_log_event(  # type: ignore[unreachable]
                             LogLevel.DEBUG,
                             f"Dependency registered: {dependency}",
                             {
@@ -659,7 +659,7 @@ class NodeBase(
 
             # Wrap the new state in a result object
             return ModelNodeWorkflowResult(
-                value=new_state,  # type: ignore
+                value=new_state,  # type: ignore[arg-type]
                 is_success=True,
                 is_failure=False,
                 error=None,

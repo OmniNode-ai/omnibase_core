@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 """
@@ -22,7 +22,6 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 logger = logging.getLogger(__name__)
-
 
 from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 

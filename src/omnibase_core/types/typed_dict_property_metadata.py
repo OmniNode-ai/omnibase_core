@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 """
 TypedDict for property metadata structures.

@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import Field
 
 from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT

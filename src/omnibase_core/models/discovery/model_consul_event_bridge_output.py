@@ -5,8 +5,6 @@ from pydantic import Field
 This module defines the output model for Consul Event Bridge operations.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor

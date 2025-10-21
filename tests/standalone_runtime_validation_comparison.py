@@ -152,7 +152,7 @@ class ModelSchemaValueGeneric(BaseModel, Generic[T]):
             value = str(value)
             type_name = "string"
 
-        return cls(value=value, value_type=type_name)  # type: ignore
+        return cls(value=value, value_type=type_name)
 
     def to_value(self) -> T:
         """Extract value."""
@@ -223,7 +223,7 @@ def test_generic_approach_wrong_type():
     try:
         typed_value: ModelSchemaValueGeneric[int] = ModelSchemaValueGeneric[int](
             value=agent_generated_timeout,
-            value_type="number",  # type: ignore
+            value_type="number",
         )
         print(f"   ❌ Pydantic allows this: {typed_value.value}")
         print("   Type validation bypassed! This is a SAFETY ISSUE!")

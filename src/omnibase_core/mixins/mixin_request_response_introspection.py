@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 from uuid import uuid4
 
 from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string

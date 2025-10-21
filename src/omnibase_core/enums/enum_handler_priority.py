@@ -13,6 +13,6 @@ class EnumHandlerPriority(int, Enum):
     PLUGIN = 0
     CUSTOM = 25
     CONTRACT = 75
-    LOW = 0
-    HIGH = 100
+    LOW = PLUGIN  # Explicit alias for lowest priority
+    HIGH = CORE  # Explicit alias for highest priority
     TEST = 5

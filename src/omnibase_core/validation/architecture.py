@@ -15,7 +15,7 @@ import argparse
 import ast
 import sys
 from pathlib import Path
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 from .validation_utils import ValidationResult
 

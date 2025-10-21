@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 from uuid import UUID
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -56,6 +56,9 @@ if TYPE_CHECKING:
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
 
+# Background tasks set to prevent garbage collection of fire-and-forget tasks
+_background_tasks: set = set()
+
 
 class MixinEventHandler:
     """
@@ -78,13 +81,18 @@ class MixinEventHandler:
             try:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
-                    # Create background tasks (explicitly ignore returned Task objects)
-                    _ = asyncio.create_task(
+                    # Create background tasks and store references to prevent garbage collection
+                    task1 = asyncio.create_task(
                         subscribe_async(self._handle_introspection_request),
                     )
-                    _ = asyncio.create_task(
+                    task2 = asyncio.create_task(
                         subscribe_async(self._handle_node_discovery_request),
                     )
+                    # Keep references to prevent premature cleanup
+                    _background_tasks.add(task1)
+                    _background_tasks.add(task2)
+                    task1.add_done_callback(_background_tasks.discard)
+                    task2.add_done_callback(_background_tasks.discard)
                 else:
                     loop.run_until_complete(
                         subscribe_async(self._handle_introspection_request),
@@ -167,7 +175,7 @@ class MixinEventHandler:
         try:
             # Get introspection data
             if hasattr(self, "_gather_introspection_data"):
-                introspection_data = self._gather_introspection_data()  # type: ignore
+                introspection_data = self._gather_introspection_data()  # type: ignore[attr-defined]
             else:
                 # Fallback introspection data
                 introspection_data = {

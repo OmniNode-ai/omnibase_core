@@ -4,7 +4,7 @@ Storage Configuration Model - ONEX Standards Compliant.
 Strongly-typed model for storage backend configuration.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, Field
 

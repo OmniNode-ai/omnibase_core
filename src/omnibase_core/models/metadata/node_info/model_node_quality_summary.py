@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from pydantic import Field
 
 """
@@ -10,7 +8,6 @@ Node Quality Summary Model.
 Structured quality summary data for nodes.
 Follows ONEX one-model-per-file architecture.
 """
-
 
 from typing import Any
 

@@ -422,16 +422,16 @@ class TestEmitLogEventNodeIdBranches:
 
 
 class TestLogCodeBlockConditionalBranches:
-    """Test log_code_block context manager conditional branches."""
+    """Test LogCodeBlock context manager conditional branches."""
 
     def test_log_code_block_start_time_none_branch(self):
-        """Test log_code_block when start_time is None (edge case)."""
-        from omnibase_core.logging.emit import log_code_block
+        """Test LogCodeBlock when start_time is None (edge case)."""
+        from omnibase_core.logging.emit import LogCodeBlock
 
         correlation_id = uuid4()
 
         # Create instance and manually set start_time to None to test branch
-        block = log_code_block("test_block", correlation_id=correlation_id)
+        block = LogCodeBlock("test_block", correlation_id=correlation_id)
         block.start_time = None
 
         # Exit should handle None start_time gracefully
@@ -439,23 +439,23 @@ class TestLogCodeBlockConditionalBranches:
         # Should compute execution_time_ms as 0
 
     def test_log_code_block_exception_type_none(self):
-        """Test log_code_block exception handling with None exc_type."""
-        from omnibase_core.logging.emit import log_code_block
+        """Test LogCodeBlock exception handling with None exc_type."""
+        from omnibase_core.logging.emit import LogCodeBlock
 
         correlation_id = uuid4()
 
-        with log_code_block("test_block", correlation_id=correlation_id):
+        with LogCodeBlock("test_block", correlation_id=correlation_id):
             pass
         # Should log successful completion (exc_type is None)
 
     def test_log_code_block_exception_with_type(self):
-        """Test log_code_block exception logging branch."""
-        from omnibase_core.logging.emit import log_code_block
+        """Test LogCodeBlock exception logging branch."""
+        from omnibase_core.logging.emit import LogCodeBlock
 
         correlation_id = uuid4()
 
         try:
-            with log_code_block("failing_block", correlation_id=correlation_id):
+            with LogCodeBlock("failing_block", correlation_id=correlation_id):
                 raise ValueError("Test error")
         except ValueError:
             pass

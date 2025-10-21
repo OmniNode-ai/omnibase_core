@@ -58,7 +58,8 @@ class TestModelValidationValueValidatorBranches:
         """Test STRING type with non-string value raises error (validator branch)."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationValue(
-                value_type=EnumValidationValueType.STRING, raw_value=123  # Wrong type
+                value_type=EnumValidationValueType.STRING,
+                raw_value=123,  # Wrong type
             )
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "String validation value must contain str data" in str(exc_info.value)

@@ -4,8 +4,7 @@ from __future__ import annotations
 TypedDict for configuration settings.
 """
 
-
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 
 class TypedDictConfigurationSettings(TypedDict):

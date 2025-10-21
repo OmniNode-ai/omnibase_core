@@ -7,7 +7,7 @@ The pre-commit hook 'no-pydantic-bypass-in-prod' enforces this restriction.
 """
 
 from copy import deepcopy
-from typing import Type, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel
 

@@ -6,9 +6,8 @@ import uuid
 TypedDict for workflow state.
 """
 
-
 from datetime import datetime
-from typing import Dict, TypedDict
+from typing import TypedDict
 from uuid import UUID
 
 

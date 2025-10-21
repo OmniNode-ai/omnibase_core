@@ -18,6 +18,8 @@ import sys
 from importlib import import_module
 from typing import Any
 
+import pytest
+
 
 def test_import_core_types():
     """Test that core types can be imported without issues."""

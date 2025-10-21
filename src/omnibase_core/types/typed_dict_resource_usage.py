@@ -4,8 +4,7 @@ from __future__ import annotations
 TypedDict for resource usage metrics.
 """
 
-
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 
 class TypedDictResourceUsage(TypedDict):

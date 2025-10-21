@@ -4,9 +4,8 @@ from __future__ import annotations
 TypedDict for general metrics.
 """
 
-
 from datetime import datetime
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 
 class TypedDictMetrics(TypedDict):

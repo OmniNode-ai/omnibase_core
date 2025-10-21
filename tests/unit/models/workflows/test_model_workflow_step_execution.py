@@ -77,7 +77,7 @@ class TestBasicCreation:
             step_id=custom_id,
             step_name="full_step",
             execution_mode=EnumExecutionMode.BATCH,
-            thunks=[thunk],
+            thunks=[action],
             condition=EnumBranchCondition.IF_TRUE,
             condition_function=custom_condition,
             timeout_ms=60000,

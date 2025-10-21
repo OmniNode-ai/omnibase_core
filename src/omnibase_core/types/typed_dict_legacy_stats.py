@@ -4,9 +4,8 @@ from __future__ import annotations
 Legacy stats input structure for converter functions.
 """
 
-
 from datetime import datetime
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 
 class TypedDictLegacyStats(TypedDict, total=False):

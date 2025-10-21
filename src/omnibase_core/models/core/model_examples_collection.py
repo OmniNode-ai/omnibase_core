@@ -269,13 +269,13 @@ class ModelExamplesCollection(BaseModel):
         cls,
         examples: list[ModelExample | dict[str, Any]],
         metadata: ModelExampleMetadata | None = None,
-        format: str = "json",
+        example_format: str = "json",
     ) -> Self:
         """Create collection from list of examples."""
         instance = cls(
             examples=[],
             metadata=metadata,
-            format=format,
+            format=example_format,
             schema_compliant=True,
         )
 

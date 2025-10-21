@@ -325,7 +325,7 @@ class TestModelCliResultFormatterEdgeCases:
 
     def test_format_output_none_text_none_data(self) -> None:
         """Test both parameters are None."""
-        result = ModelCliResultFormatter.format_output(None, None)  # type: ignore
+        result = ModelCliResultFormatter.format_output(None, None)
 
         assert result == ""
 

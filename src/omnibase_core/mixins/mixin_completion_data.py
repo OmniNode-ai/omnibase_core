@@ -6,8 +6,6 @@ from pydantic import Field
 Canonical payload for completion events following ONEX naming conventions.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt, StrictStr
 
 

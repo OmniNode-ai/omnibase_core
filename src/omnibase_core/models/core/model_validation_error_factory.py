@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Generic, TypedDict, TypeVar
+from typing import Generic, TypedDict, TypeVar
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -10,7 +10,6 @@ Validation Error Factory Pattern for Model Creation.
 
 Specialized factory for validation error models with severity patterns.
 """
-
 
 from typing import Any, Unpack
 

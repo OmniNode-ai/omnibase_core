@@ -12,6 +12,10 @@ from omnibase_core.nodes.enum_effect_types import EnumEffectType
 from omnibase_core.nodes.model_effect_input import ModelEffectInput
 
 
+class RetryTestError(Exception):
+    """Custom exception for retry test scenarios."""
+
+
 @pytest.fixture
 def mock_container():
     """Create a mock ModelONEXContainer."""
@@ -76,7 +80,7 @@ class TestRetryCountTracking:
             nonlocal call_count
             call_count += 1
             if call_count < 3:
-                raise Exception(f"Simulated failure {call_count}")
+                raise RetryTestError(f"Simulated failure {call_count}")
             return {"status": "success", "attempts": call_count}
 
         # Replace handler with flaky one
@@ -106,7 +110,7 @@ class TestRetryCountTracking:
 
         async def always_failing_handler(operation_data, transaction):
             """Handler that always fails."""
-            raise Exception("Always fails")
+            raise RetryTestError("Always fails")
 
         # Replace handler
         service_effect.effect_handlers[EnumEffectType.FILE_OPERATION] = (

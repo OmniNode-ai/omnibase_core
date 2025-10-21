@@ -69,14 +69,14 @@ class ResultFixtures(TestFixtureBase):
         )
 
     @staticmethod
-    def with_errors(error_count: int = 1, **overrides) -> ModelBaseResult:
+    def with_errors(_error_count: int = 1, **overrides) -> ModelBaseResult:
         """Create a failure result with errors.
 
         Note: This creates empty error list - use with errors override
         to provide actual ModelBaseError instances if needed.
 
         Args:
-            error_count: Number of placeholder errors (not populated)
+            _error_count: Number of placeholder errors (not populated)
             **overrides: Override default field values
 
         Returns:

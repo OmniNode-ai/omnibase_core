@@ -25,7 +25,7 @@ class ModelEffectOutput(BaseModel):
     and side effect execution metadata.
     """
 
-    result: str | int | float | bool | dict | list
+    result: str | int | float | bool | dict[str, Any] | list[Any]
     operation_id: UUID
     effect_type: EnumEffectType
     transaction_state: EnumTransactionState

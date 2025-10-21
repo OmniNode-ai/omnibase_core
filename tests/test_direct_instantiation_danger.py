@@ -30,8 +30,8 @@ class ModelSchemaValueGeneric(BaseModel, Generic[T]):
     def from_value(cls, value: T) -> "ModelSchemaValueGeneric[T]":
         """Safe factory - but agents might not use it."""
         if not isinstance(value, (str, int, float, bool, type(None), list, dict)):
-            value = str(value)  # type: ignore
-        return cls(value=value, value_type="auto")  # type: ignore
+            value = str(value)  # type: ignore[assignment]
+        return cls(value=value, value_type="auto")
 
 
 class CustomConfigObject:

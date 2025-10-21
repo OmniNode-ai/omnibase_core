@@ -4,8 +4,6 @@ Infrastructure & System Models
 Models for system infrastructure, execution, and operational concerns.
 """
 
-from typing import Dict
-
 from .model_action import ModelAction
 from .model_action_payload import ModelActionPayload
 from .model_cli_result_data import ModelCliResultData

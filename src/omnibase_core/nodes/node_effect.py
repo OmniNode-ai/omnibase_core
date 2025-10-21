@@ -75,6 +75,22 @@ class NodeEffect(NodeCoreBase):
         - See docs/THREADING.md for production guidelines and mitigation strategies
     """
 
+    # Type annotations for attributes set via object.__setattr__()
+    default_timeout_ms: int
+    default_retry_delay_ms: int
+    max_concurrent_effects: int
+    active_transactions: dict[UUID, ModelEffectTransaction]
+    circuit_breakers: dict[str, ModelCircuitBreaker]
+    effect_handlers: dict[
+        EnumEffectType, Callable[[dict[str, Any], ModelEffectTransaction | None], Any]
+    ]
+    effect_semaphore: asyncio.Semaphore
+    _active_effects_count: int
+    effect_metrics: dict[str, dict[str, float]]
+    on_rollback_failure: (
+        Callable[[ModelEffectTransaction, list[ModelOnexError]], None] | None
+    )
+
     def __init__(
         self,
         container: ModelONEXContainer,
@@ -129,7 +145,8 @@ class NodeEffect(NodeCoreBase):
         self._register_builtin_effect_handlers()
 
     async def execute_effect(
-        self, contract: "ModelContractEffect"
+        self,
+        contract: Any,  # ModelContractEffect - imported in method to avoid circular dependency
     ) -> ModelEffectOutput:
         """
         Execute effect based on contract specification.
@@ -168,7 +185,9 @@ class NodeEffect(NodeCoreBase):
         # Execute via existing process() method
         return await self.process(effect_input)
 
-    def _contract_to_input(self, contract: "ModelContractEffect") -> ModelEffectInput:
+    def _contract_to_input(
+        self, contract: Any
+    ) -> ModelEffectInput:  # ModelContractEffect
         """
         Convert ModelContractEffect to ModelEffectInput.
 
@@ -943,7 +962,7 @@ class NodeEffect(NodeCoreBase):
             correlation_id = operation_data.get("correlation_id")
 
             try:
-                event_bus = self.container.get_service("event_bus")
+                event_bus: Any = self.container.get_service("event_bus")  # type: ignore[arg-type]
                 if not event_bus:
                     emit_log_event(
                         LogLevel.WARNING,

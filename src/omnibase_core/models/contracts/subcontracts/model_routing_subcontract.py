@@ -25,7 +25,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 import uuid
-from typing import Any, ClassVar, Dict
+from typing import Any, ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator

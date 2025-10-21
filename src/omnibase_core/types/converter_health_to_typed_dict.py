@@ -6,7 +6,7 @@ from datetime import datetime
 Convert legacy health dict[str, Any] to TypedDict.
 """
 
-from typing import Any, Dict, TypedDict
+from typing import Any, TypedDict
 
 from .typed_dict_health_status import TypedDictHealthStatus
 from .typed_dict_legacy_health import TypedDictLegacyHealth

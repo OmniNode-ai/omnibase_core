@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Dict, List
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field

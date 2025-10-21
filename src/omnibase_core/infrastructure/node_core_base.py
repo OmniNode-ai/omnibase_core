@@ -1,6 +1,5 @@
 import uuid
 from pathlib import Path
-from typing import Dict
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.primitives.model_semver import ModelSemVer
@@ -63,8 +62,8 @@ class NodeCoreBase(ABC):
     node_id: UUID
     _node_id: UUID  # Alias for mixin compatibility
     created_at: datetime
-    state: Dict[str, Any]
-    metrics: Dict[str, float]
+    state: dict[str, Any]
+    metrics: dict[str, float]
     contract_data: Any | None
     version: ModelSemVer
 
@@ -439,7 +438,7 @@ class NodeCoreBase(ABC):
                 {"node_id": self.node_id, "node_type": self.__class__.__name__},
             )
 
-    async def _initialize_node_resources(self) -> None:
+    async def _initialize_node_resources(self) -> None:  # noqa: B027
         """
         Initialize node-specific resources.
 
@@ -447,7 +446,7 @@ class NodeCoreBase(ABC):
         Base implementation does nothing.
         """
 
-    async def _cleanup_node_resources(self) -> None:
+    async def _cleanup_node_resources(self) -> None:  # noqa: B027
         """
         Cleanup node-specific resources.
 

@@ -16,13 +16,17 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.utils.singleton_holders import (
+    _LoggerCache,
+    _SimpleFallbackLogger,
+)
 
 # Thread-local correlation ID context
 _context = threading.local()
 
-# Cached logger instance from registry
-_cached_logger = None
-_cache_lock = threading.Lock()
+
+# Background tasks set to prevent garbage collection of fire-and-forget tasks
+_background_tasks: set = set()
 
 
 def emit_log_event(level: LogLevel, message: str) -> None:
@@ -44,9 +48,13 @@ def emit_log_event(level: LogLevel, message: str) -> None:
     try:
         loop = asyncio.get_running_loop()
         # Fire-and-forget task (intentionally not awaited)
-        _ = loop.create_task(
+        # Store task reference to prevent garbage collection
+        task = loop.create_task(
             _async_emit_via_logger(logger, level, message, correlation_id)
         )
+        # Keep reference to prevent premature cleanup
+        _background_tasks.add(task)
+        task.add_done_callback(_background_tasks.discard)
     except RuntimeError:
         # No event loop, use sync fallback
         logger.emit(level, message, correlation_id)
@@ -90,17 +98,19 @@ def _get_correlation_id() -> UUID:
 
 def _get_registry_logger() -> Any:
     """Get logger from registry with caching for performance."""
-    global _cached_logger
-
     # Double-checked locking pattern for thread safety
-    if _cached_logger is None:
-        with _cache_lock:
-            if _cached_logger is None:
+    cached = _LoggerCache.get()
+    if cached is None:
+        with _LoggerCache._lock:
+            cached = _LoggerCache.get()
+            if cached is None:
                 # Use simple fallback logger to avoid circular dependencies
                 # The logging module is foundational and should not depend on the container
-                _cached_logger = _SimpleFallbackLogger()
+                logger = _SimpleFallbackLogger()
+                _LoggerCache.set(logger)
+                cached = logger
 
-    return _cached_logger
+    return cached
 
 
 async def _async_emit_via_logger(

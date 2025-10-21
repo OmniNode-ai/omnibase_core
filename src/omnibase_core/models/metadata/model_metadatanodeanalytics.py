@@ -31,7 +31,7 @@ from types.core_types (not from models or types.constraints).
 import uuid
 from datetime import UTC, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Self
+from typing import TYPE_CHECKING, Any, Self
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator

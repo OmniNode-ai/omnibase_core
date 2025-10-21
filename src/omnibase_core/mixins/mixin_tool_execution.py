@@ -1,5 +1,3 @@
-from typing import List
-
 """
 Tool Execution Mixin for ONEX Tool Nodes.
 
@@ -8,7 +6,7 @@ enabling tools to be executed via the event bus in the unified execution model.
 """
 
 import time
-from datetime import datetime
+from datetime import UTC, datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -217,7 +215,7 @@ class MixinToolExecution:
             event_type="tool.execution.response",
             node_id=node_id_uuid,
             correlation_id=correlation_id,
-            timestamp=datetime.fromtimestamp(time.time()),
+            timestamp=datetime.fromtimestamp(time.time(), tz=UTC),
             data={
                 "tool_name": self.get_node_name(),
                 "success": success,

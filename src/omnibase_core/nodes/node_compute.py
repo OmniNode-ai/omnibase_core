@@ -290,7 +290,7 @@ class NodeCompute(NodeCoreBase):
         if self.thread_pool:
             # Shutdown thread pool with timeout to prevent hanging
             # timeout parameter requires Python 3.9+
-            self.thread_pool.shutdown(wait=True, timeout=5.0)
+            self.thread_pool.shutdown(wait=True, timeout=5.0)  # type: ignore[call-arg]
 
             # Check if threads are still running (shutdown doesn't guarantee completion)
             # Note: shutdown() doesn't return status, but we log the completion

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic
+from typing import Any, Generic
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.primitives.model_semver import ModelSemVer
@@ -15,7 +15,7 @@ Author: ONEX Framework Team
 """
 
 import hashlib
-from datetime import datetime
+from datetime import UTC, datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -159,7 +159,7 @@ class ProtocolContractLoader:
                     file_path=file_path,
                     content=parsed_content,
                     cached_at=datetime.now(),
-                    file_modified_at=datetime.fromtimestamp(stat.st_mtime),
+                    file_modified_at=datetime.fromtimestamp(stat.st_mtime, tz=UTC),
                     file_size=stat.st_size,
                     content_hash=hashlib.sha256(content_str.encode()).hexdigest(),
                     is_valid=True,
@@ -237,7 +237,7 @@ class ProtocolContractLoader:
 
             # Parse dependencies section (optional, for Phase 0 pattern)
             # Pass raw dictionaries to ModelContractContent and let Pydantic handle validation
-            dependencies = None
+            dependencies: list[dict[str, Any]] | None = None
             if "dependencies" in raw_content:
                 deps_data = raw_content["dependencies"]
                 if isinstance(deps_data, list):
@@ -263,7 +263,7 @@ class ProtocolContractLoader:
                 input_state=input_state,
                 output_state=output_state,
                 definitions=definitions,
-                dependencies=dependencies,
+                dependencies=dependencies,  # type: ignore[arg-type]  # Pydantic validator converts dicts to ModelContractDependency
                 contract_name=None,
                 description=None,
                 name=None,

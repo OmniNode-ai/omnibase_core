@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Optional
 
 from pydantic import Field
 
@@ -16,7 +16,6 @@ This model provides structured error information with validation,
 serialization, and schema generation capabilities. Used internally
 by ModelOnexError exception class.
 """
-
 
 from datetime import UTC
 from typing import Any

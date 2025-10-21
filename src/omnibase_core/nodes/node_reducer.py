@@ -26,6 +26,7 @@ Author: ONEX Framework Team
 
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
@@ -92,10 +93,13 @@ class NodeReducer(NodeCoreBase):
         self.max_memory_usage_mb = 512
         self.streaming_buffer_size = 10000
 
-        # PURE FSM: No mutable state
-        # - No self.reduction_functions (use static registry)
-        # - No self.reduction_metrics (emit Intents instead)
-        # - No self.active_windows (pass through state)
+        # Configuration: Legacy attribute initialization for existing functionality
+        # These attributes support current implementation patterns
+        self.reduction_functions: dict[EnumReductionType, Callable[..., Any]] = {}
+        self.reduction_metrics: dict[str, dict[str, float]] = defaultdict(
+            lambda: {"count": 0.0, "total_time_ms": 0.0, "avg_time_ms": 0.0}
+        )
+        self.active_windows: dict[str, ModelStreamingWindow] = {}
 
     async def process(
         self,
@@ -484,16 +488,9 @@ class NodeReducer(NodeCoreBase):
 
         reducer_func = self.reduction_functions[reduction_type]
 
-        # Convert data to list if needed
-        if hasattr(input_data.data, "__aiter__"):
-            # Handle async iterator
-            data_list = [item async for item in input_data.data]
-        elif hasattr(input_data.data, "__iter__") and not isinstance(
-            input_data.data, (str, bytes)
-        ):
-            data_list = list(input_data.data)
-        else:
-            data_list = [input_data.data]
+        # Data is already typed as list[T_Input] in ModelReducerInput
+        # No conversion needed, just use it directly
+        data_list: list[Any] = input_data.data
 
         # Execute reduction
         result = await reducer_func(data_list, input_data, conflict_resolver)

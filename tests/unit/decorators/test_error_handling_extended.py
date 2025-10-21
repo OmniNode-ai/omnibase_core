@@ -127,8 +127,11 @@ class TestStandardErrorHandling:
         for exc_type, exc_message in exception_types:
 
             @standard_error_handling("Operation")
-            def raises_exception():
-                raise exc_type(exc_message)
+            def raises_exception(
+                _exc_type: type[Exception] = exc_type,
+                _exc_message: str = exc_message,
+            ):
+                raise _exc_type(_exc_message)
 
             with pytest.raises(ModelOnexError) as exc_info:
                 raises_exception()

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Optional, TypeVar
+from typing import Optional, TypeVar
 
 from pydantic import Field
 
@@ -13,7 +13,6 @@ Schema example model.
 Type-safe model for extracting examples from YAML schema files,
 replacing dict[str, Any] return types with structured models.
 """
-
 
 from typing import Any
 

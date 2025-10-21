@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 from pydantic import Field
 
@@ -12,7 +12,6 @@ Strongly-typed FSM data structure model.
 Replaces dict[str, Any] usage in FSM operations with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
-
 
 from pydantic import BaseModel
 

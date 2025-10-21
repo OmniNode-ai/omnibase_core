@@ -3,7 +3,7 @@
 Type-safe dictionary for function metadata summary.
 """
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.types.typed_dict_deprecation_summary import (
