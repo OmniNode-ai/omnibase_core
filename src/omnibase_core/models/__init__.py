@@ -22,10 +22,13 @@ __all__ = [
     "connections",
     "contracts",
     "core",
+    "dedup",
     "events",
     "infrastructure",
     "metadata",
     "nodes",
+    "projection",
     "results",
+    "state",
     "validation",
 ]
