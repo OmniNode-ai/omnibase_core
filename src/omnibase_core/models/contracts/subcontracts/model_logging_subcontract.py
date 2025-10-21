@@ -22,10 +22,9 @@ providing clean separation between node logic and logging behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import ClassVar
+from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing_extensions import Self
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError

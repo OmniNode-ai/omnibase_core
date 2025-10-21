@@ -223,7 +223,7 @@ class TestModelWorkflowDependencyPerformance:
         num_dependencies = 1000
         workflow_ids = [uuid4() for _ in range(num_dependencies + 1)]
 
-        dependencies: List[ModelWorkflowDependency] = []
+        dependencies: list[ModelWorkflowDependency] = []
 
         # Benchmark creating large dependency graph
         start_time = time.perf_counter()

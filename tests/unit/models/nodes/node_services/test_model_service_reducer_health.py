@@ -99,7 +99,6 @@ class ReducerNodeForHealthTesting(ModelServiceReducer):
 
     def cleanup_event_handlers(self):
         """Mock cleanup method."""
-        pass
 
 
 # ============================================================================
@@ -421,7 +420,7 @@ class TestServiceReducerHealthMonitoring:
 
         # Mock asyncio.sleep to raise CancelledError
         async def mock_sleep(seconds):
-            raise asyncio.CancelledError()
+            raise asyncio.CancelledError
 
         # Act
         with patch("asyncio.sleep", mock_sleep):

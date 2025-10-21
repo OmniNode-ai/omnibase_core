@@ -18,7 +18,7 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
-from omnibase_core.models.orchestrator.model_action import ModelThunk
+from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.workflows.model_workflow_step_execution import (
     ModelWorkflowStepExecution,
 )
@@ -62,11 +62,11 @@ class TestBasicCreation:
 
     def test_creation_with_all_fields(self) -> None:
         """Test creating step with all fields populated."""
-        from omnibase_core.enums.enum_workflow_execution import EnumThunkType
+        from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
         custom_id = uuid4()
-        thunk = ModelThunk(
-            thunk_type=EnumThunkType.COMPUTE,
+        action = ModelAction(
+            action_type=EnumActionType.COMPUTE,
             target_node_type="compute_node",
         )
 
@@ -335,29 +335,29 @@ class TestThunkManagement:
 
     def test_add_single_thunk(self) -> None:
         """Test adding a single thunk."""
-        from omnibase_core.enums.enum_workflow_execution import EnumThunkType
+        from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
-        thunk = ModelThunk(
-            thunk_type=EnumThunkType.COMPUTE,
+        action = ModelAction(
+            action_type=EnumActionType.COMPUTE,
             target_node_type="compute_node",
         )
 
         step = ModelWorkflowStepExecution(
             step_name="test_step",
             execution_mode=EnumExecutionMode.SEQUENTIAL,
-            thunks=[thunk],
+            thunks=[action],
         )
 
         assert len(step.thunks) == 1
-        assert step.thunks[0] == thunk
+        assert step.thunks[0] == action
 
     def test_add_multiple_thunks(self) -> None:
         """Test adding multiple thunks."""
-        from omnibase_core.enums.enum_workflow_execution import EnumThunkType
+        from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
-        thunks = [
-            ModelThunk(
-                thunk_type=EnumThunkType.COMPUTE,
+        actions = [
+            ModelAction(
+                action_type=EnumActionType.COMPUTE,
                 target_node_type=f"node_{i}",
             )
             for i in range(5)
@@ -366,12 +366,12 @@ class TestThunkManagement:
         step = ModelWorkflowStepExecution(
             step_name="test_step",
             execution_mode=EnumExecutionMode.PARALLEL,
-            thunks=thunks,
+            thunks=actions,
         )
 
         assert len(step.thunks) == 5
-        for i, thunk in enumerate(step.thunks):
-            assert thunk.target_node_type == f"node_{i}"
+        for i, action in enumerate(step.thunks):
+            assert action.target_node_type == f"node_{i}"
 
 
 class TestBranchingConditions:
@@ -826,11 +826,11 @@ class TestEdgeCases:
 
     def test_many_thunks(self) -> None:
         """Test step with many thunks."""
-        from omnibase_core.enums.enum_workflow_execution import EnumThunkType
+        from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
-        thunks = [
-            ModelThunk(
-                thunk_type=EnumThunkType.COMPUTE,
+        actions = [
+            ModelAction(
+                action_type=EnumActionType.COMPUTE,
                 target_node_type=f"node_{i}",
             )
             for i in range(50)
@@ -839,7 +839,7 @@ class TestEdgeCases:
         step = ModelWorkflowStepExecution(
             step_name="test_step",
             execution_mode=EnumExecutionMode.PARALLEL,
-            thunks=thunks,
+            thunks=actions,
         )
 
         assert len(step.thunks) == 50

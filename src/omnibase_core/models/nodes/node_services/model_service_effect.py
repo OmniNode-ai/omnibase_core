@@ -130,4 +130,4 @@ class ModelServiceEffect(
         """
         # Default implementation - no cleanup needed as MixinEventBus manages itself
         # Subclasses can override this to add custom event handler cleanup
-        return None
+        return

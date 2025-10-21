@@ -67,7 +67,7 @@ def example_3_check_compatibility() -> None:
     for mixin in compatible[:5]:  # Show first 5
         print(f"  • {mixin.name}")
         print(f"    Category: {mixin.category}")
-        print(f"    Why compatible: No conflicting incompatibilities")
+        print("    Why compatible: No conflicting incompatibilities")
         print()
 
 

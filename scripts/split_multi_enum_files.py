@@ -27,7 +27,7 @@ def pascal_to_snake(name: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def extract_enum_class_code(file_path: Path, class_name: str) -> Tuple[str, List[str]]:
+def extract_enum_class_code(file_path: Path, class_name: str) -> tuple[str, list[str]]:
     """
     Extract the code for a specific enum class from a file.
 
@@ -99,7 +99,7 @@ def create_enum_file(
     output_dir: Path,
     class_name: str,
     class_code: str,
-    imports: List[str],
+    imports: list[str],
     original_file: Path,
 ) -> Path:
     """
@@ -125,7 +125,7 @@ def create_enum_file(
     return file_path
 
 
-def get_enum_classes(file_path: Path) -> List[str]:
+def get_enum_classes(file_path: Path) -> list[str]:
     """Get all enum class names in a file."""
     try:
         content = file_path.read_text()
@@ -155,7 +155,7 @@ def get_enum_classes(file_path: Path) -> List[str]:
 
 
 def update_imports_in_file(
-    file_path: Path, old_module: str, enum_map: Dict[str, str]
+    file_path: Path, old_module: str, enum_map: dict[str, str]
 ) -> bool:
     """
     Update imports in a file to use new enum files.
@@ -196,7 +196,7 @@ def update_imports_in_file(
         return False
 
 
-def split_multi_enum_file(file_path: Path, dry_run: bool = False) -> List[Path]:
+def split_multi_enum_file(file_path: Path, dry_run: bool = False) -> list[Path]:
     """
     Split a multi-enum file into individual files.
 

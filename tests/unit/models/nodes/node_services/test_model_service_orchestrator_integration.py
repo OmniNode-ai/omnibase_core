@@ -39,8 +39,8 @@ from omnibase_core.models.nodes.node_services.model_service_orchestrator import 
     ModelServiceOrchestrator,
 )
 from omnibase_core.nodes.enum_orchestrator_types import (
+    EnumActionType,
     EnumExecutionMode,
-    EnumThunkType,
     EnumWorkflowState,
 )
 from omnibase_core.nodes.model_orchestrator_input import ModelOrchestratorInput

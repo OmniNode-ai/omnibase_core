@@ -16,7 +16,7 @@ from omnibase_core.models.configuration.model_compute_cache_config import (
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(autouse=True)
 def cleanup_pending_tasks():
     """
     Automatically cleanup any pending asyncio tasks after each test.

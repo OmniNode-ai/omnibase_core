@@ -684,7 +684,7 @@ class NodeCoreBase(ABC):
             # Return primitives as-is
             return data
 
-        except (FileNotFoundError, OSError, IOError) as e:
+        except (FileNotFoundError, OSError) as e:
             # fallback-ok: graceful degradation for missing/unreadable reference files
             emit_log_event(
                 LogLevel.WARNING,

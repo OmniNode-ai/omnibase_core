@@ -5,7 +5,7 @@ Tests health check subcontract including component health, node health,
 dependency health, and health check configuration validation.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import UUID
 
 import pytest
@@ -28,7 +28,7 @@ class TestModelComponentHealth:
 
     def test_valid_component_health_creation(self):
         """Test creating a valid component health status."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         component = ModelComponentHealth(
             component_name="database_connection",
             status=EnumNodeHealthStatus.HEALTHY,
@@ -47,7 +47,7 @@ class TestModelComponentHealth:
 
     def test_component_health_minimal_fields(self):
         """Test component health with minimal required fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         component = ModelComponentHealth(
             component_name="cache",
             status=EnumNodeHealthStatus.DEGRADED,
@@ -62,7 +62,7 @@ class TestModelComponentHealth:
 
     def test_component_health_negative_duration_validation(self):
         """Test validation of negative check duration."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         with pytest.raises(ValidationError):
             ModelComponentHealth(
@@ -75,7 +75,7 @@ class TestModelComponentHealth:
 
     def test_component_health_enum_preservation(self):
         """Test that enum values are preserved, not converted to strings."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         component = ModelComponentHealth(
             component_name="test",
             status=EnumNodeHealthStatus.CRITICAL,
@@ -92,7 +92,7 @@ class TestModelNodeHealthStatus:
 
     def test_valid_node_health_status_creation(self):
         """Test creating a valid node health status."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         test_uuid = UUID("12345678-1234-5678-1234-567812345678")
         node_health = ModelNodeHealthStatus(
             status=EnumNodeHealthStatus.HEALTHY,
@@ -112,7 +112,7 @@ class TestModelNodeHealthStatus:
 
     def test_node_health_status_without_node_id(self):
         """Test node health status without optional node_id."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         node_health = ModelNodeHealthStatus(
             status=EnumNodeHealthStatus.UNHEALTHY,
             message="Node is unhealthy",
@@ -126,7 +126,7 @@ class TestModelNodeHealthStatus:
 
     def test_node_health_status_negative_duration_validation(self):
         """Test validation of negative check duration."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         with pytest.raises(ValidationError):
             ModelNodeHealthStatus(
@@ -143,7 +143,7 @@ class TestModelComponentHealthCollection:
 
     def test_valid_health_collection_creation(self):
         """Test creating a valid health collection."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         components = [
             ModelComponentHealth(
                 component_name="db",
@@ -203,7 +203,7 @@ class TestModelDependencyHealth:
 
     def test_valid_dependency_health_creation(self):
         """Test creating a valid dependency health status."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         dependency = ModelDependencyHealth(
             dependency_name="postgresql",
             dependency_type="database",
@@ -223,7 +223,7 @@ class TestModelDependencyHealth:
 
     def test_dependency_health_unhealthy_with_error(self):
         """Test dependency health with unhealthy status and error message."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         dependency = ModelDependencyHealth(
             dependency_name="redis",
             dependency_type="cache",
@@ -240,7 +240,7 @@ class TestModelDependencyHealth:
 
     def test_dependency_health_minimal_fields(self):
         """Test dependency health with minimal required fields."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         dependency = ModelDependencyHealth(
             dependency_name="external_api",
             dependency_type="service",
@@ -254,7 +254,7 @@ class TestModelDependencyHealth:
 
     def test_dependency_health_negative_response_time_validation(self):
         """Test validation of negative response time."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         with pytest.raises(ValidationError):
             ModelDependencyHealth(
@@ -271,7 +271,7 @@ class TestModelHealthCheckResult:
 
     def test_valid_health_check_result_creation(self):
         """Test creating a valid health check result."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         node_health = ModelNodeHealthStatus(
             status=EnumNodeHealthStatus.HEALTHY,
@@ -319,7 +319,7 @@ class TestModelHealthCheckResult:
 
     def test_health_check_result_minimal_dependencies(self):
         """Test health check result with minimal dependencies."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         node_health = ModelNodeHealthStatus(
             status=EnumNodeHealthStatus.DEGRADED,
@@ -343,7 +343,7 @@ class TestModelHealthCheckResult:
 
     def test_health_score_validation_range(self):
         """Test health score validation within 0.0-1.0 range."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         node_health = ModelNodeHealthStatus(
             status=EnumNodeHealthStatus.HEALTHY,
@@ -387,8 +387,9 @@ class TestModelHealthCheckSubcontract:
         """Test that INTERFACE_VERSION ClassVar is present and correct."""
         assert hasattr(ModelHealthCheckSubcontract, "INTERFACE_VERSION")
         assert isinstance(ModelHealthCheckSubcontract.INTERFACE_VERSION, ModelSemVer)
-        assert ModelHealthCheckSubcontract.INTERFACE_VERSION == ModelSemVer(
-            major=1, minor=0, patch=0
+        assert (
+            ModelSemVer(major=1, minor=0, patch=0)
+            == ModelHealthCheckSubcontract.INTERFACE_VERSION
         )
 
     def test_minimal_valid_subcontract(self):

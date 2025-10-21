@@ -51,7 +51,7 @@ class TestFixtureBase:
     """
 
     @staticmethod
-    def construct(model_class: Type[T], **field_values) -> T:
+    def construct(model_class: type[T], **field_values) -> T:
         """Construct model bypassing Pydantic validation.
 
         ⚠️ ONLY USE IN TESTS - NEVER IN PRODUCTION CODE (src/)
@@ -86,7 +86,7 @@ class TestFixtureBase:
         return model_class.model_construct(**field_values)
 
     @staticmethod
-    def construct_many(model_class: Type[T], count: int, **base_fields) -> list[T]:
+    def construct_many(model_class: type[T], count: int, **base_fields) -> list[T]:
         """Construct many model instances efficiently.
 
         Creates multiple instances with incremental IDs for list-based tests.

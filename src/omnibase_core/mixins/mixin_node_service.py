@@ -330,7 +330,7 @@ class MixinNodeService:
         # Strategy 3: Try container.get_service()
         if not event_bus and hasattr(self, "container"):
             try:
-                container = getattr(self, "container")
+                container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
             except Exception:
@@ -505,7 +505,7 @@ class MixinNodeService:
         # Strategy 3: Try container.get_service()
         if not event_bus and hasattr(self, "container"):
             try:
-                container = getattr(self, "container")
+                container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
             except Exception:
@@ -539,7 +539,7 @@ class MixinNodeService:
             # Strategy 3: Try container.get_service()
             if not event_bus and hasattr(self, "container"):
                 try:
-                    container = getattr(self, "container")
+                    container = self.container
                     if hasattr(container, "get_service"):
                         event_bus = container.get_service("event_bus")
                 except Exception:
@@ -605,7 +605,7 @@ class MixinNodeService:
                     hasattr(cls, "_publish_introspection_event")
                     and cls != MixinNodeService
                 ):
-                    method = getattr(cls, "_publish_introspection_event")
+                    method = cls._publish_introspection_event
                     if callable(method):
                         method(self)
                         break

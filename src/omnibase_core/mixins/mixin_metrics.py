@@ -35,7 +35,7 @@ class MixinMetrics:
         object.__setattr__(self, "_metrics_data", {})
 
     def record_metric(
-        self, metric_name: str, value: float, tags: Dict[str, str] | None = None
+        self, metric_name: str, value: float, tags: dict[str, str] | None = None
     ) -> None:
         """
         Record a metric value.
@@ -92,7 +92,7 @@ class MixinMetrics:
             current = metrics_data.get(counter_name, {"value": 0})["value"]
             metrics_data[counter_name] = {"value": current + value}
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get current metrics data.
 

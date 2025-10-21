@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, List
 
 # Map of incorrect class names to correct class names
-SIMPLE_FIXES: Dict[str, str] = {
+SIMPLE_FIXES: dict[str, str] = {
     # Acronym casing fixes
     "EnumRSDEdgeType": "EnumRsdEdgeType",
     "EnumRSDAgentRequestType": "EnumRsdAgentRequestType",
@@ -23,9 +23,9 @@ SIMPLE_FIXES: Dict[str, str] = {
 }
 
 
-def find_all_occurrences(src_dir: Path, old_name: str) -> List[Path]:
+def find_all_occurrences(src_dir: Path, old_name: str) -> list[Path]:
     """Find all files containing the old enum name (portable)."""
-    matches: List[Path] = []
+    matches: list[Path] = []
     for p in src_dir.rglob("*.py"):
         try:
             if old_name in p.read_text():
