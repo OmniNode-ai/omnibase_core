@@ -1,4 +1,5 @@
 import uuid
+from pathlib import Path
 from typing import Dict
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -56,6 +57,16 @@ class NodeCoreBase(ABC):
     - Contract loading and validation
     - Version tracking and migration support
     """
+
+    # Type annotations for attributes set via object.__setattr__()
+    container: ModelONEXContainer
+    node_id: UUID
+    _node_id: UUID  # Alias for mixin compatibility
+    created_at: datetime
+    state: Dict[str, Any]
+    metrics: Dict[str, float]
+    contract_data: Any | None
+    version: ModelSemVer
 
     def __init__(self, container: ModelONEXContainer) -> None:
         """
