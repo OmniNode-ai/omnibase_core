@@ -7,7 +7,7 @@ from omnibase_core.enums.enum_detection_method import EnumDetectionMethod
 from omnibase_core.enums.enum_detection_type import EnumDetectionType
 from omnibase_core.enums.enum_sensitivity_level import EnumSensitivityLevel
 
-from .model_detection_result import ModelDetectionMatch
+from .model_detection_match import ModelDetectionMatch
 
 
 class ModelDetectionResult(BaseModel):

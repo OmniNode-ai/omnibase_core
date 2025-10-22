@@ -48,10 +48,8 @@ from omnibase_core.models.core.model_event_type import (
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.core.model_onex_event import OnexEvent
 
-# Moved to TYPE_CHECKING block
-
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+# Import protocol to avoid circular dependencies
+from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem

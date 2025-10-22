@@ -58,8 +58,8 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-# ONEX SPI dependency - Public repository, pinned to stable release
-omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", tag = "v0.1.0"}
+# ONEX SPI dependency - Local development version for circular import fixes
+omnibase_spi = {path = "/Volumes/PRO-G40/Code/omnibase_spi", develop = true}
 pydantic = "^2.11.7"
 llama-index = "^0.12.0"
 fastapi = "^0.115.0"

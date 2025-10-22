@@ -9,12 +9,10 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_detection_method import EnumDetectionMethod
+from omnibase_core.enums.enum_detection_type import EnumDetectionType
 from omnibase_core.enums.enum_language_code import EnumLanguageCode
-from omnibase_core.models.security.model_detection_result import (
-    EnumDetectionMethod,
-    EnumDetectionType,
-    EnumSensitivityLevel,
-)
+from omnibase_core.enums.enum_sensitivity_level import EnumSensitivityLevel
 
 __all__ = [
     "EnumLanguageCode",

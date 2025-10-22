@@ -1,14 +1,15 @@
-from typing import Any
+"""
+ModelSecurityEvent: Security event for audit trails.
 
-from pydantic import Field
+This model represents security events logged during envelope processing
+for comprehensive audit trails and compliance tracking.
+"""
 
-from .model_securityeventcollection import ModelSecurityEventCollection
-
-"\nModelSecurityEvent: Security event for audit trails.\n\nThis model represents security events logged during envelope processing\nfor comprehensive audit trails and compliance tracking.\n"
 from datetime import datetime
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_security_event_status import EnumSecurityEventStatus
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType

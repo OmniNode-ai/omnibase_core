@@ -3,9 +3,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
 
 "\nNode Executor Mixin.\n\nCanonical mixin for persistent node executor capabilities. Enables nodes to run\nas persistent executors that respond to TOOL_INVOCATION events, providing\ntool-as-a-service functionality for MCP, GraphQL, and other integrations.\n"
 import asyncio

@@ -23,10 +23,9 @@ from omnibase_core.models.core.model_event_type import (
 )
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
 from omnibase_core.primitives.model_semver import ModelSemVer
-from omnibase_spi.protocols.event_bus import ProtocolEventBus
+from omnibase_spi.protocols.event_bus import ProtocolEventBus, ProtocolEventEnvelope
 
 if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_spi.protocols.types.protocol_event_bus_types import (
         ProtocolEventMessage,
     )

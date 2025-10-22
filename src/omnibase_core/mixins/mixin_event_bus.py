@@ -29,7 +29,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
 
 # Local imports from extracted classes
 from .mixin_completion_data import MixinCompletionData
@@ -314,6 +314,10 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             event = self._build_event(event_type, data)
 
             # Wrap event in envelope before publishing
+            from omnibase_core.models.events.model_event_envelope import (
+                ModelEventEnvelope,
+            )
+
             envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                 payload=event
             )
@@ -551,22 +555,15 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
     def _create_event_handler(self, pattern: str) -> Callable[..., Any]:
         """Create event handler for a specific pattern."""
 
-        def handler(envelope: "ModelEventEnvelope[Any]") -> None:
+        def handler(envelope: ProtocolEventEnvelope[ModelOnexEvent]) -> None:
             """Handle incoming event envelope."""
             # Extract event from envelope
-            extracted_event = (
-                envelope.payload if hasattr(envelope, "payload") else envelope
-            )
+            event = envelope.payload if hasattr(envelope, "payload") else envelope
 
             # Validate event has required attributes
-            if not hasattr(extracted_event, "event_type"):
+            if not hasattr(event, "event_type"):
                 self._log_error("Event missing event_type attribute", pattern)
                 return
-
-            # Type assertion: extracted_event should be ModelOnexEvent
-            from typing import cast
-
-            event = cast(ModelOnexEvent, extracted_event)
 
             try:
                 self._log_info(

@@ -1,14 +1,18 @@
 """ONEX-compliant security event collection model for audit trails."""
 
+from __future__ import annotations
+
 from datetime import UTC, datetime, timedelta
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.models.security.model_security_event import ModelSecurityEvent
+
+if TYPE_CHECKING:
+    from omnibase_core.models.security.model_security_event import ModelSecurityEvent
 
 
 class ModelSecurityEventCollection(BaseModel):
