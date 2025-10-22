@@ -48,6 +48,9 @@ from omnibase_core.nodes.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.nodes.model_effect_input import ModelEffectInput
 from omnibase_core.nodes.model_effect_output import ModelEffectOutput
 from omnibase_core.nodes.model_effect_transaction import ModelEffectTransaction
+from omnibase_spi.protocols.node.protocol_node_configuration import (
+    ProtocolNodeConfiguration,
+)
 
 
 class NodeEffect(NodeCoreBase):
@@ -113,7 +116,8 @@ class NodeEffect(NodeCoreBase):
         super().__init__(container)
 
         # Use object.__setattr__() to bypass Pydantic validation for internal state
-        # Effect-specific configuration
+        # Effect-specific configuration (defaults, overridden in _initialize_node_resources)
+        # These defaults are used if ProtocolNodeConfiguration is not available
         object.__setattr__(self, "default_timeout_ms", 30000)
         object.__setattr__(self, "default_retry_delay_ms", 1000)
         object.__setattr__(self, "max_concurrent_effects", 10)
@@ -637,6 +641,43 @@ class NodeEffect(NodeCoreBase):
 
     async def _initialize_node_resources(self) -> None:
         """Initialize effect-specific resources."""
+        # Load configuration from ProtocolNodeConfiguration if available
+        config = self.container.get_service_optional(ProtocolNodeConfiguration)
+        if config:
+            # Load timeout configurations
+            default_timeout_value = await config.get_timeout_ms(
+                "effect.default_timeout_ms", self.default_timeout_ms
+            )
+            retry_delay_value = await config.get_timeout_ms(
+                "effect.default_retry_delay_ms", self.default_retry_delay_ms
+            )
+
+            # Load performance configurations
+            max_concurrent_value = await config.get_performance_config(
+                "effect.max_concurrent_effects", self.max_concurrent_effects
+            )
+
+            # Update configuration values with type checking
+            if isinstance(default_timeout_value, int):
+                self.default_timeout_ms = default_timeout_value
+            if isinstance(retry_delay_value, int):
+                self.default_retry_delay_ms = retry_delay_value
+            if isinstance(max_concurrent_value, (int, float)):
+                self.max_concurrent_effects = int(max_concurrent_value)
+                # Update semaphore with new value
+                self.effect_semaphore = asyncio.Semaphore(self.max_concurrent_effects)
+
+            emit_log_event(
+                LogLevel.INFO,
+                "NodeEffect loaded configuration from ProtocolNodeConfiguration",
+                {
+                    "node_id": str(self.node_id),
+                    "default_timeout_ms": self.default_timeout_ms,
+                    "default_retry_delay_ms": self.default_retry_delay_ms,
+                    "max_concurrent_effects": self.max_concurrent_effects,
+                },
+            )
+
         emit_log_event(
             LogLevel.INFO,
             "NodeEffect resources initialized",

@@ -40,6 +40,9 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.models.infrastructure import ModelComputeCache
 from omnibase_core.nodes.model_compute_input import ModelComputeInput, T_Input
 from omnibase_core.nodes.model_compute_output import ModelComputeOutput, T_Output
+from omnibase_spi.protocols.node.protocol_node_configuration import (
+    ProtocolNodeConfiguration,
+)
 
 
 class NodeCompute(NodeCoreBase):
@@ -82,7 +85,8 @@ class NodeCompute(NodeCoreBase):
         # Get cache configuration from container
         cache_config = container.compute_cache_config
 
-        # Computation-specific configuration
+        # Computation-specific configuration (defaults, overridden in _initialize_node_resources)
+        # These defaults are used if ProtocolNodeConfiguration is not available
         self.max_parallel_workers = 4
         self.cache_ttl_minutes = cache_config.get_ttl_minutes() or 30
         self.performance_threshold_ms = 100.0
@@ -273,6 +277,39 @@ class NodeCompute(NodeCoreBase):
 
     async def _initialize_node_resources(self) -> None:
         """Initialize computation-specific resources."""
+        # Load configuration from ProtocolNodeConfiguration if available
+        config = self.container.get_service_optional(ProtocolNodeConfiguration)
+        if config:
+            # Load performance configurations with fallback to current defaults
+            max_workers_value = await config.get_performance_config(
+                "compute.max_parallel_workers", self.max_parallel_workers
+            )
+            cache_ttl_value = await config.get_performance_config(
+                "compute.cache_ttl_minutes", self.cache_ttl_minutes
+            )
+            perf_threshold_value = await config.get_performance_config(
+                "compute.performance_threshold_ms", self.performance_threshold_ms
+            )
+
+            # Update configuration values with type checking
+            if isinstance(max_workers_value, (int, float)):
+                self.max_parallel_workers = int(max_workers_value)
+            if isinstance(cache_ttl_value, (int, float)):
+                self.cache_ttl_minutes = int(cache_ttl_value)
+            if isinstance(perf_threshold_value, (int, float)):
+                self.performance_threshold_ms = float(perf_threshold_value)
+
+            emit_log_event(
+                LogLevel.INFO,
+                "NodeCompute loaded configuration from ProtocolNodeConfiguration",
+                {
+                    "node_id": str(self.node_id),
+                    "max_parallel_workers": self.max_parallel_workers,
+                    "cache_ttl_minutes": self.cache_ttl_minutes,
+                    "performance_threshold_ms": self.performance_threshold_ms,
+                },
+            )
+
         self.thread_pool = ThreadPoolExecutor(max_workers=self.max_parallel_workers)
 
         emit_log_event(

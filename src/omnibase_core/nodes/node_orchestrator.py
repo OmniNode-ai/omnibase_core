@@ -49,6 +49,9 @@ from omnibase_core.nodes.model_load_balancer import ModelLoadBalancer
 from omnibase_core.nodes.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.nodes.model_orchestrator_output import ModelOrchestratorOutput
 from omnibase_core.nodes.model_workflow_step import ModelWorkflowStep
+from omnibase_spi.protocols.node.protocol_node_configuration import (
+    ProtocolNodeConfiguration,
+)
 
 
 class NodeOrchestrator(NodeCoreBase):
@@ -101,7 +104,8 @@ class NodeOrchestrator(NodeCoreBase):
         super().__init__(container)
 
         # Use object.__setattr__() to bypass Pydantic validation for internal state
-        # Orchestrator-specific configuration
+        # Orchestrator-specific configuration (defaults, overridden in _initialize_node_resources)
+        # These defaults are used if ProtocolNodeConfiguration is not available
         object.__setattr__(self, "max_concurrent_workflows", 5)
         object.__setattr__(self, "default_step_timeout_ms", 30000)
         object.__setattr__(self, "action_emission_enabled", True)
@@ -468,6 +472,47 @@ class NodeOrchestrator(NodeCoreBase):
 
     async def _initialize_node_resources(self) -> None:
         """Initialize orchestrator-specific resources."""
+        # Load configuration from ProtocolNodeConfiguration if available
+        config = self.container.get_service_optional(ProtocolNodeConfiguration)
+        if config:
+            # Load performance configurations
+            max_workflows_value = await config.get_performance_config(
+                "orchestrator.max_concurrent_workflows", self.max_concurrent_workflows
+            )
+
+            # Load timeout configurations
+            step_timeout_value = await config.get_timeout_ms(
+                "orchestrator.default_step_timeout_ms", self.default_step_timeout_ms
+            )
+
+            # Load business logic configurations
+            action_emission_value = await config.get_business_logic_config(
+                "orchestrator.action_emission_enabled", self.action_emission_enabled
+            )
+
+            # Update configuration values with type checking
+            if isinstance(max_workflows_value, (int, float)):
+                self.max_concurrent_workflows = int(max_workflows_value)
+                # Update semaphore with new value
+                self.workflow_semaphore = asyncio.Semaphore(
+                    self.max_concurrent_workflows
+                )
+            if isinstance(step_timeout_value, int):
+                self.default_step_timeout_ms = step_timeout_value
+            if isinstance(action_emission_value, bool):
+                self.action_emission_enabled = action_emission_value
+
+            emit_log_event(
+                LogLevel.INFO,
+                "NodeOrchestrator loaded configuration from ProtocolNodeConfiguration",
+                {
+                    "node_id": str(self.node_id),
+                    "max_concurrent_workflows": self.max_concurrent_workflows,
+                    "default_step_timeout_ms": self.default_step_timeout_ms,
+                    "action_emission_enabled": self.action_emission_enabled,
+                },
+            )
+
         emit_log_event(
             LogLevel.INFO,
             "NodeOrchestrator resources initialized",

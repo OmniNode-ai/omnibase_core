@@ -46,6 +46,9 @@ from omnibase_core.nodes.model_intent import ModelIntent
 from omnibase_core.nodes.model_reducer_input import ModelReducerInput, T_Input
 from omnibase_core.nodes.model_reducer_output import ModelReducerOutput, T_Output
 from omnibase_core.nodes.model_streaming_window import ModelStreamingWindow
+from omnibase_spi.protocols.node.protocol_node_configuration import (
+    ProtocolNodeConfiguration,
+)
 
 
 class NodeReducer(NodeCoreBase):
@@ -88,7 +91,8 @@ class NodeReducer(NodeCoreBase):
         """
         super().__init__(container)
 
-        # Configuration only (immutable)
+        # Configuration only (defaults, overridden in _initialize_node_resources)
+        # These defaults are used if ProtocolNodeConfiguration is not available
         self.default_batch_size = 1000
         self.max_memory_usage_mb = 512
         self.streaming_buffer_size = 10000
@@ -414,6 +418,39 @@ class NodeReducer(NodeCoreBase):
 
     async def _initialize_node_resources(self) -> None:
         """Initialize reducer-specific resources."""
+        # Load configuration from ProtocolNodeConfiguration if available
+        config = self.container.get_service_optional(ProtocolNodeConfiguration)
+        if config:
+            # Load performance configurations
+            batch_size_value = await config.get_performance_config(
+                "reducer.default_batch_size", self.default_batch_size
+            )
+            max_memory_value = await config.get_performance_config(
+                "reducer.max_memory_usage_mb", self.max_memory_usage_mb
+            )
+            buffer_size_value = await config.get_performance_config(
+                "reducer.streaming_buffer_size", self.streaming_buffer_size
+            )
+
+            # Update configuration values with type checking
+            if isinstance(batch_size_value, (int, float)):
+                self.default_batch_size = int(batch_size_value)
+            if isinstance(max_memory_value, (int, float)):
+                self.max_memory_usage_mb = int(max_memory_value)
+            if isinstance(buffer_size_value, (int, float)):
+                self.streaming_buffer_size = int(buffer_size_value)
+
+            emit_log_event(
+                LogLevel.INFO,
+                "NodeReducer loaded configuration from ProtocolNodeConfiguration",
+                {
+                    "node_id": str(self.node_id),
+                    "default_batch_size": self.default_batch_size,
+                    "max_memory_usage_mb": self.max_memory_usage_mb,
+                    "streaming_buffer_size": self.streaming_buffer_size,
+                },
+            )
+
         emit_log_event(
             LogLevel.INFO,
             "NodeReducer resources initialized",

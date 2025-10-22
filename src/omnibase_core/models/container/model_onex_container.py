@@ -89,6 +89,7 @@ class ModelONEXContainer:
         enable_performance_cache: bool = False,
         cache_dir: Path | None = None,
         compute_cache_config: ModelComputeCacheConfig | None = None,
+        enable_service_registry: bool = True,
     ) -> None:
         """
         Initialize enhanced container with optional performance optimizations.
@@ -97,6 +98,7 @@ class ModelONEXContainer:
             enable_performance_cache: Enable memory-mapped tool cache and performance monitoring
             cache_dir: Optional cache directory (defaults to temp directory)
             compute_cache_config: Cache configuration for NodeCompute instances (uses defaults if None)
+            enable_service_registry: Enable new ServiceRegistry (default: True)
         """
         self._base_container = _BaseModelONEXContainer()
 
@@ -119,6 +121,32 @@ class ModelONEXContainer:
         self.enable_performance_cache = enable_performance_cache
         self.tool_cache: Any = None
         self.performance_monitor: Any = None
+
+        # Initialize ServiceRegistry (new DI system)
+        self._service_registry: Any = None
+        self._enable_service_registry = enable_service_registry
+
+        if enable_service_registry:
+            try:
+                from omnibase_core.container.service_registry import ServiceRegistry
+                from omnibase_core.models.container.model_registry_config import (
+                    create_default_registry_config,
+                )
+
+                registry_config = create_default_registry_config()
+                self._service_registry = ServiceRegistry(registry_config)
+
+                emit_log_event(
+                    LogLevel.INFO,
+                    "ServiceRegistry initialized for container",
+                    {"registry_name": registry_config.registry_name},
+                )
+            except ImportError as e:
+                emit_log_event(
+                    LogLevel.WARNING,
+                    f"ServiceRegistry not available: {e}",
+                )
+                self._enable_service_registry = False
 
         if enable_performance_cache and MemoryMappedToolCache is not None:
             # Initialize memory-mapped cache
@@ -185,6 +213,16 @@ class ModelONEXContainer:
         """Access to secret manager."""
         return self._base_container.secret_manager
 
+    @property
+    def service_registry(self) -> Any:
+        """
+        Access to service registry (new DI system).
+
+        Returns:
+            ServiceRegistry instance if enabled, None otherwise
+        """
+        return self._service_registry
+
     async def get_service_async(
         self,
         protocol_type: type[T],
@@ -193,6 +231,9 @@ class ModelONEXContainer:
     ) -> T:
         """
         Async service resolution with caching and logging.
+
+        Enhanced with ServiceRegistry support - tries registry first, then falls back
+        to alternative resolution if registry lookup fails.
 
         Args:
             protocol_type: Protocol interface to resolve
@@ -222,7 +263,39 @@ class ModelONEXContainer:
             )
             return self._service_cache[cache_key]
 
-        # Resolve service
+        # Try ServiceRegistry first (new DI system)
+        if self._enable_service_registry and self._service_registry is not None:
+            try:
+                service_instance = await self._service_registry.resolve_service(
+                    interface=protocol_type,
+                    context={"correlation_id": final_correlation_id},
+                )
+
+                # Cache successful resolution
+                self._service_cache[cache_key] = service_instance
+
+                emit_log_event(
+                    LogLevel.INFO,
+                    f"Service resolved from registry: {protocol_name}",
+                    {
+                        "protocol_type": protocol_name,
+                        "service_name": service_name,
+                        "correlation_id": str(final_correlation_id),
+                        "source": "service_registry",
+                    },
+                )
+
+                return service_instance
+
+            except Exception as registry_error:
+                # Log but don't fail - fall through to legacy resolution
+                emit_log_event(
+                    LogLevel.DEBUG,
+                    f"ServiceRegistry resolution failed, trying legacy: {protocol_name}",
+                    {"error": str(registry_error)},
+                )
+
+        # Fallback resolution if registry lookup fails
         try:
             start_time = datetime.now()
 
@@ -277,12 +350,13 @@ class ModelONEXContainer:
 
             emit_log_event(
                 LogLevel.INFO,
-                f"Service resolved successfully: {protocol_name}",
+                f"Service resolved successfully (legacy): {protocol_name}",
                 {
                     "protocol_type": protocol_name,
                     "service_name": service_name,
                     "resolution_time_ms": resolution_time_ms,
                     "correlation_id": str(final_correlation_id),
+                    "source": "legacy",
                 },
             )
 
@@ -545,6 +619,7 @@ async def create_model_onex_container(
     enable_cache: bool = False,
     cache_dir: Path | None = None,
     compute_cache_config: ModelComputeCacheConfig | None = None,
+    enable_service_registry: bool = True,
 ) -> ModelONEXContainer:
     """
     Create and configure model ONEX container with optional performance optimizations.
@@ -553,6 +628,7 @@ async def create_model_onex_container(
         enable_cache: Enable memory-mapped tool cache and performance monitoring
         cache_dir: Optional cache directory (defaults to temp directory)
         compute_cache_config: Cache configuration for NodeCompute instances (uses defaults if None)
+        enable_service_registry: Enable new ServiceRegistry (default: True)
 
     Returns:
         ModelONEXContainer: Configured container instance
@@ -561,6 +637,7 @@ async def create_model_onex_container(
         enable_performance_cache=enable_cache,
         cache_dir=cache_dir,
         compute_cache_config=compute_cache_config,
+        enable_service_registry=enable_service_registry,
     )
 
     # Load configuration into base container
