@@ -8,8 +8,7 @@ Provides a typed structure for tool usage examples with generic type support.
 
 from typing import Generic
 
-from pydantic import Field
-from pydantic.generics import GenericModel
+from pydantic import BaseModel, Field
 
 from .model_usage_example_config import ModelConfig
 
@@ -18,7 +17,7 @@ InputT = TypeVar("InputT")
 OutputT = TypeVar("OutputT")
 
 
-class ModelUsageExample(GenericModel, Generic[InputT, OutputT]):
+class ModelUsageExample(BaseModel, Generic[InputT, OutputT]):
     """Model representing a usage example for introspection with typed input/output."""
 
     description: str = Field(

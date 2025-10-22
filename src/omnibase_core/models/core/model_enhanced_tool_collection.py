@@ -453,10 +453,17 @@ ToolRegistrationStatus = EnumToolRegistrationStatus
 
 # Re-export for current standards
 __all__ = [
+    # Enum types
+    "EnumToolCapabilityLevel",
+    "EnumToolCategory",
+    "EnumToolCompatibilityMode",
+    "EnumToolRegistrationStatus",
+    # Model classes
     "ModelToolCollection",
     "ModelToolMetadata",
     "ModelToolPerformanceMetrics",
     "ModelToolValidationResult",
+    # Type aliases
     "ToolCapabilityLevel",
     "ToolCategory",
     "ToolCollection",

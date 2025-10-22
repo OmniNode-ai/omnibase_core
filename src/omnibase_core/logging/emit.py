@@ -505,7 +505,7 @@ def _sanitize_sensitive_data(text: str) -> str:
         Sanitized text with sensitive patterns redacted
     """
     if not isinstance(text, str):
-        return text  # type: ignore[unreachable, return-value]
+        return text  # type: ignore[return-value]
 
     sanitized = text
     for pattern, replacement in _SENSITIVE_PATTERNS:
@@ -527,7 +527,7 @@ def _sanitize_data_dict(
         Sanitized dict[str, Any]ionary with JSON-compatible values
     """
     if not isinstance(data, dict):
-        return data  # type: ignore[unreachable, return-value]
+        return data  # type: ignore[return-value]
 
     sanitized: dict[str, Any | None] = {}
     for key, value in data.items():

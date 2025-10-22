@@ -376,7 +376,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 )
 
                 if self.event_bus is not None:
-                    subscription = self.event_bus.subscribe(handler, event_type=pattern)  # type: ignore[call-arg, arg-type]  # Duck-typed event bus interface
+                    # Duck-typed event bus interface
+                    subscription = self.event_bus.subscribe(handler, event_type=pattern)  # type: ignore[call-arg, arg-type]
                     self._event_subscriptions.append((pattern, subscription))
 
                 emit_log_event(

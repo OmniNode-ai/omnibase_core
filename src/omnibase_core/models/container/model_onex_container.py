@@ -46,14 +46,14 @@ try:
 except ImportError:
     # FALLBACK_REASON: cache module is optional performance enhancement,
     # system can operate without it using standard container behavior
-    MemoryMappedToolCache = None  # type: ignore[misc, assignment]
+    MemoryMappedToolCache = None
 
 try:
     from omnibase_core.monitoring.performance_monitor import PerformanceMonitor
 except ImportError:
     # FALLBACK_REASON: performance monitoring is optional feature,
     # container can function without monitoring capabilities
-    PerformanceMonitor = None  # type: ignore[misc, assignment]
+    PerformanceMonitor = None
 
 # TODO: These imports require omnibase-spi protocols that may not be available yet
 # from omnibase_core.protocols.protocol_database_connection import ProtocolDatabaseConnection
