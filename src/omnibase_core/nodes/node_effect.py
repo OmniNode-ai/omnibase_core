@@ -36,6 +36,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -48,9 +49,6 @@ from omnibase_core.nodes.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.nodes.model_effect_input import ModelEffectInput
 from omnibase_core.nodes.model_effect_output import ModelEffectOutput
 from omnibase_core.nodes.model_effect_transaction import ModelEffectTransaction
-from omnibase_spi.protocols.node.protocol_node_configuration import (
-    ProtocolNodeConfiguration,
-)
 
 
 class NodeEffect(NodeCoreBase):
@@ -641,20 +639,20 @@ class NodeEffect(NodeCoreBase):
 
     async def _initialize_node_resources(self) -> None:
         """Initialize effect-specific resources."""
-        # Load configuration from ProtocolNodeConfiguration if available
-        config = self.container.get_service_optional(ProtocolNodeConfiguration)
+        # Load configuration from NodeConfigProvider if available
+        config = self.container.get_service_optional(NodeConfigProvider)
         if config:
             # Load timeout configurations
             default_timeout_value = await config.get_timeout_ms(
-                "effect.default_timeout_ms", self.default_timeout_ms
+                "effect.default_timeout_ms", default_ms=self.default_timeout_ms
             )
             retry_delay_value = await config.get_timeout_ms(
-                "effect.default_retry_delay_ms", self.default_retry_delay_ms
+                "effect.default_retry_delay_ms", default_ms=self.default_retry_delay_ms
             )
 
             # Load performance configurations
             max_concurrent_value = await config.get_performance_config(
-                "effect.max_concurrent_effects", self.max_concurrent_effects
+                "effect.max_concurrent_effects", default=self.max_concurrent_effects
             )
 
             # Update configuration values with type checking
@@ -669,7 +667,7 @@ class NodeEffect(NodeCoreBase):
 
             emit_log_event(
                 LogLevel.INFO,
-                "NodeEffect loaded configuration from ProtocolNodeConfiguration",
+                "NodeEffect loaded configuration from NodeConfigProvider",
                 {
                     "node_id": str(self.node_id),
                     "default_timeout_ms": self.default_timeout_ms,

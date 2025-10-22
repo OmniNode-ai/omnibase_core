@@ -33,6 +33,7 @@ from typing import Any
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -46,9 +47,6 @@ from omnibase_core.nodes.model_intent import ModelIntent
 from omnibase_core.nodes.model_reducer_input import ModelReducerInput, T_Input
 from omnibase_core.nodes.model_reducer_output import ModelReducerOutput, T_Output
 from omnibase_core.nodes.model_streaming_window import ModelStreamingWindow
-from omnibase_spi.protocols.node.protocol_node_configuration import (
-    ProtocolNodeConfiguration,
-)
 
 
 class NodeReducer(NodeCoreBase):
@@ -418,18 +416,18 @@ class NodeReducer(NodeCoreBase):
 
     async def _initialize_node_resources(self) -> None:
         """Initialize reducer-specific resources."""
-        # Load configuration from ProtocolNodeConfiguration if available
-        config = self.container.get_service_optional(ProtocolNodeConfiguration)
+        # Load configuration from NodeConfigProvider if available
+        config = self.container.get_service_optional(NodeConfigProvider)
         if config:
             # Load performance configurations
             batch_size_value = await config.get_performance_config(
-                "reducer.default_batch_size", self.default_batch_size
+                "reducer.default_batch_size", default=self.default_batch_size
             )
             max_memory_value = await config.get_performance_config(
-                "reducer.max_memory_usage_mb", self.max_memory_usage_mb
+                "reducer.max_memory_usage_mb", default=self.max_memory_usage_mb
             )
             buffer_size_value = await config.get_performance_config(
-                "reducer.streaming_buffer_size", self.streaming_buffer_size
+                "reducer.streaming_buffer_size", default=self.streaming_buffer_size
             )
 
             # Update configuration values with type checking
@@ -442,7 +440,7 @@ class NodeReducer(NodeCoreBase):
 
             emit_log_event(
                 LogLevel.INFO,
-                "NodeReducer loaded configuration from ProtocolNodeConfiguration",
+                "NodeReducer loaded configuration from NodeConfigProvider",
                 {
                     "node_id": str(self.node_id),
                     "default_batch_size": self.default_batch_size,

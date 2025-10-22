@@ -147,6 +147,7 @@ class _LoggerCache:
     """Thread-safe logger cache holder."""
 
     _instance: Any = None
+    _lock = threading.Lock()
 
     @classmethod
     def get(cls) -> Any | None:

@@ -16,17 +16,14 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.utils.singleton_holders import (
-    _LoggerCache,
-    _SimpleFallbackLogger,
-)
+from omnibase_core.utils.singleton_holders import _LoggerCache
 
 # Thread-local correlation ID context
 _context = threading.local()
 
 
 # Background tasks set to prevent garbage collection of fire-and-forget tasks
-_background_tasks: set = set()
+_background_tasks: set[asyncio.Task[None]] = set()
 
 
 def emit_log_event(level: LogLevel, message: str) -> None:

@@ -34,15 +34,13 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.infrastructure import ModelComputeCache
 from omnibase_core.nodes.model_compute_input import ModelComputeInput, T_Input
 from omnibase_core.nodes.model_compute_output import ModelComputeOutput, T_Output
-from omnibase_spi.protocols.node.protocol_node_configuration import (
-    ProtocolNodeConfiguration,
-)
 
 
 class NodeCompute(NodeCoreBase):
@@ -277,18 +275,19 @@ class NodeCompute(NodeCoreBase):
 
     async def _initialize_node_resources(self) -> None:
         """Initialize computation-specific resources."""
-        # Load configuration from ProtocolNodeConfiguration if available
-        config = self.container.get_service_optional(ProtocolNodeConfiguration)
+        # Load configuration from NodeConfigProvider if available
+        config = self.container.get_service_optional(NodeConfigProvider)
         if config:
             # Load performance configurations with fallback to current defaults
             max_workers_value = await config.get_performance_config(
-                "compute.max_parallel_workers", self.max_parallel_workers
+                "compute.max_parallel_workers", default=self.max_parallel_workers
             )
             cache_ttl_value = await config.get_performance_config(
-                "compute.cache_ttl_minutes", self.cache_ttl_minutes
+                "compute.cache_ttl_minutes", default=self.cache_ttl_minutes
             )
             perf_threshold_value = await config.get_performance_config(
-                "compute.performance_threshold_ms", self.performance_threshold_ms
+                "compute.performance_threshold_ms",
+                default=self.performance_threshold_ms,
             )
 
             # Update configuration values with type checking
@@ -301,7 +300,7 @@ class NodeCompute(NodeCoreBase):
 
             emit_log_event(
                 LogLevel.INFO,
-                "NodeCompute loaded configuration from ProtocolNodeConfiguration",
+                "NodeCompute loaded configuration from NodeConfigProvider",
                 {
                     "node_id": str(self.node_id),
                     "max_parallel_workers": self.max_parallel_workers,

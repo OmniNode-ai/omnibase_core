@@ -57,7 +57,7 @@ if TYPE_CHECKING:
 _COMPONENT_NAME = Path(__file__).stem
 
 # Background tasks set to prevent garbage collection of fire-and-forget tasks
-_background_tasks: set = set()
+_background_tasks: set[asyncio.Task[Any]] = set()
 
 
 class MixinEventHandler:

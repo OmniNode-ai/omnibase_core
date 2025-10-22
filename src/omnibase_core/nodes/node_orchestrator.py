@@ -34,6 +34,7 @@ from uuid import UUID, uuid4
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -49,9 +50,6 @@ from omnibase_core.nodes.model_load_balancer import ModelLoadBalancer
 from omnibase_core.nodes.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.nodes.model_orchestrator_output import ModelOrchestratorOutput
 from omnibase_core.nodes.model_workflow_step import ModelWorkflowStep
-from omnibase_spi.protocols.node.protocol_node_configuration import (
-    ProtocolNodeConfiguration,
-)
 
 
 class NodeOrchestrator(NodeCoreBase):
@@ -472,22 +470,25 @@ class NodeOrchestrator(NodeCoreBase):
 
     async def _initialize_node_resources(self) -> None:
         """Initialize orchestrator-specific resources."""
-        # Load configuration from ProtocolNodeConfiguration if available
-        config = self.container.get_service_optional(ProtocolNodeConfiguration)
+        # Load configuration from NodeConfigProvider if available
+        config = self.container.get_service_optional(NodeConfigProvider)
         if config:
             # Load performance configurations
             max_workflows_value = await config.get_performance_config(
-                "orchestrator.max_concurrent_workflows", self.max_concurrent_workflows
+                "orchestrator.max_concurrent_workflows",
+                default=self.max_concurrent_workflows,
             )
 
             # Load timeout configurations
             step_timeout_value = await config.get_timeout_ms(
-                "orchestrator.default_step_timeout_ms", self.default_step_timeout_ms
+                "orchestrator.default_step_timeout_ms",
+                default_ms=self.default_step_timeout_ms,
             )
 
             # Load business logic configurations
             action_emission_value = await config.get_business_logic_config(
-                "orchestrator.action_emission_enabled", self.action_emission_enabled
+                "orchestrator.action_emission_enabled",
+                default=self.action_emission_enabled,
             )
 
             # Update configuration values with type checking
@@ -504,7 +505,7 @@ class NodeOrchestrator(NodeCoreBase):
 
             emit_log_event(
                 LogLevel.INFO,
-                "NodeOrchestrator loaded configuration from ProtocolNodeConfiguration",
+                "NodeOrchestrator loaded configuration from NodeConfigProvider",
                 {
                     "node_id": str(self.node_id),
                     "max_concurrent_workflows": self.max_concurrent_workflows,

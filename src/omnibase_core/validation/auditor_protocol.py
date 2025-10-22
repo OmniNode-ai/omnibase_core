@@ -10,17 +10,10 @@ Implements ProtocolQualityValidator for SPI compliance.
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from omnibase_spi.protocols.validation.protocol_quality_validator import (
-    ProtocolQualityIssue,
-    ProtocolQualityMetrics,
-    ProtocolQualityReport,
-    ProtocolQualityStandards,
     ProtocolQualityValidator,
-)
-from omnibase_spi.protocols.validation.protocol_validation import (
-    ProtocolValidationResult,
 )
 
 from .exceptions import ConfigurationError, InputValidationError
@@ -33,6 +26,17 @@ from .validation_utils import (
     extract_protocols_from_directory,
     validate_directory_path,
 )
+
+if TYPE_CHECKING:
+    from omnibase_spi.protocols.validation.protocol_quality_validator import (
+        ProtocolQualityIssue,
+        ProtocolQualityMetrics,
+        ProtocolQualityReport,
+        ProtocolQualityStandards,
+    )
+    from omnibase_spi.protocols.validation.protocol_validation import (
+        ProtocolValidationResult,
+    )
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
