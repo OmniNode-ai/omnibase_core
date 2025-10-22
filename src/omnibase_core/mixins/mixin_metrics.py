@@ -102,11 +102,14 @@ class MixinMetrics:
         # Use object.__getattribute__() to access attributes set with object.__setattr__()
         # Defensive: Initialize _metrics_data if it doesn't exist (e.g., if __init__ wasn't called)
         try:
-            metrics_data = object.__getattribute__(self, "_metrics_data")
+            metrics_data: dict[str, Any] = object.__getattribute__(
+                self, "_metrics_data"
+            )
         except AttributeError:
             object.__setattr__(self, "_metrics_data", {})
             metrics_data = object.__getattribute__(self, "_metrics_data")
-        return metrics_data.copy()
+        result: dict[str, Any] = metrics_data.copy()
+        return result
 
     def reset_metrics(self) -> None:
         """Reset all metrics data."""

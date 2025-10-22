@@ -219,7 +219,7 @@ def get_action_registry() -> ModelActionRegistry:
         )
 
         container = get_model_onex_container_sync()
-        registry = container.action_registry()
+        registry: ModelActionRegistry = container.action_registry()
 
         # Ensure core actions are bootstrapped (idempotent)
         if len(registry.get_all_actions()) == 0:
@@ -235,6 +235,8 @@ def get_action_registry() -> ModelActionRegistry:
             registry = ModelActionRegistry()
             registry.bootstrap_core_actions()
             _ActionRegistryHolder.set(registry)
+        # Type narrowing: registry is now guaranteed to be ModelActionRegistry
+        assert registry is not None
         return registry
 
 

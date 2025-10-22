@@ -189,7 +189,9 @@ class UtilityReferenceResolver:
         if self.config and self.config.subcontract_import_map:
             mapping = self.config.subcontract_import_map.get(subcontract_path, {})
             if "package_name" in mapping:
-                return mapping["package_name"]
+                package_name = mapping["package_name"]
+                # Type narrowing: ensure str return
+                return str(package_name)
 
         # Default: derive from file path
         # contracts/contract_models.yaml -> models
@@ -216,7 +218,9 @@ class UtilityReferenceResolver:
         if self.config and self.config.subcontract_import_map:
             mapping = self.config.subcontract_import_map.get(subcontract_path, {})
             if "import_path" in mapping:
-                return mapping["import_path"]
+                import_path = mapping["import_path"]
+                # Type narrowing: ensure str return
+                return str(import_path)
 
         # Default convention
         package_name = self.get_package_name_for_subcontract(subcontract_path)

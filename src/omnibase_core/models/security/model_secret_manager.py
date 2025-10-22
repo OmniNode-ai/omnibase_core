@@ -386,7 +386,8 @@ def get_secret_manager() -> ModelSecretManager:
 
     try:
         container = get_model_onex_container_sync()
-        return container.secret_manager()
+        manager: ModelSecretManager = container.secret_manager()
+        return manager
     except (
         Exception
     ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
@@ -395,6 +396,8 @@ def get_secret_manager() -> ModelSecretManager:
         if manager is None:
             manager = ModelSecretManager()
             _SecretManagerHolder.set(manager)
+        # Type narrowing: manager is now guaranteed to be ModelSecretManager
+        assert manager is not None
         return manager
 
 
@@ -411,7 +414,8 @@ def init_secret_manager(config: ModelSecretConfig) -> ModelSecretManager:
         container = get_model_onex_container_sync()
         # Container manages its own instance, but we update holder as fallback
         _SecretManagerHolder.set(manager)
-        return container.secret_manager()
+        result: ModelSecretManager = container.secret_manager()
+        return result
     except (
         Exception
     ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
@@ -431,7 +435,8 @@ def init_secret_manager_from_manager(manager: ModelSecretManager) -> ModelSecret
         container = get_model_onex_container_sync()
         # Container manages its own instance, but we update holder as fallback
         _SecretManagerHolder.set(manager)
-        return container.secret_manager()
+        result: ModelSecretManager = container.secret_manager()
+        return result
     except (
         Exception
     ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios

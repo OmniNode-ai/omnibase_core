@@ -116,4 +116,6 @@ def get_canonical_namespace_prefix() -> str:
     # Load and validate YAML using Pydantic model
     yaml_model = load_and_validate_yaml_model(PROJECT_ONEX_YAML_PATH, ModelGenericYaml)
     data = yaml_model.model_dump()
-    return data[NAMESPACE_KEY]
+    namespace = data[NAMESPACE_KEY]
+    # Type narrowing: ensure str return
+    return str(namespace)

@@ -596,12 +596,19 @@ def _detect_node_id_from_context() -> LogNodeIdentifier:
             if frame and "self" in frame.f_locals:
                 obj = frame.f_locals["self"]
                 if hasattr(obj, "node_id"):
-                    return obj.node_id
+                    node_id = obj.node_id
+                    # Type narrowing: ensure UUID | str return
+                    return (
+                        str(node_id)
+                        if not isinstance(node_id, (UUID, str))
+                        else node_id
+                    )
                 if (
                     hasattr(obj, "__class__")
                     and "node" in obj.__class__.__name__.lower()
                 ):
-                    return obj.__class__.__name__
+                    class_name: str = obj.__class__.__name__
+                    return class_name
 
         # Fallback to module name
         caller_frame = inspect.currentframe()
@@ -609,7 +616,8 @@ def _detect_node_id_from_context() -> LogNodeIdentifier:
             if caller_frame and caller_frame.f_back and caller_frame.f_back.f_back:
                 caller_frame = caller_frame.f_back.f_back
                 module_name = caller_frame.f_globals.get("__name__", "unknown")
-                return module_name.split(".")[-1]
+                # Type narrowing: ensure str return
+                return str(module_name).split(".")[-1]
         finally:
             del caller_frame
 

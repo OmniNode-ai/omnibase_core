@@ -11,7 +11,7 @@ All complex functionality has been moved to service nodes following the
 registry-centric architecture pattern.
 """
 
-from typing import Any
+from typing import Any, cast
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.utils.service_logging import ServiceLogging
@@ -40,7 +40,9 @@ def get_service(protocol_type: type[T]) -> T | None:
         # Try to get service through registry node
         registry = _get_registry_node()
         if registry:
-            return registry.get_service(protocol_type)
+            service = registry.get_service(protocol_type)
+            # Type narrowing: cast to expected protocol type
+            return service if service is not None else None
     except (
         Exception
     ):  # fallback-ok: bootstrap service discovery, fallback to minimal services
@@ -89,7 +91,8 @@ def emit_log_event(
     try:
         logging_service = get_logging_service()
         if hasattr(logging_service, "emit_log_event"):
-            return logging_service.emit_log_event(level, event_type, message, **kwargs)
+            logging_service.emit_log_event(level, event_type, message, **kwargs)
+            return None
     except (
         Exception
     ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
@@ -97,6 +100,7 @@ def emit_log_event(
         pass
 
     # Fallback to stderr when structured logging unavailable
+    return None
 
 
 def emit_log_event_sync(
@@ -113,18 +117,20 @@ def emit_log_event_sync(
     try:
         logging_service = get_logging_service()
         if hasattr(logging_service, "emit_log_event_sync"):
-            return logging_service.emit_log_event_sync(
+            logging_service.emit_log_event_sync(
                 level,
                 message,
                 event_type,
                 **kwargs,
             )
+            return None
     except (
         Exception
     ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
         pass
 
     # Fallback to stderr when structured logging unavailable
+    return None
 
 
 # Private helper functions
@@ -161,7 +167,9 @@ def _get_fallback_service(protocol_type: type[T]) -> T | None:
     """
     # Check if this is a logging protocol
     if hasattr(protocol_type, "__name__") and "Logger" in protocol_type.__name__:
-        return _get_minimal_logging_service()
+        service = _get_minimal_logging_service()
+        # Type narrowing: cast to T for type safety
+        return cast(T, service)
 
     # No fallback available
     return None
@@ -193,7 +201,7 @@ def is_service_available(protocol_type: type[T]) -> bool:
 
 def get_available_services() -> list[str]:
     """
-    Get list[Any]of available services.
+    Get list of available services.
 
     Returns:
         List of available service types
@@ -201,11 +209,13 @@ def get_available_services() -> list[str]:
     try:
         registry = _get_registry_node()
         if registry and hasattr(registry, "list_services"):
-            return registry.list_services()
+            services = registry.list_services()
+            # Type narrowing: ensure list[str]
+            return list(services) if services else []
     except (
         Exception
     ):  # fallback-ok: bootstrap registry unavailable, return minimal services
         pass
 
-    # Return minimal list[Any]for bootstrap
+    # Return minimal list for bootstrap
     return ["logging"]

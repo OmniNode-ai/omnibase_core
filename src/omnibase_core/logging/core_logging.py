@@ -86,10 +86,11 @@ class _SimpleFallbackLogger:
 # Internal implementation
 def _get_correlation_id() -> UUID:
     """Get or create correlation ID."""
-    correlation_id = getattr(_context, "correlation_id", None)
+    correlation_id: UUID | None = getattr(_context, "correlation_id", None)
     if correlation_id is None:
         _context.correlation_id = uuid4()
         correlation_id = _context.correlation_id
+    # Type narrowing: correlation_id is now guaranteed to be UUID
     return correlation_id
 
 

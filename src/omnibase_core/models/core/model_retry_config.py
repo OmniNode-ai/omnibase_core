@@ -109,7 +109,9 @@ class ModelRetryConfig(BaseModel):
             jitter = delay * 0.1 * (0.5 - hash(str(time.time())) % 1000 / 1000.0)
             delay += jitter
 
-        return max(0.1, delay)  # Minimum 0.1 second delay
+        # Type narrowing: ensure float return
+        result: float = max(0.1, delay)  # Minimum 0.1 second delay
+        return result
 
     def get_all_delays(self, include_jitter: bool = True) -> list[float]:
         """Get all delay times for the retry sequence."""
