@@ -13,6 +13,20 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_fallback_strategy_type import EnumFallbackStrategyType
 from omnibase_core.models.core.model_fallback_metadata import ModelFallbackMetadata
 
+__all__ = [
+    "EnumFallbackStrategyType",
+    "ModelFallbackStrategy",
+    "degraded_features",
+    "fallback_endpoint",
+    "get_effective_timeout",
+    "is_degraded_mode",
+    "metadata",
+    "retry_attempts",
+    "should_retry",
+    "strategy_type",
+    "timeout_seconds",
+]
+
 
 class ModelFallbackStrategy(BaseModel):
     """Scalable fallback strategy configuration model."""

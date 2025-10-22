@@ -7,6 +7,23 @@ from omnibase_core.enums.enum_agent_status_type import EnumAgentStatusType
 from omnibase_core.models.core.model_agent_activity import ModelAgentActivity
 from omnibase_core.models.core.model_resource_metrics import ModelResourceMetrics
 
+__all__ = [
+    "EnumAgentStatusType",
+    "ModelAgentStatus",
+    "activity",
+    "agent_id",
+    "error_count",
+    "health_score",
+    "last_error",
+    "last_updated",
+    "resource_usage",
+    "started_at",
+    "status",
+    "tasks_completed",
+    "tasks_failed",
+    "uptime_seconds",
+]
+
 
 class ModelAgentStatus(BaseModel):
     """Complete agent status information."""

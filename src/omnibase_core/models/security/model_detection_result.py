@@ -8,6 +8,26 @@ from omnibase_core.enums.enum_sensitivity_level import EnumSensitivityLevel
 
 from .model_detectionresult import ModelDetectionResult
 
+__all__ = [
+    "EnumDetectionMethod",
+    "EnumDetectionType",
+    "EnumSensitivityLevel",
+    "ModelDetectionMatch",
+    "confidence_score",
+    "context_after",
+    "context_before",
+    "detection_method",
+    "detection_type",
+    "end_position",
+    "matched_text",
+    "metadata",
+    "model_config",
+    "pattern_name",
+    "redacted_text",
+    "sensitivity_level",
+    "start_position",
+]
+
 """
 Detection result model for sensitive information detection.
 

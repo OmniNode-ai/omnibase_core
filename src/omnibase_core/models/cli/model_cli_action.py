@@ -127,7 +127,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
 
         pattern = r"^[a-z][a-z0-9_]*$"
         if not re.match(pattern, v):
-            message = (  # type: ignore[unreachable]
+            message = (
                 "action_display_name must match pattern: start with "
                 "lowercase letter and contain only lowercase letters, "
                 "numbers, and underscores"

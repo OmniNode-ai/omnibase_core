@@ -120,11 +120,11 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             ):
                 if "://" in metadata_block["entrypoint"]:
                     type_, target = metadata_block["entrypoint"].split("://", 1)
-                    metadata_block["entrypoint"] = EntrypointBlock(  # type: ignore[assignment]
+                    metadata_block["entrypoint"] = EntrypointBlock(
                         type=type_, target=target
                     )
             try:
-                metadata_block = NodeMetadataBlock(**metadata_block)  # type: ignore[arg-type]
+                metadata_block = NodeMetadataBlock(**metadata_block)
             except (pydantic.ValidationError, TypeError) as e:
                 # Provide defaults for missing required fields to allow incomplete dicts
                 import uuid as uuid_lib
@@ -192,7 +192,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 # Ensure hash is valid (replace invalid with placeholder)
                 complete_metadata["hash"] = hash_value
                 try:
-                    metadata_block = NodeMetadataBlock(**complete_metadata)  # type: ignore[arg-type]
+                    metadata_block = NodeMetadataBlock(**complete_metadata)
                 except (pydantic.ValidationError, TypeError):
                     # If still failing, use model_validate as last resort
                     metadata_block = NodeMetadataBlock.model_validate(complete_metadata)
@@ -398,9 +398,9 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         """
         # Convert to dict if it's a model instance
         if hasattr(block, "model_dump"):
-            block_dict = block.model_dump(mode="json")  # type: ignore[union-attr]
+            block_dict = block.model_dump(mode="json")
         else:
-            block_dict = block  # type: ignore[assignment]
+            block_dict = block
 
         # Convert string field names to EnumNodeMetadataField
         enum_volatile_fields = tuple(
@@ -415,7 +415,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         comment_prefix = str(kwargs.get("comment_prefix", ""))
 
         meta_yaml = self.canonicalize_metadata_block(
-            metadata_block=block_dict,  # type: ignore[arg-type]
+            metadata_block=block_dict,
             volatile_fields=enum_volatile_fields,
             placeholder=actual_placeholder,
             explicit_start=False,

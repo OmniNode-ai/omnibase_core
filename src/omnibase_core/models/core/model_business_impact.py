@@ -4,6 +4,40 @@ from pydantic import Field
 
 from omnibase_core.enums.enum_impact_severity import EnumImpactSeverity
 
+__all__ = [
+    "EnumImpactSeverity",
+    "ModelBusinessImpact",
+    "affected_services",
+    "affected_users",
+    "assessed_by",
+    "assessment_timestamp",
+    "automated_recovery_successful",
+    "compliance_impact",
+    "confidence_score",
+    "customer_satisfaction_impact",
+    "downtime_minutes",
+    "escalation_required",
+    "from_dict",
+    "incident_ticket_ids",
+    "lessons_learned",
+    "manual_interventions_required",
+    "mitigation_cost_usd",
+    "model_config",
+    "operational_cost_usd",
+    "opportunity_cost_usd",
+    "preventive_measures_implemented",
+    "recovery_actions_taken",
+    "recovery_time_estimate_minutes",
+    "reputation_risk",
+    "revenue_impact_usd",
+    "serialize_datetime",
+    "severity",
+    "sla_violated",
+    "time_to_detection_minutes",
+    "time_to_resolution_minutes",
+    "total_cost_usd",
+]
+
 """
 Business impact model to replace dict[str, Any]ionary usage for business metrics.
 """

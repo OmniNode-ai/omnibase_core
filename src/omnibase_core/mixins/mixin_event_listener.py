@@ -307,7 +307,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             for pattern, subscription in self._event_subscriptions:
                 try:
                     if self.event_bus is not None:
-                        self.event_bus.unsubscribe(subscription)  # type: ignore[attr-defined]  # Duck-typed event bus interface
+                        self.event_bus.unsubscribe(subscription)
                 except Exception as e:
                     emit_log_event(
                         LogLevel.WARNING,
@@ -979,7 +979,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
         # Publish envelope
         if self.event_bus is not None:
-            self.event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
+            self.event_bus.publish_async(envelope)
 
         emit_log_event(
             LogLevel.INFO,
@@ -1041,7 +1041,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         )
 
         if self.event_bus is not None:
-            self.event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
+            self.event_bus.publish_async(envelope)
 
         emit_log_event(
             LogLevel.ERROR,

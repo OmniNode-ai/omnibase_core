@@ -4,6 +4,16 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_health_status_type import EnumHealthStatusType
 
+__all__ = [
+    "EnumHealthStatusType",
+    "ModelHealthCheck",
+    "last_checked",
+    "message",
+    "name",
+    "response_time_ms",
+    "status",
+]
+
 
 class ModelHealthCheck(BaseModel):
     """Individual health check result."""

@@ -286,21 +286,21 @@ class ModelSchemaDict(BaseModel):
             if key == "items" and isinstance(value, dict):
                 kwargs["items"] = cls.from_dict(value)
             elif key == "properties" and isinstance(value, dict):
-                kwargs["properties"] = {k: cls.from_dict(v) for k, v in value.items()}  # type: ignore[assignment]
+                kwargs["properties"] = {k: cls.from_dict(v) for k, v in value.items()}
             elif key == "additionalProperties":
                 if isinstance(value, bool):
-                    kwargs["additional_properties"] = value  # type: ignore[assignment]
+                    kwargs["additional_properties"] = value
                 elif isinstance(value, dict):
-                    kwargs["additional_properties"] = cls.from_dict(value)  # type: ignore[assignment]
+                    kwargs["additional_properties"] = cls.from_dict(value)
             elif key == "definitions" and isinstance(value, dict):
-                kwargs["definitions"] = {k: cls.from_dict(v) for k, v in value.items()}  # type: ignore[assignment]
+                kwargs["definitions"] = {k: cls.from_dict(v) for k, v in value.items()}
             elif key in ["allOf", "anyOf", "oneOf"] and isinstance(value, list):
                 field_name = key[0].lower() + key[1:-1] + "_of"
-                kwargs[field_name] = [cls.from_dict(v) for v in value]  # type: ignore[assignment]
+                kwargs[field_name] = [cls.from_dict(v) for v in value]
             elif key == "default":
                 kwargs["default"] = ModelSchemaValue.from_value(value)
             elif key == "examples" and isinstance(value, list):
-                kwargs["examples"] = [ModelSchemaValue.from_value(ex) for ex in value]  # type: ignore[assignment]
+                kwargs["examples"] = [ModelSchemaValue.from_value(ex) for ex in value]
             elif key in known_fields:
                 # Map to appropriate field name
                 if key == "$schema":
@@ -329,5 +329,5 @@ class ModelSchemaDict(BaseModel):
                 # Unknown field - add to additional_fields
                 additional_fields[key] = ModelSchemaValue.from_value(value)
 
-        kwargs["additional_fields"] = additional_fields  # type: ignore[assignment]
-        return cls(**kwargs)  # type: ignore[arg-type]
+        kwargs["additional_fields"] = additional_fields
+        return cls(**kwargs)

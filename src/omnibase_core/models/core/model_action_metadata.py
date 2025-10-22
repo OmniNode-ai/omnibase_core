@@ -63,7 +63,7 @@ class ModelActionMetadata(BaseModel):
         description="Trust score for action execution (0.0-1.0)",
     )
     security_context: ModelSecurityContext = Field(
-        default_factory=ModelSecurityContext,  # type: ignore[arg-type]
+        default_factory=ModelSecurityContext,
         description="Structured security context and permissions",
     )
 
@@ -126,7 +126,7 @@ class ModelActionMetadata(BaseModel):
 
     # Performance tracking
     performance_metrics: ModelPerformanceMetrics = Field(
-        default_factory=ModelPerformanceMetrics,  # type: ignore[arg-type]
+        default_factory=ModelPerformanceMetrics,
         description="Structured performance metrics for this action",
     )
     resource_usage: dict[str, int | float] = Field(

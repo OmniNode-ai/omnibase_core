@@ -9,6 +9,42 @@ from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )
 
+__all__ = [
+    "ModelValidationIssue",
+    "ModelValidationMetadata",
+    "ModelValidationResult",
+    "T",
+    "add_error",
+    "add_issue",
+    "add_suggestion",
+    "add_warning",
+    "create_failure",
+    "create_invalid",
+    "create_success",
+    "create_valid",
+    "critical_count",
+    "details",
+    "error_count",
+    "errors",
+    "final_issues",
+    "get_issues_by_file",
+    "get_issues_by_severity",
+    "has_critical_issues",
+    "has_errors",
+    "has_warnings",
+    "is_valid",
+    "issue",
+    "issues",
+    "issues_found",
+    "merge",
+    "metadata",
+    "suggestions",
+    "summary",
+    "validated_value",
+    "warning_count",
+    "warnings",
+]
+
 """
 Consolidated Validation Result Model
 

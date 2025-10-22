@@ -104,8 +104,8 @@ class ProtocolContractValidator:
         self.interface_version = ModelSemVer(major=1, minor=0, patch=0)
 
         # Protocol compliance attributes
-        self.onex_standards = onex_standards  # type: ignore[assignment]
-        self.architecture_rules = architecture_rules  # type: ignore[assignment]
+        self.onex_standards = onex_standards
+        self.architecture_rules = architecture_rules
         self.custom_rules: list[ProtocolComplianceRule] = []
         self.strict_mode = strict_mode
 
@@ -777,7 +777,7 @@ class ProtocolContractValidator:
         Args:
             standards: ONEX standards configuration
         """
-        self.onex_standards = standards  # type: ignore[assignment]
+        self.onex_standards = standards
 
     async def get_compliance_summary(
         self, reports: list[ProtocolComplianceReport]

@@ -619,7 +619,7 @@ class NodeBase(
         """
         return state
 
-    async def dispatch_async(  # type: ignore[override]
+    async def dispatch_async(
         self,
         state: ProtocolState,
         action: ProtocolAction,

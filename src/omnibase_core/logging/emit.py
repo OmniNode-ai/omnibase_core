@@ -711,7 +711,7 @@ def _route_to_logger_node(
         output_handler = _ProtocolCache.get_output_handler()
 
         # If not cached or cache expired, perform lookup with locking
-        if formatter is None or output_handler is None or cache_expired:  # type: ignore[unreachable]
+        if formatter is None or output_handler is None or cache_expired:
             with _ProtocolCache._lock:
                 # Double-check after acquiring lock
                 current_time = time.time()
@@ -721,7 +721,7 @@ def _route_to_logger_node(
 
                 # Re-check after lock acquisition (may have changed)
                 if (
-                    _ProtocolCache.get_formatter() is None  # type: ignore[unreachable]
+                    _ProtocolCache.get_formatter() is None
                     or _ProtocolCache.get_output_handler() is None
                     or cache_expired
                 ):

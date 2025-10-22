@@ -11,3 +11,7 @@ from omnibase_core.types.constraints import BasicValueType
 from omnibase_core.types.typed_dict_usage_metadata import TypedDictUsageMetadata
 
 from .model_metadatausagemetrics import ModelMetadataUsageMetrics
+
+__all__ = [
+    "ModelMetadataUsageMetrics",
+]

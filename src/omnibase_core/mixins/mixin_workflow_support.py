@@ -138,7 +138,7 @@ class MixinDagSupport:
                 correlation_id=correlation_uuid,
             )
 
-            self._event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
+            self._event_bus.publish_async(envelope)
         except Exception as e:
             # Log error but don't fail the tool execution
             self._safe_log_error(f"Failed to emit Workflow completion event: {e}")
@@ -190,7 +190,7 @@ class MixinDagSupport:
                 correlation_id=correlation_uuid,
             )
 
-            self._event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
+            self._event_bus.publish_async(envelope)
         except Exception as e:
             self._safe_log_error(f"Failed to emit Workflow start event: {e}")
 

@@ -3,6 +3,20 @@ from uuid import UUID
 
 from pydantic import Field
 
+__all__ = [
+    "ModelCertificateInfo",
+    "ModelNodeSignature",
+    "certificate_id",
+    "extended_key_usage",
+    "issuer_dn",
+    "key_usage",
+    "not_after",
+    "not_before",
+    "public_key_hash",
+    "serial_number",
+    "subject_dn",
+]
+
 "\nModelNodeSignature: Cryptographic signature for envelope audit trails\n\nThis model represents a single node's cryptographic signature in the envelope\nrouting chain, providing non-repudiation and tamper detection capabilities.\n"
 import logging
 from dataclasses import dataclass

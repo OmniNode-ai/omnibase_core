@@ -221,11 +221,11 @@ class ModelGenericMetadata(BaseModel):
                 key: cli_value.to_python_value()
                 for key, cli_value in self.custom_fields.items()
             }
-            metadata["metadata"]["custom_fields"] = custom_fields_dict  # type: ignore[index]
+            metadata["metadata"]["custom_fields"] = custom_fields_dict
 
         # Add metadata_id to metadata dict if present
         if self.metadata_id:
-            metadata["metadata"]["metadata_id"] = str(self.metadata_id)  # type: ignore[index]
+            metadata["metadata"]["metadata_id"] = str(self.metadata_id)
 
         return metadata
 
@@ -244,7 +244,7 @@ class ModelGenericMetadata(BaseModel):
             if "metadata" in metadata:
                 meta_dict = metadata["metadata"]
                 if isinstance(meta_dict, dict) and "custom_fields" in meta_dict:
-                    custom_fields = meta_dict["custom_fields"]  # type: ignore[index]
+                    custom_fields = meta_dict["custom_fields"]
                     if isinstance(custom_fields, dict):
                         for key, value in custom_fields.items():
                             if isinstance(value, (str, int, bool, float)):

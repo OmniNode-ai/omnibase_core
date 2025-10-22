@@ -73,7 +73,7 @@ class ModelProtocolAuditor:
         self.repository_name = determine_repository_name(self.repository_path)
 
         # Protocol compliance attributes
-        self.standards = standards  # type: ignore[assignment]
+        self.standards = standards
         self.enable_complexity_analysis = enable_complexity_analysis
         self.enable_duplication_detection = enable_duplication_detection
         self.enable_style_checking = enable_style_checking
@@ -560,7 +560,7 @@ class ModelProtocolAuditor:
         Args:
             standards: Quality standards configuration
         """
-        self.standards = standards  # type: ignore[assignment]
+        self.standards = standards
 
     async def get_validation_summary(
         self, reports: list[ProtocolQualityReport]

@@ -183,7 +183,7 @@ class MixinNodeService:
 
             # Cleanup event handlers if available
             if hasattr(self, "cleanup_event_handlers"):
-                self.cleanup_event_handlers()  # type: ignore[attr-defined]
+                self.cleanup_event_handlers()
 
             self._service_running = False
             self._log_info("Service stopped successfully")
@@ -333,7 +333,7 @@ class MixinNodeService:
 
         # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
         if hasattr(self, "_get_event_bus"):
-            event_bus = self._get_event_bus()  # type: ignore[attr-defined]
+            event_bus = self._get_event_bus()
 
         # Strategy 2: Try direct event_bus attribute
         if not event_bus:
@@ -430,7 +430,7 @@ class MixinNodeService:
         if input_state_class:
             # Create input state with action and parameters
             params_dict: dict[str, Any] = (
-                event.parameters.get_parameter_dict()  # type: ignore[union-attr]
+                event.parameters.get_parameter_dict()
                 if hasattr(event.parameters, "get_parameter_dict")
                 else event.parameters  # type: ignore[assignment]
             )
@@ -440,7 +440,7 @@ class MixinNodeService:
         from types import SimpleNamespace
 
         params_dict = (
-            event.parameters.get_parameter_dict()  # type: ignore[union-attr]
+            event.parameters.get_parameter_dict()
             if hasattr(event.parameters, "get_parameter_dict")
             else event.parameters  # type: ignore[assignment]
         )
@@ -508,7 +508,7 @@ class MixinNodeService:
 
         # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
         if hasattr(self, "_get_event_bus"):
-            event_bus = self._get_event_bus()  # type: ignore[attr-defined]
+            event_bus = self._get_event_bus()
 
         # Strategy 2: Try direct event_bus attribute
         if not event_bus:
@@ -542,7 +542,7 @@ class MixinNodeService:
 
             # Strategy 1: Try _get_event_bus() method if available (from MixinEventBus)
             if hasattr(self, "_get_event_bus"):
-                event_bus = self._get_event_bus()  # type: ignore[attr-defined]
+                event_bus = self._get_event_bus()
 
             # Strategy 2: Try direct event_bus attribute
             if not event_bus:
@@ -603,7 +603,7 @@ class MixinNodeService:
         """Extract node name from class name."""
         # Try common methods first
         if hasattr(self, "get_node_name"):
-            return self.get_node_name()  # type: ignore[attr-defined]
+            return self.get_node_name()
         # Fallback to class name
         return self.__class__.__name__
 

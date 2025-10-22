@@ -71,7 +71,7 @@ class ModelServiceOrchestrator(  # type: ignore[misc]
     MixinNodeService,
     NodeOrchestrator,
     MixinHealthCheck,
-    MixinEventBus[Any, Any],  # type: ignore[misc]
+    MixinEventBus[Any, Any],
     MixinMetrics,
 ):
     """

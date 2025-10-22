@@ -175,7 +175,7 @@ class MixinEventHandler:
         try:
             # Get introspection data
             if hasattr(self, "_gather_introspection_data"):
-                introspection_data = self._gather_introspection_data()  # type: ignore[attr-defined]
+                introspection_data = self._gather_introspection_data()
             else:
                 # Fallback introspection data
                 introspection_data = {

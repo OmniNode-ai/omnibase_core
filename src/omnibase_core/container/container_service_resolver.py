@@ -102,7 +102,7 @@ def create_get_service_method(
                     health_status="healthy",
                 )
             if protocol_name == "ProtocolConsulClient":
-                getattr(self, "consul_client", lambda: None)()  # type: ignore[attr-defined]
+                getattr(self, "consul_client", lambda: None)()
                 return ModelService(
                     service_id=_generate_service_uuid("consul_client"),
                     service_name="consul_client",

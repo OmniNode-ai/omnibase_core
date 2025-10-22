@@ -72,7 +72,7 @@ class ModelCustomConnectionProperties(BaseModel):
     def handle_flat_init_kwargs(cls, data: Any) -> dict[str, Any]:
         """Handle flat kwargs during initialization by routing to nested models."""
         if not isinstance(data, dict):
-            return data  # type: ignore[return-value]
+            return data
 
         # Database properties
         database_kwargs = {}

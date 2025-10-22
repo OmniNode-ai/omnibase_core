@@ -8,6 +8,35 @@ from omnibase_core.enums.enum_tool_compatibility_mode import EnumToolCompatibili
 from omnibase_core.enums.enum_tool_registration_status import EnumToolRegistrationStatus
 from omnibase_core.primitives.model_semver import ModelSemVer
 
+__all__ = [
+    "EnumToolCapabilityLevel",
+    "EnumToolCategory",
+    "EnumToolCompatibilityMode",
+    "EnumToolRegistrationStatus",
+    "ModelToolMetadata",
+    "audit_trail",
+    "author",
+    "capability_level",
+    "category",
+    "compatibility_mode",
+    "compliance_tags",
+    "configuration_schema",
+    "dependencies",
+    "description",
+    "documentation_url",
+    "module_path",
+    "name",
+    "optional_protocols",
+    "performance_metrics",
+    "registration_time",
+    "required_protocols",
+    "security_level",
+    "status",
+    "tool_class",
+    "validation_result",
+    "version",
+]
+
 "\nTool metadata model.\n"
 from datetime import datetime
 from enum import Enum
