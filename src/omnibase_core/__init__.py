@@ -31,6 +31,9 @@ Validation Tools:
         python -m omnibase_core.validation all
 """
 
+# string-version-ok: Package metadata follows PEP 396 standard Python practice
+__version__ = "0.1.0"
+
 # Lazy import to avoid circular dependencies
 # Import error classes and validation functions only when accessed
 
@@ -80,6 +83,8 @@ def __getattr__(name: str) -> object:
 
 
 __all__ = [
+    # Version metadata
+    "__version__",
     # Error classes (commonly used)
     "EnumCoreErrorCode",
     "ModelOnexError",

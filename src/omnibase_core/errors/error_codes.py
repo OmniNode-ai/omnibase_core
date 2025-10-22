@@ -162,6 +162,7 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     INVALID_INPUT = "ONEX_CORE_007_INVALID_INPUT"
     INVALID_OPERATION = "ONEX_CORE_008_INVALID_OPERATION"
     CONVERSION_ERROR = "ONEX_CORE_009_CONVERSION_ERROR"
+    PARSING_ERROR = "ONEX_CORE_010_PARSING_ERROR"
 
     # File system errors (021-040)
     FILE_NOT_FOUND = "ONEX_CORE_021_FILE_NOT_FOUND"
@@ -295,6 +296,7 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.INVALID_INPUT: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.INVALID_OPERATION: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.CONVERSION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PARSING_ERROR: EnumCLIExitCode.ERROR,
     # File system errors -> ERROR
     EnumCoreErrorCode.FILE_NOT_FOUND: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.FILE_READ_ERROR: EnumCLIExitCode.ERROR,
@@ -400,6 +402,7 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.INVALID_INPUT: "Invalid input provided",
         EnumCoreErrorCode.INVALID_OPERATION: "Invalid operation requested",
         EnumCoreErrorCode.CONVERSION_ERROR: "Data conversion error",
+        EnumCoreErrorCode.PARSING_ERROR: "Data parsing error",
         EnumCoreErrorCode.FILE_NOT_FOUND: "File not found",
         EnumCoreErrorCode.FILE_READ_ERROR: "Cannot read file",
         EnumCoreErrorCode.FILE_WRITE_ERROR: "Cannot write file",

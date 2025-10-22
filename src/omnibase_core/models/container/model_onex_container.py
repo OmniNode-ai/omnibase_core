@@ -472,6 +472,32 @@ class ModelONEXContainer:
         """Modern standards method."""
         return self.get_service_sync(protocol_type, service_name)
 
+    def get_service_optional(
+        self,
+        protocol_type: type[T],
+        service_name: str | None = None,
+    ) -> T | None:
+        """
+        Get service with optional return - returns None if not found.
+
+        This method provides a non-throwing alternative to get_service(),
+        useful for optional dependencies that may not be available in all
+        container configurations.
+
+        Args:
+            protocol_type: Protocol interface to resolve
+            service_name: Optional service name
+
+        Returns:
+            Service instance of type T, or None if service cannot be resolved
+        """
+        try:
+            return self.get_service_sync(protocol_type, service_name)
+        except (
+            Exception
+        ):  # fallback-ok: Optional service getter intentionally returns None when service unavailable
+            return None
+
     def get_workflow_orchestrator(self) -> Any:
         """Get workflow orchestration coordinator."""
         return self.workflow_coordinator()

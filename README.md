@@ -209,7 +209,7 @@ def get_service(self, protocol_name: str) -> Any:
 ### 4. Create Package Structure
 ```bash
 # Create all missing __init__.py files
-find src/omnibase -type d -exec touch {}/__init__.py \;
+find src/omnibase_core -type d -exec touch {}/__init__.py \;
 
 # Create consolidated exports in infrastructure_service_bases.py
 # (Already complete - exports all 4 node base classes)
@@ -267,9 +267,9 @@ The `examples/` directory contains usage examples demonstrating framework patter
 The foundation of all ONEX tools:
 
 ```python
-from omnibase.core.infrastructure_service_bases import (
+from omnibase_core.core.infrastructure_service_bases import (
     NodeEffectService,      # External interactions (APIs, databases, files)
-    NodeComputeService,     # Data processing and computation  
+    NodeComputeService,     # Data processing and computation
     NodeReducerService,     # State aggregation and management
     NodeOrchestratorService # Workflow coordination
 )
@@ -288,8 +288,8 @@ logger = container.get_service("ProtocolLogger")
 
 ### 3. Structured Error Handling
 ```python
-from omnibase.decorators.error_handling import standard_error_handling
-from omnibase.exceptions.base_onex_error import OnexError
+from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.exceptions.base_onex_error import OnexError
 
 @standard_error_handling  # Eliminates 6+ lines of try/catch boilerplate
 async def my_operation(self):
@@ -302,7 +302,7 @@ async def my_operation(self):
 
 ### 4. Event-Driven Communication
 ```python
-from omnibase.model.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 
 # Process events through envelope pattern
 async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
