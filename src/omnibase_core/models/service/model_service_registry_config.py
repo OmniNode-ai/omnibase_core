@@ -127,7 +127,8 @@ class ModelServiceRegistryConfig(BaseModel):
         mode_config = self.get_mode(mode_name)
         if not mode_config:
             return []
-        return mode_config.required_services
+        required_services: list[str] = mode_config.required_services
+        return required_services
 
     def add_service(self, name: str, config: ModelServiceConfiguration) -> None:
         """Add a new service configuration."""

@@ -489,13 +489,16 @@ class MixinNodeService:
 
         if hasattr(result, "model_dump"):
             # Pydantic v2 model - use mode='json' for JSON-serializable output
-            return result.model_dump(mode="json")
+            serialized: dict[str, Any] = result.model_dump(mode="json")
+            return serialized
         if hasattr(result, "dict"):
             # Pydantic v1 model (fallback)
-            return result.dict()
+            result_dict: dict[str, Any] = result.dict()
+            return result_dict
         if hasattr(result, "__dict__"):
             # Regular object
-            return result.__dict__
+            obj_dict: dict[str, Any] = result.__dict__
+            return obj_dict
         if isinstance(result, dict):
             return result
         # Primitive or other types
@@ -603,7 +606,8 @@ class MixinNodeService:
         """Extract node name from class name."""
         # Try common methods first
         if hasattr(self, "get_node_name"):
-            return self.get_node_name()
+            node_name: str = self.get_node_name()
+            return node_name
         # Fallback to class name
         return self.__class__.__name__
 

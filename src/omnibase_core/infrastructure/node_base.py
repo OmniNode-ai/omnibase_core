@@ -516,21 +516,24 @@ class NodeBase(
 
             # Check if tool supports async processing
             if hasattr(main_tool, "process_async"):
-                return await main_tool.process_async(input_state)
+                result = await main_tool.process_async(input_state)
+                return cast(T_OUTPUT_STATE, result)
             if hasattr(main_tool, "process"):
                 # Run sync process in thread pool to avoid blocking
-                return await asyncio.get_event_loop().run_in_executor(
+                result = await asyncio.get_event_loop().run_in_executor(
                     None,
                     main_tool.process,
                     input_state,
                 )
+                return cast(T_OUTPUT_STATE, result)
             if hasattr(main_tool, "run"):
                 # Run sync run method in thread pool
-                return await asyncio.get_event_loop().run_in_executor(
+                result = await asyncio.get_event_loop().run_in_executor(
                     None,
                     main_tool.run,
                     input_state,
                 )
+                return cast(T_OUTPUT_STATE, result)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process_async(), process(), or run() method",

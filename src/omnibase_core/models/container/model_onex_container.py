@@ -1,6 +1,6 @@
 import uuid
 from collections.abc import Callable
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, cast
 
 from pydantic import BaseModel
 
@@ -261,7 +261,8 @@ class ModelONEXContainer:
                     "correlation_id": str(final_correlation_id),
                 },
             )
-            return self._service_cache[cache_key]
+            cached_service: T = self._service_cache[cache_key]
+            return cached_service
 
         # Try ServiceRegistry first (new DI system)
         if self._enable_service_registry and self._service_registry is not None:
@@ -285,7 +286,8 @@ class ModelONEXContainer:
                     },
                 )
 
-                return service_instance
+                typed_service: T = cast(T, service_instance)
+                return typed_service
 
             except Exception as registry_error:
                 # Log but don't fail - fall through to legacy resolution
@@ -360,7 +362,8 @@ class ModelONEXContainer:
                 },
             )
 
-            return service_instance
+            legacy_service: T = cast(T, service_instance)
+            return legacy_service
 
         except Exception as e:
             emit_log_event(
@@ -622,7 +625,10 @@ class ModelONEXContainer:
         if not self.performance_monitor:
             return {"error": "Performance monitoring not enabled"}
 
-        return await self.performance_monitor.run_optimization_checkpoint(phase_name)
+        result: dict[str, Any] = (
+            await self.performance_monitor.run_optimization_checkpoint(phase_name)
+        )
+        return result
 
     def close(self) -> None:
         """Clean up resources."""
@@ -714,7 +720,8 @@ async def get_model_onex_container() -> ModelONEXContainer:
     if container is None:
         container = await create_model_onex_container()
         _ContainerHolder.set(container)
-    return container
+    result: ModelONEXContainer = cast(ModelONEXContainer, container)
+    return result
 
 
 def get_model_onex_container_sync() -> ModelONEXContainer:

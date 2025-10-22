@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from pydantic import field_validator
 
@@ -136,4 +136,7 @@ class ModelOnexInputState(BaseModel):
             ModelOnexInternalInputState,
         )
 
-        return ModelOnexInternalInputState.from_boundary_state(self)
+        result: ModelOnexInternalInputState = (
+            ModelOnexInternalInputState.from_boundary_state(self)
+        )
+        return result  # type: ignore[no-any-return]

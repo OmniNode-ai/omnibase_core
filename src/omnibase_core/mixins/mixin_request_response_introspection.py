@@ -561,7 +561,8 @@ class MixinRequestResponseIntrospection:
         if hasattr(self, "_cached_introspection"):
             cached = self._cached_introspection
             if hasattr(cached, "capabilities"):
-                return cached.capabilities
+                capabilities: ModelNodeCapabilities = cached.capabilities
+                return capabilities
 
         # Fallback to basic capabilities
         actions = []

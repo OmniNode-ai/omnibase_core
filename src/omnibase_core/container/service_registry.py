@@ -2,7 +2,7 @@
 
 import time
 from datetime import datetime
-from typing import Any, Literal, TypeVar
+from typing import Any, Literal, TypeVar, cast
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel
@@ -407,9 +407,10 @@ class ServiceRegistry:
             registration.mark_accessed()
 
             # Resolve based on lifecycle
-            instance = await self._resolve_by_lifecycle(
+            instance_result = await self._resolve_by_lifecycle(
                 registration_id, registration, scope or registration.scope, context
             )
+            instance = cast(TInterface, instance_result)
 
             # Track performance
             end_time = time.perf_counter()
@@ -467,9 +468,10 @@ class ServiceRegistry:
         registration_id = self._name_map[name]
         registration = self._registrations[registration_id]
 
-        return await self._resolve_by_lifecycle(
+        result = await self._resolve_by_lifecycle(
             registration_id, registration, scope or registration.scope, None
         )
+        return cast(TInterface, result)
 
     async def resolve_all_services(
         self,

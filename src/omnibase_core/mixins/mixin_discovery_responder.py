@@ -398,7 +398,8 @@ class MixinDiscoveryResponder:
         if hasattr(self, "get_introspection_response"):
             try:
                 introspection_response = self.get_introspection_response()
-                return introspection_response.model_dump()
+                result: dict[str, Any] = introspection_response.model_dump()
+                return result
             except Exception:
                 pass
 
@@ -455,9 +456,11 @@ class MixinDiscoveryResponder:
             str: Node version if available
         """
         if hasattr(self, "version"):
-            return self.version
+            version: ModelSemVer | None = self.version
+            return version
         if hasattr(self, "node_version"):
-            return self.node_version
+            node_version: ModelSemVer | None = self.node_version
+            return node_version
         return None
 
     def _get_discovery_event_channels(self) -> dict[str, list[str]]:
@@ -470,7 +473,8 @@ class MixinDiscoveryResponder:
         if hasattr(self, "get_event_channels"):
             try:
                 channels = self.get_event_channels()
-                return channels.model_dump()
+                result: dict[str, list[str]] = channels.model_dump()
+                return result
             except Exception:
                 pass
 

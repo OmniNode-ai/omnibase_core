@@ -341,11 +341,13 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         raise ModelOnexError(msg, EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED)
 
     def _serialize_result(self, result: Any) -> dict[str, Any]:
-        """Serialize the execution result to a dict[str, Any]ionary."""
-        if hasattr(result, "dict[str, Any]"):
-            return result.model_dump()
+        """Serialize the execution result to a dictionary."""
+        if hasattr(result, "model_dump"):
+            serialized: dict[str, Any] = result.model_dump()
+            return serialized
         if hasattr(result, "__dict__"):
-            return result.__dict__
+            dict_result: dict[str, Any] = result.__dict__
+            return dict_result
         if isinstance(result, dict):
             return result
         return {"result": result}

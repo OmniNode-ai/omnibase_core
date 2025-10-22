@@ -271,16 +271,18 @@ def get_global_command_registry() -> ModelCliCommandRegistry:
 
     try:
         container = get_model_onex_container_sync()
-        return container.command_registry()
+        registry: ModelCliCommandRegistry = container.command_registry()
+        return registry
     except (
         Exception
     ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
         # Fallback to singleton holder
-        registry = _CommandRegistryHolder.get()
-        if registry is None:
-            registry = ModelCliCommandRegistry()
-            _CommandRegistryHolder.set(registry)
-        return registry
+        registry_result = _CommandRegistryHolder.get()
+        if registry_result is None:
+            registry_result = ModelCliCommandRegistry()
+            _CommandRegistryHolder.set(registry_result)
+        final_registry: ModelCliCommandRegistry = registry_result
+        return final_registry
 
 
 def discover_commands_from_contracts(base_path: Path | None = None) -> int:

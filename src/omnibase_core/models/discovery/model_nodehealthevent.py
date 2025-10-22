@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from pydantic import Field, field_validator
@@ -45,7 +45,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
         """Convert string node_id to UUID if needed."""
         if isinstance(v, str):
             return uuid_from_string(v, namespace="node")
-        return v
+        return cast(UUID, v)
 
     @field_validator("health_metrics", mode="before")
     @classmethod
@@ -81,7 +81,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
                 custom_metrics={"status": status},
             )
 
-        return v
+        return cast(ModelHealthMetrics, v)
 
     @classmethod
     def create_healthy_report(

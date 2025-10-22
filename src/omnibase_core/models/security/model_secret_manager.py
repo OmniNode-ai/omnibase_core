@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
@@ -386,8 +386,7 @@ def get_secret_manager() -> ModelSecretManager:
 
     try:
         container = get_model_onex_container_sync()
-        manager: ModelSecretManager = container.secret_manager()
-        return manager
+        return cast(ModelSecretManager, container.secret_manager())
     except (
         Exception
     ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
@@ -396,9 +395,9 @@ def get_secret_manager() -> ModelSecretManager:
         if manager is None:
             manager = ModelSecretManager()
             _SecretManagerHolder.set(manager)
+            return manager
         # Type narrowing: manager is now guaranteed to be ModelSecretManager
-        assert manager is not None
-        return manager
+        return cast(ModelSecretManager, manager)
 
 
 def init_secret_manager(config: ModelSecretConfig) -> ModelSecretManager:

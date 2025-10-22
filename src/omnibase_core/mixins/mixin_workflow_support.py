@@ -214,7 +214,8 @@ class MixinDagSupport:
         try:
             if hasattr(result, "model_dump"):
                 # Pydantic model
-                return result.model_dump()
+                serialized: dict[str, Any] = result.model_dump()
+                return serialized
             if hasattr(result, "__dict__"):
                 # Regular object
                 return {k: str(v) for k, v in result.__dict__.items()}

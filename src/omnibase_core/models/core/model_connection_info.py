@@ -186,7 +186,8 @@ class ModelConnectionInfo(BaseModel):
     def serialize_secret(self, value: Any) -> str:
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
-        return value
+        result: str = value if isinstance(value, str) else str(value) if value else ""
+        return result
 
     @field_serializer("established_at", "last_used_at")
     def serialize_datetime(self, value: datetime | None) -> str | None:

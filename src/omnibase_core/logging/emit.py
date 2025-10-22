@@ -503,9 +503,13 @@ def _sanitize_sensitive_data(text: str) -> str:
 
     Returns:
         Sanitized text with sensitive patterns redacted
+
+    Note:
+        Despite type annotation, includes runtime type check for defensive programming.
     """
+    # Defensive check for runtime safety - unreachable with proper typing
     if not isinstance(text, str):
-        return text  # type: ignore[return-value]
+        return text  # type: ignore[unreachable]
 
     sanitized = text
     for pattern, replacement in _SENSITIVE_PATTERNS:
@@ -518,16 +522,20 @@ def _sanitize_data_dict(
     data: dict[str, LogDataValue | None],
 ) -> dict[str, LogDataValue | None]:
     """
-    Sanitize sensitive data in a data dict[str, Any]ionary and ensure JSON compatibility.
+    Sanitize sensitive data in a dictionary and ensure JSON compatibility.
 
     Args:
         data: Dictionary to sanitize
 
     Returns:
-        Sanitized dict[str, Any]ionary with JSON-compatible values
+        Sanitized dictionary with JSON-compatible values
+
+    Note:
+        Despite type annotation, includes runtime type check for defensive programming.
     """
+    # Defensive check for runtime safety - unreachable with proper typing
     if not isinstance(data, dict):
-        return data  # type: ignore[return-value]
+        return data  # type: ignore[unreachable]
 
     sanitized: dict[str, Any | None] = {}
     for key, value in data.items():

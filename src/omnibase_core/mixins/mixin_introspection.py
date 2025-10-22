@@ -92,15 +92,18 @@ class MixinNodeIntrospection(ABC):
 
     @classmethod
     def get_node_name(cls) -> str:
-        return cls.get_metadata_loader().node_name
+        node_name: str = cls.get_metadata_loader().node_name
+        return node_name
 
     @classmethod
-    def get_node_version(cls) -> str:
-        return cls.get_metadata_loader().node_version
+    def get_node_version(cls) -> ModelSemVer:
+        node_version: ModelSemVer = cls.get_metadata_loader().node_version
+        return node_version
 
     @classmethod
     def get_node_description(cls) -> str:
-        return cls.get_metadata_loader().node_description
+        node_description: str = cls.get_metadata_loader().node_description
+        return node_description
 
     @classmethod
     def get_input_state_class(cls) -> type[BaseModel]:
@@ -118,7 +121,8 @@ class MixinNodeIntrospection(ABC):
         """
         metadata_loader = cls.get_metadata_loader()
         if hasattr(metadata_loader, "input_state_class"):
-            return metadata_loader.input_state_class
+            input_state_class: type[BaseModel] = metadata_loader.input_state_class
+            return input_state_class
         # Fallback to generic BaseModel if not provided
         return BaseModel
 
@@ -138,7 +142,8 @@ class MixinNodeIntrospection(ABC):
         """
         metadata_loader = cls.get_metadata_loader()
         if hasattr(metadata_loader, "output_state_class"):
-            return metadata_loader.output_state_class
+            output_state_class: type[BaseModel] = metadata_loader.output_state_class
+            return output_state_class
         # Fallback to generic BaseModel if not provided
         return BaseModel
 
@@ -158,7 +163,8 @@ class MixinNodeIntrospection(ABC):
         """
         metadata_loader = cls.get_metadata_loader()
         if hasattr(metadata_loader, "error_codes_class"):
-            return metadata_loader.error_codes_class
+            error_codes_class: type = metadata_loader.error_codes_class
+            return error_codes_class
         # Fallback to creating a minimal error codes enum
         from enum import Enum
 

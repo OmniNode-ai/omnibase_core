@@ -212,7 +212,7 @@ def get_event_type_registry() -> ModelEventTypeRegistry:
         )
 
         container = get_model_onex_container_sync()
-        registry = container.event_type_registry()
+        registry: ModelEventTypeRegistry = container.event_type_registry()
 
         # Ensure core event types are bootstrapped (idempotent)
         if len(registry.get_all_event_types()) == 0:
@@ -223,12 +223,13 @@ def get_event_type_registry() -> ModelEventTypeRegistry:
         Exception
     ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
         # Fallback to singleton holder for edge cases
-        registry = _EventTypeRegistryHolder.get()
-        if registry is None:
-            registry = ModelEventTypeRegistry()
-            registry.bootstrap_core_event_types()
-            _EventTypeRegistryHolder.set(registry)
-        return registry
+        registry_result = _EventTypeRegistryHolder.get()
+        if registry_result is None:
+            registry_result = ModelEventTypeRegistry()
+            registry_result.bootstrap_core_event_types()
+            _EventTypeRegistryHolder.set(registry_result)
+        final_registry: ModelEventTypeRegistry = registry_result
+        return final_registry
 
 
 def reset_event_type_registry() -> None:

@@ -17,7 +17,8 @@ class MixinNodeSetup:
     def node_directory(self) -> Path:
         # Allow override by setting self._node_directory in the node class
         if hasattr(self, "_node_directory"):
-            return self._node_directory
+            directory: Path = self._node_directory
+            return directory
         # Fallback: try to infer from the concrete class's file
         import inspect
 

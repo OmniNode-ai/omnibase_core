@@ -79,7 +79,7 @@ class ModelExternalServiceConfig(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_service_config(cls, values: Any) -> None:
+    def validate_service_config(cls, values: Any) -> Any:
         """Validate that connection_config matches service_type and convert to typed models."""
         if hasattr(values, "get") and callable(values.get):
             service_type = values.get("service_type", "").lower()

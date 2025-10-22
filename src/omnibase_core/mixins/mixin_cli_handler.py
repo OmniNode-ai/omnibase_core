@@ -69,7 +69,8 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
     def get_cli_description(self) -> str:
         """Get CLI description. Override to customize."""
         if hasattr(self, "description"):
-            return self.description
+            description: str = self.description
+            return description
         return f"{self.__class__.__name__} - ONEX Tool"
 
     def add_custom_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -331,12 +332,14 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
     def _create_input_state(self, data: dict[str, Any]) -> InputStateT:
         """Create input state from dictionary data."""
+        from typing import cast
+
         # Get input state class from type hints
         if hasattr(self.process, "__annotations__"):
             annotations = self.process.__annotations__
             if "input_state" in annotations:
                 input_class = annotations["input_state"]
-                return input_class(**data)
+                return cast(InputStateT, input_class(**data))
 
         # Fallback - return data as-is
         return data  # type: ignore[return-value]

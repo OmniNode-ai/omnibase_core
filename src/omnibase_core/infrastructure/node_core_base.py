@@ -603,7 +603,8 @@ class NodeCoreBase(ABC):
                             module_path = Path(module.__file__)
                             contract_path = module_path.parent / CONTRACT_FILENAME
                             if contract_path.exists():
-                                return contract_path
+                                found_path: Path = contract_path
+                                return found_path
 
             # Contract file not found in any stack frame
             raise ModelOnexError(

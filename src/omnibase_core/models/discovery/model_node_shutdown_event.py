@@ -1,7 +1,7 @@
 "\nNode Shutdown Event Model\n\nEvent published by nodes when they are shutting down to enable\ngraceful deregistration from the service registry.\n"
 
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from pydantic import Field, field_validator
@@ -69,7 +69,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         """Convert string node_id to UUID if needed."""
         if isinstance(v, str):
             return uuid_from_string(v, namespace="node")
-        return v
+        return cast(UUID, v)
 
     @classmethod
     def create_graceful_shutdown(

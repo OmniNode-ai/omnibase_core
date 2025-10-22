@@ -127,7 +127,8 @@ def get_security_recommendations(
 
             config = ModelDatabaseSecureConfig(**config_dict)
             assessment = config.get_security_assessment()
-            return assessment.get("recommendations", [])
+            recommendations: list[Any] = assessment.get("recommendations", [])
+            return recommendations
 
         if config_type == "backend":
             backend = ModelSecretBackend(**config_dict)

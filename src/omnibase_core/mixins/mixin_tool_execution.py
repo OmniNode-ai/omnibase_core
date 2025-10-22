@@ -170,10 +170,12 @@ class MixinToolExecution:
         """
         if hasattr(output_state, "model_dump"):
             # Pydantic model
-            return output_state.model_dump()
+            result: dict[str, Any] = output_state.model_dump()
+            return result
         if hasattr(output_state, "__dict__"):
             # Regular object
-            return output_state.__dict__
+            obj_dict: dict[str, Any] = output_state.__dict__
+            return obj_dict
         if isinstance(output_state, dict):
             # Already a dict
             return output_state

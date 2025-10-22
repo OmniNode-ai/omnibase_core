@@ -1,4 +1,4 @@
-from typing import Any, Generic
+from typing import Any, Generic, cast
 
 """
 Action Registry for Dynamic CLI Action Discovery.
@@ -219,7 +219,7 @@ def get_action_registry() -> ModelActionRegistry:
         )
 
         container = get_model_onex_container_sync()
-        registry: ModelActionRegistry = container.action_registry()
+        registry = cast(ModelActionRegistry, container.action_registry())
 
         # Ensure core actions are bootstrapped (idempotent)
         if len(registry.get_all_actions()) == 0:
@@ -235,9 +235,9 @@ def get_action_registry() -> ModelActionRegistry:
             registry = ModelActionRegistry()
             registry.bootstrap_core_actions()
             _ActionRegistryHolder.set(registry)
+            return registry
         # Type narrowing: registry is now guaranteed to be ModelActionRegistry
-        assert registry is not None
-        return registry
+        return cast(ModelActionRegistry, registry)
 
 
 def reset_action_registry() -> None:

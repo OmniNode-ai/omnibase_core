@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 from pydantic import Field
 
@@ -636,9 +636,11 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
             # Try to create input state from event data
             if hasattr(input_state_class, "from_event"):
-                return input_state_class.from_event(event)
+                result = input_state_class.from_event(event)
+                return cast(InputStateT, result)
             # Create from event data directly
-            return input_state_class(**event_data)
+            result = input_state_class(**event_data)
+            return cast(InputStateT, result)
 
         except Exception as e:
             self._log_error(
@@ -655,7 +657,8 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             orig_bases = getattr(self.__class__, "__orig_bases__", ())
             for base in orig_bases:
                 if hasattr(base, "__args__") and len(base.__args__) >= 1:
-                    return base.__args__[0]
+                    cls: type | None = base.__args__[0]
+                    return cls
             return None
         except (
             Exception
