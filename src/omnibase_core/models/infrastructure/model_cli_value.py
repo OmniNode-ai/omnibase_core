@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Note: Previously had type alias (CliDictValueType)
@@ -137,15 +138,21 @@ class ModelCliValue(BaseModel):
             return cls.from_integer(value)
         if isinstance(value, float):
             return cls.from_float(value)
-        if isinstance(value, dict):
-            converted_value = {
-                key: ModelSchemaValue.from_value(val) for key, val in value.items()
-            }
-            return cls.from_dict_value(converted_value)
-        if isinstance(value, list):
-            return cls.from_list(value)
-        # Convert unknown types to string representation
-        return cls.from_string(str(value))
+        # Reject unsupported types with clear error message
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Unsupported type {type(value).__name__} for metadata field. "
+            f"Supported types: str, int, bool, float",
+            details=ModelErrorContext.with_context(
+                {
+                    "provided_type": ModelSchemaValue.from_value(type(value).__name__),
+                    "supported_types": ModelSchemaValue.from_value(
+                        "str, int, bool, float"
+                    ),
+                    "value_repr": ModelSchemaValue.from_value(str(value)[:100]),
+                }
+            ),
+        )
 
     def to_python_value(self) -> object:
         """Convert back to Python native value."""

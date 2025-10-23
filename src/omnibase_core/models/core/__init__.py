@@ -35,6 +35,9 @@ from .model_generic_collection_summary import ModelGenericCollectionSummary
 from .model_generic_metadata import ModelGenericMetadata
 from .model_generic_properties import ModelGenericProperties
 
+# Event envelope patterns
+from .model_onex_envelope_v1 import ModelOnexEnvelopeV1
+
 # Version information
 from .model_onex_version import ModelOnexVersionInfo
 from .model_result_accessor import ModelResultAccessor
@@ -106,6 +109,8 @@ __all__ = [
     "ModelCustomProperties",
     # Version information
     "ModelOnexVersionInfo",
+    # Event envelope patterns
+    "ModelOnexEnvelopeV1",
     # Generic container pattern
     "ModelContainer",
     # Field accessor patterns

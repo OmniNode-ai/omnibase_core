@@ -1,0 +1,279 @@
+# Intent Publisher Subcontract
+# ONEX v2.0 Coordination Capability
+#
+# Provides intent publishing capability for nodes that need to coordinate
+# actions without performing direct domain I/O. Intents are published to
+# Kafka coordination topics for execution by intent executor nodes.
+#
+# Architecture:
+#   Node (pure logic) → Mixin.publish_event_intent() → Kafka (intent topic)
+#     → IntentExecutor → EFFECT → Kafka (domain topic)
+#
+# Usage:
+#   Include this subcontract in any node that needs coordination I/O.
+#   Node must implement MixinIntentPublisher and call _init_intent_publisher().
+
+name: intent_publisher
+version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: "service"
+type: coordination
+category: io_coordination
+
+description: >
+  Provides intent publishing capability for ONEX nodes. #magic___^_^___line Allows nodes to coordinate actions (like publishing events) without performing direct domain I/O. Instead, nodes publish "intents" to a coordination topic, which are executed by dedicated IntentExecutor nodes. #magic___^_^___line Key benefits:
+    - Domain logic stays pure (no direct I/O)
+    - Coordination I/O is explicit (via mixin)
+    - Intents are traceable (correlation IDs, timestamps)
+    - Execution is async and decoupled
+
+# Capabilities provided by this subcontract
+capabilities:
+  publish_event_intent:
+    description: Publish an intent to publish an event to Kafka
+
+    inputs:
+      target_topic:
+        type: string
+        description: Kafka topic where event should be published
+        required: true
+        examples:
+          - "dev.omninode-bridge.codegen.metrics-recorded.v1"
+          - "dev.omninode-bridge.codegen.generation-completed.v1"
+
+      target_key:
+        type: string
+        description: Kafka key for the event
+        required: true
+
+      event:
+        type: object
+        description: Event model to publish (Pydantic BaseModel)
+        required: true
+
+      correlation_id:
+        type: string
+        format: uuid
+        description: Correlation ID for tracing (generated if not provided)
+        required: false
+
+      priority:
+        type: integer
+        description: Intent priority (1=highest, 10=lowest)
+        minimum: 1
+        maximum: 10
+        default: 5
+        required: false
+
+    outputs:
+      intent_id:
+        type: string
+        format: uuid
+        description: Unique identifier for the published intent
+
+      published_at:
+        type: string
+        format: date-time
+        description: When intent was published (UTC)
+
+      target_topic:
+        type: string
+        description: Echo of target topic for confirmation
+
+      correlation_id:
+        type: string
+        format: uuid
+        description: Correlation ID for tracing
+
+# Kafka configuration for intent publishing
+kafka_config:
+  intent_topic: "dev.omninode-bridge.intents.event-publish.v1"
+  publisher_type: "coordination" # Different from domain publishing
+
+  envelope_format: "ModelOnexEnvelopeV1"
+  envelope_version: "1.0"
+
+  retry_policy:
+    max_attempts: 3
+    backoff_ms: 500
+    backoff_multiplier: 2.0
+
+# Dependencies required by this subcontract
+dependencies:
+  required_services:
+    - name: kafka_client
+      purpose: Intent publishing to coordination topic
+      interface: KafkaClient
+      methods:
+        - publish(topic, key, value)
+
+  optional_services:
+    - name: intent_tracker
+      purpose: Track intent execution status
+      interface: IntentTracker
+
+# Mixin implementation
+mixin:
+  class_name: MixinIntentPublisher
+  module: omnibase_core.mixins.mixin_intent_publisher
+  initialization: _init_intent_publisher(container)
+
+  methods:
+    - publish_event_intent(target_topic, target_key, event, correlation_id, priority)
+
+# Integration requirements
+integration:
+  node_contract:
+    must_include:
+      - subcontracts.refs: "./contracts/intent_publisher.yaml"
+      - mixins: ["MixinIntentPublisher"]
+
+  node_implementation:
+    must_call:
+      - self._init_intent_publisher(container) # In __init__
+
+  container_services:
+    must_provide:
+      - kafka_client
+
+# Event schemas
+events:
+  published:
+    - event_type: EVENT_PUBLISH_INTENT
+      schema:
+        type: object
+        required:
+          - intent_id
+          - correlation_id
+          - created_at
+          - created_by
+          - target_topic
+          - target_key
+          - target_event_type
+          - target_event_payload
+        properties:
+          intent_id:
+            type: string
+            format: uuid
+          correlation_id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          created_by:
+            type: string
+          target_topic:
+            type: string
+          target_key:
+            type: string
+          target_event_type:
+            type: string
+          target_event_payload:
+            type: object
+          priority:
+            type: integer
+            minimum: 1
+            maximum: 10
+
+# Performance characteristics
+performance:
+  publish_latency_ms:
+    p50: 5
+    p95: 15
+    p99: 30
+
+  throughput:
+    target_per_second: 1000
+    notes: Intent publishing is lightweight coordination I/O
+
+# Testing requirements
+testing:
+  unit_tests:
+    - test_publish_event_intent_success
+    - test_publish_event_intent_invalid_priority
+    - test_publish_event_intent_missing_kafka_client
+    - test_intent_payload_structure
+
+  integration_tests:
+    - test_intent_consumed_by_executor
+    - test_intent_execution_end_to_end
+
+  mocks:
+    - MockKafkaClient: For testing without real Kafka
+
+# Documentation
+documentation:
+  examples:
+    - name: Basic intent publishing
+      code: |
+        class MyReducer(MixinIntentPublisher):
+            def __init__(self, container):
+                super().__init__(container)
+                self._init_intent_publisher(container)
+
+            async def execute_reduction(self, events):
+                result = self._aggregate(events)
+
+                event = MetricsRecordedEvent(...)
+
+                await self.publish_event_intent(
+                    target_topic=TOPIC_METRICS,
+                    target_key=str(result.id),
+                    event=event
+                )
+
+                return result
+
+    - name: With correlation tracking
+      code: |
+        correlation_id = uuid4()
+
+        result = await self.publish_event_intent(
+            target_topic=TOPIC_MY_EVENT,
+            target_key="my-key",
+            event=my_event,
+            correlation_id=correlation_id,
+            priority=3  # High priority
+        )
+
+        logger.info(f"Intent {result.intent_id} published")
+
+# Migration notes
+migration:
+  from_direct_publishing:
+    before: |
+      # Old: Direct publishing (couples node to Kafka)
+      await kafka_client.publish(
+          topic=TOPIC_METRICS,
+          key=str(metrics.id),
+          value=event.model_dump_json()
+      )
+
+    after: |
+      # New: Intent publishing (coordination I/O)
+      await self.publish_event_intent(
+          target_topic=TOPIC_METRICS,
+          target_key=str(metrics.id),
+          event=event
+      )
+
+    benefits:
+      - Domain logic becomes testable without Kafka
+      - Can swap Kafka for other message brokers
+      - Intent execution can be monitored/retried independently
+      - Maintains ONEX architectural boundaries
+
+# Future enhancements
+roadmap:
+  - name: Intent prioritization
+    description: Intent executor respects priority for execution order
+
+  - name: Intent batching
+    description: Batch multiple intents for efficiency
+
+  - name: Intent TTL
+    description: Expire intents that aren't executed within timeout
+
+  - name: Intent status tracking
+    description: Query intent execution status via API
