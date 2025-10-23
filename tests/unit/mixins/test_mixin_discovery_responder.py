@@ -13,11 +13,14 @@ Tests cover:
 
 import json
 import time
+from typing import Any
 from unittest.mock import AsyncMock, Mock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
+from pydantic import BaseModel
 
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.mixins.mixin_discovery_responder import MixinDiscoveryResponder
 from omnibase_core.models.core.model_discovery_request_response import (
@@ -25,6 +28,49 @@ from omnibase_core.models.core.model_discovery_request_response import (
 )
 from omnibase_core.models.core.model_event_type import create_event_type_from_registry
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
+from omnibase_core.primitives.model_semver import ModelSemVer
+
+
+# Helper class for testing - fully compliant node
+class MockIntrospectionResponse(BaseModel):
+    """Mock introspection response for testing."""
+
+    node_id: UUID
+    node_type: str
+    capabilities: list[str]
+    health_status: str
+
+
+class MockEventChannels(BaseModel):
+    """Mock event channels for testing."""
+
+    subscribes_to: list[str]
+    publishes_to: list[str]
+
+
+class CompliantTestNode(MixinDiscoveryResponder):
+    """Fully compliant test node with all required attributes and methods."""
+
+    def __init__(self):
+        super().__init__()
+        self.node_id: UUID = uuid4()
+        self.version: ModelSemVer = ModelSemVer(major=1, minor=0, patch=0)
+
+    def get_introspection_response(self) -> MockIntrospectionResponse:
+        """Return introspection response."""
+        return MockIntrospectionResponse(
+            node_id=self.node_id,
+            node_type=self.__class__.__name__,
+            capabilities=self.get_discovery_capabilities(),
+            health_status=self.get_health_status(),
+        )
+
+    def get_event_channels(self) -> MockEventChannels:
+        """Return event channels."""
+        return MockEventChannels(
+            subscribes_to=["onex.discovery.broadcast"],
+            publishes_to=["onex.discovery.response"],
+        )
 
 
 class TestMixinDiscoveryResponderInitialization:
@@ -433,12 +479,15 @@ class TestNodeVersion:
         class TestNode(MixinDiscoveryResponder):
             def __init__(self):
                 super().__init__()
-                self.version = "2.5.0"
+                self.version = ModelSemVer(major=2, minor=5, patch=0)
 
         node = TestNode()
         version = node._get_node_version()
 
-        assert version == "2.5.0"
+        assert isinstance(version, ModelSemVer)
+        assert version.major == 2
+        assert version.minor == 5
+        assert version.patch == 0
 
     def test_get_node_version_with_node_version_attr(self):
         """Test getting version from node_version attribute."""
@@ -446,35 +495,51 @@ class TestNodeVersion:
         class TestNode(MixinDiscoveryResponder):
             def __init__(self):
                 super().__init__()
-                self.node_version = "3.1.4"
+                self.node_version = ModelSemVer(major=3, minor=1, patch=4)
 
         node = TestNode()
         version = node._get_node_version()
 
-        assert version == "3.1.4"
+        assert isinstance(version, ModelSemVer)
+        assert version.major == 3
+        assert version.minor == 1
+        assert version.patch == 4
 
     def test_get_node_version_none(self):
-        """Test getting version when not available."""
+        """Test getting version when not available now raises error."""
 
         class TestNode(MixinDiscoveryResponder):
             pass
 
         node = TestNode()
-        version = node._get_node_version()
 
-        assert version is None
+        # BREAKING CHANGE: Now raises error instead of returning None
+        with pytest.raises(ModelOnexError) as exc_info:
+            node._get_node_version()
+
+        assert "version" in str(exc_info.value).lower()
 
 
 class TestEventChannels:
     """Test event channels retrieval."""
 
-    def test_get_discovery_event_channels_fallback(self):
-        """Test fallback event channels."""
+    def test_get_discovery_event_channels_missing_method(self):
+        """Test that missing get_event_channels() method raises error."""
 
         class TestNode(MixinDiscoveryResponder):
             pass
 
         node = TestNode()
+
+        # BREAKING CHANGE: Now raises error instead of fallback
+        with pytest.raises(ModelOnexError) as exc_info:
+            node._get_discovery_event_channels()
+
+        assert "get_event_channels" in str(exc_info.value).lower()
+
+    def test_get_discovery_event_channels_with_method(self):
+        """Test event channels retrieval with proper method."""
+        node = CompliantTestNode()
         channels = node._get_discovery_event_channels()
 
         assert isinstance(channels, dict)
@@ -491,13 +556,8 @@ class TestIntegrationScenarios:
     async def test_full_discovery_workflow(self):
         """Test complete discovery request-response workflow."""
 
-        class TestNode(MixinDiscoveryResponder):
-            def __init__(self):
-                super().__init__()
-                self.node_id = uuid4()
-                self.version = "1.0.0"
-
-        node = TestNode()
+        # Use CompliantTestNode which has all required attributes
+        node = CompliantTestNode()
         mock_event_bus = AsyncMock()
         mock_event_bus.subscribe = AsyncMock(return_value=AsyncMock())
         mock_event_bus.publish = AsyncMock()
@@ -542,3 +602,150 @@ class TestIntegrationScenarios:
             request_id=uuid4(), requested_capabilities=["custom_cap1"]
         )
         assert node._matches_discovery_criteria(request) is True
+
+
+class TestStrictTypeEnforcement:
+    """Test strict type enforcement breaking changes."""
+
+    @pytest.mark.asyncio
+    async def test_start_discovery_responder_missing_node_id(self):
+        """Test that starting discovery fails if node_id is missing."""
+
+        class InvalidNode(MixinDiscoveryResponder):
+            pass
+
+        node = InvalidNode()
+        mock_event_bus = AsyncMock()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await node.start_discovery_responder(mock_event_bus)
+
+        # Error is wrapped in DISCOVERY_SETUP_FAILED
+        assert exc_info.value.error_code == EnumCoreErrorCode.DISCOVERY_SETUP_FAILED
+
+    @pytest.mark.asyncio
+    async def test_start_discovery_responder_wrong_node_id_type(self):
+        """Test that starting discovery fails if node_id is not UUID."""
+
+        class InvalidNode(MixinDiscoveryResponder):
+            def __init__(self):
+                super().__init__()
+                self.node_id = "not-a-uuid"  # Wrong type
+
+        node = InvalidNode()
+        mock_event_bus = AsyncMock()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await node.start_discovery_responder(mock_event_bus)
+
+        # Error is wrapped in DISCOVERY_SETUP_FAILED
+        assert exc_info.value.error_code == EnumCoreErrorCode.DISCOVERY_SETUP_FAILED
+
+    def test_get_node_version_missing(self):
+        """Test that _get_node_version fails if no version attribute."""
+
+        class InvalidNode(MixinDiscoveryResponder):
+            pass
+
+        node = InvalidNode()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node._get_node_version()
+
+        assert "version" in str(exc_info.value).lower()
+
+    def test_get_node_version_wrong_type(self):
+        """Test that _get_node_version fails if version is not ModelSemVer."""
+
+        class InvalidNode(MixinDiscoveryResponder):
+            def __init__(self):
+                super().__init__()
+                self.version = "1.0.0"  # Wrong type (string not ModelSemVer)
+
+        node = InvalidNode()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node._get_node_version()
+
+        assert "modelsemver" in str(exc_info.value).lower()
+
+    def test_get_node_version_correct_type(self):
+        """Test that _get_node_version succeeds with correct ModelSemVer type."""
+
+        class ValidNode(MixinDiscoveryResponder):
+            def __init__(self):
+                super().__init__()
+                self.version = ModelSemVer(major=2, minor=5, patch=3)
+
+        node = ValidNode()
+        version = node._get_node_version()
+
+        assert isinstance(version, ModelSemVer)
+        assert version.major == 2
+        assert version.minor == 5
+        assert version.patch == 3
+
+    def test_get_discovery_introspection_missing_method(self):
+        """Test that _get_discovery_introspection fails if method missing."""
+
+        class InvalidNode(MixinDiscoveryResponder):
+            pass
+
+        node = InvalidNode()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node._get_discovery_introspection()
+
+        assert "get_introspection_response" in str(exc_info.value).lower()
+
+    def test_get_discovery_introspection_with_method(self):
+        """Test that _get_discovery_introspection succeeds with proper method."""
+        node = CompliantTestNode()
+        introspection = node._get_discovery_introspection()
+
+        assert isinstance(introspection, dict)
+        assert "node_id" in introspection
+        assert "node_type" in introspection
+
+    def test_get_discovery_event_channels_missing_method(self):
+        """Test that _get_discovery_event_channels fails if method missing."""
+
+        class InvalidNode(MixinDiscoveryResponder):
+            pass
+
+        node = InvalidNode()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node._get_discovery_event_channels()
+
+        assert "get_event_channels" in str(exc_info.value).lower()
+
+    def test_get_discovery_event_channels_with_method(self):
+        """Test that _get_discovery_event_channels succeeds with proper method."""
+        node = CompliantTestNode()
+        channels = node._get_discovery_event_channels()
+
+        assert isinstance(channels, dict)
+        assert "subscribes_to" in channels
+        assert "publishes_to" in channels
+
+    @pytest.mark.asyncio
+    async def test_compliant_node_full_workflow(self):
+        """Test that fully compliant node works end-to-end."""
+        node = CompliantTestNode()
+        mock_event_bus = AsyncMock()
+        mock_event_bus.subscribe = AsyncMock(return_value=AsyncMock())
+
+        # Should not raise any errors
+        await node.start_discovery_responder(mock_event_bus)
+
+        assert node._discovery_active is True
+
+        # Verify all required methods work
+        assert isinstance(node._get_node_version(), ModelSemVer)
+        assert isinstance(node._get_discovery_introspection(), dict)
+        assert isinstance(node._get_discovery_event_channels(), dict)
+
+        await node.stop_discovery_responder()
+
+        assert node._discovery_active is False

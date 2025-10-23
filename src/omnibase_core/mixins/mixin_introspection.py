@@ -358,7 +358,7 @@ class MixinNodeIntrospection(ABC):
         # Create enhanced node metadata with version information
         node_metadata = ModelNodeMetadataInfo(
             name=node_name,
-            version=parse_semver_from_string(cls.get_node_version()),
+            version=cls.get_node_version(),
             description=cls.get_node_description(),
             author=cls.get_node_author(),
             schema_version=parse_semver_from_string(cls.get_schema_version()),

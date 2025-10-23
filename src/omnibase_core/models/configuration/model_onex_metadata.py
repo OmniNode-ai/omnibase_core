@@ -8,9 +8,11 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.enums.enum_lifecycle import EnumLifecycle
-from omnibase_core.enums.enum_meta_type import EnumMetaType
-from omnibase_core.enums.enum_runtime_language import EnumRuntimeLanguage
+from omnibase_core.enums.enum_metadata import (
+    EnumLifecycle,
+    EnumMetaType,
+    EnumRuntimeLanguage,
+)
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_node_metadata import Namespace

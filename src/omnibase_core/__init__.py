@@ -29,6 +29,19 @@ Validation Tools:
         python -m omnibase_core.validation architecture src/
         python -m omnibase_core.validation union-usage --strict
         python -m omnibase_core.validation all
+
+Validators:
+    The validators module provides reusable validation tools that can be used
+    by any project consuming omnibase_core as a dependency.
+
+    Quick usage:
+        from omnibase_core.validators import CircularImportValidator
+
+        # Detect circular imports
+        validator = CircularImportValidator(source_path="/path/to/src")
+        result = validator.validate()
+        if result.has_circular_imports:
+            print(f"Found {len(result.circular_imports)} circular imports")
 """
 
 # string-version-ok: Package metadata follows PEP 396 standard Python practice
@@ -70,6 +83,16 @@ def __getattr__(name: str) -> object:
         # Return the requested attribute from validation module
         return locals()[name]
 
+    if name in {"CircularImportValidator", "ImportStatus", "ModuleImportResult"}:
+        from .validators import (
+            CircularImportValidator,
+            ImportStatus,
+            ModuleImportResult,
+        )
+
+        # Return the requested attribute from validators module
+        return locals()[name]
+
     # Import here to avoid circular dependency
     from omnibase_core.errors.error_codes import EnumCoreErrorCode
     from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -96,4 +119,8 @@ __all__ = [
     "validate_contracts",
     "validate_patterns",
     "validate_union_usage",
+    # Validators (reusable validation tools)
+    "CircularImportValidator",
+    "ImportStatus",
+    "ModuleImportResult",
 ]

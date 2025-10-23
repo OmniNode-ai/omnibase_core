@@ -36,6 +36,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
+if TYPE_CHECKING:
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_status import EnumNodeStatus
 from omnibase_core.enums.enum_registry_execution_mode import EnumRegistryExecutionMode

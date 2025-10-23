@@ -100,10 +100,12 @@ from .enum_parameter_type import EnumParameterType
 
 # Registry-related enums
 from .enum_registry_health_status import EnumRegistryHealthStatus
+from .enum_registry_type import EnumRegistryType
 from .enum_return_type import EnumReturnType
 
-# from .enum_registry_type import EnumRegistryType  # MISSING MODULE
+# Security-related enums
 from .enum_security_profile import EnumSecurityProfile
+from .enum_security_risk_level import SecurityRiskLevel
 
 # Service-related enums
 from .enum_service_health_status import EnumServiceHealthStatus
@@ -125,11 +127,17 @@ from .enum_tool_type import EnumToolType
 # State management enums
 from .enum_transition_type import EnumTransitionType
 
+# Tree sync enums
+from .enum_tree_sync_status import EnumTreeSyncStatus
+
 # URI-related enums
 from .enum_uri_type import EnumUriType
 
 # Validation-related enums
 from .enum_validation import EnumErrorSeverity, EnumValidationLevel, EnumValidationMode
+
+# Value type enums
+from .enum_value_type import EnumValueType
 
 # Version and contract enums
 from .enum_version_status import EnumVersionStatus
@@ -163,6 +171,7 @@ __all__ = [
     "EnumDataClassification",
     "EnumSecurityProfile",
     "EnumAuthenticationMethod",
+    "SecurityRiskLevel",
     # Validation domain
     "EnumErrorSeverity",
     # Execution domain
@@ -179,6 +188,7 @@ __all__ = [
     "EnumOperationStatus",
     "EnumValidationLevel",
     "EnumValidationMode",
+    "EnumValueType",
     # Parameter and return type domain
     "EnumParameterType",
     "EnumReturnType",
@@ -219,6 +229,8 @@ __all__ = [
     # State management domain
     "EnumTransitionType",
     "EnumStateUpdateOperation",
+    # Tree sync domain
+    "EnumTreeSyncStatus",
     # Response and reply domain
     "EnumOnexReplyStatus",
     # Computation and processing domain
@@ -239,6 +251,7 @@ __all__ = [
     "EnumFunctionLanguage",
     # Registry-related domain
     "EnumRegistryHealthStatus",
+    "EnumRegistryType",
     # Service-related domain
     "EnumServiceHealthStatus",
     "EnumServiceMode",

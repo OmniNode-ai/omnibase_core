@@ -8,11 +8,11 @@ Represents the highest level of organization for ONEX tool groups.
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field, field_validator
-from pydantic.dataclasses import ValidationInfo
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 # Import extracted classes
-from omnibase_core.enums.enum_group_manifest import EnumGroupStatus, EnumSecurityProfile
+from omnibase_core.enums.enum_group_status import EnumGroupStatus
+from omnibase_core.enums.enum_security_profile import EnumSecurityProfile
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_group_dependency import ModelGroupDependency

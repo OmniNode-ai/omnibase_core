@@ -4,10 +4,8 @@ Version Manifest Model - Tier 3 Metadata.
 Re-export module for version manifest components.
 """
 
-from omnibase_core.enums.enum_version_manifest import (
-    EnumContractCompliance,
-    EnumVersionStatus,
-)
+from omnibase_core.enums.enum_contract_compliance import EnumContractCompliance
+from omnibase_core.enums.enum_version_status import EnumVersionStatus
 from omnibase_core.models.core.model_version_contract import ModelVersionContract
 from omnibase_core.models.core.model_version_deployment import ModelVersionDeployment
 from omnibase_core.models.core.model_version_documentation import (

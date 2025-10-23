@@ -1,6 +1,7 @@
 from typing import Any
 from uuid import UUID
 
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # === OmniNode:Metadata ===
@@ -38,6 +39,9 @@ import inspect
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync
@@ -144,8 +148,16 @@ class MixinEventHandler:
         Args:
             envelope: Event envelope containing the introspection request
         """
+        # STRICT: Envelope must have payload attribute
+        if not hasattr(envelope, "payload"):
+            raise ModelOnexError(
+                f"Envelope missing required 'payload' attribute",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                context={"envelope_type": type(envelope).__name__},
+            )
+
         # Extract event from envelope
-        event = envelope.payload if hasattr(envelope, "payload") else envelope
+        event = envelope.payload
 
         # Check if this event is an introspection request
         try:
@@ -236,8 +248,16 @@ class MixinEventHandler:
         Args:
             envelope: Event envelope containing the discovery request
         """
+        # STRICT: Envelope must have payload attribute
+        if not hasattr(envelope, "payload"):
+            raise ModelOnexError(
+                f"Envelope missing required 'payload' attribute",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                context={"envelope_type": type(envelope).__name__},
+            )
+
         # Extract event from envelope
-        event = envelope.payload if hasattr(envelope, "payload") else envelope
+        event = envelope.payload
 
         # Check if this event is a discovery request
         try:

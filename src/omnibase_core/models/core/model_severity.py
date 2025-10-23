@@ -15,7 +15,8 @@ Phase 3I remediation: Eliminated all factory methods and conversion anti-pattern
 from pathlib import Path
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
+from pydantic_core.core_schema import ValidationInfo
 
 
 class ModelSeverity(BaseModel):
@@ -81,20 +82,23 @@ class ModelSeverity(BaseModel):
     )
 
     # ONEX validation constraints
-    @validator("name")
-    def validate_name_consistency(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("name")
+    @classmethod
+    def validate_name_consistency(cls, v: Any, info: ValidationInfo) -> Any:
         """Ensure name and value are consistent."""
-        if "value" in values and v.lower() != values["value"]:
+        value = info.data.get("value")
+        if value is not None and v.lower() != value:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Name '{v}' must match value '{values.get('value', '')}'",
+                message=f"Name '{v}' must match value '{value}'",
             )
         return v
 
-    @validator("numeric_value")
-    def validate_severity_ranges(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("numeric_value")
+    @classmethod
+    def validate_severity_ranges(cls, v: Any, info: ValidationInfo) -> Any:
         """Validate numeric values align with severity expectations."""
-        name = values.get("name", "")
+        name = info.data.get("name", "")
         expected_ranges = {
             "DEBUG": (0, 15),
             "INFO": (15, 25),
@@ -113,11 +117,12 @@ class ModelSeverity(BaseModel):
                 )
         return v
 
-    @validator("is_critical")
-    def validate_critical_consistency(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("is_critical")
+    @classmethod
+    def validate_critical_consistency(cls, v: Any, info: ValidationInfo) -> Any:
         """Ensure critical flag aligns with severity level."""
-        name = values.get("name", "")
-        numeric = values.get("numeric_value", 0)
+        name = info.data.get("name", "")
+        numeric = info.data.get("numeric_value", 0)
 
         if name in ["CRITICAL", "FATAL"] and not v:
             raise ModelOnexError(

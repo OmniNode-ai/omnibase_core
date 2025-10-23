@@ -264,6 +264,8 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     # Discovery and metadata errors (251-260)
     DISCOVERY_SETUP_FAILED = "ONEX_CORE_251_DISCOVERY_SETUP_FAILED"
     METADATA_LOAD_FAILED = "ONEX_CORE_252_METADATA_LOAD_FAILED"
+    DISCOVERY_INVALID_NODE = "ONEX_CORE_253_DISCOVERY_INVALID_NODE"
+    DISCOVERY_INVALID_REQUEST = "ONEX_CORE_254_DISCOVERY_INVALID_REQUEST"
 
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
@@ -366,6 +368,8 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     # Discovery/metadata errors -> ERROR
     EnumCoreErrorCode.DISCOVERY_SETUP_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.METADATA_LOAD_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DISCOVERY_INVALID_NODE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST: EnumCLIExitCode.ERROR,
 }
 
 
@@ -464,6 +468,8 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.CONTRACT_VIOLATION: "Contract violation detected",
         EnumCoreErrorCode.DISCOVERY_SETUP_FAILED: "Discovery setup failed",
         EnumCoreErrorCode.METADATA_LOAD_FAILED: "Metadata loading failed",
+        EnumCoreErrorCode.DISCOVERY_INVALID_NODE: "Discovery invalid node configuration",
+        EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST: "Discovery invalid request format",
     }
     return descriptions.get(error_code, "Unknown error")
 

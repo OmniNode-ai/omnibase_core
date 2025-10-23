@@ -462,20 +462,26 @@ class MixinNodeService:
         event: ModelToolInvocationEvent,
     ) -> Any:
         """Execute the tool via the node's run method."""
-        # Check if the node has a run method
-        if hasattr(self, "run"):
-            run_method = self.run
-            if asyncio.iscoroutinefunction(run_method):
-                return await run_method(input_state)
-            # Run synchronous method in executor to avoid blocking
-            return await asyncio.get_event_loop().run_in_executor(
-                None,
-                run_method,
-                input_state,
+        # STRICT: Node must have run() method for service to work
+        if not hasattr(self, "run"):
+            raise ModelOnexError(
+                message="Node does not have a 'run' method for tool execution",
+                error_code=EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED,
+                context={
+                    "node_type": type(self).__name__,
+                    "tool_name": event.tool_name,
+                    "action": event.action,
+                },
             )
-        raise ModelOnexError(
-            message="Node does not have a 'run' method for tool execution",
-            error_code=EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED,
+
+        run_method = self.run
+        if asyncio.iscoroutinefunction(run_method):
+            return await run_method(input_state)
+        # Run synchronous method in executor to avoid blocking
+        return await asyncio.get_event_loop().run_in_executor(
+            None,
+            run_method,
+            input_state,
         )
 
     def _serialize_result(self, result: Any) -> dict[str, Any]:

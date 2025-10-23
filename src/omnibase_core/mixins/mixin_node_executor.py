@@ -2,6 +2,9 @@ import uuid
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+if TYPE_CHECKING:
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
 
@@ -136,7 +139,15 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         Args:
             envelope: The event envelope containing the tool invocation event
         """
-        extracted_event = envelope.payload if hasattr(envelope, "payload") else envelope
+        # STRICT: Envelope must have payload attribute
+        if not hasattr(envelope, "payload"):
+            raise ModelOnexError(
+                "Envelope missing required 'payload' attribute",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                context={"envelope_type": type(envelope).__name__},
+            )
+
+        extracted_event = envelope.payload
         if not isinstance(extracted_event, ModelToolInvocationEvent):
             self._log_warning(f"Unexpected event type: {type(extracted_event)}")
             return
@@ -328,15 +339,24 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         self, input_state: Any, event: ModelToolInvocationEvent
     ) -> Any:
         """Execute the tool via the node's run method."""
-        if hasattr(self, "run"):
-            run_method = self.run
-            if asyncio.iscoroutinefunction(run_method):
-                return await run_method(input_state)
-            return await asyncio.get_event_loop().run_in_executor(
-                None, run_method, input_state
+        # STRICT: Node must have run() method for executor to work
+        if not hasattr(self, "run"):
+            raise ModelOnexError(
+                "Node does not have a 'run' method for tool execution",
+                error_code=EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED,
+                context={
+                    "node_type": type(self).__name__,
+                    "tool_name": event.tool_name,
+                    "action": event.action,
+                },
             )
-        msg = "Node does not have a 'run' method for tool execution"
-        raise ModelOnexError(msg, EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED)
+
+        run_method = self.run
+        if asyncio.iscoroutinefunction(run_method):
+            return await run_method(input_state)
+        return await asyncio.get_event_loop().run_in_executor(
+            None, run_method, input_state
+        )
 
     def _serialize_result(self, result: Any) -> dict[str, Any]:
         """Serialize the execution result to a dictionary."""

@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
 from pydantic import Field
 
+from omnibase_core.errors import OnexError
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
@@ -211,15 +212,16 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 payload=event
             )
 
-            # Publish via event bus
+            # Publish via event bus - fail fast if no publish method
             if hasattr(bus, "publish_async"):
                 await bus.publish_async(envelope)
             elif hasattr(bus, "publish"):
                 bus.publish(event)  # Synchronous method - no await
             else:
-                self._log_error(
-                    "Event bus does not support publishing",
-                    "publish_event",
+                raise OnexError(
+                    message="Event bus does not support publishing (missing 'publish_async' and 'publish' methods)",
+                    error_code="EVENT_BUS_MISSING_PUBLISH_METHOD",
+                    context={"bus_type": type(bus).__name__, "event_type": event_type},
                 )
 
             self._log_info(f"Published event: {event_type}", event_type)
@@ -272,13 +274,14 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                 payload=event
             )
-            # Use synchronous publish method only (this is a sync method)
+            # Use synchronous publish method only (this is a sync method) - fail fast if missing
             if hasattr(bus, "publish"):
                 bus.publish(event)
             else:
-                self._log_error(
-                    "Event bus has no synchronous publish method",
-                    "publish_completion",
+                raise OnexError(
+                    message="Event bus has no synchronous 'publish' method",
+                    error_code="EVENT_BUS_MISSING_SYNC_PUBLISH",
+                    context={"bus_type": type(bus).__name__, "event_type": event_type},
                 )
             self._log_info(f"Published completion event: {event_type}", event_type)
         except Exception as e:
@@ -322,16 +325,17 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 payload=event
             )
 
-            # Prefer async publishing if available
+            # Prefer async publishing if available - fail fast if no publish method
             if hasattr(bus, "publish_async"):
                 await bus.publish_async(envelope)
             # Fallback to sync method
             elif hasattr(bus, "publish"):
                 bus.publish(event)  # Synchronous method - no await
             else:
-                self._log_error(
-                    "Event bus has no publish method",
-                    "publish_completion",
+                raise OnexError(
+                    message="Event bus has no publish method (missing 'publish_async' and 'publish')",
+                    error_code="EVENT_BUS_MISSING_PUBLISH_METHOD",
+                    context={"bus_type": type(bus).__name__, "event_type": event_type},
                 )
 
             self._log_info(f"Published completion event: {event_type}", event_type)
@@ -479,9 +483,16 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         if self.stop_event is not None:
             self.stop_event.set()
 
-        # Unsubscribe from all events
+        # Unsubscribe from all events - fail fast if bus doesn't support unsubscribe
         bus = self._get_event_bus()
-        if bus and hasattr(bus, "unsubscribe"):
+        if bus:
+            if not hasattr(bus, "unsubscribe"):
+                raise OnexError(
+                    message="Event bus does not support 'unsubscribe' method",
+                    error_code="EVENT_BUS_MISSING_UNSUBSCRIBE",
+                    context={"bus_type": type(bus).__name__},
+                )
+
             for subscription in self.event_subscriptions:
                 try:
                     bus.unsubscribe(subscription)
@@ -520,12 +531,22 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                 return
 
             bus = self._get_event_bus()
-            if not bus or not hasattr(bus, "subscribe"):
-                self._log_error(
-                    "Event bus does not support subscription",
-                    "event_listener",
+            if not bus:
+                raise OnexError(
+                    message="No event bus available for subscription",
+                    error_code="EVENT_BUS_NOT_AVAILABLE",
+                    context={"node_name": self.get_node_name()},
                 )
-                return
+
+            if not hasattr(bus, "subscribe"):
+                raise OnexError(
+                    message="Event bus does not support 'subscribe' method",
+                    error_code="EVENT_BUS_MISSING_SUBSCRIBE",
+                    context={
+                        "bus_type": type(bus).__name__,
+                        "node_name": self.get_node_name(),
+                    },
+                )
 
             # Subscribe to all patterns
             for pattern in patterns:
@@ -557,13 +578,26 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
         def handler(envelope: ProtocolEventEnvelope[ModelOnexEvent]) -> None:
             """Handle incoming event envelope."""
-            # Extract event from envelope
-            event = envelope.payload if hasattr(envelope, "payload") else envelope
+            # Extract event from envelope - fail fast if missing
+            if not hasattr(envelope, "payload"):
+                raise OnexError(
+                    message=f"Envelope missing required 'payload' attribute for pattern {pattern}",
+                    error_code="EVENT_BUS_INVALID_ENVELOPE",
+                    context={
+                        "pattern": pattern,
+                        "envelope_type": type(envelope).__name__,
+                    },
+                )
 
-            # Validate event has required attributes
+            event: ModelOnexEvent = envelope.payload
+
+            # Validate event has required attributes - fail fast if missing
             if not hasattr(event, "event_type"):
-                self._log_error("Event missing event_type attribute", pattern)
-                return
+                raise OnexError(
+                    message=f"Event missing required 'event_type' attribute for pattern {pattern}",
+                    error_code="EVENT_BUS_INVALID_EVENT",
+                    context={"pattern": pattern, "event_type": type(event).__name__},
+                )
 
             try:
                 self._log_info(
@@ -657,10 +691,16 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                     cls: type | None = base.__args__[0]
                     return cls
             return None
-        except (
-            Exception
-        ):  # fallback-ok: returns None which is checked and handled by caller
-            return None
+        except (AttributeError, TypeError, IndexError) as e:
+            # Fail fast on unexpected errors during type introspection
+            raise OnexError(
+                message=f"Failed to extract input state class from generic type parameters: {e!s}",
+                error_code="EVENT_BUS_TYPE_INTROSPECTION_FAILED",
+                context={
+                    "node_name": self.get_node_name(),
+                    "class_name": self.__class__.__name__,
+                },
+            ) from e
 
     # --- Logging Helpers -----------------------------------------------------
 
