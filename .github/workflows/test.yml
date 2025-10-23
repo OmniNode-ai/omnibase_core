@@ -70,16 +70,16 @@ jobs:
             -x \
             --tb=short
 
-  # Parallel test execution - split into 5 groups for speed
+  # Parallel test execution - split into 10 groups for speed and memory management
   test-parallel:
-    name: Tests (Split ${{ matrix.split }}/5)
+    name: Tests (Split ${{ matrix.split }}/10)
     needs: smoke-test
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        split: [1, 2, 3, 4, 5]
+        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
     steps:
       - name: Checkout code
@@ -128,10 +128,10 @@ jobs:
             exit 1
           }
 
-      - name: Run test split ${{ matrix.split }}/5
+      - name: Run test split ${{ matrix.split }}/10
         run: |
           poetry run pytest tests/ \
-            --splits 5 \
+            --splits 10 \
             --group ${{ matrix.split }} \
             -n auto \
             --tb=short \
@@ -293,7 +293,7 @@ jobs:
              [[ "$lint" == "success" ]]; then
             echo "✅ All tests passed successfully"
             echo "Smoke Tests: ✅ Passed"
-            echo "Parallel Tests (5 splits): ✅ Passed"
+            echo "Parallel Tests (10 splits): ✅ Passed"
             echo "Code Quality: ✅ Passed"
             exit 0
           else

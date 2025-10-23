@@ -138,16 +138,24 @@ class ModelValue(BaseModel):
             return cls.from_integer(value)
         if isinstance(value, float):
             return cls.from_float(value)
+        if isinstance(value, list):
+            return cls.from_list(value)
+        if isinstance(value, dict):
+            # Convert raw dict to dict[str, ModelSchemaValue] for proper typing
+            typed_dict: dict[str, ModelSchemaValue] = {
+                k: ModelSchemaValue.from_value(v) for k, v in value.items()
+            }
+            return cls.from_dict_value(typed_dict)
         # Reject unsupported types with clear error message
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Unsupported type {type(value).__name__} for metadata field. "
-            f"Supported types: str, int, bool, float",
+            f"Supported types: str, int, bool, float, list, dict",
             details=ModelErrorContext.with_context(
                 {
                     "provided_type": ModelSchemaValue.from_value(type(value).__name__),
                     "supported_types": ModelSchemaValue.from_value(
-                        "str, int, bool, float"
+                        "str, int, bool, float, list, dict"
                     ),
                     "value_repr": ModelSchemaValue.from_value(str(value)[:100]),
                 }

@@ -136,19 +136,22 @@ class ModelGenericMetadata(BaseModel):
     @overload
     def set_field(self, key: str, value: list[object]) -> None: ...
 
+    @overload
+    def set_field(self, key: str, value: dict[str, object]) -> None: ...
+
     def set_field(self, key: str, value: object) -> None:
         """Set a custom field value with type validation."""
         # Validate that only supported types are used
-        if not isinstance(value, (str, int, bool, float, list)):
+        if not isinstance(value, (str, int, bool, float, list, dict)):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Value must be str, int, bool, float, or list. Got {type(value).__name__}",
+                message=f"Value must be str, int, bool, float, list, or dict. Got {type(value).__name__}",
                 details=ModelErrorContext.with_context(
                     {
                         "key": ModelSchemaValue.from_value(key),
                         "value_type": ModelSchemaValue.from_value(str(type(value))),
                         "supported_types": ModelSchemaValue.from_value(
-                            "str, int, bool, float, list",
+                            "str, int, bool, float, list, dict",
                         ),
                     },
                 ),
