@@ -37,10 +37,7 @@ from .model_resource_limits import ModelResourceLimits
 from .model_retry_strategy import ModelRetryStrategy
 from .model_routing_preferences import ModelRoutingPreferences
 from .model_security_config import ModelSecurityConfig
-from .model_service_configuration import (
-    EnumFallbackStrategyType,
-    ModelFallbackStrategy,
-)
+from .model_service_configuration import EnumFallbackStrategyType, ModelFallbackStrategy
 from .model_service_configuration_single import ModelServiceConfiguration
 from .model_service_health import ModelServiceHealth
 from .model_service_registry_config import ModelServiceRegistryConfig
