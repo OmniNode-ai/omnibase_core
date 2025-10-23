@@ -370,8 +370,8 @@ class ModelIntent(BaseModel):
 **Basic Pattern**:
 
 ```python
-from omnibase_core.nodes.model_intent import ModelIntent
-from omnibase_core.nodes.model_reducer_output import ModelReducerOutput
+from omnibase_core.models.model_intent import ModelIntent
+from omnibase_core.models.model_reducer_output import ModelReducerOutput
 
 async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
     start_time = time.time()
@@ -499,7 +499,7 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
 **Intent Consumption Pattern**:
 
 ```python
-from omnibase_core.nodes.model_intent import ModelIntent
+from omnibase_core.models.model_intent import ModelIntent
 
 class NodeEffect(NodeCoreBase):
     async def execute_intents(

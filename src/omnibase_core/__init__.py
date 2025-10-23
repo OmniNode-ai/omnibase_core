@@ -83,11 +83,17 @@ def __getattr__(name: str) -> object:
         # Return the requested attribute from validation module
         return locals()[name]
 
-    if name in {"CircularImportValidator", "ImportStatus", "ModuleImportResult"}:
+    if name in {
+        "CircularImportValidator",
+        "EnumImportStatus",
+        "ModelModuleImportResult",
+        "ModelValidationResult",
+    }:
         from .validators import (
             CircularImportValidator,
-            ImportStatus,
-            ModuleImportResult,
+            EnumImportStatus,
+            ModelModuleImportResult,
+            ModelValidationResult,
         )
 
         # Return the requested attribute from validators module
@@ -121,6 +127,7 @@ __all__ = [
     "validate_union_usage",
     # Validators (reusable validation tools)
     "CircularImportValidator",
-    "ImportStatus",
-    "ModuleImportResult",
+    "EnumImportStatus",
+    "ModelModuleImportResult",
+    "ModelValidationResult",
 ]

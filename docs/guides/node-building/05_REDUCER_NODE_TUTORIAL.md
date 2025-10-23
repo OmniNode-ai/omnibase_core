@@ -377,8 +377,8 @@ from collections import defaultdict
 
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_reducer import NodeReducer
-from omnibase_core.nodes.model_reducer_input import ModelReducerInput
-from omnibase_core.nodes.enum_reducer_types import (
+from omnibase_core.models.model_reducer_input import ModelReducerInput
+from omnibase_core.enums.enum_reducer_types import (
     EnumReductionType,
     EnumStreamingMode,
     EnumConflictResolution,
@@ -1152,6 +1152,245 @@ EnumConflictResolution.TAKE_MIN     # Keep minimum value
 EnumConflictResolution.TAKE_LATEST  # Use latest value
 EnumConflictResolution.MERGE        # Merge lists/objects
 ```
+
+---
+
+## Using MixinIntentPublisher for Event Publishing
+
+### Overview
+
+While `ModelIntent` is used for general side effects, **MixinIntentPublisher** provides a specialized pattern for publishing events to Kafka topics while maintaining node purity.
+
+**When to use MixinIntentPublisher**:
+- ✅ REDUCER needs to publish aggregated results as events
+- ✅ COMPUTE needs to publish computed results for downstream processing
+- ✅ Node wants to coordinate event publishing without direct Kafka I/O
+- ✅ Testing needs to verify intent publishing without real Kafka
+
+### Adding MixinIntentPublisher to Your REDUCER
+
+**Step 1: Inherit from Mixin**
+
+```python
+from omnibase_core.mixins import MixinIntentPublisher
+from omnibase_core.nodes.node_reducer import NodeReducer
+
+class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
+    """REDUCER with event publishing capability via intents."""
+
+    def __init__(self, container):
+        super().__init__(container)
+        # Initialize intent publisher (REQUIRED)
+        self._init_intent_publisher(container)
+```
+
+**Step 2: Publish Events as Intents**
+
+```python
+async def aggregate_metrics(
+    self,
+    input_data: ModelMetricsAggregationInput,
+) -> ModelMetricsAggregationOutput:
+    """
+    Aggregate metrics and publish results via intent.
+
+    This maintains reducer purity - we build the event (pure)
+    and publish an intent (coordination I/O), but don't
+    publish directly to Kafka (domain I/O).
+    """
+    # Pure aggregation
+    aggregated_data = self._reduce_data(input_data.data_sources)
+
+    # Build event (pure - just data construction)
+    metrics_event = MetricsAggregatedEvent(
+        metric_name=input_data.metric_name,
+        aggregated_value=aggregated_data.total,
+        count=len(input_data.data_sources),
+        timestamp=datetime.now(UTC),
+    )
+
+    # Publish intent (coordination I/O)
+    await self.publish_event_intent(
+        target_topic="dev.omninode-bridge.metrics.aggregated.v1",
+        target_key=f"metrics-{input_data.metric_name}",
+        event=metrics_event,
+        correlation_id=input_data.correlation_id,
+        priority=5
+    )
+
+    # Return result
+    return ModelMetricsAggregationOutput(
+        aggregated_data=aggregated_data,
+        sources_processed=len(input_data.data_sources),
+        items_processed=len(aggregated_data),
+    )
+```
+
+**Step 3: Update Contract**
+
+```yaml
+# contract.yaml
+subcontracts:
+  refs:
+    - "./contracts/intent_publisher.yaml"
+
+mixins:
+  - "MixinIntentPublisher"
+```
+
+### Testing with MixinIntentPublisher
+
+```python
+import pytest
+from tests.fixtures.fixture_intent_publisher import MockKafkaClient
+
+@pytest.mark.asyncio
+async def test_reducer_publishes_aggregated_metrics():
+    """Test REDUCER publishes aggregated metrics via intent."""
+    # Arrange
+    mock_kafka = MockKafkaClient()
+    container = create_test_container(kafka_client=mock_kafka)
+    reducer = NodeMetricsAggregatorReducer(container)
+
+    input_data = ModelMetricsAggregationInput(
+        metric_name="api_latency",
+        data_sources=[
+            {"value": 100},
+            {"value": 200},
+            {"value": 150},
+        ],
+        aggregation_strategy=EnumAggregationStrategy.AVERAGE,
+    )
+
+    # Act
+    result = await reducer.aggregate_metrics(input_data)
+
+    # Assert - Aggregation is correct
+    assert result.aggregated_data.average == 150.0
+
+    # Assert - Intent was published
+    assert mock_kafka.get_message_count() == 1
+    assert mock_kafka.published_messages[0]["topic"] == "dev.omninode-bridge.intents.event-publish.v1"
+
+    # Assert - Intent contains correct target
+    import json
+    intent_envelope = json.loads(mock_kafka.published_messages[0]["value"])
+    intent_payload = intent_envelope["payload"]
+    assert intent_payload["target_topic"] == "dev.omninode-bridge.metrics.aggregated.v1"
+    assert intent_payload["target_event_payload"]["aggregated_value"] == 150.0
+```
+
+### Pattern Comparison
+
+**ModelIntent (General Side Effects)**:
+```python
+# Use for: Logging, metrics, notifications, general I/O
+intents = [
+    ModelIntent(
+        intent_type="log_event",
+        target="logging_service",
+        payload={"message": "Aggregation complete"},
+    )
+]
+return ModelMetricsAggregationOutput(result=data, intents=intents)
+```
+
+**MixinIntentPublisher (Event Publishing)**:
+```python
+# Use for: Publishing domain events to Kafka topics
+await self.publish_event_intent(
+    target_topic="my.events.v1",
+    target_key="event-123",
+    event=my_event_model
+)
+return ModelMetricsAggregationOutput(result=data)
+```
+
+**Key Differences**:
+- ModelIntent: Returned in output, executed by orchestrator
+- MixinIntentPublisher: Awaited directly, publishes to intent topic immediately
+- ModelIntent: For general side effects
+- MixinIntentPublisher: Specifically for event publishing coordination
+
+### Complete Example
+
+```python
+from datetime import UTC, datetime
+from uuid import uuid4
+
+from omnibase_core.mixins import MixinIntentPublisher
+from omnibase_core.nodes.node_reducer import NodeReducer
+
+
+class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
+    """
+    REDUCER that aggregates metrics and publishes results via intent.
+
+    Demonstrates:
+    - Pure FSM aggregation logic
+    - ModelIntent for side effects (logging, metrics)
+    - MixinIntentPublisher for event publishing
+    """
+
+    def __init__(self, container):
+        super().__init__(container)
+        self._init_intent_publisher(container)
+
+    async def aggregate_metrics(
+        self,
+        input_data: ModelMetricsAggregationInput,
+    ) -> ModelMetricsAggregationOutput:
+        """Aggregate metrics and coordinate result publishing."""
+        start_time = datetime.now(UTC)
+
+        # PURE: Aggregate data
+        aggregated = self._aggregate_data(input_data.data_sources)
+
+        # PURE: Build event
+        event = MetricsAggregatedEvent(
+            metric_name=input_data.metric_name,
+            value=aggregated.total,
+            count=aggregated.count,
+        )
+
+        # COORDINATION I/O: Publish event intent
+        await self.publish_event_intent(
+            target_topic="dev.metrics.aggregated.v1",
+            target_key=f"metrics-{input_data.metric_name}",
+            event=event,
+            correlation_id=input_data.correlation_id or uuid4(),
+        )
+
+        # PURE: Build side effect intents
+        processing_time = (datetime.now(UTC) - start_time).total_seconds() * 1000
+        intents = [
+            ModelIntent(
+                intent_type="log_metric",
+                target="metrics_service",
+                payload={
+                    "metric": "aggregation_time_ms",
+                    "value": processing_time,
+                },
+            )
+        ]
+
+        return ModelMetricsAggregationOutput(
+            aggregated_data=aggregated,
+            sources_processed=len(input_data.data_sources),
+            intents=intents,
+        )
+
+    def _aggregate_data(self, sources):
+        """Pure aggregation logic (no I/O)."""
+        # Implementation...
+        pass
+```
+
+### Further Reading
+
+- [Testing Intent Publisher](09-testing-intent-publisher.md) - Comprehensive testing guide
+- [MODEL_INTENT_ARCHITECTURE.md](../../architecture/MODEL_INTENT_ARCHITECTURE.md) - Intent pattern details
+- [MixinIntentPublisher Implementation](../../../src/omnibase_core/mixins/mixin_intent_publisher.py)
 
 ---
 

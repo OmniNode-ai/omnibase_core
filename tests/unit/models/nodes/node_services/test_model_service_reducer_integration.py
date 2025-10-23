@@ -23,11 +23,11 @@ from omnibase_core.models.contracts.model_contract_reducer import ModelContractR
 from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
+from omnibase_core.models.model_reducer_input import ModelReducerInput
+from omnibase_core.models.model_reducer_output import ModelReducerOutput
 from omnibase_core.models.nodes.node_services.model_service_reducer import (
     ModelServiceReducer,
 )
-from omnibase_core.nodes.model_reducer_input import ModelReducerInput
-from omnibase_core.nodes.model_reducer_output import ModelReducerOutput
 
 
 class ReducerNodeForIntegrationTest(ModelServiceReducer):

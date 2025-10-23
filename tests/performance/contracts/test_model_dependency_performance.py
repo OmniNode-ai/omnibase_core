@@ -128,11 +128,12 @@ class TestModelDependencyPerformance:
         #   privileged keyword scanning, and creates full ModelOnexError with context
         # - 1.5s provides 19% safety margin for CPU load variations and CI/CD environments
         # - Still catches actual regressions (>200μs per operation would exceed threshold)
+        # - Per-operation threshold: 0.12ms (20% margin over 0.1ms baseline for system variance)
         assert (
             security_time < 1.5
         ), f"Security validation too slow: {security_time:.2f}s"
         assert (
-            avg_security_time_ms < 0.1
+            avg_security_time_ms < 0.12
         ), f"Average security check too slow: {avg_security_time_ms:.3f}ms"
         assert (
             rejected_count >= 7000

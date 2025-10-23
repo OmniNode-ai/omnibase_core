@@ -455,8 +455,8 @@ created_at: datetime = Field(
 ```python
 from uuid import uuid4
 from datetime import datetime
-from omnibase_core.nodes.model_action import ModelAction
-from omnibase_core.nodes.enum_orchestrator_types import EnumActionType
+from omnibase_core.models.model_action import ModelAction
+from omnibase_core.enums.enum_orchestrator_types import EnumActionType
 
 class NodeWorkflowOrchestrator(NodeCoreBase):
     def __init__(self, container):

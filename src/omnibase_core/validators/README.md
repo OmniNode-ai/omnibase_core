@@ -116,7 +116,7 @@ exit_code = validator.validate_and_report()
 #### Result Structure
 
 ```python
-from omnibase_core.validators import ValidationResult, ModuleImportResult, ImportStatus
+from omnibase_core.validators import ValidationResult, ModuleImportResult, EnumImportStatus
 
 # ValidationResult properties
 result.total_files: int                           # Total files scanned
@@ -135,16 +135,16 @@ result.success_rate: float                        # Success rate (0-100)
 
 # ModuleImportResult attributes
 import_result.module_name: str                    # Module name
-import_result.status: ImportStatus                # Status enum
+import_result.status: EnumImportStatus            # Status enum
 import_result.error_message: Optional[str]        # Error if failed
 import_result.file_path: Optional[str]            # Path to file
 
-# ImportStatus enum values
-ImportStatus.SUCCESS
-ImportStatus.CIRCULAR_IMPORT
-ImportStatus.IMPORT_ERROR
-ImportStatus.UNEXPECTED_ERROR
-ImportStatus.SKIPPED
+# EnumImportStatus enum values
+EnumImportStatus.SUCCESS
+EnumImportStatus.CIRCULAR_IMPORT
+EnumImportStatus.IMPORT_ERROR
+EnumImportStatus.UNEXPECTED_ERROR
+EnumImportStatus.SKIPPED
 ```
 
 ## Integration Examples

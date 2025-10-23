@@ -96,6 +96,42 @@ def test_batch_processing():
     assert len(results) == 100
 ```
 
+## Available Fixtures
+
+### Intent Publisher Fixtures
+
+**NEW**: `fixture_intent_publisher.py` provides fixtures for testing nodes using MixinIntentPublisher.
+
+```python
+from tests.fixtures.fixture_intent_publisher import (
+    IntentPublisherFixtures,
+    IntentResultFixtures,
+    MockKafkaClient,
+)
+
+# Create intent models
+intent = IntentPublisherFixtures.event_publish_intent(
+    target_topic="my.topic.v1",
+    target_key="test-key"
+)
+
+# Create mock Kafka client for testing
+mock_kafka = MockKafkaClient()
+container = create_test_container(kafka_client=mock_kafka)
+
+# Test intent publishing
+await node.publish_event_intent(...)
+assert mock_kafka.get_message_count() == 1
+```
+
+**Use Cases**:
+- Testing REDUCER nodes that publish aggregated results
+- Testing COMPUTE nodes that publish computed results
+- Testing event publishing coordination without real Kafka
+- Verifying intent structure, correlation IDs, priorities
+
+**Complete Guide**: See [Testing Intent Publisher](../../docs/guides/node-building/09-testing-intent-publisher.md)
+
 ## Examples
 
 ### Simple Fixtures
