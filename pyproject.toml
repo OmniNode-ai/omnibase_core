@@ -49,6 +49,12 @@ kubernetes = ["kubernetes"]
 full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
 
 [tool.poetry]
+name = "omnibase_core"
+version = "0.1.0"
+description = "ONEX Core Framework - Base classes and essential implementations"
+authors = ["OmniNode Team <team@omninode.ai>"]
+license = "MIT"
+readme = "README.md"
 packages = [{include = "omnibase_core", from = "src"}]
 include = [
     "scripts/validation/*.py",
