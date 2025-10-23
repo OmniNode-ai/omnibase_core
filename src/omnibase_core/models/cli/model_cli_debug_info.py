@@ -24,7 +24,7 @@ from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 
 
 class ModelCliDebugInfo(BaseModel):
@@ -89,7 +89,7 @@ class ModelCliDebugInfo(BaseModel):
     trace_mode: bool = Field(default=False, description="Trace mode enabled")
 
     # Custom debug fields for extensibility
-    custom_debug_fields: dict[str, ModelCliValue] = Field(
+    custom_debug_fields: dict[str, ModelValue] = Field(
         default_factory=dict,
         description="Custom debug fields",
     )
@@ -99,8 +99,8 @@ class ModelCliDebugInfo(BaseModel):
     def validate_custom_debug_fields(
         cls,
         v: dict[str, Any],
-    ) -> dict[str, ModelCliValue]:
-        """Convert raw values to ModelCliValue objects for custom_debug_fields."""
+    ) -> dict[str, ModelValue]:
+        """Convert raw values to ModelValue objects for custom_debug_fields."""
         if not isinstance(v, dict):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -117,18 +117,18 @@ class ModelCliDebugInfo(BaseModel):
 
         result = {}
         for key, value in v.items():
-            if isinstance(value, ModelCliValue):
+            if isinstance(value, ModelValue):
                 result[key] = value
             elif (
                 isinstance(value, dict)
                 and "value_type" in value
                 and "raw_value" in value
             ):
-                # This is a serialized ModelCliValue, reconstruct it
-                result[key] = ModelCliValue.model_validate(value)
+                # This is a serialized ModelValue, reconstruct it
+                result[key] = ModelValue.model_validate(value)
             else:
-                # Convert raw value to ModelCliValue
-                result[key] = ModelCliValue.from_any(value)
+                # Convert raw value to ModelValue
+                result[key] = ModelValue.from_any(value)
         return result
 
     def add_debug_message(self, message: str) -> None:
@@ -155,13 +155,13 @@ class ModelCliDebugInfo(BaseModel):
         """Add a stack trace."""
         self.stack_traces.append(trace)
 
-    def set_custom_field(self, key: str, value: ModelCliValue | object) -> None:
+    def set_custom_field(self, key: str, value: ModelValue | object) -> None:
         """Set a custom debug field with automatic type conversion."""
-        if isinstance(value, ModelCliValue):
+        if isinstance(value, ModelValue):
             self.custom_debug_fields[key] = value
         else:
-            # Convert to ModelCliValue for type safety
-            self.custom_debug_fields[key] = ModelCliValue.from_any(value)
+            # Convert to ModelValue for type safety
+            self.custom_debug_fields[key] = ModelValue.from_any(value)
 
     def get_custom_field(self, key: str, default: str = "") -> str:
         """Get a custom debug field. CLI debug fields are strings."""

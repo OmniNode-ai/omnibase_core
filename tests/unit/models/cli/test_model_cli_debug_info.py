@@ -167,7 +167,7 @@ class TestModelCliDebugInfo:
         debug_info.set_custom_field("float_field", 3.14)
         debug_info.set_custom_field("bool_field", True)
 
-        # Verify values through ModelCliValue interface
+        # Verify values through ModelValue interface
         assert (
             debug_info.custom_debug_fields["string_field"].to_python_value()
             == "test_value"
@@ -300,7 +300,7 @@ class TestModelCliDebugInfo:
         assert debug_info.stack_traces == ["Test stack trace"]
         assert debug_info.verbose_mode is True
         assert debug_info.trace_mode is False
-        # custom_debug_fields should now contain ModelCliValue objects
+        # custom_debug_fields should now contain ModelValue objects
         assert "error_code" in debug_info.custom_debug_fields
         assert debug_info.custom_debug_fields["error_code"].to_python_value() == 500
 

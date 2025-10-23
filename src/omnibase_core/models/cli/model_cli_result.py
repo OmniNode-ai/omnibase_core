@@ -265,16 +265,16 @@ class ModelCliResult(BaseModel):
         if self.result_metadata is None:
             return default
 
-        # Get ModelCliValue - provide a default ModelCliValue for empty string
-        from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+        # Get ModelValue - provide a default ModelValue for empty string
+        from omnibase_core.models.infrastructure.model_value import ModelValue
 
-        default_cli_value = ModelCliValue.from_string(
+        default_cli_value = ModelValue.from_string(
             str(default) if default is not None else "",
         )
         cli_value = self.result_metadata.get_custom_field(key, default_cli_value)
 
         if cli_value is not None:
-            # Convert ModelCliValue to Python value
+            # Convert ModelValue to Python value
             python_value = cli_value.to_python_value()
             value_str = str(python_value)
 

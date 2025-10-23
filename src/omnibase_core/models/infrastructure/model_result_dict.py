@@ -16,8 +16,8 @@ from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
-from .model_cli_value import ModelCliValue
 from .model_error_value import ModelErrorValue
+from .model_value import ModelValue
 
 
 class ModelResultDict(BaseModel):
@@ -33,7 +33,7 @@ class ModelResultDict(BaseModel):
     """
 
     success: bool = Field(default=..., description="Whether the operation succeeded")
-    value: ModelCliValue | None = Field(
+    value: ModelValue | None = Field(
         default=None,
         description="Success value (if success=True)",
     )
@@ -82,9 +82,7 @@ class ModelResultDict(BaseModel):
 
 
 # Type alias for dict[str, Any]ionary-based data structures
-ModelResultData = dict[
-    str, ModelCliValue
-]  # Strongly-typed dict[str, Any]for common data
+ModelResultData = dict[str, ModelValue]  # Strongly-typed dict[str, Any]for common data
 
 # Export for use
 __all__ = ["ModelResultData", "ModelResultDict"]

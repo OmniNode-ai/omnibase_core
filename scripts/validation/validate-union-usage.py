@@ -697,7 +697,7 @@ def generate_model_suggestions(patterns: list[UnionPattern]) -> list[str]:
 
             # CLI value patterns
             if {"str", "Path", "UUID"}.issubset(types_set):
-                suggestion += "\n  • class ModelCliValue(BaseModel):"
+                suggestion += "\n  • class ModelValue(BaseModel):"
                 suggestion += "\n    - value: str | Path | UUID"
                 suggestion += "\n    - type_hint: Literal['string', 'path', 'uuid']"
 

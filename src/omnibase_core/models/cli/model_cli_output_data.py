@@ -19,7 +19,7 @@ from omnibase_core.enums.enum_cli_status import EnumCliStatus
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.enums.enum_output_type import EnumOutputType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 
 
 class ModelCliOutputData(BaseModel):
@@ -48,13 +48,13 @@ class ModelCliOutputData(BaseModel):
     stderr: str = Field(default="", description="Standard error content")
 
     # Structured results
-    results: dict[str, ModelCliValue] = Field(
+    results: dict[str, ModelValue] = Field(
         default_factory=dict,
         description="Execution results with typed values",
     )
 
     # Metadata
-    metadata: dict[str, ModelCliValue] = Field(
+    metadata: dict[str, ModelValue] = Field(
         default_factory=dict,
         description="Output metadata with typed values",
     )
@@ -86,11 +86,11 @@ class ModelCliOutputData(BaseModel):
 
     def add_result(self, key: str, value: str) -> None:
         """Add a result value. CLI results are typically strings."""
-        self.results[key] = ModelCliValue.from_string(value)
+        self.results[key] = ModelValue.from_string(value)
 
     def add_metadata(self, key: str, value: str) -> None:
         """Add metadata. CLI metadata is typically strings."""
-        self.metadata[key] = ModelCliValue.from_string(value)
+        self.metadata[key] = ModelValue.from_string(value)
 
     def add_file_created(self, file_path: str) -> None:
         """Add a created file to the list[Any]."""
@@ -112,7 +112,7 @@ class ModelCliOutputData(BaseModel):
 
     def set_field_value(self, key: str, value: str) -> None:
         """Set a field value in results. CLI field values are strings."""
-        self.results[key] = ModelCliValue.from_string(value)
+        self.results[key] = ModelValue.from_string(value)
 
     @classmethod
     def create_simple(
@@ -135,7 +135,7 @@ class ModelCliOutputData(BaseModel):
         status: EnumCliStatus = EnumCliStatus.SUCCESS,
     ) -> ModelCliOutputData:
         """Create output data with structured results. CLI results are strings."""
-        typed_results = {k: ModelCliValue.from_string(v) for k, v in results.items()}
+        typed_results = {k: ModelValue.from_string(v) for k, v in results.items()}
         return cls(
             results=typed_results,
             status=status,

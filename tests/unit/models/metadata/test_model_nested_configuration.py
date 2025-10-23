@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_config_type import EnumConfigType
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.metadata.model_nested_configuration import (
     ModelNestedConfiguration,
 )
@@ -33,8 +33,8 @@ class TestModelNestedConfiguration:
         config_id = uuid4()
 
         settings = {
-            "host": ModelCliValue.from_string("localhost"),
-            "port": ModelCliValue.from_integer(8080),
+            "host": ModelValue.from_string("localhost"),
+            "port": ModelValue.from_integer(8080),
         }
 
         config = ModelNestedConfiguration(
@@ -121,7 +121,7 @@ class TestModelNestedConfiguration:
         )
 
         # Add a setting
-        config.settings["new_setting"] = ModelCliValue.from_string("test")
+        config.settings["new_setting"] = ModelValue.from_string("test")
 
         assert len(config.settings) == 1
         assert "new_setting" in config.settings

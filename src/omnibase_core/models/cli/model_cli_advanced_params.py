@@ -17,15 +17,15 @@ from typing import Any
 
 from pydantic import BaseModel
 
-# Use object type for values convertible to ModelCliValue via from_any() method.
+# Use object type for values convertible to ModelValue via from_any() method.
 # This avoids primitive soup union anti-pattern while maintaining type safety
-# through runtime validation in ModelCliValue.from_any().
+# through runtime validation in ModelValue.from_any().
 CliConvertibleValue = object
 
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 
 from .model_output_format_options import ModelOutputFormatOptions
 
@@ -129,13 +129,13 @@ class ModelCliAdvancedParams(BaseModel):
     )
 
     # Node-specific configuration
-    node_config_overrides: dict[str, ModelCliValue] = Field(
+    node_config_overrides: dict[str, ModelValue] = Field(
         default_factory=dict,
         description="Node-specific configuration overrides",
     )
 
     # Extensibility for specific node types
-    custom_parameters: dict[str, ModelCliValue] = Field(
+    custom_parameters: dict[str, ModelValue] = Field(
         default_factory=dict,
         description="Custom parameters for specific node types",
     )
@@ -145,8 +145,8 @@ class ModelCliAdvancedParams(BaseModel):
     def validate_node_config_overrides(
         cls,
         v: dict[str, CliConvertibleValue],
-    ) -> dict[str, ModelCliValue]:
-        """Convert raw values to ModelCliValue objects for node_config_overrides."""
+    ) -> dict[str, ModelValue]:
+        """Convert raw values to ModelValue objects for node_config_overrides."""
         if not isinstance(v, dict):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -155,17 +155,17 @@ class ModelCliAdvancedParams(BaseModel):
 
         result = {}
         for key, value in v.items():
-            if isinstance(value, ModelCliValue):
+            if isinstance(value, ModelValue):
                 result[key] = value
             elif (
                 isinstance(value, dict)
                 and "value_type" in value
                 and "raw_value" in value
             ):
-                # This is a serialized ModelCliValue, reconstruct it
-                result[key] = ModelCliValue.model_validate(value)
+                # This is a serialized ModelValue, reconstruct it
+                result[key] = ModelValue.model_validate(value)
             else:
-                # Convert raw value to ModelCliValue
+                # Convert raw value to ModelValue
                 result[key] = cls._convert_raw_to_cli_value(value)
         return result
 
@@ -174,8 +174,8 @@ class ModelCliAdvancedParams(BaseModel):
     def validate_custom_parameters(
         cls,
         v: dict[str, CliConvertibleValue],
-    ) -> dict[str, ModelCliValue]:
-        """Convert raw values to ModelCliValue objects for custom_parameters."""
+    ) -> dict[str, ModelValue]:
+        """Convert raw values to ModelValue objects for custom_parameters."""
         if not isinstance(v, dict):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -184,24 +184,24 @@ class ModelCliAdvancedParams(BaseModel):
 
         result = {}
         for key, value in v.items():
-            if isinstance(value, ModelCliValue):
+            if isinstance(value, ModelValue):
                 result[key] = value
             elif (
                 isinstance(value, dict)
                 and "value_type" in value
                 and "raw_value" in value
             ):
-                # This is a serialized ModelCliValue, reconstruct it
-                result[key] = ModelCliValue.model_validate(value)
+                # This is a serialized ModelValue, reconstruct it
+                result[key] = ModelValue.model_validate(value)
             else:
-                # Convert raw value to ModelCliValue
+                # Convert raw value to ModelValue
                 result[key] = cls._convert_raw_to_cli_value(value)
         return result
 
     @staticmethod
-    def _convert_raw_to_cli_value(value: CliConvertibleValue) -> ModelCliValue:
-        """Convert a raw value to a ModelCliValue object."""
-        return ModelCliValue.from_any(value)
+    def _convert_raw_to_cli_value(value: CliConvertibleValue) -> ModelValue:
+        """Convert a raw value to a ModelValue object."""
+        return ModelValue.from_any(value)
 
     def set_timeout(self, seconds: float) -> None:
         """Set timeout with validation."""
@@ -236,11 +236,11 @@ class ModelCliAdvancedParams(BaseModel):
 
     def add_config_override(self, key: str, value: CliConvertibleValue) -> None:
         """Add a configuration override. Accepts CLI-convertible value types."""
-        self.node_config_overrides[key] = ModelCliValue.from_any(value)
+        self.node_config_overrides[key] = ModelValue.from_any(value)
 
     def set_custom_parameter(self, key: str, value: CliConvertibleValue) -> None:
         """Set a custom parameter. Accepts CLI-convertible value types."""
-        self.custom_parameters[key] = ModelCliValue.from_any(value)
+        self.custom_parameters[key] = ModelValue.from_any(value)
 
     def get_custom_parameter(self, key: str, default: str = "") -> str:
         """Get a custom parameter. CLI parameters are strings."""

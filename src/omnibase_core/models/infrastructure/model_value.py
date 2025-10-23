@@ -27,7 +27,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 # CLI raw values use discriminated union pattern with runtime validation
 
 
-class ModelCliValue(BaseModel):
+class ModelValue(BaseModel):
     """
     CLI value object with discriminated union pattern.
 
@@ -91,42 +91,42 @@ class ModelCliValue(BaseModel):
         return v
 
     @classmethod
-    def from_string(cls, value: str) -> ModelCliValue:
+    def from_string(cls, value: str) -> ModelValue:
         """Create CLI value from string."""
         return cls(value_type=EnumCliValueType.STRING, raw_value=value)
 
     @classmethod
-    def from_integer(cls, value: int) -> ModelCliValue:
+    def from_integer(cls, value: int) -> ModelValue:
         """Create CLI value from integer."""
         return cls(value_type=EnumCliValueType.INTEGER, raw_value=value)
 
     @classmethod
-    def from_float(cls, value: float) -> ModelCliValue:
+    def from_float(cls, value: float) -> ModelValue:
         """Create CLI value from float."""
         return cls(value_type=EnumCliValueType.FLOAT, raw_value=value)
 
     @classmethod
-    def from_boolean(cls, value: bool) -> ModelCliValue:
+    def from_boolean(cls, value: bool) -> ModelValue:
         """Create CLI value from boolean."""
         return cls(value_type=EnumCliValueType.BOOLEAN, raw_value=value)
 
     @classmethod
-    def from_list(cls, value: list[object]) -> ModelCliValue:
+    def from_list(cls, value: list[object]) -> ModelValue:
         """Create CLI value from list[Any]."""
         return cls(value_type=EnumCliValueType.LIST, raw_value=value)
 
     @classmethod
-    def from_dict_value(cls, value: dict[str, ModelSchemaValue]) -> ModelCliValue:
+    def from_dict_value(cls, value: dict[str, ModelSchemaValue]) -> ModelValue:
         """Create CLI value wrapping a dict[str, Any]ionary value with proper ONEX typing."""
         return cls(value_type=EnumCliValueType.DICT, raw_value=value)
 
     @classmethod
-    def from_null(cls) -> ModelCliValue:
+    def from_null(cls) -> ModelValue:
         """Create CLI value for null/None."""
         return cls(value_type=EnumCliValueType.NULL, raw_value=None)
 
     @classmethod
-    def from_any(cls, value: object) -> ModelCliValue:
+    def from_any(cls, value: object) -> ModelValue:
         """Create CLI value from any Python value with automatic type detection."""
         if value is None:
             return cls.from_null()
@@ -232,4 +232,4 @@ class ModelCliValue(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelCliValue"]
+__all__ = ["ModelValue"]

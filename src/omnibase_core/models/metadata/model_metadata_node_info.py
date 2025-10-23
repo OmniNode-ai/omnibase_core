@@ -28,7 +28,7 @@ from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
 from omnibase_core.enums.enum_validation_level import EnumValidationLevel
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
@@ -142,7 +142,7 @@ class ModelMetadataNodeInfo(BaseModel):
     )
 
     # Custom metadata for extensibility
-    custom_metadata: dict[str, ModelCliValue] = Field(
+    custom_metadata: dict[str, ModelValue] = Field(
         default_factory=dict,
         description="Custom metadata fields with strongly-typed values",
     )
@@ -272,14 +272,14 @@ class ModelMetadataNodeInfo(BaseModel):
     def add_custom_metadata(self, key: str, value: ModelMetadataValue) -> None:
         """Add custom metadata using strongly-typed value."""
         # Use the already typed metadata value directly
-        self.custom_metadata[key] = ModelCliValue.from_any(value.to_python_value())
+        self.custom_metadata[key] = ModelValue.from_any(value.to_python_value())
         self.update_timestamp()
 
     def get_custom_metadata(
         self,
         key: str,
-        default: ModelCliValue | None = None,
-    ) -> ModelCliValue | None:
+        default: ModelValue | None = None,
+    ) -> ModelValue | None:
         """Get custom metadata value."""
         return self.custom_metadata.get(key, default)
 

@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.enums.enum_field_type import EnumFieldType
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.metadata.model_field_identity import ModelFieldIdentity
 from omnibase_core.models.metadata.model_field_validation_rules import (
     ModelFieldValidationRules,
@@ -47,7 +47,7 @@ class TestModelMetadataFieldInfoInstantiation:
     def test_create_with_default_value(self):
         """Test creating field info with default value."""
         identity = ModelFieldIdentity(identity_id=uuid4(), field_id=uuid4())
-        default_val = ModelCliValue.from_string("default")
+        default_val = ModelValue.from_string("default")
         field_info = ModelMetadataFieldInfo(
             identity=identity,
             is_required=False,
@@ -553,7 +553,7 @@ class TestModelMetadataFieldInfoSerialization:
             field_display_name="test",
         )
         validation = ModelFieldValidationRules(min_length=5)
-        default_val = ModelCliValue.from_string("default")
+        default_val = ModelValue.from_string("default")
         field_info = ModelMetadataFieldInfo(
             identity=identity,
             is_required=True,

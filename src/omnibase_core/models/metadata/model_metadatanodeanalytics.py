@@ -49,7 +49,7 @@ from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 if TYPE_CHECKING:
-    from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+    from omnibase_core.models.infrastructure.model_value import ModelValue
     from omnibase_core.models.metadata.model_metadata_analytics_summary import (
         ModelMetadataAnalyticsSummary,
     )
@@ -229,24 +229,24 @@ class ModelMetadataNodeAnalytics(BaseModel):
     def add_custom_metric(self, name: str, value: ModelMetadataValue) -> None:
         """Add a custom metric using strongly-typed value."""
         # Runtime import to avoid circular dependency
-        from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+        from omnibase_core.models.infrastructure.model_value import ModelValue
 
         # Use the already typed metadata value directly
-        cli_value = ModelCliValue.from_any(value.to_python_value())
+        cli_value = ModelValue.from_any(value.to_python_value())
         self.custom_metrics.add_metric(name, cli_value.to_python_value())
 
     def get_custom_metric(
         self,
         name: str,
-        default: "ModelCliValue | None" = None,
-    ) -> "ModelCliValue | None":
+        default: "ModelValue | None" = None,
+    ) -> "ModelValue | None":
         """Get a custom metric value."""
         # Runtime import to avoid circular dependency
-        from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+        from omnibase_core.models.infrastructure.model_value import ModelValue
 
         value = self.custom_metrics.get_metric_by_key(name)
         if value is not None:
-            return ModelCliValue.from_any(value)
+            return ModelValue.from_any(value)
         return default
 
     def update_timestamp(self) -> None:

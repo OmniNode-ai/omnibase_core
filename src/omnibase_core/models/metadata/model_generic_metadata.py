@@ -7,7 +7,7 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
 from omnibase_core.types.constraints import BasicValueType
 from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict
@@ -53,7 +53,7 @@ class ModelGenericMetadata(BaseModel):
         default_factory=list,
         description="Metadata tags",
     )
-    custom_fields: dict[str, ModelCliValue] | None = Field(
+    custom_fields: dict[str, ModelValue] | None = Field(
         default=None,
         description="Custom metadata fields with strongly-typed values",
     )
@@ -74,17 +74,24 @@ class ModelGenericMetadata(BaseModel):
     @field_validator("custom_fields", mode="before")
     @classmethod
     def validate_custom_fields(cls, v: object) -> object:
-        """Convert raw values to ModelCliValue objects."""
+        """Convert raw values to ModelValue objects."""
         if v is None:
             return v
         if isinstance(v, dict):
             result = {}
             for key, value in v.items():
-                if isinstance(value, ModelCliValue):
+                if isinstance(value, ModelValue):
                     result[key] = value
+                elif (
+                    isinstance(value, dict)
+                    and "value_type" in value
+                    and "raw_value" in value
+                ):
+                    # Deserialize from ModelValue dict representation
+                    result[key] = ModelValue.model_validate(value)
                 else:
-                    # Convert raw values to ModelCliValue
-                    result[key] = ModelCliValue.from_any(value)
+                    # Convert raw values to ModelValue
+                    result[key] = ModelValue.from_any(value)
             return result
         return v
 
@@ -106,8 +113,8 @@ class ModelGenericMetadata(BaseModel):
         if cli_value is None:
             return default
 
-        # Handle ModelCliValue objects (custom_fields is typed as dict[str, ModelCliValue])
-        # If custom_fields validation worked correctly, cli_value should always be ModelCliValue
+        # Handle ModelValue objects (custom_fields is typed as dict[str, ModelValue])
+        # If custom_fields validation worked correctly, cli_value should always be ModelValue
         if hasattr(cli_value, "to_python_value"):
             return cli_value.to_python_value()
         # Fallback for edge cases where validation didn't convert properly
@@ -148,8 +155,8 @@ class ModelGenericMetadata(BaseModel):
             )
         if self.custom_fields is None:
             self.custom_fields = {}
-        # ModelCliValue.from_any() handles type conversion for supported types
-        self.custom_fields[key] = ModelCliValue.from_any(value)
+        # ModelValue.from_any() handles type conversion for supported types
+        self.custom_fields[key] = ModelValue.from_any(value)
 
     def get_typed_field(
         self,
@@ -175,15 +182,15 @@ class ModelGenericMetadata(BaseModel):
             if self.custom_fields is None:
                 self.custom_fields = {}
 
-            # Convert to ModelCliValue for strongly-typed storage
+            # Convert to ModelValue for strongly-typed storage
             if hasattr(value, "__dict__"):
                 # For complex objects, store as string representation
-                self.custom_fields[key] = ModelCliValue.from_string(str(value))
-            # For primitive types, use ModelCliValue.from_any() for type-safe storage
+                self.custom_fields[key] = ModelValue.from_string(str(value))
+            # For primitive types, use ModelValue.from_any() for type-safe storage
             elif isinstance(value, (str, int, float, bool)):
-                self.custom_fields[key] = ModelCliValue.from_any(value)
+                self.custom_fields[key] = ModelValue.from_any(value)
             else:
-                self.custom_fields[key] = ModelCliValue.from_string(str(value))
+                self.custom_fields[key] = ModelValue.from_string(str(value))
         else:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

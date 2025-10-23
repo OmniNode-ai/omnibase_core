@@ -20,7 +20,7 @@ from typing import Any, cast
 
 from pydantic import BaseModel
 
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 
 # Removed Any import - using object for ONEX compliance
 
@@ -148,7 +148,7 @@ class ModelOutputFormatOptions(BaseModel):
     )
 
     # Custom format options (extensibility)
-    custom_options: dict[str, ModelCliValue] = Field(
+    custom_options: dict[str, ModelValue] = Field(
         default_factory=dict,
         description="Custom format options for specific use cases",
     )
@@ -209,7 +209,7 @@ class ModelOutputFormatOptions(BaseModel):
 
     def add_custom_option(self, key: str, value: T) -> None:
         """Add a custom format option."""
-        self.custom_options[key] = ModelCliValue.from_any(value)
+        self.custom_options[key] = ModelValue.from_any(value)
 
     def get_custom_option(self, key: str, default: T) -> T:
         """Get a custom format option with type safety."""
@@ -275,19 +275,19 @@ class ModelOutputFormatOptions(BaseModel):
         )
 
         # Handle custom options separately
-        custom_options: dict[str, ModelCliValue] = {}
+        custom_options: dict[str, ModelValue] = {}
         for key, value in data.items():
             if key.startswith("custom_") and not registry.has_converter(key):
                 custom_key = key[7:]  # Remove "custom_" prefix
                 # Infer type from value - this could also be moved to registry pattern
                 if value.lower() in ("true", "false"):
-                    custom_options[custom_key] = ModelCliValue.from_boolean(
+                    custom_options[custom_key] = ModelValue.from_boolean(
                         value.lower() == "true",
                     )
                 elif value.isdigit():
-                    custom_options[custom_key] = ModelCliValue.from_integer(int(value))
+                    custom_options[custom_key] = ModelValue.from_integer(int(value))
                 else:
-                    custom_options[custom_key] = ModelCliValue.from_string(value)
+                    custom_options[custom_key] = ModelValue.from_string(value)
 
         if custom_options:
             kwargs_dict["custom_options"] = custom_options
