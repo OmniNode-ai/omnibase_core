@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Generic, Optional
+from typing import Generic, Optional
 
 from pydantic import Field, field_validator
 
@@ -27,7 +27,6 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 # uuid: 09d6280a-827e-4838-a874-d52e17c69c17
 # version: 1.0.0
 # === /OmniNode:Metadata ===
-
 
 """
 Pydantic model for ONEX state contracts.

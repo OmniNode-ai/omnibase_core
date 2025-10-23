@@ -1,5 +1,5 @@
 import uuid
-from typing import Dict
+from pathlib import Path
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.primitives.model_semver import ModelSemVer
@@ -56,6 +56,16 @@ class NodeCoreBase(ABC):
     - Contract loading and validation
     - Version tracking and migration support
     """
+
+    # Type annotations for attributes set via object.__setattr__()
+    container: ModelONEXContainer
+    node_id: UUID
+    _node_id: UUID  # Alias for mixin compatibility
+    created_at: datetime
+    state: dict[str, Any]
+    metrics: dict[str, float]
+    contract_data: Any | None
+    version: ModelSemVer
 
     def __init__(self, container: ModelONEXContainer) -> None:
         """
@@ -428,7 +438,7 @@ class NodeCoreBase(ABC):
                 {"node_id": self.node_id, "node_type": self.__class__.__name__},
             )
 
-    async def _initialize_node_resources(self) -> None:
+    async def _initialize_node_resources(self) -> None:  # noqa: B027
         """
         Initialize node-specific resources.
 
@@ -436,7 +446,7 @@ class NodeCoreBase(ABC):
         Base implementation does nothing.
         """
 
-    async def _cleanup_node_resources(self) -> None:
+    async def _cleanup_node_resources(self) -> None:  # noqa: B027
         """
         Cleanup node-specific resources.
 
@@ -593,7 +603,8 @@ class NodeCoreBase(ABC):
                             module_path = Path(module.__file__)
                             contract_path = module_path.parent / CONTRACT_FILENAME
                             if contract_path.exists():
-                                return contract_path
+                                found_path: Path = contract_path
+                                return found_path
 
             # Contract file not found in any stack frame
             raise ModelOnexError(
@@ -684,7 +695,7 @@ class NodeCoreBase(ABC):
             # Return primitives as-is
             return data
 
-        except (FileNotFoundError, OSError, IOError) as e:
+        except (FileNotFoundError, OSError) as e:
             # fallback-ok: graceful degradation for missing/unreadable reference files
             emit_log_event(
                 LogLevel.WARNING,

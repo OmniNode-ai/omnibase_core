@@ -1,16 +1,12 @@
-from typing import Any
-from uuid import UUID
-
-from pydantic import Field
-
-#!/usr/bin/env python3
 """
 Error serialization data model for ONEX core.
 """
 
 from datetime import datetime
+from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 

@@ -379,7 +379,8 @@ class TestModelTypedConfigurationBranchCoverage:
             name="original_name", description="original"
         )
         config2 = ModelTypedConfiguration[dict[str, Any]](
-            name=None, description="new_description"  # None should not overwrite
+            name=None,
+            description="new_description",  # None should not overwrite
         )
 
         config1.merge_configuration(config2)

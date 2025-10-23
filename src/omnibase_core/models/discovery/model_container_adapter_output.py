@@ -8,7 +8,6 @@ This module defines the output model used by the Container Adapter tool
 for ONEX Discovery & Integration Event Registry operations.
 """
 
-from typing import Dict
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict

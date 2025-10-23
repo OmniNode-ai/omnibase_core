@@ -242,7 +242,9 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
                 },
             )
 
-            return result
+            from typing import cast
+
+            return cast(OutputStateT, result)
 
         except (
             Exception
@@ -314,7 +316,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
         """Get supported execution modes from contract."""
         # Try to get from contract data
         if hasattr(self, "contract_data") and self.contract_data:
-            modes = self.contract_data.get(cf.EXECUTION_MODES, [])
+            modes: list[Any] = self.contract_data.get(cf.EXECUTION_MODES, [])
             if modes:
                 return modes
 

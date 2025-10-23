@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List
 
 """
 Custom Filter Models - Re-exports for current standards.

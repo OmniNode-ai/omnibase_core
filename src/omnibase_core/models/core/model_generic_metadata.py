@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, Optional
+from typing import Any, Generic, Optional
 
 from pydantic import Field
 

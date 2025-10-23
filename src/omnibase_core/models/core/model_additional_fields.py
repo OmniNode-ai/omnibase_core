@@ -1,5 +1,3 @@
-import uuid
-
 from pydantic import Field
 
 """
@@ -9,7 +7,6 @@ Strongly typed model for additional metadata fields.
 """
 
 from typing import Optional
-from uuid import UUID
 
 from pydantic import BaseModel
 

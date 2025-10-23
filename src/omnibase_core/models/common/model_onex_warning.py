@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Optional
 
 from pydantic import Field
 
@@ -13,7 +13,6 @@ Pydantic model for ONEX warning serialization and validation.
 This model provides structured warning information with validation,
 serialization, and schema generation capabilities.
 """
-
 
 from datetime import UTC
 from typing import Any

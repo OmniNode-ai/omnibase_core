@@ -610,7 +610,7 @@ class TestModelServiceEffectToolInvocation:
                 service_node.handle_tool_invocation(short_timeout_event),
                 timeout=0.5,  # 500ms timeout (shorter than slow_run)
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             # Expected timeout
             pass
 

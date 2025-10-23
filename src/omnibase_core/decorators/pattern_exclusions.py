@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Dict, Generic, Optional
+from typing import Generic, Optional
 
 """
 ONEX Pattern Exclusion Decorators.
@@ -186,7 +186,8 @@ def has_pattern_exclusion(obj: Any, pattern: str) -> bool:
     """
     if not hasattr(obj, "_onex_pattern_exclusions"):
         return False
-    return pattern in obj._onex_pattern_exclusions
+    exclusions: set[str] = getattr(obj, "_onex_pattern_exclusions", set())
+    return pattern in exclusions
 
 
 def get_exclusion_info(obj: Any) -> dict[str, Any] | None:
@@ -203,7 +204,7 @@ def get_exclusion_info(obj: Any) -> dict[str, Any] | None:
         return None
 
     return {
-        "excluded_patterns": obj._onex_pattern_exclusions,
+        "excluded_patterns": getattr(obj, "_onex_pattern_exclusions", set()),
         "reason": getattr(obj, "_onex_exclusion_reason", "No reason provided"),
         "scope": getattr(obj, "_onex_exclusion_scope", "function"),
         "reviewer": getattr(obj, "_onex_exclusion_reviewer", None),

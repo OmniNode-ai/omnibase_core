@@ -77,9 +77,11 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
     @classmethod
     def convert_node_id_to_uuid(cls, v: Any) -> UUID:
         """Convert string node_id to UUID if needed."""
+        from typing import cast
+
         if isinstance(v, str):
             return uuid_from_string(v, namespace="node")
-        return v
+        return cast(UUID, v)
 
     @classmethod
     def create_response(

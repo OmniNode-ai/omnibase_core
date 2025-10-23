@@ -6,8 +6,7 @@ Result Factory TypedDict for Model Creation.
 Specialized TypedDict for result-type models with success/error patterns.
 """
 
-
-from typing import Any, Dict, TypedDict
+from typing import Any, TypedDict
 
 
 class TypedDictResultFactoryKwargs(TypedDict, total=False):

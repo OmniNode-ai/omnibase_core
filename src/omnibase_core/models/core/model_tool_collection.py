@@ -59,3 +59,12 @@ __all__ = [
 ToolCollection = ModelToolCollection
 MetadataToolCollection = ModelMetadataToolCollection
 LegacyToolCollection = ModelMetadataToolCollection
+
+# Enum aliases without Model/Enum prefix for convenience
+ToolCapabilityLevel = EnumToolCapabilityLevel
+ToolCategory = EnumToolCategory
+ToolCompatibilityMode = EnumToolCompatibilityMode
+ToolRegistrationStatus = EnumToolRegistrationStatus
+MetadataToolComplexity = EnumMetadataToolComplexity
+MetadataToolStatus = EnumMetadataToolStatus
+MetadataToolType = EnumMetadataToolType

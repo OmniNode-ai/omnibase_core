@@ -25,7 +25,7 @@ def snake_to_pascal(snake_str: str) -> str:
     return "".join(word.capitalize() for word in snake_str.split("_"))
 
 
-def check_enum_file(file_path: Path) -> List[str]:
+def check_enum_file(file_path: Path) -> list[str]:
     """
     Check if enum file follows ONEX naming conventions.
 
@@ -104,7 +104,7 @@ def check_enum_file(file_path: Path) -> List[str]:
     return violations
 
 
-def check_service_file(file_path: Path) -> List[str]:
+def check_service_file(file_path: Path) -> list[str]:
     """
     Check if service file follows ONEX naming conventions.
 
@@ -153,7 +153,7 @@ def check_service_file(file_path: Path) -> List[str]:
     return violations
 
 
-def main(files: List[str] = None):
+def main(files: list[str] | None = None):
     """
     Main validation function.
 

@@ -1,5 +1,5 @@
 import json
-from typing import Generic, List
+from typing import Generic
 
 from pydantic import Field
 

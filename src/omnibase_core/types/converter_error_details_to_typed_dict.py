@@ -6,7 +6,7 @@ from datetime import datetime
 Convert legacy error dict[str, Any] to TypedDict.
 """
 
-from typing import Any, Dict, TypedDict
+from typing import Any, TypedDict
 
 from .typed_dict_error_details import TypedDictErrorDetails
 from .typed_dict_legacy_error import TypedDictLegacyError

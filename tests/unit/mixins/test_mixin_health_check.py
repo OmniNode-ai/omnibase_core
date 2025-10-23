@@ -474,8 +474,8 @@ class TestMixinHealthCheck:
 
         for value, expected_status in test_cases:
 
-            def check_func():
-                return value
+            def check_func(_value=value):
+                return _value
 
             result = node.check_dependency_health("test_dependency", check_func)
             assert result.status == expected_status
@@ -488,8 +488,8 @@ class TestMixinHealthCheck:
 
         for value in test_cases:
 
-            def check_func():
-                return value
+            def check_func(_value=value):
+                return _value
 
             result = node.check_dependency_health("test_dependency", check_func)
             assert result.status == EnumNodeHealthStatus.UNHEALTHY

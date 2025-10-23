@@ -1,5 +1,3 @@
-from typing import List
-
 """
 Pydantic model for node discovery results.
 

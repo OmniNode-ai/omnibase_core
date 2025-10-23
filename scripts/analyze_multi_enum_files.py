@@ -20,7 +20,7 @@ def snake_to_pascal(snake_str: str) -> str:
     return "".join(word.capitalize() for word in snake_str.split("_"))
 
 
-def get_enum_classes(file_path: Path) -> List[str]:
+def get_enum_classes(file_path: Path) -> list[str]:
     """
     Get all enum classes in a file.
 
@@ -63,7 +63,7 @@ def has_all_export(file_path: Path) -> bool:
         return False
 
 
-def analyze_file(file_path: Path) -> Dict:
+def analyze_file(file_path: Path) -> dict:
     """Analyze a multi-enum file."""
     match = re.match(r"enum_(.+)\.py$", file_path.name)
     if not match:
@@ -85,7 +85,7 @@ def analyze_file(file_path: Path) -> Dict:
     }
 
 
-def categorize_violation(analysis: Dict) -> str:
+def categorize_violation(analysis: dict) -> str:
     """
     Categorize the type of violation.
 

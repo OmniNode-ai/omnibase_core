@@ -47,9 +47,9 @@ class MixinDagSupport:
         """
         # Check for Workflow environment variables
         workflow_context = (
-            os.environ.get("ONEX_Workflow_EXECUTION", "false").lower() == "true"
+            os.environ.get("ONEX_WORKFLOW_EXECUTION", "false").lower() == "true"
         )
-        dag_correlation_id = os.environ.get("ONEX_Workflow_CORRELATION_ID")
+        dag_correlation_id = os.environ.get("ONEX_WORKFLOW_CORRELATION_ID")
 
         # Check for Workflow correlation ID set by scenario runner
         has_correlation_id = (
@@ -88,7 +88,7 @@ class MixinDagSupport:
 
         # Get correlation and node IDs
         correlation_id = self._dag_correlation_id or os.environ.get(
-            "ONEX_Workflow_CORRELATION_ID",
+            "ONEX_WORKFLOW_CORRELATION_ID",
             str(uuid.uuid4()),
         )
         node_id = self._workflow_node_id or getattr(self, "node_id", "unknown_tool")
@@ -138,7 +138,7 @@ class MixinDagSupport:
                 correlation_id=correlation_uuid,
             )
 
-            self._event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
+            self._event_bus.publish_async(envelope)
         except Exception as e:
             # Log error but don't fail the tool execution
             self._safe_log_error(f"Failed to emit Workflow completion event: {e}")
@@ -149,7 +149,7 @@ class MixinDagSupport:
             return
 
         correlation_id = self._dag_correlation_id or os.environ.get(
-            "ONEX_Workflow_CORRELATION_ID",
+            "ONEX_WORKFLOW_CORRELATION_ID",
             str(uuid.uuid4()),
         )
         node_id = self._workflow_node_id or getattr(self, "node_id", "unknown_tool")
@@ -190,7 +190,7 @@ class MixinDagSupport:
                 correlation_id=correlation_uuid,
             )
 
-            self._event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
+            self._event_bus.publish_async(envelope)
         except Exception as e:
             self._safe_log_error(f"Failed to emit Workflow start event: {e}")
 
@@ -214,7 +214,8 @@ class MixinDagSupport:
         try:
             if hasattr(result, "model_dump"):
                 # Pydantic model
-                return result.model_dump()
+                serialized: dict[str, Any] = result.model_dump()
+                return serialized
             if hasattr(result, "__dict__"):
                 # Regular object
                 return {k: str(v) for k, v in result.__dict__.items()}

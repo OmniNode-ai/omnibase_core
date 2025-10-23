@@ -1,5 +1,3 @@
-from typing import Dict
-
 from pydantic import Field, field_validator, model_validator
 
 from omnibase_core.errors.model_onex_error import ModelOnexError

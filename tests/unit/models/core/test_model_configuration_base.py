@@ -333,7 +333,7 @@ class TestConfigurationBaseEdgeCases:
         error = RuntimeError("Configuration error")
         config = ModelConfigurationBase[str](
             name="test",
-            config_data=error,  # type: ignore
+            config_data=error,
         )
 
         # Should be converted to string during validation

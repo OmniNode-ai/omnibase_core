@@ -1,4 +1,4 @@
-from typing import Any, Generic, List
+from typing import Any, Generic
 
 from pydantic import Field, field_validator
 

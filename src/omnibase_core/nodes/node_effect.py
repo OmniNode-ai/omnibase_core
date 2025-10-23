@@ -36,6 +36,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -75,6 +76,22 @@ class NodeEffect(NodeCoreBase):
         - See docs/THREADING.md for production guidelines and mitigation strategies
     """
 
+    # Type annotations for attributes set via object.__setattr__()
+    default_timeout_ms: int
+    default_retry_delay_ms: int
+    max_concurrent_effects: int
+    active_transactions: dict[UUID, ModelEffectTransaction]
+    circuit_breakers: dict[str, ModelCircuitBreaker]
+    effect_handlers: dict[
+        EnumEffectType, Callable[[dict[str, Any], ModelEffectTransaction | None], Any]
+    ]
+    effect_semaphore: asyncio.Semaphore
+    _active_effects_count: int
+    effect_metrics: dict[str, dict[str, float]]
+    on_rollback_failure: (
+        Callable[[ModelEffectTransaction, list[ModelOnexError]], None] | None
+    )
+
     def __init__(
         self,
         container: ModelONEXContainer,
@@ -97,7 +114,8 @@ class NodeEffect(NodeCoreBase):
         super().__init__(container)
 
         # Use object.__setattr__() to bypass Pydantic validation for internal state
-        # Effect-specific configuration
+        # Effect-specific configuration (defaults, overridden in _initialize_node_resources)
+        # These defaults are used if ProtocolNodeConfiguration is not available
         object.__setattr__(self, "default_timeout_ms", 30000)
         object.__setattr__(self, "default_retry_delay_ms", 1000)
         object.__setattr__(self, "max_concurrent_effects", 10)
@@ -129,7 +147,8 @@ class NodeEffect(NodeCoreBase):
         self._register_builtin_effect_handlers()
 
     async def execute_effect(
-        self, contract: "ModelContractEffect"
+        self,
+        contract: Any,  # ModelContractEffect - imported in method to avoid circular dependency
     ) -> ModelEffectOutput:
         """
         Execute effect based on contract specification.
@@ -168,7 +187,9 @@ class NodeEffect(NodeCoreBase):
         # Execute via existing process() method
         return await self.process(effect_input)
 
-    def _contract_to_input(self, contract: "ModelContractEffect") -> ModelEffectInput:
+    def _contract_to_input(
+        self, contract: Any
+    ) -> ModelEffectInput:  # ModelContractEffect
         """
         Convert ModelContractEffect to ModelEffectInput.
 
@@ -618,6 +639,43 @@ class NodeEffect(NodeCoreBase):
 
     async def _initialize_node_resources(self) -> None:
         """Initialize effect-specific resources."""
+        # Load configuration from NodeConfigProvider if available
+        config = self.container.get_service_optional(NodeConfigProvider)
+        if config:
+            # Load timeout configurations
+            default_timeout_value = await config.get_timeout_ms(
+                "effect.default_timeout_ms", default_ms=self.default_timeout_ms
+            )
+            retry_delay_value = await config.get_timeout_ms(
+                "effect.default_retry_delay_ms", default_ms=self.default_retry_delay_ms
+            )
+
+            # Load performance configurations
+            max_concurrent_value = await config.get_performance_config(
+                "effect.max_concurrent_effects", default=self.max_concurrent_effects
+            )
+
+            # Update configuration values with type checking
+            if isinstance(default_timeout_value, int):
+                self.default_timeout_ms = default_timeout_value
+            if isinstance(retry_delay_value, int):
+                self.default_retry_delay_ms = retry_delay_value
+            if isinstance(max_concurrent_value, (int, float)):
+                self.max_concurrent_effects = int(max_concurrent_value)
+                # Update semaphore with new value
+                self.effect_semaphore = asyncio.Semaphore(self.max_concurrent_effects)
+
+            emit_log_event(
+                LogLevel.INFO,
+                "NodeEffect loaded configuration from NodeConfigProvider",
+                {
+                    "node_id": str(self.node_id),
+                    "default_timeout_ms": self.default_timeout_ms,
+                    "default_retry_delay_ms": self.default_retry_delay_ms,
+                    "max_concurrent_effects": self.max_concurrent_effects,
+                },
+            )
+
         emit_log_event(
             LogLevel.INFO,
             "NodeEffect resources initialized",
@@ -943,7 +1001,7 @@ class NodeEffect(NodeCoreBase):
             correlation_id = operation_data.get("correlation_id")
 
             try:
-                event_bus = self.container.get_service("event_bus")
+                event_bus: Any = self.container.get_service("event_bus")  # type: ignore[arg-type]
                 if not event_bus:
                     emit_log_event(
                         LogLevel.WARNING,

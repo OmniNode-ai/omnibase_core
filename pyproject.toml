@@ -2,13 +2,53 @@
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry]
+[project]
 name = "omnibase_core"
 version = "0.1.0"
 description = "ONEX Core Framework - Base classes and essential implementations"
-authors = ["OmniNode Team <team@omninode.ai>"]
+authors = [
+    {name = "OmniNode Team", email = "team@omninode.ai"}
+]
 license = "MIT"
 readme = "README.md"
+requires-python = ">=3.12"
+keywords = [
+    "onex",
+    "framework",
+    "architecture",
+    "dependency-injection",
+    "base-classes",
+    "infrastructure",
+    "event-driven",
+    "error-handling",
+    "node-architecture"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed"
+]
+dynamic = ["dependencies"]
+
+[project.urls]
+homepage = "https://github.com/OmniNode-ai/omnibase_core"
+repository = "https://github.com/OmniNode-ai/omnibase_core"
+documentation = "https://github.com/OmniNode-ai/omnibase_core/tree/main/docs"
+
+[project.scripts]
+omni-agent = "omnibase_core.cli.commands:cli"
+
+[project.optional-dependencies]
+cli = ["psutil"]
+monitoring = ["prometheus-client", "sentry-sdk"]
+kubernetes = ["kubernetes"]
+full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
+
+[tool.poetry]
 packages = [{include = "omnibase_core", from = "src"}]
 include = [
     "scripts/validation/*.py",
@@ -16,19 +56,10 @@ include = [
     "scripts/validation/*.md"
 ]
 
-[tool.poetry.scripts]
-omni-agent = "omnibase_core.cli.commands:cli"
-
-[tool.poetry.extras]
-cli = ["psutil"]
-monitoring = ["prometheus-client", "sentry-sdk"]
-kubernetes = ["kubernetes"]
-full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
-
 [tool.poetry.dependencies]
 python = "^3.12"
-# ONEX SPI dependency - Public repository, pinned to stable release
-omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", tag = "v0.1.0"}
+# ONEX SPI dependency - Using main branch from GitHub
+omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", branch = "main"}
 pydantic = "^2.11.7"
 llama-index = "^0.12.0"
 fastapi = "^0.115.0"
@@ -215,7 +246,8 @@ addopts = [
     "--strict-markers",
     "--strict-config",
     "-ra",
-    "--tb=short"
+    "--tb=short",
+    "-n auto"  # Automatic parallel execution using all CPU cores
 ]
 
 [tool.coverage.run]

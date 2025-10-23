@@ -39,15 +39,15 @@ class ModelToolVersion(BaseModel):
 
     def is_active(self) -> bool:
         """Check if version is active."""
-        return self.status.value == "active"
+        return bool(self.status.value == "active")
 
     def is_deprecated(self) -> bool:
         """Check if version is deprecated."""
-        return self.status.value == "deprecated"
+        return bool(self.status.value == "deprecated")
 
     def is_end_of_life(self) -> bool:
         """Check if version is end of life."""
-        return self.status.value == "end_of_life"
+        return bool(self.status.value == "end_of_life")
 
     def get_lifecycle_phase(self) -> str:
         """Get current lifecycle phase."""

@@ -11,8 +11,6 @@ strongly-typed registry references.
 Author: ONEX Framework Team
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, ConfigDict
 
 

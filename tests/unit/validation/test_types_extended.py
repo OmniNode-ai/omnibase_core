@@ -211,7 +211,7 @@ def func(x: str) -> None:
 """,
         )
 
-        original_cwd = os.getcwd()
+        original_cwd = Path.cwd()
         try:
             os.chdir(tmp_path)
             monkeypatch.setattr(sys, "argv", ["validate_union"])

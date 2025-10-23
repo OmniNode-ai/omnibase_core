@@ -23,7 +23,7 @@ def snake_to_pascal(snake_str: str) -> str:
     return "".join(word.capitalize() for word in snake_str.split("_"))
 
 
-def check_enum_file(file_path: Path) -> List[Tuple[str, str, str]]:
+def check_enum_file(file_path: Path) -> list[tuple[str, str, str]]:
     """
     Check if enum file follows ONEX naming conventions.
 
@@ -77,7 +77,7 @@ def check_enum_file(file_path: Path) -> List[Tuple[str, str, str]]:
     return violations
 
 
-def check_service_file(file_path: Path) -> List[Tuple[str, str, str]]:
+def check_service_file(file_path: Path) -> list[tuple[str, str, str]]:
     """
     Check if service file follows ONEX naming conventions.
 
@@ -134,7 +134,7 @@ def main():
     print(f"Auditing {len(service_files)} service files...")
     print()
 
-    all_violations: Dict[str, List[Tuple[str, str, str]]] = {"enum": [], "service": []}
+    all_violations: dict[str, list[tuple[str, str, str]]] = {"enum": [], "service": []}
 
     # Check enum files
     for enum_file in enum_files:

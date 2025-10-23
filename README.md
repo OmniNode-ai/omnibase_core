@@ -1,5 +1,13 @@
 # ONEX Core Framework (omnibase_core)
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Type checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy.readthedocs.io/)
+[![Pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+[![Framework: Core](https://img.shields.io/badge/framework-core-purple.svg)](https://github.com/OmniNode-ai/omnibase_core)
+[![Node Types: 4](https://img.shields.io/badge/node%20types-4-blue.svg)](https://github.com/OmniNode-ai/omnibase_core)
+
 Foundational implementations for the ONEX framework, providing base classes, dependency injection, and essential models.
 
 ## Overview
@@ -42,18 +50,19 @@ src/omnibase_core/
 │   └── model_onex_error.py           # Pydantic error model
 ├── decorators/                        # Utility decorators
 │   └── error_handling.py             # @standard_error_handling decorator
-└── examples/                          # Canonical node implementations
-    ├── tool_infrastructure_consul_adapter_effect/     # EFFECT example
-    ├── tool_infrastructure_message_aggregator_compute/ # COMPUTE example
-    ├── tool_infrastructure_reducer/                   # REDUCER example
-    └── tool_infrastructure_orchestrator/              # ORCHESTRATOR example
+└── examples/                          # Example usage scripts
+    ├── contract_validator_usage.py    # Contract validation examples
+    ├── field_accessor_migration.py    # Field accessor migration guide
+    ├── mixin_discovery_usage.py       # Mixin system usage examples
+    ├── practical_migration_example.py # Migration patterns and examples
+    └── validation_usage_example.py    # Validation system examples
 ```
 
 ## Concurrency and Thread Safety
 
 ⚠️ **Important**: Most ONEX node components are **NOT thread-safe by default**.
 
-For production multi-threaded environments, see **[docs/THREADING.md](docs/THREADING.md)** for:
+For production multi-threaded environments, see **[docs/THREADING.md](docs/reference/THREADING.md)** for:
 
 - **Thread safety guarantees** for each component
 - **Synchronization patterns** and mitigation strategies
@@ -74,7 +83,7 @@ For production multi-threaded environments, see **[docs/THREADING.md](docs/THREA
 
 **Critical Rule**: Do NOT share node instances across threads without explicit synchronization.
 
-See [docs/THREADING.md](docs/THREADING.md) for complete guidelines and mitigation strategies.
+See [docs/THREADING.md](docs/reference/THREADING.md) for complete guidelines and mitigation strategies.
 
 ## Why Poetry?
 
@@ -105,10 +114,10 @@ See [docs/THREADING.md](docs/THREADING.md) for complete guidelines and mitigatio
 |--------|-----------|------|
 | **New Developers** | [Getting Started Guide](docs/getting-started/) | 15 min |
 | **Building Nodes** | [Node Building Guide](docs/guides/node-building/README.md) ⭐ | 30-60 min |
-| **Understanding Architecture** | [ONEX Four-Node Architecture](docs/ONEX_FOUR_NODE_ARCHITECTURE.md) | 30 min |
+| **Understanding Architecture** | [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | 30 min |
 | **Reference & Templates** | [Node Templates](docs/reference/templates/) | - |
-| **Error Handling** | [Error Handling Best Practices](docs/ERROR_HANDLING_BEST_PRACTICES.md) | 20 min |
-| **Thread Safety** | [Threading Guide](docs/THREADING.md) | 15 min |
+| **Error Handling** | [Error Handling Best Practices](docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md) | 20 min |
+| **Thread Safety** | [Threading Guide](docs/reference/THREADING.md) | 15 min |
 
 ### Node Building Guide ⭐ **Recommended Starting Point**
 
@@ -200,7 +209,7 @@ def get_service(self, protocol_name: str) -> Any:
 ### 4. Create Package Structure
 ```bash
 # Create all missing __init__.py files
-find src/omnibase -type d -exec touch {}/__init__.py \;
+find src/omnibase_core -type d -exec touch {}/__init__.py \;
 
 # Create consolidated exports in infrastructure_service_bases.py
 # (Already complete - exports all 4 node base classes)
@@ -240,32 +249,17 @@ poetry run pytest tests/unit/test_node_services.py -v
 poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 ```
 
-### 7. Validate Example Node Implementations
-The canonical examples in `examples/` demonstrate proper ONEX architecture:
+### 7. Explore Example Scripts
+The `examples/` directory contains usage examples demonstrating framework patterns:
 
-**EFFECT Node Pattern** (`tool_infrastructure_consul_adapter_effect`):
-```python
-class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
-    def __init__(self, container: ONEXContainer):
-        super().__init__(container)  # All boilerplate handled!
-        # Only business logic here
-```
+**Available Examples**:
+- `contract_validator_usage.py` - Contract validation patterns
+- `field_accessor_migration.py` - Field accessor migration guide
+- `mixin_discovery_usage.py` - Mixin system usage patterns
+- `practical_migration_example.py` - Real-world migration examples
+- `validation_usage_example.py` - Validation system demonstrations
 
-**COMPUTE Node Pattern** (`tool_infrastructure_message_aggregator_compute`):
-- Inherits from `NodeComputeService`
-- Data processing and aggregation logic
-- State management with PostgreSQL persistence
-
-**REDUCER Node Pattern** (`tool_infrastructure_reducer`):
-- Inherits from `NodeReducerService`
-- State aggregation with **pure FSM pattern**: δ(state, action) → (new_state, intents[])
-- **Pure FSM**: No mutable state, Intent emission for side effects
-- Effect nodes execute the emitted Intents for external actions
-
-**ORCHESTRATOR Node Pattern** (`tool_infrastructure_orchestrator`):
-- Inherits from `NodeOrchestratorService`
-- Workflow coordination and service orchestration
-- Infrastructure connection management
+**Node Implementation Examples**: See the [Node Building Guide](docs/guides/node-building/) for complete tutorials on building EFFECT, COMPUTE, REDUCER, and ORCHESTRATOR nodes
 
 ## Core Framework Components
 
@@ -273,9 +267,9 @@ class ToolInfrastructureConsulAdapterEffect(NodeEffectService):
 The foundation of all ONEX tools:
 
 ```python
-from omnibase.core.infrastructure_service_bases import (
+from omnibase_core.core.infrastructure_service_bases import (
     NodeEffectService,      # External interactions (APIs, databases, files)
-    NodeComputeService,     # Data processing and computation  
+    NodeComputeService,     # Data processing and computation
     NodeReducerService,     # State aggregation and management
     NodeOrchestratorService # Workflow coordination
 )
@@ -294,8 +288,8 @@ logger = container.get_service("ProtocolLogger")
 
 ### 3. Structured Error Handling
 ```python
-from omnibase.decorators.error_handling import standard_error_handling
-from omnibase.exceptions.base_onex_error import OnexError
+from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.exceptions.base_onex_error import OnexError
 
 @standard_error_handling  # Eliminates 6+ lines of try/catch boilerplate
 async def my_operation(self):
@@ -308,7 +302,7 @@ async def my_operation(self):
 
 ### 4. Event-Driven Communication
 ```python
-from omnibase.model.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
 
 # Process events through envelope pattern
 async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
@@ -369,7 +363,7 @@ class EventBusService(ProtocolEventBus):
    - Practice: Build a simple calculator node
 
 3. **Explore Architecture** (30 min)
-   - Read: [ONEX Four-Node Architecture](docs/ONEX_FOUR_NODE_ARCHITECTURE.md)
+   - Read: [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 
 ### Intermediate Path
 
@@ -379,14 +373,14 @@ class EventBusService(ProtocolEventBus):
    - [ORCHESTRATOR Node Tutorial](docs/guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) (coming soon)
 
 2. **Best Practices** (1 hour)
-   - [Error Handling Best Practices](docs/ERROR_HANDLING_BEST_PRACTICES.md)
-   - [Threading Guide](docs/THREADING.md)
+   - [Error Handling Best Practices](docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md)
+   - [Threading Guide](docs/reference/THREADING.md)
    - [Patterns Catalog](docs/guides/node-building/07-patterns-catalog.md) (coming soon)
 
 ### Advanced Path
 
 1. **Deep Dives**
-   - [Subcontract Architecture](docs/SUBCONTRACT_ARCHITECTURE.md)
+   - [Subcontract Architecture](docs/architecture/SUBCONTRACT_ARCHITECTURE.md)
    - [Mixin System](docs/reference/architecture-research/)
    - Production Templates: [Node Templates](docs/reference/templates/)
 

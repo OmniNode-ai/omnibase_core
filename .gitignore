@@ -235,7 +235,7 @@ reports/
 secrets/
 
 # Ignore sensitive and legacy files
-.cursor/mcp.json
+.cursor/
 legacy/
 
 #ignore private docs

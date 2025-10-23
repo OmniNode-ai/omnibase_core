@@ -42,7 +42,7 @@ Breaking this chain (e.g., adding runtime import from models.*) will cause circu
 import re
 from datetime import UTC, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -162,6 +162,7 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     INVALID_INPUT = "ONEX_CORE_007_INVALID_INPUT"
     INVALID_OPERATION = "ONEX_CORE_008_INVALID_OPERATION"
     CONVERSION_ERROR = "ONEX_CORE_009_CONVERSION_ERROR"
+    PARSING_ERROR = "ONEX_CORE_010_PARSING_ERROR"
 
     # File system errors (021-040)
     FILE_NOT_FOUND = "ONEX_CORE_021_FILE_NOT_FOUND"
@@ -263,6 +264,8 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     # Discovery and metadata errors (251-260)
     DISCOVERY_SETUP_FAILED = "ONEX_CORE_251_DISCOVERY_SETUP_FAILED"
     METADATA_LOAD_FAILED = "ONEX_CORE_252_METADATA_LOAD_FAILED"
+    DISCOVERY_INVALID_NODE = "ONEX_CORE_253_DISCOVERY_INVALID_NODE"
+    DISCOVERY_INVALID_REQUEST = "ONEX_CORE_254_DISCOVERY_INVALID_REQUEST"
 
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
@@ -295,6 +298,7 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.INVALID_INPUT: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.INVALID_OPERATION: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.CONVERSION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PARSING_ERROR: EnumCLIExitCode.ERROR,
     # File system errors -> ERROR
     EnumCoreErrorCode.FILE_NOT_FOUND: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.FILE_READ_ERROR: EnumCLIExitCode.ERROR,
@@ -364,6 +368,8 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     # Discovery/metadata errors -> ERROR
     EnumCoreErrorCode.DISCOVERY_SETUP_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.METADATA_LOAD_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DISCOVERY_INVALID_NODE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST: EnumCLIExitCode.ERROR,
 }
 
 
@@ -400,6 +406,7 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.INVALID_INPUT: "Invalid input provided",
         EnumCoreErrorCode.INVALID_OPERATION: "Invalid operation requested",
         EnumCoreErrorCode.CONVERSION_ERROR: "Data conversion error",
+        EnumCoreErrorCode.PARSING_ERROR: "Data parsing error",
         EnumCoreErrorCode.FILE_NOT_FOUND: "File not found",
         EnumCoreErrorCode.FILE_READ_ERROR: "Cannot read file",
         EnumCoreErrorCode.FILE_WRITE_ERROR: "Cannot write file",
@@ -461,6 +468,8 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.CONTRACT_VIOLATION: "Contract violation detected",
         EnumCoreErrorCode.DISCOVERY_SETUP_FAILED: "Discovery setup failed",
         EnumCoreErrorCode.METADATA_LOAD_FAILED: "Metadata loading failed",
+        EnumCoreErrorCode.DISCOVERY_INVALID_NODE: "Discovery invalid node configuration",
+        EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST: "Discovery invalid request format",
     }
     return descriptions.get(error_code, "Unknown error")
 

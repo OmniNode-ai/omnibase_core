@@ -1,5 +1,6 @@
 import os
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
@@ -744,18 +745,18 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         # Check SSL files exist if SSL is enabled
         if self.ssl_enabled:
-            if self.ssl_cert_path and not os.path.exists(self.ssl_cert_path):
+            if self.ssl_cert_path and not Path(self.ssl_cert_path).exists():
                 return False
-            if self.ssl_key_path and not os.path.exists(self.ssl_key_path):
+            if self.ssl_key_path and not Path(self.ssl_key_path).exists():
                 return False
-            if self.ssl_ca_path and not os.path.exists(self.ssl_ca_path):
+            if self.ssl_ca_path and not Path(self.ssl_ca_path).exists():
                 return False
 
         # Driver-specific checks
         if self.driver == "sqlite":
             # For SQLite, check if directory exists
-            db_dir = os.path.dirname(self.database)
-            if db_dir and not os.path.exists(db_dir):
+            db_path = Path(self.database)
+            if db_path.parent != Path() and not db_path.parent.exists():
                 return False
 
         return True

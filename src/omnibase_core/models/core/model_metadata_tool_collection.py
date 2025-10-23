@@ -20,6 +20,7 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_audit_entry import ModelAuditEntry
 from omnibase_core.models.core.model_function_tool import ModelFunctionTool
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 from .model_metadata_tool_analytics import ModelMetadataToolAnalytics
 from .model_metadata_tool_info import ModelMetadataToolInfo
@@ -155,7 +156,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
         return self
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def collection_id(self) -> str:
         """Generate unique identifier for this collection."""
@@ -163,20 +164,20 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         content = f"metadata_tools:{':'.join(tool_names)}"
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def tool_count(self) -> int:
         """Get total number of tools (excluding metadata)."""
         return len([k for k in self.root if not k.startswith("_")])
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def analytics(self) -> ModelMetadataToolAnalytics:
         """Get collection analytics."""
         analytics_data = self.root.get("_metadata_analytics", {})
         return ModelMetadataToolAnalytics(**analytics_data)
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def health_score(self) -> float:
         """Calculate overall collection health score."""

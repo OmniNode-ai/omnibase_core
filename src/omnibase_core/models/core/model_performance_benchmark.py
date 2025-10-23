@@ -4,8 +4,6 @@ from pydantic import Field
 PerformanceBenchmark model.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, ConfigDict
 
 

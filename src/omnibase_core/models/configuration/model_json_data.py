@@ -15,7 +15,8 @@ Strong typing with generic container patterns following ONEX standards.
 
 from typing import Any
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
+from pydantic_core.core_schema import ValidationInfo
 
 from omnibase_core.enums.enum_json_value_type import EnumJsonValueType
 from omnibase_core.models.configuration.model_json_field import ModelJsonField
@@ -47,20 +48,23 @@ class ModelJsonData(BaseModel):
     )
 
     # ONEX validation constraints
-    @validator("fields")
-    def validate_field_consistency(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("fields")
+    @classmethod
+    def validate_field_consistency(cls, v: Any, info: ValidationInfo) -> Any:
         """Ensure field count matches actual fields."""
-        if len(v) != values.get("total_field_count", 0):
+        total_field_count = info.data.get("total_field_count", 0)
+        if len(v) != total_field_count:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Field count mismatch: expected {values.get('total_field_count', 0)}, got {len(v)}",
+                message=f"Field count mismatch: expected {total_field_count}, got {len(v)}",
             )
         return v
 
-    @validator("total_field_count", pre=True, always=True)
-    def calculate_field_count(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("total_field_count", mode="before")
+    @classmethod
+    def calculate_field_count(cls, v: Any, info: ValidationInfo) -> Any:
         """Auto-calculate field count for validation."""
-        fields = values.get("fields", {})
+        fields = info.data.get("fields", {})
         return len(fields) if isinstance(fields, dict) else v
 
     def get_field_value(self, field_name: str) -> Any:

@@ -9,12 +9,34 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_detection_method import EnumDetectionMethod
+from omnibase_core.enums.enum_detection_type import EnumDetectionType
 from omnibase_core.enums.enum_language_code import EnumLanguageCode
-from omnibase_core.models.security.model_detection_result import (
-    EnumDetectionMethod,
-    EnumDetectionType,
-    EnumSensitivityLevel,
-)
+from omnibase_core.enums.enum_sensitivity_level import EnumSensitivityLevel
+
+__all__ = [
+    "EnumLanguageCode",
+    "ModelDetectionPattern",
+    "confidence_threshold",
+    "context_window_size",
+    "description",
+    "detection_method",
+    "detection_type",
+    "enabled",
+    "examples",
+    "false_positive_patterns",
+    "get_summary",
+    "is_enabled",
+    "languages",
+    "meets_confidence_threshold",
+    "model_config",
+    "pattern_id",
+    "pattern_keywords",
+    "pattern_name",
+    "pattern_regex",
+    "sensitivity_level",
+    "supports_language",
+]
 
 
 class ModelDetectionPattern(BaseModel):

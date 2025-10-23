@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field, field_validator
 
@@ -12,7 +12,6 @@ Environment Variables Model
 Type-safe environment variable management with validation and security.
 Follows ONEX one-model-per-file naming conventions.
 """
-
 
 from collections.abc import Iterator
 from typing import Any

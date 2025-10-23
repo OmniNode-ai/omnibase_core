@@ -1,13 +1,10 @@
-from typing import Any
-
-from pydantic import Field
-
-#!/usr/bin/env python3
 """
 Error JSON schema model for ONEX core.
 """
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class ModelErrorJsonSchema(BaseModel):

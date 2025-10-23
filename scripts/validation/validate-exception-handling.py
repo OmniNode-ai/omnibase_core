@@ -23,7 +23,7 @@ class ExceptionHandlingValidator:
     """Validates exception handling patterns in Python files."""
 
     def __init__(self):
-        self.errors: List[Tuple[str, int, str]] = []
+        self.errors: list[tuple[str, int, str]] = []
 
     def validate_file(self, file_path: Path) -> bool:
         """

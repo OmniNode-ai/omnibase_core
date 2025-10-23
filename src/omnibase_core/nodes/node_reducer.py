@@ -26,12 +26,14 @@ Author: ONEX Framework Team
 
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -87,15 +89,19 @@ class NodeReducer(NodeCoreBase):
         """
         super().__init__(container)
 
-        # Configuration only (immutable)
+        # Configuration only (defaults, overridden in _initialize_node_resources)
+        # These defaults are used if ProtocolNodeConfiguration is not available
         self.default_batch_size = 1000
         self.max_memory_usage_mb = 512
         self.streaming_buffer_size = 10000
 
-        # PURE FSM: No mutable state
-        # - No self.reduction_functions (use static registry)
-        # - No self.reduction_metrics (emit Intents instead)
-        # - No self.active_windows (pass through state)
+        # Configuration: Legacy attribute initialization for existing functionality
+        # These attributes support current implementation patterns
+        self.reduction_functions: dict[EnumReductionType, Callable[..., Any]] = {}
+        self.reduction_metrics: dict[str, dict[str, float]] = defaultdict(
+            lambda: {"count": 0.0, "total_time_ms": 0.0, "avg_time_ms": 0.0}
+        )
+        self.active_windows: dict[str, ModelStreamingWindow] = {}
 
     async def process(
         self,
@@ -410,6 +416,39 @@ class NodeReducer(NodeCoreBase):
 
     async def _initialize_node_resources(self) -> None:
         """Initialize reducer-specific resources."""
+        # Load configuration from NodeConfigProvider if available
+        config = self.container.get_service_optional(NodeConfigProvider)
+        if config:
+            # Load performance configurations
+            batch_size_value = await config.get_performance_config(
+                "reducer.default_batch_size", default=self.default_batch_size
+            )
+            max_memory_value = await config.get_performance_config(
+                "reducer.max_memory_usage_mb", default=self.max_memory_usage_mb
+            )
+            buffer_size_value = await config.get_performance_config(
+                "reducer.streaming_buffer_size", default=self.streaming_buffer_size
+            )
+
+            # Update configuration values with type checking
+            if isinstance(batch_size_value, (int, float)):
+                self.default_batch_size = int(batch_size_value)
+            if isinstance(max_memory_value, (int, float)):
+                self.max_memory_usage_mb = int(max_memory_value)
+            if isinstance(buffer_size_value, (int, float)):
+                self.streaming_buffer_size = int(buffer_size_value)
+
+            emit_log_event(
+                LogLevel.INFO,
+                "NodeReducer loaded configuration from NodeConfigProvider",
+                {
+                    "node_id": str(self.node_id),
+                    "default_batch_size": self.default_batch_size,
+                    "max_memory_usage_mb": self.max_memory_usage_mb,
+                    "streaming_buffer_size": self.streaming_buffer_size,
+                },
+            )
+
         emit_log_event(
             LogLevel.INFO,
             "NodeReducer resources initialized",
@@ -484,16 +523,9 @@ class NodeReducer(NodeCoreBase):
 
         reducer_func = self.reduction_functions[reduction_type]
 
-        # Convert data to list if needed
-        if hasattr(input_data.data, "__aiter__"):
-            # Handle async iterator
-            data_list = [item async for item in input_data.data]
-        elif hasattr(input_data.data, "__iter__") and not isinstance(
-            input_data.data, (str, bytes)
-        ):
-            data_list = list(input_data.data)
-        else:
-            data_list = [input_data.data]
+        # Data is already typed as list[T_Input] in ModelReducerInput
+        # No conversion needed, just use it directly
+        data_list: list[Any] = input_data.data
 
         # Execute reduction
         result = await reducer_func(data_list, input_data, conflict_resolver)

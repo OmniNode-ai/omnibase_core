@@ -4,9 +4,8 @@ from __future__ import annotations
 TypedDict for health status information.
 """
 
-
 from datetime import datetime
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 
 class TypedDictHealthStatus(TypedDict):

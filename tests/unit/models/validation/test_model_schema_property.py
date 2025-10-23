@@ -502,7 +502,7 @@ class TestModelSchemaPropertyModelConfig:
         # Extra fields should be allowed
         prop = ModelSchemaProperty(
             type="string",
-            custom_field="custom value",  # type: ignore
+            custom_field="custom value",
         )
         assert prop.type == "string"
         # Extra field should be accessible

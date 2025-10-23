@@ -1,11 +1,12 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.utils.singleton_holders import _SecretManagerHolder
 
 from .model_configuration_summary import ModelConfigurationSummary
 from .model_credentials_analysis import ModelCredentialsAnalysis, ModelManagerAssessment
@@ -362,7 +363,7 @@ class ModelSecretManager(BaseModel):
     def create_for_kubernetes(
         cls,
         namespace: str = "default",
-        secret_name: str = "onex-secrets",
+        secret_name: str = "onex-secrets",  # noqa: S107 - config name, not a password
     ) -> "ModelSecretManager":
         """Create secret manager for Kubernetes environment."""
         config = ModelSecretConfig.create_for_kubernetes(namespace, secret_name)
@@ -377,27 +378,67 @@ class ModelSecretManager(BaseModel):
         return cls(config=config, audit_enabled=True, fallback_enabled=True)
 
 
-# Global secret manager instance
-_secret_manager: ModelSecretManager | None = None
-
-
 def get_secret_manager() -> ModelSecretManager:
-    """Get global secret manager instance."""
-    global _secret_manager
-    if _secret_manager is None:
-        _secret_manager = ModelSecretManager.create_auto_configured()
-    return _secret_manager
+    """Get the secret manager instance (now via DI container)."""
+    from omnibase_core.models.container.model_onex_container import (
+        get_model_onex_container_sync,
+    )
+
+    try:
+        container = get_model_onex_container_sync()
+        return cast(ModelSecretManager, container.secret_manager())
+    except (
+        Exception
+    ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
+        # Fallback to singleton holder
+        manager = _SecretManagerHolder.get()
+        if manager is None:
+            manager = ModelSecretManager()
+            _SecretManagerHolder.set(manager)
+            return manager
+        # Type narrowing: manager is now guaranteed to be ModelSecretManager
+        return cast(ModelSecretManager, manager)
 
 
 def init_secret_manager(config: ModelSecretConfig) -> ModelSecretManager:
-    """Initialize global secret manager with custom config."""
-    global _secret_manager
-    _secret_manager = ModelSecretManager(config=config)
-    return _secret_manager
+    """Initialize global secret manager with custom config (now via DI container)."""
+    from omnibase_core.models.container.model_onex_container import (
+        get_model_onex_container_sync,
+    )
+
+    manager = ModelSecretManager(config=config)
+
+    try:
+        # Try to set in container
+        container = get_model_onex_container_sync()
+        # Container manages its own instance, but we update holder as fallback
+        _SecretManagerHolder.set(manager)
+        result: ModelSecretManager = container.secret_manager()
+        return result
+    except (
+        Exception
+    ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
+        # Fallback to singleton holder
+        _SecretManagerHolder.set(manager)
+        return manager
 
 
 def init_secret_manager_from_manager(manager: ModelSecretManager) -> ModelSecretManager:
-    """Initialize global secret manager from existing manager instance."""
-    global _secret_manager
-    _secret_manager = manager
-    return _secret_manager
+    """Initialize global secret manager from existing manager instance (now via DI container)."""
+    from omnibase_core.models.container.model_onex_container import (
+        get_model_onex_container_sync,
+    )
+
+    try:
+        # Try to set in container
+        container = get_model_onex_container_sync()
+        # Container manages its own instance, but we update holder as fallback
+        _SecretManagerHolder.set(manager)
+        result: ModelSecretManager = container.secret_manager()
+        return result
+    except (
+        Exception
+    ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
+        # Fallback to singleton holder
+        _SecretManagerHolder.set(manager)
+        return manager

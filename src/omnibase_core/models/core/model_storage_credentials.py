@@ -1,18 +1,13 @@
-import json
-from typing import Dict, Optional
-
-from pydantic import Field
-
-#!/usr/bin/env python3
 """
 Storage Credentials Model - ONEX Standards Compliant.
 
 Strongly-typed model for storage backend authentication credentials.
 """
 
-from typing import Any
+import json
+from typing import Any, Optional
 
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, Field, SecretStr
 
 from .model_storage_credentials_config import ModelConfig
 

@@ -3,7 +3,6 @@ from uuid import UUID
 from pydantic import Field
 
 "Event Registry Coordinator Input model for ONEX Discovery & Integration Event Registry.\n\nThis module defines the input model for Event Registry Coordinator operations.\n"
-from typing import Dict
 
 from pydantic import BaseModel, ConfigDict
 

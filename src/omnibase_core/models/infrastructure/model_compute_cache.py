@@ -75,7 +75,7 @@ class ModelComputeCache:
         if isinstance(eviction_policy, str):
             self.eviction_policy = EnumCacheEvictionPolicy(eviction_policy)
         else:
-            self.eviction_policy = eviction_policy
+            self.eviction_policy = eviction_policy  # type: ignore[unreachable]
         self.enable_stats = enable_stats
 
         # TTL handling: store as timedelta for precision

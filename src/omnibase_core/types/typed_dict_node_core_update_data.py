@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 """
 Typed structure for core node data updates.
 """
-
 
 from datetime import datetime
 

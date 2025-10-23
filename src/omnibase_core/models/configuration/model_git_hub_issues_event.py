@@ -10,7 +10,8 @@ Phase 3I remediation: Eliminated factory method anti-patterns and optional retur
 
 from typing import Any
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
+from pydantic_core.core_schema import ValidationInfo
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
@@ -62,8 +63,9 @@ class ModelGitHubIssuesEvent(BaseModel):
     )
 
     # ONEX validation constraints
-    @validator("action")
-    def validate_action_context(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("action")
+    @classmethod
+    def validate_action_context(cls, v: Any, info: ValidationInfo) -> Any:
         """Validate action corresponds to appropriate context data."""
         label_actions = {"labeled", "unlabeled"}
         assignee_actions = {"assigned", "unassigned"}
@@ -73,10 +75,11 @@ class ModelGitHubIssuesEvent(BaseModel):
         # This validation ensures action is in expected format
         return v
 
-    @validator("label")
-    def validate_label_context(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("label")
+    @classmethod
+    def validate_label_context(cls, v: Any, info: ValidationInfo) -> Any:
         """Ensure label is provided when action requires it."""
-        action = values.get("action", "")
+        action = info.data.get("action", "")
         if action in {"labeled", "unlabeled"} and v is None:
             raise ModelOnexError(
                 f"Action '{action}' requires label data",
@@ -87,10 +90,11 @@ class ModelGitHubIssuesEvent(BaseModel):
             pass  # Allow label in other contexts for flexibility
         return v
 
-    @validator("assignee")
-    def validate_assignee_context(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("assignee")
+    @classmethod
+    def validate_assignee_context(cls, v: Any, info: ValidationInfo) -> Any:
         """Ensure assignee is provided when action requires it."""
-        action = values.get("action", "")
+        action = info.data.get("action", "")
         if action in {"assigned", "unassigned"} and v is None:
             raise ModelOnexError(
                 f"Action '{action}' requires assignee data",

@@ -16,7 +16,7 @@ from omnibase_core.models.configuration.model_compute_cache_config import (
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(autouse=True)
 def cleanup_pending_tasks():
     """
     Automatically cleanup any pending asyncio tasks after each test.
@@ -75,7 +75,7 @@ def cleanup_pending_tasks():
 
 
 @pytest.fixture
-def service_cleanup(request):
+def service_cleanup():
     """
     Fixture to manually register services for cleanup.
 
@@ -130,25 +130,22 @@ def service_cleanup(request):
 
     helper = ServiceCleanupHelper()
 
-    # Register finalizer for explicit cleanup of registered services
+    yield helper
+
+    # Cleanup after test
     async def async_finalizer():
         for service in registered_services:
             await helper.cleanup_service_async(service)
 
-    def finalizer():
-        # Run async finalizer if there are registered services
-        if registered_services:
-            try:
-                loop = asyncio.get_event_loop()
-                if loop and not loop.is_closed():
-                    loop.run_until_complete(async_finalizer())
-            except Exception:
-                # Best effort - cleanup_pending_tasks will catch remaining tasks
-                pass
-
-    request.addfinalizer(finalizer)
-
-    return helper
+    # Run async finalizer if there are registered services
+    if registered_services:
+        try:
+            loop = asyncio.get_event_loop()
+            if loop and not loop.is_closed():
+                loop.run_until_complete(async_finalizer())
+        except Exception:
+            # Best effort - cleanup_pending_tasks will catch remaining tasks
+            pass
 
 
 @pytest.fixture

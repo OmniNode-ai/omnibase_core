@@ -189,9 +189,9 @@ class NodeBase(
             name_hash = hashlib.sha256(contract_content.node_name.encode()).digest()[
                 :16
             ]
-            from uuid import UUID as UUIDType
+            from uuid import UUID
 
-            node_id = UUIDType(bytes=name_hash)
+            node_id = UUID(bytes=name_hash)
 
         self.node_id = node_id
 
@@ -220,8 +220,8 @@ class NodeBase(
                 # Process each dependency
                 for dependency in contract_content.dependencies:
                     # Handle both string and ModelContractDependency types
-                    if isinstance(dependency, str):
-                        emit_log_event(
+                    if isinstance(dependency, str):  # type: ignore[unreachable]
+                        emit_log_event(  # type: ignore[unreachable]
                             LogLevel.DEBUG,
                             f"Dependency registered: {dependency}",
                             {
@@ -516,21 +516,24 @@ class NodeBase(
 
             # Check if tool supports async processing
             if hasattr(main_tool, "process_async"):
-                return await main_tool.process_async(input_state)
+                result = await main_tool.process_async(input_state)
+                return cast(T_OUTPUT_STATE, result)
             if hasattr(main_tool, "process"):
                 # Run sync process in thread pool to avoid blocking
-                return await asyncio.get_event_loop().run_in_executor(
+                result = await asyncio.get_event_loop().run_in_executor(
                     None,
                     main_tool.process,
                     input_state,
                 )
+                return cast(T_OUTPUT_STATE, result)
             if hasattr(main_tool, "run"):
                 # Run sync run method in thread pool
-                return await asyncio.get_event_loop().run_in_executor(
+                result = await asyncio.get_event_loop().run_in_executor(
                     None,
                     main_tool.run,
                     input_state,
                 )
+                return cast(T_OUTPUT_STATE, result)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process_async(), process(), or run() method",
@@ -619,7 +622,7 @@ class NodeBase(
         """
         return state
 
-    async def dispatch_async(  # type: ignore[override]
+    async def dispatch_async(
         self,
         state: ProtocolState,
         action: ProtocolAction,
@@ -659,7 +662,7 @@ class NodeBase(
 
             # Wrap the new state in a result object
             return ModelNodeWorkflowResult(
-                value=new_state,  # type: ignore
+                value=new_state,  # type: ignore[arg-type]
                 is_success=True,
                 is_failure=False,
                 error=None,

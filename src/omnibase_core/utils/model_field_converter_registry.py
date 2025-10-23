@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Dict
 
 from pydantic import Field
 
@@ -22,7 +21,6 @@ This module is part of a carefully managed import chain to avoid circular depend
 Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
-
 
 from collections.abc import Callable as CallableABC
 from enum import Enum

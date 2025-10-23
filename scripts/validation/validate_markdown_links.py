@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import List, Set, Tuple
 
 
-def extract_markdown_links(content: str, file_path: Path) -> List[Tuple[str, int]]:
+def extract_markdown_links(content: str, file_path: Path) -> list[tuple[str, int]]:
     """Extract all markdown links with line numbers."""
     links = []
 
@@ -37,7 +37,7 @@ def is_internal_link(link: str) -> bool:
 
 def validate_file_link(
     link: str, source_file: Path, repo_root: Path
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """Validate that a file link exists."""
     # Remove anchor if present
     file_path = link.split("#")[0]
@@ -113,13 +113,13 @@ def validate_markdown_links(repo_root: Path) -> int:
                 errors += 1
 
     print(f"\n{'='*70}")
-    print(f"✅ Validation complete!")
+    print("✅ Validation complete!")
     print(f"   Files scanned: {total_files}")
     print(f"   Total links: {total_links}")
     print(f"   Broken links: {errors}")
 
     if errors == 0:
-        print(f"\n🎉 All internal links are valid!")
+        print("\n🎉 All internal links are valid!")
         return 0
     else:
         print(f"\n⚠️  Found {errors} broken link(s)")

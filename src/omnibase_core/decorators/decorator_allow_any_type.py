@@ -29,7 +29,7 @@ def allow_any_type(reason: str) -> Callable[[F], F]:
 
     def decorator(func: F) -> F:
         # Add reason to function metadata for tracking
-        func.__allow_any_reason__ = reason  # type: ignore
+        func.__allow_any_reason__ = reason  # type: ignore[attr-defined]
         return func
 
     return decorator

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict
 
 # Map of incorrect class names to correct class names for simple renames
-SIMPLE_RENAMES: Dict[str, str] = {
+SIMPLE_RENAMES: dict[str, str] = {
     "EnumGitHubRunnerOS": "EnumGithubRunnerOs",
     "EnumIOType": "EnumIoType",
     "EnumRSDTriggerType": "EnumRsdTriggerType",
@@ -23,7 +23,10 @@ SIMPLE_RENAMES: Dict[str, str] = {
 def find_all_occurrences(src_dir: Path, old_name: str) -> list[Path]:
     """Find all files containing the old enum name."""
     result = subprocess.run(
-        ["grep", "-r", "-l", old_name, str(src_dir)], capture_output=True, text=True
+        ["grep", "-r", "-l", old_name, str(src_dir)],
+        capture_output=True,
+        text=True,
+        check=False,
     )
     if result.returncode != 0:
         return []

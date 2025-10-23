@@ -7,7 +7,8 @@ import asyncio
 import json
 import time
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, List, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
+from uuid import UUID
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -23,7 +24,7 @@ from omnibase_core.models.core.model_event_type import (
 )
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
 from omnibase_core.primitives.model_semver import ModelSemVer
-from omnibase_spi.protocols.event_bus import ProtocolEventBus
+from omnibase_spi.protocols.event_bus import ProtocolEventBus, ProtocolEventEnvelope
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
@@ -93,8 +94,21 @@ class MixinDiscoveryResponder:
         self._discovery_event_bus = event_bus
 
         try:
-            # Get node_id for group_id
-            node_id = getattr(self, "node_id", "discovery-responder")
+            # Get node_id for group_id - STRICT: Must have node_id attribute
+            if not hasattr(self, "node_id"):
+                raise ModelOnexError(
+                    message="Node must have 'node_id' attribute to participate in discovery",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
+                    node_type=self.__class__.__name__,
+                )
+            node_id = self.node_id
+            if not isinstance(node_id, UUID):
+                raise ModelOnexError(
+                    message="node_id must be UUID type",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
+                    node_type=self.__class__.__name__,
+                    actual_type=type(node_id).__name__,
+                )
             group_id = f"discovery-{node_id}"
 
             # Subscribe to discovery broadcast channel
@@ -123,9 +137,9 @@ class MixinDiscoveryResponder:
                 f"Failed to start discovery responder: {e!s}",
                 {"component": "DiscoveryResponder", "error": str(e)},
             )
-            msg = f"Failed to start discovery responder: {e!s}"
             raise ModelOnexError(
-                EnumCoreErrorCode.DISCOVERY_SETUP_FAILED,
+                message=f"Failed to start discovery responder: {e!s}",
+                error_code=EnumCoreErrorCode.DISCOVERY_SETUP_FAILED,
             )
 
     async def stop_discovery_responder(self) -> None:
@@ -187,14 +201,28 @@ class MixinDiscoveryResponder:
             envelope: Event envelope containing the discovery request
         """
         try:
+            # STRICT: Envelope must have payload attribute
+            if not hasattr(envelope, "payload"):
+                raise ModelOnexError(
+                    message="Envelope missing required 'payload' attribute",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST,
+                    envelope_type=type(envelope).__name__,
+                )
+
             # Extract event from envelope and cast to OnexEvent for type safety
-            event = envelope.payload if hasattr(envelope, "payload") else envelope
+            event = envelope.payload
             # Type cast for mypy - event is ModelOnexEvent after extraction
             onex_event = cast(OnexEvent, event)
 
-            if not hasattr(onex_event, "event_type") or not is_event_equal(
-                onex_event.event_type, "DISCOVERY_REQUEST"
-            ):
+            # STRICT: Event must have event_type attribute
+            if not hasattr(onex_event, "event_type"):
+                raise ModelOnexError(
+                    message="Event missing required 'event_type' attribute",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST,
+                    event_type=type(onex_event).__name__,
+                )
+
+            if not is_event_equal(onex_event.event_type, "DISCOVERY_REQUEST"):
                 return  # Not a discovery request
 
             # Type-safe increment (get returns int|float|None, but default ensures int)
@@ -301,35 +329,35 @@ class MixinDiscoveryResponder:
             introspection_data = self._get_discovery_introspection()
 
             # Create discovery response
-            # Get node_id as UUID or generate a temporary one
-            from uuid import UUID, uuid4
+            # STRICT: Node must have node_id attribute of type UUID
+            if not hasattr(self, "node_id"):
+                raise ModelOnexError(
+                    message="Node must have 'node_id' attribute to send discovery response",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
+                    node_type=self.__class__.__name__,
+                )
 
-            node_id_value: UUID
-            if hasattr(self, "node_id"):
-                node_id_attr = self.node_id
-                if isinstance(node_id_attr, UUID):
-                    node_id_value = node_id_attr
-                elif isinstance(node_id_attr, str):
-                    node_id_value = UUID(node_id_attr)
-                else:
-                    node_id_value = uuid4()
-            else:
-                node_id_value = uuid4()
+            node_id_value = self.node_id
+            if not isinstance(node_id_value, UUID):
+                raise ModelOnexError(
+                    message="node_id must be UUID type, not string or other type",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
+                    node_type=self.__class__.__name__,
+                    actual_type=type(node_id_value).__name__,
+                    value=str(node_id_value),
+                )
 
-            # Get version as ModelSemVer
-            version_value = self._get_node_version()
-            if version_value is None:
-                version_semver = ModelSemVer(major=0, minor=0, patch=0)
-            else:
-                # Parse version string like "1.2.3"
-                parts = version_value.split(".")
-                try:
-                    major = int(parts[0]) if len(parts) > 0 else 0
-                    minor = int(parts[1]) if len(parts) > 1 else 0
-                    patch = int(parts[2]) if len(parts) > 2 else 0
-                    version_semver = ModelSemVer(major=major, minor=minor, patch=patch)
-                except (ValueError, IndexError):
-                    version_semver = ModelSemVer(major=0, minor=0, patch=0)
+            # STRICT: Get version as ModelSemVer - no silent conversions
+            version_semver = self._get_node_version()
+            if not isinstance(version_semver, ModelSemVer):
+                raise ModelOnexError(
+                    message="Node version must be ModelSemVer type",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
+                    node_type=self.__class__.__name__,
+                    actual_type=(
+                        type(version_semver).__name__ if version_semver else "None"
+                    ),
+                )
 
             # Get event channels as list
             channels_dict = self._get_discovery_event_channels()
@@ -368,9 +396,10 @@ class MixinDiscoveryResponder:
                 )
 
                 # Wrap in envelope before publishing
+                # Note: node_id_value already validated above as UUID type
                 envelope = ModelEventEnvelope.create_broadcast(
                     payload=response_event,
-                    source_node_id=getattr(self, "node_id", uuid4()),
+                    source_node_id=node_id_value,
                     correlation_id=original_event.correlation_id,
                 )
 
@@ -392,24 +421,24 @@ class MixinDiscoveryResponder:
         """
         Get introspection data for discovery response.
 
+        STRICT: Node must implement get_introspection_response() method.
+
         Returns:
             dict[str, Any]: Node introspection data (dict[str, Any] required for flexible structure)
-        """
-        if hasattr(self, "get_introspection_response"):
-            try:
-                introspection_response = self.get_introspection_response()
-                return introspection_response.model_dump()
-            except Exception:
-                pass
 
-        # Fallback to basic introspection
-        return {
-            "node_id": getattr(self, "node_id", "unknown"),
-            "node_type": self.__class__.__name__,
-            "capabilities": self.get_discovery_capabilities(),
-            "health_status": self.get_health_status(),
-            "timestamp": datetime.now(UTC).isoformat(),
-        }
+        Raises:
+            ModelOnexError: If get_introspection_response() method is missing
+        """
+        if not hasattr(self, "get_introspection_response"):
+            raise ModelOnexError(
+                message="Node must implement 'get_introspection_response()' method for discovery",
+                error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
+                node_type=self.__class__.__name__,
+            )
+
+        introspection_response = self.get_introspection_response()
+        result: dict[str, Any] = introspection_response.model_dump()
+        return result
 
     def get_discovery_capabilities(self) -> list[str]:
         """
@@ -447,38 +476,71 @@ class MixinDiscoveryResponder:
         # Subclasses should implement actual health checks
         return "healthy"
 
-    def _get_node_version(self) -> str | None:
+    def _get_node_version(self) -> ModelSemVer:
         """
         Get version of the node.
 
+        STRICT: Returns ModelSemVer type only - no string conversions or fallbacks.
+
         Returns:
-            str: Node version if available
+            ModelSemVer: Node version
+
+        Raises:
+            ModelOnexError: If version attribute is missing or wrong type
         """
+        # Check for version attribute first
         if hasattr(self, "version"):
-            return self.version
+            version = self.version
+            if not isinstance(version, ModelSemVer):
+                raise ModelOnexError(
+                    message="Node 'version' attribute must be ModelSemVer type",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
+                    node_type=self.__class__.__name__,
+                    actual_type=type(version).__name__,
+                )
+            return version
+
+        # Check for node_version attribute as fallback
         if hasattr(self, "node_version"):
-            return self.node_version
-        return None
+            node_version = self.node_version
+            if not isinstance(node_version, ModelSemVer):
+                raise ModelOnexError(
+                    message="Node 'node_version' attribute must be ModelSemVer type",
+                    error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
+                    node_type=self.__class__.__name__,
+                    actual_type=type(node_version).__name__,
+                )
+            return node_version
+
+        # No version attribute found
+        raise ModelOnexError(
+            message="Node must have 'version' or 'node_version' attribute of type ModelSemVer",
+            error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
+            node_type=self.__class__.__name__,
+        )
 
     def _get_discovery_event_channels(self) -> dict[str, list[str]]:
         """
         Get event channels for discovery response.
 
-        Returns:
-            dict[str, Any]: Event channels (subscribes_to, publishes_to)
-        """
-        if hasattr(self, "get_event_channels"):
-            try:
-                channels = self.get_event_channels()
-                return channels.model_dump()
-            except Exception:
-                pass
+        STRICT: Node must implement get_event_channels() method.
 
-        # Fallback to universal channels
-        return {
-            "subscribes_to": ["onex.discovery.broadcast"],
-            "publishes_to": ["onex.discovery.response"],
-        }
+        Returns:
+            dict[str, list[str]]: Event channels (subscribes_to, publishes_to)
+
+        Raises:
+            ModelOnexError: If get_event_channels() method is missing
+        """
+        if not hasattr(self, "get_event_channels"):
+            raise ModelOnexError(
+                message="Node must implement 'get_event_channels()' method for discovery",
+                error_code=EnumCoreErrorCode.DISCOVERY_INVALID_NODE,
+                node_type=self.__class__.__name__,
+            )
+
+        channels = self.get_event_channels()
+        result: dict[str, list[str]] = channels.model_dump()
+        return result
 
     def get_discovery_stats(self) -> dict[str, Any]:
         """

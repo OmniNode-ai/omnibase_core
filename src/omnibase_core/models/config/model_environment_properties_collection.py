@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 from pydantic import Field
 
@@ -11,7 +11,6 @@ Environment Properties Collection Model
 
 Type-safe collection of environment properties with metadata support.
 """
-
 
 from typing import Any
 

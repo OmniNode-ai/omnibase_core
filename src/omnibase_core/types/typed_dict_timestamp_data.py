@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 """
 Timestamp data structure.
 """
-
 
 from datetime import datetime
 
@@ -17,4 +16,4 @@ class TypedDictTimestampData(TypedDict):
     last_validated: datetime | None
 
 
-__all__ = ["ModelTypedDictTimestampData"]
+__all__ = ["TypedDictTimestampData"]

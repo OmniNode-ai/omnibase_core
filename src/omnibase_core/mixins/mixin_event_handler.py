@@ -1,6 +1,7 @@
-from typing import Any, List
+from typing import Any
 from uuid import UUID
 
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # === OmniNode:Metadata ===
@@ -39,6 +40,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_event_type import (
@@ -48,13 +52,14 @@ from omnibase_core.models.core.model_event_type import (
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.core.model_onex_event import OnexEvent
 
-# Moved to TYPE_CHECKING block
-
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+# Import protocol to avoid circular dependencies
+from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
+
+# Background tasks set to prevent garbage collection of fire-and-forget tasks
+_background_tasks: set[asyncio.Task[Any]] = set()
 
 
 class MixinEventHandler:
@@ -78,13 +83,18 @@ class MixinEventHandler:
             try:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
-                    # Create background tasks (explicitly ignore returned Task objects)
-                    _ = asyncio.create_task(
+                    # Create background tasks and store references to prevent garbage collection
+                    task1 = asyncio.create_task(
                         subscribe_async(self._handle_introspection_request),
                     )
-                    _ = asyncio.create_task(
+                    task2 = asyncio.create_task(
                         subscribe_async(self._handle_node_discovery_request),
                     )
+                    # Keep references to prevent premature cleanup
+                    _background_tasks.add(task1)
+                    _background_tasks.add(task2)
+                    task1.add_done_callback(_background_tasks.discard)
+                    task2.add_done_callback(_background_tasks.discard)
                 else:
                     loop.run_until_complete(
                         subscribe_async(self._handle_introspection_request),
@@ -138,8 +148,16 @@ class MixinEventHandler:
         Args:
             envelope: Event envelope containing the introspection request
         """
+        # STRICT: Envelope must have payload attribute
+        if not hasattr(envelope, "payload"):
+            raise ModelOnexError(
+                f"Envelope missing required 'payload' attribute",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                context={"envelope_type": type(envelope).__name__},
+            )
+
         # Extract event from envelope
-        event = envelope.payload if hasattr(envelope, "payload") else envelope
+        event = envelope.payload
 
         # Check if this event is an introspection request
         try:
@@ -167,7 +185,7 @@ class MixinEventHandler:
         try:
             # Get introspection data
             if hasattr(self, "_gather_introspection_data"):
-                introspection_data = self._gather_introspection_data()  # type: ignore
+                introspection_data = self._gather_introspection_data()
             else:
                 # Fallback introspection data
                 introspection_data = {
@@ -230,8 +248,16 @@ class MixinEventHandler:
         Args:
             envelope: Event envelope containing the discovery request
         """
+        # STRICT: Envelope must have payload attribute
+        if not hasattr(envelope, "payload"):
+            raise ModelOnexError(
+                f"Envelope missing required 'payload' attribute",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                context={"envelope_type": type(envelope).__name__},
+            )
+
         # Extract event from envelope
-        event = envelope.payload if hasattr(envelope, "payload") else envelope
+        event = envelope.payload
 
         # Check if this event is a discovery request
         try:

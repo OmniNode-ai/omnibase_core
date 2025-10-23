@@ -45,7 +45,11 @@ class ModelPermissionEvaluationContext(BaseModel):
             "integer_attributes",
             "boolean_attributes",
         ]:
-            return getattr(self, key)
+            value = getattr(self, key)
+            # Type narrowing: ensure return type matches signature
+            if isinstance(value, (str, int, bool, type(None))):
+                return value
+            return default
         if key in self.string_attributes:
             return self.string_attributes[key]
         if key in self.integer_attributes:

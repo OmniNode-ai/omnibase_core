@@ -6,6 +6,20 @@ from pydantic import BaseModel, Field
 
 from .model_manager_assessment import ModelManagerAssessment
 
+__all__ = [
+    "ModelCredentialsAnalysis",
+    "ModelManagerAssessment",
+    "common_patterns",
+    "compliance_status",
+    "manager_assessment",
+    "password_entropy",
+    "recommendations",
+    "risk_level",
+    "security_issues",
+    "strength_score",
+    "to_dict",
+]
+
 
 class ModelCredentialsAnalysis(BaseModel):
     """Credentials strength analysis results."""

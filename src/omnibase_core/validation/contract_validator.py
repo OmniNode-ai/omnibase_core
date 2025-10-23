@@ -32,6 +32,17 @@ from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.validation.model_contract_validation_result import (
     ModelContractValidationResult,
 )
+from omnibase_spi.protocols.validation.protocol_compliance_validator import (
+    ProtocolArchitectureCompliance,
+    ProtocolComplianceReport,
+    ProtocolComplianceRule,
+    ProtocolComplianceValidator,
+    ProtocolComplianceViolation,
+    ProtocolONEXStandards,
+)
+from omnibase_spi.protocols.validation.protocol_validation import (
+    ProtocolValidationResult,
+)
 
 # Validation constants
 MAX_YAML_SIZE_BYTES = 10 * 1024 * 1024  # 10MB limit for YAML files
@@ -55,6 +66,8 @@ class ProtocolContractValidator:
     - Checks required fields, types, and naming conventions
     - Provides actionable error messages
     - Scores based on completeness and correctness
+
+    Implements ProtocolComplianceValidator for SPI compatibility.
     """
 
     # Contract type mapping to model classes
@@ -74,9 +87,27 @@ class ProtocolContractValidator:
     )
     MODEL_PATTERN = re.compile(r"^Model[A-Z][a-zA-Z0-9]*$")
 
-    def __init__(self) -> None:
-        """Initialize the contract validator."""
+    def __init__(
+        self,
+        onex_standards: ProtocolONEXStandards | None = None,
+        architecture_rules: ProtocolArchitectureCompliance | None = None,
+        strict_mode: bool = False,
+    ) -> None:
+        """
+        Initialize the contract validator.
+
+        Args:
+            onex_standards: Optional ONEX standards implementation
+            architecture_rules: Optional architecture compliance rules
+            strict_mode: Enable strict validation mode
+        """
         self.interface_version = ModelSemVer(major=1, minor=0, patch=0)
+
+        # Protocol compliance attributes
+        self.onex_standards = onex_standards
+        self.architecture_rules = architecture_rules
+        self.custom_rules: list[ProtocolComplianceRule] = []
+        self.strict_mode = strict_mode
 
     def validate_contract_yaml(
         self,
@@ -588,6 +619,184 @@ class ProtocolContractValidator:
 
         except (OSError, RuntimeError):
             return False
+
+    # ProtocolComplianceValidator interface methods
+
+    async def validate_file_compliance(
+        self, file_path: str, content: str | None = None
+    ) -> ProtocolComplianceReport:
+        """
+        Validate file compliance with ONEX standards.
+
+        Args:
+            file_path: Path to file to validate
+            content: Optional file content (reads from file if not provided)
+
+        Returns:
+            Compliance report with violations and recommendations
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "validate_file_compliance() protocol method not yet implemented. "
+            "Use validate_contract_yaml() or validate_model_compliance() instead."
+        )
+
+    async def validate_repository_compliance(
+        self, repository_path: str, file_patterns: list[str] | None = None
+    ) -> list[ProtocolComplianceReport]:
+        """
+        Validate entire repository compliance.
+
+        Args:
+            repository_path: Path to repository root
+            file_patterns: Optional file patterns to validate
+
+        Returns:
+            List of compliance reports for each file
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "validate_repository_compliance() protocol method not yet implemented"
+        )
+
+    async def validate_onex_naming(
+        self, file_path: str, content: str | None = None
+    ) -> list[ProtocolComplianceViolation]:
+        """
+        Validate ONEX naming conventions.
+
+        Args:
+            file_path: Path to file to validate
+            content: Optional file content
+
+        Returns:
+            List of naming convention violations
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "validate_onex_naming() protocol method not yet implemented"
+        )
+
+    async def validate_architecture_compliance(
+        self, file_path: str, content: str | None = None
+    ) -> list[ProtocolComplianceViolation]:
+        """
+        Validate architecture compliance.
+
+        Args:
+            file_path: Path to file to validate
+            content: Optional file content
+
+        Returns:
+            List of architecture violations
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "validate_architecture_compliance() protocol method not yet implemented"
+        )
+
+    async def validate_directory_structure(
+        self, repository_path: str
+    ) -> list[ProtocolComplianceViolation]:
+        """
+        Validate repository directory structure.
+
+        Args:
+            repository_path: Path to repository root
+
+        Returns:
+            List of directory structure violations
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "validate_directory_structure() protocol method not yet implemented"
+        )
+
+    async def validate_dependency_compliance(
+        self, file_path: str, imports: list[str]
+    ) -> list[ProtocolComplianceViolation]:
+        """
+        Validate dependency compliance.
+
+        Args:
+            file_path: Path to file
+            imports: List of import statements
+
+        Returns:
+            List of dependency violations
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "validate_dependency_compliance() protocol method not yet implemented"
+        )
+
+    async def aggregate_compliance_results(
+        self, reports: list[ProtocolComplianceReport]
+    ) -> ProtocolValidationResult:
+        """
+        Aggregate compliance results into validation result.
+
+        Args:
+            reports: List of compliance reports
+
+        Returns:
+            Aggregated validation result
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "aggregate_compliance_results() protocol method not yet implemented"
+        )
+
+    def add_custom_rule(self, rule: ProtocolComplianceRule) -> None:
+        """
+        Add custom compliance rule.
+
+        Args:
+            rule: Custom compliance rule to add
+        """
+        self.custom_rules.append(rule)
+
+    def configure_onex_standards(self, standards: ProtocolONEXStandards) -> None:
+        """
+        Configure ONEX standards.
+
+        Args:
+            standards: ONEX standards configuration
+        """
+        self.onex_standards = standards
+
+    async def get_compliance_summary(
+        self, reports: list[ProtocolComplianceReport]
+    ) -> str:
+        """
+        Get compliance summary from reports.
+
+        Args:
+            reports: List of compliance reports
+
+        Returns:
+            Human-readable compliance summary
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "get_compliance_summary() protocol method not yet implemented"
+        )
 
     def validate_contract_file(
         self,

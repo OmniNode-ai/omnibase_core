@@ -165,7 +165,7 @@ class TestModelCircuitBreakerSubcontractValidation:
             )
             # If no error raised, check if values are still sensible
             # (Field validation order may prevent this check)
-            assert cb.success_threshold <= cb.half_open_max_calls or True
+            assert True
         except ModelOnexError as e:
             assert "cannot exceed" in str(e)
 

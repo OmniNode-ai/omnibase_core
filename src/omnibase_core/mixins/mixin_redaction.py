@@ -21,8 +21,7 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-
-from typing import Any, Dict, List
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -194,7 +193,7 @@ class MixinSensitiveFieldRedaction:
         """
         # Get the model data using standard model_dump
         if hasattr(self, "model_dump"):
-            data = self.model_dump(**kwargs)  # type: ignore[attr-defined]
+            data = self.model_dump(**kwargs)
         else:
             # Fallback for non-Pydantic models
             data = {

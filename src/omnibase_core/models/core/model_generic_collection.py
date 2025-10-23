@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Callable
 from datetime import datetime
-from typing import Dict, Generic, List, TypedDict, TypeVar
+from typing import Generic, TypedDict, TypeVar
 
 from pydantic import Field
 
@@ -13,7 +13,6 @@ Generic collection management pattern for Omnibase Core.
 This module provides a reusable, strongly-typed collection base class that
 can replace ad-hoc collection operations found across Config, Data, and other domains.
 """
-
 
 from datetime import UTC
 from typing import Any

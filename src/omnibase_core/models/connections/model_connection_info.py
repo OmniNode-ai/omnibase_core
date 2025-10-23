@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Dict
-
 from pydantic import Field
 
 """
@@ -10,7 +8,6 @@ Connection info model to replace Dict[str, Any] usage for connection_info fields
 Restructured to use composition of focused sub-models instead of
 excessive string fields in a single large model.
 """
-
 
 import uuid
 from datetime import datetime

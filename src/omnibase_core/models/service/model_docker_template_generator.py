@@ -9,7 +9,7 @@ Author: OmniNode Team
 
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
 

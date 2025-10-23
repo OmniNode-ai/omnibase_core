@@ -8,9 +8,11 @@ Tree generator configuration model.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.config.model_artifact_type_config import (
+    ModelArtifactTypeConfig,
+)
 from omnibase_core.models.core.model_onex_ignore_section import ModelOnexIgnoreSection
 
-from .model_artifact_type_config import ModelArtifactTypeConfig
 from .model_metadata_validation_config import ModelMetadataValidationConfig
 from .model_namespace_config import ModelNamespaceConfig
 

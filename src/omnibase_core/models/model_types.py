@@ -8,7 +8,7 @@ from typing import TypeAlias
 
 # JSON-serializable types that match JSON specification
 # This recursive type represents all values that can be serialized to JSON
-JsonSerializable: TypeAlias = (
+type JsonSerializable = (
     str
     | int
     | float

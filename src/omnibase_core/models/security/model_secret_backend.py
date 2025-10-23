@@ -214,7 +214,7 @@ class ModelSecretBackend(BaseModel):
     def detect_environment_type(self) -> str:
         """Detect the current environment type for backend recommendations."""
         # Check for Kubernetes environment
-        if os.path.exists("/var/run/secrets/kubernetes.io/serviceaccount") or os.getenv(
+        if Path("/var/run/secrets/kubernetes.io/serviceaccount").exists() or os.getenv(
             "KUBERNETES_SERVICE_HOST",
         ):
             return "kubernetes"
@@ -269,7 +269,7 @@ class ModelSecretBackend(BaseModel):
             encryption_in_transit="none",
             access_control="os_level",
             audit_logging="none",
-            secret_rotation="manual",
+            secret_rotation="manual",  # noqa: S106 - config value, not a password
             security_level=EnumSecurityLevel.BASIC,
         ),
         EnumBackendType.DOTENV: ModelBackendSecurityProfile(
@@ -277,7 +277,7 @@ class ModelSecretBackend(BaseModel):
             encryption_in_transit="none",
             access_control="file_permissions",
             audit_logging="version_control",
-            secret_rotation="manual",
+            secret_rotation="manual",  # noqa: S106 - config value, not a password
             security_level=EnumSecurityLevel.DEVELOPMENT_ONLY,
         ),
         EnumBackendType.VAULT: ModelBackendSecurityProfile(
@@ -285,7 +285,7 @@ class ModelSecretBackend(BaseModel):
             encryption_in_transit="tls",
             access_control="policy_based",
             audit_logging="comprehensive",
-            secret_rotation="automatic",
+            secret_rotation="automatic",  # noqa: S106 - config value, not a password
             security_level=EnumSecurityLevel.ENTERPRISE,
         ),
         EnumBackendType.KUBERNETES: ModelBackendSecurityProfile(
@@ -293,7 +293,7 @@ class ModelSecretBackend(BaseModel):
             encryption_in_transit="tls",
             access_control="rbac",
             audit_logging="cluster_level",
-            secret_rotation="manual_or_operator",
+            secret_rotation="manual_or_operator",  # noqa: S106 - config value, not a password
             security_level=EnumSecurityLevel.PRODUCTION,
         ),
         EnumBackendType.FILE: ModelBackendSecurityProfile(
@@ -301,7 +301,7 @@ class ModelSecretBackend(BaseModel):
             encryption_in_transit="none",
             access_control="file_permissions",
             audit_logging="version_control",
-            secret_rotation="manual",
+            secret_rotation="manual",  # noqa: S106 - config value, not a password
             security_level=EnumSecurityLevel.NOT_RECOMMENDED,
         ),
     }
@@ -315,7 +315,7 @@ class ModelSecretBackend(BaseModel):
                 encryption_in_transit="none",
                 access_control="none",
                 audit_logging="none",
-                secret_rotation="manual",
+                secret_rotation="manual",  # noqa: S106 - config value, not a password
                 security_level=EnumSecurityLevel.BASIC,
             ),  # Default security profile
         )

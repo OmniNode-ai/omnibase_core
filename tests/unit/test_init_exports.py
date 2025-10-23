@@ -261,11 +261,11 @@ class TestInitLazyLoadingBehavior:
 
     def test_init_multiple_lazy_loads_return_same_object(self):
         """Test that multiple lazy loads return the same object instance."""
-        from omnibase_core import ModelOnexError as error1
-        from omnibase_core import ModelOnexError as error2
+        from omnibase_core import ModelOnexError as Error1
+        from omnibase_core import ModelOnexError as Error2
 
         # Should be the exact same class object (identity check)
-        assert error1 is error2
+        assert Error1 is Error2
 
 
 class TestInitModuleDocstring:

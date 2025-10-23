@@ -1,6 +1,7 @@
 from typing import Any, Union
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
+from pydantic_core.core_schema import ValidationInfo
 
 from omnibase_core.enums.enum_json_value_type import EnumJsonValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -43,10 +44,11 @@ class ModelJsonField(BaseModel):
     )
 
     # ONEX validation constraints
-    @validator("string_value")
-    def validate_string_type_consistency(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("string_value")
+    @classmethod
+    def validate_string_type_consistency(cls, v: Any, info: ValidationInfo) -> Any:
         """Ensure string_value is set only when field_type=STRING."""
-        field_type = values.get("field_type")
+        field_type = info.data.get("field_type")
         if field_type == EnumJsonValueType.STRING and v is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -59,10 +61,11 @@ class ModelJsonField(BaseModel):
             )
         return v
 
-    @validator("number_value")
-    def validate_number_type_consistency(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("number_value")
+    @classmethod
+    def validate_number_type_consistency(cls, v: Any, info: ValidationInfo) -> Any:
         """Ensure number_value is set only when field_type=NUMBER."""
-        field_type = values.get("field_type")
+        field_type = info.data.get("field_type")
         if field_type == EnumJsonValueType.NUMBER and v is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -75,10 +78,11 @@ class ModelJsonField(BaseModel):
             )
         return v
 
-    @validator("boolean_value")
-    def validate_boolean_type_consistency(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("boolean_value")
+    @classmethod
+    def validate_boolean_type_consistency(cls, v: Any, info: ValidationInfo) -> Any:
         """Ensure boolean_value is set only when field_type=BOOLEAN."""
-        field_type = values.get("field_type")
+        field_type = info.data.get("field_type")
         if field_type == EnumJsonValueType.BOOLEAN and v is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -91,10 +95,11 @@ class ModelJsonField(BaseModel):
             )
         return v
 
-    @validator("array_values")
-    def validate_array_type_consistency(self, v: Any, values: dict[str, Any]) -> Any:
+    @field_validator("array_values")
+    @classmethod
+    def validate_array_type_consistency(cls, v: Any, info: ValidationInfo) -> Any:
         """Ensure array_values is set only when field_type=ARRAY."""
-        field_type = values.get("field_type")
+        field_type = info.data.get("field_type")
         if field_type == EnumJsonValueType.ARRAY and v is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

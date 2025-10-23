@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, cast
 from uuid import UUID
 
 from pydantic import Field, field_validator
@@ -62,7 +62,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         """Convert string node_id to UUID if needed."""
         if isinstance(v, str):
             return uuid_from_string(v, namespace="node")
-        return v
+        return cast(UUID, v)
 
     @field_validator("capabilities", mode="before")
     @classmethod
@@ -87,7 +87,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
                 capability_display_name=capability_str.upper(),
             )
 
-        return v
+        return cast(ModelNodeCapability, v)
 
     @classmethod
     def create_from_node_info(

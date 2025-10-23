@@ -2,9 +2,8 @@ from __future__ import annotations
 
 """Complex composite filter model."""
 
-
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from pydantic import Field
 

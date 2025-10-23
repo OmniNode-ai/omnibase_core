@@ -43,7 +43,7 @@ class UtilUUID:
         return uuid4()
 
     @staticmethod
-    def ensure_uuid(value) -> UUID:
+    def ensure_uuid(value: UUID | str | None) -> UUID:
         """Ensure value is a UUID, generate if None or invalid."""
         if value is None:
             return uuid4()
@@ -54,7 +54,7 @@ class UtilUUID:
                 return UUID(value)
             except (ValueError, TypeError):
                 return uuid4()
-        return uuid4()
+        return uuid4()  # type: ignore[unreachable]  # Defensive fallback
 
     @staticmethod
     def from_string(uuid_string: str) -> UUID:

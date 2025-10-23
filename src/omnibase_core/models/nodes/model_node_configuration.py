@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Dict, TypedDict
+from typing import TypedDict
 from uuid import UUID
 
 from pydantic import Field
@@ -12,7 +12,6 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 Node configuration model for node settings and parameters.
 Restructured to use focused sub-models for better organization.
 """
-
 
 from typing import Any
 

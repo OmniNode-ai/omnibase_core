@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Dict, TypedDict
+from typing import TypedDict
 from uuid import UUID
 
 from pydantic import Field
@@ -14,7 +14,6 @@ Node Resource Limits Model.
 Resource limitation configuration for nodes.
 Part of the ModelNodeConfiguration restructuring.
 """
-
 
 from typing import Any
 

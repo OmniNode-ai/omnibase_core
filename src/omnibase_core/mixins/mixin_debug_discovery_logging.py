@@ -68,7 +68,7 @@ class MixinDebugDiscoveryLogging:
                     envelope_or_event, node_name
                 )
 
-            self._handle_introspection_request = debug_handler  # type: ignore[assignment]  # Dynamic method replacement for debug logging
+            self._handle_introspection_request = debug_handler
 
             emit_log_event(
                 LogLevel.DEBUG,
@@ -114,7 +114,9 @@ class MixinDebugDiscoveryLogging:
 
         # Call original handler
         try:
-            result = self._original_handle_introspection_request(envelope_or_event)
+            result: None = self._original_handle_introspection_request(
+                envelope_or_event
+            )
 
             emit_log_event(
                 LogLevel.DEBUG,

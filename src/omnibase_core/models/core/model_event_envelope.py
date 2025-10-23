@@ -1,11 +1,3 @@
-import json
-import uuid
-from typing import Dict, Optional
-
-from pydantic import Field
-
-from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-
 """
 ModelEventEnvelope: Event envelope for distributed routing
 
@@ -18,7 +10,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.primitives.model_semver import ModelSemVer
 

@@ -16,7 +16,7 @@ import uuid
 from collections.abc import Callable
 from collections.abc import Callable as CallableABC
 from pathlib import Path
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar, cast
 from uuid import UUID
 
 from pydantic import ValidationError
@@ -100,7 +100,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
     def get_node_name(self) -> str:
         """Get the node name from the implementing class."""
         if hasattr(self, "node_name"):
-            return self.node_name
+            node_name: str = getattr(self, "node_name")
+            return node_name
         # Fallback: derive from class name
         class_name = self.__class__.__name__
         # Convert CamelCase to snake_case
@@ -307,7 +308,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             for pattern, subscription in self._event_subscriptions:
                 try:
                     if self.event_bus is not None:
-                        self.event_bus.unsubscribe(subscription)  # type: ignore[attr-defined]  # Duck-typed event bus interface
+                        self.event_bus.unsubscribe(subscription)
                 except Exception as e:
                     emit_log_event(
                         LogLevel.WARNING,
@@ -376,7 +377,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 )
 
                 if self.event_bus is not None:
-                    subscription = self.event_bus.subscribe(handler, event_type=pattern)  # type: ignore[call-arg, arg-type]  # Duck-typed event bus interface
+                    # Duck-typed event bus interface
+                    subscription = self.event_bus.subscribe(handler, event_type=pattern)
                     self._event_subscriptions.append((pattern, subscription))
 
                 emit_log_event(
@@ -710,7 +712,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                             "result_type": type(result).__name__,
                         },
                     )
-                    return result
+                    return cast(InputStateT, result)
                 # Try to extract dict from model
                 if data is not None and hasattr(data, "model_dump"):
                     dict_data = data.model_dump()
@@ -720,7 +722,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                         "✅ EVENT_TO_INPUT_STATE: Created input state from model_dump",
                         {"node_name": self.get_node_name()},
                     )
-                    return result
+                    return cast(InputStateT, result)
                 if data is not None and hasattr(data, "dict"):
                     dict_data = data.dict()
                     result = input_state_class(**dict_data)
@@ -729,14 +731,14 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                         "✅ EVENT_TO_INPUT_STATE: Created input state from dict method",
                         {"node_name": self.get_node_name()},
                     )
-                    return result
+                    return cast(InputStateT, result)
                 result = input_state_class(data=data)
                 emit_log_event(
                     LogLevel.DEBUG,
                     "✅ EVENT_TO_INPUT_STATE: Created input state with data wrapper",
                     {"node_name": self.get_node_name()},
                 )
-                return result
+                return cast(InputStateT, result)
             except Exception as e:
                 emit_log_event(
                     LogLevel.ERROR,
@@ -773,7 +775,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         if hasattr(self.process, "__annotations__"):
             annotations = self.process.__annotations__
             if "input_state" in annotations:
-                return annotations["input_state"]
+                state_cls: type | None = annotations["input_state"]
+                return state_cls
 
         # Try common patterns
         module_name = self.__class__.__module__
@@ -820,7 +823,8 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                             f"Found input state class: {attr_name}",
                             {"node_name": self.get_node_name()},
                         )
-                        return getattr(module, attr_name)
+                        cls: type | None = getattr(module, attr_name)
+                        return cls
 
             except Exception as e:
                 emit_log_event(
@@ -979,7 +983,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
         # Publish envelope
         if self.event_bus is not None:
-            self.event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
+            self.event_bus.publish_async(envelope)
 
         emit_log_event(
             LogLevel.INFO,
@@ -1041,7 +1045,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         )
 
         if self.event_bus is not None:
-            self.event_bus.publish_async(envelope)  # type: ignore[attr-defined]  # Duck-typed event bus interface
+            self.event_bus.publish_async(envelope)
 
         emit_log_event(
             LogLevel.ERROR,

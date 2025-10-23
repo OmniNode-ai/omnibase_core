@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, TypedDict, TypeVar
+from typing import TypedDict, TypeVar
 
 from pydantic import Field
 
@@ -11,7 +11,6 @@ Environment Properties Model
 
 Type-safe custom environment properties with access methods.
 """
-
 
 from datetime import datetime
 from typing import Any, cast, get_origin

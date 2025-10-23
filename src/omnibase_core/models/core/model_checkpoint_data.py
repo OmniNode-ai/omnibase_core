@@ -6,7 +6,7 @@ Strongly-typed model for checkpoint data in ONEX storage backends.
 """
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field

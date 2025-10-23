@@ -2,13 +2,19 @@ from __future__ import annotations
 
 """
 Protocol auditor for detecting duplicates and violations across omni* ecosystem.
+
+Implements ProtocolQualityValidator for SPI compliance.
 """
 
 
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from omnibase_spi.protocols.validation.protocol_quality_validator import (
+    ProtocolQualityValidator,
+)
 
 from .exceptions import ConfigurationError, InputValidationError
 from .model_audit_result import ModelAuditResult
@@ -20,6 +26,17 @@ from .validation_utils import (
     extract_protocols_from_directory,
     validate_directory_path,
 )
+
+if TYPE_CHECKING:
+    from omnibase_spi.protocols.validation.protocol_quality_validator import (
+        ProtocolQualityIssue,
+        ProtocolQualityMetrics,
+        ProtocolQualityReport,
+        ProtocolQualityStandards,
+    )
+    from omnibase_spi.protocols.validation.protocol_validation import (
+        ProtocolValidationResult,
+    )
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -33,9 +50,18 @@ class ModelProtocolAuditor:
     - Current repository only (fast)
     - Current repository vs SPI (medium)
     - Full ecosystem scan (comprehensive)
+
+    Implements ProtocolQualityValidator for SPI compliance.
     """
 
-    def __init__(self, repository_path: str = "."):
+    def __init__(
+        self,
+        repository_path: str = ".",
+        standards: ProtocolQualityStandards | None = None,
+        enable_complexity_analysis: bool = True,
+        enable_duplication_detection: bool = True,
+        enable_style_checking: bool = True,
+    ):
         try:
             self.repository_path = validate_directory_path(
                 Path(repository_path), "repository"
@@ -45,6 +71,13 @@ class ModelProtocolAuditor:
             raise ConfigurationError(msg)
 
         self.repository_name = determine_repository_name(self.repository_path)
+
+        # Protocol compliance attributes
+        self.standards = standards
+        self.enable_complexity_analysis = enable_complexity_analysis
+        self.enable_duplication_detection = enable_duplication_detection
+        self.enable_style_checking = enable_style_checking
+
         logger.info(
             f"ModelProtocolAuditor initialized for repository '{self.repository_name}' "
             f"at {self.repository_path}"
@@ -356,3 +389,194 @@ class ModelProtocolAuditor:
         if report.migration_candidates:
             for _candidate in report.migration_candidates:
                 pass
+
+    # ProtocolQualityValidator interface methods
+
+    async def validate_file_quality(
+        self, file_path: str, content: str | None = None
+    ) -> ProtocolQualityReport:
+        """
+        Validate file quality metrics.
+
+        Args:
+            file_path: Path to file to validate
+            content: Optional file content
+
+        Returns:
+            Quality report with metrics and issues
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "validate_file_quality() protocol method not yet implemented. "
+            "Use check_current_repository() or check_against_spi() instead."
+        )
+
+    async def validate_directory_quality(
+        self, directory_path: str, file_patterns: list[str] | None = None
+    ) -> list[ProtocolQualityReport]:
+        """
+        Validate directory quality.
+
+        Args:
+            directory_path: Path to directory
+            file_patterns: Optional file patterns to validate
+
+        Returns:
+            List of quality reports
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "validate_directory_quality() protocol method not yet implemented"
+        )
+
+    def calculate_quality_metrics(
+        self, file_path: str, content: str | None = None
+    ) -> ProtocolQualityMetrics:
+        """
+        Calculate quality metrics for file.
+
+        Args:
+            file_path: Path to file
+            content: Optional file content
+
+        Returns:
+            Quality metrics
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "calculate_quality_metrics() protocol method not yet implemented"
+        )
+
+    def detect_code_smells(
+        self, file_path: str, content: str | None = None
+    ) -> list[ProtocolQualityIssue]:
+        """
+        Detect code smells in file.
+
+        Args:
+            file_path: Path to file
+            content: Optional file content
+
+        Returns:
+            List of detected code smells
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "detect_code_smells() protocol method not yet implemented"
+        )
+
+    async def check_naming_conventions(
+        self, file_path: str, content: str | None = None
+    ) -> list[ProtocolQualityIssue]:
+        """
+        Check naming convention compliance.
+
+        Args:
+            file_path: Path to file
+            content: Optional file content
+
+        Returns:
+            List of naming convention issues
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "check_naming_conventions() protocol method not yet implemented"
+        )
+
+    async def analyze_complexity(
+        self, file_path: str, content: str | None = None
+    ) -> list[ProtocolQualityIssue]:
+        """
+        Analyze code complexity.
+
+        Args:
+            file_path: Path to file
+            content: Optional file content
+
+        Returns:
+            List of complexity issues
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "analyze_complexity() protocol method not yet implemented"
+        )
+
+    async def validate_documentation(
+        self, file_path: str, content: str | None = None
+    ) -> list[ProtocolQualityIssue]:
+        """
+        Validate documentation quality.
+
+        Args:
+            file_path: Path to file
+            content: Optional file content
+
+        Returns:
+            List of documentation issues
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "validate_documentation() protocol method not yet implemented"
+        )
+
+    def suggest_refactoring(
+        self, file_path: str, content: str | None = None
+    ) -> list[str]:
+        """
+        Suggest refactoring opportunities.
+
+        Args:
+            file_path: Path to file
+            content: Optional file content
+
+        Returns:
+            List of refactoring suggestions
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "suggest_refactoring() protocol method not yet implemented"
+        )
+
+    def configure_standards(self, standards: ProtocolQualityStandards) -> None:
+        """
+        Configure quality standards.
+
+        Args:
+            standards: Quality standards configuration
+        """
+        self.standards = standards
+
+    async def get_validation_summary(
+        self, reports: list[ProtocolQualityReport]
+    ) -> ProtocolValidationResult:
+        """
+        Get validation summary from quality reports.
+
+        Args:
+            reports: List of quality reports
+
+        Returns:
+            Validation result summary
+
+        Raises:
+            NotImplementedError: Protocol method not yet implemented
+        """
+        raise NotImplementedError(  # stub-ok: SPI protocol method - implementation pending
+            "get_validation_summary() protocol method not yet implemented"
+        )

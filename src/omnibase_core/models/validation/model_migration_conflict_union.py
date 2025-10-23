@@ -13,8 +13,6 @@ Replaces Union[TypedDictMigrationDuplicateConflictDict, TypedDictMigrationNameCo
 with ONEX-compliant discriminated union pattern.
 """
 
-from typing import Dict
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType

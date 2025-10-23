@@ -1,5 +1,3 @@
-from typing import List
-
 """
 CLI Result Formatter Utility.
 

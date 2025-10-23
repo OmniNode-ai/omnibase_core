@@ -6,8 +6,7 @@ import uuid
 TypedDict for overall system state.
 """
 
-
-from typing import Dict, TypedDict
+from typing import TypedDict
 from uuid import UUID
 
 from .typed_dict_dependency_info import TypedDictDependencyInfo

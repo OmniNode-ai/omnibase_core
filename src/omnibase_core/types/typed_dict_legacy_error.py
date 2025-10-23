@@ -6,8 +6,7 @@ from datetime import datetime
 Legacy error input structure for converter functions.
 """
 
-
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 
 class TypedDictLegacyError(TypedDict, total=False):

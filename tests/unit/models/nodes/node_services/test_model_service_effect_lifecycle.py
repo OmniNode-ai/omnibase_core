@@ -369,9 +369,9 @@ class TestModelServiceEffectShutdown:
         # Get the published event
         call_args = mock_event_bus.publish.call_args_list
         shutdown_event = None
-        for call in call_args:
-            if call[0] and isinstance(call[0][0], ModelNodeShutdownEvent):
-                shutdown_event = call[0][0]
+        for call_arg in call_args:
+            if call_arg[0] and isinstance(call_arg[0][0], ModelNodeShutdownEvent):
+                shutdown_event = call_arg[0][0]
                 break
 
         assert shutdown_event is not None

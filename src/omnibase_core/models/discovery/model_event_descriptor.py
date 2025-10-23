@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import Field
@@ -7,6 +7,40 @@ from omnibase_core.enums.enum_discovery_phase import EnumDiscoveryPhase
 from omnibase_core.enums.enum_event_type import EnumEventType
 from omnibase_core.enums.enum_service_status import EnumServiceStatus
 from omnibase_core.primitives.model_semver import ModelSemVer
+
+__all__ = [
+    "EnumDiscoveryPhase",
+    "EnumEventType",
+    "EnumServiceStatus",
+    "ModelEventDescriptor",
+    "auto_provisioning_config",
+    "consul_meta",
+    "consul_service_name",
+    "consul_tags",
+    "container_adapter_enabled",
+    "container_status",
+    "correlation_id",
+    "discovery_phase",
+    "event_context",
+    "event_data",
+    "event_id",
+    "event_name",
+    "event_schema_version",
+    "event_timestamp",
+    "event_type",
+    "health_check_endpoint",
+    "hub_domain",
+    "hub_registration_required",
+    "mesh_coordination_data",
+    "model_config",
+    "node_id",
+    "service_endpoints",
+    "service_id",
+    "service_name",
+    "service_version",
+    "trust_level",
+    "validation_required",
+]
 
 """Event Descriptor model for ONEX Discovery & Integration Event Registry.
 

@@ -14,6 +14,7 @@ from pathlib import Path
 
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+from omnibase_core.utils.singleton_holders import _EventTypeRegistryHolder
 
 from .model_event_type import ModelEventType
 
@@ -202,21 +203,35 @@ class ModelEventTypeRegistry:
         }
 
 
-# Global registry instance
-_global_event_type_registry: ModelEventTypeRegistry | None = None
-
-
 def get_event_type_registry() -> ModelEventTypeRegistry:
-    """Get the global event type registry instance."""
-    global _global_event_type_registry
-    if _global_event_type_registry is None:
-        _global_event_type_registry = ModelEventTypeRegistry()
-        # Bootstrap core event types
-        _global_event_type_registry.bootstrap_core_event_types()
-    return _global_event_type_registry
+    """Get the global event type registry instance (now via DI container)."""
+    # Try to get from container first
+    try:
+        from omnibase_core.models.container.model_onex_container import (
+            get_model_onex_container_sync,
+        )
+
+        container = get_model_onex_container_sync()
+        registry: ModelEventTypeRegistry = container.event_type_registry()
+
+        # Ensure core event types are bootstrapped (idempotent)
+        if len(registry.get_all_event_types()) == 0:
+            registry.bootstrap_core_event_types()
+
+        return registry
+    except (
+        Exception
+    ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
+        # Fallback to singleton holder for edge cases
+        registry_result = _EventTypeRegistryHolder.get()
+        if registry_result is None:
+            registry_result = ModelEventTypeRegistry()
+            registry_result.bootstrap_core_event_types()
+            _EventTypeRegistryHolder.set(registry_result)
+        final_registry: ModelEventTypeRegistry = registry_result
+        return final_registry
 
 
 def reset_event_type_registry() -> None:
     """Reset the global event type registry (for testing)."""
-    global _global_event_type_registry
-    _global_event_type_registry = None
+    _EventTypeRegistryHolder.set(None)

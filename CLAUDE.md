@@ -34,7 +34,7 @@ python script.py                    # NEVER
 
 ### Agent Instructions
 
-When spawning agent-workflow-coordinator agents:
+When spawning polymorphic agents:
 - **ALWAYS** instruct them to use `poetry run` for Python commands
 - **NEVER** allow direct pip or python execution
 - Include explicit examples showing Poetry usage

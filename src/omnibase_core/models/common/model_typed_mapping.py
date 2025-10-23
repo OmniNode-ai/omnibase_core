@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Optional, cast
+from typing import Optional, cast
 
 from pydantic import Field
 
@@ -26,7 +26,6 @@ This module is part of a carefully managed import chain to avoid circular depend
 Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
-
 
 from typing import Any, ClassVar
 

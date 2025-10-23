@@ -8,7 +8,6 @@ ZERO TOLERANCE: Performance must remain acceptable even with 1000+ dependencies.
 """
 
 import time
-from typing import List
 from uuid import UUID, uuid4
 
 import pytest
@@ -223,7 +222,7 @@ class TestModelWorkflowDependencyPerformance:
         num_dependencies = 1000
         workflow_ids = [uuid4() for _ in range(num_dependencies + 1)]
 
-        dependencies: List[ModelWorkflowDependency] = []
+        dependencies: list[ModelWorkflowDependency] = []
 
         # Benchmark creating large dependency graph
         start_time = time.perf_counter()
@@ -471,7 +470,7 @@ class TestModelWorkflowDependencyPerformance:
             f"✅ Overall time: {overall_time:.2f}s, max thread: {max_thread_time:.2f}s"
         )
         print(
-            f"✅ {num_threads} threads × {deps_per_thread} deps = {total_validations} validations"
+            f"✅ {num_threads} threads x {deps_per_thread} deps = {total_validations} validations"
         )
 
 

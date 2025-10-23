@@ -213,7 +213,10 @@ class ModelNodeServiceConfig(BaseModel):
         }
         network_config: dict[str, Any] = {
             "port": int(os.getenv("SERVICE_PORT", "8080")),
-            "host": os.getenv("SERVICE_HOST", "0.0.0.0"),
+            "host": os.getenv(
+                "SERVICE_HOST",
+                "0.0.0.0",  # noqa: S104 - Required for containerized services to bind to all interfaces
+            ),
         }
         health_config: dict[str, Any] = {
             "enabled": os.getenv("HEALTH_CHECK_ENABLED", "true").lower() == "true",

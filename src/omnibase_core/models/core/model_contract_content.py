@@ -1,5 +1,3 @@
-from typing import Dict
-
 from pydantic import Field
 
 from omnibase_core.primitives.model_semver import ModelSemVer

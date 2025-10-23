@@ -1,6 +1,6 @@
 import uuid
 from collections.abc import Callable
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, Optional, TypeVar, cast
 
 from pydantic import BaseModel
 
@@ -37,6 +37,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
+from omnibase_core.utils.singleton_holders import _ContainerHolder
 from omnibase_spi import ProtocolLogger
 
 # Optional performance enhancements
@@ -45,14 +46,14 @@ try:
 except ImportError:
     # FALLBACK_REASON: cache module is optional performance enhancement,
     # system can operate without it using standard container behavior
-    MemoryMappedToolCache = None  # type: ignore[misc, assignment]
+    MemoryMappedToolCache = None
 
 try:
     from omnibase_core.monitoring.performance_monitor import PerformanceMonitor
 except ImportError:
     # FALLBACK_REASON: performance monitoring is optional feature,
     # container can function without monitoring capabilities
-    PerformanceMonitor = None  # type: ignore[misc, assignment]
+    PerformanceMonitor = None
 
 # TODO: These imports require omnibase-spi protocols that may not be available yet
 # from omnibase_core.protocols.protocol_database_connection import ProtocolDatabaseConnection
@@ -63,9 +64,7 @@ except ImportError:
 ProtocolDatabaseConnection = Any
 ProtocolServiceDiscovery = Any
 
-
 T = TypeVar("T")
-
 
 # === CORE CONTAINER DEFINITION ===
 
@@ -90,6 +89,7 @@ class ModelONEXContainer:
         enable_performance_cache: bool = False,
         cache_dir: Path | None = None,
         compute_cache_config: ModelComputeCacheConfig | None = None,
+        enable_service_registry: bool = True,
     ) -> None:
         """
         Initialize enhanced container with optional performance optimizations.
@@ -98,6 +98,7 @@ class ModelONEXContainer:
             enable_performance_cache: Enable memory-mapped tool cache and performance monitoring
             cache_dir: Optional cache directory (defaults to temp directory)
             compute_cache_config: Cache configuration for NodeCompute instances (uses defaults if None)
+            enable_service_registry: Enable new ServiceRegistry (default: True)
         """
         self._base_container = _BaseModelONEXContainer()
 
@@ -120,6 +121,32 @@ class ModelONEXContainer:
         self.enable_performance_cache = enable_performance_cache
         self.tool_cache: Any = None
         self.performance_monitor: Any = None
+
+        # Initialize ServiceRegistry (new DI system)
+        self._service_registry: Any = None
+        self._enable_service_registry = enable_service_registry
+
+        if enable_service_registry:
+            try:
+                from omnibase_core.container.service_registry import ServiceRegistry
+                from omnibase_core.models.container.model_registry_config import (
+                    create_default_registry_config,
+                )
+
+                registry_config = create_default_registry_config()
+                self._service_registry = ServiceRegistry(registry_config)
+
+                emit_log_event(
+                    LogLevel.INFO,
+                    "ServiceRegistry initialized for container",
+                    {"registry_name": registry_config.registry_name},
+                )
+            except ImportError as e:
+                emit_log_event(
+                    LogLevel.WARNING,
+                    f"ServiceRegistry not available: {e}",
+                )
+                self._enable_service_registry = False
 
         if enable_performance_cache and MemoryMappedToolCache is not None:
             # Initialize memory-mapped cache
@@ -166,6 +193,36 @@ class ModelONEXContainer:
         """Access to workflow coordinator."""
         return self._base_container.workflow_coordinator
 
+    @property
+    def action_registry(self) -> Any:
+        """Access to action registry."""
+        return self._base_container.action_registry
+
+    @property
+    def event_type_registry(self) -> Any:
+        """Access to event type registry."""
+        return self._base_container.event_type_registry
+
+    @property
+    def command_registry(self) -> Any:
+        """Access to command registry."""
+        return self._base_container.command_registry
+
+    @property
+    def secret_manager(self) -> Any:
+        """Access to secret manager."""
+        return self._base_container.secret_manager
+
+    @property
+    def service_registry(self) -> Any:
+        """
+        Access to service registry (new DI system).
+
+        Returns:
+            ServiceRegistry instance if enabled, None otherwise
+        """
+        return self._service_registry
+
     async def get_service_async(
         self,
         protocol_type: type[T],
@@ -174,6 +231,9 @@ class ModelONEXContainer:
     ) -> T:
         """
         Async service resolution with caching and logging.
+
+        Enhanced with ServiceRegistry support - tries registry first, then falls back
+        to alternative resolution if registry lookup fails.
 
         Args:
             protocol_type: Protocol interface to resolve
@@ -201,9 +261,43 @@ class ModelONEXContainer:
                     "correlation_id": str(final_correlation_id),
                 },
             )
-            return self._service_cache[cache_key]
+            cached_service: T = self._service_cache[cache_key]
+            return cached_service
 
-        # Resolve service
+        # Try ServiceRegistry first (new DI system)
+        if self._enable_service_registry and self._service_registry is not None:
+            try:
+                service_instance = await self._service_registry.resolve_service(
+                    interface=protocol_type,
+                    context={"correlation_id": final_correlation_id},
+                )
+
+                # Cache successful resolution
+                self._service_cache[cache_key] = service_instance
+
+                emit_log_event(
+                    LogLevel.INFO,
+                    f"Service resolved from registry: {protocol_name}",
+                    {
+                        "protocol_type": protocol_name,
+                        "service_name": service_name,
+                        "correlation_id": str(final_correlation_id),
+                        "source": "service_registry",
+                    },
+                )
+
+                typed_service: T = cast(T, service_instance)
+                return typed_service
+
+            except Exception as registry_error:
+                # Log but don't fail - fall through to legacy resolution
+                emit_log_event(
+                    LogLevel.DEBUG,
+                    f"ServiceRegistry resolution failed, trying legacy: {protocol_name}",
+                    {"error": str(registry_error)},
+                )
+
+        # Fallback resolution if registry lookup fails
         try:
             start_time = datetime.now()
 
@@ -258,16 +352,18 @@ class ModelONEXContainer:
 
             emit_log_event(
                 LogLevel.INFO,
-                f"Service resolved successfully: {protocol_name}",
+                f"Service resolved successfully (legacy): {protocol_name}",
                 {
                     "protocol_type": protocol_name,
                     "service_name": service_name,
                     "resolution_time_ms": resolution_time_ms,
                     "correlation_id": str(final_correlation_id),
+                    "source": "legacy",
                 },
             )
 
-            return service_instance
+            legacy_service: T = cast(T, service_instance)
+            return legacy_service
 
         except Exception as e:
             emit_log_event(
@@ -378,6 +474,32 @@ class ModelONEXContainer:
     ) -> T:
         """Modern standards method."""
         return self.get_service_sync(protocol_type, service_name)
+
+    def get_service_optional(
+        self,
+        protocol_type: type[T],
+        service_name: str | None = None,
+    ) -> T | None:
+        """
+        Get service with optional return - returns None if not found.
+
+        This method provides a non-throwing alternative to get_service(),
+        useful for optional dependencies that may not be available in all
+        container configurations.
+
+        Args:
+            protocol_type: Protocol interface to resolve
+            service_name: Optional service name
+
+        Returns:
+            Service instance of type T, or None if service cannot be resolved
+        """
+        try:
+            return self.get_service_sync(protocol_type, service_name)
+        except (
+            Exception
+        ):  # fallback-ok: Optional service getter intentionally returns None when service unavailable
+            return None
 
     def get_workflow_orchestrator(self) -> Any:
         """Get workflow orchestration coordinator."""
@@ -503,7 +625,10 @@ class ModelONEXContainer:
         if not self.performance_monitor:
             return {"error": "Performance monitoring not enabled"}
 
-        return await self.performance_monitor.run_optimization_checkpoint(phase_name)
+        result: dict[str, Any] = (
+            await self.performance_monitor.run_optimization_checkpoint(phase_name)
+        )
+        return result
 
     def close(self) -> None:
         """Clean up resources."""
@@ -519,7 +644,6 @@ class ModelONEXContainer:
 # === HELPER FUNCTIONS ===
 # Helper functions moved to base_model_onex_container.py
 
-
 # === CONTAINER FACTORY ===
 
 
@@ -527,6 +651,7 @@ async def create_model_onex_container(
     enable_cache: bool = False,
     cache_dir: Path | None = None,
     compute_cache_config: ModelComputeCacheConfig | None = None,
+    enable_service_registry: bool = True,
 ) -> ModelONEXContainer:
     """
     Create and configure model ONEX container with optional performance optimizations.
@@ -535,6 +660,7 @@ async def create_model_onex_container(
         enable_cache: Enable memory-mapped tool cache and performance monitoring
         cache_dir: Optional cache directory (defaults to temp directory)
         compute_cache_config: Cache configuration for NodeCompute instances (uses defaults if None)
+        enable_service_registry: Enable new ServiceRegistry (default: True)
 
     Returns:
         ModelONEXContainer: Configured container instance
@@ -543,6 +669,7 @@ async def create_model_onex_container(
         enable_performance_cache=enable_cache,
         cache_dir=cache_dir,
         compute_cache_config=compute_cache_config,
+        enable_service_registry=enable_service_registry,
     )
 
     # Load configuration into base container
@@ -586,15 +713,15 @@ async def create_model_onex_container(
 
 # === GLOBAL ENHANCED CONTAINER ===
 
-_model_onex_container: ModelONEXContainer | None = None
-
 
 async def get_model_onex_container() -> ModelONEXContainer:
     """Get or create global enhanced container instance."""
-    global _model_onex_container
-    if _model_onex_container is None:
-        _model_onex_container = await create_model_onex_container()
-    return _model_onex_container
+    container = _ContainerHolder.get()
+    if container is None:
+        container = await create_model_onex_container()
+        _ContainerHolder.set(container)
+    result: ModelONEXContainer = cast(ModelONEXContainer, container)
+    return result
 
 
 def get_model_onex_container_sync() -> ModelONEXContainer:

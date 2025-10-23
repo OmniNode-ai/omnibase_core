@@ -360,7 +360,7 @@ compute_config = ModelComputeCacheConfig(
 
 ### Configuration Model
 
-See [`model_compute_cache_config.py`](../src/omnibase_core/models/configuration/model_compute_cache_config.py) for complete API documentation.
+See [`model_compute_cache_config.py`](../../src/omnibase_core/models/configuration/model_compute_cache_config.py) for complete API documentation.
 
 ### Thread Safety
 
@@ -368,6 +368,6 @@ See [THREADING.md](./THREADING.md) for multi-threaded deployment guidelines.
 
 ### Related Documentation
 
-- [NodeCompute Architecture](../src/omnibase_core/nodes/node_compute.py)
-- [ModelComputeCache Implementation](../src/omnibase_core/models/infrastructure/model_compute_cache.py)
-- [Container Configuration](../src/omnibase_core/models/container/model_onex_container.py)
+- [NodeCompute Architecture](../../src/omnibase_core/nodes/node_compute.py)
+- [ModelComputeCache Implementation](../../src/omnibase_core/models/infrastructure/model_compute_cache.py)
+- [Container Configuration](../../src/omnibase_core/models/container/model_onex_container.py)

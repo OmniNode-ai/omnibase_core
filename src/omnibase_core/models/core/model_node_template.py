@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import Field
 
 # === OmniNode:Metadata ===
@@ -25,15 +23,12 @@ from pydantic import Field
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-
 """
 Pydantic model for node template configuration.
 
 This module provides structured configuration for node template generation,
 including template metadata, file mappings, and generation options.
 """
-
-from typing import Dict
 
 from pydantic import BaseModel
 

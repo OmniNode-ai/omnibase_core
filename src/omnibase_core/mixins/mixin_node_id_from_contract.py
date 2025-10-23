@@ -3,7 +3,7 @@ import inspect
 import os
 import sys
 from pathlib import Path
-from typing import Any, Generic, List
+from typing import Any, Generic
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError

@@ -852,14 +852,14 @@ tool_specification:
         versions = [(1, 0, 0), (1, 2, 3), (2, 0, 0), (3, 5, 7)]
         results = []
 
-        for i, (major, minor, patch) in enumerate(versions):
-            contract_file = tmp_path / f"contract_v{major}_{minor}_{patch}.yaml"
+        for i, (major, minor, patch_ver) in enumerate(versions):
+            contract_file = tmp_path / f"contract_v{major}_{minor}_{patch_ver}.yaml"
             contract_file.write_text(
                 f"""
 contract_version:
   major: {major}
   minor: {minor}
-  patch: {patch}
+  patch: {patch_ver}
 node_name: Node{i}
 tool_specification:
   main_tool_class: ToolClass{i}
@@ -870,10 +870,10 @@ tool_specification:
             results.append(result)
 
         # Verify all versions were loaded correctly
-        for result, (major, minor, patch) in zip(results, versions, strict=False):
+        for result, (major, minor, patch_ver) in zip(results, versions, strict=False):
             assert result.contract_version.major == major
             assert result.contract_version.minor == minor
-            assert result.contract_version.patch == patch
+            assert result.contract_version.patch == patch_ver
 
     def test_loader_state_consistency_after_errors(
         self, contract_loader: ProtocolContractLoader, tmp_path: Path

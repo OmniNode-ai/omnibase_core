@@ -31,4 +31,5 @@ class ModelRequestAuth(BaseModel):
     def serialize_secret(self, value: Any) -> str | None:
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
-        return value
+        # Explicitly return None or str
+        return str(value) if value is not None else None

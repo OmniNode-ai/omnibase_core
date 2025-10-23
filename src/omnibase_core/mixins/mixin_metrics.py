@@ -11,7 +11,7 @@ Usage:
             # Metrics tracking automatically available
 """
 
-from typing import Any, Dict
+from typing import Any
 
 
 class MixinMetrics:
@@ -35,7 +35,7 @@ class MixinMetrics:
         object.__setattr__(self, "_metrics_data", {})
 
     def record_metric(
-        self, metric_name: str, value: float, tags: Dict[str, str] | None = None
+        self, metric_name: str, value: float, tags: dict[str, str] | None = None
     ) -> None:
         """
         Record a metric value.
@@ -92,7 +92,7 @@ class MixinMetrics:
             current = metrics_data.get(counter_name, {"value": 0})["value"]
             metrics_data[counter_name] = {"value": current + value}
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get current metrics data.
 
@@ -102,11 +102,14 @@ class MixinMetrics:
         # Use object.__getattribute__() to access attributes set with object.__setattr__()
         # Defensive: Initialize _metrics_data if it doesn't exist (e.g., if __init__ wasn't called)
         try:
-            metrics_data = object.__getattribute__(self, "_metrics_data")
+            metrics_data: dict[str, Any] = object.__getattribute__(
+                self, "_metrics_data"
+            )
         except AttributeError:
             object.__setattr__(self, "_metrics_data", {})
             metrics_data = object.__getattribute__(self, "_metrics_data")
-        return metrics_data.copy()
+        result: dict[str, Any] = metrics_data.copy()
+        return result
 
     def reset_metrics(self) -> None:
         """Reset all metrics data."""

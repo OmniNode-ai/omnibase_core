@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import Field
 
 """
@@ -10,7 +8,6 @@ Mixins follow the single responsibility principle and provide specific capabilit
 that can be composed into concrete node implementations.
 """
 
-# Core mixins
 from omnibase_core.mixins.mixin_canonical_serialization import (
     MixinCanonicalYAMLSerializer,
 )
@@ -55,6 +52,7 @@ from omnibase_core.mixins.mixin_tool_execution import MixinToolExecution
 from omnibase_core.mixins.mixin_workflow_support import MixinDagSupport
 from omnibase_core.mixins.mixin_yaml_serialization import MixinYAMLSerialization
 
+# Core mixins
 # Import protocols from omnibase_spi
 from omnibase_spi.protocols.types import ProtocolLogEmitter as LogEmitter
 from omnibase_spi.protocols.types import ProtocolRegistryWithBus as RegistryWithBus

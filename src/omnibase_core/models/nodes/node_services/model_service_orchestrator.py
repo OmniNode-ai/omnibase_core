@@ -57,6 +57,8 @@ Included Capabilities:
 Node Type: Orchestrator (Workflow coordination, multi-node management)
 """
 
+from typing import Any
+
 from omnibase_core.mixins.mixin_event_bus import MixinEventBus
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
@@ -65,11 +67,11 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 
 
-class ModelServiceOrchestrator(
+class ModelServiceOrchestrator(  # type: ignore[misc]
     MixinNodeService,
     NodeOrchestrator,
     MixinHealthCheck,
-    MixinEventBus,
+    MixinEventBus[Any, Any],
     MixinMetrics,
 ):
     """

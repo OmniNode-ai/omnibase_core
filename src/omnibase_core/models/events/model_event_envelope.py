@@ -1,5 +1,5 @@
 import uuid
-from typing import Dict, Generic, Optional, TypeVar, cast
+from typing import Generic, Optional, TypeVar, cast
 
 from pydantic import BaseModel, Field, field_validator
 

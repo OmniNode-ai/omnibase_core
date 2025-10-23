@@ -106,11 +106,11 @@ from pydantic import BaseModel, Field
 # Import existing ONEX types
 from omnibase.protocols.types.core_types import HealthStatus, NodeType
 
-class Model[CapabilityName](BaseModel):
+class ModelCapabilityName(BaseModel):
     """Individual capability model."""
     # Field definitions with validation
 
-class Model[MainSubcontract](BaseModel):
+class ModelMainSubcontract(BaseModel):
     """Main subcontract definition model."""
     subcontract_name: str = Field(default="mixin_name")
     subcontract_version: str = Field(default="1.0.0")

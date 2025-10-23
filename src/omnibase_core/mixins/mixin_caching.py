@@ -22,7 +22,7 @@ Usage:
 
 import hashlib
 import json
-from typing import Any, Dict
+from typing import Any
 
 
 class MixinCaching:
@@ -42,7 +42,7 @@ class MixinCaching:
         """Initialize caching mixin."""
         super().__init__(*args, **kwargs)
         self._cache_enabled = True
-        self._cache_data: Dict[str, Any] = {}
+        self._cache_data: dict[str, Any] = {}
 
     def generate_cache_key(self, data: Any) -> str:
         """
@@ -108,7 +108,7 @@ class MixinCaching:
         """Clear all cache entries."""
         self._cache_data.clear()
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 

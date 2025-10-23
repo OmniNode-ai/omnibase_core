@@ -297,8 +297,10 @@ class MixinHealthCheck:
                             cpu_usage_percent=0.0,
                         )
 
-                    async def wrap_sync() -> ModelHealthStatus:
-                        return sync_result
+                    async def wrap_sync(
+                        captured_result: ModelHealthStatus = sync_result,
+                    ) -> ModelHealthStatus:
+                        return captured_result
 
                     task = asyncio.create_task(wrap_sync())
                 else:

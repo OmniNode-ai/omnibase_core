@@ -338,7 +338,7 @@ class TestExecuteWorkflow:
         def failing_create_workflow(input_state: SimpleInputState) -> Mock:
             raise RuntimeError("Workflow creation failed")
 
-        tool.create_workflow = failing_create_workflow  # type: ignore
+        tool.create_workflow = failing_create_workflow  # type: ignore[method-assign]
 
         with patch("llama_index.core.workflow"):
             result = tool._execute_workflow(input_state)
@@ -464,7 +464,7 @@ class TestCalculateComplexity:
         class PlainObject:
             pass
 
-        plain_input = PlainObject()  # type: ignore
+        plain_input = PlainObject()
 
         complexity = tool._calculate_complexity(plain_input)
 

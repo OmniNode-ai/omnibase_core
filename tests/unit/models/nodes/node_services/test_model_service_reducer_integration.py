@@ -95,11 +95,9 @@ class ReducerNodeForIntegrationTest(ModelServiceReducer):
 
     def _publish_introspection_event(self):
         """Mock introspection publishing."""
-        pass
 
     def cleanup_event_handlers(self):
         """Mock cleanup."""
-        pass
 
 
 class TestModelServiceReducerIntegration:

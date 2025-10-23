@@ -66,11 +66,11 @@ class TestModelSemVerCreation:
         """Test that ModelSemVer is immutable."""
         version = ModelSemVer(major=1, minor=2, patch=3)
         with pytest.raises(ValidationError):
-            version.major = 2  # type: ignore
+            version.major = 2
 
     def test_extra_fields_ignored(self):
         """Test that extra fields are ignored per model config."""
-        version = ModelSemVer(major=1, minor=2, patch=3, extra_field="ignored")  # type: ignore
+        version = ModelSemVer(major=1, minor=2, patch=3, extra_field="ignored")
         assert version.major == 1
         assert not hasattr(version, "extra_field")
 

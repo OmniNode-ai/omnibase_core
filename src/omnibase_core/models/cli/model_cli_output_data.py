@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from pydantic import Field
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -12,7 +10,6 @@ CLI output data model.
 Clean, strongly-typed replacement for dict[str, Any] in CLI execution output.
 Follows ONEX one-model-per-file naming conventions.
 """
-
 
 from typing import Any
 

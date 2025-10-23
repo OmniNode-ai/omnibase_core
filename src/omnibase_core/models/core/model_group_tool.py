@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from omnibase_core.enums.enum_group_manifest import EnumGroupStatus
+    from omnibase_core.enums.enum_group_status import EnumGroupStatus
     from omnibase_core.primitives.model_semver import SemVerField
 
 

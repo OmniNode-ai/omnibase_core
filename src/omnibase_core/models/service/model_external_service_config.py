@@ -79,7 +79,7 @@ class ModelExternalServiceConfig(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_service_config(cls, values: Any) -> None:
+    def validate_service_config(cls, values: Any) -> Any:
         """Validate that connection_config matches service_type and convert to typed models."""
         if hasattr(values, "get") and callable(values.get):
             service_type = values.get("service_type", "").lower()
@@ -110,7 +110,6 @@ class ModelExternalServiceConfig(BaseModel):
                             error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                         ) from e
                     except Exception as e:
-
                         msg = f"Failed to create database connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
@@ -122,14 +121,12 @@ class ModelExternalServiceConfig(BaseModel):
                             **connection_config,
                         )
                     except (ValueError, ValidationError) as e:
-
                         msg = f"Invalid REST API connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
                             error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                         ) from e
                     except Exception as e:
-
                         msg = f"Failed to create REST API connection config: {e!s}"
                         raise ModelOnexError(
                             msg,

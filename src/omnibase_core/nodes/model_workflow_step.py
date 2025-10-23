@@ -34,10 +34,10 @@ class ModelWorkflowStep(BaseModel):
         default_factory=list, description="List of thunks to execute"
     )
     condition: EnumBranchCondition | None = Field(
-        None, description="Optional branching condition"
+        default=None, description="Optional branching condition"
     )
     condition_function: Callable[..., Any] | None = Field(
-        None, description="Optional custom condition function"
+        default=None, description="Optional custom condition function"
     )
     timeout_ms: int = Field(default=30000, description="Step timeout in milliseconds")
     retry_count: int = Field(default=0, description="Number of retry attempts")
@@ -47,9 +47,13 @@ class ModelWorkflowStep(BaseModel):
     state: EnumWorkflowState = Field(
         default=EnumWorkflowState.PENDING, description="Current step state"
     )
-    started_at: datetime | None = Field(None, description="Step start timestamp")
-    completed_at: datetime | None = Field(None, description="Step completion timestamp")
-    error: Exception | None = Field(None, description="Error if step failed")
+    started_at: datetime | None = Field(
+        default=None, description="Step start timestamp"
+    )
+    completed_at: datetime | None = Field(
+        default=None, description="Step completion timestamp"
+    )
+    error: Exception | None = Field(default=None, description="Error if step failed")
     results: list[Any] = Field(
         default_factory=list, description="Step execution results"
     )

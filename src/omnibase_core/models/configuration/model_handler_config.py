@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import Field
 
@@ -25,7 +25,6 @@ from pydantic import Field
 # uuid: c6cae84d-f423-4d9b-a85c-12377cc25bcc
 # version: 1.0.0
 # === /OmniNode:Metadata ===
-
 
 """
 Pydantic model for file type handler configuration.

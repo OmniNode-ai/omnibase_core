@@ -69,7 +69,8 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
     def get_cli_description(self) -> str:
         """Get CLI description. Override to customize."""
         if hasattr(self, "description"):
-            return self.description
+            description: str = self.description
+            return description
         return f"{self.__class__.__name__} - ONEX Tool"
 
     def add_custom_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -170,9 +171,6 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
         elif args.input_file:
             input_path = Path(args.input_file)
             if not input_path.exists():
-                from omnibase_core.errors.core_error_code import EnumCoreErrorCode
-                from omnibase_core.errors.onex_error import ModelOnexError
-
                 raise ModelOnexError(
                     message=f"Input file not found: {args.input_file}",
                     error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
@@ -220,7 +218,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
         return data
 
-    def format_output(self, output: OutputStateT, format: str) -> str:
+    def format_output(self, output: OutputStateT, output_format: str) -> str:
         """Format output based on requested format."""
         # Convert output to dict
         if hasattr(output, "model_dump"):
@@ -233,7 +231,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             output_dict = {"result": str(output)}
 
         # Format as requested
-        if format == "yaml":
+        if output_format == "yaml":
             from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
 
             return serialize_data_to_yaml(output_dict, default_flow_style=False)
@@ -334,12 +332,14 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
     def _create_input_state(self, data: dict[str, Any]) -> InputStateT:
         """Create input state from dictionary data."""
+        from typing import cast
+
         # Get input state class from type hints
         if hasattr(self.process, "__annotations__"):
             annotations = self.process.__annotations__
             if "input_state" in annotations:
                 input_class = annotations["input_state"]
-                return input_class(**data)
+                return cast(InputStateT, input_class(**data))
 
         # Fallback - return data as-is
         return data  # type: ignore[return-value]

@@ -373,7 +373,7 @@ class TestServiceModelIntegration:
 
         # Should not be able to modify frozen model
         with pytest.raises(Exception):  # ValidationError or AttributeError
-            service.health_status = "unhealthy"  # type: ignore
+            service.health_status = "unhealthy"
 
     def test_service_and_health_coordination(self):
         """Test coordinated use of ModelService and ModelServiceHealth."""

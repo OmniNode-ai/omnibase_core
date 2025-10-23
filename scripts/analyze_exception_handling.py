@@ -29,7 +29,7 @@ class ExceptionPatternAnalyzer:
 
     def __init__(self, root_dir: Path):
         self.root_dir = root_dir
-        self.issues: List[Issue] = []
+        self.issues: list[Issue] = []
 
     def analyze_file(self, file_path: Path) -> None:
         """Analyze a single Python file for exception handling issues."""

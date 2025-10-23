@@ -469,6 +469,13 @@ class StringVersionValidator:
         """Check Python content for hardcoded __version__ declarations."""
         lines = content.split("\n")
 
+        # Track bypass comments
+        bypass_patterns = [
+            "string-version-ok:",
+            "version-ok:",
+            "semver-ok:",
+        ]
+
         for line_num, line in enumerate(lines, 1):
             stripped_line = line.strip()
 
@@ -480,6 +487,30 @@ class StringVersionValidator:
             if "__version__" in stripped_line and "=" in stripped_line:
                 # Extract the assignment
                 if stripped_line.startswith("__version__"):
+                    # Check for bypass comment on previous line or same line
+                    has_bypass = False
+
+                    # Check previous line for bypass comment
+                    if line_num > 1:
+                        prev_line = lines[line_num - 2].strip()
+                        if prev_line.startswith("#"):
+                            for pattern in bypass_patterns:
+                                if pattern in prev_line:
+                                    has_bypass = True
+                                    break
+
+                    # Check current line for inline bypass comment
+                    if "#" in line:
+                        comment_part = line.split("#", 1)[1]
+                        for pattern in bypass_patterns:
+                            if pattern in comment_part:
+                                has_bypass = True
+                                break
+
+                    # Skip if bypass comment found
+                    if has_bypass:
+                        continue
+
                     assignment_part = stripped_line.split("=", 1)[1].strip()
                     # Remove quotes and check if it's a version string
                     clean_value = assignment_part.strip().strip("\"'")

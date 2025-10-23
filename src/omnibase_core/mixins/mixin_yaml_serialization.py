@@ -57,7 +57,7 @@ class MixinYAMLSerialization:
 
         # Delegate to centralized serialization function
         return serialize_pydantic_model_to_yaml(
-            self,  # type: ignore[arg-type] # Protocol matches Pydantic BaseModel
+            self,
             comment_prefix=comment_prefix,
             sort_keys=False,
             default_flow_style=False,

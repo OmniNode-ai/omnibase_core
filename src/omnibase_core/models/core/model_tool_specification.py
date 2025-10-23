@@ -9,8 +9,6 @@ tool resolution from contract specifications.
 Author: ONEX Framework Team
 """
 
-from typing import Dict
-
 from pydantic import BaseModel, ConfigDict
 
 

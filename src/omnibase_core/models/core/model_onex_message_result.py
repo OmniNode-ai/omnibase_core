@@ -15,7 +15,6 @@ from .model_unified_summary_details import ModelUnifiedSummaryDetails
 from .model_unified_version import ModelUnifiedVersion
 
 # Compatibility aliases (maintain old names for any existing imports)
-ModelOnexMessageContext = ModelOnexMessageContext
 UnifiedSummaryDetailsModel = ModelUnifiedSummaryDetails
 OnexResultModelMetadata = ModelOnexResultMetadata
 OrchestratorInfoModel = ModelOrchestratorInfo  # Use proper orchestrator info model

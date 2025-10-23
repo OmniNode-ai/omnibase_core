@@ -34,6 +34,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -82,7 +83,8 @@ class NodeCompute(NodeCoreBase):
         # Get cache configuration from container
         cache_config = container.compute_cache_config
 
-        # Computation-specific configuration
+        # Computation-specific configuration (defaults, overridden in _initialize_node_resources)
+        # These defaults are used if ProtocolNodeConfiguration is not available
         self.max_parallel_workers = 4
         self.cache_ttl_minutes = cache_config.get_ttl_minutes() or 30
         self.performance_threshold_ms = 100.0
@@ -273,6 +275,40 @@ class NodeCompute(NodeCoreBase):
 
     async def _initialize_node_resources(self) -> None:
         """Initialize computation-specific resources."""
+        # Load configuration from NodeConfigProvider if available
+        config = self.container.get_service_optional(NodeConfigProvider)
+        if config:
+            # Load performance configurations with fallback to current defaults
+            max_workers_value = await config.get_performance_config(
+                "compute.max_parallel_workers", default=self.max_parallel_workers
+            )
+            cache_ttl_value = await config.get_performance_config(
+                "compute.cache_ttl_minutes", default=self.cache_ttl_minutes
+            )
+            perf_threshold_value = await config.get_performance_config(
+                "compute.performance_threshold_ms",
+                default=self.performance_threshold_ms,
+            )
+
+            # Update configuration values with type checking
+            if isinstance(max_workers_value, (int, float)):
+                self.max_parallel_workers = int(max_workers_value)
+            if isinstance(cache_ttl_value, (int, float)):
+                self.cache_ttl_minutes = int(cache_ttl_value)
+            if isinstance(perf_threshold_value, (int, float)):
+                self.performance_threshold_ms = float(perf_threshold_value)
+
+            emit_log_event(
+                LogLevel.INFO,
+                "NodeCompute loaded configuration from NodeConfigProvider",
+                {
+                    "node_id": str(self.node_id),
+                    "max_parallel_workers": self.max_parallel_workers,
+                    "cache_ttl_minutes": self.cache_ttl_minutes,
+                    "performance_threshold_ms": self.performance_threshold_ms,
+                },
+            )
+
         self.thread_pool = ThreadPoolExecutor(max_workers=self.max_parallel_workers)
 
         emit_log_event(
@@ -290,7 +326,7 @@ class NodeCompute(NodeCoreBase):
         if self.thread_pool:
             # Shutdown thread pool with timeout to prevent hanging
             # timeout parameter requires Python 3.9+
-            self.thread_pool.shutdown(wait=True, timeout=5.0)
+            self.thread_pool.shutdown(wait=True, timeout=5.0)  # type: ignore[call-arg]
 
             # Check if threads are still running (shutdown doesn't guarantee completion)
             # Note: shutdown() doesn't return status, but we log the completion

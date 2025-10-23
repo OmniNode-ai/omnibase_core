@@ -1,18 +1,13 @@
-import uuid
-from typing import Any, Dict
-
-from pydantic import Field
-
-from omnibase_core.models.core.model_custom_fields import ModelCustomFields
-
-"\nAdditional Context Model.\n\nType-safe additional context replacing Dict[str, Any]\nwith structured context information.\n"
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_custom_fields import ModelCustomFields
 from .model_environment import ModelEnvironment
 from .model_feature_flags import ModelFeatureFlags
+
+"\nAdditional Context Model.\n\nType-safe additional context replacing Dict[str, Any]\nwith structured context information.\n"
 
 
 class ModelAdditionalContext(BaseModel):

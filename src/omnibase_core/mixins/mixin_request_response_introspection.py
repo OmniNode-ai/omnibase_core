@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 from uuid import uuid4
 
 from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
@@ -561,7 +561,8 @@ class MixinRequestResponseIntrospection:
         if hasattr(self, "_cached_introspection"):
             cached = self._cached_introspection
             if hasattr(cached, "capabilities"):
-                return cached.capabilities
+                capabilities: ModelNodeCapabilities = cached.capabilities
+                return capabilities
 
         # Fallback to basic capabilities
         actions = []

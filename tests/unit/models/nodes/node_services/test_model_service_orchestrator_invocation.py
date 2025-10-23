@@ -91,9 +91,7 @@ class TestModelServiceOrchestratorToolInvocation:
                 "workflow_id": str(workflow_id),
                 "steps_completed": 3,
                 "action": (
-                    str(action_value)
-                    if hasattr(action_value, "__call__")
-                    else action_value
+                    str(action_value) if callable(action_value) else action_value
                 ),
             }
 

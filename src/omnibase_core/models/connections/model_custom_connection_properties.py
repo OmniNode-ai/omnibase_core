@@ -69,10 +69,12 @@ class ModelCustomConnectionProperties(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def handle_flat_init_kwargs(cls, data: Any) -> dict[str, Any]:
+    def handle_flat_init_kwargs(cls, data: Any) -> Any:
         """Handle flat kwargs during initialization by routing to nested models."""
         if not isinstance(data, dict):
-            return data  # type: ignore[return-value]
+            # Return non-dict data as-is for Pydantic to handle
+            result: Any = data
+            return result
 
         # Database properties
         database_kwargs = {}
@@ -133,7 +135,9 @@ class ModelCustomConnectionProperties(BaseModel):
         if perf_kwargs and "performance" not in data:
             data["performance"] = perf_kwargs
 
-        return data
+        # Type narrowing: data is confirmed to be dict[str, Any] at this point
+        typed_result: dict[str, Any] = data
+        return typed_result
 
     # Factory methods
     @classmethod

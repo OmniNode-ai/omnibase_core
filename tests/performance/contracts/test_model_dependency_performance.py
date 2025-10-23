@@ -8,7 +8,6 @@ ZERO TOLERANCE: Validation must remain fast even with complex patterns.
 """
 
 import time
-from typing import List
 
 import pytest
 
@@ -302,7 +301,7 @@ class TestModelDependencyPerformance:
 
         # Benchmark large dependency set creation
         start_time = time.perf_counter()
-        dependencies: List[ModelDependency] = []
+        dependencies: list[ModelDependency] = []
 
         for data in dependency_data:
             dep = ModelDependency(**data)

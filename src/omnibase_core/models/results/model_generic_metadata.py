@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, Generic
+from typing import Generic
 
 from pydantic import Field
 
@@ -10,7 +10,6 @@ from omnibase_core.primitives.model_semver import ModelSemVer
 """
 Generic metadata model to replace Dict[str, Any] usage for metadata fields.
 """
-
 
 from datetime import datetime
 from typing import Any

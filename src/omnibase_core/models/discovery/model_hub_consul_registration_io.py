@@ -3,13 +3,22 @@ from uuid import UUID
 
 from pydantic import Field
 
+__all__ = [
+    "ModelHubConsulRegistrationInput",
+    "ModelHubConsulRegistrationOutput",
+    "action",
+    "hub_domain",
+    "hub_id",
+    "hub_port",
+    "model_config",
+    "registration_event",
+]
+
 """Input/Output models for Hub Consul Registration tool.
 
 This module defines the input and output models used by the Hub Consul Registration tool
 for automatic hub self-registration in Consul service discovery.
 """
-
-from typing import Dict
 
 from pydantic import BaseModel, ConfigDict
 

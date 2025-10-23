@@ -891,7 +891,7 @@ class TestBootstrapEdgeCases:
         """Test with None as protocol type."""
         # Act & Assert
         with patch.object(util_bootstrap, "_get_registry_node", return_value=None):
-            result = util_bootstrap.get_service(None)  # type: ignore
+            result = util_bootstrap.get_service(None)
             assert result is None
 
     def test_concurrent_service_access(self):

@@ -126,7 +126,7 @@ class ModelPropertyCollection(BaseModel):
         for type_checker, factory_method in type_handlers:
             if type_checker(value):
                 # Dynamic dispatch - type checking guarantees type safety
-                return factory_method(value, source)  # type: ignore[arg-type]
+                return factory_method(value, source)
 
         # If no handler matches, raise error
         raise ModelOnexError(

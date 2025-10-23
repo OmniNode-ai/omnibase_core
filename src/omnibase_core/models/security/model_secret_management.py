@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -127,7 +127,8 @@ def get_security_recommendations(
 
             config = ModelDatabaseSecureConfig(**config_dict)
             assessment = config.get_security_assessment()
-            return assessment.get("recommendations", [])
+            recommendations: list[Any] = assessment.get("recommendations", [])
+            return recommendations
 
         if config_type == "backend":
             backend = ModelSecretBackend(**config_dict)
