@@ -17,7 +17,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.nodes.enum_effect_types import EnumEffectType
+from omnibase_core.enums.enum_effect_types import EnumEffectType
 
 
 class ModelEffectInput(BaseModel):

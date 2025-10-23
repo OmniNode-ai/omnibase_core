@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.nodes.enum_reducer_types import (
+from omnibase_core.enums.enum_reducer_types import (
     EnumConflictResolution,
     EnumReductionType,
     EnumStreamingMode,

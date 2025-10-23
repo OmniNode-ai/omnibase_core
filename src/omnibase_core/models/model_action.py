@@ -11,7 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.nodes.enum_orchestrator_types import EnumActionType
+from omnibase_core.enums.enum_orchestrator_types import EnumActionType
 
 
 class ModelAction(BaseModel):

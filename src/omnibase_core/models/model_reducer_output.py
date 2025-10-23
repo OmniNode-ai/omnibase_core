@@ -13,8 +13,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.nodes.enum_reducer_types import EnumReductionType, EnumStreamingMode
-from omnibase_core.nodes.model_intent import ModelIntent
+from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
+from omnibase_core.models.model_intent import ModelIntent
 
 T_Output = TypeVar("T_Output")
 

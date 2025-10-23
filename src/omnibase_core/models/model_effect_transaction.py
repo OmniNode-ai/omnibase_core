@@ -13,10 +13,10 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+from omnibase_core.enums.enum_effect_types import EnumTransactionState
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-from omnibase_core.nodes.enum_effect_types import EnumTransactionState
 
 __all__ = ["ModelEffectTransaction"]
 

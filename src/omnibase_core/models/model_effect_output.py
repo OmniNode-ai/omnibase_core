@@ -12,7 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.nodes.enum_effect_types import EnumEffectType, EnumTransactionState
+from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
 
 __all__ = ["ModelEffectOutput"]
 

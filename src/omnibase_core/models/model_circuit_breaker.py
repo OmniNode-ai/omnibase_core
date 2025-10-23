@@ -24,7 +24,7 @@ Author: ONEX Framework Team
 
 from datetime import datetime, timedelta
 
-from omnibase_core.nodes.enum_effect_types import EnumCircuitBreakerState
+from omnibase_core.enums.enum_effect_types import EnumCircuitBreakerState
 
 __all__ = ["ModelCircuitBreaker"]
 

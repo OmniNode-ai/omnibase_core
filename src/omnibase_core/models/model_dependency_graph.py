@@ -4,8 +4,8 @@ ModelDependencyGraph - Dependency graph for workflow step ordering.
 
 from uuid import UUID
 
-from omnibase_core.nodes.enum_orchestrator_types import EnumWorkflowState
-from omnibase_core.nodes.model_workflow_step import ModelWorkflowStep
+from omnibase_core.enums.enum_orchestrator_types import EnumWorkflowState
+from omnibase_core.models.model_workflow_step import ModelWorkflowStep
 
 
 class ModelDependencyGraph:
