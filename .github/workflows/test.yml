@@ -84,7 +84,7 @@ jobs:
     name: Tests (Split ${{ matrix.split }}/10)
     needs: smoke-test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25  # Increased from 15 to handle slower splits (Split 6 needs ~20min)
     strategy:
       fail-fast: false
       matrix:
@@ -152,6 +152,8 @@ jobs:
             --splits 10 \
             --group ${{ matrix.split }} \
             -n auto \
+            --timeout=60 \
+            --timeout-method=thread \
             --tb=short \
             --junitxml=junit-${{ matrix.split }}.xml
 
