@@ -1,3 +1,4 @@
+import random
 import re
 from typing import Any
 
@@ -89,8 +90,6 @@ class ModelLogFilterConfig(BaseModel):
 
     def should_sample(self) -> bool:
         """Determine if this message should be sampled."""
-        import random
-
         return random.random() < self.sample_rate
 
     def validate_message_length(self, message: str) -> bool:
