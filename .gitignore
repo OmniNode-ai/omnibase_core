@@ -248,6 +248,7 @@ docs_archived/
 # AI IDE tools (entire directories ignored)
 .codanna/
 .serena/
+.cursor/
 
 # AI Tools and Generated Content
 .hive-mind/
