@@ -64,14 +64,6 @@ jobs:
             exit 1
           }
 
-      - name: Force fresh install of omnibase_spi
-        run: |
-          rm -rf .venv
-          poetry install --no-interaction || {
-            echo "❌ Failed to install dependencies"
-            exit 1
-          }
-
       - name: Run smoke tests
         run: |
           poetry run pytest tests/unit/enums tests/unit/errors \
@@ -135,14 +127,6 @@ jobs:
         run: |
           poetry install --no-interaction || {
             echo "❌ Project install failed"
-            exit 1
-          }
-
-      - name: Force fresh install of omnibase_spi
-        run: |
-          rm -rf .venv
-          poetry install --no-interaction || {
-            echo "❌ Failed to install dependencies"
             exit 1
           }
 
@@ -213,11 +197,6 @@ jobs:
       - name: Install project
         run: poetry install --no-interaction
 
-      - name: Force fresh install of omnibase_spi
-        run: |
-          rm -rf .venv
-          poetry install --no-interaction
-
       - name: Run tests with coverage
         run: |
           poetry run pytest tests/ \
@@ -287,11 +266,6 @@ jobs:
 
       - name: Install project
         run: poetry install --no-interaction
-
-      - name: Force fresh install of omnibase_spi
-        run: |
-          rm -rf .venv
-          poetry install --no-interaction
 
       - name: Check Black formatting
         run: poetry run black --check src/ tests/
