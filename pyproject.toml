@@ -33,6 +33,7 @@ classifiers = [
     "Typing :: Typed"
 ]
 dynamic = ["dependencies"]
+dependencies = ["llama-index (>=0.14.0,<0.15.0)", "pypdf (>=6.1.0,<7.0.0)", "fastapi (>=0.120.0,<0.121.0)", "starlette (>=0.47.2)"]
 
 [project.urls]
 homepage = "https://github.com/OmniNode-ai/omnibase_core"
@@ -67,8 +68,10 @@ python = "^3.12"
 # ONEX SPI dependency - Using main branch from GitHub
 omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", branch = "main"}
 pydantic = "^2.11.7"
-llama-index = "^0.12.0"
-fastapi = "^0.115.0"
+llama-index = "^0.14.0"  # Updated for pypdf 6.0+ security fix (CVE-2025-55197)
+pypdf = "^6.1.0"  # Security fix for CVE-2025-55197
+fastapi = "^0.120.0"  # Updated for starlette 0.47.2+ security fix (CVE-2025-54121)
+starlette = ">=0.47.2"  # Security fix for CVE-2025-54121
 uvicorn = "^0.32.0"
 pyyaml = "^6.0.2"
 asyncpg = "^0.29.0"
@@ -104,6 +107,7 @@ pytest-cov = "^7.0.0"
 pytest-xdist = "^3.8.0"
 pytest-split = "^0.10.0"
 pytest-timeout = "^2.4.0"
+pytest-rerunfailures = "^16.1"
 
 [tool.ruff]
 target-version = "py312"
