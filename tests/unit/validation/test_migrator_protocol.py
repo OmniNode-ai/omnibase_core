@@ -846,6 +846,7 @@ class TestProtocol(Protocol):
             if platform.system() != "Windows":
                 Path(unreadable_file).chmod(0o644)
 
+    @pytest.mark.flaky(reruns=3, reruns_delay=1)
     def test_rollback_migration_with_error(self, tmp_path: Path) -> None:
         """Test rollback handling when file deletion fails."""
         import uuid

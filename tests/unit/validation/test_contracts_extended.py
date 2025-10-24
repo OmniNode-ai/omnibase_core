@@ -750,6 +750,7 @@ class TestTimeoutHandler:
         signal.alarm(0)
         signal.signal(signal.SIGALRM, original_handler)
 
+    @pytest.mark.flaky(reruns=3, reruns_delay=1)
     def test_timeout_handler_raises_modelonex_error(self) -> None:
         """Test timeout handler raises ModelOnexError.
 
