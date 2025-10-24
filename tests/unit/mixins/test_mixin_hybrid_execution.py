@@ -369,11 +369,20 @@ class TestExecuteOrchestrated:
         tool = MockTool()
         input_state = SimpleInputState(value="test")
 
+        # Mock asyncio to prevent actual event loop creation in CI
+        mock_loop = MagicMock()
+        mock_loop.run_until_complete.return_value = SimpleInputState(
+            value="workflow: test"
+        )
+
         with patch("llama_index.core.workflow"):
-            result = tool._execute_orchestrated(input_state)
+            with patch("asyncio.new_event_loop", return_value=mock_loop):
+                result = tool._execute_orchestrated(input_state)
 
         # Should execute workflow
         assert tool.workflow_created
+        # Verify event loop was properly closed
+        mock_loop.close.assert_called_once()
 
 
 class TestCalculateComplexity:
