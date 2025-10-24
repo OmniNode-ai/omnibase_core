@@ -144,7 +144,7 @@ jobs:
           poetry run pytest tests/ \
             --splits 10 \
             --group ${{ matrix.split }} \
-            -n auto \
+            -n ${{ matrix.split == 6 && '0' || 'auto' }} \
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
@@ -153,6 +153,9 @@ jobs:
           #   - Longest test: ~30 seconds (2x safety margin)
           #   - Thread method: Avoids signal handler issues in parallel execution
           #   - No false positives observed at this threshold
+          # Split 6 runs sequentially (-n 0) to avoid GitHub Actions runner
+          # cancellation issues observed with parallel execution. Other splits
+          # use -n auto for optimal performance.
 
       - name: Upload test results
         if: always()
