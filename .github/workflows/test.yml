@@ -64,11 +64,11 @@ jobs:
             exit 1
           }
 
-      - name: Force reinstall omnibase_spi from git
+      - name: Force fresh install of omnibase_spi
         run: |
-          poetry run pip uninstall -y omnibase_spi
+          rm -rf .venv
           poetry install --no-interaction || {
-            echo "❌ Failed to reinstall omnibase_spi"
+            echo "❌ Failed to install dependencies"
             exit 1
           }
 
@@ -138,11 +138,11 @@ jobs:
             exit 1
           }
 
-      - name: Force reinstall omnibase_spi from git
+      - name: Force fresh install of omnibase_spi
         run: |
-          poetry run pip uninstall -y omnibase_spi
+          rm -rf .venv
           poetry install --no-interaction || {
-            echo "❌ Failed to reinstall omnibase_spi"
+            echo "❌ Failed to install dependencies"
             exit 1
           }
 
@@ -211,9 +211,9 @@ jobs:
       - name: Install project
         run: poetry install --no-interaction
 
-      - name: Force reinstall omnibase_spi from git
+      - name: Force fresh install of omnibase_spi
         run: |
-          poetry run pip uninstall -y omnibase_spi
+          rm -rf .venv
           poetry install --no-interaction
 
       - name: Run tests with coverage
@@ -286,9 +286,9 @@ jobs:
       - name: Install project
         run: poetry install --no-interaction
 
-      - name: Force reinstall omnibase_spi from git
+      - name: Force fresh install of omnibase_spi
         run: |
-          poetry run pip uninstall -y omnibase_spi
+          rm -rf .venv
           poetry install --no-interaction
 
       - name: Check Black formatting
