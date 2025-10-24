@@ -63,8 +63,8 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-# ONEX SPI dependency - Using main branch from GitHub
-omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", branch = "main"}
+# ONEX SPI dependency - Pinned to specific commit for reproducibility
+omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", rev = "65e4c39c59d318ed0f1da1433c8d87a459ead55a"}
 pydantic = "^2.11.7"
 llama-index = "^0.14.0"  # Updated for pypdf 6.0+ security fix (CVE-2025-55197)
 pypdf = "^6.1.0"  # Security fix for CVE-2025-55197

@@ -1281,4 +1281,4 @@ monitoring = ["prometheus-client", "sentry-sdk"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "eb074e7a953f961bcb7157e02702378061519c000d729453eed1412262e7c3ca"
+content-hash = "d92953be98545f26f05b11f4c5f2a844af33344311e4dbbeeb66adf8c185f071"
