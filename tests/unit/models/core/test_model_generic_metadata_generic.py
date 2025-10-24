@@ -156,7 +156,7 @@ class TestModelGenericMetadataGeneric:
         # Verify custom fields
         assert metadata.get_field("custom_field") == "custom_value"
         assert metadata.get_field("priority") == 10
-        # Note: Nested dicts don't round-trip perfectly through ModelCliValue
+        # Note: Nested dicts don't round-trip perfectly through ModelValue
         # This is expected behavior - nested values become ModelSchemaValue objects
         config = metadata.get_field("config")
         assert isinstance(config, dict)
@@ -209,7 +209,7 @@ class TestModelGenericMetadataGeneric:
         assert restored.version.minor == 0
         assert restored.version.patch == 0
         # Note: Custom fields may not round-trip perfectly through JSON due to complex nesting
-        # This is expected behavior for complex ModelCliValue structures
+        # This is expected behavior for complex ModelValue structures
 
     def test_generic_with_complex_types(self):
         """Test with list data."""
@@ -317,7 +317,7 @@ class TestModelGenericMetadataGeneric:
         assert restored.version == original.version
         assert restored.tags == original.tags
         # Note: Custom fields may not round-trip perfectly through model_dump/validate
-        # due to complex ModelCliValue serialization - this is expected behavior
+        # due to complex ModelValue serialization - this is expected behavior
 
 
 class TestModelGenericMetadataGenericEdgeCases:

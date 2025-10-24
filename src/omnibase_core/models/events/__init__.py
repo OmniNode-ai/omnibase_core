@@ -1,11 +1,17 @@
 """
-Event Models Module
+ONEX event models.
 
-Event-related models for the ONEX system including event envelopes.
+Event models for coordination and domain events in the ONEX framework.
 """
 
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.events.model_intent_events import (
+    TOPIC_EVENT_PUBLISH_INTENT,
+    ModelEventPublishIntent,
+    ModelIntentExecutionResult,
+)
 
 __all__ = [
-    "ModelEventEnvelope",
+    "ModelEventPublishIntent",
+    "ModelIntentExecutionResult",
+    "TOPIC_EVENT_PUBLISH_INTENT",
 ]

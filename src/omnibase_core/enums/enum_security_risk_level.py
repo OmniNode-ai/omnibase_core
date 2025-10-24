@@ -8,7 +8,7 @@ from enum import Enum, unique
 
 
 @unique
-class SecurityRiskLevel(str, Enum):
+class EnumSecurityRiskLevel(str, Enum):
     """
     Security risk level classifications for security assessments.
 
@@ -28,12 +28,12 @@ class SecurityRiskLevel(str, Enum):
         return self.value
 
     @classmethod
-    def is_actionable(cls, risk_level: "SecurityRiskLevel") -> bool:
+    def is_actionable(cls, risk_level: "EnumSecurityRiskLevel") -> bool:
         """Check if the risk level requires action."""
         return risk_level in {cls.HIGH, cls.CRITICAL}
 
     @classmethod
-    def is_severe(cls, risk_level: "SecurityRiskLevel") -> bool:
+    def is_severe(cls, risk_level: "EnumSecurityRiskLevel") -> bool:
         """Check if the risk level is severe."""
         return risk_level == cls.CRITICAL
 
@@ -50,4 +50,4 @@ class SecurityRiskLevel(str, Enum):
 
 
 # Export for use
-__all__ = ["SecurityRiskLevel"]
+__all__ = ["EnumSecurityRiskLevel"]

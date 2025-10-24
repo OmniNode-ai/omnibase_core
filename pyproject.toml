@@ -49,6 +49,12 @@ kubernetes = ["kubernetes"]
 full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
 
 [tool.poetry]
+name = "omnibase_core"
+version = "0.1.0"
+description = "ONEX Core Framework - Base classes and essential implementations"
+authors = ["OmniNode Team <team@omninode.ai>"]
+license = "MIT"
+readme = "README.md"
 packages = [{include = "omnibase_core", from = "src"}]
 include = [
     "scripts/validation/*.py",
@@ -97,6 +103,7 @@ pyyaml = "^6.0.3"
 pytest-cov = "^7.0.0"
 pytest-xdist = "^3.8.0"
 pytest-split = "^0.10.0"
+pytest-timeout = "^2.4.0"
 
 [tool.ruff]
 target-version = "py312"
@@ -247,8 +254,20 @@ addopts = [
     "--strict-config",
     "-ra",
     "--tb=short",
-    "-n auto"  # Automatic parallel execution using all CPU cores
+    "-n4",  # Limit parallel workers to prevent OOM (was: auto)
+    "--timeout=60",  # Prevent hanging tests (60s per test)
+    "--timeout-method=thread",  # Use thread-based timeout for better compatibility
+    "--dist=loadscope",  # Group tests by module to reduce memory overhead
 ]
+# Memory optimization notes:
+# - Limited to 4 workers to prevent OOM on machines with 16GB RAM
+# - Use --timeout to prevent hanging tests accumulating memory
+# - Use --dist=loadscope to group tests by module (reduces import overhead)
+# Test execution strategies:
+#   Fast iteration: -n 2 --timeout=30
+#   Full suite: -n 4 --timeout=60 (default)
+#   CI/Large machines: -n 8 --timeout=120
+#   Debug single test: -n 0 (disable xdist)
 
 [tool.coverage.run]
 source = ["src/omnibase_core"]

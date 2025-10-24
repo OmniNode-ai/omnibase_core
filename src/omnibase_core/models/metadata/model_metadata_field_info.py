@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_field_type import EnumFieldType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
@@ -71,7 +71,7 @@ class ModelMetadataFieldInfo(BaseModel):
         description="Python type of the field",
     )
 
-    default_value: ModelCliValue | None = Field(
+    default_value: ModelValue | None = Field(
         default=None,
         description="Default value for optional fields with strongly-typed values",
     )
@@ -99,7 +99,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type=EnumFieldType.STRING,
-            default_value=ModelCliValue.from_string(str(DEFAULT_METADATA_VERSION)),
+            default_value=ModelValue.from_string(str(DEFAULT_METADATA_VERSION)),
         )
 
     @classmethod
@@ -118,7 +118,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type=EnumFieldType.STRING,
-            default_value=ModelCliValue.from_string(str(DEFAULT_PROTOCOL_VERSION)),
+            default_value=ModelValue.from_string(str(DEFAULT_PROTOCOL_VERSION)),
         )
 
     @classmethod
@@ -155,7 +155,7 @@ class ModelMetadataFieldInfo(BaseModel):
             is_optional=True,
             is_volatile=False,
             field_type=EnumFieldType.STRING,
-            default_value=ModelCliValue.from_string(str(DEFAULT_NODE_VERSION)),
+            default_value=ModelValue.from_string(str(DEFAULT_NODE_VERSION)),
         )
 
     @classmethod

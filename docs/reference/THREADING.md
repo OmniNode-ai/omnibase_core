@@ -183,7 +183,7 @@ Use thread-local circuit breakers for isolated failure tracking:
 
 ```python
 import threading
-from omnibase_core.nodes.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.model_circuit_breaker import ModelCircuitBreaker
 
 class ThreadLocalCircuitBreakerManager:
     """Manages thread-local circuit breakers."""
@@ -208,8 +208,8 @@ Add synchronization to circuit breaker operations:
 
 ```python
 from threading import Lock
-from omnibase_core.nodes.model_circuit_breaker import ModelCircuitBreaker
-from omnibase_core.nodes.enum_effect_types import EnumCircuitBreakerState
+from omnibase_core.models.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.enums.enum_effect_types import EnumCircuitBreakerState
 
 class ThreadSafeCircuitBreaker:
     """Thread-safe wrapper for ModelCircuitBreaker.
@@ -257,7 +257,7 @@ class ThreadSafeCircuitBreaker:
 
 ```python
 from uuid import uuid4
-from omnibase_core.nodes.model_effect_transaction import ModelEffectTransaction
+from omnibase_core.models.model_effect_transaction import ModelEffectTransaction
 
 async def execute_isolated_effect(effect_node, operation_data):
     """Execute effect with transaction isolation.
@@ -305,7 +305,7 @@ async def safe_transaction_cleanup(effect_node):
 All Pydantic models are thread-safe after creation:
 
 ```python
-from omnibase_core.nodes.model_compute_input import ModelComputeInput
+from omnibase_core.models.model_compute_input import ModelComputeInput
 
 # Thread-safe - models are immutable after construction
 input_data = ModelComputeInput(

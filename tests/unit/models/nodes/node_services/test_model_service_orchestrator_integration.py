@@ -24,6 +24,11 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.constants.event_types import TOOL_INVOCATION
+from omnibase_core.enums.enum_orchestrator_types import (
+    EnumActionType,
+    EnumExecutionMode,
+    EnumWorkflowState,
+)
 from omnibase_core.mixins.mixin_event_bus import MixinEventBus
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
@@ -35,15 +40,10 @@ from omnibase_core.models.discovery.model_tool_invocation_event import (
 from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
+from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.models.nodes.node_services.model_service_orchestrator import (
     ModelServiceOrchestrator,
 )
-from omnibase_core.nodes.enum_orchestrator_types import (
-    EnumActionType,
-    EnumExecutionMode,
-    EnumWorkflowState,
-)
-from omnibase_core.nodes.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 
 
@@ -167,7 +167,7 @@ class TestMROCorrectness:
 
         # NodeOrchestrator methods
         assert hasattr(service_orchestrator, "process")
-        assert hasattr(service_orchestrator, "emit_thunk")
+        assert hasattr(service_orchestrator, "emit_action")
         assert hasattr(service_orchestrator, "orchestrate_rsd_ticket_lifecycle")
         assert hasattr(service_orchestrator, "register_condition_function")
         assert hasattr(service_orchestrator, "get_orchestration_metrics")
@@ -196,8 +196,8 @@ class TestMROCorrectness:
         assert isinstance(service.active_workflows, dict)
         assert hasattr(service, "workflow_states")
         assert isinstance(service.workflow_states, dict)
-        assert hasattr(service, "emitted_thunks")
-        assert isinstance(service.emitted_thunks, dict)
+        assert hasattr(service, "emitted_actions")
+        assert isinstance(service.emitted_actions, dict)
         assert hasattr(service, "condition_functions")
         assert isinstance(service.condition_functions, dict)
 
@@ -439,7 +439,7 @@ class TestServiceModeHealthCheckIntegration:
         # Verify workflow management metrics are included
         assert "workflow_management" in metrics
         assert "active_workflows" in metrics["workflow_management"]
-        assert "total_thunks_emitted" in metrics["workflow_management"]
+        assert "total_actions_emitted" in metrics["workflow_management"]
 
     @pytest.mark.asyncio
     async def test_health_includes_workflow_status(self, service_orchestrator):
@@ -730,22 +730,22 @@ class TestOrchestratorSemanticsServiceMode:
 
     @pytest.mark.asyncio
     async def test_thunk_emission_during_workflow(self, service_orchestrator):
-        """Test thunk emission during workflow execution."""
+        """Test action emission during workflow execution."""
         workflow_id = uuid4()
 
-        # Create thunk manually
-        thunk = await service_orchestrator.emit_thunk(
-            thunk_type=EnumActionType.COMPUTE,
+        # Create action manually
+        action = await service_orchestrator.emit_action(
+            action_type=EnumActionType.COMPUTE,
             target_node_type="NodeCompute",
-            operation_data={"workflow_id": str(workflow_id), "test": "data"},
+            payload={"workflow_id": str(workflow_id), "test": "data"},
             priority=1,
         )
 
-        # Verify thunk was created and stored
-        assert thunk.action_id is not None
-        assert thunk.action_type == EnumActionType.COMPUTE
-        assert workflow_id in service_orchestrator.emitted_thunks
-        assert len(service_orchestrator.emitted_thunks[workflow_id]) == 1
+        # Verify action was created and stored
+        assert action.action_id is not None
+        assert action.action_type == EnumActionType.COMPUTE
+        assert workflow_id in service_orchestrator.emitted_actions
+        assert len(service_orchestrator.emitted_actions[workflow_id]) == 1
 
 
 class TestSubnodeCoordinationServiceMode:
@@ -778,21 +778,24 @@ class TestSubnodeCoordinationServiceMode:
 
     @pytest.mark.asyncio
     async def test_workflow_step_coordination(self, service_orchestrator):
-        """Test coordination of workflow steps with thunks."""
+        """Test coordination of workflow steps with actions."""
         workflow_id = uuid4()
+        action_id = uuid4()
         orch_input = ModelOrchestratorInput(
             workflow_id=workflow_id,
             steps=[
                 {
                     "step_id": str(uuid4()),
                     "step_name": "Coordinate Step",
-                    "thunks": [
+                    "actions": [
                         {
-                            "thunk_id": str(uuid4()),
-                            "thunk_type": "compute",
+                            "action_id": action_id,
+                            "action_type": EnumActionType.COMPUTE,
                             "target_node_type": "NodeCompute",
-                            "operation_data": {"test": "data"},
+                            "payload": {"test": "data"},
                             "dependencies": [],
+                            "lease_id": uuid4(),
+                            "epoch": 0,
                         }
                     ],
                 }
@@ -804,7 +807,7 @@ class TestSubnodeCoordinationServiceMode:
 
         # Verify coordination succeeded
         assert result.workflow_state == EnumWorkflowState.COMPLETED
-        assert len(result.thunks_emitted) >= 1
+        assert len(result.actions_emitted) >= 1
 
 
 class TestWorkflowLifecycleEventsToolInvocation:
@@ -1041,7 +1044,7 @@ class TestMixinMethodAccessibility:
     def test_node_orchestrator_methods_accessible(self, service_orchestrator):
         """Test NodeOrchestrator methods are accessible."""
         assert callable(service_orchestrator.process)
-        assert callable(service_orchestrator.emit_thunk)
+        assert callable(service_orchestrator.emit_action)
         assert callable(service_orchestrator.orchestrate_rsd_ticket_lifecycle)
         assert callable(service_orchestrator.register_condition_function)
         assert callable(service_orchestrator.get_orchestration_metrics)

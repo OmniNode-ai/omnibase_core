@@ -71,21 +71,21 @@ class TestDagContextDetection:
 
         assert not tool.is_dag_enabled()
 
-    @patch.dict(os.environ, {"ONEX_Workflow_EXECUTION": "true"}, clear=True)
+    @patch.dict(os.environ, {"ONEX_WORKFLOW_EXECUTION": "true"}, clear=True)
     def test_dag_enabled_via_environment(self) -> None:
         """Test DAG enabled via environment variable."""
         tool = MockTool()
 
         assert tool.is_dag_enabled()
 
-    @patch.dict(os.environ, {"ONEX_Workflow_EXECUTION": "false"}, clear=True)
+    @patch.dict(os.environ, {"ONEX_WORKFLOW_EXECUTION": "false"}, clear=True)
     def test_dag_not_enabled_when_env_false(self) -> None:
         """Test DAG not enabled when environment is false."""
         tool = MockTool()
 
         assert not tool.is_dag_enabled()
 
-    @patch.dict(os.environ, {"ONEX_Workflow_CORRELATION_ID": "test-id"}, clear=True)
+    @patch.dict(os.environ, {"ONEX_WORKFLOW_CORRELATION_ID": "test-id"}, clear=True)
     def test_dag_enabled_via_correlation_id_env(self) -> None:
         """Test DAG enabled via correlation ID environment variable."""
         tool = MockTool()
@@ -104,7 +104,7 @@ class TestDagContextDetection:
 
     @patch.dict(
         os.environ,
-        {"ONEX_Workflow_EXECUTION": "TRUE"},  # Uppercase should work
+        {"ONEX_WORKFLOW_EXECUTION": "TRUE"},  # Uppercase should work
         clear=True,
     )
     def test_dag_enabled_case_insensitive(self) -> None:
@@ -234,7 +234,7 @@ class TestEmitDagCompletionEvent:
 
     @patch.dict(
         os.environ,
-        {"ONEX_Workflow_CORRELATION_ID": str(uuid4())},
+        {"ONEX_WORKFLOW_CORRELATION_ID": str(uuid4())},
         clear=True,
     )
     def test_emit_completion_uses_env_correlation_id(self) -> None:
@@ -244,7 +244,7 @@ class TestEmitDagCompletionEvent:
         # Set DAG enabled via env
         tool._dag_correlation_id = None  # No explicit correlation ID set
 
-        with patch.dict(os.environ, {"ONEX_Workflow_EXECUTION": "true"}):
+        with patch.dict(os.environ, {"ONEX_WORKFLOW_EXECUTION": "true"}):
             tool.emit_dag_completion_event(result="test", status="completed")
 
         event_bus.publish_async.assert_called_once()
@@ -291,7 +291,7 @@ class TestEmitDagStartEvent:
 
     @patch.dict(
         os.environ,
-        {"ONEX_Workflow_CORRELATION_ID": str(uuid4())},
+        {"ONEX_WORKFLOW_CORRELATION_ID": str(uuid4())},
         clear=True,
     )
     def test_emit_start_uses_env_correlation_id(self) -> None:
@@ -299,7 +299,7 @@ class TestEmitDagStartEvent:
         event_bus = MagicMock()
         tool = MockTool(event_bus=event_bus)
 
-        with patch.dict(os.environ, {"ONEX_Workflow_EXECUTION": "true"}):
+        with patch.dict(os.environ, {"ONEX_WORKFLOW_EXECUTION": "true"}):
             tool.emit_dag_start_event()
 
         event_bus.publish_async.assert_called_once()
@@ -536,8 +536,8 @@ class TestWorkflowIntegration:
         with patch.dict(
             os.environ,
             {
-                "ONEX_Workflow_EXECUTION": "true",
-                "ONEX_Workflow_CORRELATION_ID": str(uuid4()),
+                "ONEX_WORKFLOW_EXECUTION": "true",
+                "ONEX_WORKFLOW_CORRELATION_ID": str(uuid4()),
             },
             clear=True,
         ):
@@ -612,7 +612,7 @@ class TestEdgeCases:
         """Test mixing environment variables with explicit context."""
         tool = MockTool()
 
-        with patch.dict(os.environ, {"ONEX_Workflow_EXECUTION": "true"}, clear=True):
+        with patch.dict(os.environ, {"ONEX_WORKFLOW_EXECUTION": "true"}, clear=True):
             # Both methods enable DAG
             assert tool.is_dag_enabled()
 

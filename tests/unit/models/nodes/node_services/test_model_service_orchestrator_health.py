@@ -24,6 +24,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_orchestrator_types import EnumWorkflowState
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
@@ -31,7 +32,6 @@ from omnibase_core.models.discovery.model_node_shutdown_event import (
 from omnibase_core.models.nodes.node_services.model_service_orchestrator import (
     ModelServiceOrchestrator,
 )
-from omnibase_core.nodes.enum_orchestrator_types import EnumWorkflowState
 
 # ============================================================================
 # Fixtures

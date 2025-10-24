@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.metadata.model_generic_metadata import ModelGenericMetadata
 from omnibase_core.primitives.model_semver import ModelSemVer
 
@@ -41,8 +41,8 @@ class TestModelGenericMetadataCreation:
             version=version,
             tags=["test", "example", "metadata"],
             custom_fields={
-                "key1": ModelCliValue.from_string("value1"),
-                "key2": ModelCliValue.from_any(42),
+                "key1": ModelValue.from_string("value1"),
+                "key2": ModelValue.from_any(42),
             },
         )
 
@@ -109,19 +109,21 @@ class TestModelGenericMetadataFieldOperations:
         assert metadata.custom_fields is not None
         assert metadata.custom_fields["rate"].to_python_value() == 3.14159
 
-    @pytest.mark.skip(
-        reason="Validation not implemented - dict types are currently allowed",
-    )
     def test_set_field_invalid_type_fails(self):
         """Test that setting invalid type fails."""
         metadata = ModelGenericMetadata()
 
         from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 
-        with pytest.raises(OnexError) as exc_info:
-            metadata.set_field("invalid", {"dict": "not", "allowed": True})
+        class InvalidType:
+            pass
 
-        assert "Value must be str, int, bool, float, or list" in str(exc_info.value)
+        with pytest.raises(OnexError) as exc_info:
+            metadata.set_field("invalid", InvalidType())
+
+        assert "Value must be str, int, bool, float, list, or dict" in str(
+            exc_info.value
+        )
 
     def test_get_field_existing(self):
         """Test getting existing field."""
@@ -192,9 +194,6 @@ class TestModelGenericMetadataFieldOperations:
         assert metadata.get_field("bool_field", False) is True
         assert metadata.get_field("float_field", 0.0) == 3.14
 
-    @pytest.mark.skip(
-        reason="Validation not implemented - custom types are currently allowed",
-    )
     def test_set_typed_field_unsupported_type_fails(self):
         """Test that setting unsupported type fails."""
         metadata = ModelGenericMetadata()
@@ -207,7 +206,9 @@ class TestModelGenericMetadataFieldOperations:
         with pytest.raises(OnexError) as exc_info:
             metadata.set_field("invalid", UnsupportedType())
 
-        assert "Value must be str, int, bool, float, or list" in str(exc_info.value)
+        assert "Value must be str, int, bool, float, list, or dict" in str(
+            exc_info.value
+        )
 
     def test_has_field(self):
         """Test checking field existence."""
@@ -420,8 +421,8 @@ class TestModelGenericMetadataSerialization:
         assert deserialized.description == original.description
         assert deserialized.tags == original.tags
 
-        # Note: Custom fields may not round-trip perfectly through JSON due to complex ModelCliValue nesting
-        # This is expected behavior for complex ModelCliValue structures
+        # Note: Custom fields may not round-trip perfectly through JSON due to complex ModelValue nesting
+        # This is expected behavior for complex ModelValue structures
         assert deserialized.custom_fields is not None
         assert "test_field" in deserialized.custom_fields
         assert "number_field" in deserialized.custom_fields

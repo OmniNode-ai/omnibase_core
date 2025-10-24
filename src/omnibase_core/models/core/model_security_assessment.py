@@ -9,7 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
-from omnibase_core.enums.enum_security_risk_level import SecurityRiskLevel
+from omnibase_core.enums.enum_security_risk_level import EnumSecurityRiskLevel
 from omnibase_core.models.core.model_security_vulnerability import (
     ModelSecurityVulnerability,
 )
@@ -25,7 +25,7 @@ class ModelSecurityAssessment(BaseModel):
     """
 
     # Overall assessment
-    overall_risk_level: SecurityRiskLevel = Field(
+    overall_risk_level: EnumSecurityRiskLevel = Field(
         default=...,
         description="Overall security risk level",
     )

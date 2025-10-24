@@ -69,17 +69,31 @@ class TestModelLogFilterMatching:
         assert filter._matches_keywords("error occurred") is True
 
     def test_apply_filter_exclude(self):
+        """Test apply_filter with exclude action.
+
+        Note: Current implementation doesn't actually use the 'action' field.
+        This test verifies that matching messages are processed correctly.
+        When action support is implemented, this test should be updated.
+        """
+        from omnibase_core.models.configuration.model_log_filter_config import (
+            ModelLogFilterConfig,
+        )
+
+        # Create filter with deterministic sampling (sample_rate=1.0)
         filter = ModelLogFilter(
             filter_name="test",
             filter_type="keyword",
             keywords=["debug"],
             action="exclude",
+            configuration=ModelLogFilterConfig(sample_rate=1.0),
         )
         log_entry = {"level": 10, "message": "debug info", "user": "test"}
         result = filter.apply_filter(log_entry)
-        # apply_filter currently only checks matches_message, doesn't apply action
-        # So it returns the entry if it matches
-        assert result is not None or result is None  # Accept either behavior
+
+        # With sample_rate=1.0 and matching message, should return filtered entry
+        assert result is not None
+        assert result["message"] == "debug info"
+        assert result["level"] == 10
 
     def test_apply_filter_include(self):
         filter = ModelLogFilter(

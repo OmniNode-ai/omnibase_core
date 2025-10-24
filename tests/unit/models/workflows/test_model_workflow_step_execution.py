@@ -68,6 +68,8 @@ class TestBasicCreation:
         action = ModelAction(
             action_type=EnumActionType.COMPUTE,
             target_node_type="compute_node",
+            lease_id=uuid4(),
+            epoch=1,
         )
 
         def custom_condition() -> bool:
@@ -340,6 +342,8 @@ class TestThunkManagement:
         action = ModelAction(
             action_type=EnumActionType.COMPUTE,
             target_node_type="compute_node",
+            lease_id=uuid4(),
+            epoch=1,
         )
 
         step = ModelWorkflowStepExecution(
@@ -359,6 +363,8 @@ class TestThunkManagement:
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
                 target_node_type=f"node_{i}",
+                lease_id=uuid4(),
+                epoch=1,
             )
             for i in range(5)
         ]
@@ -832,6 +838,8 @@ class TestEdgeCases:
             ModelAction(
                 action_type=EnumActionType.COMPUTE,
                 target_node_type=f"node_{i}",
+                lease_id=uuid4(),
+                epoch=1,
             )
             for i in range(50)
         ]

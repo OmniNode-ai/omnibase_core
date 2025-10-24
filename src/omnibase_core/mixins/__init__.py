@@ -29,6 +29,7 @@ from omnibase_core.mixins.mixin_fail_fast import MixinFailFast
 from omnibase_core.mixins.mixin_hash_computation import MixinHashComputation
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_hybrid_execution import MixinHybridExecution
+from omnibase_core.mixins.mixin_intent_publisher import MixinIntentPublisher
 from omnibase_core.mixins.mixin_introspect_from_contract import (
     MixinIntrospectFromContract,
 )
@@ -91,4 +92,5 @@ __all__ = [
     "MixinSensitiveFieldRedaction",
     "SerializableMixin",
     "MixinYAMLSerialization",
+    "MixinIntentPublisher",
 ]

@@ -27,10 +27,10 @@ from omnibase_core.enums.enum_result_category import EnumResultCategory
 from omnibase_core.enums.enum_result_type import EnumResultType
 from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
-# Using ModelCliValue instead of primitive soup type alias for proper discriminated union typing
+# Using ModelValue instead of primitive soup type alias for proper discriminated union typing
 
 
 class ModelCliResultMetadata(BaseModel):
@@ -129,7 +129,7 @@ class ModelCliResultMetadata(BaseModel):
     )
 
     # Custom metadata fields for extensibility
-    custom_metadata: dict[str, ModelCliValue] = Field(
+    custom_metadata: dict[str, ModelValue] = Field(
         default_factory=dict,
         description="Custom metadata fields",
     )
@@ -191,23 +191,23 @@ class ModelCliResultMetadata(BaseModel):
 
     @field_validator("custom_metadata", mode="before")
     @classmethod
-    def validate_custom_metadata(cls, v: dict[str, Any]) -> dict[str, ModelCliValue]:
-        """Validate custom metadata values ensure they are ModelCliValue objects."""
+    def validate_custom_metadata(cls, v: dict[str, Any]) -> dict[str, ModelValue]:
+        """Validate custom metadata values ensure they are ModelValue objects."""
         result = {}
         for key, value in v.items():
-            if isinstance(value, ModelCliValue):
-                # Keep as ModelCliValue
+            if isinstance(value, ModelValue):
+                # Keep as ModelValue
                 result[key] = value
             elif (
                 isinstance(value, dict)
                 and "value_type" in value
                 and "raw_value" in value
             ):
-                # Reconstruct ModelCliValue from serialized form
-                result[key] = ModelCliValue.model_validate(value)
+                # Reconstruct ModelValue from serialized form
+                result[key] = ModelValue.model_validate(value)
             else:
-                # Convert to ModelCliValue
-                result[key] = ModelCliValue.from_any(value)
+                # Convert to ModelValue
+                result[key] = ModelValue.from_any(value)
         return result
 
     def add_tag(self, tag: str) -> None:
@@ -279,19 +279,19 @@ class ModelCliResultMetadata(BaseModel):
         timestamp = datetime.now(UTC).isoformat()
         self.audit_trail.append(f"{timestamp}: {entry}")
 
-    def set_custom_field(self, key: str, value: ModelCliValue | object) -> None:
+    def set_custom_field(self, key: str, value: ModelValue | object) -> None:
         """Set a custom metadata field with automatic type conversion."""
-        if isinstance(value, ModelCliValue):
+        if isinstance(value, ModelValue):
             self.custom_metadata[key] = value
         else:
-            # Convert to ModelCliValue for type safety
-            self.custom_metadata[key] = ModelCliValue.from_any(value)
+            # Convert to ModelValue for type safety
+            self.custom_metadata[key] = ModelValue.from_any(value)
 
     def get_custom_field(
         self,
         key: str,
-        default: ModelCliValue | None = None,
-    ) -> ModelCliValue | None:
+        default: ModelValue | None = None,
+    ) -> ModelValue | None:
         """Get a custom metadata field with original type."""
         return self.custom_metadata.get(key, default)
 

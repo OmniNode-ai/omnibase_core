@@ -30,6 +30,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
@@ -38,12 +39,11 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
+from omnibase_core.models.model_reducer_input import ModelReducerInput
+from omnibase_core.models.model_reducer_output import ModelReducerOutput
 from omnibase_core.models.nodes.node_services.model_service_reducer import (
     ModelServiceReducer,
 )
-from omnibase_core.nodes.enum_reducer_types import EnumReductionType, EnumStreamingMode
-from omnibase_core.nodes.model_reducer_input import ModelReducerInput
-from omnibase_core.nodes.model_reducer_output import ModelReducerOutput
 
 
 class ConcreteReducerService(ModelServiceReducer):

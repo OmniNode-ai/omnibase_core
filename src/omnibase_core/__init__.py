@@ -83,11 +83,17 @@ def __getattr__(name: str) -> object:
         # Return the requested attribute from validation module
         return locals()[name]
 
-    if name in {"CircularImportValidator", "ImportStatus", "ModuleImportResult"}:
+    if name in {
+        "CircularImportValidator",
+        "EnumImportStatus",
+        "ModelModuleImportResult",
+        "ModelValidationResult",
+    }:
         from .validators import (
             CircularImportValidator,
-            ImportStatus,
-            ModuleImportResult,
+            EnumImportStatus,
+            ModelModuleImportResult,
+            ModelValidationResult,
         )
 
         # Return the requested attribute from validators module
@@ -106,8 +112,6 @@ def __getattr__(name: str) -> object:
 
 
 __all__ = [
-    # Version metadata
-    "__version__",
     # Error classes (commonly used)
     "EnumCoreErrorCode",
     "ModelOnexError",
@@ -119,8 +123,4 @@ __all__ = [
     "validate_contracts",
     "validate_patterns",
     "validate_union_usage",
-    # Validators (reusable validation tools)
-    "CircularImportValidator",
-    "ImportStatus",
-    "ModuleImportResult",
 ]

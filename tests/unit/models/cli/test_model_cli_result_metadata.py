@@ -250,14 +250,14 @@ class TestModelCliResultMetadata:
         metadata.set_custom_field("float_field", 3.14)
         metadata.set_custom_field("bool_field", True)
 
-        # Verify values - custom_metadata stores ModelCliValue wrappers
+        # Verify values - custom_metadata stores ModelValue wrappers
         # Access raw_value to get the unwrapped Python value
         assert metadata.custom_metadata["string_field"].raw_value == "test_value"
         assert metadata.custom_metadata["int_field"].raw_value == 42
         assert metadata.custom_metadata["float_field"].raw_value == 3.14
         assert metadata.custom_metadata["bool_field"].raw_value is True
 
-        # Test get_custom_field - returns ModelCliValue wrapper
+        # Test get_custom_field - returns ModelValue wrapper
         string_field = metadata.get_custom_field("string_field")
         assert string_field is not None
         assert string_field.raw_value == "test_value"
@@ -407,7 +407,7 @@ class TestModelCliResultMetadata:
         assert metadata.resource_usage == {"memory": 128.0}
         assert metadata.compliance_flags == {"test_coverage": True}
         assert metadata.audit_trail == ["Test started"]
-        # custom_metadata stores ModelCliValue wrappers, check raw_value
+        # custom_metadata stores ModelValue wrappers, check raw_value
         assert "test_id" in metadata.custom_metadata
         assert metadata.custom_metadata["test_id"].raw_value == "12345"
 

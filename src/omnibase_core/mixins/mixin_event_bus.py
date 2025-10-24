@@ -24,7 +24,7 @@ import threading
 from collections.abc import Callable as CallableABC
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, StrictStr
+from pydantic import BaseModel, ConfigDict, StrictStr, ValidationError
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -91,17 +91,50 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         This ensures __pydantic_extra__ is properly initialized before
         other mixins try to set attributes. Accepts both positional args
         (from MRO chain) and keyword args (for BaseModel fields).
+
+        Note: We need to handle the case where this mixin is used in classes
+        that inherit from both BaseModel (via this mixin) and non-Pydantic
+        classes (like NodeCoreBase). We use object.__setattr__() to bypass
+        Pydantic validation for fields that will be set by parent classes.
         """
         # Default node_name if not provided
         if "node_name" not in kwargs:
             kwargs["node_name"] = "UnknownNode"
 
-        # Initialize BaseModel with keyword args only
-        # (positional args are passed to next in MRO chain)
-        super().__init__(**kwargs)
+        # Initialize BaseModel's internal state manually to avoid validation errors
+        # for fields that are set by other parent classes (like NodeCoreBase)
+        try:
+            # Try normal initialization first
+            super().__init__(**kwargs)
+        except ValidationError:
+            # If Pydantic validation fails (due to required fields from non-Pydantic parents),
+            # initialize BaseModel's internals manually and let parent __init__ set fields
+            emit_log_event(
+                LogLevel.DEBUG,
+                "Using fallback initialization for MixinEventBus due to mixed Pydantic/non-Pydantic inheritance",
+                {"node_name": kwargs.get("node_name", "UnknownNode")},
+            )
+            object.__setattr__(self, "__pydantic_extra__", {})
+            object.__setattr__(self, "__pydantic_fields_set__", set())
+            object.__setattr__(self, "__pydantic_private__", {})
 
-        # If there are positional args, they're for the next class in MRO
-        # Let super().__init__() handle them via cooperative inheritance
+            # Set our own fields
+            for field_name, field_value in kwargs.items():
+                object.__setattr__(self, field_name, field_value)
+
+            # Call next in MRO (skip BaseModel validation)
+            # Find the next class after BaseModel in MRO
+            mro = type(self).__mro__
+            for i, cls in enumerate(mro):
+                if cls is MixinEventBus:
+                    # Skip to class after MixinMetrics (next non-Pydantic class)
+                    for j in range(i + 1, len(mro)):
+                        if hasattr(mro[j], "__init__") and mro[j] is not BaseModel:
+                            # Call the next __init__ in chain if it exists
+                            if mro[j].__init__ is not object.__init__:
+                                mro[j].__init__(self, *args, **kwargs)
+                            break
+                    break
 
     def model_post_init(self, __context: Any) -> None:
         """Initialize threading objects after Pydantic validation."""

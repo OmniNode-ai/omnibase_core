@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
-from .model_cli_value import ModelCliValue
+from .model_value import ModelValue
 
 
 class ModelCliResultData(BaseModel):
@@ -33,7 +33,7 @@ class ModelCliResultData(BaseModel):
 
     success: bool = Field(description="Whether execution was successful")
     execution_id: UUID = Field(description="Execution identifier")
-    output_data: ModelCliValue | None = Field(
+    output_data: ModelValue | None = Field(
         default=None,
         description="Output data if successful",
     )

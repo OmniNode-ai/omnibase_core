@@ -13,6 +13,7 @@ Tests cover:
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -722,6 +723,33 @@ operations: []
 class TestTimeoutHandler:
     """Test timeout_handler function."""
 
+    @pytest.fixture(autouse=True)
+    def isolate_signal_handlers(self) -> Generator[None, None, None]:
+        """Isolate signal handlers for timeout tests.
+
+        This fixture ensures signal handler state is properly isolated between tests:
+        1. Cancels any pending alarms from other tests
+        2. Saves the current signal handler
+        3. Restores everything in cleanup
+
+        This prevents flaky test failures in parallel execution (pytest-xdist)
+        where multiple tests might be setting SIGALRM handlers.
+        """
+        import signal
+
+        # CRITICAL: Cancel any pending alarms from other tests
+        # This prevents race conditions where an alarm fires during this test
+        signal.alarm(0)
+
+        # Save current signal handler state
+        original_handler = signal.signal(signal.SIGALRM, signal.SIG_DFL)
+
+        yield
+
+        # Cleanup: Cancel any alarms and restore original handler
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, original_handler)
+
     def test_timeout_handler_raises_modelonex_error(self) -> None:
         """Test timeout handler raises ModelOnexError.
 
@@ -730,34 +758,34 @@ class TestTimeoutHandler:
 
         Note: The error is EXPECTED to be raised - this is not a test failure.
         The pytest.raises context manager catches the exception to verify it.
+
+        Signal handler isolation is provided by the isolate_signal_handlers fixture
+        to prevent flaky failures in parallel test execution.
         """
         import signal
 
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
         from omnibase_core.errors.model_onex_error import ModelOnexError
 
-        # Save current signal handler state (in case other tests polluted it)
-        original_handler = signal.signal(signal.SIGALRM, signal.SIG_DFL)
+        # Verify no alarms are pending before we start
+        remaining = signal.alarm(0)
+        assert remaining == 0, f"Found pending alarm with {remaining}s remaining"
 
-        try:
-            # Test that timeout_handler raises the correct exception
-            with pytest.raises(ModelOnexError) as exc_info:
-                timeout_handler(0, None)
+        # Test that timeout_handler raises the correct exception
+        with pytest.raises(ModelOnexError) as exc_info:
+            timeout_handler(0, None)
 
-            # Verify the exception has the correct error code
-            assert exc_info.value.error_code == EnumCoreErrorCode.TIMEOUT_ERROR, (
-                f"Expected error code {EnumCoreErrorCode.TIMEOUT_ERROR}, "
-                f"got {exc_info.value.error_code}"
-            )
+        # Verify the exception has the correct error code
+        assert exc_info.value.error_code == EnumCoreErrorCode.TIMEOUT_ERROR, (
+            f"Expected error code {EnumCoreErrorCode.TIMEOUT_ERROR}, "
+            f"got {exc_info.value.error_code}"
+        )
 
-            # Verify the exception has the correct message
-            assert "Validation timed out" in exc_info.value.message, (
-                f"Expected message to contain 'Validation timed out', "
-                f"got '{exc_info.value.message}'"
-            )
-        finally:
-            # Restore original signal handler to avoid test pollution
-            signal.signal(signal.SIGALRM, original_handler)
+        # Verify the exception has the correct message
+        assert "Validation timed out" in exc_info.value.message, (
+            f"Expected message to contain 'Validation timed out', "
+            f"got '{exc_info.value.message}'"
+        )
 
 
 class TestValidateYamlFileErrors:

@@ -39,8 +39,8 @@ from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.infrastructure import ModelComputeCache
-from omnibase_core.nodes.model_compute_input import ModelComputeInput, T_Input
-from omnibase_core.nodes.model_compute_output import ModelComputeOutput, T_Output
+from omnibase_core.models.model_compute_input import ModelComputeInput, T_Input
+from omnibase_core.models.model_compute_output import ModelComputeOutput, T_Output
 
 
 class NodeCompute(NodeCoreBase):

@@ -18,7 +18,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_config_type import EnumConfigType
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 
 
 class ModelNestedConfiguration(BaseModel):
@@ -41,7 +41,7 @@ class ModelNestedConfiguration(BaseModel):
         default=...,
         description="Configuration type",
     )
-    settings: dict[str, ModelCliValue] = Field(
+    settings: dict[str, ModelValue] = Field(
         default_factory=dict,
         description="Configuration settings with strongly-typed values",
     )

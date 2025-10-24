@@ -848,17 +848,34 @@ class TestProtocol(Protocol):
 
     def test_rollback_migration_with_error(self, tmp_path: Path) -> None:
         """Test rollback handling when file deletion fails."""
+        import uuid
+
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
         from omnibase_core.errors.model_onex_error import ModelOnexError
 
         migrator = ProtocolMigrator()
 
-        # Create a directory (not a file) to trigger deletion error
-        created_dir = tmp_path / "created_dir"
-        created_dir.mkdir()
+        # Create a directory with unique name to avoid parallel test conflicts
+        unique_id = str(uuid.uuid4())[:8]
+        created_dir = tmp_path / f"rollback_test_dir_{unique_id}"
 
-        # Also create a file inside to make it non-empty
-        (created_dir / "file.txt").write_text("test")
+        # Ensure clean state - remove if exists from previous runs
+        if created_dir.exists():
+            import shutil
+
+            shutil.rmtree(created_dir)
+
+        # Create the directory
+        created_dir.mkdir(parents=True, exist_ok=False)
+
+        # Create a file inside to make it non-empty
+        test_file = created_dir / "file.txt"
+        test_file.write_text("test")
+
+        # Verify test preconditions
+        assert created_dir.exists(), "Test setup failed: directory should exist"
+        assert created_dir.is_dir(), "Test setup failed: path should be a directory"
+        assert test_file.exists(), "Test setup failed: test file should exist"
 
         result = ModelMigrationResult(
             success=True,
@@ -872,6 +889,9 @@ class TestProtocol(Protocol):
             execution_time_minutes=5,
             rollback_available=True,
         )
+
+        # Verify directory still exists right before rollback call
+        assert created_dir.exists(), "Directory should exist before rollback"
 
         # Attempting to delete a directory as if it were a file should raise error
         with pytest.raises(ModelOnexError) as exc_info:

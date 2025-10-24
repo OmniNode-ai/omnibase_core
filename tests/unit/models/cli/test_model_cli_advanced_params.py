@@ -344,12 +344,12 @@ class TestModelCliAdvancedParams:
         params.add_config_override("debug_enabled", "true")
         params.add_config_override("service_name", "test-service")
 
-        # Values are now stored as ModelCliValue objects
+        # Values are now stored as ModelValue objects
         assert "max_connections" in params.node_config_overrides
         assert "debug_enabled" in params.node_config_overrides
         assert "service_name" in params.node_config_overrides
 
-        # Check actual stored values through ModelCliValue interface
+        # Check actual stored values through ModelValue interface
         assert (
             params.node_config_overrides["max_connections"].to_python_value() == "100"
         )
@@ -372,7 +372,7 @@ class TestModelCliAdvancedParams:
         params.set_custom_parameter("float_param", "3.14")
         params.set_custom_parameter("bool_param", "true")
 
-        # Values are now stored as ModelCliValue objects
+        # Values are now stored as ModelValue objects
         assert "string_param" in params.custom_parameters
         assert "int_param" in params.custom_parameters
         assert "float_param" in params.custom_parameters
@@ -516,7 +516,7 @@ class TestModelCliAdvancedParams:
         assert data["enable_profiling"] is True
         assert data["security_level"] == EnumSecurityLevel.ENTERPRISE.value
         assert data["environment_variables"] == {"TEST_ENV": "true"}
-        # Custom parameters are now ModelCliValue objects in serialization
+        # Custom parameters are now ModelValue objects in serialization
         assert "test_param" in data["custom_parameters"]
         custom_param = data["custom_parameters"]["test_param"]
         assert custom_param["raw_value"] == "value"
@@ -555,13 +555,13 @@ class TestModelCliAdvancedParams:
         assert params.security_level == EnumSecurityLevel.BASIC.value
         assert params.environment_variables == {"APP_ENV": "staging"}
 
-        # node_config_overrides should be ModelCliValue objects now
+        # node_config_overrides should be ModelValue objects now
         assert "max_workers" in params.node_config_overrides
         assert "enable_ssl" in params.node_config_overrides
         assert params.node_config_overrides["max_workers"].to_python_value() == 8
         assert params.node_config_overrides["enable_ssl"].to_python_value() is True
 
-        # custom_parameters should be ModelCliValue objects now
+        # custom_parameters should be ModelValue objects now
         assert "experiment_id" in params.custom_parameters
         assert "version" in params.custom_parameters
         assert params.custom_parameters["experiment_id"].to_python_value() == "exp-456"
@@ -649,7 +649,7 @@ class TestModelCliAdvancedParams:
         params.add_config_override("int_config", 42)
         params.add_config_override("bool_config", True)
 
-        # Values are now stored as ModelCliValue objects - check through the interface
+        # Values are now stored as ModelValue objects - check through the interface
         assert (
             params.node_config_overrides["string_config"].to_python_value() == "value"
         )

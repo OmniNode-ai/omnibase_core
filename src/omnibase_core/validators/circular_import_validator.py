@@ -10,11 +10,11 @@ import sys
 from pathlib import Path
 from typing import Callable, Optional
 
-from omnibase_core.validators.validation_result import (
-    ImportStatus,
-    ModuleImportResult,
-    ValidationResult,
-)
+from omnibase_core.enums.enum_import_status import EnumImportStatus
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.model_module_import_result import ModelModuleImportResult
+from omnibase_core.models.model_validation_result import ModelValidationResult
 
 
 class CircularImportValidator:
@@ -56,7 +56,10 @@ class CircularImportValidator:
         self.progress_callback = progress_callback
 
         if not self.source_path.exists():
-            raise ValueError(f"Source path does not exist: {self.source_path}")
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Source path does not exist: {self.source_path}",
+            )
 
     def _should_exclude(self, file_path: Path) -> bool:
         """Check if a file should be excluded based on exclude patterns."""
@@ -109,7 +112,9 @@ class CircularImportValidator:
         except ValueError:
             return None
 
-    def _test_import(self, module_name: str, file_path: Path) -> ModuleImportResult:
+    def _test_import(
+        self, module_name: str, file_path: Path
+    ) -> ModelModuleImportResult:
         """
         Test importing a single module.
 
@@ -118,7 +123,7 @@ class CircularImportValidator:
             file_path: Path to the module file
 
         Returns:
-            ModuleImportResult with the import attempt status and details
+            ModelModuleImportResult with the import attempt status and details
         """
         try:
             # Clear any previously imported modules to get a fresh test
@@ -128,9 +133,9 @@ class CircularImportValidator:
             # Attempt to import
             importlib.import_module(module_name)
 
-            return ModuleImportResult(
+            return ModelModuleImportResult(
                 module_name=module_name,
-                status=ImportStatus.SUCCESS,
+                status=EnumImportStatus.SUCCESS,
                 file_path=str(file_path),
             )
 
@@ -138,26 +143,28 @@ class CircularImportValidator:
             error_msg = str(e)
             # Check if it's a circular import
             if "circular import" in error_msg.lower():
-                return ModuleImportResult(
+                return ModelModuleImportResult(
                     module_name=module_name,
-                    status=ImportStatus.CIRCULAR_IMPORT,
+                    status=EnumImportStatus.CIRCULAR_IMPORT,
                     error_message=error_msg,
                     file_path=str(file_path),
                 )
             else:
                 # Other import errors (missing dependencies, etc.)
-                return ModuleImportResult(
+                return ModelModuleImportResult(
                     module_name=module_name,
-                    status=ImportStatus.IMPORT_ERROR,
+                    status=EnumImportStatus.IMPORT_ERROR,
                     error_message=error_msg,
                     file_path=str(file_path),
                 )
 
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # fallback-ok: Import testing requires catching all exceptions to classify import failures
             # Unexpected errors
-            return ModuleImportResult(
+            return ModelModuleImportResult(
                 module_name=module_name,
-                status=ImportStatus.UNEXPECTED_ERROR,
+                status=EnumImportStatus.UNEXPECTED_ERROR,
                 error_message=repr(e),
                 file_path=str(file_path),
             )
@@ -172,12 +179,12 @@ class CircularImportValidator:
         if self.progress_callback:
             self.progress_callback(message)
 
-    def validate(self) -> ValidationResult:
+    def validate(self) -> ModelValidationResult:
         """
         Validate all Python modules for circular imports.
 
         Returns:
-            ValidationResult containing detailed results of the validation
+            ModelValidationResult containing detailed results of the validation
 
         Example:
             >>> validator = CircularImportValidator("/path/to/src")
@@ -190,7 +197,7 @@ class CircularImportValidator:
         self._log("=" * 80)
 
         # Initialize result
-        result = ValidationResult(total_files=len(python_files))
+        result = ModelValidationResult(total_files=len(python_files))
 
         # Test each file
         for file_path in python_files:
@@ -198,9 +205,9 @@ class CircularImportValidator:
 
             if module_name is None:
                 # Skip this file
-                skip_result = ModuleImportResult(
+                skip_result = ModelModuleImportResult(
                     module_name=str(file_path),
-                    status=ImportStatus.SKIPPED,
+                    status=EnumImportStatus.SKIPPED,
                     error_message="Could not convert path to module name",
                     file_path=str(file_path),
                 )
@@ -213,16 +220,16 @@ class CircularImportValidator:
             result.add_result(import_result)
 
             # Log the result
-            if import_result.status == ImportStatus.SUCCESS:
+            if import_result.status == EnumImportStatus.SUCCESS:
                 self._log(f"✓ {module_name}")
-            elif import_result.status == ImportStatus.CIRCULAR_IMPORT:
+            elif import_result.status == EnumImportStatus.CIRCULAR_IMPORT:
                 self._log(f"✗ {module_name}")
                 self._log(f"  Circular import detected: {import_result.error_message}")
-            elif import_result.status == ImportStatus.IMPORT_ERROR:
+            elif import_result.status == EnumImportStatus.IMPORT_ERROR:
                 self._log(f"⚠ {module_name}")
                 error_msg = import_result.error_message or "Unknown error"
                 self._log(f"  Import error (non-circular): {error_msg[:100]}")
-            elif import_result.status == ImportStatus.UNEXPECTED_ERROR:
+            elif import_result.status == EnumImportStatus.UNEXPECTED_ERROR:
                 self._log(f"⚠ {module_name}")
                 self._log(f"  Unexpected error: {import_result.error_message}")
 

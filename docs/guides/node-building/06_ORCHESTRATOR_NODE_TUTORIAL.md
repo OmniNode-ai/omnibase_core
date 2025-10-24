@@ -60,8 +60,8 @@ poetry run pytest tests/unit/nodes/test_node_orchestrator.py -v --maxfail=1
 An **action** is an Orchestrator-issued command that represents work to be done by a specific node type. Actions replace the legacy "thunk" terminology and include lease management for single-writer semantics:
 
 ```python
-from omnibase_core.nodes.model_action import ModelAction
-from omnibase_core.nodes.enum_orchestrator_types import EnumActionType
+from omnibase_core.models.model_action import ModelAction
+from omnibase_core.enums.enum_orchestrator_types import EnumActionType
 
 # Example: Action for COMPUTE operation
 compute_action = ModelAction(
@@ -160,7 +160,7 @@ action_update = ModelAction(
 A **workflow step** groups related actions together:
 
 ```python
-from omnibase_core.nodes.model_workflow_step import ModelWorkflowStep
+from omnibase_core.models.model_workflow_step import ModelWorkflowStep
 
 step = ModelWorkflowStep(
     step_id=uuid4(),
@@ -206,7 +206,7 @@ Execution order: Steps 1&2 in parallel → Step 3 → Step 4
 
 from pydantic import BaseModel, Field
 from uuid import UUID, uuid4
-from omnibase_core.nodes.enum_orchestrator_types import EnumExecutionMode
+from omnibase_core.enums.enum_orchestrator_types import EnumExecutionMode
 
 
 class ModelPipelineConfig(BaseModel):
@@ -317,15 +317,15 @@ from typing import Any
 
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.nodes.enum_orchestrator_types import (
+from omnibase_core.enums.enum_orchestrator_types import (
     EnumExecutionMode,
     EnumActionType,
     EnumWorkflowState,
 )
-from omnibase_core.nodes.model_action import ModelAction
-from omnibase_core.nodes.model_workflow_step import ModelWorkflowStep
-from omnibase_core.nodes.model_orchestrator_input import ModelOrchestratorInput
-from omnibase_core.nodes.model_orchestrator_output import ModelOrchestratorOutput
+from omnibase_core.models.model_action import ModelAction
+from omnibase_core.models.model_workflow_step import ModelWorkflowStep
+from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
+from omnibase_core.models.model_orchestrator_output import ModelOrchestratorOutput
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
@@ -702,7 +702,7 @@ Demonstrates conditional step execution based on runtime state.
 from uuid import uuid4
 from datetime import datetime
 
-from omnibase_core.nodes.enum_orchestrator_types import EnumBranchCondition
+from omnibase_core.enums.enum_orchestrator_types import EnumBranchCondition
 
 from .node_pipeline_orchestrator import NodePipelineOrchestrator
 from .model_pipeline_orchestrator_input import ModelPipelineOrchestratorInput
@@ -1066,7 +1066,7 @@ import pytest
 from uuid import uuid4
 
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.nodes.enum_orchestrator_types import (
+from omnibase_core.enums.enum_orchestrator_types import (
     EnumExecutionMode,
     EnumWorkflowState,
 )

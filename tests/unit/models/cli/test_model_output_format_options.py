@@ -14,7 +14,7 @@ from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
 from omnibase_core.models.cli.model_output_format_options import (
     ModelOutputFormatOptions,
 )
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 
 
 class TestModelOutputFormatOptionsBasics:
@@ -223,7 +223,7 @@ class TestModelOutputFormatOptionsCustomOptions:
         options.add_custom_option("format", "json")
 
         assert "format" in options.custom_options
-        assert isinstance(options.custom_options["format"], ModelCliValue)
+        assert isinstance(options.custom_options["format"], ModelValue)
 
     def test_add_custom_option_int(self):
         """Test adding integer custom option."""
@@ -231,7 +231,7 @@ class TestModelOutputFormatOptionsCustomOptions:
         options.add_custom_option("max_depth", 5)
 
         assert "max_depth" in options.custom_options
-        assert isinstance(options.custom_options["max_depth"], ModelCliValue)
+        assert isinstance(options.custom_options["max_depth"], ModelValue)
 
     def test_add_custom_option_bool(self):
         """Test adding boolean custom option."""
@@ -239,7 +239,7 @@ class TestModelOutputFormatOptionsCustomOptions:
         options.add_custom_option("show_icons", True)
 
         assert "show_icons" in options.custom_options
-        assert isinstance(options.custom_options["show_icons"], ModelCliValue)
+        assert isinstance(options.custom_options["show_icons"], ModelValue)
 
     def test_get_custom_option_existing(self):
         """Test getting existing custom option."""
@@ -247,7 +247,7 @@ class TestModelOutputFormatOptionsCustomOptions:
         options.add_custom_option("format", "yaml")
 
         result = options.get_custom_option("format", "json")
-        # Returns ModelCliValue when key exists
+        # Returns ModelValue when key exists
         assert result is not None
 
     def test_get_custom_option_default(self):

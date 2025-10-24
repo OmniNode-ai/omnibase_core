@@ -8,26 +8,26 @@ STABILITY GUARANTEE: Node interfaces are frozen for code generation.
 Breaking changes require major version bump.
 """
 
-from omnibase_core.nodes.enum_orchestrator_types import (
+from omnibase_core.enums.enum_orchestrator_types import (
     EnumActionType,
     EnumBranchCondition,
     EnumExecutionMode,
     EnumWorkflowState,
 )
-from omnibase_core.nodes.enum_reducer_types import (
+from omnibase_core.enums.enum_reducer_types import (
     EnumConflictResolution,
     EnumReductionType,
     EnumStreamingMode,
 )
-from omnibase_core.nodes.model_compute_input import ModelComputeInput
-from omnibase_core.nodes.model_compute_output import ModelComputeOutput
-from omnibase_core.nodes.model_effect_input import ModelEffectInput
-from omnibase_core.nodes.model_effect_output import ModelEffectOutput
-from omnibase_core.nodes.model_effect_transaction import ModelEffectTransaction
-from omnibase_core.nodes.model_orchestrator_input import ModelOrchestratorInput
-from omnibase_core.nodes.model_orchestrator_output import ModelOrchestratorOutput
-from omnibase_core.nodes.model_reducer_input import ModelReducerInput
-from omnibase_core.nodes.model_reducer_output import ModelReducerOutput
+from omnibase_core.models.model_compute_input import ModelComputeInput
+from omnibase_core.models.model_compute_output import ModelComputeOutput
+from omnibase_core.models.model_effect_input import ModelEffectInput
+from omnibase_core.models.model_effect_output import ModelEffectOutput
+from omnibase_core.models.model_effect_transaction import ModelEffectTransaction
+from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
+from omnibase_core.models.model_orchestrator_output import ModelOrchestratorOutput
+from omnibase_core.models.model_reducer_input import ModelReducerInput
+from omnibase_core.models.model_reducer_output import ModelReducerOutput
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator

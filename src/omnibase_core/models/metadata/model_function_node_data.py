@@ -26,7 +26,7 @@ from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.infrastructure.model_cli_value import ModelCliValue
+from omnibase_core.models.infrastructure.model_value import ModelValue
 
 from .model_nested_configuration import ModelNestedConfiguration
 from .model_structured_description import ModelStructuredDescription
@@ -164,7 +164,7 @@ class ModelFunctionNodeData(BaseModel):
         config_id: UUID,
         config_display_name: str,
         config_type: EnumConfigType,
-        settings: dict[str, ModelCliValue],
+        settings: dict[str, ModelValue],
     ) -> None:
         """Add a configuration object."""
         self.configurations.append(
