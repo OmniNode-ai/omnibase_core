@@ -68,10 +68,7 @@ class TestModelLogFilterMatching:
         assert filter._matches_keywords("ERROR occurred") is True
         assert filter._matches_keywords("error occurred") is True
 
-    @pytest.mark.skip(
-        reason="Causes CI timeout in split 6 - investigate random.random() behavior in CI environment"
-    )
-    def test_apply_filter_exclude(self):
+    def test_apply_filter_exclude(self, monkeypatch):
         """Test apply_filter with exclude action.
 
         Note: Current implementation doesn't actually use the 'action' field.
@@ -81,6 +78,9 @@ class TestModelLogFilterMatching:
         from omnibase_core.models.configuration.model_log_filter_config import (
             ModelLogFilterConfig,
         )
+
+        # Mock random.random() to return deterministic value for should_sample()
+        monkeypatch.setattr("random.random", lambda: 0.5)
 
         # Create filter with deterministic sampling (sample_rate=1.0)
         filter = ModelLogFilter(
@@ -98,10 +98,10 @@ class TestModelLogFilterMatching:
         assert result["message"] == "debug info"
         assert result["level"] == 10
 
-    @pytest.mark.skip(
-        reason="Skipping apply_filter tests due to CI instability - may be related to random.random() in ModelLogFilterConfig"
-    )
-    def test_apply_filter_include(self):
+    def test_apply_filter_include(self, monkeypatch):
+        # Mock random.random() to return deterministic value for should_sample()
+        monkeypatch.setattr("random.random", lambda: 0.5)
+
         filter = ModelLogFilter(
             filter_name="test",
             filter_type="keyword",
