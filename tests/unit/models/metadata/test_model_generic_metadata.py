@@ -115,10 +115,15 @@ class TestModelGenericMetadataFieldOperations:
 
         from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 
-        with pytest.raises(OnexError) as exc_info:
-            metadata.set_field("invalid", {"dict": "not", "allowed": True})
+        class InvalidType:
+            pass
 
-        assert "Value must be str, int, bool, float, or list" in str(exc_info.value)
+        with pytest.raises(OnexError) as exc_info:
+            metadata.set_field("invalid", InvalidType())
+
+        assert "Value must be str, int, bool, float, list, or dict" in str(
+            exc_info.value
+        )
 
     def test_get_field_existing(self):
         """Test getting existing field."""
@@ -201,7 +206,9 @@ class TestModelGenericMetadataFieldOperations:
         with pytest.raises(OnexError) as exc_info:
             metadata.set_field("invalid", UnsupportedType())
 
-        assert "Value must be str, int, bool, float, or list" in str(exc_info.value)
+        assert "Value must be str, int, bool, float, list, or dict" in str(
+            exc_info.value
+        )
 
     def test_has_field(self):
         """Test checking field existence."""

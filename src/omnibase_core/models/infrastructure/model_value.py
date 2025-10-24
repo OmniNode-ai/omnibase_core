@@ -75,12 +75,12 @@ class ModelValue(BaseModel):
         if value_type == EnumCliValueType.DICT and not isinstance(v, dict):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Dict value type must contain dict[str, Any]data",
+                message="Dict value type must contain dict[str, Any] data",
             )
         if value_type == EnumCliValueType.LIST and not isinstance(v, list):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="List value type must contain list[Any]data",
+                message="List value type must contain list[Any] data",
             )
         if value_type == EnumCliValueType.NULL and v is not None:
             raise ModelOnexError(

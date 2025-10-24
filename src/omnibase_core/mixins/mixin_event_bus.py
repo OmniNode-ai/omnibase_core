@@ -24,7 +24,7 @@ import threading
 from collections.abc import Callable as CallableABC
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, StrictStr
+from pydantic import BaseModel, ConfigDict, StrictStr, ValidationError
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -106,9 +106,14 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         try:
             # Try normal initialization first
             super().__init__(**kwargs)
-        except Exception:
-            # If validation fails (due to required fields from non-Pydantic parents),
+        except ValidationError:
+            # If Pydantic validation fails (due to required fields from non-Pydantic parents),
             # initialize BaseModel's internals manually and let parent __init__ set fields
+            emit_log_event(
+                LogLevel.DEBUG,
+                "Using fallback initialization for MixinEventBus due to mixed Pydantic/non-Pydantic inheritance",
+                {"node_name": kwargs.get("node_name", "UnknownNode")},
+            )
             object.__setattr__(self, "__pydantic_extra__", {})
             object.__setattr__(self, "__pydantic_fields_set__", set())
             object.__setattr__(self, "__pydantic_private__", {})
