@@ -67,7 +67,7 @@ jobs:
       - name: Force reinstall omnibase_spi from git
         run: |
           poetry run pip uninstall -y omnibase_spi
-          poetry install --no-interaction --only-root || {
+          poetry install --no-interaction || {
             echo "❌ Failed to reinstall omnibase_spi"
             exit 1
           }
@@ -141,7 +141,7 @@ jobs:
       - name: Force reinstall omnibase_spi from git
         run: |
           poetry run pip uninstall -y omnibase_spi
-          poetry install --no-interaction --only-root || {
+          poetry install --no-interaction || {
             echo "❌ Failed to reinstall omnibase_spi"
             exit 1
           }
@@ -214,7 +214,7 @@ jobs:
       - name: Force reinstall omnibase_spi from git
         run: |
           poetry run pip uninstall -y omnibase_spi
-          poetry install --no-interaction --only-root
+          poetry install --no-interaction
 
       - name: Run tests with coverage
         run: |
@@ -289,7 +289,7 @@ jobs:
       - name: Force reinstall omnibase_spi from git
         run: |
           poetry run pip uninstall -y omnibase_spi
-          poetry install --no-interaction --only-root
+          poetry install --no-interaction
 
       - name: Check Black formatting
         run: poetry run black --check src/ tests/
