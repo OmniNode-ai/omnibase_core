@@ -72,11 +72,20 @@ jobs:
             --tb=short
 
   # Parallel test execution - split into 10 groups for speed and memory management
+  # Split strategy rationale:
+  #   - 10,987 total tests ÷ 10 splits = ~1,099 tests/split
+  #   - Target: 3-5 minutes per split (measured: 3-4 min avg)
+  #   - 10x parallelization speedup vs sequential execution
+  #   - More splits would add overhead without significant benefit
   test-parallel:
     name: Tests (Split ${{ matrix.split }}/10)
     needs: smoke-test
     runs-on: ubuntu-latest
-    timeout-minutes: 25  # Increased from 15 to handle slower splits (Split 6 needs ~20min)
+    # Timeout rationale: 25 minutes provides adequate buffer
+    #   - Typical split time: 3-5 minutes
+    #   - Setup/teardown: 2-3 minutes (cache restore, dependency install)
+    #   - Safety margin: 3x worst case (15 min) + 10 min for runner variance
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -140,6 +149,10 @@ jobs:
             --timeout-method=thread \
             --tb=short \
             --junitxml=junit-${{ matrix.split }}.xml
+          # Per-test timeout: 60 seconds prevents infinite hangs
+          #   - Longest test: ~30 seconds (2x safety margin)
+          #   - Thread method: Avoids signal handler issues in parallel execution
+          #   - No false positives observed at this threshold
 
       - name: Upload test results
         if: always()

@@ -3,6 +3,9 @@
 import pytest
 
 from omnibase_core.models.configuration.model_log_filter import ModelLogFilter
+from omnibase_core.models.configuration.model_log_filter_config import (
+    ModelLogFilterConfig,
+)
 
 
 class TestModelLogFilterBasics:
@@ -75,12 +78,12 @@ class TestModelLogFilterMatching:
         This test verifies that matching messages are processed correctly.
         When action support is implemented, this test should be updated.
         """
-        from omnibase_core.models.configuration.model_log_filter_config import (
-            ModelLogFilterConfig,
-        )
-
         # Mock random.random() to return deterministic value for should_sample()
-        monkeypatch.setattr("random.random", lambda: 0.5)
+        # Must patch in the module where random is actually imported and used
+        monkeypatch.setattr(
+            "omnibase_core.models.configuration.model_log_filter_config.random.random",
+            lambda: 0.5,
+        )
 
         # Create filter with deterministic sampling (sample_rate=1.0)
         filter = ModelLogFilter(
@@ -100,7 +103,11 @@ class TestModelLogFilterMatching:
 
     def test_apply_filter_include(self, monkeypatch):
         # Mock random.random() to return deterministic value for should_sample()
-        monkeypatch.setattr("random.random", lambda: 0.5)
+        # Must patch in the module where random is actually imported and used
+        monkeypatch.setattr(
+            "omnibase_core.models.configuration.model_log_filter_config.random.random",
+            lambda: 0.5,
+        )
 
         filter = ModelLogFilter(
             filter_name="test",
