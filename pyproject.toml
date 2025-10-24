@@ -32,8 +32,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed"
 ]
-dynamic = ["dependencies"]
-dependencies = ["llama-index (>=0.14.0,<0.15.0)", "pypdf (>=6.1.0,<7.0.0)", "fastapi (>=0.120.0,<0.121.0)", "starlette (>=0.47.2)"]
 
 [project.urls]
 homepage = "https://github.com/OmniNode-ai/omnibase_core"
@@ -71,7 +69,7 @@ pydantic = "^2.11.7"
 llama-index = "^0.14.0"  # Updated for pypdf 6.0+ security fix (CVE-2025-55197)
 pypdf = "^6.1.0"  # Security fix for CVE-2025-55197
 fastapi = "^0.120.0"  # Updated for starlette 0.47.2+ security fix (CVE-2025-54121)
-starlette = ">=0.47.2"  # Security fix for CVE-2025-54121
+starlette = "^0.48.0"  # Security fix for CVE-2025-54121 (compatible with fastapi ^0.120.0)
 uvicorn = "^0.32.0"
 pyyaml = "^6.0.2"
 asyncpg = "^0.29.0"
