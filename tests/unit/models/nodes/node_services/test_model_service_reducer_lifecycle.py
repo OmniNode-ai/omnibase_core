@@ -14,6 +14,7 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.constants.event_types import TOOL_INVOCATION
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
@@ -307,13 +308,15 @@ class TestModelServiceReducerLifecycle:
         - start_service_mode() is called
 
         Expected:
-        - RuntimeError raised
+        - ModelOnexError raised
         - Service not started
         """
-        # Remove event bus
+        # Remove event bus from all sources
         service_reducer.event_bus = None
+        # Also prevent container.get_service() from providing event_bus
+        service_reducer.container.get_service = Mock(return_value=None)
 
-        with pytest.raises(RuntimeError, match="Event bus not available"):
+        with pytest.raises(ModelOnexError, match="Event bus not available"):
             await service_reducer.start_service_mode()
 
         # Verify service not started
