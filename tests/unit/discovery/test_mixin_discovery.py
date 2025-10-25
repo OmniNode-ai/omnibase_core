@@ -11,6 +11,7 @@ import pytest
 
 from omnibase_core.discovery.mixin_discovery import MixinDiscovery
 from omnibase_core.discovery.model_mixin_info import ModelMixinInfo
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.primitives.model_semver import ModelSemVer
 
@@ -269,6 +270,161 @@ class TestMixinDiscovery:
             discovery.get_all_mixins()
 
         assert "not found" in str(exc_info.value.message).lower()
+
+    def test_metadata_file_too_large(self, tmp_path: Path) -> None:
+        """Test error handling when metadata file exceeds size limit."""
+        from omnibase_core.discovery.mixin_discovery import MAX_METADATA_FILE_SIZE_BYTES
+
+        # Create a large metadata file
+        metadata_file = tmp_path / "mixin_metadata.yaml"
+        # Write content larger than limit
+        large_content = "x" * (MAX_METADATA_FILE_SIZE_BYTES + 1)
+        metadata_file.write_text(large_content)
+
+        discovery = MixinDiscovery(mixins_path=tmp_path)
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            discovery.get_all_mixins()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "too large" in exc_info.value.message.lower()
+        assert str(MAX_METADATA_FILE_SIZE_BYTES) in exc_info.value.message
+
+    def test_metadata_file_invalid_yaml(self, tmp_path: Path) -> None:
+        """Test error handling for invalid YAML syntax."""
+        metadata_file = tmp_path / "mixin_metadata.yaml"
+        # Write invalid YAML
+        metadata_file.write_text("invalid: yaml: syntax: [[[")
+
+        discovery = MixinDiscovery(mixins_path=tmp_path)
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            discovery.get_all_mixins()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "failed to parse" in exc_info.value.message.lower()
+        assert "yaml" in exc_info.value.message.lower()
+
+    def test_metadata_file_not_dict(self, tmp_path: Path) -> None:
+        """Test error handling when metadata is not a dictionary."""
+        metadata_file = tmp_path / "mixin_metadata.yaml"
+        # Write valid YAML but not a dict (it's a list)
+        metadata_file.write_text("- item1\n- item2\n- item3")
+
+        discovery = MixinDiscovery(mixins_path=tmp_path)
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            discovery.get_all_mixins()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "invalid metadata format" in exc_info.value.message.lower()
+        assert "expected dictionary" in exc_info.value.message.lower()
+
+    def test_metadata_file_invalid_encoding(self, tmp_path: Path) -> None:
+        """Test error handling for file with invalid UTF-8 encoding."""
+        metadata_file = tmp_path / "mixin_metadata.yaml"
+        # Write invalid UTF-8 bytes
+        metadata_file.write_bytes(b"\x80\x81\x82invalid utf-8")
+
+        discovery = MixinDiscovery(mixins_path=tmp_path)
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            discovery.get_all_mixins()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.FILE_READ_ERROR
+        assert "encoding error" in exc_info.value.message.lower()
+
+    def test_metadata_file_missing_required_mixin_fields(self, tmp_path: Path) -> None:
+        """Test error handling when mixin metadata is missing required fields."""
+        metadata_file = tmp_path / "mixin_metadata.yaml"
+        # Write metadata with missing required fields (no version)
+        metadata_file.write_text(
+            """
+MixinInvalid:
+  name: MixinInvalid
+  description: Invalid mixin missing version
+  category: testing
+"""
+        )
+
+        discovery = MixinDiscovery(mixins_path=tmp_path)
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            discovery.get_all_mixins()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "failed to parse metadata" in exc_info.value.message.lower()
+        assert "MixinInvalid" in exc_info.value.message
+
+    def test_reload_clears_cache_and_reloads(self, tmp_path: Path) -> None:
+        """Test that reload() clears cache and loads fresh data."""
+        metadata_file = tmp_path / "mixin_metadata.yaml"
+
+        # Write initial metadata
+        initial_metadata = """
+MixinTest1:
+  name: MixinTest1
+  description: First test mixin
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  category: testing
+"""
+        metadata_file.write_text(initial_metadata)
+
+        discovery = MixinDiscovery(mixins_path=tmp_path)
+
+        # Load initial data
+        mixins1 = discovery.get_all_mixins()
+        assert len(mixins1) == 1
+        assert mixins1[0].name == "MixinTest1"
+
+        # Modify metadata file
+        updated_metadata = """
+MixinTest1:
+  name: MixinTest1
+  description: First test mixin
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  category: testing
+MixinTest2:
+  name: MixinTest2
+  description: Second test mixin
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  category: testing
+"""
+        metadata_file.write_text(updated_metadata)
+
+        # Reload and verify new data is loaded
+        discovery.reload()
+        mixins2 = discovery.get_all_mixins()
+        assert len(mixins2) == 2
+
+    def test_get_mixin_by_name_with_special_characters(self, tmp_path: Path) -> None:
+        """Test retrieving mixin with special characters in name."""
+        metadata_file = tmp_path / "mixin_metadata.yaml"
+        metadata_file.write_text(
+            """
+MixinTest_123:
+  name: MixinTest_123
+  description: Test mixin with numbers
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  category: testing
+"""
+        )
+
+        discovery = MixinDiscovery(mixins_path=tmp_path)
+        mixin = discovery.get_mixin("MixinTest_123")
+        assert mixin.name == "MixinTest_123"
 
 
 class TestMixinDiscoveryIntegration:

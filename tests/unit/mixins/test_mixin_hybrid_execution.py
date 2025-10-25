@@ -5,6 +5,19 @@ Tests all execution paths, mode selection branches, complexity calculations,
 and workflow execution scenarios for the hybrid execution mixin.
 
 ZERO TOLERANCE: No Any types allowed.
+
+Note on Event Loop Mocking:
+    These tests use manual MagicMock() creation for event loops instead of the
+    mock_event_loop fixture from conftest.py. This is intentional because each
+    test requires different return values from mock_loop.run_until_complete().
+
+    The manual approach allows test-specific return values while maintaining
+    the same safety pattern:
+    1. Create mock loop with specific return value
+    2. Patch asyncio.new_event_loop to return mock
+    3. Verify mock_loop.close() was called for cleanup
+
+    See conftest.py for the generic mock_event_loop fixture used by other tests.
 """
 
 import json

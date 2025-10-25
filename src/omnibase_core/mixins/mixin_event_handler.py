@@ -43,6 +43,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
+# Import protocol to avoid circular dependencies
+from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_event_type import (
@@ -51,9 +54,6 @@ from omnibase_core.models.core.model_event_type import (
 )
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.core.model_onex_event import OnexEvent
-
-# Import protocol to avoid circular dependencies
-from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -151,7 +151,7 @@ class MixinEventHandler:
         # STRICT: Envelope must have payload attribute
         if not hasattr(envelope, "payload"):
             raise ModelOnexError(
-                f"Envelope missing required 'payload' attribute",
+                "Envelope missing required 'payload' attribute",
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 context={"envelope_type": type(envelope).__name__},
             )
@@ -251,7 +251,7 @@ class MixinEventHandler:
         # STRICT: Envelope must have payload attribute
         if not hasattr(envelope, "payload"):
             raise ModelOnexError(
-                f"Envelope missing required 'payload' attribute",
+                "Envelope missing required 'payload' attribute",
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 context={"envelope_type": type(envelope).__name__},
             )

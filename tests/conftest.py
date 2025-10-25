@@ -8,7 +8,7 @@ to prevent OOM issues in large test suites.
 import asyncio
 import gc
 import logging
-from typing import Generator
+from collections.abc import Generator
 from unittest.mock import MagicMock
 
 import pytest
@@ -92,7 +92,7 @@ def event_loop_cleanup() -> Generator[None, None, None]:
                         await asyncio.gather(*pending, return_exceptions=True)
 
                     loop.run_until_complete(asyncio.wait_for(cancel_all(), timeout=2.0))
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # Some tasks didn't cancel in time - force cleanup
                     for task in pending:
                         if not task.done():
@@ -227,7 +227,7 @@ async def cleanup_service_tasks() -> Generator[None, None, None]:
                     asyncio.gather(*health_tasks, return_exceptions=True),
                     timeout=1.0,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Tasks didn't cancel in time - they'll be cleaned up by event_loop_cleanup
                 pass
 
@@ -256,7 +256,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
             process = psutil.Process()
             memory_info = process.memory_info()
-            print(f"\n=== Test Suite Memory Statistics ===")
+            print("\n=== Test Suite Memory Statistics ===")
             print(f"RSS (Resident Set Size): {memory_info.rss / 1024 / 1024:.2f} MB")
             print(f"VMS (Virtual Memory Size): {memory_info.vms / 1024 / 1024:.2f} MB")
     except ImportError:
@@ -298,6 +298,11 @@ def mock_event_loop() -> Generator[MagicMock, None, None]:
         - Real event loop creation can hang in CI environments
         - Event loops must be properly closed to prevent resource leaks
         - Mocked event loops provide deterministic test behavior
+
+    When NOT to use this fixture:
+        - When tests need specific return values from run_until_complete()
+        - When multiple different workflows are tested in one test
+        - See tests/unit/mixins/test_mixin_hybrid_execution.py for manual mock pattern
 
     See Also:
         - tests/unit/mixins/test_mixin_hybrid_execution.py for examples

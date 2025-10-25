@@ -92,7 +92,7 @@ def emit_log_event(
         logging_service = get_logging_service()
         if hasattr(logging_service, "emit_log_event"):
             logging_service.emit_log_event(level, event_type, message, **kwargs)
-            return None
+            return
     except (
         Exception
     ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
@@ -100,7 +100,7 @@ def emit_log_event(
         pass
 
     # Fallback to stderr when structured logging unavailable
-    return None
+    return
 
 
 def emit_log_event_sync(
@@ -123,14 +123,14 @@ def emit_log_event_sync(
                 event_type,
                 **kwargs,
             )
-            return None
+            return
     except (
         Exception
     ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
         pass
 
     # Fallback to stderr when structured logging unavailable
-    return None
+    return
 
 
 # Private helper functions

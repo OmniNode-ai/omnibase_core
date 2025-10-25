@@ -32,6 +32,11 @@ else:
     )
 
 # Import or define Pydantic BaseModel
+from omnibase_spi.protocols.types.protocol_core_types import (
+    ProtocolAction,
+    ProtocolNodeResult,
+    ProtocolState,
+)
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -44,11 +49,6 @@ from omnibase_core.models.infrastructure.model_node_workflow_result import (
     ModelNodeWorkflowResult,
 )
 from omnibase_core.models.infrastructure.model_state import ModelState
-from omnibase_spi.protocols.types.protocol_core_types import (
-    ProtocolAction,
-    ProtocolNodeResult,
-    ProtocolState,
-)
 
 T_INPUT_STATE = TypeVar("T_INPUT_STATE")
 T_OUTPUT_STATE = TypeVar("T_OUTPUT_STATE")

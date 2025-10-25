@@ -30,35 +30,48 @@ repos:
         args: [--maxkb=1000]
 
   # ONEX Python Development Hooks (from shared templates)
-  - repo: https://github.com/psf/black
-    rev: 25.9.0
+  # Order: black → isort → ruff → mypy (formatting before linting before type checking)
+  - repo: local
     hooks:
-      - id: black
-        name: Black Python Formatter
+      - id: black-format
+        name: black (auto-format)
+        entry: poetry run black
+        language: system
+        types: [python]
         args: [--line-length, "88", --target-version, py311]
         exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
+        stages: [commit]
 
-  - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
-    hooks:
-      - id: isort
-        name: isort Import Sorter
+      - id: isort-format
+        name: isort (auto-sort imports)
+        entry: poetry run isort
+        language: system
+        types: [python]
         args: [--profile, black, --line-length, "88"]
         exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
+        stages: [commit]
+
+      - id: ruff-fix
+        name: ruff (auto-fix linting issues)
+        entry: poetry run ruff check --fix
+        language: system
+        types: [python]
+        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
+        stages: [commit]
+
+      - id: mypy-type-check
+        name: mypy (type checking - incremental)
+        entry: poetry run mypy
+        language: system
+        types: [python]
+        args: [--ignore-missing-imports, --show-error-codes, --no-error-summary, --follow-imports=silent]
+        files: ^src/omnibase_core/(core|models|enums|errors|types).*\.py$
+        exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
+        stages: [commit]
 
   # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:
-      # MyPy Type Checking - DISABLED for pre-commit (moved to CI for full checks)
-      # Taking >45s per run - use `poetry run mypy src/` manually or in CI
-      # - id: mypy-poetry
-      #   name: MyPy Type Checking (via Poetry)
-      #   entry: poetry run mypy
-      #   language: system
-      #   types: [python]
-      #   args: [--ignore-missing-imports, --show-error-codes, --no-error-summary, --follow-imports=silent, --config-file=mypy.ini]
-      #   files: ^src/omnibase_core/(core|models|enums|exceptions|types).*\.py$
-      #   exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect|archive/|archived/).*\.py$
 
       # ONEX Core Framework Validation (SHARED HOOKS)
       - id: validate-repository-structure

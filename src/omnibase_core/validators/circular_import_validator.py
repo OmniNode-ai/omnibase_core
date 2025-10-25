@@ -7,8 +7,9 @@ Can be used as a standalone validator or integrated into other tools.
 
 import importlib
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Optional
 
 from omnibase_core.enums.enum_import_status import EnumImportStatus
 from omnibase_core.errors.error_codes import EnumCoreErrorCode

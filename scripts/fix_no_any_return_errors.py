@@ -35,6 +35,7 @@ def get_mypy_errors() -> list[ErrorLocation]:
         ["poetry", "run", "mypy", "src/omnibase_core/", "--strict"],
         capture_output=True,
         text=True,
+        check=False,
     )
 
     errors = []

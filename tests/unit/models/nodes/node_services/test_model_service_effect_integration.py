@@ -488,7 +488,7 @@ class TestEffectSemanticsServiceMode:
             operation_data={
                 "operation_type": "read",
                 "file_path": "/tmp/test.txt",
-            },  # noqa: S108 - Test data, not actual temp file usage
+            },
             transaction_enabled=True,
             retry_enabled=False,
         )
@@ -563,7 +563,7 @@ class TestCircuitBreakerServiceMode:
             operation_data={
                 "operation_type": "read",
                 "file_path": "/tmp/test.txt",
-            },  # noqa: S108 - Test data, not actual temp file usage
+            },
             circuit_breaker_enabled=True,
             retry_enabled=False,
         )

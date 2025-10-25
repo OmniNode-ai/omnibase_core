@@ -5,7 +5,7 @@ This module tests the intent publish result model used for coordination I/O.
 Validates field types, constraints, serialization, and Pydantic behavior.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 from uuid import UUID, uuid4
 
 import pytest
@@ -20,7 +20,7 @@ class TestModelIntentPublishResultInstantiation:
     def test_create_with_all_fields(self):
         """Test creating ModelIntentPublishResult with all required fields."""
         intent_id = uuid4()
-        published_at = datetime.now(timezone.utc)
+        published_at = datetime.now(UTC)
         target_topic = "test.topic"
         correlation_id = uuid4()
 
@@ -40,7 +40,7 @@ class TestModelIntentPublishResultInstantiation:
         """Test creating with UUID strings (Pydantic auto-converts)."""
         intent_id_str = str(uuid4())
         correlation_id_str = str(uuid4())
-        published_at = datetime.now(timezone.utc)
+        published_at = datetime.now(UTC)
 
         result = ModelIntentPublishResult(
             intent_id=intent_id_str,
@@ -73,7 +73,7 @@ class TestModelIntentPublishResultInstantiation:
         """Test that ModelIntentPublishResult inherits from BaseModel."""
         result = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="test.topic",
             correlation_id=uuid4(),
         )
@@ -88,7 +88,7 @@ class TestModelIntentPublishResultFieldValidation:
         """Test that missing intent_id raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             ModelIntentPublishResult(
-                published_at=datetime.now(timezone.utc),
+                published_at=datetime.now(UTC),
                 target_topic="test.topic",
                 correlation_id=uuid4(),
             )
@@ -114,7 +114,7 @@ class TestModelIntentPublishResultFieldValidation:
         with pytest.raises(ValidationError) as exc_info:
             ModelIntentPublishResult(
                 intent_id=uuid4(),
-                published_at=datetime.now(timezone.utc),
+                published_at=datetime.now(UTC),
                 correlation_id=uuid4(),
             )
 
@@ -126,7 +126,7 @@ class TestModelIntentPublishResultFieldValidation:
         with pytest.raises(ValidationError) as exc_info:
             ModelIntentPublishResult(
                 intent_id=uuid4(),
-                published_at=datetime.now(timezone.utc),
+                published_at=datetime.now(UTC),
                 target_topic="test.topic",
             )
 
@@ -138,7 +138,7 @@ class TestModelIntentPublishResultFieldValidation:
         with pytest.raises(ValidationError) as exc_info:
             ModelIntentPublishResult(
                 intent_id="not-a-uuid",
-                published_at=datetime.now(timezone.utc),
+                published_at=datetime.now(UTC),
                 target_topic="test.topic",
                 correlation_id=uuid4(),
             )
@@ -151,7 +151,7 @@ class TestModelIntentPublishResultFieldValidation:
         with pytest.raises(ValidationError) as exc_info:
             ModelIntentPublishResult(
                 intent_id=uuid4(),
-                published_at=datetime.now(timezone.utc),
+                published_at=datetime.now(UTC),
                 target_topic="test.topic",
                 correlation_id="not-a-uuid",
             )
@@ -177,7 +177,7 @@ class TestModelIntentPublishResultFieldValidation:
         with pytest.raises(ValidationError) as exc_info:
             ModelIntentPublishResult(
                 intent_id=uuid4(),
-                published_at=datetime.now(timezone.utc),
+                published_at=datetime.now(UTC),
                 target_topic=12345,  # type: ignore[arg-type]
                 correlation_id=uuid4(),
             )
@@ -189,7 +189,7 @@ class TestModelIntentPublishResultFieldValidation:
         """Test that empty string target_topic is allowed."""
         result = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="",
             correlation_id=uuid4(),
         )
@@ -201,7 +201,7 @@ class TestModelIntentPublishResultFieldValidation:
         with pytest.raises(ValidationError):
             ModelIntentPublishResult(
                 intent_id=None,  # type: ignore[arg-type]
-                published_at=datetime.now(timezone.utc),
+                published_at=datetime.now(UTC),
                 target_topic="test.topic",
                 correlation_id=uuid4(),
             )
@@ -213,7 +213,7 @@ class TestModelIntentPublishResultSerialization:
     def test_model_dump(self):
         """Test model_dump() serialization."""
         intent_id = uuid4()
-        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
         correlation_id = uuid4()
 
         result = ModelIntentPublishResult(
@@ -234,7 +234,7 @@ class TestModelIntentPublishResultSerialization:
     def test_model_dump_json(self):
         """Test model_dump_json() serialization."""
         intent_id = uuid4()
-        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
         correlation_id = uuid4()
 
         result = ModelIntentPublishResult(
@@ -254,7 +254,7 @@ class TestModelIntentPublishResultSerialization:
     def test_model_validate(self):
         """Test model_validate() deserialization."""
         intent_id = uuid4()
-        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
         correlation_id = uuid4()
 
         data = {
@@ -274,7 +274,7 @@ class TestModelIntentPublishResultSerialization:
     def test_model_validate_json(self):
         """Test model_validate_json() deserialization."""
         intent_id = uuid4()
-        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
         correlation_id = uuid4()
 
         result = ModelIntentPublishResult(
@@ -295,7 +295,7 @@ class TestModelIntentPublishResultSerialization:
         """Test serialization and deserialization roundtrip."""
         original = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="roundtrip.topic",
             correlation_id=uuid4(),
         )
@@ -313,7 +313,7 @@ class TestModelIntentPublishResultSerialization:
         """Test JSON serialization and deserialization roundtrip."""
         original = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="json.roundtrip.topic",
             correlation_id=uuid4(),
         )
@@ -332,7 +332,7 @@ class TestModelIntentPublishResultEquality:
     def test_equality_same_values(self):
         """Test that models with same values are equal."""
         intent_id = uuid4()
-        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
         correlation_id = uuid4()
 
         result1 = ModelIntentPublishResult(
@@ -353,7 +353,7 @@ class TestModelIntentPublishResultEquality:
 
     def test_inequality_different_intent_id(self):
         """Test that models with different intent_id are not equal."""
-        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
         correlation_id = uuid4()
 
         result1 = ModelIntentPublishResult(
@@ -375,7 +375,7 @@ class TestModelIntentPublishResultEquality:
     def test_inequality_different_correlation_id(self):
         """Test that models with different correlation_id are not equal."""
         intent_id = uuid4()
-        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
 
         result1 = ModelIntentPublishResult(
             intent_id=intent_id,
@@ -396,7 +396,7 @@ class TestModelIntentPublishResultEquality:
     def test_inequality_different_topic(self):
         """Test that models with different target_topic are not equal."""
         intent_id = uuid4()
-        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+        published_at = datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC)
         correlation_id = uuid4()
 
         result1 = ModelIntentPublishResult(
@@ -422,14 +422,14 @@ class TestModelIntentPublishResultEquality:
 
         result1 = ModelIntentPublishResult(
             intent_id=intent_id,
-            published_at=datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc),
+            published_at=datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC),
             target_topic="test.topic",
             correlation_id=correlation_id,
         )
 
         result2 = ModelIntentPublishResult(
             intent_id=intent_id,
-            published_at=datetime(2024, 1, 16, 12, 0, 0, tzinfo=timezone.utc),
+            published_at=datetime(2024, 1, 16, 12, 0, 0, tzinfo=UTC),
             target_topic="test.topic",
             correlation_id=correlation_id,
         )
@@ -444,7 +444,7 @@ class TestModelIntentPublishResultCopy:
         """Test model_copy() creates independent copy."""
         original = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="test.topic",
             correlation_id=uuid4(),
         )
@@ -462,7 +462,7 @@ class TestModelIntentPublishResultCopy:
         """Test model_copy() with update."""
         original = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="original.topic",
             correlation_id=uuid4(),
         )
@@ -481,7 +481,7 @@ class TestModelIntentPublishResultRepresentation:
         """Test __str__ representation."""
         result = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="test.topic",
             correlation_id=uuid4(),
         )
@@ -494,7 +494,7 @@ class TestModelIntentPublishResultRepresentation:
         """Test __repr__ representation."""
         result = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="test.topic",
             correlation_id=uuid4(),
         )
@@ -511,7 +511,7 @@ class TestModelIntentPublishResultMetadata:
         """Test that model_fields contains all expected fields."""
         result = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="test.topic",
             correlation_id=uuid4(),
         )
@@ -566,7 +566,7 @@ class TestModelIntentPublishResultEdgeCases:
 
         result = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic=long_topic,
             correlation_id=uuid4(),
         )
@@ -580,7 +580,7 @@ class TestModelIntentPublishResultEdgeCases:
 
         result = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic=special_topic,
             correlation_id=uuid4(),
         )
@@ -589,7 +589,7 @@ class TestModelIntentPublishResultEdgeCases:
 
     def test_past_published_at(self):
         """Test with past datetime."""
-        past_date = datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        past_date = datetime(2020, 1, 1, 0, 0, 0, tzinfo=UTC)
 
         result = ModelIntentPublishResult(
             intent_id=uuid4(),
@@ -602,7 +602,7 @@ class TestModelIntentPublishResultEdgeCases:
 
     def test_future_published_at(self):
         """Test with future datetime."""
-        future_date = datetime(2030, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+        future_date = datetime(2030, 12, 31, 23, 59, 59, tzinfo=UTC)
 
         result = ModelIntentPublishResult(
             intent_id=uuid4(),
@@ -619,7 +619,7 @@ class TestModelIntentPublishResultEdgeCases:
 
         result = ModelIntentPublishResult(
             intent_id=same_id,
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="test.topic",
             correlation_id=same_id,
         )
@@ -631,7 +631,7 @@ class TestModelIntentPublishResultEdgeCases:
         """Test that extra fields are ignored by default."""
         result = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="test.topic",
             correlation_id=uuid4(),
             extra_field="ignored",  # type: ignore[call-arg]
@@ -655,7 +655,7 @@ class TestModelIntentPublishResultAttributes:
         """Test that instance has required methods."""
         result = ModelIntentPublishResult(
             intent_id=uuid4(),
-            published_at=datetime.now(timezone.utc),
+            published_at=datetime.now(UTC),
             target_topic="test.topic",
             correlation_id=uuid4(),
         )

@@ -16,6 +16,17 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 import yaml
+from omnibase_spi.protocols.validation.protocol_compliance_validator import (
+    ProtocolArchitectureCompliance,
+    ProtocolComplianceReport,
+    ProtocolComplianceRule,
+    ProtocolComplianceValidator,
+    ProtocolComplianceViolation,
+    ProtocolONEXStandards,
+)
+from omnibase_spi.protocols.validation.protocol_validation import (
+    ProtocolValidationResult,
+)
 from pydantic import BaseModel, Field, ValidationError
 
 from omnibase_core.enums import EnumNodeType
@@ -31,17 +42,6 @@ from omnibase_core.models.contracts.model_contract_reducer import ModelContractR
 from omnibase_core.primitives.model_semver import ModelSemVer
 from omnibase_core.validation.model_contract_validation_result import (
     ModelContractValidationResult,
-)
-from omnibase_spi.protocols.validation.protocol_compliance_validator import (
-    ProtocolArchitectureCompliance,
-    ProtocolComplianceReport,
-    ProtocolComplianceRule,
-    ProtocolComplianceValidator,
-    ProtocolComplianceViolation,
-    ProtocolONEXStandards,
-)
-from omnibase_spi.protocols.validation.protocol_validation import (
-    ProtocolValidationResult,
 )
 
 # Validation constants

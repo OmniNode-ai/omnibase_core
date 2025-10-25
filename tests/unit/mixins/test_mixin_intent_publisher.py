@@ -283,8 +283,6 @@ class TestMixinIntentPublisher:
         class InvalidEvent:
             """Event without model_dump() method."""
 
-            pass
-
         invalid_event = InvalidEvent()
 
         with pytest.raises(ModelOnexError) as exc_info:

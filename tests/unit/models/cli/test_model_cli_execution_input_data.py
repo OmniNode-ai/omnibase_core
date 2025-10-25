@@ -426,9 +426,7 @@ class TestModelCliExecutionInputDataHelperMethods:
         """Test getting string representation of Path value."""
         path = Path("/tmp/test")  # noqa: S108 - Test data, not actual temp file usage
         data = ModelCliExecutionInputData.from_path("test_key", path)
-        assert (
-            data.get_string_value() == "/tmp/test"
-        )  # noqa: S108 - Test assertion value
+        assert data.get_string_value() == "/tmp/test"
 
     def test_get_string_value_from_uuid(self):
         """Test getting string representation of UUID value."""
@@ -462,9 +460,7 @@ class TestModelCliExecutionInputDataHelperMethods:
 
     def test_is_path_value_false(self):
         """Test is_path_value returns False for non-Path values."""
-        data = ModelCliExecutionInputData.from_string(
-            "test_key", "/tmp/test"
-        )  # noqa: S108 - Test data string, not actual temp file usage
+        data = ModelCliExecutionInputData.from_string("test_key", "/tmp/test")
         assert data.is_path_value() is False
 
     def test_is_uuid_value_true(self):

@@ -1175,9 +1175,6 @@ operations: []
         import sys
         from unittest.mock import patch
 
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
-
         (tmp_path / "test.yaml").write_text(
             """
 contract_version:
@@ -1217,9 +1214,6 @@ operations: []
         """Test CLI handles generic ModelOnexError."""
         import sys
         from unittest.mock import patch
-
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         (tmp_path / "test.yaml").write_text(
             """

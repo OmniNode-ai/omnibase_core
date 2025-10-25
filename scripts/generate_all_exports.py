@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Dict, Set
 
 
-def extract_public_names(file_path: Path) -> Set[str]:
+def extract_public_names(file_path: Path) -> set[str]:
     """Extract all public class, function, and constant names from a module."""
     try:
         with open(file_path) as f:
@@ -71,7 +71,7 @@ def has_all_declaration(file_path: Path) -> bool:
         return False
 
 
-def add_all_export(file_path: Path, names: Set[str], dry_run: bool = True) -> bool:
+def add_all_export(file_path: Path, names: set[str], dry_run: bool = True) -> bool:
     """Add __all__ declaration to module."""
     if not names:
         print(f"⚠️  {file_path.name}: No public names found, skipping")
@@ -152,17 +152,18 @@ def add_all_export(file_path: Path, names: Set[str], dry_run: bool = True) -> bo
         return True
 
 
-def get_attr_defined_errors(project_root: Path) -> Dict[str, Set[str]]:
+def get_attr_defined_errors(project_root: Path) -> dict[str, set[str]]:
     """Get all attr-defined errors from mypy strict mode."""
     result = subprocess.run(
         ["poetry", "run", "mypy", "src/omnibase_core/", "--strict"],
         capture_output=True,
         text=True,
         cwd=project_root,
+        check=False,
     )
 
     # Parse errors to find affected modules and missing attributes
-    affected_modules: Dict[str, Set[str]] = {}
+    affected_modules: dict[str, set[str]] = {}
 
     for line in result.stdout.split("\n"):
         if "[attr-defined]" in line:

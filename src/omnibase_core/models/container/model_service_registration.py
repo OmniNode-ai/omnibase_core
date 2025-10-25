@@ -4,13 +4,12 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
-
 from omnibase_spi.protocols.container import (
     LiteralInjectionScope,
     LiteralServiceLifecycle,
     ServiceHealthStatus,
 )
+from pydantic import BaseModel, Field
 
 from .model_service_metadata import ModelServiceMetadata
 

@@ -27,11 +27,6 @@ Safe Runtime Imports (OK to import at module level):
 import json
 from typing import Any, ClassVar
 
-from pydantic import BaseModel
-
-# Import standard type alias from ONEX common types
-from omnibase_core.models.types.model_onex_common_types import JsonSerializable
-
 # Import protocols from omnibase_spi
 from omnibase_spi.protocols.types import (
     ProtocolModelJsonSerializable as ModelProtocolJsonSerializable,
@@ -39,6 +34,10 @@ from omnibase_spi.protocols.types import (
 from omnibase_spi.protocols.types import (
     ProtocolModelValidatable as ModelProtocolValidatable,
 )
+from pydantic import BaseModel
+
+# Import standard type alias from ONEX common types
+from omnibase_core.models.types.model_onex_common_types import JsonSerializable
 
 ValidatableValue = type("ValidatableValue", (object,), {})
 
