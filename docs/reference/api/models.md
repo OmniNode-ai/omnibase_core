@@ -1,160 +1,436 @@
 # Models API Reference - omnibase_core
 
-**Status**: 🚧 Coming Soon
+**Status**: ✅ Complete
 
 ## Overview
 
-Complete API reference for all ONEX Pydantic models.
+This document provides comprehensive API reference for all Pydantic models in omnibase_core. These models provide type safety, validation, and serialization for the ONEX framework.
 
 ## Core Models
 
-### ModelEventEnvelope
+### Container Models
 
-Event communication envelope for inter-service messaging.
+#### ModelONEXContainer
 
-```python
-class ModelEventEnvelope(BaseModel):
-    """Event envelope for service communication."""
-    event_type: str
-    payload: dict
-    metadata: Optional[dict] = None
-    timestamp: datetime
-    correlation_id: UUID
-```
+**Location**: `omnibase_core.models.container.model_onex_container`
 
-### ModelHealthStatus
-
-Health status reporting for nodes and services.
+**Purpose**: Dependency injection container for service resolution.
 
 ```python
-class ModelHealthStatus(BaseModel):
-    """Health status model."""
-    status: EnumHealthStatus
-    timestamp: datetime
-    details: Optional[dict] = None
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+# Create container
+container = ModelONEXContainer()
+
+# Register services
+container.register_service("MyService", my_service_instance)
+
+# Resolve services
+service = container.get_service("MyService")
 ```
 
-### ModelSemver
+#### Key Methods
 
-Semantic versioning model.
+- `register_service(name: str, service: Any)` - Register a service
+- `get_service(name: str) -> Any` - Resolve service by name
+- `has_service(name: str) -> bool` - Check if service exists
+- `get_all_services() -> Dict[str, Any]` - Get all registered services
+
+### Input/Output Models
+
+#### ModelComputeInput
+
+**Location**: `omnibase_core.models.model_compute_input`
+
+**Purpose**: Standard input model for COMPUTE nodes.
 
 ```python
-class ModelSemver(BaseModel):
-    """Semantic version model."""
-    major: int
-    minor: int
-    patch: int
+from omnibase_core.models.model_compute_input import ModelComputeInput
 
-    def __str__(self) -> str:
-        return f"{self.major}.{self.minor}.{self.patch}"
+input_data = ModelComputeInput(
+    computation_type="calculate",
+    data={"values": [1, 2, 3, 4, 5]},
+    correlation_id="12345"
+)
 ```
 
-## Contract Models
+#### ModelComputeOutput
 
-### ModelContractBase
+**Location**: `omnibase_core.models.model_compute_output`
 
-Base contract for all operations.
+**Purpose**: Standard output model for COMPUTE nodes.
 
 ```python
-class ModelContractBase(BaseModel):
-    """Base contract."""
-    name: str
-    version: str
-    description: Optional[str]
-    node_type: EnumNodeType
+from omnibase_core.models.model_compute_output import ModelComputeOutput
+
+output_data = ModelComputeOutput(
+    result={"sum": 15},
+    success=True,
+    processing_time_ms=2.5,
+    correlation_id="12345"
+)
 ```
 
-### ModelContractEffect
+### Error Models
 
-Contract for EFFECT nodes.
+#### ModelOnexError
+
+**Location**: `omnibase_core.errors.model_onex_error`
+
+**Purpose**: Standard error model for ONEX framework.
 
 ```python
-class ModelContractEffect(ModelContractBase):
-    """EFFECT node contract."""
-    operation_type: str
-    target: str
-    parameters: dict
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+
+error = ModelOnexError(
+    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+    message="Invalid input data",
+    context={"field": "value", "expected": "string"}
+)
 ```
 
-### ModelContractCompute
+#### Key Properties
 
-Contract for COMPUTE nodes.
+- `error_code: EnumCoreErrorCode` - Error classification
+- `message: str` - Human-readable error message
+- `context: Dict[str, Any]` - Additional error context
+- `timestamp: float` - Error timestamp
+- `correlation_id: Optional[str]` - Request correlation ID
+
+### Event Models
+
+#### ModelEventEnvelope
+
+**Location**: `omnibase_core.models.model_event_envelope`
+
+**Purpose**: Event envelope for inter-node communication.
 
 ```python
-class ModelContractCompute(ModelContractBase):
-    """COMPUTE node contract."""
-    input_data: dict
-    cache_config: Optional[ModelCacheConfig] = None
+from omnibase_core.models.model_event_envelope import ModelEventEnvelope
+
+event = ModelEventEnvelope(
+    event_type="computation_completed",
+    payload={"result": "success"},
+    source_node="compute_node_1",
+    target_node="effect_node_1"
+)
 ```
 
-### ModelContractReducer
+### Intent and Action Models
 
-Contract for REDUCER nodes.
+#### ModelIntent
+
+**Location**: `omnibase_core.models.model_intent`
+
+**Purpose**: Intent model for side effect requests.
 
 ```python
-class ModelContractReducer(ModelContractBase):
-    """REDUCER node contract."""
-    state_key: str
-    aggregation_config: dict
+from omnibase_core.models.model_intent import ModelIntent
+from omnibase_core.enums.enum_intent_type import EnumIntentType
+
+intent = ModelIntent(
+    intent_type=EnumIntentType.DATABASE_WRITE,
+    payload={"table": "users", "data": {"name": "John"}},
+    priority="high"
+)
 ```
 
-### ModelContractOrchestrator
+#### ModelAction
 
-Contract for ORCHESTRATOR nodes.
+**Location**: `omnibase_core.models.model_action`
+
+**Purpose**: Action model for state transitions.
 
 ```python
-class ModelContractOrchestrator(ModelContractBase):
-    """ORCHESTRATOR node contract."""
-    workflow_definition: dict
-    execution_mode: str
+from omnibase_core.models.model_action import ModelAction
+from omnibase_core.enums.enum_action_type import EnumActionType
+
+action = ModelAction(
+    action_type=EnumActionType.UPDATE_STATE,
+    payload={"field": "status", "value": "completed"},
+    timestamp=time.time()
+)
 ```
 
-## Container Models
+### Cache Models
 
-### ModelONEXContainer
+#### ModelComputeCache
 
-Protocol-driven dependency injection container.
+**Location**: `omnibase_core.models.infrastructure.model_compute_cache`
+
+**Purpose**: LRU cache for computation results.
 
 ```python
-class ModelONEXContainer(BaseModel):
-    """DI container."""
+from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
 
-    def get_service(self, protocol_name: str) -> Any:
-        """Get service by protocol."""
-        pass
+cache = ModelComputeCache(max_size=1000, default_ttl_minutes=30)
 
-    def register_service(
-        self,
-        protocol_name: str,
-        implementation: Any
-    ) -> None:
-        """Register service."""
-        pass
+# Store result
+cache.put("key", {"result": "computed"}, ttl_minutes=60)
+
+# Retrieve result
+result = cache.get("key")
+
+# Check if exists
+exists = cache.contains("key")
 ```
 
-## Error Models
+#### Key Methods
 
-### ModelOnexError
+- `put(key: str, value: Any, ttl_minutes: Optional[int])` - Store value
+- `get(key: str) -> Optional[Any]` - Retrieve value
+- `contains(key: str) -> bool` - Check existence
+- `clear()` - Clear all entries
+- `get_stats() -> Dict[str, Any]` - Get cache statistics
 
-Structured error model.
+### Circuit Breaker Models
+
+#### ModelCircuitBreaker
+
+**Location**: `omnibase_core.models.model_circuit_breaker`
+
+**Purpose**: Circuit breaker for failure handling.
 
 ```python
-class ModelOnexError(BaseModel):
-    """Error model."""
-    message: str
-    error_code: EnumErrorCode
-    context: Optional[dict] = None
-    timestamp: datetime
+from omnibase_core.models.model_circuit_breaker import ModelCircuitBreaker
+
+breaker = ModelCircuitBreaker(
+    failure_threshold=5,
+    recovery_timeout=60
+)
+
+# Check if can execute
+if breaker.can_execute():
+    try:
+        result = await risky_operation()
+        breaker.record_success()
+    except Exception as e:
+        breaker.record_failure()
+        raise
+else:
+    raise Exception("Circuit breaker is open")
 ```
 
-## Next Steps
+#### Key Methods
 
-- [Nodes API](nodes.md) - Node reference
+- `can_execute() -> bool` - Check if operation can proceed
+- `record_success()` - Record successful operation
+- `record_failure()` - Record failed operation
+- `get_state() -> EnumCircuitBreakerState` - Get current state
+
+### Transaction Models
+
+#### ModelEffectTransaction
+
+**Location**: `omnibase_core.models.model_effect_transaction`
+
+**Purpose**: Transaction management for side effects.
+
+```python
+from omnibase_core.models.model_effect_transaction import ModelEffectTransaction
+
+async with ModelEffectTransaction() as transaction:
+    # Add operations to transaction
+    transaction.add_operation("database_write", {"table": "users"})
+    transaction.add_operation("file_write", {"path": "/tmp/data.json"})
+
+    # Execute operations
+    await transaction.execute()
+
+    # Transaction commits automatically on success
+    # or rolls back on exception
+```
+
+## Validation Patterns
+
+### Input Validation
+
+```python
+from pydantic import BaseModel, Field, validator
+from typing import List, Optional
+
+class MyInputModel(BaseModel):
+    """Example input model with validation."""
+
+    name: str = Field(description="User name", min_length=1, max_length=100)
+    age: int = Field(description="User age", ge=0, le=150)
+    email: str = Field(description="Email address", regex=r'^[\w\.-]+@[\w\.-]+\.\w+$')
+    tags: List[str] = Field(description="User tags", max_items=10)
+
+    @validator('name')
+    def validate_name(cls, v):
+        """Custom name validation."""
+        if not v.strip():
+            raise ValueError("Name cannot be empty")
+        return v.strip()
+
+    @validator('tags')
+    def validate_tags(cls, v):
+        """Custom tags validation."""
+        if len(set(v)) != len(v):
+            raise ValueError("Tags must be unique")
+        return v
+```
+
+### Output Validation
+
+```python
+class MyOutputModel(BaseModel):
+    """Example output model with validation."""
+
+    success: bool = Field(description="Operation success status")
+    result: Optional[Dict[str, Any]] = Field(description="Operation result")
+    error_message: Optional[str] = Field(description="Error message if failed")
+    processing_time_ms: float = Field(description="Processing time", ge=0)
+
+    @validator('error_message')
+    def validate_error_message(cls, v, values):
+        """Validate error message consistency."""
+        success = values.get('success', True)
+        if success and v is not None:
+            raise ValueError("Error message should be None when success is True")
+        if not success and v is None:
+            raise ValueError("Error message required when success is False")
+        return v
+```
+
+## Serialization Patterns
+
+### JSON Serialization
+
+```python
+# Convert to JSON
+json_data = model.json()
+
+# Convert from JSON
+model = MyModel.parse_raw(json_data)
+
+# Convert to dict
+dict_data = model.dict()
+
+# Convert from dict
+model = MyModel(**dict_data)
+```
+
+### Custom Serialization
+
+```python
+from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import Any
+
+class CustomModel(BaseModel):
+    """Model with custom serialization."""
+
+    timestamp: datetime = Field(default_factory=datetime.now)
+    data: Dict[str, Any] = Field(default_factory=dict)
+
+    class Config:
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+
+    def to_api_dict(self) -> Dict[str, Any]:
+        """Custom serialization for API responses."""
+        return {
+            "timestamp": self.timestamp.isoformat(),
+            "data": self.data,
+            "version": "1.0"
+        }
+```
+
+## Error Handling Patterns
+
+### Validation Error Handling
+
+```python
+from pydantic import ValidationError
+
+try:
+    model = MyModel(**input_data)
+except ValidationError as e:
+    # Handle validation errors
+    error_details = []
+    for error in e.errors():
+        error_details.append({
+            "field": ".".join(str(x) for x in error["loc"]),
+            "message": error["msg"],
+            "type": error["type"]
+        })
+
+    raise ModelOnexError(
+        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        message="Input validation failed",
+        context={"errors": error_details}
+    )
+```
+
+### Model Error Conversion
+
+```python
+def convert_to_onex_error(error: Exception, context: Dict[str, Any]) -> ModelOnexError:
+    """Convert any exception to ModelOnexError."""
+
+    if isinstance(error, ValidationError):
+        return ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Validation failed: {str(error)}",
+            context=context
+        )
+    elif isinstance(error, TimeoutError):
+        return ModelOnexError(
+            error_code=EnumCoreErrorCode.TIMEOUT_ERROR,
+            message=f"Operation timed out: {str(error)}",
+            context=context
+        )
+    else:
+        return ModelOnexError(
+            error_code=EnumCoreErrorCode.PROCESSING_ERROR,
+            message=f"Processing failed: {str(error)}",
+            context=context
+        )
+```
+
+## Performance Considerations
+
+### Model Caching
+
+```python
+from functools import lru_cache
+
+@lru_cache(maxsize=128)
+def create_model_from_dict(model_class: type, data: Dict[str, Any]) -> BaseModel:
+    """Cache model creation for performance."""
+    return model_class(**data)
+```
+
+### Lazy Loading
+
+```python
+from typing import Optional
+
+class LazyModel(BaseModel):
+    """Model with lazy-loaded fields."""
+
+    _cached_data: Optional[Dict[str, Any]] = None
+
+    @property
+    def expensive_data(self) -> Dict[str, Any]:
+        """Lazy-loaded expensive data."""
+        if self._cached_data is None:
+            self._cached_data = self._load_expensive_data()
+        return self._cached_data
+
+    def _load_expensive_data(self) -> Dict[str, Any]:
+        """Load expensive data."""
+        # Expensive operation here
+        return {"loaded": "data"}
+```
+
+## Related Documentation
+
+- [Nodes API](nodes.md) - Node class reference
 - [Enums API](enums.md) - Enumeration reference
-- [Contract System](../../architecture/contract-system.md)
-
----
-
-**Related Documentation**:
-- [Pydantic Documentation](https://docs.pydantic.dev/)
-- [Type System](../../architecture/type-system.md)
+- [Error Handling](../../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error handling patterns
+- [Node Building Guide](../../guides/node-building/README.md) - Usage examples

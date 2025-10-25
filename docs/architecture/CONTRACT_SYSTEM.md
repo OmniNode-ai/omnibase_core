@@ -1,6 +1,6 @@
 # Contract System - omnibase_core
 
-**Status**: 🚧 Coming Soon
+**Status**: ✅ Complete
 
 ## Overview
 
@@ -113,7 +113,7 @@ class MyCustomContract(ModelContractCompute):
 ## Next Steps
 
 - [Subcontract Architecture](SUBCONTRACT_ARCHITECTURE.md) - Detailed subcontract design
-- [Type System](type-system.md) - Type conventions
+- [Type System](TYPE_SYSTEM.md) - Type conventions
 - [Node Building Guide](../guides/node-building/README.md)
 
 ---

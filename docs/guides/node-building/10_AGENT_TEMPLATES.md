@@ -237,10 +237,10 @@ STEP 4: Integrate into your project
 While agent-specific templates are being developed, AI agents can use:
 
 ### Existing Templates (Human-Oriented)
-- [COMPUTE Node Template](../../reference/templates/COMPUTE_NODE_TEMPLATE.md)
-- [EFFECT Node Template](../../reference/templates/EFFECT_NODE_TEMPLATE.md)
-- [REDUCER Node Template](../../reference/templates/REDUCER_NODE_TEMPLATE.md)
-- [ORCHESTRATOR Node Template](../../reference/templates/ORCHESTRATOR_NODE_TEMPLATE.md)
+- [COMPUTE Node Template](../../guides/templates/COMPUTE_NODE_TEMPLATE.md)
+- [EFFECT Node Template](../../guides/templates/EFFECT_NODE_TEMPLATE.md)
+- [REDUCER Node Template](../../guides/templates/REDUCER_NODE_TEMPLATE.md)
+- [ORCHESTRATOR Node Template](../../guides/templates/ORCHESTRATOR_NODE_TEMPLATE.md)
 
 ### Parsing Strategy for Existing Templates
 ```python
@@ -322,8 +322,8 @@ agent_workflow:
 
 - [README](README.md) - Node Building Guide overview
 - [Node Types](02_NODE_TYPES.md) - Understanding node type selection
-- [Patterns Catalog](07-patterns-catalog.md) - Common patterns (coming soon)
-- [Testing Guide](08-testing-guide.md) - Testing strategies (coming soon)
+- [Patterns Catalog](07_PATTERNS_CATALOG.md) - Common patterns
+- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Testing strategies
 
 ---
 

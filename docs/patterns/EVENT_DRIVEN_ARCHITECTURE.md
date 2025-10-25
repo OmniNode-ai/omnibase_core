@@ -224,4 +224,4 @@ async def test_event_publishing():
 
 **Related Documentation**:
 - [ONEX Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
-- [Testing Guide](../guides/testing-guide.md)
+- [Testing Guide](../guides/TESTING_GUIDE.md)

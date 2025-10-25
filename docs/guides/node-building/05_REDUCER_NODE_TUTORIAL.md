@@ -1388,7 +1388,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
 
 ### Further Reading
 
-- [Testing Intent Publisher](09-testing-intent-publisher.md) - Comprehensive testing guide
+- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Comprehensive testing guide
 - [MODEL_INTENT_ARCHITECTURE.md](../../architecture/MODEL_INTENT_ARCHITECTURE.md) - Intent pattern details
 - [MixinIntentPublisher Implementation](../../../src/omnibase_core/mixins/mixin_intent_publisher.py)
 
@@ -1452,8 +1452,8 @@ async def process(self, input_data):
 
 **Continue your journey**:
 - [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Master workflow coordination
-- [Intent Routing Patterns](07-intent-routing-patterns.md) - Advanced Intent handling
-- [Testing Pure FSM Nodes](08-testing-pure-fsm.md) - Testing strategies
+- [Patterns Catalog](07_PATTERNS_CATALOG.md) - Common patterns and advanced Intent handling
+- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Testing strategies
 
 **Challenge**: Build an Effect node that executes Intents with retry logic and circuit breakers!
 

@@ -695,11 +695,11 @@ class TestMyMetricsReducer:
 - **Pattern Guide**: [MODEL_INTENT_ARCHITECTURE.md](../../architecture/MODEL_INTENT_ARCHITECTURE.md)
 - **Implementation**: [mixin_intent_publisher.py](../../../src/omnibase_core/mixins/mixin_intent_publisher.py)
 - **Fixtures**: [fixture_intent_publisher.py](../../../tests/fixtures/fixture_intent_publisher.py)
-- **General Testing**: [testing-guide.md](../testing-guide.md)
+- **General Testing**: [Testing Guide](../TESTING_GUIDE.md)
 
 ---
 
 **Next Steps**:
-- Review [Testing Pure FSM](08-testing-pure-fsm.md) for REDUCER-specific patterns
-- See [Intent Routing Patterns](07-intent-routing-patterns.md) for usage examples
+- Review [Patterns Catalog](07_PATTERNS_CATALOG.md) for REDUCER-specific patterns and usage examples
 - Check [Error Handling Best Practices](../../conventions/ERROR_HANDLING_BEST_PRACTICES.md) for error scenarios
+- See [Common Pitfalls](08_COMMON_PITFALLS.md) for anti-patterns to avoid

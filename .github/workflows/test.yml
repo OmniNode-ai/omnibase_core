@@ -297,10 +297,34 @@ jobs:
     # - name: Run mypy type checking
     #   run: poetry run mypy src/omnibase_core
 
+  docs-validation:
+    name: Documentation Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Validate documentation links
+        run: |
+          python3 scripts/validate-doc-links.py --fix-case
+
+      - name: Documentation validation summary
+        if: always()
+        run: |
+          echo "## Documentation Validation" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All documentation links validated" >> $GITHUB_STEP_SUMMARY
+
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [smoke-test, test-parallel, lint]
+    needs: [smoke-test, test-parallel, lint, docs-validation]
     if: always()
 
     steps:
@@ -309,19 +333,23 @@ jobs:
           smoke="${{ needs.smoke-test.result }}"
           parallel="${{ needs.test-parallel.result }}"
           lint="${{ needs.lint.result }}"
+          docs="${{ needs.docs-validation.result }}"
 
           if [[ "$smoke" == "success" ]] && \
              [[ "$parallel" == "success" ]] && \
-             [[ "$lint" == "success" ]]; then
+             [[ "$lint" == "success" ]] && \
+             [[ "$docs" == "success" ]]; then
             echo "✅ All tests passed successfully"
             echo "Smoke Tests: ✅ Passed"
             echo "Parallel Tests (12 splits): ✅ Passed"
             echo "Code Quality: ✅ Passed"
+            echo "Documentation: ✅ Passed"
             exit 0
           else
             echo "❌ Tests failed"
             echo "Smoke Tests: $smoke"
             echo "Parallel Tests: $parallel"
             echo "Lint: $lint"
+            echo "Documentation: $docs"
             exit 1
           fi

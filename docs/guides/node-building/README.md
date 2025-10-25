@@ -35,10 +35,10 @@ Each tutorial takes you from zero to a working, tested node:
 
 ### 3. Advanced Topics
 
-- [07. Patterns Catalog](07-patterns-catalog.md) - Common patterns with code
-- [08. Testing Guide](08-testing-guide.md) - Testing each node type
-- [09. Common Pitfalls](09-common-pitfalls.md) - What to avoid
-- [10. Agent Templates](10-agent-templates.md) - Agent-friendly structured templates
+- [07. Patterns Catalog](07_PATTERNS_CATALOG.md) - Common patterns with code
+- [08. Common Pitfalls](08_COMMON_PITFALLS.md) - What to avoid
+- [09. Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Testing with MixinIntentPublisher
+- [10. Agent Templates](10_AGENT_TEMPLATES.md) - Agent-friendly structured templates
 
 ## Quick Start
 
@@ -51,9 +51,9 @@ Each tutorial takes you from zero to a working, tested node:
 
 **Built nodes before?** Jump to:
 
-- [Patterns Catalog](07-patterns-catalog.md) for reusable patterns
-- [Testing Guide](08-testing-guide.md) for testing strategies
-- [Agent Templates](10-agent-templates.md) for structured templates
+- [Patterns Catalog](07_PATTERNS_CATALOG.md) for reusable patterns
+- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) for testing strategies
+- [Agent Templates](10_AGENT_TEMPLATES.md) for structured templates
 
 ## For AI Agents
 
@@ -65,7 +65,7 @@ This guide is designed to be agent-friendly with:
 - ✅ **Validation checkpoints**: Verify success at each stage
 - ✅ **Template library**: Reusable structured templates
 
-See [Agent Templates](10-agent-templates.md) for specialized agent-focused content.
+See [Agent Templates](10_AGENT_TEMPLATES.md) for specialized agent-focused content.
 
 ## Prerequisites
 
@@ -116,7 +116,7 @@ poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ om
    - Practice: Build a simple calculator node
 
 3. **Testing** (30 min)
-   - Read: [Testing Guide](08-testing-guide.md)
+   - Read: [Testing Guide](../TESTING_GUIDE.md)
    - Practice: Test your calculator node
 
 4. **Second Node** (1-2 hours)
@@ -126,7 +126,7 @@ poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ om
 ### Intermediate Path (Some Experience)
 
 1. **Review Patterns** (30 min)
-   - Read: [Patterns Catalog](07-patterns-catalog.md)
+   - Read: [Patterns Catalog](07_PATTERNS_CATALOG.md)
    - Identify patterns for your use case
 
 2. **Build Complex Node** (2-4 hours)
@@ -134,7 +134,7 @@ poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ om
    - Practice: Build workflow coordinator
 
 3. **Avoid Pitfalls** (30 min)
-   - Read: [Common Pitfalls](09-common-pitfalls.md)
+   - Read: [Common Pitfalls](08_COMMON_PITFALLS.md)
    - Review your code for anti-patterns
 
 ### Advanced Path (Experienced Developer)
@@ -191,9 +191,9 @@ your_project/
 ## Getting Help
 
 - **Documentation Issues**: File an issue in the repository
-- **Pattern Questions**: Check [Patterns Catalog](07-patterns-catalog.md)
+- **Pattern Questions**: Check [Patterns Catalog](07_PATTERNS_CATALOG.md)
 - **Code Examples**: See `src/omnibase_core/nodes/` for real implementations
-- **Testing Help**: See [Testing Guide](08-testing-guide.md)
+- **Testing Help**: See [Testing Guide](../TESTING_GUIDE.md)
 
 ## Contributing
 
@@ -210,7 +210,7 @@ Ready to start building? Choose your path:
 
 - **New to nodes?** → [What is a Node?](01_WHAT_IS_A_NODE.md)
 - **Know the basics?** → [COMPUTE Node Tutorial](03_COMPUTE_NODE_TUTORIAL.md)
-- **Need patterns?** → [Patterns Catalog](07-patterns-catalog.md)
-- **Ready to test?** → [Testing Guide](08-testing-guide.md)
+- **Need patterns?** → [Patterns Catalog](07_PATTERNS_CATALOG.md)
+- **Ready to test?** → [Testing Guide](../TESTING_GUIDE.md)
 
 Happy node building! 🚀

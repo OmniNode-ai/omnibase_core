@@ -1,6 +1,6 @@
 # Type System - omnibase_core
 
-**Status**: 🚧 Coming Soon
+**Status**: ✅ Complete
 
 ## Overview
 
@@ -199,7 +199,7 @@ def is_string_list(val: list) -> TypeGuard[List[str]]:
 
 ## Next Steps
 
-- [Contract System](contract-system.md) - Contract architecture
+- [Contract System](CONTRACT_SYSTEM.md) - Contract architecture
 - [Architecture Overview](overview.md) - System design
 - [Node Building Guide](../guides/node-building/README.md)
 

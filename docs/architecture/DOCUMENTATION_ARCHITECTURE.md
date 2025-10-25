@@ -25,9 +25,9 @@ docs/
 │
 ├── getting-started/                  # New developer onboarding
 │   ├── README.md                     # Getting started overview
-│   ├── installation.md               # Environment setup with Poetry
-│   ├── quick-start.md                # 5-minute first steps
-│   └── first-node.md                 # Build your first node
+│   ├── INSTALLATION.md               # Environment setup with Poetry
+│   ├── QUICK_START.md                # 5-minute first steps
+│   └── FIRST_NODE.md                 # Build your first node
 │
 ├── guides/                           # Developer guides and tutorials
 │   ├── node-building/                # **CRITICAL PRIORITY**
@@ -39,18 +39,18 @@ docs/
 │   │   ├── 05_REDUCER_NODE_TUTORIAL.md   # Step-by-step REDUCER
 │   │   ├── 06_ORCHESTRATOR_NODE_TUTORIAL.md  # Step-by-step ORCHESTRATOR
 │   │   ├── 07-patterns-catalog.md    # Common patterns library
-│   │   ├── 08-testing-guide.md       # Testing each node type
+│   │   ├── 08-TESTING_GUIDE.md       # Testing each node type
 │   │   ├── 09-common-pitfalls.md     # What to avoid
 │   │   └── 10-agent-templates.md     # Agent-friendly structured templates
 │   ├── development-workflow.md       # Development process
-│   ├── testing-guide.md              # Comprehensive testing
+│   ├── TESTING_GUIDE.md              # Comprehensive testing
 │   └── debugging-guide.md            # Debugging strategies
 │
 ├── architecture/                     # System architecture
 │   ├── overview.md                   # Architecture overview
 │   ├── four-node-pattern.md          # Link to ONEX_FOUR_NODE_ARCHITECTURE.md
 │   ├── dependency-injection.md       # ModelONEXContainer patterns
-│   ├── contract-system.md            # Contract architecture
+│   ├── CONTRACT_SYSTEM.md            # Contract architecture
 │   └── type-system.md                # Typing patterns
 │
 ├── reference/                        # Reference materials (existing)
@@ -88,9 +88,9 @@ docs/
 **Target Audience**: Developers new to omnibase_core
 **Format**: Tutorial-style with code examples
 **Key Documents**:
-- installation.md - Environment setup
-- quick-start.md - First 5 minutes
-- first-node.md - Build a simple node
+- INSTALLATION.md - Environment setup
+- QUICK_START.md - First 5 minutes
+- FIRST_NODE.md - Build a simple node
 
 ### 2. Guides (Progressive Learning)
 
@@ -99,7 +99,7 @@ docs/
 **Key Documents**:
 - node-building/* - **CRITICAL PRIORITY** comprehensive node guide
 - development-workflow.md - Development process
-- testing-guide.md - Testing strategies
+- TESTING_GUIDE.md - Testing strategies
 
 ### 3. Architecture (Understanding the System)
 
@@ -108,7 +108,7 @@ docs/
 **Key Documents**:
 - four-node-pattern.md - Core pattern
 - dependency-injection.md - DI patterns
-- contract-system.md - Contract architecture
+- CONTRACT_SYSTEM.md - Contract architecture
 
 ### 4. Reference (Lookup and Templates)
 
@@ -140,7 +140,7 @@ guides/node-building/
 ├── 05_REDUCER_NODE_TUTORIAL.md         # Step-by-step REDUCER
 ├── 06_ORCHESTRATOR_NODE_TUTORIAL.md    # Step-by-step ORCHESTRATOR
 ├── 07-patterns-catalog.md              # Common patterns with code
-├── 08-testing-guide.md                 # Testing each node type
+├── 08-TESTING_GUIDE.md                 # Testing each node type
 ├── 09-common-pitfalls.md               # What to avoid
 └── 10-agent-templates.md               # Agent-friendly templates
 ```
@@ -257,7 +257,7 @@ Before publishing documentation:
 ## Related Documents
 
 - [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md) - Core architecture
-- [Threading Guide](../reference/THREADING.md) - Thread safety
+- [Threading Guide](../guides/THREADING.md) - Thread safety
 - [Error Handling](../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error patterns
 - [API Documentation](../reference/API_DOCUMENTATION.md) - API reference
 

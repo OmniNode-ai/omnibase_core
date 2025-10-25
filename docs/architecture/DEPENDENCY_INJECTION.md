@@ -1,6 +1,6 @@
 # Dependency Injection - omnibase_core
 
-**Status**: 🚧 Coming Soon
+**Status**: ✅ Complete
 
 ## Overview
 
@@ -114,6 +114,6 @@ test_container.register_service("ProtocolLogger", MockLogger())
 ---
 
 **Related Documentation**:
-- [Architecture Overview](overview.md)
-- [Type System](type-system.md)
-- [Testing Guide](../guides/testing-guide.md)
+- [Architecture Overview](OVERVIEW.md)
+- [Type System](TYPE_SYSTEM.md)
+- [Testing Guide](../guides/TESTING_GUIDE.md)
