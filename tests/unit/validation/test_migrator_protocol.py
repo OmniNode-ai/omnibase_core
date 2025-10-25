@@ -19,6 +19,8 @@ from typing import TYPE_CHECKING
 import pytest
 
 from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )
@@ -846,13 +848,9 @@ class TestProtocol(Protocol):
             if platform.system() != "Windows":
                 Path(unreadable_file).chmod(0o644)
 
-    @pytest.mark.flaky(reruns=3, reruns_delay=1)
     def test_rollback_migration_with_error(self, tmp_path: Path) -> None:
         """Test rollback handling when file deletion fails."""
         import uuid
-
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         migrator = ProtocolMigrator()
 

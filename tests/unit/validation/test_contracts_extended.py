@@ -20,6 +20,8 @@ from typing import TYPE_CHECKING
 import pytest
 import yaml
 
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.contracts import (
     MAX_FILE_SIZE,
     VALIDATION_TIMEOUT,
@@ -764,9 +766,6 @@ class TestTimeoutHandler:
         to prevent flaky failures in parallel test execution.
         """
         import signal
-
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         # Verify no alarms are pending before we start
         remaining = signal.alarm(0)

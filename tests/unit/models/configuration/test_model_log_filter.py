@@ -3,6 +3,9 @@
 import pytest
 
 from omnibase_core.models.configuration.model_log_filter import ModelLogFilter
+from omnibase_core.models.configuration.model_log_filter_config import (
+    ModelLogFilterConfig,
+)
 
 
 class TestModelLogFilterBasics:
@@ -68,15 +71,18 @@ class TestModelLogFilterMatching:
         assert filter._matches_keywords("ERROR occurred") is True
         assert filter._matches_keywords("error occurred") is True
 
-    def test_apply_filter_exclude(self):
+    def test_apply_filter_exclude(self, monkeypatch):
         """Test apply_filter with exclude action.
 
         Note: Current implementation doesn't actually use the 'action' field.
         This test verifies that matching messages are processed correctly.
         When action support is implemented, this test should be updated.
         """
-        from omnibase_core.models.configuration.model_log_filter_config import (
-            ModelLogFilterConfig,
+        # Mock random.random() to return deterministic value for should_sample()
+        # Must patch in the module where random is actually imported and used
+        monkeypatch.setattr(
+            "omnibase_core.models.configuration.model_log_filter_config.random.random",
+            lambda: 0.5,
         )
 
         # Create filter with deterministic sampling (sample_rate=1.0)
@@ -95,7 +101,14 @@ class TestModelLogFilterMatching:
         assert result["message"] == "debug info"
         assert result["level"] == 10
 
-    def test_apply_filter_include(self):
+    def test_apply_filter_include(self, monkeypatch):
+        # Mock random.random() to return deterministic value for should_sample()
+        # Must patch in the module where random is actually imported and used
+        monkeypatch.setattr(
+            "omnibase_core.models.configuration.model_log_filter_config.random.random",
+            lambda: 0.5,
+        )
+
         filter = ModelLogFilter(
             filter_name="test",
             filter_type="keyword",
