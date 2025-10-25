@@ -215,7 +215,7 @@ class TestExecuteWithModeSelection:
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                result = tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
+                tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
 
         assert tool._execution_mode == ExecutionMode.WORKFLOW
         assert tool.workflow_created
@@ -260,7 +260,7 @@ class TestExecuteWithModeSelection:
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                result = tool.execute(input_state, mode=ExecutionMode.ORCHESTRATED)
+                tool.execute(input_state, mode=ExecutionMode.ORCHESTRATED)
 
         # Orchestrated falls back to workflow mode
         assert tool._execution_mode == ExecutionMode.ORCHESTRATED
@@ -387,7 +387,7 @@ class TestExecuteWorkflow:
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                result = tool._execute_workflow(input_state)
+                tool._execute_workflow(input_state)
 
         assert tool._workflow_metrics is not None
         assert tool._workflow_metrics.status == EnumWorkflowStatus.COMPLETED
@@ -413,7 +413,7 @@ class TestExecuteOrchestrated:
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                result = tool._execute_orchestrated(input_state)
+                tool._execute_orchestrated(input_state)
 
         # Should execute workflow
         assert tool.workflow_created
@@ -618,7 +618,7 @@ class TestPropertiesAccessors:
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                result = tool._execute_workflow(input_state)
+                tool._execute_workflow(input_state)
 
         assert tool.workflow_metrics is not None
         assert tool.workflow_metrics.status == EnumWorkflowStatus.COMPLETED
@@ -703,7 +703,7 @@ class TestEdgeCases:
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                result2 = tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
+                tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
                 assert tool._execution_mode == ExecutionMode.WORKFLOW
 
         # Verify event loop was properly closed

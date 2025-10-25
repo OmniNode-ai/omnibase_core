@@ -71,14 +71,14 @@ jobs:
             -x \
             --tb=short
 
-  # Parallel test execution - split into 10 groups for speed and memory management
+  # Parallel test execution - split into 12 groups for speed and memory management
   # Split strategy rationale:
-  #   - 10,987 total tests ÷ 10 splits = ~1,099 tests/split
+  #   - 10,987 total tests ÷ 12 splits = ~916 tests/split
   #   - Target: 3-5 minutes per split (measured: 3-4 min avg)
-  #   - 10x parallelization speedup vs sequential execution
-  #   - More splits would add overhead without significant benefit
+  #   - 12x parallelization speedup vs sequential execution
+  #   - Increased from 10 to 12 splits to reduce resource exhaustion in split 6
   test-parallel:
-    name: Tests (Split ${{ matrix.split }}/10)
+    name: Tests (Split ${{ matrix.split }}/12)
     needs: smoke-test
     runs-on: ubuntu-latest
     # Timeout rationale: 25 minutes provides adequate buffer
@@ -89,7 +89,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
     steps:
       - name: Checkout code
@@ -139,10 +139,10 @@ jobs:
             exit 1
           }
 
-      - name: Run test split ${{ matrix.split }}/10
+      - name: Run test split ${{ matrix.split }}/12
         run: |
           poetry run pytest tests/ \
-            --splits 10 \
+            --splits 12 \
             --group ${{ matrix.split }} \
             -n auto \
             --timeout=60 \
@@ -314,7 +314,7 @@ jobs:
              [[ "$lint" == "success" ]]; then
             echo "✅ All tests passed successfully"
             echo "Smoke Tests: ✅ Passed"
-            echo "Parallel Tests (10 splits): ✅ Passed"
+            echo "Parallel Tests (12 splits): ✅ Passed"
             echo "Code Quality: ✅ Passed"
             exit 0
           else

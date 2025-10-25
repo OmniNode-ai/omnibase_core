@@ -312,7 +312,7 @@ def mock_event_loop() -> Generator[MagicMock, None, None]:
         import warnings
 
         warnings.warn(
-            f"mock_event_loop was not closed in test. "
+            "mock_event_loop was not closed in test. "
             "Always call mock_loop.close.assert_called_once() to verify cleanup.",
             RuntimeWarning,
             stacklevel=2,
