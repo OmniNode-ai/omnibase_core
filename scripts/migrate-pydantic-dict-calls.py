@@ -8,7 +8,6 @@ all existing functionality and avoiding breaking changes.
 
 import re
 from pathlib import Path
-from typing import List, Tuple
 
 
 class PydanticDictMigrator:

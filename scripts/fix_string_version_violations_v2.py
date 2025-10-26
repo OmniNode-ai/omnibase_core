@@ -11,7 +11,6 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import List, Set, Tuple
 
 
 class ComprehensiveStringVersionFixer:
@@ -205,7 +204,7 @@ def main():
         if fix_violations_in_file(file_path):
             fixed_count += 1
         else:
-            print("ℹ️  No changes needed")
+            print("INFO: No changes needed")
             skipped_count += 1
 
     print(f"\n{'='*60}")

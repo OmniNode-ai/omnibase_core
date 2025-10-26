@@ -14,23 +14,6 @@ from omnibase_core.primitives.model_semver import ModelSemVer
 __all__ = [
     "ModelNodeConfiguration",
     "ModelNodeInformation",
-    "author",
-    "capabilities",
-    "configuration",
-    "created_at",
-    "dependencies",
-    "description",
-    "from_dict",
-    "health",
-    "node_id",
-    "node_name",
-    "node_type",
-    "node_version",
-    "normalized_data",
-    "performance_metrics",
-    "status",
-    "supported_operations",
-    "updated_at",
 ]
 
 

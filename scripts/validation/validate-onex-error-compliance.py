@@ -20,7 +20,6 @@ Exceptions allowed:
 import ast
 import sys
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
 
 
 class OnexErrorComplianceChecker:

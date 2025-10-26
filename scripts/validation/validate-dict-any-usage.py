@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ONEX Dict[str, Any] Anti-Pattern Detection
+ONEX dict[str, Any] Anti-Pattern Detection
 
 This script detects usage of dict[str, Any] anti-patterns in the codebase
 and enforces strong typing standards.
@@ -20,7 +20,6 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 
 class DictAnyDetector(ast.NodeVisitor):
@@ -89,7 +88,7 @@ def validate_dict_any_usage(src_dirs: list[str], max_violations: int = 0) -> boo
     Validate dict[str, Any] usage across source directories.
 
     Args:
-        src_dirs: List of source directories to check
+        src_dirs: list of source directories to check
         max_violations: Maximum allowed violations (default: 0)
 
     Returns:
@@ -127,7 +126,7 @@ def validate_dict_any_usage(src_dirs: list[str], max_violations: int = 0) -> boo
                 for line_num, message in violations:
                     print(f"   Line {line_num}: {message}")
 
-    print("\n📊 Dict[str, Any] Validation Summary:")
+    print("\n📊 dict[str, Any] Validation Summary:")
     print(
         f"   • Files checked: {len(list(Path(src_dirs[0]).rglob('*.py'))) if src_dirs else 0}"
     )
@@ -136,10 +135,10 @@ def validate_dict_any_usage(src_dirs: list[str], max_violations: int = 0) -> boo
     print(f"   • Max allowed: {max_violations}")
 
     if total_violations <= max_violations:
-        print("✅ Dict[str, Any] validation PASSED")
+        print("✅ dict[str, Any] validation PASSED")
         return True
     else:
-        print("❌ Dict[str, Any] validation FAILED")
+        print("❌ dict[str, Any] validation FAILED")
         print("\n🔧 How to fix:")
         print("   1. Replace dict[str, Any] with specific typed models")
         print("   2. Use TypedDict for structured dictionaries")

@@ -8,7 +8,6 @@ This script applies targeted fixes based on the error analysis.
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, Set, Tuple
 
 # Root directory
 ROOT_DIR = Path("/Volumes/PRO-G40/Code/omnibase_core")

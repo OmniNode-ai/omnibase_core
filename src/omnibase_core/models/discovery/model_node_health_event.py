@@ -3,17 +3,6 @@ from pydantic import Field
 __all__ = [
     "ModelHealthMetrics",
     "ModelNodeHealthEvent",
-    "cpu_usage_percent",
-    "custom_metrics",
-    "error_rate",
-    "health_check_duration_ms",
-    "health_check_url",
-    "last_health_check",
-    "memory_usage_percent",
-    "request_count",
-    "response_time_ms",
-    "status",
-    "uptime_seconds",
 ]
 
 """

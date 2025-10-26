@@ -14,6 +14,7 @@ import argparse
 import json
 import re
 import subprocess
+import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -271,7 +272,7 @@ def main():
 
     # Get error lines
     if args.no_run_mypy:
-        cache_file = Path("/tmp/mypy_call_arg_errors.txt")
+        cache_file = Path(tempfile.gettempdir()) / "mypy_call_arg_errors.txt"
         if not cache_file.exists():
             print("Error: No cached errors found. Run without --no-run-mypy first.")
             return 1

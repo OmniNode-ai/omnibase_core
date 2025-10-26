@@ -6,7 +6,6 @@ Fix semi-redundant to_dict() methods by removing them and updating callers.
 import os
 import re
 from pathlib import Path
-from typing import List, Tuple
 
 # List of semi-redundant methods from our analysis
 SEMI_REDUNDANT_FILES = [
@@ -120,12 +119,12 @@ def analyze_to_dict_method(content: str, start_line: int, end_line: int) -> dict
     is_simple_return = (
         len(
             [
-                l
-                for l in method_lines
-                if l.strip()
-                and not l.strip().startswith('"""')
-                and not l.strip().startswith("#")
-                and "def to_dict" not in l
+                line
+                for line in method_lines
+                if line.strip()
+                and not line.strip().startswith('"""')
+                and not line.strip().startswith("#")
+                and "def to_dict" not in line
             ]
         )
         <= 1

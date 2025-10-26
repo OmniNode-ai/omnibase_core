@@ -105,4 +105,4 @@ class _BaseModelONEXContainer(containers.DeclarativeContainer):
     secret_manager = providers.Singleton(lambda: _create_secret_manager())
 
 
-__all__ = ["_BaseModelONEXContainer"]
+__all__ = []

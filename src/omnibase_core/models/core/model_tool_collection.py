@@ -31,28 +31,7 @@ from omnibase_core.models.core.model_metadata_tool_collection import (
 
 # Ensure all original functionality is available
 __all__ = [
-    "LegacyToolCollection",
-    "MetadataToolAnalytics",
-    "MetadataToolCollection",
-    "MetadataToolComplexity",
-    "MetadataToolInfo",
-    "MetadataToolStatus",
-    # Enhanced enums and classes for MetadataToolCollection
-    "MetadataToolType",
-    "MetadataToolUsageMetrics",
     "ModelMetadataToolCollection",
-    # Original models (enhanced)
-    "ModelToolCollection",
-    "ToolCapabilityLevel",
-    "ToolCategory",
-    # Legacy aliases (preserved)
-    "ToolCollection",
-    "ToolCompatibilityMode",
-    "ToolMetadata",
-    "ToolPerformanceMetrics",
-    # Enhanced enums and classes for ToolCollection
-    "ToolRegistrationStatus",
-    "ToolValidationResult",
 ]
 
 # Legacy aliases for current standards during migration

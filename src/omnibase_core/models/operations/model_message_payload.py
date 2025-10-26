@@ -144,5 +144,4 @@ class ModelMessagePayload(BaseModel):
 # Export for use
 __all__ = [
     "ModelMessagePayload",
-    "get_message_content_discriminator",
 ]

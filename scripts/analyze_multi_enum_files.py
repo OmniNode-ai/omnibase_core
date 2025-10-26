@@ -12,7 +12,6 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List
 
 
 def snake_to_pascal(snake_str: str) -> str:

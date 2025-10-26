@@ -13,7 +13,6 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 
 def pascal_to_snake(name: str) -> str:

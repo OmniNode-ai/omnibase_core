@@ -145,16 +145,7 @@ def get_security_recommendations(
 # === Export All Models ===
 
 __all__ = [
-    # Core models
-    "ModelSecretBackend",
     "ModelSecretConfig",
     "ModelSecretManager",
     "ModelSecureCredentials",
-    # Utility functions
-    "create_secret_manager_for_environment",
-    "get_secret_manager",
-    "get_security_recommendations",
-    "init_secret_manager",
-    "init_secret_manager_from_manager",
-    "validate_secret_configuration",
 ]

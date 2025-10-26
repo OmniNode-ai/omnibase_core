@@ -9,7 +9,6 @@ preserving original code formatting.
 import re
 import sys
 from pathlib import Path
-from typing import Set
 
 # Field names that should use UUID
 ID_FIELDS = {

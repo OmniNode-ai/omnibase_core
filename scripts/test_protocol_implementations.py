@@ -8,7 +8,7 @@ Tests that all protocol implementations work correctly across the 205 model file
 import importlib
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 # Add src directory to path
 src_dir = Path(__file__).parent.parent / "src"
@@ -146,8 +146,8 @@ class ProtocolTester:
 
                     # Try different instantiation approaches
                     for approach in [
-                        lambda: model_class(),  # Default constructor
-                        lambda: model_class(),  # Empty kwargs
+                        lambda cls=model_class: cls(),  # Default constructor
+                        lambda cls=model_class: cls(),  # Empty kwargs
                     ]:
                         try:
                             instance = approach()

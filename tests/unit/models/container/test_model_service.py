@@ -56,7 +56,7 @@ class TestModelService:
         )
 
         with pytest.raises(Exception):  # ValidationError for frozen model
-            service.service_name = "modified"  # type: ignore
+            service.service_name = "modified"  # type: ignore[misc]
 
     def test_service_types(self):
         """Test different service types."""

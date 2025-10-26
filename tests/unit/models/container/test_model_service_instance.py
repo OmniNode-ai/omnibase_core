@@ -151,7 +151,7 @@ class TestModelServiceInstance:
                 instance_id=inst_id,
                 service_registration_id=reg_id,
                 instance=MockService("test"),
-                lifecycle=lifecycle,  # type: ignore
+                lifecycle=lifecycle,  # type: ignore[arg-type]
                 scope="global",
             )
             assert instance.lifecycle == lifecycle
@@ -167,7 +167,7 @@ class TestModelServiceInstance:
                 service_registration_id=reg_id,
                 instance=MockService("test"),
                 lifecycle="singleton",
-                scope=scope,  # type: ignore
+                scope=scope,  # type: ignore[arg-type]
             )
             assert instance.scope == scope
 

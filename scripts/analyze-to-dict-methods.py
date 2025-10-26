@@ -12,7 +12,7 @@ import ast
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 
 class ToDigtMethodAnalyzer(ast.NodeVisitor):

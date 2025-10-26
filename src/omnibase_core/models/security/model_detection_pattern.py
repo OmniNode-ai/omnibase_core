@@ -17,25 +17,6 @@ from omnibase_core.enums.enum_sensitivity_level import EnumSensitivityLevel
 __all__ = [
     "EnumLanguageCode",
     "ModelDetectionPattern",
-    "confidence_threshold",
-    "context_window_size",
-    "description",
-    "detection_method",
-    "detection_type",
-    "enabled",
-    "examples",
-    "false_positive_patterns",
-    "get_summary",
-    "is_enabled",
-    "languages",
-    "meets_confidence_threshold",
-    "model_config",
-    "pattern_id",
-    "pattern_keywords",
-    "pattern_name",
-    "pattern_regex",
-    "sensitivity_level",
-    "supports_language",
 ]
 
 

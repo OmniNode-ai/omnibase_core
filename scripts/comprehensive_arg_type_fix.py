@@ -6,7 +6,6 @@ This script systematically fixes UUID, ModelSemVer, Path, and other type convers
 
 import re
 from pathlib import Path
-from typing import List, Tuple
 
 ROOT_DIR = Path(__file__).parent.parent / "src" / "omnibase_core"
 

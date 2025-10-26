@@ -189,7 +189,7 @@ class TestModelServiceRegistration:
             registration = ModelServiceRegistration(
                 registration_id=uuid4(),
                 service_metadata=sample_metadata,
-                lifecycle=lifecycle,  # type: ignore
+                lifecycle=lifecycle,  # type: ignore[arg-type]
                 scope="global",
             )
             assert registration.lifecycle == lifecycle
@@ -201,7 +201,7 @@ class TestModelServiceRegistration:
                 registration_id=uuid4(),
                 service_metadata=sample_metadata,
                 lifecycle="singleton",
-                scope=scope,  # type: ignore
+                scope=scope,  # type: ignore[arg-type]
             )
             assert registration.scope == scope
 
@@ -220,7 +220,7 @@ class TestModelServiceRegistration:
                 service_metadata=sample_metadata,
                 lifecycle="singleton",
                 scope="global",
-                registration_status=status,  # type: ignore
+                registration_status=status,  # type: ignore[arg-type]
             )
             assert registration.registration_status == status
 
@@ -232,7 +232,7 @@ class TestModelServiceRegistration:
                 service_metadata=sample_metadata,
                 lifecycle="singleton",
                 scope="global",
-                health_status=health,  # type: ignore
+                health_status=health,  # type: ignore[arg-type]
             )
             assert registration.health_status == health
 

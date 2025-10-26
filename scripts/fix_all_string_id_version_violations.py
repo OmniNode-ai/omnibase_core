@@ -16,7 +16,6 @@ Usage:
 import ast
 import re
 from pathlib import Path
-from typing import Set
 
 
 class StringFieldRewriter(ast.NodeTransformer):

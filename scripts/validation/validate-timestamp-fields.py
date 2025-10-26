@@ -14,7 +14,7 @@ import argparse
 import ast
 import re
 from pathlib import Path
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 
 class TimestampViolation(NamedTuple):

@@ -19,5 +19,4 @@ from .model_subcontract_constraint_validator_class import (
 __all__ = [
     "ModelContractData",
     "ModelSubcontractConstraintValidator",
-    "TypedDictNodeRuleStructure",
 ]

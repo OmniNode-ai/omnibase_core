@@ -18,11 +18,7 @@ LatencyProfile = ModelLatencyProfile
 
 # Re-export
 __all__ = [
-    "LatencyProfile",
     "ModelLatencyProfile",
     "ModelParsedConnectionInfo",
     "ModelPoolRecommendations",
-    # Compatibility
-    "ParsedConnectionInfo",
-    "PoolRecommendations",
 ]

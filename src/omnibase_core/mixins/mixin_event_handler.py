@@ -44,8 +44,6 @@ if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Import protocol to avoid circular dependencies
-from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
-
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_event_type import (
@@ -54,6 +52,7 @@ from omnibase_core.models.core.model_event_type import (
 )
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.core.model_onex_event import OnexEvent
+from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -170,9 +169,6 @@ class MixinEventHandler:
 
         except Exception as e:
             # Cannot create event type - raise error instead of silently skipping
-            from omnibase_core.errors import ModelOnexError
-            from omnibase_core.errors.error_codes import EnumCoreErrorCode
-
             raise ModelOnexError(
                 f"Failed to create introspection request event type: {e!s}",
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,

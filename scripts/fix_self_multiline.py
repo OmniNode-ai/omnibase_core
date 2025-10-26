@@ -8,7 +8,6 @@ This script properly handles multi-line method definitions.
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, List
 
 ROOT_DIR = Path("/Volumes/PRO-G40/Code/omnibase_core")
 

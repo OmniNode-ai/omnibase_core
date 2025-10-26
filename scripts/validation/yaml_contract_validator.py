@@ -6,7 +6,7 @@ Simple Pydantic model for validating YAML contract files without circular depend
 This model is designed specifically for the validation script to avoid import issues.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 

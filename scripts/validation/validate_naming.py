@@ -275,7 +275,7 @@ class NamingConventionValidator:
         return False
 
     def _check_class_naming(
-        self, file_path: Path, node: ast.ClassDef, category: str, rules: Dict
+        self, file_path: Path, node: ast.ClassDef, category: str, rules: dict
     ):
         """Check if class name follows conventions."""
         class_name = node.name

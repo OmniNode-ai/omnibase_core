@@ -64,20 +64,11 @@ ProjectMetadataBlock = ModelProjectMetadataBlock
 
 # Re-export for current standards
 __all__ = [
-    # Compatibility
-    "ArtifactTypeConfig",
-    "MetadataValidationConfig",
     "ModelArtifactTypeConfig",
     "ModelMetadataValidationConfig",
     "ModelNamespaceConfig",
     "ModelProjectMetadataBlock",
     "ModelTreeGeneratorConfig",
-    "NamespaceConfig",
-    "ProjectMetadataBlock",
-    "TreeGeneratorConfig",
-    "get_canonical_namespace_prefix",
-    # Utility functions
-    "get_canonical_versions",
 ]
 
 PROJECT_ONEX_YAML_PATH = (

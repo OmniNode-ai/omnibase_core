@@ -6,7 +6,6 @@ from omnibase_core.models.core.model_tool_collection import ModelToolCollection
 
 # Re-export for current standards
 __all__ = [
-    "EntrypointBlock",
     "ModelFunctionTool",
     "ModelToolCollection",
 ]

@@ -11,7 +11,6 @@ import sys
 import time
 import tracemalloc
 from pathlib import Path
-from typing import Dict, List
 
 import psutil
 

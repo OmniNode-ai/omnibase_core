@@ -13,7 +13,6 @@ import sys
 import time
 from pathlib import Path
 from statistics import mean, median, stdev
-from typing import Dict, List, Tuple
 
 # Add src to Python path
 project_root = Path(__file__).parent.parent.parent

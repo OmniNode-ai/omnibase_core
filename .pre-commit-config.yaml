@@ -24,7 +24,7 @@ repos:
         args: [--markdown-linebreak-ext=md]
         exclude: ^\.github/workflows/
       - id: end-of-file-fixer
-        exclude: ^\.github/workflows/
+        exclude: ^(\.github/workflows/|\.mcp\.json$)
       - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=1000]
@@ -47,8 +47,8 @@ repos:
         entry: poetry run isort
         language: system
         types: [python]
-        args: [--profile, black, --line-length, "88"]
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
+        args: [--profile, black, --line-length, "88", --skip, src/omnibase_core/mixins/mixin_event_bus.py, --skip, src/omnibase_core/mixins/mixin_event_handler.py]
+        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/|src/omnibase_core/mixins/mixin_event_bus\.py|src/omnibase_core/mixins/mixin_event_handler\.py)$
         stages: [commit]
 
       - id: ruff-fix
@@ -283,17 +283,9 @@ repos:
           - -x
           - --tb=short
           - -q
+          - -p
+          - no:rerunfailures
         stages: [pre-commit]
-
-    # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
-    # This demonstrates how other repositories would use the shared validation
-    # - id: validate-onex-standards
-    #   name: ONEX Standards Comprehensive Validation
-    #   entry: python -c "from omnibase_core.validation import validate_onex_standards; import sys; result = validate_onex_standards('.'); sys.exit(0 if result['success'] else 1)"
-    #   language: system
-    #   always_run: true
-    #   pass_filenames: false
-    #   stages: [commit]
 
 # Configuration
 default_install_hook_types: [pre-commit]

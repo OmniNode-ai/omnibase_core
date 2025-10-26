@@ -6,9 +6,6 @@ from omnibase_core.primitives.model_semver import ModelSemVer
 __all__ = [
     "ModelNodeCapabilities",
     "ModelNodeIntrospectionEvent",
-    "actions",
-    "metadata",
-    "protocols",
 ]
 
 """

@@ -18,7 +18,6 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 
 def check_typeddict_naming(file_path: Path) -> list[tuple[int, str, str]]:

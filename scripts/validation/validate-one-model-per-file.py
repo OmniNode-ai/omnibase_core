@@ -18,7 +18,6 @@ import argparse
 import ast
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 
 class ModelCounter(ast.NodeVisitor):

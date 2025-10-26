@@ -50,8 +50,5 @@ EffectResultDiscriminator = Discriminator(
 )
 
 __all__ = [
-    "EffectResultUnion",
     "ModelEffectResult",
-    "EffectResultDiscriminator",
-    "get_effect_result_discriminator",
 ]

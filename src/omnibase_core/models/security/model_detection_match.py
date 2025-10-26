@@ -12,19 +12,6 @@ from omnibase_core.enums.enum_sensitivity_level import EnumSensitivityLevel
 
 __all__ = [
     "ModelDetectionMatch",
-    "start_position",
-    "end_position",
-    "matched_text",
-    "redacted_text",
-    "confidence_score",
-    "detection_type",
-    "sensitivity_level",
-    "detection_method",
-    "pattern_name",
-    "context_before",
-    "context_after",
-    "metadata",
-    "model_config",
 ]
 
 

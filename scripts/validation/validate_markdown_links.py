@@ -11,7 +11,6 @@ Checks for:
 import re
 import sys
 from pathlib import Path
-from typing import List, Set, Tuple
 
 
 def extract_markdown_links(content: str, file_path: Path) -> list[tuple[str, int]]:

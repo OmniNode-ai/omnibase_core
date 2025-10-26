@@ -124,12 +124,12 @@ class TestModelRegistryError:
     def test_error_code_required(self):
         """Test error_code is required."""
         with pytest.raises(Exception):  # ValidationError
-            ModelRegistryError(message="Test")  # type: ignore
+            ModelRegistryError(message="Test")  # type: ignore[call-arg]
 
     def test_message_required(self):
         """Test message is required."""
         with pytest.raises(Exception):  # ValidationError or TypeError
-            ModelRegistryError(  # type: ignore
+            ModelRegistryError(  # type: ignore[call-arg]
                 error_code=EnumRegistryErrorCode.TOOL_NOT_FOUND
             )
 

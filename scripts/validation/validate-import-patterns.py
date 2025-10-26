@@ -383,7 +383,7 @@ class ImportPatternValidator:
             violations_by_dir[directory].append(violation)
 
         # Sort violations by directory and line number for reproducible output
-        for directory in violations_by_dir:
+        for directory in list(violations_by_dir.keys()):
             violations_by_dir[directory].sort(key=lambda v: (v["file"], int(v["line"])))
 
         print(

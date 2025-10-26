@@ -26,7 +26,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 # Import our duplication audit script
 sys.path.append(str(Path(__file__).parent.parent / "validation"))

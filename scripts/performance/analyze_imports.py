@@ -14,7 +14,6 @@ import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
 
 
 class ImportAnalyzer(ast.NodeVisitor):

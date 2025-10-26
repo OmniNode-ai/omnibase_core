@@ -7,15 +7,15 @@ Tests that validators implement the required SPI protocols:
 """
 
 import pytest
+
+from omnibase_core.validation.auditor_protocol import ModelProtocolAuditor
+from omnibase_core.validation.contract_validator import ProtocolContractValidator
 from omnibase_spi.protocols.validation.protocol_compliance_validator import (
     ProtocolComplianceValidator,
 )
 from omnibase_spi.protocols.validation.protocol_quality_validator import (
     ProtocolQualityValidator,
 )
-
-from omnibase_core.validation.auditor_protocol import ModelProtocolAuditor
-from omnibase_core.validation.contract_validator import ProtocolContractValidator
 
 
 class TestProtocolComplianceValidatorImplementation:

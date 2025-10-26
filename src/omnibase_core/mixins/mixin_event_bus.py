@@ -24,13 +24,13 @@ import threading
 from collections.abc import Callable as CallableABC
 from uuid import UUID, uuid4
 
-from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
 from pydantic import BaseModel, ConfigDict, StrictStr, ValidationError
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
 
 # Local imports from extracted classes
 from .mixin_completion_data import MixinCompletionData
@@ -131,8 +131,8 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                     for j in range(i + 1, len(mro)):
                         if hasattr(mro[j], "__init__") and mro[j] is not BaseModel:
                             # Call the next __init__ in chain if it exists
-                            if mro[j].__init__ is not object.__init__:
-                                mro[j].__init__(self, *args, **kwargs)
+                            if mro[j].__init__ is not object.__init__:  # type: ignore[misc]
+                                mro[j].__init__(self, *args, **kwargs)  # type: ignore[misc]
                             break
                     break
 

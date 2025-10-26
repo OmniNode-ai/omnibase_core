@@ -21,7 +21,7 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, TypedDict
+from typing import TypedDict
 
 
 class Violation(TypedDict):
@@ -160,8 +160,8 @@ class EnumCaseValidator:
             violations_by_file[file_path].append(violation)
 
         # Sort violations by file and line number for reproducible output
-        for file_path in violations_by_file:
-            violations_by_file[file_path].sort(key=lambda v: v["line"])
+        for file_path, violations in violations_by_file.items():
+            violations.sort(key=lambda v: v["line"])
 
         print(f"Found {len(self.violations)} enum case consistency violations:\n")
 

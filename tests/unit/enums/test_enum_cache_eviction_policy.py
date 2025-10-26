@@ -27,7 +27,6 @@ class TestEnumCacheEvictionPolicy:
     def test_lru_policy(self) -> None:
         """Test LRU (Least Recently Used) policy."""
         assert EnumCacheEvictionPolicy.LRU.value == "lru"
-        assert "Least Recently Used" in EnumCacheEvictionPolicy.__doc__ or True
 
     def test_lfu_policy(self) -> None:
         """Test LFU (Least Frequently Used) policy."""

@@ -148,7 +148,7 @@ class TestModelOnexWarning:
         context = {
             "operation": "file_write",
             "details": {
-                "path": "/tmp/output.txt",
+                "path": "/tmp/output.txt",  # noqa: S108
                 "size_bytes": 1024,
                 "permissions": "0644",
             },
@@ -164,7 +164,7 @@ class TestModelOnexWarning:
     def test_warning_message_required(self):
         """Test message is required field."""
         with pytest.raises(Exception):  # ValidationError
-            ModelOnexWarning()  # type: ignore
+            ModelOnexWarning()  # type: ignore[call-arg]
 
     def test_multiple_warnings_independent(self):
         """Test multiple warnings are independent."""

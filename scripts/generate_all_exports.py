@@ -21,7 +21,6 @@ import ast
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, Set
 
 
 def extract_public_names(file_path: Path) -> set[str]:

@@ -548,7 +548,7 @@ class TestIntentPublisherIntegration:
             await reducer.publish_event_intent(
                 target_topic="dev.omninode.test.v1",
                 target_key="test",
-                event=invalid_event,  # type: ignore
+                event=invalid_event,  # type: ignore[arg-type]
             )
 
     def test_kafka_client_missing_from_container(self):

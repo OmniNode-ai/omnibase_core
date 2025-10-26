@@ -11,7 +11,7 @@ This script identifies problematic exception handling patterns:
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Tuple, TypedDict
+from typing import Any, Literal, TypedDict
 
 
 class Issue(TypedDict):
@@ -58,10 +58,14 @@ class ExceptionPatternAnalyzer:
                     # Check if there's proper logging in the next few lines
                     next_lines = lines[i : i + 5]
                     has_logging = any(
-                        "emit_log_event" in l or "logger." in l or "_logger." in l
-                        for l in next_lines
+                        "emit_log_event" in line
+                        or "logger." in line
+                        or "_logger." in line
+                        for line in next_lines
                     )
-                    has_fallback_ok = any("# fallback-ok" in l for l in next_lines)
+                    has_fallback_ok = any(
+                        "# fallback-ok" in line for line in next_lines
+                    )
 
                     if not has_logging and not has_fallback_ok:
                         self.issues.append(

@@ -199,7 +199,7 @@ class TestModelServiceRegistryStatus:
         for status_type in ["success", "failed", "in_progress", "cancelled", "pending"]:
             status = ModelServiceRegistryStatus(
                 registry_id=reg_id,
-                status=status_type,  # type: ignore
+                status=status_type,  # type: ignore[arg-type]
                 message=f"Status: {status_type}",
             )
             assert status.status == status_type
