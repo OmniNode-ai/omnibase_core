@@ -214,7 +214,31 @@ profile = "black"
 line_length = 88
 multi_line_output = 3
 known_first_party = ["omnibase_core", "omnibase_spi"]
-extend_skip = ["archived", "archive", ".github/workflows", "scripts/validation/test_timeout_compatibility.py", "tests/unit/validation/test_protocol_compliance.py", "src/omnibase_core/mixins/mixin_event_bus.py", "src/omnibase_core/mixins/mixin_event_handler.py"]
+extend_skip = [
+    "archived", "archive", ".github/workflows",
+    "scripts/validation/test_timeout_compatibility.py",
+    "tests/unit/validation/test_protocol_compliance.py",
+    # Files with intentional import order to avoid circular dependencies
+    "src/omnibase_core/types/constraints.py",
+    "src/omnibase_core/mixins/mixin_event_bus.py",
+    "src/omnibase_core/mixins/mixin_event_handler.py",
+    "src/omnibase_core/mixins/mixin_node_executor.py",
+    "src/omnibase_core/mixins/mixin_discovery_responder.py",
+    "src/omnibase_core/mixins/__init__.py",
+    "src/omnibase_core/mixins/mixin_event_driven_node.py",
+    "src/omnibase_core/mixins/mixin_canonical_serialization.py",
+    "src/omnibase_core/models/container/model_service_instance.py",
+    "src/omnibase_core/models/container/model_onex_container.py",
+    "src/omnibase_core/models/container/model_service_registration.py",
+    "src/omnibase_core/models/container/model_registry_status.py",
+    "src/omnibase_core/models/common/model_value_container.py",
+    "src/omnibase_core/models/metadata/model_generic_metadata.py",
+    "src/omnibase_core/models/metadata/__init__.py",
+    "src/omnibase_core/container/service_registry.py",
+    "src/omnibase_core/infrastructure/node_base.py",
+    "src/omnibase_core/logging/structured.py",
+    "src/omnibase_core/validation/contract_validator.py",
+]
 extend_skip_glob = ["tests/fixtures/validation/edge_cases/*.py"]
 
 [tool.mypy]
