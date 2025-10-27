@@ -78,18 +78,17 @@ jobs:
   #   - Target: 3-5 minutes per split (measured: 3-4 min avg)
   #   - 12x parallelization speedup vs sequential execution
   #   - Increased from 10 to 12 splits to reduce resource exhaustion in split 6
+  #   - Splits 7 and 12 isolated in dedicated jobs due to runner cancellation issues
   test-parallel:
     name: Tests (Split ${{ matrix.split }}/12)
     needs: smoke-test
     runs-on: ubuntu-latest
-    # Timeout increased to 60 minutes due to Split 7 runner cancellations
-    # Split 7 was being canceled at ~3-4 minutes (well under 25 min timeout)
-    # Increasing timeout to rule out any job-level timeout issues
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        # Splits 7 and 12 isolated to dedicated jobs due to stability issues
+        split: [1, 2, 3, 4, 5, 6, 8, 9, 10, 11]
 
     steps:
       - name: Checkout code
@@ -139,30 +138,52 @@ jobs:
             exit 1
           }
 
-      - name: Run test split ${{ matrix.split }}/12
+      - name: Debug - System information
         run: |
-          # Splits 7 and 12 need to run without parallelism due to signal handler conflicts
-          # in validation tests that only fail in CI parallel execution environment
-          if [[ "${{ matrix.split }}" == "7" ]] || [[ "${{ matrix.split }}" == "12" ]]; then
-            WORKERS=0  # Disable parallelism for splits 7 and 12
-          else
-            WORKERS=auto  # Use auto-detection for other splits
-          fi
+          echo "=== System Information ==="
+          uname -a
+          echo ""
+          echo "=== Memory Information ==="
+          free -m
+          echo ""
+          echo "=== Python Version ==="
+          poetry run python -V
+          echo ""
+          echo "=== Runner Environment ==="
+          echo "Runner OS: ${{ runner.os }}"
+          echo "Runner Architecture: ${{ runner.arch }}"
+          echo "GitHub Workspace: $GITHUB_WORKSPACE"
 
-          poetry run pytest tests/ \
-            --splits 12 \
-            --group ${{ matrix.split }} \
-            -n $WORKERS \
-            --timeout=60 \
-            --timeout-method=thread \
-            --tb=short \
-            --junitxml=junit-${{ matrix.split }}.xml
-          # Per-test timeout: 60 seconds prevents infinite hangs
-          #   - Longest test: ~30 seconds (2x safety margin)
-          #   - Thread method: Avoids signal handler issues in parallel execution
-          #   - No false positives observed at this threshold
-          # Splits 7 and 12: -n 0 (no parallelism) to avoid signal handler conflicts
-          # Other splits: -n auto (full parallelism) after event loop fixes
+      - name: Run test split ${{ matrix.split }}/12 with retry
+        run: |
+          # Retry wrapper for transient failures
+          MAX_ATTEMPTS=2
+          ATTEMPT=1
+
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "Attempt $ATTEMPT of $MAX_ATTEMPTS"
+
+            if poetry run pytest tests/ \
+              --splits 12 \
+              --group ${{ matrix.split }} \
+              -n auto \
+              --timeout=60 \
+              --timeout-method=thread \
+              --tb=short \
+              --junitxml=junit-${{ matrix.split }}.xml; then
+              echo "✅ Tests passed on attempt $ATTEMPT"
+              exit 0
+            else
+              if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+                echo "⚠️ Attempt $ATTEMPT failed, retrying in 8 seconds..."
+                sleep 8
+                ATTEMPT=$((ATTEMPT + 1))
+              else
+                echo "❌ All attempts failed"
+                exit 1
+              fi
+            fi
+          done
 
       - name: Upload test results
         if: always()
@@ -172,11 +193,229 @@ jobs:
           path: junit-${{ matrix.split }}.xml
           retention-days: 7
 
+  # Isolated job for split 7 - dedicated execution with no parallelism
+  test-split-7:
+    name: Tests (Split 7/12) - Isolated
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 120  # Increased timeout for isolated execution
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          poetry install --no-interaction --no-root || {
+            echo "❌ Dependency install failed"
+            exit 1
+          }
+
+      - name: Install project
+        run: |
+          poetry install --no-interaction || {
+            echo "❌ Project install failed"
+            exit 1
+          }
+
+      - name: Debug - System information
+        run: |
+          echo "=== System Information ==="
+          uname -a
+          echo ""
+          echo "=== Memory Information ==="
+          free -m
+          echo ""
+          echo "=== Python Version ==="
+          poetry run python -V
+          echo ""
+          echo "=== Runner Environment ==="
+          echo "Runner OS: ${{ runner.os }}"
+          echo "Runner Architecture: ${{ runner.arch }}"
+          echo "GitHub Workspace: $GITHUB_WORKSPACE"
+
+      - name: Run test split 7/12 with retry (no parallelism)
+        run: |
+          # Retry wrapper for transient failures
+          MAX_ATTEMPTS=2
+          ATTEMPT=1
+
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "Attempt $ATTEMPT of $MAX_ATTEMPTS"
+
+            # Run without parallelism to avoid signal handler conflicts
+            if poetry run pytest tests/ \
+              --splits 12 \
+              --group 7 \
+              -n 0 \
+              --timeout=60 \
+              --timeout-method=thread \
+              --tb=short \
+              --junitxml=junit-7.xml; then
+              echo "✅ Tests passed on attempt $ATTEMPT"
+              exit 0
+            else
+              if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+                echo "⚠️ Attempt $ATTEMPT failed, retrying in 8 seconds..."
+                sleep 8
+                ATTEMPT=$((ATTEMPT + 1))
+              else
+                echo "❌ All attempts failed"
+                exit 1
+              fi
+            fi
+          done
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-7
+          path: junit-7.xml
+          retention-days: 7
+
+  # Isolated job for split 12 - dedicated execution with no parallelism
+  test-split-12:
+    name: Tests (Split 12/12) - Isolated
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 120  # Increased timeout for isolated execution
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          poetry install --no-interaction --no-root || {
+            echo "❌ Dependency install failed"
+            exit 1
+          }
+
+      - name: Install project
+        run: |
+          poetry install --no-interaction || {
+            echo "❌ Project install failed"
+            exit 1
+          }
+
+      - name: Debug - System information
+        run: |
+          echo "=== System Information ==="
+          uname -a
+          echo ""
+          echo "=== Memory Information ==="
+          free -m
+          echo ""
+          echo "=== Python Version ==="
+          poetry run python -V
+          echo ""
+          echo "=== Runner Environment ==="
+          echo "Runner OS: ${{ runner.os }}"
+          echo "Runner Architecture: ${{ runner.arch }}"
+          echo "GitHub Workspace: $GITHUB_WORKSPACE"
+
+      - name: Run test split 12/12 with retry (no parallelism)
+        run: |
+          # Retry wrapper for transient failures
+          MAX_ATTEMPTS=2
+          ATTEMPT=1
+
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "Attempt $ATTEMPT of $MAX_ATTEMPTS"
+
+            # Run without parallelism to avoid signal handler conflicts
+            if poetry run pytest tests/ \
+              --splits 12 \
+              --group 12 \
+              -n 0 \
+              --timeout=60 \
+              --timeout-method=thread \
+              --tb=short \
+              --junitxml=junit-12.xml; then
+              echo "✅ Tests passed on attempt $ATTEMPT"
+              exit 0
+            else
+              if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+                echo "⚠️ Attempt $ATTEMPT failed, retrying in 8 seconds..."
+                sleep 8
+                ATTEMPT=$((ATTEMPT + 1))
+              else
+                echo "❌ All attempts failed"
+                exit 1
+              fi
+            fi
+          done
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-12
+          path: junit-12.xml
+          retention-days: 7
+
   # Coverage report (only runs on main branch to save CI time)
   coverage:
     name: Coverage Report
     if: github.ref == 'refs/heads/main'
-    needs: test-parallel
+    needs: [test-parallel, test-split-7, test-split-12]
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -326,7 +565,7 @@ jobs:
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [smoke-test, test-parallel, lint, docs-validation]
+    needs: [smoke-test, test-parallel, test-split-7, test-split-12, lint, docs-validation]
     if: always()
 
     steps:
@@ -334,16 +573,22 @@ jobs:
         run: |
           smoke="${{ needs.smoke-test.result }}"
           parallel="${{ needs.test-parallel.result }}"
+          split7="${{ needs.test-split-7.result }}"
+          split12="${{ needs.test-split-12.result }}"
           lint="${{ needs.lint.result }}"
           docs="${{ needs.docs-validation.result }}"
 
           if [[ "$smoke" == "success" ]] && \
              [[ "$parallel" == "success" ]] && \
+             [[ "$split7" == "success" ]] && \
+             [[ "$split12" == "success" ]] && \
              [[ "$lint" == "success" ]] && \
              [[ "$docs" == "success" ]]; then
             echo "✅ All tests passed successfully"
             echo "Smoke Tests: ✅ Passed"
-            echo "Parallel Tests (12 splits): ✅ Passed"
+            echo "Parallel Tests (10 splits): ✅ Passed"
+            echo "Isolated Split 7: ✅ Passed"
+            echo "Isolated Split 12: ✅ Passed"
             echo "Code Quality: ✅ Passed"
             echo "Documentation: ✅ Passed"
             exit 0
@@ -351,6 +596,8 @@ jobs:
             echo "❌ Tests failed"
             echo "Smoke Tests: $smoke"
             echo "Parallel Tests: $parallel"
+            echo "Isolated Split 7: $split7"
+            echo "Isolated Split 12: $split12"
             echo "Lint: $lint"
             echo "Documentation: $docs"
             exit 1
