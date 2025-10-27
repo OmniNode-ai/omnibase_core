@@ -228,11 +228,14 @@ def validate_contracts_cli() -> int:
 
     args = parser.parse_args()
 
-    # Set up timeout - save original handler for proper cleanup
-    original_handler = signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(args.timeout)
+    # Initialize to None for finally block
+    original_handler = None
 
     try:
+        # Set up timeout AFTER entering try block for proper exception handling
+        original_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(args.timeout)
+
         print("🔍 YAML Contract Validation")
         print("=" * 40)
 
@@ -279,7 +282,8 @@ def validate_contracts_cli() -> int:
     finally:
         # Clean up signal handling to prevent test pollution
         signal.alarm(0)  # Cancel timeout
-        signal.signal(signal.SIGALRM, original_handler)  # Restore original handler
+        if original_handler is not None:
+            signal.signal(signal.SIGALRM, original_handler)  # Restore original handler
 
 
 if __name__ == "__main__":
