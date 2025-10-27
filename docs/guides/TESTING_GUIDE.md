@@ -754,42 +754,130 @@ exclude_lines = [
 
 ## Continuous Integration
 
-### GitHub Actions Example
+### omnibase_core CI Strategy
 
-```yaml
-name: Tests
+The project uses a sophisticated CI pipeline with parallel test execution for optimal performance and reliability.
 
-on: [push, pull_request]
+#### CI Pipeline Architecture
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.12, 3.13]
+**Jobs**:
+1. **Smoke Tests** (5-10s) - Fast-fail basic validation
+2. **Parallel Tests** (12 splits, 3-5 min each) - Full test suite with optimal resource usage
+3. **Code Quality** - Black, isort, mypy strict type checking
+4. **Documentation Validation** - Link validation and documentation checks
+5. **Coverage Report** (main branch only) - Comprehensive coverage analysis
 
-    steps:
-    - uses: actions/checkout@v3
+#### Parallel Test Execution
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
+**Strategy Rationale**:
+- **Total Tests**: ~11,000 tests
+- **Split Count**: 12 parallel jobs
+- **Tests per Split**: ~916 tests/split
+- **Duration**: 3-5 minutes per split (vs ~40+ minutes sequential)
+- **Speedup**: 12x parallelization
+- **Resource Management**: Prevents memory exhaustion with controlled parallelism
 
-    - name: Install dependencies
-      run: |
-        pip install poetry
-        poetry install
+**Split Configuration**:
 
-    - name: Run tests
-      run: |
-        poetry run pytest --cov=omnibase_core --cov-report=xml
-
-    - name: Upload coverage
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
+```bash
+# Each split runs a subset of tests using pytest-split
+poetry run pytest tests/ \
+  --splits 12 \
+  --group $SPLIT_NUMBER \
+  -n auto \
+  --timeout=60 \
+  --timeout-method=thread \
+  --tb=short
 ```
+
+**Why 12 Splits?**:
+- Increased from 10 to 12 splits to reduce resource exhaustion
+- Each split stays under 5 minutes (GitHub Actions best practice)
+- Optimal balance between parallelization and overhead
+- Prevents individual split timeouts
+
+#### Local Testing Commands
+
+**Standard local testing** (matches pyproject.toml config):
+```bash
+# Run all tests with 4 workers (default)
+poetry run pytest tests/
+
+# Run specific test file
+poetry run pytest tests/unit/models/test_model.py -v
+
+# Run with full parallelism (for powerful machines)
+poetry run pytest tests/ -n 8
+
+# Debug single test (disable parallelism)
+poetry run pytest tests/unit/test_specific.py -n 0 -xvs
+```
+
+**CI-equivalent local testing** (12 splits):
+```bash
+# Run specific split locally (e.g., split 1 of 12)
+poetry run pytest tests/ --splits 12 --group 1 -n auto
+
+# Run all splits sequentially (full CI simulation)
+for i in {1..12}; do
+  poetry run pytest tests/ --splits 12 --group $i -n auto
+done
+```
+
+#### Timeout Configuration
+
+**Per-test timeout**:
+- `--timeout=60` (60 seconds per test)
+- `--timeout-method=thread` (avoids signal handler conflicts)
+- Prevents infinite hangs in async code or event loop issues
+- 2x safety margin over longest test (~30s)
+
+**Job-level timeout**:
+- Smoke tests: 5 minutes
+- Parallel tests: 60 minutes (generous buffer for occasional slowdowns)
+- Code quality: 10 minutes
+- Coverage: 15 minutes
+
+#### Type Checking in CI
+
+**Status**: ✅ Enabled with strict configuration
+
+```bash
+# CI runs strict mypy (0 errors required)
+poetry run mypy src/omnibase_core/
+```
+
+**Strict Mode**:
+- `disallow_untyped_defs = true`
+- All 1865 source files must pass
+- Same configuration as pre-commit hooks and local development
+
+#### Coverage Requirements
+
+**Target**: 60% minimum coverage (configured in pyproject.toml)
+
+```bash
+# Run coverage locally
+poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing --cov-report=html
+
+# View HTML report
+open htmlcov/index.html
+```
+
+**CI Coverage**:
+- Only runs on `main` branch (saves CI time on PRs)
+- Generates XML and HTML reports
+- Uploaded as workflow artifacts (30-day retention)
+
+#### GitHub Actions Configuration
+
+See `.github/workflows/test.yml` for complete configuration. Key features:
+
+- **Poetry 2.2.1**: Latest stable Poetry version
+- **Python 3.12**: Minimum supported version
+- **Caching**: Poetry virtualenv caching with version key
+- **Fail-fast**: Disabled to collect all split results
+- **Artifacts**: Test results (7 days), coverage reports (30 days)
 
 ## Related Documentation
 

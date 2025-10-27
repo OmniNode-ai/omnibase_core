@@ -290,13 +290,8 @@ jobs:
       - name: Check isort import sorting
         run: poetry run isort --check-only src/ tests/
 
-    # MyPy disabled: 234 type errors, >45s execution time
-    # Same as pre-commit configuration
-    # (see .pre-commit-config.yaml line 52-61)
-    # TODO: Re-enable after fixing mixin Protocol definitions
-    # and import errors
-    # - name: Run mypy type checking
-    #   run: poetry run mypy src/omnibase_core
+      - name: Run mypy type checking (strict)
+        run: poetry run mypy src/omnibase_core
 
   docs-validation:
     name: Documentation Validation

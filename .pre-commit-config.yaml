@@ -2,9 +2,9 @@
 # Uses shared ONEX hook templates to demonstrate ecosystem integration
 #
 # PERFORMANCE OPTIMIZATION NOTES:
-# - MyPy disabled for pre-commit (>45s timeout) - run manually or in CI
+# - MyPy enabled with strict configuration (0 errors, ~5-10s)
 # - validate-naming-conventions takes ~14s on full codebase
-# - Total pre-commit time target: <15s for fast feedback
+# - Total pre-commit time target: <30s for comprehensive feedback
 # - Use `pre-commit run --all-files` to test all hooks before pushing
 
 repos:
@@ -60,12 +60,12 @@ repos:
         stages: [commit]
 
       - id: mypy-type-check
-        name: mypy (type checking - incremental)
+        name: mypy (type checking - strict)
         entry: poetry run mypy
         language: system
         types: [python]
-        args: [--ignore-missing-imports, --show-error-codes, --no-error-summary, --follow-imports=silent]
-        files: ^src/omnibase_core/(core|models|enums|errors|types).*\.py$
+        args: [--show-error-codes, --no-error-summary]
+        files: ^src/omnibase_core/.*\.py$
         exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
         stages: [commit]
 
