@@ -271,7 +271,8 @@ markers = [
     "performance: Performance and benchmark tests",
     "cache: Cache-related tests",
     "nodes: Node architecture tests",
-    "validation: Validation framework tests"
+    "validation: Validation framework tests",
+    "flaky: Marks tests as flaky and allows reruns (from pytest-rerunfailures)"
 ]
 addopts = [
     "--strict-markers",
