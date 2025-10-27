@@ -1165,6 +1165,7 @@ operations: []
         assert "=" in captured.out or "-" in captured.out
         assert "Files checked" in captured.out or "validation" in captured.out.lower()
 
+    @pytest.mark.xdist_group(name="signal_handling")
     def test_cli_timeout_error(
         self,
         tmp_path: Path,
@@ -1174,6 +1175,9 @@ operations: []
         """Test CLI handles timeout errors."""
         import sys
         from unittest.mock import patch
+
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         (tmp_path / "test.yaml").write_text(
             """
@@ -1205,6 +1209,7 @@ operations: []
         captured = capsys.readouterr()
         assert "timed out" in captured.out.lower()
 
+    @pytest.mark.xdist_group(name="signal_handling")
     def test_cli_generic_onex_error(
         self,
         tmp_path: Path,
@@ -1214,6 +1219,9 @@ operations: []
         """Test CLI handles generic ModelOnexError."""
         import sys
         from unittest.mock import patch
+
+        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         (tmp_path / "test.yaml").write_text(
             """
