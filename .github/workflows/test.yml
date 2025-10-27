@@ -141,10 +141,18 @@ jobs:
 
       - name: Run test split ${{ matrix.split }}/12
         run: |
+          # Splits 7 and 12 need to run without parallelism due to signal handler conflicts
+          # in validation tests that only fail in CI parallel execution environment
+          if [[ "${{ matrix.split }}" == "7" ]] || [[ "${{ matrix.split }}" == "12" ]]; then
+            WORKERS=0  # Disable parallelism for splits 7 and 12
+          else
+            WORKERS=auto  # Use auto-detection for other splits
+          fi
+
           poetry run pytest tests/ \
             --splits 12 \
             --group ${{ matrix.split }} \
-            -n auto \
+            -n $WORKERS \
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
@@ -153,10 +161,8 @@ jobs:
           #   - Longest test: ~30 seconds (2x safety margin)
           #   - Thread method: Avoids signal handler issues in parallel execution
           #   - No false positives observed at this threshold
-          # Splits 7 and 12 run without parallelism (-n 0) due to signal handler conflicts
-          # in validation tests that fail only in CI parallel execution environment.
-          # All other splits use -n auto after fixing event loop hang issues
-          # in test_mixin_hybrid_execution.py tests (asyncio.new_event_loop mocking)
+          # Splits 7 and 12: -n 0 (no parallelism) to avoid signal handler conflicts
+          # Other splits: -n auto (full parallelism) after event loop fixes
 
       - name: Upload test results
         if: always()
