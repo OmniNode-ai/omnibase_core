@@ -112,8 +112,11 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         # All validation is now handled by Pydantic model
         # Legacy manual validation removed for ONEX compliance
 
+    except OSError as e:
+        # Collect OS errors during file reading
+        errors.append(f"OS error reading file: {e}")
     except Exception as e:
-        # Collect file reading errors
+        # Collect other file reading errors
         errors.append(f"Error reading file: {e}")
 
     return errors
