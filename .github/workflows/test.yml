@@ -145,7 +145,7 @@ jobs:
           poetry run pytest tests/ \
             --splits 12 \
             --group ${{ matrix.split }} \
-            -n auto \
+            ${{ (matrix.split == 7 || matrix.split == 12) && '-n 0' || '-n auto' }} \
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
@@ -154,7 +154,9 @@ jobs:
           #   - Longest test: ~30 seconds (2x safety margin)
           #   - Thread method: Avoids signal handler issues in parallel execution
           #   - No false positives observed at this threshold
-          # All splits now use -n auto after fixing event loop hang issues
+          # Splits 7 and 12 run without parallelism (-n 0) due to signal handler conflicts
+          # in validation tests that fail only in CI parallel execution environment.
+          # All other splits use -n auto after fixing event loop hang issues
           # in test_mixin_hybrid_execution.py tests (asyncio.new_event_loop mocking)
 
       - name: Upload test results
