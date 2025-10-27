@@ -44,11 +44,7 @@ LogMarkdownRowModel = ModelLogMarkdownRow
 
 # Re-export for current standards
 __all__ = [
-    "LogMarkdownRowModel",
-    "LogModelContext",
     "ModelLogContext",
-    "ModelLogEntry",
-    # Compatibility
     "ModelLogEntry",
     "ModelLogMarkdownRow",
 ]

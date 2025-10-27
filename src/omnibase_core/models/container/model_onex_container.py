@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from dependency_injector import containers, providers
+from omnibase_spi import ProtocolLogger
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
@@ -38,7 +39,6 @@ from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
 from omnibase_core.utils.singleton_holders import _ContainerHolder
-from omnibase_spi import ProtocolLogger
 
 # Optional performance enhancements
 try:

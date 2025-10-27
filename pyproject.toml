@@ -12,6 +12,7 @@ authors = [
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.12"
+dynamic = ["dependencies"]
 keywords = [
     "onex",
     "framework",
@@ -48,12 +49,8 @@ kubernetes = ["kubernetes"]
 full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
 
 [tool.poetry]
-name = "omnibase_core"
-version = "0.1.0"
-description = "ONEX Core Framework - Base classes and essential implementations"
-authors = ["OmniNode Team <team@omninode.ai>"]
-license = "MIT"
-readme = "README.md"
+# Note: name and version are defined in [project] section above (PEP 621)
+# Poetry will use those values automatically
 packages = [{include = "omnibase_core", from = "src"}]
 include = [
     "scripts/validation/*.py",
@@ -63,8 +60,8 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-# ONEX SPI dependency - Using main branch from GitHub
-omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", branch = "main"}
+# ONEX SPI dependency - Pinned to v0.1.1 tag for reproducibility
+omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", tag = "v0.1.1"}
 pydantic = "^2.11.7"
 llama-index = "^0.14.0"  # Updated for pypdf 6.0+ security fix (CVE-2025-55197)
 pypdf = "^6.1.0"  # Security fix for CVE-2025-55197
@@ -206,17 +203,42 @@ ignore = [
     "ISC001",    # Implicit string concatenation (conflicts with formatter)
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"scripts/validation/test_timeout_compatibility.py" = ["I001"]  # Import sorting conflicts with isort
+"tests/unit/validation/test_protocol_compliance.py" = ["I001"]  # Import sorting conflicts with isort
+"src/omnibase_core/mixins/mixin_event_bus.py" = ["I001"]  # Import order conflicts with import semantics
+"src/omnibase_core/mixins/mixin_event_handler.py" = ["I001"]  # Import order conflicts with import semantics
+
 [tool.isort]
 profile = "black"
 line_length = 88
 multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-ensure_newline_before_comments = true
-skip_gitignore = true
 known_first_party = ["omnibase_core", "omnibase_spi"]
-extend_skip = ["archived", "archive", ".github/workflows"]
+extend_skip = [
+    "archived", "archive", ".github/workflows",
+    "scripts/validation/test_timeout_compatibility.py",
+    "tests/unit/validation/test_protocol_compliance.py",
+    # Files with intentional import order to avoid circular dependencies
+    "src/omnibase_core/types/constraints.py",
+    "src/omnibase_core/mixins/mixin_event_bus.py",
+    "src/omnibase_core/mixins/mixin_event_handler.py",
+    "src/omnibase_core/mixins/mixin_node_executor.py",
+    "src/omnibase_core/mixins/mixin_discovery_responder.py",
+    "src/omnibase_core/mixins/__init__.py",
+    "src/omnibase_core/mixins/mixin_event_driven_node.py",
+    "src/omnibase_core/mixins/mixin_canonical_serialization.py",
+    "src/omnibase_core/models/container/model_service_instance.py",
+    "src/omnibase_core/models/container/model_onex_container.py",
+    "src/omnibase_core/models/container/model_service_registration.py",
+    "src/omnibase_core/models/container/model_registry_status.py",
+    "src/omnibase_core/models/common/model_value_container.py",
+    "src/omnibase_core/models/metadata/model_generic_metadata.py",
+    "src/omnibase_core/models/metadata/__init__.py",
+    "src/omnibase_core/container/service_registry.py",
+    "src/omnibase_core/infrastructure/node_base.py",
+    "src/omnibase_core/logging/structured.py",
+    "src/omnibase_core/validation/contract_validator.py",
+]
 extend_skip_glob = ["tests/fixtures/validation/edge_cases/*.py"]
 
 [tool.mypy]
@@ -249,7 +271,8 @@ markers = [
     "performance: Performance and benchmark tests",
     "cache: Cache-related tests",
     "nodes: Node architecture tests",
-    "validation: Validation framework tests"
+    "validation: Validation framework tests",
+    "flaky: Marks tests as flaky and allows reruns (from pytest-rerunfailures)"
 ]
 addopts = [
     "--strict-markers",

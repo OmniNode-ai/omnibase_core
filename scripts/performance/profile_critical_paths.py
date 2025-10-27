@@ -16,10 +16,11 @@ import time
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+from omnibase_core.models.infrastructure.model_timeout import ModelTimeout
 
 try:
     import os
@@ -38,6 +39,9 @@ try:
         spec.loader.exec_module(module)
         return module
 
+    # Import required models and enums for profiling
+    from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
+
     # Mock basic functionality for profiling
     class MockEnumRuntimeCategory:
         FAST = "FAST"
@@ -53,8 +57,8 @@ try:
             else:
                 return (60, 300)
 
-    # Just profile basic operations without full model loading
-    EnumRuntimeCategory = MockEnumRuntimeCategory()
+    # Use real EnumRuntimeCategory if imported successfully
+    # EnumRuntimeCategory is already imported above
 
 except ImportError as e:
     print(f"Import error: {e}")
@@ -244,9 +248,9 @@ class PerformanceProfiler:
 
                 results.append(
                     {
-                        "module": module_name,
+                        "module_name": module_name,
                         "import_time": end - start,
-                        "module": module,
+                        "module_obj": module,
                     }
                 )
 

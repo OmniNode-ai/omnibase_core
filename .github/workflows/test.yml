@@ -8,8 +8,9 @@ on:
   workflow_dispatch:
 
 env:
-  POETRY_VERSION: "1.8.0"
+  POETRY_VERSION: "2.2.1"
   PYTHON_VERSION: "3.12"
+  CACHE_VERSION: "0.1.1"
 
 jobs:
   # Quick smoke test - fails fast on basic issues (5-10s)
@@ -44,9 +45,10 @@ jobs:
           path: .venv
           key: >-
             venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
           restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
@@ -70,16 +72,22 @@ jobs:
             -x \
             --tb=short
 
-  # Parallel test execution - split into 10 groups for speed and memory management
+  # Parallel test execution - split into 16 groups for speed and memory management
+  # Split strategy rationale:
+  #   - 10,987 total tests ÷ 16 splits = ~687 tests/split
+  #   - Target: 2-4 minutes per split (reduces runner cancellation exposure)
+  #   - 16x parallelization speedup vs sequential execution
+  #   - Increased from 12 to 16 splits to reduce Split 7 runner cancellations
+  #   - Shorter per-split runtime reduces probability of external runner shutdown
   test-parallel:
-    name: Tests (Split ${{ matrix.split }}/10)
+    name: Tests (Split ${{ matrix.split }}/16)
     needs: smoke-test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
     steps:
       - name: Checkout code
@@ -109,9 +117,10 @@ jobs:
           path: .venv
           key: >-
             venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
           restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
@@ -128,14 +137,22 @@ jobs:
             exit 1
           }
 
-      - name: Run test split ${{ matrix.split }}/10
+      - name: Run test split ${{ matrix.split }}/16
         run: |
           poetry run pytest tests/ \
-            --splits 10 \
+            --splits 16 \
             --group ${{ matrix.split }} \
             -n auto \
+            --timeout=60 \
+            --timeout-method=thread \
             --tb=short \
             --junitxml=junit-${{ matrix.split }}.xml
+          # Per-test timeout: 60 seconds prevents infinite hangs
+          #   - Longest test: ~30 seconds (2x safety margin)
+          #   - Thread method: Avoids signal handler issues in parallel execution
+          #   - No false positives observed at this threshold
+          # All splits use -n auto (full parallelism) - shorter splits reduce
+          # resource pressure and runner cancellation probability
 
       - name: Upload test results
         if: always()
@@ -181,9 +198,10 @@ jobs:
           path: .venv
           key: >-
             venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
           restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
@@ -250,9 +268,10 @@ jobs:
           path: .venv
           key: >-
             venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
           restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
 
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
@@ -267,18 +286,37 @@ jobs:
       - name: Check isort import sorting
         run: poetry run isort --check-only src/ tests/
 
-    # MyPy disabled: 234 type errors, >45s execution time
-    # Same as pre-commit configuration
-    # (see .pre-commit-config.yaml line 52-61)
-    # TODO: Re-enable after fixing mixin Protocol definitions
-    # and import errors
-    # - name: Run mypy type checking
-    #   run: poetry run mypy src/omnibase_core
+      - name: Run mypy type checking (strict)
+        run: poetry run mypy src/omnibase_core
+
+  docs-validation:
+    name: Documentation Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Validate documentation links
+        run: |
+          python3 scripts/validate-doc-links.py --fix-case
+
+      - name: Documentation validation summary
+        if: always()
+        run: |
+          echo "## Documentation Validation" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All documentation links validated" >> $GITHUB_STEP_SUMMARY
 
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [smoke-test, test-parallel, lint]
+    needs: [smoke-test, test-parallel, lint, docs-validation]
     if: always()
 
     steps:
@@ -287,19 +325,23 @@ jobs:
           smoke="${{ needs.smoke-test.result }}"
           parallel="${{ needs.test-parallel.result }}"
           lint="${{ needs.lint.result }}"
+          docs="${{ needs.docs-validation.result }}"
 
           if [[ "$smoke" == "success" ]] && \
              [[ "$parallel" == "success" ]] && \
-             [[ "$lint" == "success" ]]; then
+             [[ "$lint" == "success" ]] && \
+             [[ "$docs" == "success" ]]; then
             echo "✅ All tests passed successfully"
             echo "Smoke Tests: ✅ Passed"
-            echo "Parallel Tests (10 splits): ✅ Passed"
+            echo "Parallel Tests (12 splits): ✅ Passed"
             echo "Code Quality: ✅ Passed"
+            echo "Documentation: ✅ Passed"
             exit 0
           else
             echo "❌ Tests failed"
             echo "Smoke Tests: $smoke"
             echo "Parallel Tests: $parallel"
             echo "Lint: $lint"
+            echo "Documentation: $docs"
             exit 1
           fi

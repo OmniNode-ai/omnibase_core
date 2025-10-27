@@ -100,7 +100,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
     def get_node_name(self) -> str:
         """Get the node name from the implementing class."""
         if hasattr(self, "node_name"):
-            node_name: str = getattr(self, "node_name")
+            node_name: str = self.node_name
             return node_name
         # Fallback: derive from class name
         class_name = self.__class__.__name__

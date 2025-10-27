@@ -5,6 +5,19 @@ Tests all execution paths, mode selection branches, complexity calculations,
 and workflow execution scenarios for the hybrid execution mixin.
 
 ZERO TOLERANCE: No Any types allowed.
+
+Note on Event Loop Mocking:
+    These tests use manual MagicMock() creation for event loops instead of the
+    mock_event_loop fixture from conftest.py. This is intentional because each
+    test requires different return values from mock_loop.run_until_complete().
+
+    The manual approach allows test-specific return values while maintaining
+    the same safety pattern:
+    1. Create mock loop with specific return value
+    2. Patch asyncio.new_event_loop to return mock
+    3. Verify mock_loop.close() was called for cleanup
+
+    See conftest.py for the generic mock_event_loop fixture used by other tests.
 """
 
 import json
@@ -207,11 +220,20 @@ class TestExecuteWithModeSelection:
         tool = MockTool()
         input_state = SimpleInputState(value="test")
 
+        # Mock asyncio to prevent actual event loop creation in CI
+        mock_loop = MagicMock()
+        mock_loop.run_until_complete.return_value = SimpleInputState(
+            value="workflow: test"
+        )
+
         with patch("llama_index.core.workflow"):
-            result = tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
+            with patch("asyncio.new_event_loop", return_value=mock_loop):
+                tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
 
         assert tool._execution_mode == ExecutionMode.WORKFLOW
         assert tool.workflow_created
+        # Verify event loop was properly closed
+        mock_loop.close.assert_called_once()
 
     def test_execute_with_auto_mode_calls_determine(self) -> None:
         """Test execute with AUTO mode calls determine_execution_mode."""
@@ -243,11 +265,20 @@ class TestExecuteWithModeSelection:
         tool = MockTool()
         input_state = SimpleInputState(value="test")
 
+        # Mock asyncio to prevent actual event loop creation in CI
+        mock_loop = MagicMock()
+        mock_loop.run_until_complete.return_value = SimpleInputState(
+            value="workflow: test"
+        )
+
         with patch("llama_index.core.workflow"):
-            result = tool.execute(input_state, mode=ExecutionMode.ORCHESTRATED)
+            with patch("asyncio.new_event_loop", return_value=mock_loop):
+                tool.execute(input_state, mode=ExecutionMode.ORCHESTRATED)
 
         # Orchestrated falls back to workflow mode
         assert tool._execution_mode == ExecutionMode.ORCHESTRATED
+        # Verify event loop was properly closed
+        mock_loop.close.assert_called_once()
 
     def test_execute_with_unknown_mode_falls_back_to_direct(self) -> None:
         """Test execute with unknown mode falls back to direct."""
@@ -298,13 +329,22 @@ class TestExecuteWorkflow:
         tool = MockTool()
         input_state = SimpleInputState(value="workflow_test")
 
+        # Mock asyncio to prevent actual event loop creation in CI
+        mock_loop = MagicMock()
+        mock_loop.run_until_complete.return_value = SimpleInputState(
+            value="workflow: workflow_test"
+        )
+
         with patch("llama_index.core.workflow"):
-            result = tool._execute_workflow(input_state)
+            with patch("asyncio.new_event_loop", return_value=mock_loop):
+                result = tool._execute_workflow(input_state)
 
         assert tool.workflow_created
         assert result.value == "workflow: workflow_test"
         assert tool._workflow_metrics is not None
         assert tool._workflow_metrics.status == EnumWorkflowStatus.COMPLETED
+        # Verify event loop was properly closed
+        mock_loop.close.assert_called_once()
 
     def test_execute_workflow_without_create_method_falls_back(self) -> None:
         """Test workflow execution without create_workflow falls back to direct."""
@@ -352,13 +392,22 @@ class TestExecuteWorkflow:
         tool = MockTool()
         input_state = SimpleInputState(value="test")
 
+        # Mock asyncio to prevent actual event loop creation in CI
+        mock_loop = MagicMock()
+        mock_loop.run_until_complete.return_value = SimpleInputState(
+            value="workflow: test"
+        )
+
         with patch("llama_index.core.workflow"):
-            result = tool._execute_workflow(input_state)
+            with patch("asyncio.new_event_loop", return_value=mock_loop):
+                tool._execute_workflow(input_state)
 
         assert tool._workflow_metrics is not None
         assert tool._workflow_metrics.status == EnumWorkflowStatus.COMPLETED
         assert tool._workflow_metrics.duration_seconds >= 0
         assert tool._workflow_metrics.steps_completed == 3
+        # Verify event loop was properly closed
+        mock_loop.close.assert_called_once()
 
 
 class TestExecuteOrchestrated:
@@ -369,11 +418,20 @@ class TestExecuteOrchestrated:
         tool = MockTool()
         input_state = SimpleInputState(value="test")
 
+        # Mock asyncio to prevent actual event loop creation in CI
+        mock_loop = MagicMock()
+        mock_loop.run_until_complete.return_value = SimpleInputState(
+            value="workflow: test"
+        )
+
         with patch("llama_index.core.workflow"):
-            result = tool._execute_orchestrated(input_state)
+            with patch("asyncio.new_event_loop", return_value=mock_loop):
+                tool._execute_orchestrated(input_state)
 
         # Should execute workflow
         assert tool.workflow_created
+        # Verify event loop was properly closed
+        mock_loop.close.assert_called_once()
 
 
 class TestCalculateComplexity:
@@ -564,11 +622,21 @@ class TestPropertiesAccessors:
 
         # Execute workflow to generate metrics
         input_state = SimpleInputState(value="test")
+
+        # Mock asyncio to prevent actual event loop creation in CI
+        mock_loop = MagicMock()
+        mock_loop.run_until_complete.return_value = SimpleInputState(
+            value="workflow: test"
+        )
+
         with patch("llama_index.core.workflow"):
-            result = tool._execute_workflow(input_state)
+            with patch("asyncio.new_event_loop", return_value=mock_loop):
+                tool._execute_workflow(input_state)
 
         assert tool.workflow_metrics is not None
         assert tool.workflow_metrics.status == EnumWorkflowStatus.COMPLETED
+        # Verify event loop was properly closed
+        mock_loop.close.assert_called_once()
 
 
 class TestCreateWorkflowDefault:
@@ -640,9 +708,19 @@ class TestEdgeCases:
         assert tool._execution_mode == ExecutionMode.DIRECT
 
         # Second execution in workflow mode
+        # Mock asyncio to prevent actual event loop creation in CI
+        mock_loop = MagicMock()
+        mock_loop.run_until_complete.return_value = SimpleInputState(
+            value="workflow: test"
+        )
+
         with patch("llama_index.core.workflow"):
-            result2 = tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
-            assert tool._execution_mode == ExecutionMode.WORKFLOW
+            with patch("asyncio.new_event_loop", return_value=mock_loop):
+                tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
+                assert tool._execution_mode == ExecutionMode.WORKFLOW
+
+        # Verify event loop was properly closed
+        mock_loop.close.assert_called_once()
 
     def test_complexity_with_empty_operations_list(self) -> None:
         """Test complexity with empty operations list."""

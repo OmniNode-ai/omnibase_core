@@ -487,8 +487,8 @@ class TestEffectSemanticsServiceMode:
             effect_type=EnumEffectType.FILE_OPERATION,
             operation_data={
                 "operation_type": "read",
-                "file_path": "/tmp/test.txt",
-            },  # noqa: S108 - Test data, not actual temp file usage
+                "file_path": "/tmp/test.txt",  # noqa: S108
+            },
             transaction_enabled=True,
             retry_enabled=False,
         )
@@ -562,8 +562,8 @@ class TestCircuitBreakerServiceMode:
             effect_type=EnumEffectType.FILE_OPERATION,
             operation_data={
                 "operation_type": "read",
-                "file_path": "/tmp/test.txt",
-            },  # noqa: S108 - Test data, not actual temp file usage
+                "file_path": "/tmp/test.txt",  # noqa: S108
+            },
             circuit_breaker_enabled=True,
             retry_enabled=False,
         )

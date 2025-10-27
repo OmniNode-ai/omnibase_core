@@ -80,10 +80,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         errors.append(f"File encoding error: {e}")
         return errors
     except OSError as e:
-        errors.append(f"OS error reading file: {e}")
-        return errors
-    except OSError as e:
-        errors.append(f"IO error reading file: {e}")
+        errors.append(f"OS/IO error reading file: {e}")
         return errors
 
     # Handle whitespace-only files as valid (empty content)

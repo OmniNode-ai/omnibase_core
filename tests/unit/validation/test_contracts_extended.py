@@ -20,6 +20,8 @@ from typing import TYPE_CHECKING
 import pytest
 import yaml
 
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.contracts import (
     MAX_FILE_SIZE,
     VALIDATION_TIMEOUT,
@@ -765,9 +767,6 @@ class TestTimeoutHandler:
         """
         import signal
 
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
-
         # Verify no alarms are pending before we start
         remaining = signal.alarm(0)
         assert remaining == 0, f"Found pending alarm with {remaining}s remaining"
@@ -1166,6 +1165,7 @@ operations: []
         assert "=" in captured.out or "-" in captured.out
         assert "Files checked" in captured.out or "validation" in captured.out.lower()
 
+    @pytest.mark.xdist_group(name="signal_handling")
     def test_cli_timeout_error(
         self,
         tmp_path: Path,
@@ -1209,6 +1209,7 @@ operations: []
         captured = capsys.readouterr()
         assert "timed out" in captured.out.lower()
 
+    @pytest.mark.xdist_group(name="signal_handling")
     def test_cli_generic_onex_error(
         self,
         tmp_path: Path,

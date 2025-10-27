@@ -93,5 +93,4 @@ class ModelResultFactory(ModelGenericFactory[T]):
 # Export result factory class and types
 __all__ = [
     "ModelResultFactory",
-    "TypedDictResultFactoryKwargs",
 ]

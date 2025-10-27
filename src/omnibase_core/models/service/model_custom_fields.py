@@ -178,10 +178,6 @@ ErrorDetails = ModelErrorDetails
 
 # Re-export for current standards
 __all__ = [
-    # Compatibility
-    "CustomFieldDefinition",
-    "CustomFields",
-    "ErrorDetails",
     "ModelCustomFieldDefinition",
     "ModelCustomFields",
     "ModelErrorDetails",

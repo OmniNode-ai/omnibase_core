@@ -9,7 +9,6 @@ This script fixes:
 
 import re
 from pathlib import Path
-from typing import Dict, List
 
 # Map of incorrect class names to correct class names
 SIMPLE_FIXES: dict[str, str] = {

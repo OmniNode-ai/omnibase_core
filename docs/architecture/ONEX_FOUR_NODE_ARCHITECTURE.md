@@ -44,10 +44,10 @@ The ONEX pattern enforces unidirectional data flow from left to right:
 **Implementation Example**:
 
 ```python
-from omnibase_core.core.infrastructure_service_bases import NodeEffectService
+from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 
-class DatabaseEffectService(NodeEffectService):
+class DatabaseEffectService(NodeEffect):
     """
     EFFECT node for database operations.
 
@@ -55,7 +55,7 @@ class DatabaseEffectService(NodeEffectService):
     retry logic, and error handling.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self.db_pool = container.get_service("ProtocolDatabasePool")
         self.logger = container.get_service("ProtocolLogger")
@@ -143,10 +143,10 @@ class DatabaseEffectService(NodeEffectService):
 **Implementation Example**:
 
 ```python
-from omnibase_core.core.infrastructure_service_bases import NodeComputeService
+from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
-class DataTransformationComputeService(NodeComputeService):
+class DataTransformationComputeService(NodeCompute):
     """
     COMPUTE node for data transformation operations.
 
@@ -154,7 +154,7 @@ class DataTransformationComputeService(NodeComputeService):
     optimized performance and parallel execution support.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self.algorithm_registry = container.get_service("ProtocolAlgorithmRegistry")
         self.performance_monitor = container.get_service("ProtocolPerformanceMonitor")
@@ -292,10 +292,10 @@ class DataTransformationComputeService(NodeComputeService):
 **Implementation Example**:
 
 ```python
-from omnibase_core.core.infrastructure_service_bases import NodeReducerService
+from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
-class DataAggregationReducerService(NodeReducerService):
+class DataAggregationReducerService(NodeReducer):
     """
     REDUCER node for data aggregation and state management.
 
@@ -303,7 +303,7 @@ class DataAggregationReducerService(NodeReducerService):
     for streaming updates and transactional consistency.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self.state_manager = container.get_service("ProtocolStateManager")
         self.transaction_manager = container.get_service("ProtocolTransactionManager")
@@ -540,12 +540,12 @@ class ModelIntent(BaseModel):
 **Pure Reducer Implementation**:
 
 ```python
-from omnibase_core.core.infrastructure_service_bases import NodeReducerService
+from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType, EnumIntentPriority
 from uuid import uuid4
 
-class OrderProcessingReducerService(NodeReducerService):
+class OrderProcessingReducerService(NodeReducer):
     """
     Pure FSM Reducer that emits intents for side effects.
 
@@ -684,10 +684,10 @@ class OrderProcessingReducerService(NodeReducerService):
 **Intent Executor Implementation**:
 
 ```python
-from omnibase_core.core.infrastructure_service_bases import NodeEffectService
+from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
-class IntentExecutorEffectService(NodeEffectService):
+class IntentExecutorEffectService(NodeEffect):
     """
     Effect node that executes intents emitted by Reducers.
 
@@ -843,10 +843,10 @@ def execute_reduction(self, contract):
 **Implementation Example**:
 
 ```python
-from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.models.contracts.model_contract_orchestrator import ModelContractOrchestrator
 
-class WorkflowOrchestratorService(NodeOrchestratorService):
+class WorkflowOrchestratorService(NodeOrchestrator):
     """
     ORCHESTRATOR node for workflow coordination and service management.
 
@@ -854,7 +854,7 @@ class WorkflowOrchestratorService(NodeOrchestratorService):
     workflow patterns, dependency management, and fault tolerance.
     """
 
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self.service_registry = container.get_service("ProtocolServiceRegistry")
         self.event_bus = container.get_service("ProtocolEventBus")
@@ -1168,12 +1168,12 @@ class ModelAction(BaseModel):
 **Lease Acquisition**:
 
 ```python
-from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.models.model_action import ModelAction, EnumActionType
 from uuid import uuid4
 from datetime import datetime, timedelta, UTC
 
-class LeaseAwareOrchestratorService(NodeOrchestratorService):
+class LeaseAwareOrchestratorService(NodeOrchestrator):
     """
     Orchestrator with lease-based single-writer enforcement.
     """
@@ -1608,8 +1608,8 @@ class ParallelComputeService(NodeComputeService):
 Nodes implement resource pooling and management:
 
 ```python
-class ResourceManagedEffectService(NodeEffectService):
-    def __init__(self, container: ONEXContainer):
+class ResourceManagedEffectService(NodeEffect):
+    def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self.connection_pool = container.get_service("ProtocolConnectionPool")
         self.semaphore = asyncio.Semaphore(10)  # Limit concurrent operations
@@ -1629,7 +1629,7 @@ All nodes collect performance metrics:
 
 ```python
 class MonitoredNodeService:
-    def __init__(self, container: ONEXContainer):
+    def __init__(self, container: ModelONEXContainer):
         self.metrics_collector = container.get_service("ProtocolMetricsCollector")
 
     async def execute_with_monitoring(self, contract):

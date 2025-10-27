@@ -1,124 +1,386 @@
 # Nodes API Reference - omnibase_core
 
-**Status**: 🚧 Coming Soon
+**Status**: ✅ Complete
 
 ## Overview
 
-Complete API reference for all ONEX node base classes.
+This document provides comprehensive API reference for all node classes in omnibase_core. The ONEX framework provides four core node types: COMPUTE, EFFECT, REDUCER, and ORCHESTRATOR.
 
-## Node Base Classes
+## Core Node Classes
 
-### NodeEffectService
+### NodeCompute
 
-**Location**: `omnibase_core.core.node_effect_service`
+**Location**: `omnibase_core.nodes.node_compute`
 
-Base class for EFFECT nodes that handle external interactions.
+**Purpose**: Pure computation nodes for business logic and data transformation.
 
 ```python
-class NodeEffectService(NodeCoreBase):
-    """Base class for EFFECT nodes."""
+from omnibase_core.nodes.node_compute import NodeCompute
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
+class MyComputeNode(NodeCompute):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
 
-    async def execute_effect(
-        self,
-        contract: ModelContractEffect
-    ) -> ModelResult:
-        """Execute external operation."""
-        pass
+    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        # Your computation logic here
+        return {"result": "computed_value"}
 ```
 
-### NodeComputeService
+#### Key Methods
 
-**Location**: `omnibase_core.core.node_compute_service`
+- `__init__(container: ModelONEXContainer)` - Initialize with dependency injection container
+- `async process(input_data: Dict[str, Any]) -> Dict[str, Any]` - Main processing method
+- `get_metrics() -> Dict[str, Any]` - Get performance metrics
+- `health_check() -> Dict[str, Any]` - Health status check
 
-Base class for COMPUTE nodes that perform pure transformations.
+#### Properties
+
+- `container: ModelONEXContainer` - Dependency injection container
+- `computation_cache: ModelComputeCache` - LRU cache for results
+- `performance_metrics: Dict[str, Any]` - Performance tracking data
+
+### NodeEffect
+
+**Location**: `omnibase_core.nodes.node_effect`
+
+**Purpose**: Side effect nodes for external interactions (databases, APIs, file systems).
 
 ```python
-class NodeComputeService(NodeCoreBase):
-    """Base class for COMPUTE nodes."""
+from omnibase_core.nodes.node_effect import NodeEffect
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
+class DatabaseEffectNode(NodeEffect):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
 
-    async def execute_compute(
-        self,
-        contract: ModelContractCompute
-    ) -> ModelResult:
-        """Execute computation."""
-        pass
+    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        # Your side effect logic here
+        return {"status": "completed"}
 ```
 
-### NodeReducerService
+#### Key Methods
 
-**Location**: `omnibase_core.core.node_reducer_service`
+- `__init__(container: ModelONEXContainer)` - Initialize with dependency injection container
+- `async process(input_data: Dict[str, Any]) -> Dict[str, Any]` - Main processing method
+- `async transaction_context(operation_id: UUID)` - Transaction management context
+- `get_circuit_breaker_status() -> Dict[str, Any]` - Circuit breaker status
 
-Base class for REDUCER nodes that manage state with pure FSM pattern.
+#### Properties
+
+- `container: ModelONEXContainer` - Dependency injection container
+- `circuit_breakers: Dict[str, ModelCircuitBreaker]` - Circuit breaker instances
+- `transaction_manager: ModelEffectTransaction` - Transaction management
+
+### NodeReducer
+
+**Location**: `omnibase_core.nodes.node_reducer`
+
+**Purpose**: State management nodes for data aggregation and state transitions.
 
 ```python
-class NodeReducerService(NodeCoreBase):
-    """Base class for REDUCER nodes."""
+from omnibase_core.nodes.node_reducer import NodeReducer
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
+class MetricsReducerNode(NodeReducer):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
 
-    async def execute_reduction(
-        self,
-        state: ModelState,
-        action: ModelAction
-    ) -> Tuple[ModelState, List[ModelIntent]]:
-        """Execute state reduction (pure FSM)."""
-        pass
+    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        # Your state management logic here
+        return {"state": "updated"}
 ```
 
-### NodeOrchestratorService
+#### Key Methods
 
-**Location**: `omnibase_core.core.node_orchestrator_service`
+- `__init__(container: ModelONEXContainer)` - Initialize with dependency injection container
+- `async process(input_data: Dict[str, Any]) -> Dict[str, Any]` - Main processing method
+- `get_current_state() -> Dict[str, Any]` - Get current state
+- `emit_intent(intent: ModelIntent)` - Emit intent for side effects
 
-Base class for ORCHESTRATOR nodes that coordinate workflows.
+#### Properties
+
+- `container: ModelONEXContainer` - Dependency injection container
+- `current_state: Dict[str, Any]` - Current state data
+- `state_history: List[Dict[str, Any]]` - State change history
+
+### NodeOrchestrator
+
+**Location**: `omnibase_core.nodes.node_orchestrator`
+
+**Purpose**: Workflow coordination nodes for managing complex business processes.
 
 ```python
-class NodeOrchestratorService(NodeCoreBase):
-    """Base class for ORCHESTRATOR nodes."""
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
+class WorkflowOrchestratorNode(NodeOrchestrator):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
 
-    async def execute_orchestration(
-        self,
-        contract: ModelContractOrchestrator
-    ) -> ModelResult:
-        """Execute workflow orchestration."""
-        pass
+    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        # Your orchestration logic here
+        return {"workflow": "completed"}
 ```
 
-## NodeCoreBase
+#### Key Methods
 
-Common base class for all nodes.
+- `__init__(container: ModelONEXContainer)` - Initialize with dependency injection container
+- `async process(input_data: Dict[str, Any]) -> Dict[str, Any]` - Main processing method
+- `async coordinate_workflow(workflow_data: Dict[str, Any])` - Coordinate workflow execution
+- `get_workflow_status(workflow_id: str) -> Dict[str, Any]` - Get workflow status
 
-### Methods
+#### Properties
 
-#### `__init__(container: ModelONEXContainer)`
+- `container: ModelONEXContainer` - Dependency injection container
+- `active_workflows: Dict[str, Dict[str, Any]]` - Active workflow instances
+- `workflow_templates: Dict[str, Dict[str, Any]]` - Workflow templates
 
-Initialize node with container.
+## Service Wrapper Classes
 
-#### `get_service(protocol_name: str) -> Any`
+### ModelServiceCompute
 
-Resolve service by protocol name.
+**Location**: `omnibase_core.models.nodes.node_services.model_service_compute`
 
-#### `async def health_check() -> ModelHealthStatus`
+**Purpose**: Pre-composed COMPUTE node with common mixins.
 
-Check node health status.
+```python
+from omnibase_core.models.nodes.node_services.model_service_compute import ModelServiceCompute
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-## Next Steps
+# Pre-composed with MixinNodeService, NodeCompute, MixinHealthCheck, MixinCaching, MixinMetrics
+service = ModelServiceCompute(container)
+```
 
-- [Models API](models.md) - Model reference
-- [Enums API](enums.md) - Enumeration reference
-- [Node Building Guide](../../guides/node-building/README.md)
+### ModelServiceEffect
 
----
+**Location**: `omnibase_core.models.nodes.node_services.model_service_effect`
 
-**Related Documentation**:
-- [ONEX Architecture](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
-- [Node Templates](../templates/)
+**Purpose**: Pre-composed EFFECT node with common mixins.
+
+```python
+from omnibase_core.models.nodes.node_services.model_service_effect import ModelServiceEffect
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+# Pre-composed with MixinNodeService, NodeEffect, MixinHealthCheck, MixinCircuitBreaker, MixinMetrics
+service = ModelServiceEffect(container)
+```
+
+### ModelServiceReducer
+
+**Location**: `omnibase_core.models.nodes.node_services.model_service_reducer`
+
+**Purpose**: Pre-composed REDUCER node with common mixins.
+
+```python
+from omnibase_core.models.nodes.node_services.model_service_reducer import ModelServiceReducer
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+# Pre-composed with MixinNodeService, NodeReducer, MixinHealthCheck, MixinStateManagement, MixinMetrics
+service = ModelServiceReducer(container)
+```
+
+### ModelServiceOrchestrator
+
+**Location**: `omnibase_core.models.nodes.node_services.model_service_orchestrator`
+
+**Purpose**: Pre-composed ORCHESTRATOR node with common mixins.
+
+```python
+from omnibase_core.models.nodes.node_services.model_service_orchestrator import ModelServiceOrchestrator
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+# Pre-composed with MixinNodeService, NodeOrchestrator, MixinHealthCheck, MixinWorkflowManagement, MixinMetrics
+service = ModelServiceOrchestrator(container)
+```
+
+## Base Infrastructure Classes
+
+### NodeCoreBase
+
+**Location**: `omnibase_core.infrastructure.node_core_base`
+
+**Purpose**: Abstract base class providing common infrastructure for all nodes.
+
+```python
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+class MyCustomNode(NodeCoreBase):
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+```
+
+#### Key Methods
+
+- `__init__(container: ModelONEXContainer)` - Initialize with container
+- `load_contracts()` - Load node contracts
+- `emit_event(event: ModelEventEnvelope)` - Emit events
+- `handle_error(error: Exception)` - Error handling
+
+## Common Patterns
+
+### Basic Node Implementation
+
+```python
+from omnibase_core.nodes.node_compute import NodeCompute
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from typing import Dict, Any
+
+class MyBusinessLogicNode(NodeCompute):
+    """Example COMPUTE node implementation."""
+
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+        # Initialize your business logic components
+
+    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Main processing method."""
+        try:
+            # Validate input
+            validated_input = self._validate_input(input_data)
+
+            # Process business logic
+            result = await self._execute_business_logic(validated_input)
+
+            # Return result
+            return {"success": True, "result": result}
+
+        except Exception as e:
+            # Handle errors
+            return {"success": False, "error": str(e)}
+
+    def _validate_input(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate input data."""
+        # Add validation logic
+        return input_data
+
+    async def _execute_business_logic(self, input_data: Dict[str, Any]) -> Any:
+        """Execute core business logic."""
+        # Add business logic
+        return "processed_result"
+```
+
+### Error Handling Pattern
+
+```python
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
+
+async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        # Your logic here
+        return {"result": "success"}
+    except ValueError as e:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Validation failed: {str(e)}",
+            context={"input_data": input_data}
+        ) from e
+    except Exception as e:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.PROCESSING_ERROR,
+            message=f"Processing failed: {str(e)}",
+            context={"input_data": input_data}
+        ) from e
+```
+
+### Health Check Pattern
+
+```python
+async def health_check(self) -> Dict[str, Any]:
+    """Implement health check."""
+    try:
+        # Check dependencies
+        container_healthy = self.container is not None
+
+        # Check internal state
+        internal_healthy = self._check_internal_state()
+
+        return {
+            "status": "healthy" if container_healthy and internal_healthy else "unhealthy",
+            "components": {
+                "container": "healthy" if container_healthy else "unhealthy",
+                "internal_state": "healthy" if internal_healthy else "unhealthy"
+            },
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": time.time()
+        }
+```
+
+## Thread Safety
+
+**Important**: Most ONEX node components are **NOT thread-safe by default**. See [Threading Guide](../../guides/THREADING.md) for details.
+
+### Thread-Safe Usage
+
+```python
+import threading
+
+# Option 1: Per-thread instances
+thread_local = threading.local()
+
+def get_node_instance(container):
+    if not hasattr(thread_local, 'node'):
+        thread_local.node = MyComputeNode(container)
+    return thread_local.node
+
+# Option 2: Use service wrappers with thread-safe mixins
+from omnibase_core.models.nodes.node_services.model_service_compute import ModelServiceCompute
+service = ModelServiceCompute(container)  # May include thread-safe patterns
+```
+
+## Performance Considerations
+
+### Caching
+
+```python
+# COMPUTE nodes include built-in caching
+class MyComputeNode(NodeCompute):
+    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        # Check cache first
+        cache_key = self._generate_cache_key(input_data)
+        cached_result = self.computation_cache.get(cache_key)
+        if cached_result:
+            return cached_result
+
+        # Compute result
+        result = await self._compute(input_data)
+
+        # Cache result
+        self.computation_cache.put(cache_key, result)
+        return result
+```
+
+### Metrics Collection
+
+```python
+# All nodes support metrics collection
+class MyNode(NodeCompute):
+    async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        start_time = time.time()
+
+        try:
+            result = await self._process(input_data)
+
+            # Record success metrics
+            self.record_metric("processing_time", time.time() - start_time)
+            self.record_metric("success_count", 1)
+
+            return result
+        except Exception as e:
+            # Record error metrics
+            self.record_metric("error_count", 1)
+            raise
+```
+
+## Related Documentation
+
+- [Node Building Guide](../../guides/node-building/README.md) - Complete tutorials
+- [Threading Guide](../../guides/THREADING.md) - Thread safety considerations
+- [Error Handling](../../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error handling patterns
+- [Architecture Overview](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - System design

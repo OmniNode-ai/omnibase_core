@@ -40,18 +40,18 @@ class ONEXPatternExclusion:
 
     def __call__(self, target: Callable[..., Any] | type) -> Callable[..., Any] | type:
         """Apply the exclusion to the target function or class."""
-        # Mark the target with exclusion metadata using setattr to avoid type issues
+        # Mark the target with exclusion metadata (type ignore for dynamic attributes)
         if not hasattr(target, "_onex_pattern_exclusions"):
-            setattr(target, "_onex_pattern_exclusions", set())
+            target._onex_pattern_exclusions = set()  # type: ignore[attr-defined]
 
         existing_exclusions: set[str] = getattr(
             target, "_onex_pattern_exclusions", set()
         )
         existing_exclusions.update(self.excluded_patterns)
-        setattr(target, "_onex_pattern_exclusions", existing_exclusions)
-        setattr(target, "_onex_exclusion_reason", self.reason)
-        setattr(target, "_onex_exclusion_scope", self.scope)
-        setattr(target, "_onex_exclusion_reviewer", self.reviewer)
+        target._onex_pattern_exclusions = existing_exclusions  # type: ignore[union-attr]
+        target._onex_exclusion_reason = self.reason  # type: ignore[union-attr]
+        target._onex_exclusion_scope = self.scope  # type: ignore[union-attr]
+        target._onex_exclusion_reviewer = self.reviewer  # type: ignore[union-attr]
 
         return target
 

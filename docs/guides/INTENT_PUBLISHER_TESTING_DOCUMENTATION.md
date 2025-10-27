@@ -43,7 +43,7 @@ This document provides a comprehensive index of all documentation related to tes
 
 ### 2. General Testing Guide
 
-**File**: `docs/guides/testing-guide.md`
+**File**: `docs/guides/TESTING_GUIDE.md`
 
 **Updated Sections**:
 - Intent Publisher Testing quick start
@@ -362,7 +362,7 @@ This documentation suite provides complete coverage of testing nodes using Mixin
 | Document | Purpose | Audience |
 |----------|---------|----------|
 | `09-testing-intent-publisher.md` | Comprehensive testing guide | Developers writing tests |
-| `testing-guide.md` | General testing overview | All developers |
+| `TESTING_GUIDE.md` | General testing overview | All developers |
 | `05_REDUCER_NODE_TUTORIAL.md` | REDUCER-specific patterns | REDUCER developers |
 | `fixture_intent_publisher.py` | Test fixtures implementation | Test authors |
 | `fixtures/README.md` | Fixtures quick reference | All developers |
@@ -375,7 +375,7 @@ This documentation suite provides complete coverage of testing nodes using Mixin
 
 - [MODEL_INTENT_ARCHITECTURE.md](../architecture/MODEL_INTENT_ARCHITECTURE.md) - Intent pattern architecture
 - [Error Handling Best Practices](../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error testing patterns
-- [Testing Pure FSM](node-building/08-testing-pure-fsm.md) - REDUCER FSM testing
+- [Testing Intent Publisher](node-building/09_TESTING_INTENT_PUBLISHER.md) - Intent publisher testing patterns
 - [ONEX Four-Node Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - Overall architecture
 
 ---

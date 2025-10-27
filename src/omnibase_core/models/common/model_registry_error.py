@@ -21,11 +21,6 @@ class ModelRegistryError(ModelOnexError):
     Use this for all structured registry error reporting.
     """
 
-    error_code: EnumRegistryErrorCode = Field(
-        default=...,
-        description="Canonical registry error code.",
-    )
-
     def __init__(
         self,
         message: str,

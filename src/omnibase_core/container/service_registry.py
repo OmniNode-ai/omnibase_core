@@ -5,6 +5,11 @@ from datetime import datetime
 from typing import Any, Literal, TypeVar, cast
 from uuid import UUID, uuid4
 
+from omnibase_spi.protocols.container import (
+    LiteralInjectionScope,
+    LiteralServiceLifecycle,
+)
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -19,10 +24,6 @@ from omnibase_core.models.container.model_service_instance import ModelServiceIn
 from omnibase_core.models.container.model_service_metadata import ModelServiceMetadata
 from omnibase_core.models.container.model_service_registration import (
     ModelServiceRegistration,
-)
-from omnibase_spi.protocols.container import (
-    LiteralInjectionScope,
-    LiteralServiceLifecycle,
 )
 
 # Define LiteralOperationStatus locally to avoid runtime import

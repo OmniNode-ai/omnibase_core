@@ -9,7 +9,6 @@ This script handles violations that the field-based AST script missed:
 
 import ast
 from pathlib import Path
-from typing import Set
 
 
 class FunctionParamRewriter(ast.NodeTransformer):
@@ -267,7 +266,7 @@ def main():
             fixed_count += 1
             print("  ✅ Fixed!\n")
         else:
-            print("  ℹ️  No changes needed\n")
+            print("  INFO: No changes needed\n")
 
     print(f"📊 Summary: {fixed_count} files fixed")
 

@@ -4,6 +4,7 @@ Analyze MyPy name-defined and attr-defined errors to categorize and prioritize f
 """
 
 import re
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 
@@ -206,7 +207,7 @@ def print_report(errors: list[dict], categories: dict, by_file: dict):
 
 
 if __name__ == "__main__":
-    error_file = "/tmp/name_errors_v2.txt"
+    error_file = str(Path(tempfile.gettempdir()) / "name_errors_v2.txt")
 
     print("Parsing error file...")
     errors = parse_error_file(error_file)

@@ -28,15 +28,6 @@ GitHubReleaseEvent = ModelGitHubReleaseEvent
 
 # Re-export
 __all__ = [
-    "GitHubIssue",
-    "GitHubIssueComment",
-    "GitHubIssueCommentEvent",
-    "GitHubIssuesEvent",
-    "GitHubRelease",
-    "GitHubReleaseEvent",
-    "GitHubRepository",
-    # Compatibility
-    "GitHubUser",
     "ModelGitHubIssue",
     "ModelGitHubIssueComment",
     "ModelGitHubIssueCommentEvent",

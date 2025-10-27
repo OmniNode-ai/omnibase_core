@@ -10,18 +10,6 @@ from omnibase_core.models.core.model_resource_metrics import ModelResourceMetric
 __all__ = [
     "EnumAgentStatusType",
     "ModelAgentStatus",
-    "activity",
-    "agent_id",
-    "error_count",
-    "health_score",
-    "last_error",
-    "last_updated",
-    "resource_usage",
-    "started_at",
-    "status",
-    "tasks_completed",
-    "tasks_failed",
-    "uptime_seconds",
 ]
 
 

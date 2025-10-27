@@ -3,7 +3,6 @@
 
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 # Patterns to fix: (regex_pattern, replacement, description)
 FIXES: list[tuple[str, str, str]] = [

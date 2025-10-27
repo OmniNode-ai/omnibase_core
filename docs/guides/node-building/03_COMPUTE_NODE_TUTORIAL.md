@@ -796,8 +796,8 @@ You've successfully built a COMPUTE node! Now:
 - [EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md) - Build a database interaction node
 - [REDUCER Node Tutorial](05_REDUCER_NODE_TUTORIAL.md) - Build a data aggregation node
 - [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Coordinate workflows
-- [Patterns Catalog](07-patterns-catalog.md) - Reusable patterns
-- [Testing Guide](08-testing-guide.md) - Advanced testing strategies
+- [Patterns Catalog](07_PATTERNS_CATALOG.md) - Reusable patterns
+- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Advanced testing strategies
 
 ## Troubleshooting
 

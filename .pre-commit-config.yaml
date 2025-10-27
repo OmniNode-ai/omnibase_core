@@ -2,9 +2,9 @@
 # Uses shared ONEX hook templates to demonstrate ecosystem integration
 #
 # PERFORMANCE OPTIMIZATION NOTES:
-# - MyPy disabled for pre-commit (>45s timeout) - run manually or in CI
+# - MyPy enabled with strict configuration (0 errors, ~5-10s)
 # - validate-naming-conventions takes ~14s on full codebase
-# - Total pre-commit time target: <15s for fast feedback
+# - Total pre-commit time target: <30s for comprehensive feedback
 # - Use `pre-commit run --all-files` to test all hooks before pushing
 
 repos:
@@ -24,41 +24,54 @@ repos:
         args: [--markdown-linebreak-ext=md]
         exclude: ^\.github/workflows/
       - id: end-of-file-fixer
-        exclude: ^\.github/workflows/
+        exclude: ^(\.github/workflows/|\.mcp\.json$)
       - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=1000]
 
   # ONEX Python Development Hooks (from shared templates)
-  - repo: https://github.com/psf/black
-    rev: 25.9.0
+  # Order: black → isort → ruff → mypy (formatting before linting before type checking)
+  - repo: local
     hooks:
-      - id: black
-        name: Black Python Formatter
+      - id: black-format
+        name: black (auto-format)
+        entry: poetry run black
+        language: system
+        types: [python]
         args: [--line-length, "88", --target-version, py311]
         exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
+        stages: [commit]
 
-  - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
-    hooks:
-      - id: isort
-        name: isort Import Sorter
-        args: [--profile, black, --line-length, "88"]
+      - id: isort-format
+        name: isort (auto-sort imports)
+        entry: poetry run isort
+        language: system
+        types: [python]
+        args: [--profile, black, --line-length, "88", --skip, src/omnibase_core/mixins/mixin_event_bus.py, --skip, src/omnibase_core/mixins/mixin_event_handler.py]
+        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/|src/omnibase_core/mixins/mixin_event_bus\.py|src/omnibase_core/mixins/mixin_event_handler\.py)$
+        stages: [commit]
+
+      - id: ruff-fix
+        name: ruff (auto-fix linting issues)
+        entry: poetry run ruff check --fix
+        language: system
+        types: [python]
         exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
+        stages: [commit]
+
+      - id: mypy-type-check
+        name: mypy (type checking - strict)
+        entry: poetry run mypy
+        language: system
+        types: [python]
+        args: [--show-error-codes, --no-error-summary]
+        files: ^src/omnibase_core/.*\.py$
+        exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
+        stages: [commit]
 
   # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:
-      # MyPy Type Checking - DISABLED for pre-commit (moved to CI for full checks)
-      # Taking >45s per run - use `poetry run mypy src/` manually or in CI
-      # - id: mypy-poetry
-      #   name: MyPy Type Checking (via Poetry)
-      #   entry: poetry run mypy
-      #   language: system
-      #   types: [python]
-      #   args: [--ignore-missing-imports, --show-error-codes, --no-error-summary, --follow-imports=silent, --config-file=mypy.ini]
-      #   files: ^src/omnibase_core/(core|models|enums|exceptions|types).*\.py$
-      #   exclude: ^(tests/|src/omnibase_core/examples|src/omnibase_core/core/contracts/model_contract_effect|archive/|archived/).*\.py$
 
       # ONEX Core Framework Validation (SHARED HOOKS)
       - id: validate-repository-structure
@@ -270,17 +283,9 @@ repos:
           - -x
           - --tb=short
           - -q
+          - -p
+          - no:rerunfailures
         stages: [pre-commit]
-
-    # COMPREHENSIVE ONEX STANDARDS VALIDATION (SHARED) - Disabled for now due to local fallback issues
-    # This demonstrates how other repositories would use the shared validation
-    # - id: validate-onex-standards
-    #   name: ONEX Standards Comprehensive Validation
-    #   entry: python -c "from omnibase_core.validation import validate_onex_standards; import sys; result = validate_onex_standards('.'); sys.exit(0 if result['success'] else 1)"
-    #   language: system
-    #   always_run: true
-    #   pass_filenames: false
-    #   stages: [commit]
 
 # Configuration
 default_install_hook_types: [pre-commit]

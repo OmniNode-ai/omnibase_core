@@ -10,7 +10,6 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from statistics import mean, median, stdev
-from typing import List
 
 
 @dataclass

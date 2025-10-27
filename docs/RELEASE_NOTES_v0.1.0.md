@@ -113,7 +113,7 @@ class NodeMyServiceCompute(NodeCoreBase):
 ```
 
 ### Learn More
-- **Getting Started**: [Quick Start Guide](getting-started/quick-start.md)
+- **Getting Started**: [Quick Start Guide](getting-started/QUICK_START.md)
 - **Node Building**: [Complete Node Building Guide](guides/node-building/README.md)
 - **Architecture**: [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 - **Documentation Index**: [docs/INDEX.md](INDEX.md)
@@ -174,7 +174,7 @@ await self.emit_intent(intent)
 - Target: <100 violations before v0.2.0
 
 ### Thread Safety
-Most ONEX node components are NOT thread-safe by default. See [Threading Guide](reference/THREADING.md) for:
+Most ONEX node components are NOT thread-safe by default. See [Threading Guide](guides/THREADING.md) for:
 - Thread safety guarantees per component
 - Synchronization patterns
 - Production deployment checklist
@@ -214,12 +214,12 @@ Most ONEX node components are NOT thread-safe by default. See [Threading Guide](
 - [docs/INDEX.md](INDEX.md) - Complete documentation index
 
 ### Quick Links
-- [Installation Guide](getting-started/installation.md)
+- [Installation Guide](getting-started/INSTALLATION.md)
 - [COMPUTE Node Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md)
 - [EFFECT Node Tutorial](guides/node-building/04_EFFECT_NODE_TUTORIAL.md)
 - [REDUCER Node Tutorial](guides/node-building/05_REDUCER_NODE_TUTORIAL.md)
 - [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md)
-- [Threading Guide](reference/THREADING.md)
+- [Threading Guide](guides/THREADING.md)
 
 ## Contributing
 

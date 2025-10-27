@@ -13,11 +13,9 @@ from pathlib import Path
 # Add validation directory to path to import timeout_utils
 sys.path.insert(0, str(Path(__file__).parent))
 
+from timeout_utils import DEFAULT_TIMEOUTS, TIMEOUT_ERROR_MESSAGES, CrossPlatformTimeout
+from timeout_utils import TimeoutError as CustomTimeoutError
 from timeout_utils import (
-    DEFAULT_TIMEOUTS,
-    TIMEOUT_ERROR_MESSAGES,
-    CrossPlatformTimeout,
-    TimeoutError,
     UnixSignalTimeout,
     get_platform_info,
     timeout_context,
@@ -34,7 +32,7 @@ def test_cross_platform_timeout():
         with CrossPlatformTimeout(1, "Test timeout"):
             time.sleep(2)
         assert False, "Should have timed out"
-    except TimeoutError as e:
+    except CustomTimeoutError as e:
         assert str(e) == "Test timeout"
         print("  ✅ Timeout correctly raised")
 
@@ -43,7 +41,7 @@ def test_cross_platform_timeout():
         with CrossPlatformTimeout(2, "Test timeout"):
             time.sleep(0.5)
         print("  ✅ Normal completion works")
-    except TimeoutError:
+    except CustomTimeoutError:
         assert False, "Should not have timed out"
 
 
@@ -56,7 +54,7 @@ def test_unix_signal_timeout():
         with UnixSignalTimeout(1, "Unix test timeout"):
             time.sleep(2)
         assert False, "Should have timed out"
-    except TimeoutError as e:
+    except CustomTimeoutError as e:
         assert str(e) == "Unix test timeout"
         print("  ✅ Unix timeout correctly raised")
 
@@ -65,7 +63,7 @@ def test_unix_signal_timeout():
         with UnixSignalTimeout(2, "Unix test timeout"):
             time.sleep(0.5)
         print("  ✅ Unix normal completion works")
-    except TimeoutError:
+    except CustomTimeoutError:
         assert False, "Should not have timed out"
 
 
@@ -78,7 +76,7 @@ def test_timeout_context():
         with timeout_context("validation", 1):
             time.sleep(2)
         assert False, "Should have timed out"
-    except TimeoutError as e:
+    except CustomTimeoutError as e:
         expected_msg = TIMEOUT_ERROR_MESSAGES["validation"]
         assert str(e) == expected_msg
         print("  ✅ Predefined operation timeout works")
@@ -88,7 +86,7 @@ def test_timeout_context():
         with timeout_context("general", 1):
             time.sleep(0.5)
         print("  ✅ Custom duration works")
-    except TimeoutError:
+    except CustomTimeoutError:
         assert False, "Should not have timed out"
 
 
@@ -105,7 +103,7 @@ def test_cleanup_function():
         with timeout_context("general", 1, cleanup_func=cleanup):
             time.sleep(2)
         assert False, "Should have timed out"
-    except TimeoutError:
+    except CustomTimeoutError:
         # Give cleanup function time to execute
         assert cleanup_called.wait(
             timeout=1
@@ -131,7 +129,7 @@ def test_with_timeout_decorator():
     try:
         slow_function()
         assert False, "Should have timed out"
-    except TimeoutError as e:
+    except CustomTimeoutError as e:
         assert str(e) == "Decorator timeout"
         print("  ✅ Decorator timeout works")
 
@@ -140,7 +138,7 @@ def test_with_timeout_decorator():
         result = fast_function()
         assert result == "completed"
         print("  ✅ Decorator normal completion works")
-    except TimeoutError:
+    except CustomTimeoutError:
         assert False, "Should not have timed out"
 
 
@@ -237,7 +235,7 @@ def test_ruff_try003_compliance():
     try:
         with timeout_context("validation", 0.1):
             time.sleep(0.2)
-    except TimeoutError as e:
+    except CustomTimeoutError as e:
         expected = TIMEOUT_ERROR_MESSAGES["validation"]
         assert str(e) == expected, f"Expected '{expected}', got '{e!s}'"
         print("  ✅ timeout_context uses constants for error messages")
@@ -246,7 +244,7 @@ def test_ruff_try003_compliance():
     try:
         with CrossPlatformTimeout(0.1, TIMEOUT_ERROR_MESSAGES["file_discovery"]):
             time.sleep(0.2)
-    except TimeoutError as e:
+    except CustomTimeoutError as e:
         expected = TIMEOUT_ERROR_MESSAGES["file_discovery"]
         assert str(e) == expected
         print("  ✅ CrossPlatformTimeout accepts constant messages")

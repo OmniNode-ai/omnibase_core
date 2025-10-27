@@ -12,6 +12,9 @@ Models for metadata collection, analytics, and field information.
 
 from typing import TYPE_CHECKING
 
+# Import ProtocolSupportedMetadataType from omnibase_spi (authoritative source)
+from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
+
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.types.typed_dict_analytics_summary_data import (
     TypedDictAnalyticsSummaryData,
@@ -28,9 +31,6 @@ from omnibase_core.types.typed_dict_quality_data import TypedDictQualityData
 from omnibase_core.types.typed_dict_timestamp_update_data import (
     TypedDictTimestampUpdateData,
 )
-
-# Import ProtocolSupportedMetadataType from omnibase_spi (authoritative source)
-from omnibase_spi.protocols.types import ProtocolSupportedMetadataType
 
 from .model_metadata_analytics_summary import ModelMetadataAnalyticsSummary
 from .model_metadata_field_info import ModelMetadataFieldInfo

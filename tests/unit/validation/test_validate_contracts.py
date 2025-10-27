@@ -402,7 +402,8 @@ node_type: 'compute'""",
         with patch("builtins.open", side_effect=OSError("OS Error")):
             errors = validate_yaml_file(yaml_file)
             assert len(errors) >= 1
-            assert any("os error reading file" in error.lower() for error in errors)
+            # Check for OS/IO error in message (script uses "OS/IO error reading file")
+            assert any("error reading file" in error.lower() for error in errors)
 
 
 class TestMainFunction:

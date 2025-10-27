@@ -4,7 +4,6 @@
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Set
 
 # Mapping of undefined names to their import statements
 IMPORT_MAP = {

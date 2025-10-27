@@ -16,7 +16,6 @@ import argparse
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 
 class ExceptionHandlingValidator:
@@ -81,13 +80,15 @@ class ExceptionHandlingValidator:
                     next_lines = lines[next_lines_start:next_lines_end]
 
                     has_logging = any(
-                        "emit_log_event" in l
-                        or "logger." in l
-                        or "_logger." in l
-                        or "log." in l
-                        for l in next_lines
+                        "emit_log_event" in line
+                        or "logger." in line
+                        or "_logger." in line
+                        or "log." in line
+                        for line in next_lines
                     )
-                    has_fallback_ok = any("# fallback-ok" in l for l in next_lines)
+                    has_fallback_ok = any(
+                        "# fallback-ok" in line for line in next_lines
+                    )
 
                     # Flag handlers with no logging AND no control flow
                     # Control flow: return, raise, break, continue, or any function call

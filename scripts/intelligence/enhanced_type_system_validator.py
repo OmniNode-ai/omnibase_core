@@ -16,7 +16,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import Any, NamedTuple, Optional
 
 
 @dataclass
@@ -120,7 +120,7 @@ class EnhancedTypeValidator(ast.NodeVisitor):
                 "Generic Any Usage",
                 "CRITICAL",
                 "Generic type contains Any",
-                "Replace with specific types: Dict[str, ModelSchemaValue] instead of Dict[str, Any]",
+                "Replace with specific types: dict[str, ModelSchemaValue] instead of dict[str, Any]",
             )
 
         # Check for lazy Union usage patterns
@@ -444,14 +444,14 @@ class ComprehensiveTypeSystemValidator:
                 "# ❌ CRITICAL VIOLATIONS",
                 "param: Any",
                 "def func() -> Any:",
-                "data: Dict[str, Any]",
-                "items: List[Any]",
+                "data: dict[str, Any]",
+                "items: list[Any]",
                 "",
                 "# ✅ ONEX COMPLIANT",
                 "param: str | int | ModelSchemaValue",
                 "def func() -> ModelProcessingResult:",
-                "data: Dict[str, ModelSchemaValue]",
-                "items: List[ModelSchemaValue]",
+                "data: dict[str, ModelSchemaValue]",
+                "items: list[ModelSchemaValue]",
                 "```",
                 "",
                 "### Phase 2: HIGH - Convention Compliance",

@@ -22,7 +22,6 @@ __all__ = [
     "ModelValidateMessageContext",
     "ModelValidateResult",
     "ValidateMessageModel",
-    # Compatibility
     "ValidateMessageModelContext",
     "ValidateResultModel",
 ]

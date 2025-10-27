@@ -5,7 +5,7 @@ Remove simple wrapper to_dict() methods that just call model_dump().
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 # Semi-redundant methods that are simple wrappers (remaining after manual fixes)
 SIMPLE_WRAPPER_FILES = [

@@ -670,14 +670,9 @@ LegacyToolCollection = ModelMetadataToolCollection
 
 # Re-export for current standards
 __all__ = [
-    "LegacyToolCollection",
-    "MetadataToolAnalytics",
-    "MetadataToolCollection",
     "EnumMetadataToolComplexity",
     "EnumMetadataToolStatus",
     "EnumMetadataToolType",
-    # Compatibility
-    "MetadataToolUsageMetrics",
     "ModelMetadataToolAnalytics",
     "ModelMetadataToolCollection",
     "ModelMetadataToolInfo",

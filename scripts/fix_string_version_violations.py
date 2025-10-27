@@ -10,7 +10,6 @@ Automatically converts:
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 
 class StringVersionFixer:
@@ -183,7 +182,7 @@ def main():
             fixed_count += 1
             print(f"✅ Fixed {file_rel}")
         else:
-            print(f"ℹ️  No changes needed for {file_rel}")
+            print(f"INFO: No changes needed for {file_rel}")
 
     print(f"\n{'='*60}")
     print(f"✅ Fixed {fixed_count} files")

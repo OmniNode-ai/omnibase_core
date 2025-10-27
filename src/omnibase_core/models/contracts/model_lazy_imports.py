@@ -203,15 +203,12 @@ def get_loader_stats() -> dict[str, object]:
 
 
 __all__ = [
-    # Lazy loader functions
+    "ModelLazyContractLoader",
     "get_contract_base",
     "get_contract_compute",
     "get_contract_effect",
     "get_contract_reducer",
     "get_contract_orchestrator",
-    # Utility functions
     "preload_all_contracts",
     "get_loader_stats",
-    # Advanced usage
-    "ModelLazyContractLoader",
 ]

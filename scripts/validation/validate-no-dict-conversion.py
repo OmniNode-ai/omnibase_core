@@ -268,7 +268,7 @@ def main() -> int:
         violations_by_file[file_path].append(violation)
 
     # Sort violations by file path and then by line number for reproducible output
-    for file_path in violations_by_file:
+    for file_path in list(violations_by_file.keys()):
         violations_by_file[file_path].sort(key=lambda v: v["line"])
 
     # Print violations grouped by file in deterministic order

@@ -30,7 +30,6 @@ WorkflowPermissions = ModelWorkflowPermissions
 
 # Re-export
 __all__ = [
-    "MatrixStrategy",
     "ModelMatrixStrategy",
     "ModelServiceContainer",
     "ModelWorkflowDispatch",
@@ -38,11 +37,4 @@ __all__ = [
     "ModelWorkflowPermissions",
     "ModelWorkflowServices",
     "ModelWorkflowStrategy",
-    "ServiceContainer",
-    "WorkflowDispatch",
-    # Compatibility
-    "WorkflowInput",
-    "WorkflowPermissions",
-    "WorkflowServices",
-    "WorkflowStrategy",
 ]

@@ -6,7 +6,6 @@ Fix simple enum naming violations (single enum files with wrong name).
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict
 
 # Map of incorrect class names to correct class names for simple renames
 SIMPLE_RENAMES: dict[str, str] = {

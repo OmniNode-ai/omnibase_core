@@ -5,15 +5,15 @@
 ## 🚀 Quick Start Paths
 
 ### New to omnibase_core?
-1. Read [Installation](getting-started/installation.md) (5 min)
-2. Follow [Quick Start](getting-started/quick-start.md) (10 min)
-3. Build [Your First Node](getting-started/first-node.md) (20 min)
+1. Read [Installation](getting-started/INSTALLATION.md) (5 min)
+2. Follow [Quick Start](getting-started/QUICK_START.md) (10 min)
+3. Build [Your First Node](getting-started/FIRST_NODE.md) (20 min)
 
 ### Building Nodes?
 → **Start here**: [Node Building Guide](guides/node-building/README.md) ← **RECOMMENDED**
 
 ### Need Reference?
-→ **Templates**: [Node Templates](reference/templates/)
+→ **Templates**: [Node Templates](guides/templates/)
 → **Architecture**: [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 
 ## 📚 Documentation Structure
@@ -37,9 +37,9 @@ omnibase_core/docs/
 
 | Document | Description | Time | Status |
 |----------|-------------|------|--------|
-| [Installation](getting-started/installation.md) | Environment setup with Poetry | 5 min | 🚧 Coming Soon |
-| [Quick Start](getting-started/quick-start.md) | First 5 minutes with omnibase_core | 10 min | 🚧 Coming Soon |
-| [First Node](getting-started/first-node.md) | Build your first simple node | 20 min | 🚧 Coming Soon |
+| [Installation](getting-started/INSTALLATION.md) | Environment setup with Poetry | 5 min | ✅ Complete |
+| [Quick Start](getting-started/QUICK_START.md) | First 5 minutes with omnibase_core | 10 min | ✅ Complete |
+| [First Node](getting-started/FIRST_NODE.md) | Build your first simple node | 20 min | ✅ Complete |
 
 ---
 
@@ -59,21 +59,19 @@ omnibase_core/docs/
 | 3 | [COMPUTE Node Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) | Build a price calculator | 30 min | ✅ Complete |
 | 4 | [EFFECT Node Tutorial](guides/node-building/04_EFFECT_NODE_TUTORIAL.md) | Build a file backup system | 30 min | ✅ Complete (Phase 2) |
 | 5 | [REDUCER Node Tutorial](guides/node-building/05_REDUCER_NODE_TUTORIAL.md) | Build a metrics aggregator | 30 min | ✅ Complete (Phase 2) |
-| 6 | [ORCHESTRATOR Node Tutorial](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) | Build a workflow coordinator | 45 min | 🚧 Placeholder |
-| 7 | [Patterns Catalog](guides/node-building/07-patterns-catalog.md) | Common patterns library | 20 min | 🚧 Coming Soon |
-| 8 | [Testing Guide](guides/node-building/08-testing-guide.md) | Testing each node type | 20 min | 🚧 Coming Soon |
-| 9 | [Common Pitfalls](guides/node-building/09-common-pitfalls.md) | What to avoid | 15 min | 🚧 Coming Soon |
-| 10 | [Agent Templates](guides/node-building/10-agent-templates.md) | Agent-friendly templates | 15 min | 🚧 Coming Soon |
+| 6 | [ORCHESTRATOR Node Tutorial](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) | Build a workflow coordinator | 45 min | ✅ Complete |
+| 7 | [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md) | Common patterns library | 20 min | ✅ Complete |
+| 8 | [Common Pitfalls](guides/node-building/08_COMMON_PITFALLS.md) | What to avoid | 15 min | ✅ Complete |
+| 9 | [Testing Intent Publisher](guides/node-building/09_TESTING_INTENT_PUBLISHER.md) | Testing with MixinIntentPublisher | 20 min | ✅ Complete |
+| 10 | [Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md) | Agent-friendly templates | 15 min | 🚧 Coming Soon |
 
-**Progress**: 6 of 11 complete (55%) - Phase 2 Complete
+**Progress**: 8 of 10 complete (80%) - Phase 2 Complete
 
 ### Other Guides
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [Development Workflow](guides/development-workflow.md) | Development process and tooling | 🚧 Coming Soon |
-| [Testing Guide](guides/testing-guide.md) | Comprehensive testing strategies | 🚧 Coming Soon |
-| [Debugging Guide](guides/debugging-guide.md) | Debugging techniques | 🚧 Coming Soon |
+| [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
 
 ---
 
@@ -83,11 +81,15 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [Architecture Overview](architecture/overview.md) | High-level system design | 🚧 Coming Soon |
+| [Architecture Overview](architecture/OVERVIEW.md) | High-level system design | ✅ Complete |
 | [**Four-Node Pattern**](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX architecture ⭐ **Excellent!** | ✅ Complete |
-| [Dependency Injection](architecture/dependency-injection.md) | ModelONEXContainer patterns | 🚧 Coming Soon |
-| [Contract System](architecture/contract-system.md) | Contract architecture | See [SUBCONTRACT_ARCHITECTURE.md](architecture/SUBCONTRACT_ARCHITECTURE.md) |
-| [Type System](architecture/type-system.md) | Typing patterns and conventions | 🚧 Coming Soon |
+| [Dependency Injection](architecture/DEPENDENCY_INJECTION.md) | ModelONEXContainer patterns | ✅ Complete |
+| [Contract System](architecture/CONTRACT_SYSTEM.md) | Contract architecture | ✅ Complete |
+| [Type System](architecture/TYPE_SYSTEM.md) | Typing patterns and conventions | ✅ Complete |
+| [Documentation Architecture](architecture/DOCUMENTATION_ARCHITECTURE.md) | Documentation structure and organization | ✅ Complete |
+| [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design and subcontract patterns | ✅ Complete |
+| [Mixin Architecture](architecture/MIXIN_ARCHITECTURE.md) | Mixin system design and patterns | ✅ Complete |
+| [Protocol Architecture](architecture/PROTOCOL_ARCHITECTURE.md) | Protocol design and compliance | ✅ Complete |
 
 ---
 
@@ -101,38 +103,38 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [COMPUTE Node Template](reference/templates/COMPUTE_NODE_TEMPLATE.md) | Complete COMPUTE node template | ✅ Excellent |
-| [EFFECT Node Template](reference/templates/EFFECT_NODE_TEMPLATE.md) | Complete EFFECT node template | ✅ Excellent |
-| [REDUCER Node Template](reference/templates/REDUCER_NODE_TEMPLATE.md) | Complete REDUCER node template | ✅ Excellent |
-| [ORCHESTRATOR Node Template](reference/templates/ORCHESTRATOR_NODE_TEMPLATE.md) | Complete ORCHESTRATOR node template | ✅ Excellent |
-| [Enhanced Node Patterns](reference/templates/ENHANCED_NODE_PATTERNS.md) | Advanced patterns | ✅ Available |
+| [COMPUTE Node Template](guides/templates/COMPUTE_NODE_TEMPLATE.md) | Complete COMPUTE node template | ✅ Excellent |
+| [EFFECT Node Template](guides/templates/EFFECT_NODE_TEMPLATE.md) | Complete EFFECT node template | ✅ Excellent |
+| [REDUCER Node Template](guides/templates/REDUCER_NODE_TEMPLATE.md) | Complete REDUCER node template | ✅ Excellent |
+| [ORCHESTRATOR Node Template](guides/templates/ORCHESTRATOR_NODE_TEMPLATE.md) | Complete ORCHESTRATOR node template | ✅ Excellent |
+| [Enhanced Node Patterns](guides/templates/ENHANCED_NODE_PATTERNS.md) | Advanced patterns | ✅ Available |
 
 ### API Reference
 
 | Document | Description | Status |
 |----------|-------------|--------|
 | [API Documentation](reference/API_DOCUMENTATION.md) | Core API reference | ✅ Available |
-| [Nodes API](reference/api/nodes.md) | Node class APIs | 🚧 Coming Soon |
-| [Models API](reference/api/models.md) | Model class APIs | 🚧 Coming Soon |
-| [Enums API](reference/api/enums.md) | Enumeration reference | 🚧 Coming Soon |
-| [Utils API](reference/api/utils.md) | Utility function reference | 🚧 Coming Soon |
+| [Nodes API](reference/api/NODES.md) | Node class APIs | ✅ Complete |
+| [Models API](reference/api/MODELS.md) | Model class APIs | ✅ Complete |
+| [Enums API](reference/api/ENUMS.md) | Enumeration reference | ✅ Complete |
+| [Utils API](reference/api/UTILS.md) | Utility function reference | ✅ Complete |
 
 ### Architecture Research
 
 | Document | Description | Status |
 |----------|-------------|--------|
 | [Reference Overview](reference/README.md) | Reference materials overview | ✅ Available |
-| [ONEX Mixin System Research](reference/architecture-research/ONEX_MIXIN_SYSTEM_RESEARCH.md) | Mixin architecture | ✅ Available |
-| [4-Node Architecture Research](reference/architecture-research/RESEARCH_REPORT_4_NODE_ARCHITECTURE.md) | Architecture research | ✅ Available |
-| [Mixin Architecture Patterns](reference/mixin-architecture/ONEX_MIXIN_ARCHITECTURE_PATTERNS.md) | Mixin patterns | ✅ Available |
+| [ONEX Mixin System Research](architecture/architecture-research/ONEX_MIXIN_SYSTEM_RESEARCH.md) | Mixin architecture | ✅ Available |
+| [4-Node Architecture Research](architecture/architecture-research/RESEARCH_REPORT_4_NODE_ARCHITECTURE.md) | Architecture research | ✅ Available |
+| [Mixin Architecture Patterns](architecture/mixin-architecture/ONEX_MIXIN_ARCHITECTURE_PATTERNS.md) | Mixin patterns | ✅ Available |
 
 ### Design Patterns
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [Circuit Breaker Pattern](reference/patterns/CIRCUIT_BREAKER_PATTERN.md) | Circuit breaker implementation | ✅ Available |
-| [Configuration Management](reference/patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns | ✅ Available |
-| [Performance Benchmarks](reference/PERFORMANCE_BENCHMARKS.md) | Performance testing | ✅ Available |
+| [Circuit Breaker Pattern](patterns/patterns/CIRCUIT_BREAKER_PATTERN.md) | Circuit breaker implementation | ✅ Available |
+| [Configuration Management](patterns/patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns | ✅ Available |
+| [Performance Benchmarks](guides/PERFORMANCE_BENCHMARKS.md) | Performance testing | ✅ Available |
 
 ---
 
@@ -151,43 +153,22 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [**Threading Guide**](reference/THREADING.md) | Thread safety and concurrency | ✅ Excellent |
+| [**Threading Guide**](guides/THREADING.md) | Thread safety and concurrency | ✅ Excellent |
 
 ### Architecture Patterns
 
 | Document | Description | Status |
 |----------|-------------|--------|
 | [**Subcontract Architecture**](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design | ✅ Excellent |
-| [Union Patterns Guide](patterns/UNION_PATTERNS_GUIDE.md) | Type union patterns | ✅ Available |
-| [TypedDict Consolidation](migration/TYPEDDICT_CONSOLIDATION.md) | TypedDict usage | ✅ Available |
-
-### Migration & Updates
-
-| Document | Description | Status |
-|----------|-------------|--------|
-| [Migration Guide](migration/MIGRATION_GUIDE.md) | Version migration guide | ✅ Available |
-| [Import Migration Patterns](migration/IMPORT_MIGRATION_PATTERNS.md) | Import organization | ✅ Available |
-| [Validation Integration Guide](planning/VALIDATION_INTEGRATION_GUIDE.md) | Validation patterns | ✅ Available |
+| [Approved Union Patterns](patterns/APPROVED_UNION_PATTERNS.md) | Type union patterns | ✅ Available |
+| [Validation Enhancement Plan](planning/VALIDATION_ENHANCEMENT_PLAN.md) | Validation patterns | ✅ Available |
 
 ### Project Documentation
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [Production Cache Tuning](reference/PRODUCTION_CACHE_TUNING.md) | Cache optimization | ✅ Available |
+| [Production Cache Tuning](guides/PRODUCTION_CACHE_TUNING.md) | Cache optimization | ✅ Available |
 | [Documentation Validation Report](quality/DOCUMENTATION_VALIDATION_REPORT.md) | Doc quality report | ✅ Available |
-| [Runtime Validation Analysis](quality/RUNTIME_VALIDATION_ANALYSIS.md) | Validation analysis | ✅ Available |
-| [Naming Convention Analysis](conventions/NAMING_CONVENTION_ANALYSIS.md) | Naming standards | ✅ Available |
-
----
-
-## 📊 Reports & Analysis
-
-**Quality reports and analysis documents**
-
-| Document | Description |
-|----------|-------------|
-| [ONEX String Version ID Analysis](reports/ONEX_STRING_VERSION_ID_ANALYSIS.md) | Version ID analysis |
-| [ONEX String Violations Summary](reports/ONEX_STRING_VIOLATIONS_SUMMARY.md) | Standards violations |
 
 ---
 
@@ -201,13 +182,12 @@ omnibase_core/docs/
 |------|-------|
 | **Build my first node** | [Node Building Guide](guides/node-building/README.md) → [COMPUTE Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) |
 | **Understand node types** | [Node Types](guides/node-building/02_NODE_TYPES.md) |
-| **Use a production template** | [Node Templates](reference/templates/) |
+| **Use a production template** | [Node Templates](guides/templates/) |
 | **Handle errors properly** | [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md) |
-| **Make nodes thread-safe** | [Threading Guide](reference/THREADING.md) |
+| **Make nodes thread-safe** | [Threading Guide](guides/THREADING.md) |
 | **Understand the architecture** | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
-| **Test my node** | [Testing Guide](guides/node-building/08-testing-guide.md) (coming soon) |
-| **Debug an issue** | [Debugging Guide](guides/debugging-guide.md) (coming soon) |
-| **Migrate code** | [Migration Guide](migration/MIGRATION_GUIDE.md) |
+| **Test my node** | [Testing Guide](guides/TESTING_GUIDE.md) |
+| **Debug an issue** | Debugging Guide 🚧 Coming Soon |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
 
 ---
@@ -219,8 +199,8 @@ omnibase_core/docs/
 ### Agent-Friendly Resources
 
 - **[Node Building Guide](guides/node-building/README.md)** - Structured, parseable, step-by-step
-- **[Agent Templates](guides/node-building/10-agent-templates.md)** - Copy-paste ready templates (coming soon)
-- **[Node Templates](reference/templates/)** - Production-ready reference implementations
+- **[Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md)** - Copy-paste ready templates (coming soon)
+- **[Node Templates](guides/templates/)** - Production-ready reference implementations
 
 ### Agent Workflow
 
@@ -231,8 +211,8 @@ omnibase_core/docs/
    - [EFFECT](guides/node-building/04_EFFECT_NODE_TUTORIAL.md) (coming soon)
    - [REDUCER](guides/node-building/05_REDUCER_NODE_TUTORIAL.md) (coming soon)
    - [ORCHESTRATOR](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) (coming soon)
-4. Use [Patterns Catalog](guides/node-building/07-patterns-catalog.md) for common patterns (coming soon)
-5. Test with [Testing Guide](guides/node-building/08-testing-guide.md) (coming soon)
+4. Use [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md) for common patterns
+5. Test with [Testing Guide](guides/TESTING_GUIDE.md)
 
 ---
 
@@ -275,39 +255,39 @@ omnibase_core/docs/
 ### By Role
 
 **New Developer**:
-1. [Installation](getting-started/installation.md) → [Quick Start](getting-started/quick-start.md) → [First Node](getting-started/first-node.md)
+1. [Installation](getting-started/INSTALLATION.md) → [Quick Start](getting-started/QUICK_START.md) → [First Node](getting-started/FIRST_NODE.md)
 
 **Experienced Developer**:
 1. [Node Building Guide](guides/node-building/README.md) → Choose tutorial → Build
 
 **Architect**:
-1. [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) → [Architecture Research](reference/architecture-research/)
+1. [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) → [Architecture Research](architecture/architecture-research/)
 
 **AI Agent**:
-1. [Node Building Guide](guides/node-building/README.md) → [Agent Templates](guides/node-building/10-agent-templates.md)
+1. [Node Building Guide](guides/node-building/README.md) → [Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md)
 
 ### By Task
 
 **Building**:
 - Nodes: [Node Building Guide](guides/node-building/README.md)
-- Tests: [Testing Guide](guides/testing-guide.md)
+- Tests: [Testing Guide](guides/TESTING_GUIDE.md)
 - Workflows: [ORCHESTRATOR Tutorial](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md)
 
 **Learning**:
 - Concepts: [What is a Node?](guides/node-building/01_WHAT_IS_A_NODE.md)
 - Architecture: [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
-- Patterns: [Patterns Catalog](guides/node-building/07-patterns-catalog.md)
+- Patterns: [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md)
 
 **Debugging**:
 - Errors: [Error Handling](conventions/ERROR_HANDLING_BEST_PRACTICES.md)
-- Performance: [Production Cache Tuning](reference/PRODUCTION_CACHE_TUNING.md)
-- Threading: [Threading Guide](reference/THREADING.md)
+- Performance: [Production Cache Tuning](guides/PRODUCTION_CACHE_TUNING.md)
+- Threading: [Threading Guide](guides/THREADING.md)
 
 ---
 
 ## 🔗 External Resources
 
-- **omnibase_core Repository**: [GitHub](https://github.com/your-org/omnibase_core)
+- **omnibase_core Repository**: [GitHub](https://github.com/OmniNode-ai/omnibase_core)
 - **ONEX Ecosystem**: [Documentation](https://onex-framework.dev)
 - **Poetry Documentation**: [python-poetry.org](https://python-poetry.org/)
 - **Pydantic Documentation**: [pydantic.dev](https://pydantic.dev/)

@@ -11,7 +11,6 @@ Fixes remaining string version violations by:
 import ast
 import sys
 from pathlib import Path
-from typing import Set
 
 
 class ImportTracker:

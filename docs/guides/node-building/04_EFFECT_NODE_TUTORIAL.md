@@ -909,8 +909,8 @@ await node.transaction_context(operation_id)  # Transaction mgmt
 **Continue your journey**:
 - [REDUCER Node Tutorial](05_REDUCER_NODE_TUTORIAL.md) - Learn data aggregation
 - [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Master workflow coordination
-- [Patterns Catalog](07-patterns-catalog.md) - Common EFFECT patterns
-- [Testing Guide](08-testing-guide.md) - Advanced testing strategies
+- [Patterns Catalog](07_PATTERNS_CATALOG.md) - Common EFFECT patterns
+- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Advanced testing strategies
 
 **Challenge**: Extend this node to support S3 backups using external service integration!
 

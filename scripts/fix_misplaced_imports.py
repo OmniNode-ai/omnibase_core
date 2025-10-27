@@ -3,15 +3,13 @@
 
 import re
 from pathlib import Path
-from typing import List, Tuple
 
 
 def fix_file(file_path: Path) -> tuple[bool, str]:
     """
     Fix misplaced imports in a Python file.
 
-    Returns:
-        Tuple of (was_modified, error_message)
+    Returns: tuple of (was_modified, error_message)
     """
     try:
         content = file_path.read_text()

@@ -235,7 +235,6 @@ class ModelWorkflowParameters(BaseModel):
 
 # Export for use
 __all__ = [
-    "ConfigExecutionParameterUnion",
     "ModelEnvironmentVariableParameter",
     "ModelExecutionSettingParameter",
     "ModelResourceLimitParameter",

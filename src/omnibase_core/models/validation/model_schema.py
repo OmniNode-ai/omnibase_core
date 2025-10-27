@@ -15,6 +15,7 @@ __all__ = [
     "ModelSchema",
     "ModelSchemaPropertiesModel",
     "ModelRequiredFieldsModel",
+    "ModelSchemaProperty",
     "SchemaPropertyModel",
     "SchemaPropertiesModel",
     "RequiredFieldsModel",

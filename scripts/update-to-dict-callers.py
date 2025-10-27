@@ -5,7 +5,6 @@ Update callers that were using the removed simple to_dict() wrapper methods.
 
 import re
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 # Files we know we removed to_dict() methods from, mapped to their replacement
 REMOVED_TO_DICT_METHODS = {

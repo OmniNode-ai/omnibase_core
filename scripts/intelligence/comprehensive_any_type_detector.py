@@ -11,7 +11,7 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import NamedTuple, Optional
 
 
 @dataclass
@@ -65,7 +65,7 @@ class AnyTypeDetector(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
-        """Detect Any in generic types (List[Any], Dict[str, Any], etc.)."""
+        """Detect Any in generic types (list[Any], dict[str, Any], etc.)."""
         # Check if slice contains Any
         if self._contains_any(node):
             self._record_violation(
@@ -304,10 +304,10 @@ class TypeSystemValidator:
                 "2. **Generic Any Usage**: Use specific generic types",
                 "   ```python",
                 "   # ❌ Prohibited",
-                "   data: Dict[str, Any]",
+                "   data: dict[str, Any]",
                 "   ",
                 "   # ✅ ONEX Compliant",
-                "   data: Dict[str, ModelSchemaValue]",
+                "   data: dict[str, ModelSchemaValue]",
                 "   ```",
                 "",
                 "3. **Function Signatures**: Specify exact parameter and return types",

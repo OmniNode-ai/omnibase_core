@@ -40,7 +40,7 @@ import ast
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import Optional
 
 try:
     import yaml

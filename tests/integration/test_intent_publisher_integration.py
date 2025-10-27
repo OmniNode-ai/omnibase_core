@@ -548,7 +548,7 @@ class TestIntentPublisherIntegration:
             await reducer.publish_event_intent(
                 target_topic="dev.omninode.test.v1",
                 target_key="test",
-                event=invalid_event,  # type: ignore
+                event=invalid_event,  # type: ignore[arg-type]
             )
 
     def test_kafka_client_missing_from_container(self):
@@ -559,9 +559,9 @@ class TestIntentPublisherIntegration:
         # Note: We don't call original_get_service to avoid asyncio.run() in running event loop
         def mock_get_service(service_name):
             if service_name == "kafka_client":
-                return None
+                return
             # Return None for any other service (this test only needs kafka_client)
-            return None
+            return
 
         container.get_service = mock_get_service
 

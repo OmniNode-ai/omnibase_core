@@ -131,8 +131,8 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
                     for j in range(i + 1, len(mro)):
                         if hasattr(mro[j], "__init__") and mro[j] is not BaseModel:
                             # Call the next __init__ in chain if it exists
-                            if mro[j].__init__ is not object.__init__:
-                                mro[j].__init__(self, *args, **kwargs)
+                            if mro[j].__init__ is not object.__init__:  # type: ignore[misc]
+                                mro[j].__init__(self, *args, **kwargs)  # type: ignore[misc]
                             break
                     break
 

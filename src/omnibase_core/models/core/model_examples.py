@@ -17,8 +17,6 @@ ExampleMetadata = ModelExampleMetadata
 
 # Re-export for current standards
 __all__ = [
-    # Compatibility
-    "ExampleMetadata",
     "ModelCustomSettings",
     "ModelExample",
     "ModelExampleMetadata",

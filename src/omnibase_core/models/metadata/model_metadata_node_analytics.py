@@ -43,4 +43,6 @@ def _create_default_metrics_data() -> ModelMetricsData:
 
 
 # Export for use
-__all__ = ["ModelMetadataNodeAnalytics", "TypedDictMetadataDict"]
+__all__ = [
+    "ModelMetadataNodeAnalytics",
+]

@@ -36,9 +36,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_status import EnumNodeStatus
 from omnibase_core.enums.enum_registry_execution_mode import EnumRegistryExecutionMode
@@ -53,8 +50,8 @@ from omnibase_core.models.core.model_onex_event_metadata import ModelOnexEventMe
 from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
 )
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
-from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem

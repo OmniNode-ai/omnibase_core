@@ -885,7 +885,7 @@ async def emit_action_with_logging(self, action_type, payload):
 
 - **[ONEX Four-Node Architecture](./ONEX_FOUR_NODE_ARCHITECTURE.md)** - Node responsibilities and data flow
 - **[Lease Management Pattern](../patterns/LEASE_MANAGEMENT_PATTERN.md)** - Single-writer semantics in detail
-- **[Orchestrator Node Template](../reference/templates/ORCHESTRATOR_NODE_TEMPLATE.md)** - Implementation patterns
+- **[Orchestrator Node Template](../guides/templates/ORCHESTRATOR_NODE_TEMPLATE.md)** - Implementation patterns
 - **[Subcontract Architecture](./SUBCONTRACT_ARCHITECTURE.md)** - Workflow subcontracts
 - **[Event-Driven Architecture](../patterns/EVENT_DRIVEN_ARCHITECTURE.md)** - Action publication patterns
 

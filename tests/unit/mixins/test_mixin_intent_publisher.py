@@ -283,15 +283,13 @@ class TestMixinIntentPublisher:
         class InvalidEvent:
             """Event without model_dump() method."""
 
-            pass
-
         invalid_event = InvalidEvent()
 
         with pytest.raises(ModelOnexError) as exc_info:
             await test_node.publish_event_intent(
                 target_topic="dev.omninode.test.v1",
                 target_key="test-key",
-                event=invalid_event,  # type: ignore
+                event=invalid_event,  # type: ignore[arg-type]
             )
 
         assert "model_dump" in str(exc_info.value)

@@ -18,7 +18,6 @@ import ast
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
 
 
 class TypingSyntaxDetector(ast.NodeVisitor):
@@ -104,7 +103,7 @@ class TypingSyntaxDetector(ast.NodeVisitor):
                 return "None"
             return repr(node.value)
         elif isinstance(node, ast.Subscript):
-            # Handle List[str], Dict[str, int], etc.
+            # Handle list[str], dict[str, int], etc.
             if isinstance(node.value, ast.Name):
                 slice_str = self._extract_type_string(node.slice)
                 if isinstance(node.slice, ast.Tuple):

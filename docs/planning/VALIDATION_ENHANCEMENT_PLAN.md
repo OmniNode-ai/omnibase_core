@@ -140,9 +140,8 @@ class ModelContractV2(ModelContractV1):
 
 ## Related Documents
 
-- [Validation Integration Guide](VALIDATION_INTEGRATION_GUIDE.md)
-- [Runtime Validation Analysis](../quality/RUNTIME_VALIDATION_ANALYSIS.md)
-- [Contract System](../architecture/contract-system.md)
+- This document serves as the validation enhancement plan
+- [Contract System](../architecture/CONTRACT_SYSTEM.md)
 
 ## Feedback
 

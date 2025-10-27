@@ -3,14 +3,13 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
-
 from omnibase_spi.protocols.container import (
     LiteralInjectionScope,
     LiteralServiceLifecycle,
     ServiceHealthStatus,
 )
 from omnibase_spi.protocols.types.protocol_core_types import LiteralOperationStatus
+from pydantic import BaseModel, Field
 
 
 class ModelServiceRegistryStatus(BaseModel):

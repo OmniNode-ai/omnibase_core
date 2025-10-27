@@ -14,6 +14,12 @@ Transforms:
 import re
 import sys
 from pathlib import Path
+from uuid import UUID, uuid4
+
+# Add path to allow imports from src
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 def fix_id_field_simple(content: str, field_name: str) -> str:

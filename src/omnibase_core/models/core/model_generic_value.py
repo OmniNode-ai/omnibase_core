@@ -203,7 +203,7 @@ class ModelGenericValue(BaseModel):
             return json.loads(self.dict_value) if self.dict_value else {}
         if self.value_type == EnumValueType.NULL:
             return None
-        msg = f"Unknown value type: {self.value_type}"
+        msg = f"Unknown value type: {self.value_type}"  # type: ignore[unreachable]
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,

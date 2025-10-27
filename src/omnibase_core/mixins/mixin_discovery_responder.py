@@ -10,6 +10,8 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
+from omnibase_spi.protocols.event_bus import ProtocolEventBus, ProtocolEventEnvelope
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -24,13 +26,13 @@ from omnibase_core.models.core.model_event_type import (
 )
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
 from omnibase_core.primitives.model_semver import ModelSemVer
-from omnibase_spi.protocols.event_bus import ProtocolEventBus, ProtocolEventEnvelope
 
 if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_spi.protocols.types.protocol_event_bus_types import (
         ProtocolEventMessage,
     )
+
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 
 class MixinDiscoveryResponder:

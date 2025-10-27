@@ -29,9 +29,7 @@ class TestMixinSensitiveFieldRedactionBasicBehavior:
             name: str
             password: str
 
-        model = TestModel(
-            name="user", password="secret123"
-        )  # noqa: S106 - Test data, not actual password
+        model = TestModel(name="user", password="secret123")  # noqa: S106
         assert isinstance(model, MixinSensitiveFieldRedaction)
         assert isinstance(model, BaseModel)
 
@@ -182,9 +180,7 @@ class TestRedactSensitiveFields:
             name: str
             password: str
 
-        model = TestModel(
-            name="user", password="secret123"
-        )  # noqa: S106 - Test data, not actual password
+        model = TestModel(name="user", password="secret123")  # noqa: S106
         data = {"name": "user", "password": "secret123"}
 
         redacted = model.redact_sensitive_fields(data)
@@ -203,7 +199,7 @@ class TestRedactSensitiveFields:
 
         model = TestModel(
             username="user",
-            password="pass123",
+            password="pass123",  # noqa: S106
             api_key="key123",
             token="token123",  # noqa: S106 - Test data, not actual password/token
         )
@@ -306,8 +302,8 @@ class TestRedactMethod:
             email: str
 
         model = TestModel(
-            username="user", password="secret", email="user@test.com"
-        )  # noqa: S106 - Test data, not actual password
+            username="user", password="secret", email="user@test.com"  # noqa: S106
+        )
 
         redacted = model.redact()
 
@@ -324,8 +320,8 @@ class TestRedactMethod:
             password: str
 
         model = TestModel(
-            name="user", email="user@test.com", password="secret"
-        )  # noqa: S106 - Test data, not actual password
+            name="user", email="user@test.com", password="secret"  # noqa: S106
+        )
 
         redacted = model.redact()
 
@@ -342,8 +338,8 @@ class TestRedactMethod:
             internal: str
 
         model = TestModel(
-            name="user", password="secret", internal="internal_data"
-        )  # noqa: S106 - Test data, not actual password
+            name="user", password="secret", internal="internal_data"  # noqa: S106
+        )
 
         redacted = model.redact(exclude={"internal"})
 
@@ -363,9 +359,7 @@ class TestModelDumpRedacted:
             username: str
             password: str
 
-        model = TestModel(
-            username="user", password="secret"
-        )  # noqa: S106 - Test data, not actual password
+        model = TestModel(username="user", password="secret")  # noqa: S106
 
         redacted = model.model_dump_redacted()
 
@@ -379,9 +373,7 @@ class TestModelDumpRedacted:
             name: str
             token: str
 
-        model = TestModel(
-            name="user", token="abc123"
-        )  # noqa: S106 - Test data, not actual token
+        model = TestModel(name="user", token="abc123")  # noqa: S106
 
         redacted1 = model.redact()
         redacted2 = model.model_dump_redacted()
@@ -420,9 +412,7 @@ class TestCustomPatterns:
                 values["password"] = "[HIDDEN]"
                 return values
 
-        model = CustomModel(
-            password="secret"
-        )  # noqa: S106 - Test data, not actual password
+        model = CustomModel(password="secret")  # noqa: S106
 
         value = model.get_redaction_value("password", "secret")
         assert value == "[HIDDEN]"

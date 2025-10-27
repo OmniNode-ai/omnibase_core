@@ -5,10 +5,6 @@ from pydantic import Field
 __all__ = [
     "ModelDiscoveryRequestModelMetadata",
     "ModelDiscoveryResponseModelMetadata",
-    "filter_criteria",
-    "node_types",
-    "request_id",
-    "requested_capabilities",
 ]
 
 """

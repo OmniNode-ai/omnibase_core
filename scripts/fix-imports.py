@@ -8,7 +8,6 @@ omnibase_spi package instead of the old omnibase references.
 
 import re
 from pathlib import Path
-from typing import List, Tuple
 
 
 class ImportFixer:

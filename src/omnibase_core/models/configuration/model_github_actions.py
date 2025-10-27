@@ -62,11 +62,6 @@ Job = ModelJob
 
 # Re-export
 __all__ = [
-    "GitHubActionEvent",
-    # Compatibility
-    "GitHubActionsWorkflow",
-    "GitHubRunnerOS",
-    "Job",
     "EnumGithubActionEvent",
     "ModelGitHubActionsWorkflow",
     "EnumGithubRunnerOs",
@@ -77,10 +72,4 @@ __all__ = [
     "ModelStep",
     "ModelStepWith",
     "ModelWorkflowTriggers",
-    "PullRequestTrigger",
-    "PushTrigger",
-    "ScheduleTrigger",
-    "Step",
-    "StepWith",
-    "WorkflowTriggers",
 ]

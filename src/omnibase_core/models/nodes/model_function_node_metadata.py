@@ -13,7 +13,6 @@ from .model_function_node_metadata_class import ModelFunctionNodeMetadata
 from .model_function_node_metadata_config import ModelFunctionNodeMetadataConfig
 
 __all__ = [
-    "TypedDictDocumentationSummaryFiltered",
     "ModelFunctionMetadataSummary",
     "ModelFunctionNodeMetadata",
     "ModelFunctionNodeMetadataConfig",

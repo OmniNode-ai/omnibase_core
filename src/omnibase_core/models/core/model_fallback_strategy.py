@@ -16,15 +16,6 @@ from omnibase_core.models.core.model_fallback_metadata import ModelFallbackMetad
 __all__ = [
     "EnumFallbackStrategyType",
     "ModelFallbackStrategy",
-    "degraded_features",
-    "fallback_endpoint",
-    "get_effective_timeout",
-    "is_degraded_mode",
-    "metadata",
-    "retry_attempts",
-    "should_retry",
-    "strategy_type",
-    "timeout_seconds",
 ]
 
 

@@ -90,10 +90,7 @@ class BackwardCompatibilityDetector:
             self.errors.append(f"{py_path}: Permission denied - cannot read file")
             return False
         except OSError as e:
-            self.errors.append(f"{py_path}: OS error reading file - {e}")
-            return False
-        except OSError as e:
-            self.errors.append(f"{py_path}: IO error reading file - {e}")
+            self.errors.append(f"{py_path}: OS/IO error reading file - {e}")
             return False
 
         self.checked_files += 1
@@ -307,11 +304,7 @@ class BackwardCompatibilityDetector:
                                 )
                             except OSError as e:
                                 self.errors.append(
-                                    f"Error reading source file for context check: OS error - {e}"
-                                )
-                            except OSError as e:
-                                self.errors.append(
-                                    f"Error reading source file for context check: IO error - {e}"
+                                    f"Error reading source file for context check: OS/IO error - {e}"
                                 )
 
                             # Check lines around this node for compatibility keywords

@@ -10,7 +10,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-__all__ = ["ModelComputeInput", "T_Input"]
+__all__ = [
+    "ModelComputeInput",
+]
 
 T_Input = TypeVar("T_Input")
 

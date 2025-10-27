@@ -16,7 +16,6 @@ import re
 import shutil
 from pathlib import Path
 from re import Pattern
-from typing import List
 
 # Patterns for files and directories to clean up
 CLEANUP_PATTERNS = [

@@ -31,5 +31,4 @@ StatusEnumType = type("StatusEnumType", (), {})  # Simple type variable
 # Export for use
 __all__ = [
     "EnumStatusProtocol",
-    "StatusEnumType",
 ]

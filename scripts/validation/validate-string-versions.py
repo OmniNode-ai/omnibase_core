@@ -24,7 +24,7 @@ import re
 import signal
 import sys
 from pathlib import Path
-from typing import Any, List, NamedTuple
+from typing import Any, NamedTuple
 
 import yaml
 
@@ -51,9 +51,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 # Try to import Pydantic models if available (may not exist in empty package structure)
 try:
+    from omnibase_core.core.model_generic_yaml import ModelGenericYaml
     from omnibase_core.utils.safe_yaml_loader import load_yaml_content_as_model
-
-    from ..core.model_generic_yaml import ModelGenericYaml
 
     PYDANTIC_MODELS_AVAILABLE = True
 except ImportError:
@@ -416,10 +415,7 @@ class StringVersionValidator:
             self.errors.append(f"{python_path}: Permission denied - {e}")
             return False
         except OSError as e:
-            self.errors.append(f"{python_path}: OS error reading file - {e}")
-            return False
-        except OSError as e:
-            self.errors.append(f"{python_path}: IO error reading file - {e}")
+            self.errors.append(f"{python_path}: OS/IO error reading file - {e}")
             return False
 
         # Skip empty files
@@ -560,10 +556,7 @@ class StringVersionValidator:
             self.errors.append(f"{yaml_path}: Permission denied - {e}")
             return False
         except OSError as e:
-            self.errors.append(f"{yaml_path}: OS error reading file - {e}")
-            return False
-        except OSError as e:
-            self.errors.append(f"{yaml_path}: IO error reading file - {e}")
+            self.errors.append(f"{yaml_path}: OS/IO error reading file - {e}")
             return False
 
         # Skip empty files

@@ -28,7 +28,7 @@ import signal
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Optional, Union
 
 # Constants
 MAX_PYTHON_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks
@@ -690,8 +690,8 @@ class StringTypingValidator:
                     by_file[violation.file_path].append(violation)
 
                 # Sort violations by file path and line number for reproducible output
-                for file_path in by_file:
-                    by_file[file_path].sort(key=lambda v: (v.line_number, v.column))
+                for file_path, violations in by_file.items():
+                    violations.sort(key=lambda v: (v.line_number, v.column))
 
                 # Process files in sorted order for deterministic output
                 for file_path in sorted(by_file.keys()):

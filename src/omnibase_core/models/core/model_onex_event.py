@@ -239,5 +239,4 @@ __all__ = [
     "ModelTelemetryOperationErrorMetadata",
     "ModelTelemetryOperationStartMetadata",
     "ModelTelemetryOperationSuccessMetadata",
-    "OnexEvent",
 ]

@@ -2,6 +2,7 @@
 """Add ModelOnexError import to files that need it."""
 
 import re
+import tempfile
 from pathlib import Path
 
 
@@ -65,7 +66,7 @@ def add_import(file_path):
 
 def main():
     """Main function."""
-    files_path = Path("/tmp/files_need_modelonexerror.txt")
+    files_path = Path(tempfile.gettempdir()) / "files_need_modelonexerror.txt"
     if not files_path.exists():
         print("Files list not found!")
         return

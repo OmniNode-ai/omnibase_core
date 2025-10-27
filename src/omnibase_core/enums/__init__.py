@@ -109,7 +109,6 @@ from .enum_onex_reply_status import EnumOnexReplyStatus
 from .enum_orchestrator_types import (
     EnumActionType,
     EnumBranchCondition,
-    EnumExecutionMode,
     EnumWorkflowState,
 )
 

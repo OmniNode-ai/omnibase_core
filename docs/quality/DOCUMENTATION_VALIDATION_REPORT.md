@@ -95,11 +95,10 @@ poetry run mypy src/
 
 ## Next Steps
 
-- [Runtime Validation Analysis](RUNTIME_VALIDATION_ANALYSIS.md)
-- [Naming Convention Analysis](../conventions/NAMING_CONVENTION_ANALYSIS.md)
+Continue improving documentation quality and coverage.
 
 ---
 
 **Related Documentation**:
 - [Documentation Architecture](../architecture/DOCUMENTATION_ARCHITECTURE.md)
-- [Testing Guide](../guides/testing-guide.md)
+- [Testing Guide](../guides/TESTING_GUIDE.md)

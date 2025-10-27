@@ -9,7 +9,6 @@ and adds appropriate type hints based on common patterns.
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
 
 
 def get_untyped_functions() -> list[tuple[str, int, str]]:
