@@ -82,11 +82,10 @@ jobs:
     name: Tests (Split ${{ matrix.split }}/12)
     needs: smoke-test
     runs-on: ubuntu-latest
-    # Timeout rationale: 25 minutes provides adequate buffer
-    #   - Typical split time: 3-5 minutes
-    #   - Setup/teardown: 2-3 minutes (cache restore, dependency install)
-    #   - Safety margin: 3x worst case (15 min) + 10 min for runner variance
-    timeout-minutes: 25
+    # Timeout increased to 60 minutes due to Split 7 runner cancellations
+    # Split 7 was being canceled at ~3-4 minutes (well under 25 min timeout)
+    # Increasing timeout to rule out any job-level timeout issues
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -145,7 +144,7 @@ jobs:
           poetry run pytest tests/ \
             --splits 12 \
             --group ${{ matrix.split }} \
-            ${{ matrix.split == 12 && '-n 0 -p no:rerunfailures' || matrix.split == 7 && '-n auto -p no:rerunfailures' || '-n auto' }} \
+            -n auto \
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
