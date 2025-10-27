@@ -101,7 +101,7 @@ class TestProtocol(Protocol):
         finally:
             temp_path.unlink()
 
-    def test_extract_protocol_with_parsing_exception(self, caplog, monkeypatch):
+    def test_extract_protocol_with_parsing_exception(self, caplog):
         """Test exception during ProtocolSignatureExtractor visit (lines 66-72)."""
         protocol_code = """
 from typing import Protocol
@@ -116,25 +116,22 @@ class TestProtocol(Protocol):
 
         try:
             # Mock ProtocolSignatureExtractor.visit to raise an exception
-            from omnibase_core.validation.model_protocol_signature_extractor import (
-                ProtocolSignatureExtractor,
-            )
-
-            original_visit = ProtocolSignatureExtractor.visit
-
-            def mock_visit(self, node):
+            # Use unittest.mock.patch for pytest-xdist compatibility
+            def mock_visit(node):
                 raise ValueError("Unexpected visitor error")
 
-            monkeypatch.setattr(ProtocolSignatureExtractor, "visit", mock_visit)
+            with patch(
+                "omnibase_core.validation.validation_utils.ProtocolSignatureExtractor.visit",
+                side_effect=mock_visit,
+            ):
+                with caplog.at_level(logging.ERROR):
+                    result = extract_protocol_signature(temp_path)
 
-            with caplog.at_level(logging.ERROR):
-                result = extract_protocol_signature(temp_path)
-
-                # Should return None and log the exception
-                assert result is None
-                assert len(caplog.records) == 1
-                assert caplog.records[0].levelname == "ERROR"
-                assert "unexpected error" in caplog.records[0].message.lower()
+                    # Should return None and log the exception
+                    assert result is None
+                    assert len(caplog.records) == 1
+                    assert caplog.records[0].levelname == "ERROR"
+                    assert "unexpected error" in caplog.records[0].message.lower()
 
         finally:
             temp_path.unlink()
