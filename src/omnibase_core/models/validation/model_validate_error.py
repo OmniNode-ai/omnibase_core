@@ -21,6 +21,9 @@ __all__ = [
     "ModelValidateMessage",
     "ModelValidateMessageContext",
     "ModelValidateResult",
+    "ValidateMessageModel",
+    "ValidateMessageModelContext",
+    "ValidateResultModel",
 ]
 
 # === OmniNode:Metadata ===

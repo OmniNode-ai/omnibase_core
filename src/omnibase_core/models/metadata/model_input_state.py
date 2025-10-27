@@ -11,5 +11,7 @@ from omnibase_core.types.typed_dict_input_state_source_type import (
 )
 
 __all__ = [
+    "TypedDictInputStateFields",
+    "TypedDictInputStateSourceType",
     "ModelInputState",
 ]

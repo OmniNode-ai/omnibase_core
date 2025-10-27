@@ -241,8 +241,22 @@ def preload_all_contracts() -> None:
 # Performance monitoring
 
 __all__ = [
+    # Fast contract access
+    "base",
+    "compute",
+    "effect",
+    "reducer",
+    "orchestrator",
+    "all_contracts",
+    # Creation helpers
+    "create_compute_contract",
     "create_effect_contract",
     "create_base_contract",
+    # Preloading
+    "preload_critical_contracts",
+    "preload_all_contracts",
+    # Utilities
+    "factory_stats",
     "ModelFastContractFactory",
     "ModelPerformanceMonitor",
 ]
