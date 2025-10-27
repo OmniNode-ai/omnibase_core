@@ -72,24 +72,22 @@ jobs:
             -x \
             --tb=short
 
-  # Parallel test execution - split into 12 groups for speed and memory management
+  # Parallel test execution - split into 16 groups for speed and memory management
   # Split strategy rationale:
-  #   - 10,987 total tests ÷ 12 splits = ~916 tests/split
-  #   - Target: 3-5 minutes per split (measured: 3-4 min avg)
-  #   - 12x parallelization speedup vs sequential execution
-  #   - Increased from 10 to 12 splits to reduce resource exhaustion in split 6
+  #   - 10,987 total tests ÷ 16 splits = ~687 tests/split
+  #   - Target: 2-4 minutes per split (reduces runner cancellation exposure)
+  #   - 16x parallelization speedup vs sequential execution
+  #   - Increased from 12 to 16 splits to reduce Split 7 runner cancellations
+  #   - Shorter per-split runtime reduces probability of external runner shutdown
   test-parallel:
-    name: Tests (Split ${{ matrix.split }}/12)
+    name: Tests (Split ${{ matrix.split }}/16)
     needs: smoke-test
     runs-on: ubuntu-latest
-    # Timeout increased to 60 minutes due to Split 7 runner cancellations
-    # Split 7 was being canceled at ~3-4 minutes (well under 25 min timeout)
-    # Increasing timeout to rule out any job-level timeout issues
-    timeout-minutes: 60
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
     steps:
       - name: Checkout code
@@ -139,20 +137,12 @@ jobs:
             exit 1
           }
 
-      - name: Run test split ${{ matrix.split }}/12
+      - name: Run test split ${{ matrix.split }}/16
         run: |
-          # Splits 7 and 12 need to run without parallelism due to signal handler conflicts
-          # in validation tests that only fail in CI parallel execution environment
-          if [[ "${{ matrix.split }}" == "7" ]] || [[ "${{ matrix.split }}" == "12" ]]; then
-            WORKERS=0  # Disable parallelism for splits 7 and 12
-          else
-            WORKERS=auto  # Use auto-detection for other splits
-          fi
-
           poetry run pytest tests/ \
-            --splits 12 \
+            --splits 16 \
             --group ${{ matrix.split }} \
-            -n $WORKERS \
+            -n auto \
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
@@ -161,8 +151,8 @@ jobs:
           #   - Longest test: ~30 seconds (2x safety margin)
           #   - Thread method: Avoids signal handler issues in parallel execution
           #   - No false positives observed at this threshold
-          # Splits 7 and 12: -n 0 (no parallelism) to avoid signal handler conflicts
-          # Other splits: -n auto (full parallelism) after event loop fixes
+          # All splits use -n auto (full parallelism) - shorter splits reduce
+          # resource pressure and runner cancellation probability
 
       - name: Upload test results
         if: always()
