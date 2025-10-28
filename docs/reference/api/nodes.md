@@ -138,6 +138,8 @@ class WorkflowOrchestratorNode(NodeOrchestrator):
 
 ## Service Wrapper Classes
 
+> Tip: For comprehensive guidance and examples, see `src/omnibase_core/models/nodes/node_services/README.md`.
+
 ### ModelServiceCompute
 
 **Location**: `omnibase_core.models.nodes.node_services.model_service_compute`
@@ -162,7 +164,7 @@ service = ModelServiceCompute(container)
 from omnibase_core.models.nodes.node_services.model_service_effect import ModelServiceEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-# Pre-composed with MixinNodeService, NodeEffect, MixinHealthCheck, MixinCircuitBreaker, MixinMetrics
+# Pre-composed with MixinNodeService, NodeEffect, MixinHealthCheck, MixinEventBus, MixinMetrics
 service = ModelServiceEffect(container)
 ```
 
@@ -176,7 +178,7 @@ service = ModelServiceEffect(container)
 from omnibase_core.models.nodes.node_services.model_service_reducer import ModelServiceReducer
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-# Pre-composed with MixinNodeService, NodeReducer, MixinHealthCheck, MixinStateManagement, MixinMetrics
+# Pre-composed with MixinNodeService, NodeReducer, MixinHealthCheck, MixinCaching, MixinMetrics
 service = ModelServiceReducer(container)
 ```
 
@@ -190,7 +192,7 @@ service = ModelServiceReducer(container)
 from omnibase_core.models.nodes.node_services.model_service_orchestrator import ModelServiceOrchestrator
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-# Pre-composed with MixinNodeService, NodeOrchestrator, MixinHealthCheck, MixinWorkflowManagement, MixinMetrics
+# Pre-composed with MixinNodeService, NodeOrchestrator, MixinHealthCheck, MixinEventBus, MixinMetrics
 service = ModelServiceOrchestrator(container)
 ```
 

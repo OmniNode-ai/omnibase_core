@@ -6,11 +6,26 @@ The ONEX Four-Node Architecture is a foundational design pattern that provides s
 
 ## Architecture Pattern
 
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   EFFECT    │───▶│   COMPUTE   │───▶│   REDUCER   │───▶│ORCHESTRATOR │
-│   (Input)   │    │ (Process)   │    │(Aggregate)  │    │(Coordinate) │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+### Visual Overview
+
+```mermaid
+flowchart LR
+    A[EFFECT<br/>External I/O<br/>APIs, DB, Files] -->|Raw Data| B[COMPUTE<br/>Processing<br/>Transform, Validate]
+    B -->|Processed Data| C[REDUCER<br/>Aggregation<br/>State, Accumulate]
+    C -->|Aggregated State| D[ORCHESTRATOR<br/>Coordination<br/>Workflows, Dependencies]
+
+    style A fill:#e1f5ff,stroke:#0066cc,stroke-width:2px
+    style B fill:#fff4e1,stroke:#ff9900,stroke-width:2px
+    style C fill:#f0e1ff,stroke:#9900cc,stroke-width:2px
+    style D fill:#e1ffe1,stroke:#00cc66,stroke-width:2px
+
+    A -.->|Side Effects<br/>I/O Operations| External[External World]
+    C -.->|Emits Intents| Intents[Intent Queue]
+    D -.->|Issues Actions| Actions[Action Queue]
+
+    style External fill:#fff,stroke:#999,stroke-dasharray: 5 5
+    style Intents fill:#fff,stroke:#999,stroke-dasharray: 5 5
+    style Actions fill:#fff,stroke:#999,stroke-dasharray: 5 5
 ```
 
 ### Data Flow Direction
@@ -466,6 +481,46 @@ Where:
 - `action`: Incoming action/command
 - `new_state`: Next immutable state
 - `intents[]`: List of side effects to execute
+
+### Intent Emission and Execution Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Reducer
+    participant IntentQueue
+    participant Executor
+    participant Effect
+
+    Client->>Reducer: Execute FSM Transition<br/>(state, action)
+    activate Reducer
+
+    Note over Reducer: Pure FSM Logic<br/>No Side Effects!
+    Reducer->>Reducer: compute new_state
+    Reducer->>Reducer: emit intents[]
+
+    Reducer->>IntentQueue: publish(intents[])
+    Reducer-->>Client: (new_state, intents[])
+    deactivate Reducer
+
+    activate IntentQueue
+    IntentQueue->>Executor: poll next intent
+    deactivate IntentQueue
+
+    activate Executor
+    Note over Executor: Validate intent<br/>Check priority
+
+    Executor->>Effect: execute intent
+    activate Effect
+    Note over Effect: Actual Side Effect<br/>(DB write, API call, etc.)
+    Effect-->>Executor: result
+    deactivate Effect
+
+    Executor-->>IntentQueue: mark completed
+    deactivate Executor
+
+    Note over Reducer,Effect: Separation: Reducer declares WHAT<br/>Effect determines HOW
+```
 
 ### ModelIntent Structure
 
@@ -1083,6 +1138,52 @@ class WorkflowOrchestratorService(NodeOrchestrator):
 ModelAction represents a **command issued by an Orchestrator** to coordinate work across nodes. Unlike generic "thunks" or arbitrary callbacks, Actions have strict ownership semantics enforced through lease management and optimistic concurrency control.
 
 **Key Principle**: Only the lease-holding Orchestrator can issue Actions that modify shared state.
+
+### Action Validation and Execution Flow
+
+```mermaid
+sequenceDiagram
+    participant Orch1 as Orchestrator A
+    participant Orch2 as Orchestrator B
+    participant LeaseMgr as Lease Manager
+    participant Validator
+    participant Executor
+    participant StateStore
+
+    Orch1->>LeaseMgr: acquire_lease(workflow_id)
+    activate LeaseMgr
+    LeaseMgr-->>Orch1: lease_a (UUID + epoch=0)
+    deactivate LeaseMgr
+
+    Orch2->>LeaseMgr: acquire_lease(workflow_id)
+    activate LeaseMgr
+    LeaseMgr-->>Orch2: ❌ LeaseConflictError
+    deactivate LeaseMgr
+    Note over Orch2: Single-writer enforcement
+
+    Orch1->>Executor: execute_action(ModelAction<br/>lease_id=lease_a<br/>epoch=0)
+    activate Executor
+
+    Executor->>Validator: validate_action()
+    activate Validator
+    Validator->>LeaseMgr: verify_lease(lease_a)
+    LeaseMgr-->>Validator: ✅ Valid
+    Validator->>StateStore: get_current_epoch()
+    StateStore-->>Validator: epoch=0
+    Note over Validator: Optimistic<br/>Concurrency Check
+    Validator-->>Executor: ✅ Valid
+    deactivate Validator
+
+    Executor->>StateStore: update_state(epoch=0→1)
+    activate StateStore
+    StateStore-->>Executor: success
+    deactivate StateStore
+
+    Executor-->>Orch1: result
+    deactivate Executor
+
+    Note over Orch1,StateStore: Lease + Epoch = Reliable Coordination
+```
 
 ### ModelAction Structure
 

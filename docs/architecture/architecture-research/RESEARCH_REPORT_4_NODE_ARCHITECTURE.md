@@ -171,26 +171,26 @@ definitions: {...}
 
 ### 3.1 Node Service Pattern
 
-**Service Classes:**
-- `NodeEffectService`: Effect node service capabilities
-- `NodeComputeService`: Compute node service capabilities  
-- `NodeReducerService`: Reducer node service capabilities
-- `NodeOrchestratorService`: Orchestrator node service capabilities
+Use the standard `ModelService*` wrappers for production-ready compositions:
 
-#### Service Composition Pattern:
+**Service Wrapper Classes:**
+- `ModelServiceEffect`: `MixinNodeService` + `NodeEffect` + `MixinHealthCheck` + `MixinEventBus` + `MixinMetrics`
+- `ModelServiceCompute`: `MixinNodeService` + `NodeCompute` + `MixinHealthCheck` + `MixinCaching` + `MixinMetrics`
+- `ModelServiceReducer`: `MixinNodeService` + `NodeReducer` + `MixinHealthCheck` + `MixinCaching` + `MixinMetrics`
+- `ModelServiceOrchestrator`: `MixinNodeService` + `NodeOrchestrator` + `MixinHealthCheck` + `MixinEventBus` + `MixinMetrics`
+
+#### Service Composition Example:
 ```python
-class NodeEffectService(
-    NodeEffect,              # Core node functionality
-    MixinNodeService,        # Service lifecycle management
-    MixinNodeIdFromContract, # Contract-based node ID loading
-    MixinHealthCheck,        # Standardized health checks
-):
-    """Composed service with multiple capability layers."""
+from omnibase_core.models.nodes.node_services import ModelServiceEffect
+
+class NodeDatabaseWriter(ModelServiceEffect):
+    """Effect node with health checks, events, and metrics pre-wired."""
+    pass
 ```
 
 ### 3.2 Service Lifecycle Management
 
-**Lifecycle Phases:**
+**Lifecycle Phases (via MixinNodeService):**
 1. **Initialization**: Container injection and dependency resolution
 2. **Contract Loading**: Load and validate node configuration
 3. **Service Registration**: Register with service discovery

@@ -62,7 +62,7 @@ src/omnibase_core/
 
 ⚠️ **Important**: Most ONEX node components are **NOT thread-safe by default**.
 
-For production multi-threaded environments, see **[docs/THREADING.md](docs/reference/THREADING.md)** for:
+For production multi-threaded environments, see **[docs/THREADING.md](docs/guides/THREADING.md)** for:
 
 - **Thread safety guarantees** for each component
 - **Synchronization patterns** and mitigation strategies
@@ -83,7 +83,7 @@ For production multi-threaded environments, see **[docs/THREADING.md](docs/refer
 
 **Critical Rule**: Do NOT share node instances across threads without explicit synchronization.
 
-See [docs/THREADING.md](docs/reference/THREADING.md) for complete guidelines and mitigation strategies.
+See [docs/THREADING.md](docs/guides/THREADING.md) for complete guidelines and mitigation strategies.
 
 ## Why Poetry?
 
@@ -117,7 +117,7 @@ See [docs/THREADING.md](docs/reference/THREADING.md) for complete guidelines and
 | **Understanding Architecture** | [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | 30 min |
 | **Reference & Templates** | [Node Templates](docs/reference/templates/) | - |
 | **Error Handling** | [Error Handling Best Practices](docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md) | 20 min |
-| **Thread Safety** | [Threading Guide](docs/reference/THREADING.md) | 15 min |
+| **Thread Safety** | [Threading Guide](docs/guides/THREADING.md) | 15 min |
 
 ### Node Building Guide ⭐ **Recommended Starting Point**
 

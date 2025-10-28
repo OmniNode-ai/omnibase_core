@@ -44,15 +44,23 @@ touch src/my_project/nodes/__init__.py
 """A simple COMPUTE node that doubles numbers."""
 
 from typing import Dict, Any
-from omnibase_core.nodes.node_compute import NodeCompute
+from omnibase_core.models.nodes.node_services import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
-class NodeDoublerCompute(NodeCompute):
-    """A simple COMPUTE node that doubles numbers."""
+class NodeDoublerCompute(ModelServiceCompute):
+    """
+    A simple COMPUTE node that doubles numbers.
+
+    Uses ModelServiceCompute for production-ready features:
+    - Health checks and metrics
+    - Automatic caching support
+    - Performance monitoring
+    - Error handling patterns
+    """
 
     def __init__(self, container: ModelONEXContainer):
-        """Initialize the doubler node."""
+        """Initialize the doubler node with service wrapper."""
         super().__init__(container)
 
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -87,6 +95,16 @@ class NodeDoublerCompute(NodeCompute):
             "operation": "double"
         }
 ```
+
+> **💡 Why ModelServiceCompute?**
+>
+> We use `ModelServiceCompute` (a service wrapper) instead of `NodeCompute` directly because:
+> - ✅ Includes health checks, metrics, and caching out-of-the-box
+> - ✅ Production-ready with best-practice patterns
+> - ✅ Less boilerplate code to write
+> - ✅ Consistent structure across all ONEX nodes
+>
+> For custom needs, you can inherit directly from `NodeCoreBase`. See [02_NODE_TYPES.md](../guides/node-building/02_NODE_TYPES.md#service-wrapper-decision-guide) for guidance.
 
 ## Step 3: Create a Test
 
@@ -237,7 +255,9 @@ poetry run python example_usage.py
 
 You created a production-ready COMPUTE node with:
 
-- ✅ **Zero boilerplate** - Base class handles ONEX infrastructure
+- ✅ **Service Wrapper** - ModelServiceCompute provides production features
+- ✅ **Zero boilerplate** - 80+ lines of setup eliminated
+- ✅ **Built-in monitoring** - Health checks and metrics included
 - ✅ **Type safety** - Proper typing and validation
 - ✅ **Error handling** - Comprehensive input validation
 - ✅ **Testing** - Full test coverage with pytest
@@ -246,7 +266,7 @@ You created a production-ready COMPUTE node with:
 
 ## Key ONEX Concepts You Used
 
-1. **NodeCompute Base Class** - Provides infrastructure and contracts
+1. **ModelServiceCompute (Service Wrapper)** - Production-ready COMPUTE node with essential mixins
 2. **Container Pattern** - Dependency injection for services
 3. **Async Processing** - Non-blocking computation
 4. **Error Handling** - Proper exception management

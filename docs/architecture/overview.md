@@ -143,9 +143,11 @@ Nodes communicate through:
 - Domain-specific implementations
 
 ### 2. Service Layer
-- Service wrappers with mixins
+- Service wrappers with mixins (prefer `ModelService*` for production nodes)
 - Common patterns and utilities
 - Cross-cutting concerns
+
+> Note on terminology: "Service wrappers" are pre-composed node classes (internal to ONEX) and are not the same as external services (APIs, DBs). External services are injected via the container; service wrappers describe how nodes are composed internally.
 
 ### 3. Infrastructure Layer
 - Base node classes
@@ -260,6 +262,15 @@ except CircuitBreakerOpenException:
 - **ORCHESTRATOR**: For workflow coordination
 
 ### 2. Implement Your Node
+Prefer a service wrapper to eliminate boilerplate and ensure correct mixin ordering:
+```python
+from omnibase_core.models.nodes.node_services import ModelServiceCompute
+
+class MyComputeService(ModelServiceCompute):
+    pass
+```
+
+Or compose manually only when you need specialized capabilities:
 ```python
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer

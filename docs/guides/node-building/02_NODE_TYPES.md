@@ -303,6 +303,62 @@ Use a REDUCER node when you need to:
 ✅ Build summary statistics
 ✅ Combine partial results
 
+### REDUCER and the Pure FSM Pattern 🔄
+
+**Modern REDUCER Pattern**: REDUCER nodes should follow the **Pure Finite State Machine (FSM)** pattern:
+
+```python
+δ(state, action) → (new_state, intents[])
+```
+
+**Key Principles**:
+- **Pure Function**: No side effects, deterministic state transitions
+- **Intent Emission**: Instead of executing side effects directly, emit `ModelIntent` objects
+- **Testability**: Easy to test without mocking external systems
+
+**Example: Order Processing FSM**
+
+```python
+from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
+
+class NodeOrderProcessingReducer(NodeCoreBase):
+    """Pure FSM reducer for order processing."""
+
+    def _apply_fsm_transition(self, state: dict, action: str, payload: dict):
+        """
+        Pure state transition with intent emission.
+
+        Returns: (new_state, intents[])
+        """
+        if action == "PLACE_ORDER":
+            # Compute new state (pure)
+            new_state = {
+                **state,
+                "status": "ORDER_PLACED",
+                "order_id": str(uuid4()),
+                "items": payload.get("items"),
+                "total": self._calculate_total(payload.get("items"))
+            }
+
+            # Emit intents for side effects
+            intents = [
+                ModelIntent(
+                    intent_type=EnumIntentType.DATABASE_WRITE,
+                    target="orders_table",
+                    payload={"operation": "insert", "data": new_state}
+                ),
+                ModelIntent(
+                    intent_type=EnumIntentType.NOTIFICATION,
+                    target="email_service",
+                    payload={"template": "order_confirmation"}
+                )
+            ]
+
+            return FSMTransitionResult(new_state=new_state, intents=intents)
+```
+
+> **Learn More**: See [ONEX_FOUR_NODE_ARCHITECTURE.md](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md#modelintent-architecture) for complete Intent/Action patterns and FSM implementation details.
+
 ### Real-World Examples
 
 ```python
@@ -434,6 +490,55 @@ Use an ORCHESTRATOR node when you need to:
 ✅ Handle complex error recovery
 ✅ Implement saga patterns
 ✅ Coordinate multiple services
+
+### ORCHESTRATOR and ModelAction Pattern 🎯
+
+**Modern ORCHESTRATOR Pattern**: ORCHESTRATOR nodes use **ModelAction** for command issuance with **lease-based ownership** and **optimistic concurrency**:
+
+**Key Principles**:
+- **Single-Writer Semantics**: Only lease-holding orchestrator can issue actions
+- **Epoch Versioning**: Optimistic concurrency prevents lost updates
+- **Action Queue**: Structured command execution with validation
+- **Traceability**: Full audit trail of orchestration decisions
+
+**Example: Workflow Coordination with Lease Management**
+
+```python
+from omnibase_core.models.model_action import ModelAction, EnumActionType
+
+class NodeWorkflowOrchestrator(NodeCoreBase):
+    """Orchestrator with lease-based coordination."""
+
+    async def execute_orchestration(self, contract):
+        # Acquire exclusive lease
+        lease = await self._acquire_workflow_lease(
+            workflow_id=contract.workflow_id,
+            lease_duration=timedelta(minutes=10)
+        )
+
+        try:
+            # Issue action with lease proof
+            action = ModelAction(
+                action_id=uuid4(),
+                action_type=EnumActionType.START_WORKFLOW,
+                lease_id=lease.lease_id,  # Proves ownership
+                epoch=lease.epoch,  # Optimistic concurrency
+                target_node="reducer",
+                command_payload={"workflow_type": "order_processing"},
+                correlation_id=contract.correlation_id
+            )
+
+            # Execute with validation
+            result = await self._execute_validated_action(action)
+
+            return ModelOrchestratorOutput(result=result)
+
+        finally:
+            # Release lease on completion
+            await self._release_workflow_lease(lease)
+```
+
+> **Learn More**: See [ONEX_FOUR_NODE_ARCHITECTURE.md](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md#modelaction-architecture) for complete Action patterns, lease management, and orchestration details.
 
 ### Real-World Examples
 
@@ -709,28 +814,99 @@ Or jump to a specific tutorial:
 - [REDUCER Node Tutorial](05_REDUCER_NODE_TUTORIAL.md)
 - [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md)
 
+## Service Wrapper Decision Guide
+
+### When to Use Service Wrappers vs Custom Nodes
+
+```mermaid
+flowchart TD
+    Start[Need to create a node?] --> Q1{Need standard<br/>capabilities?}
+
+    Q1 -->|Yes:<br/>Health checks,<br/>metrics, events| UseWrapper[Use ModelService*<br/>Service Wrapper]
+    Q1 -->|No:<br/>Specialized<br/>composition| Q2{What node type?}
+
+    UseWrapper --> WrapperChoice{Which node type?}
+    WrapperChoice -->|External I/O| SW1[ModelServiceEffect<br/>+health +events +metrics]
+    WrapperChoice -->|Processing| SW2[ModelServiceCompute<br/>+health +caching +metrics]
+    WrapperChoice -->|Aggregation| SW3[ModelServiceReducer<br/>+health +state +metrics]
+    WrapperChoice -->|Coordination| SW4[ModelServiceOrchestrator<br/>+health +workflows +metrics]
+
+    Q2 -->|COMPUTE| Q3{Need custom<br/>mixins?}
+    Q2 -->|EFFECT| Q4{Need custom<br/>I/O handling?}
+    Q2 -->|REDUCER| Q5{Need custom<br/>state management?}
+    Q2 -->|ORCHESTRATOR| Q6{Need custom<br/>workflows?}
+
+    Q3 -->|No| SW2
+    Q3 -->|Yes| Custom1[Inherit NodeCoreBase<br/>Add custom mixins]
+
+    Q4 -->|No| SW1
+    Q4 -->|Yes| Custom2[Inherit NodeCoreBase<br/>Add custom I/O]
+
+    Q5 -->|No| SW3
+    Q5 -->|Yes| Custom3[Inherit NodeCoreBase<br/>Add custom state]
+
+    Q6 -->|No| SW4
+    Q6 -->|Yes| Custom4[Inherit NodeCoreBase<br/>Add custom workflows]
+
+    style UseWrapper fill:#90EE90,stroke:#006400,stroke-width:3px
+    style SW1 fill:#e1f5ff,stroke:#0066cc
+    style SW2 fill:#fff4e1,stroke:#ff9900
+    style SW3 fill:#f0e1ff,stroke:#9900cc
+    style SW4 fill:#e1ffe1,stroke:#00cc66
+    style Custom1 fill:#ffe1e1,stroke:#cc0000
+    style Custom2 fill:#ffe1e1,stroke:#cc0000
+    style Custom3 fill:#ffe1e1,stroke:#cc0000
+    style Custom4 fill:#ffe1e1,stroke:#cc0000
+```
+
+### Why Service Wrappers? 🎯
+
+**Service Wrappers** (ModelService\*) are pre-configured node implementations that combine:
+- Base node functionality (EFFECT/COMPUTE/REDUCER/ORCHESTRATOR)
+- Essential mixins (health checks, metrics, caching, events)
+- Production-ready patterns (error handling, logging, observability)
+- Correct mixin ordering and composition
+
+**Benefits**:
+- ✅ **Less Code**: 80+ lines of boilerplate eliminated
+- ✅ **Best Practices**: Vetted patterns and configurations
+- ✅ **Consistency**: Same structure across all nodes
+- ✅ **Maintainability**: Framework updates benefit all wrappers
+- ✅ **Testing**: Pre-tested integration and composition
+
+**When to Use Custom Nodes**:
+- ❌ Need specialized mixin composition
+- ❌ Unusual mixin ordering required
+- ❌ Custom base class needed
+- ❌ Experimental features
+
+**Rule of Thumb**: Start with `ModelService*` wrappers. Only create custom nodes when you have a clear reason why the wrapper doesn't fit your needs.
+
+> See [MIXIN_ARCHITECTURE.md](../../architecture/MIXIN_ARCHITECTURE.md#service-wrappers-and-mixin-mapping) for detailed wrapper composition and MRO information.
+
 ## Quick Reference
 
 ```python
-# EFFECT: External I/O
-class NodeMyEffect(NodeCoreBase):
-    async def process(self, input_data):
-        return await self.external_service.call(input_data)
+# RECOMMENDED: Use service wrappers for production
+from omnibase_core.models.nodes.node_services import (
+    ModelServiceEffect,
+    ModelServiceCompute,
+    ModelServiceReducer,
+    ModelServiceOrchestrator
+)
 
-# COMPUTE: Pure computation
-class NodeMyCompute(NodeCoreBase):
+class MyProductionService(ModelServiceCompute):
+    """Production-ready COMPUTE node with standard mixins."""
     async def process(self, input_data):
-        return self.calculate(input_data)  # No I/O
+        # Your business logic here
+        return self.calculate(input_data)
 
-# REDUCER: Aggregation
-class NodeMyReducer(NodeCoreBase):
-    async def process(self, input_data):
-        return sum(input_data.values)  # Aggregate
+# ADVANCED: Custom nodes only when needed
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 
-# ORCHESTRATOR: Coordination
-class NodeMyOrchestrator(NodeCoreBase):
+class MyCustomNode(NodeCoreBase):
+    """Custom node with specialized composition."""
     async def process(self, input_data):
-        step1 = await self.node1.process(input_data)
-        step2 = await self.node2.process(step1)
-        return step2  # Coordinate workflow
+        # Specialized implementation
+        return custom_logic(input_data)
 ```
