@@ -26,6 +26,7 @@ from omnibase_core.models.core.model_event_type import (
 )
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
 from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.types.typed_dict_discovery_stats import TypedDictDiscoveryStats
 
 if TYPE_CHECKING:
     from omnibase_spi.protocols.types.protocol_event_bus_types import (
@@ -63,7 +64,7 @@ class MixinDiscoveryResponder:
         self._discovery_active = False
         self._last_response_time: float = 0.0
         self._response_throttle = 1.0  # Minimum seconds between responses
-        self._discovery_stats: dict[str, int | float | None] = {
+        self._discovery_stats: TypedDictDiscoveryStats = {
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
