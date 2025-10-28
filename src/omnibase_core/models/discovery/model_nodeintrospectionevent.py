@@ -16,6 +16,21 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
 
     This event is automatically published by the MixinEventDrivenNode when a node
     starts up, enabling other services to discover its capabilities.
+
+    ONEX Architecture:
+        The 4-node ONEX architecture classifies nodes by their primary function:
+        - effect: External I/O, APIs, databases, side effects
+        - compute: Pure transformations, algorithmic processing
+        - reducer: Aggregation, persistence, state management
+        - orchestrator: Workflow coordination, multi-step execution
+
+        node_type enforces this 4-node architecture.
+        node_role provides optional specialization within a type (e.g., registry, adapter).
+
+    Example:
+        Registry node:
+            node_type="effect" (primary function: external I/O)
+            node_role="registry" (specialization within effect nodes)
     """
 
     # Override event_type to be fixed for this event
@@ -29,6 +44,17 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         default=..., description="Name of the node (e.g. 'node_generator')"
     )
     version: ModelSemVer = Field(default=..., description="Version of the node")
+
+    # ONEX Architecture Classification
+    node_type: str = Field(
+        default=...,
+        description="Type of ONEX node based on primary function",
+        pattern="^(effect|compute|reducer|orchestrator)$",
+    )
+    node_role: str | None = Field(
+        default=None,
+        description="Optional role specialization within node type (e.g., 'registry', 'adapter', 'bridge')",
+    )
 
     # Node capabilities
     capabilities: ModelNodeCapability = Field(
@@ -95,10 +121,12 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         node_id: UUID | str,
         node_name: str,
         version: ModelSemVer,
+        node_type: str,
         actions: list[str],
         protocols: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
         tags: list[str] | None = None,
+        node_role: str | None = None,
         **kwargs: Any,
     ) -> "ModelNodeIntrospectionEvent":
         """
@@ -108,10 +136,12 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
             node_id: Unique node identifier (UUID or string)
             node_name: Node name (e.g. 'node_generator')
             version: Node version
+            node_type: Type of ONEX node (effect, compute, reducer, orchestrator)
             actions: List of supported actions
             protocols: List of supported protocols
             metadata: Additional metadata
             tags: Discovery tags
+            node_role: Optional role specialization (registry, adapter, bridge, etc.)
             **kwargs: Additional fields
 
         Returns:
@@ -131,7 +161,9 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
             node_id=node_id,
             node_name=node_name,
             version=version,
+            node_type=node_type,
             capabilities=capabilities,
             tags=tags or [],
+            node_role=node_role,
             **kwargs,
         )

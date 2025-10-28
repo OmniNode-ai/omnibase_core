@@ -96,6 +96,7 @@ def sample_node_introspection_event():
         node_id="test_node_001",
         node_name="node_test",
         version=ModelSemVer(major=1, minor=0, patch=0),
+        node_type="effect",
         capabilities=capabilities,
         tags=["test_tag"],
         health_endpoint="/health",
@@ -558,6 +559,7 @@ class TestIntegrationScenarios:
             node_id="test_node_001",
             node_name="node_test",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="effect",
             capabilities=ModelNodeCapabilities(
                 actions=["test_action"],
                 protocols=["test_protocol"],
@@ -626,6 +628,7 @@ class TestIntegrationScenarios:
                 node_id=f"test_node_{i:03d}",
                 node_name=f"node_test_{capability}",
                 version=ModelSemVer(major=1, minor=0, patch=0),
+                node_type="effect",
                 capabilities=ModelNodeCapabilities(
                     actions=[capability],
                     protocols=["test_protocol"],
@@ -676,6 +679,7 @@ class TestUnifiedDiscoverySystem:
             node_id="test_node_001",
             node_name="node_test",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="effect",
             capabilities=ModelNodeCapabilities(
                 actions=["test_action"],
                 protocols=["test_protocol"],
@@ -733,6 +737,7 @@ class TestUnifiedDiscoverySystem:
                 node_id=f"node_{i:03d}",
                 node_name=f"node_{capability}",
                 version=ModelSemVer(major=1, minor=0, patch=0),
+                node_type="effect",
                 capabilities=ModelNodeCapabilities(
                     actions=[f"{capability}_action"],
                     protocols=[f"{capability}_protocol"],

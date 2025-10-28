@@ -40,6 +40,7 @@ class TestNodeIntrospectionEvent:
             node_id=node_id,
             node_name="test_node",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="effect",
             capabilities=capabilities,
             tags=["test", "generator"],
         )
@@ -57,6 +58,7 @@ class TestNodeIntrospectionEvent:
             node_id=node_id,
             node_name="node_generator",
             version=ModelSemVer(major=1, minor=2, patch=3),
+            node_type="compute",
             actions=["generate_complete_node", "health_check"],
             protocols=["mcp", "graphql"],
             metadata={"author": "ONEX"},
@@ -272,6 +274,7 @@ def test_all_events_have_correlation_id_support():
         node_id=node_id,
         node_name="test",
         version=ModelSemVer(major=1, minor=0, patch=0),
+        node_type="effect",
         actions=["test"],
         correlation_id=correlation_id,
     )
