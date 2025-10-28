@@ -14,3 +14,4 @@ class TypedDictDiscoveryStats(TypedDict):
     responses_sent: int
     throttled_requests: int
     last_request_time: float | None
+    error_count: int

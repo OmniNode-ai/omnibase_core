@@ -69,6 +69,7 @@ class MixinDiscoveryResponder:
             "responses_sent": 0,
             "throttled_requests": 0,
             "last_request_time": None,
+            "error_count": 0,
         }
         self._discovery_event_bus: ProtocolEventBus | None = None
         self._discovery_unsubscribe: Any = None  # Callable to unsubscribe
@@ -190,9 +191,23 @@ class MixinDiscoveryResponder:
             # Handle the discovery request
             await self._handle_discovery_request(envelope)
 
-        except Exception:
-            # Silently handle errors to avoid disrupting discovery
-            pass
+        except Exception as e:
+            # Log non-fatal discovery errors for observability
+            from omnibase_core.logging.structured import (
+                emit_log_event_sync as emit_log_event,
+            )
+
+            emit_log_event(
+                LogLevel.WARNING,
+                "Discovery message processing failed (non-fatal)",
+                {
+                    "component": "DiscoveryResponder",
+                    "error": str(e),
+                    "operation": "_on_discovery_message",
+                },
+            )
+            # Track error metrics
+            self._discovery_stats["error_count"] += 1
 
     async def _handle_discovery_request(
         self, envelope: "ModelEventEnvelope[Any]"
@@ -228,20 +243,14 @@ class MixinDiscoveryResponder:
             if not is_event_equal(onex_event.event_type, "DISCOVERY_REQUEST"):
                 return  # Not a discovery request
 
-            # Type-safe increment (get returns int|float|None, but default ensures int)
-            current_requests = self._discovery_stats.get("requests_received", 0)
-            self._discovery_stats["requests_received"] = (
-                current_requests if isinstance(current_requests, int) else 0
-            ) + 1
+            # TypedDict ensures correct types at initialization
+            self._discovery_stats["requests_received"] += 1
             self._discovery_stats["last_request_time"] = time.time()
 
             # Check rate limiting
             current_time = time.time()
             if current_time - self._last_response_time < self._response_throttle:
-                current_throttled = self._discovery_stats.get("throttled_requests", 0)
-                self._discovery_stats["throttled_requests"] = (
-                    current_throttled if isinstance(current_throttled, int) else 0
-                ) + 1
+                self._discovery_stats["throttled_requests"] += 1
                 return  # Throttled
 
             # Extract request metadata
@@ -257,14 +266,21 @@ class MixinDiscoveryResponder:
             await self._send_discovery_response(onex_event, request_metadata)
 
             self._last_response_time = current_time
-            current_responses = self._discovery_stats.get("responses_sent", 0)
-            self._discovery_stats["responses_sent"] = (
-                current_responses if isinstance(current_responses, int) else 0
-            ) + 1
+            self._discovery_stats["responses_sent"] += 1
 
-        except Exception:
-            # Silently handle errors to avoid disrupting discovery
-            pass
+        except Exception as e:
+            # Log non-fatal discovery errors for observability
+            emit_log_event(
+                LogLevel.WARNING,
+                "Discovery request handling failed (non-fatal)",
+                {
+                    "component": "DiscoveryResponder",
+                    "error": str(e),
+                    "operation": "_handle_discovery_request",
+                },
+            )
+            # Track error metrics
+            self._discovery_stats["error_count"] += 1
 
     def _matches_discovery_criteria(
         self, request: ModelDiscoveryRequestModelMetadata
@@ -416,9 +432,19 @@ class MixinDiscoveryResponder:
                     value=envelope_bytes,
                 )
 
-        except Exception:
-            # Log error but don't disrupt discovery
-            pass
+        except Exception as e:
+            # Log non-fatal discovery errors for observability
+            emit_log_event(
+                LogLevel.WARNING,
+                "Discovery response sending failed (non-fatal)",
+                {
+                    "component": "DiscoveryResponder",
+                    "error": str(e),
+                    "operation": "_send_discovery_response",
+                },
+            )
+            # Track error metrics
+            self._discovery_stats["error_count"] += 1
 
     def _get_discovery_introspection(self) -> dict[str, Any]:
         """
@@ -568,4 +594,5 @@ class MixinDiscoveryResponder:
             "responses_sent": 0,
             "throttled_requests": 0,
             "last_request_time": None,
+            "error_count": 0,
         }
