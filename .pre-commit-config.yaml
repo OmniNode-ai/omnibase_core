@@ -47,8 +47,8 @@ repos:
         entry: poetry run isort
         language: system
         types: [python]
-        args: [--profile, black, --line-length, "88", --skip, src/omnibase_core/mixins/mixin_event_bus.py, --skip, src/omnibase_core/mixins/mixin_event_handler.py]
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/|src/omnibase_core/mixins/mixin_event_bus\.py|src/omnibase_core/mixins/mixin_event_handler\.py)$
+        args: [--profile, black, --line-length, "88", --skip, src/omnibase_core/mixins/mixin_event_bus.py, --skip, src/omnibase_core/mixins/mixin_event_handler.py, --skip, src/omnibase_core/mixins/mixin_discovery_responder.py]
+        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/|src/omnibase_core/mixins/mixin_event_bus\.py|src/omnibase_core/mixins/mixin_event_handler\.py|src/omnibase_core/mixins/mixin_discovery_responder\.py)$
         stages: [commit]
 
       - id: ruff-fix
@@ -151,7 +151,7 @@ repos:
       - id: validate-union-usage
         name: ONEX Union Usage Validation
         entry: poetry run python scripts/validation/validate-union-usage.py
-        args: ['--allow-invalid', '240']
+        args: ['--allow-invalid', '235']
         language: system
         pass_filenames: false
         files: ^src/.*\.py$

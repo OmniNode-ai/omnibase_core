@@ -100,6 +100,7 @@ from .typed_dict_core_summary import TypedDictCoreSummary
 from .typed_dict_debug_info_data import TypedDictDebugInfoData
 from .typed_dict_dependency_info import TypedDictDependencyInfo
 from .typed_dict_deprecation_summary import TypedDictDeprecationSummary
+from .typed_dict_discovery_stats import TypedDictDiscoveryStats
 from .typed_dict_documentation_summary_filtered import (
     TypedDictDocumentationSummaryFiltered,
 )
@@ -238,6 +239,7 @@ __all__ = [
     "TypedDictCoreAnalytics",
     "TypedDictDebugInfoData",
     "TypedDictDeprecationSummary",
+    "TypedDictDiscoveryStats",
     "TypedDictDocumentationSummaryFiltered",
     "TypedDictExecutionParams",
     "TypedDictFactoryKwargs",

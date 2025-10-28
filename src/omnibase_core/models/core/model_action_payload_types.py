@@ -43,6 +43,7 @@ from omnibase_core.models.core.model_validation_action_payload import (
 )
 
 # Union type for all payload types
+# union-ok: Factory pattern legitimately needs union of all action payload types
 SpecificActionPayload = Union[
     ModelLifecycleActionPayload,
     ModelOperationalActionPayload,

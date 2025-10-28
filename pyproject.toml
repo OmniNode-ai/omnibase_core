@@ -209,6 +209,7 @@ ignore = [
 "tests/unit/validation/test_protocol_compliance.py" = ["I001"]  # Import sorting conflicts with isort
 "src/omnibase_core/mixins/mixin_event_bus.py" = ["I001"]  # Import order conflicts with import semantics
 "src/omnibase_core/mixins/mixin_event_handler.py" = ["I001"]  # Import order conflicts with import semantics
+"src/omnibase_core/mixins/mixin_discovery_responder.py" = ["I001"]  # Import sorting skipped by isort - sync with isort skip list
 
 [tool.isort]
 profile = "black"

@@ -14,6 +14,7 @@ from typing import Any
 from pydantic import BaseModel
 
 # Define allowed argument value types
+# union-ok: Value wrapper legitimately needs multiple primitive types for runtime flexibility
 ArgumentValueType = Union[str, int, bool, float, list[str], list[int], list[float]]
 
 
