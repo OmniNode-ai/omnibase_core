@@ -1,20 +1,3 @@
 {
-  "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/Volumes/PRO-G40/Code/omnibase_core"
-      ]
-    },
-    "git": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-git",
-        "--repository",
-        "/Volumes/PRO-G40/Code/omnibase_core"
-      ]
-    }
-  }
+  "mcpServers": {}
 }
