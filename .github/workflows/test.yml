@@ -234,12 +234,6 @@ jobs:
             htmlcov/
           retention-days: 30
 
-      - name: Coverage summary
-        if: always()
-        run: |
-          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
-          poetry run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
-
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
