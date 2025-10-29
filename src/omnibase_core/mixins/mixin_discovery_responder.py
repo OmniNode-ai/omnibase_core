@@ -55,6 +55,13 @@ class MixinDiscoveryResponder:
     - Current health status and capabilities
     - Event channels and version information
     - Response time metrics
+
+    THREAD SAFETY:
+    ⚠️ This mixin is NOT thread-safe by default:
+    - Instance state (_discovery_stats, _last_response_time) can be corrupted
+    - Concurrent access requires external synchronization (threading.Lock)
+    - Each thread should use its own instance, or wrap access with locks
+    - See docs/guides/THREADING.md for comprehensive threading guidelines
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
