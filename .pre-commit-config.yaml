@@ -267,6 +267,16 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # Documentation link validation - prevents broken links in CI
+      - id: validate-doc-links
+        name: ONEX Documentation Link Validation
+        entry: poetry run python scripts/validate-doc-links.py
+        args: [--fix-case]
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       # Smoke tests - fast critical path validation (~3s)
       # Runs foundational tests (enums, errors) for immediate feedback
       # Full test suite (10k+ tests) runs in CI with parallel execution

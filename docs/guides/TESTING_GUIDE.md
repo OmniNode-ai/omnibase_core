@@ -426,8 +426,6 @@ async def test_event_emission(event_node):
     assert event.target_node == "effect_node"
 ```
 
-**Further Reading**: For comprehensive analysis of event bus patterns, implementation alternatives, and architectural considerations, see [In-Memory Event Bus Research Report](../../research/IN_MEMORY_EVENT_BUS_RESEARCH_REPORT.md).
-
 ## Performance Testing
 
 ### Load Testing

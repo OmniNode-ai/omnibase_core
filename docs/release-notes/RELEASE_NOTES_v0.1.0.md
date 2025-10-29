@@ -113,10 +113,10 @@ class NodeMyServiceCompute(NodeCoreBase):
 ```
 
 ### Learn More
-- **Getting Started**: [Quick Start Guide](getting-started/QUICK_START.md)
-- **Node Building**: [Complete Node Building Guide](guides/node-building/README.md)
-- **Architecture**: [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
-- **Documentation Index**: [docs/INDEX.md](INDEX.md)
+- **Getting Started**: [Quick Start Guide](../getting-started/QUICK_START.md)
+- **Node Building**: [Complete Node Building Guide](../guides/node-building/README.md)
+- **Architecture**: [ONEX Four-Node Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
+- **Documentation Index**: [docs/INDEX.md](../INDEX.md)
 
 ## Breaking Changes
 
@@ -142,7 +142,7 @@ from omnibase_core.enums.enum_workflow_execution import EnumActionType
 - Added: `lease_id` (required for single-writer semantics)
 - Added: `epoch` (required for lease management)
 
-**Migration Path**: See [CHANGELOG.md](../CHANGELOG.md) for detailed migration guide.
+**Migration Path**: See [CHANGELOG.md](../../CHANGELOG.md) for detailed migration guide.
 
 ### Reducer FSM Changes
 
@@ -174,7 +174,7 @@ await self.emit_intent(intent)
 - Target: <100 violations before v0.2.0
 
 ### Thread Safety
-Most ONEX node components are NOT thread-safe by default. See [Threading Guide](guides/THREADING.md) for:
+Most ONEX node components are NOT thread-safe by default. See [Threading Guide](../guides/THREADING.md) for:
 - Thread safety guarantees per component
 - Synchronization patterns
 - Production deployment checklist
@@ -208,22 +208,22 @@ Most ONEX node components are NOT thread-safe by default. See [Threading Guide](
 ## Documentation
 
 ### Essential Reading
-- [README.md](../README.md) - Project overview
-- [CHANGELOG.md](../CHANGELOG.md) - Detailed change log
-- [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution guidelines
-- [docs/INDEX.md](INDEX.md) - Complete documentation index
+- [README.md](../../README.md) - Project overview
+- [CHANGELOG.md](../../CHANGELOG.md) - Detailed change log
+- [CONTRIBUTING.md](../../CONTRIBUTING.md) - Contribution guidelines
+- [docs/INDEX.md](../INDEX.md) - Complete documentation index
 
 ### Quick Links
-- [Installation Guide](getting-started/INSTALLATION.md)
-- [COMPUTE Node Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md)
-- [EFFECT Node Tutorial](guides/node-building/04_EFFECT_NODE_TUTORIAL.md)
-- [REDUCER Node Tutorial](guides/node-building/05_REDUCER_NODE_TUTORIAL.md)
-- [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md)
-- [Threading Guide](guides/THREADING.md)
+- [Installation Guide](../getting-started/INSTALLATION.md)
+- [COMPUTE Node Tutorial](../guides/node-building/03_COMPUTE_NODE_TUTORIAL.md)
+- [EFFECT Node Tutorial](../guides/node-building/04_EFFECT_NODE_TUTORIAL.md)
+- [REDUCER Node Tutorial](../guides/node-building/05_REDUCER_NODE_TUTORIAL.md)
+- [Error Handling Best Practices](../conventions/ERROR_HANDLING_BEST_PRACTICES.md)
+- [Threading Guide](../guides/THREADING.md)
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](../CONTRIBUTING.md) for:
+We welcome contributions! Please see [CONTRIBUTING.md](../../CONTRIBUTING.md) for:
 - Development setup
 - Code standards
 - Testing requirements
@@ -238,7 +238,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](../CONTRIBUTING.md) for:
 
 ## License
 
-MIT License - See [LICENSE](../LICENSE) for details.
+MIT License - See [LICENSE](../../LICENSE) for details.
 
 ## Acknowledgments
 
@@ -250,9 +250,9 @@ Built with ONEX framework principles:
 
 ---
 
-**Ready to build?** → [Node Building Guide](guides/node-building/README.md)
+**Ready to build?** → [Node Building Guide](../guides/node-building/README.md)
 
-**Need help?** → [Documentation Index](INDEX.md)
+**Need help?** → [Documentation Index](../INDEX.md)
 
 **Found a bug?** → [GitHub Issues](https://github.com/OmniNode-ai/omnibase_core/issues)
 
