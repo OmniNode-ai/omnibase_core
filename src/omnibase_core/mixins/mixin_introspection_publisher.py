@@ -16,7 +16,9 @@ from pathlib import Path
 
 from pydantic import BaseModel, ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_node_introspection_data import (
     MixinNodeIntrospectionData,
@@ -54,9 +56,14 @@ class MixinIntrospectionPublisher:
             from uuid import UUID, uuid4
 
             correlation_id = uuid4()
-            node_type = getattr(
-                self, "get_node_type", lambda: self.__class__.__name__
-            )()
+            # Require explicit get_node_type() implementation - no fallback
+            if not hasattr(self, "get_node_type"):
+                raise ModelOnexError(
+                    message=f"Node {self.__class__.__name__} must implement get_node_type() "
+                    "returning one of: effect, compute, reducer, orchestrator",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                )
+            node_type = self.get_node_type()
             introspection_event = ModelNodeIntrospectionEvent.create_from_node_info(
                 node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
                 node_name=introspection_data.node_name,

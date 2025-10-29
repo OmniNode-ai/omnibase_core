@@ -48,6 +48,7 @@ class ModelOnexEnvelopeV1(BaseModel):
         - event_type: String identifier for the event type
         - timestamp: When the event was created
         - source_service: Service that created the event
+        - source_node_id: UUID of the node instance (optional, for node-to-node tracking)
         - payload: The actual event data (as dict)
 
     Example:
@@ -90,6 +91,10 @@ class ModelOnexEnvelopeV1(BaseModel):
     )
     source_service: str = Field(
         description="Service that created this event",
+    )
+    source_node_id: UUID | None = Field(
+        default=None,
+        description="UUID of the node instance that generated this event (for node-to-node tracking)",
     )
 
     # Event payload (actual data)
