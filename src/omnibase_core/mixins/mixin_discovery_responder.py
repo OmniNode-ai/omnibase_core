@@ -434,14 +434,16 @@ class MixinDiscoveryResponder:
                 )
 
                 # Update metrics only after successful publish
-                self._last_response_time = request_time
+                self._last_response_time = (
+                    time.time()
+                )  # Use actual publish time, not request time
                 self._discovery_stats["responses_sent"] += 1
 
         except Exception as e:
-            # Log non-fatal discovery errors for observability
+            # Log discovery errors for observability
             emit_log_event(
                 LogLevel.WARNING,
-                "Discovery response sending failed (non-fatal)",
+                "Discovery response sending failed",
                 {
                     "component": "DiscoveryResponder",
                     "error": str(e),
@@ -450,6 +452,12 @@ class MixinDiscoveryResponder:
             )
             # Track error metrics
             self._discovery_stats["error_count"] += 1
+
+            # Re-raise to signal failure to caller
+            raise ModelOnexError(
+                message="Failed to send discovery response",
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            ) from e
 
     def _get_discovery_introspection(self) -> dict[str, Any]:
         """
