@@ -184,11 +184,11 @@ class MixinDiscoveryResponder:
             envelope_dict = json.loads(message.value.decode("utf-8"))
             envelope: ModelEventEnvelope[Any] = ModelEventEnvelope(**envelope_dict)
 
-            # Acknowledge message receipt
-            await message.ack()
-
             # Handle the discovery request
             await self._handle_discovery_request(envelope)
+
+            # Acknowledge message receipt only after successful handling
+            await message.ack()
 
         except Exception as e:
             # Log non-fatal discovery errors for observability
@@ -262,11 +262,10 @@ class MixinDiscoveryResponder:
                 self._discovery_stats["filtered_requests"] += 1
                 return  # Doesn't match criteria
 
-            # Generate discovery response
-            await self._send_discovery_response(onex_event, request_metadata)
-
-            self._last_response_time = current_time
-            self._discovery_stats["responses_sent"] += 1
+            # Generate discovery response (updates metrics on success)
+            await self._send_discovery_response(
+                onex_event, request_metadata, current_time
+            )
 
         except Exception as e:
             # Log non-fatal discovery errors for observability
@@ -333,6 +332,7 @@ class MixinDiscoveryResponder:
         self,
         original_event: OnexEvent,
         request: ModelDiscoveryRequestModelMetadata,
+        request_time: float,
     ) -> None:
         """
         Send discovery response back to requester.
@@ -340,6 +340,7 @@ class MixinDiscoveryResponder:
         Args:
             original_event: Original discovery request event
             request: Request metadata
+            request_time: Time when request was received (for metrics)
         """
         try:
             response_start = time.time()
@@ -431,6 +432,10 @@ class MixinDiscoveryResponder:
                     key=None,
                     value=envelope_bytes,
                 )
+
+                # Update metrics only after successful publish
+                self._last_response_time = request_time
+                self._discovery_stats["responses_sent"] += 1
 
         except Exception as e:
             # Log non-fatal discovery errors for observability

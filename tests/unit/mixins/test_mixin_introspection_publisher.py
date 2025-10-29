@@ -386,8 +386,6 @@ class TestMixinIntrospectionPublisher:
             version=ModelSemVer(major=1, minor=0, patch=0),
             node_type="compute",
             actions=["health_check"],
-            protocols=["event_bus"],
-            metadata={"description": "Test node"},
             tags=["test"],
             correlation_id=uuid4(),
         )
@@ -416,8 +414,6 @@ class TestMixinIntrospectionPublisher:
             version=ModelSemVer(major=1, minor=0, patch=0),
             node_type="compute",
             actions=["health_check"],
-            protocols=["event_bus"],
-            metadata={"description": "Test node"},
             tags=["test"],
             correlation_id=uuid4(),
         )
@@ -444,8 +440,6 @@ class TestMixinIntrospectionPublisher:
             version=ModelSemVer(major=1, minor=0, patch=0),
             node_type="compute",
             actions=["health_check"],
-            protocols=["event_bus"],
-            metadata={"description": "Test node"},
             tags=["test"],
             correlation_id=uuid4(),
         )
@@ -465,8 +459,6 @@ class TestMixinIntrospectionPublisher:
             version=ModelSemVer(major=1, minor=0, patch=0),
             node_type="compute",
             actions=["health_check"],
-            protocols=["event_bus"],
-            metadata={"description": "Test node"},
             tags=["test"],
             correlation_id=uuid4(),
         )

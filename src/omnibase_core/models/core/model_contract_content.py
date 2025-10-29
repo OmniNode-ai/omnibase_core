@@ -80,6 +80,23 @@ class ModelContractContent(BaseModel):
     primary_actions: list[str] | None = Field(
         default=None, description="Primary actions"
     )
+
+    @field_validator("validation_rules", mode="before")
+    @classmethod
+    def validate_validation_rules_flexible(
+        cls, v: object
+    ) -> ModelValidationRules | None:
+        """Validate and convert flexible validation rules format using shared utility."""
+        if v is None:
+            return None
+        if isinstance(v, ModelValidationRules):
+            return v
+        from omnibase_core.models.utils.model_validation_rules_converter import (
+            ModelValidationRulesConverter,
+        )
+
+        return ModelValidationRulesConverter.convert_to_validation_rules(v)
+
     validation_rules: ModelValidationRules | None = Field(
         default=None,
         description="Validation rules for contract enforcement",

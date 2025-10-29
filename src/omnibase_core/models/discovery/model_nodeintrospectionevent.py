@@ -123,8 +123,6 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         version: ModelSemVer,
         node_type: str,
         actions: list[str],
-        protocols: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
         tags: list[str] | None = None,
         node_role: str | None = None,
         **kwargs: Any,
@@ -138,14 +136,18 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
             version: Node version
             node_type: Type of ONEX node (effect, compute, reducer, orchestrator)
             actions: List of supported actions
-            protocols: List of supported protocols
-            metadata: Additional metadata
             tags: Discovery tags
             node_role: Optional role specialization (registry, adapter, bridge, etc.)
-            **kwargs: Additional fields
+            **kwargs: Additional fields (e.g., health_endpoint, correlation_id)
 
         Returns:
             ModelNodeIntrospectionEvent instance
+
+        Note:
+            Previously accepted 'protocols' and 'metadata' parameters but these were
+            never used since ModelNodeCapability doesn't support them and the base
+            model has extra="forbid" configured. Callers passing these parameters
+            need to be updated.
         """
         # Convert node_id to UUID if string
         if isinstance(node_id, str):

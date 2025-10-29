@@ -162,10 +162,14 @@ jobs:
           path: junit-${{ matrix.split }}.xml
           retention-days: 7
 
-  # Coverage report (only runs on main branch to save CI time)
+  # Coverage report (runs on main branch and PRs to main)
+  # Rationale:
+  #   - Main branch: Track overall coverage trends
+  #   - PRs to main: Validate production-bound changes
+  #   - PRs to develop: Skipped to save CI time (use local coverage)
   coverage:
     name: Coverage Report
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.base_ref == 'main')
     needs: test-parallel
     runs-on: ubuntu-latest
     timeout-minutes: 15

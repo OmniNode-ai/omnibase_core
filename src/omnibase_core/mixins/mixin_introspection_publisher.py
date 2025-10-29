@@ -70,8 +70,6 @@ class MixinIntrospectionPublisher:
                 version=introspection_data.version,
                 node_type=node_type,
                 actions=introspection_data.capabilities.actions,
-                protocols=introspection_data.capabilities.protocols,
-                metadata=introspection_data.capabilities.metadata,
                 tags=introspection_data.tags,
                 health_endpoint=introspection_data.health_endpoint,
                 correlation_id=correlation_id,

@@ -60,8 +60,6 @@ class TestNodeIntrospectionEvent:
             version=ModelSemVer(major=1, minor=2, patch=3),
             node_type="compute",
             actions=["generate_complete_node", "health_check"],
-            protocols=["mcp", "graphql"],
-            metadata={"author": "ONEX"},
             tags=["generator", "validated"],
         )
 

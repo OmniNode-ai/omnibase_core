@@ -104,6 +104,7 @@ pytest-split = "^0.10.0"
 pytest-timeout = "^2.4.0"
 pytest-rerunfailures = "^16.1"
 aiokafka = "^0.12.0"
+pytest-testmon = "^2.1.3"
 
 [tool.ruff]
 target-version = "py312"
@@ -295,6 +296,12 @@ addopts = [
 #   Full suite: -n 4 --timeout=60 (default)
 #   CI/Large machines: -n 8 --timeout=120
 #   Debug single test: -n 0 (disable xdist)
+#
+# Intelligent test selection with pytest-testmon:
+#   Run only affected tests: poetry run pytest --testmon
+#   Reset testmon database: poetry run pytest --testmon-noselect
+#   Disable testmon: poetry run pytest --testmon-off
+#   Note: .testmondata file is gitignored and stores test dependencies
 
 [tool.coverage.run]
 source = ["src/omnibase_core"]

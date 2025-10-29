@@ -1,6 +1,6 @@
-from typing import Union
+from typing import Any
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 """
 Argument Value Model.
@@ -9,13 +9,9 @@ Type-safe argument value wrapper replacing Any usage
 with structured argument value handling.
 """
 
-from typing import Any
-
-from pydantic import BaseModel
-
 # Define allowed argument value types
 # union-ok: Value wrapper legitimately needs multiple primitive types for runtime flexibility
-ArgumentValueType = Union[str, int, bool, float, list[str], list[int], list[float]]
+ArgumentValueType = str | int | bool | float | list[str] | list[int] | list[float]
 
 
 class ModelArgumentValue(BaseModel):
@@ -77,7 +73,7 @@ class ModelArgumentValue(BaseModel):
         return False
 
     def get_as_list(self) -> list[str]:
-        """Get value as list[Any]of strings."""
+        """Get value as list of strings."""
         if isinstance(self.value, list):
             return [str(item) for item in self.value]
         return [str(self.value)]
