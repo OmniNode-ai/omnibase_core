@@ -146,19 +146,14 @@ jobs:
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
-            --junitxml=junit-${{ matrix.split }}.xml \
-            --cov=src/omnibase_core \
-            --cov-report=term-missing:skip-covered \
-            --cov-context=test \
-            --no-cov-on-fail
+            --junitxml=junit-${{ matrix.split }}.xml
           # Per-test timeout: 60 seconds prevents infinite hangs
           #   - Longest test: ~30 seconds (2x safety margin)
           #   - Thread method: Avoids signal handler issues in parallel execution
           #   - No false positives observed at this threshold
           # All splits use -n auto (full parallelism) - shorter splits reduce
           # resource pressure and runner cancellation probability
-          # Coverage collected per split and combined in coverage-combine job
-          # --no-cov-on-fail: Don't fail on low coverage per split (combined check in coverage-combine)
+          # Coverage collected separately in coverage job (not per-split)
 
       - name: Upload test results
         if: always()
@@ -168,27 +163,19 @@ jobs:
           path: junit-${{ matrix.split }}.xml
           retention-days: 7
 
-      - name: Upload coverage data
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-data-${{ matrix.split }}
-          path: .coverage.*
-          retention-days: 7
-
-  # Coverage combine - merge coverage from all 16 splits
+  # Coverage report - runs all tests with coverage
   # Rationale:
-  #   - Eliminates redundant test execution (was re-running all 10,987 tests)
-  #   - Combines .coverage files from all splits into unified report
+  #   - Runs after splits complete successfully (fast feedback from splits)
+  #   - Collects comprehensive coverage data in single job
   #   - Main branch: Track overall coverage trends
   #   - PRs to main: Validate production-bound changes
   #   - PRs to develop: Skipped to save CI time (use local coverage)
-  coverage-combine:
+  coverage:
     name: Coverage Report
     if: github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.base_ref == 'main')
     needs: test-parallel
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -226,31 +213,16 @@ jobs:
       - name: Install project
         run: poetry install --no-interaction
 
-      - name: Download all coverage artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: coverage-data-*
-          path: coverage-data/
-
-      - name: Combine coverage files
+      - name: Run tests with coverage
         run: |
-          # Find and move all .coverage.* files from nested artifact directories to root
-          find coverage-data/ -name '.coverage.*' -exec cp {} . \;
-
-          # List coverage files for debugging
-          ls -la .coverage.* || echo "No coverage files found"
-
-          # Combine all coverage files
-          poetry run coverage combine .coverage.*
-
-          # Generate reports
-          poetry run coverage report --format=markdown > coverage-report.md
-          poetry run coverage xml
-          poetry run coverage html
-
-      - name: Check coverage threshold
-        run: |
-          poetry run coverage report --fail-under=60
+          poetry run pytest tests/ \
+            -n auto \
+            --cov=src/omnibase_core \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-fail-under=60 \
+            --tb=short
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
@@ -260,14 +232,13 @@ jobs:
           path: |
             coverage.xml
             htmlcov/
-            coverage-report.md
           retention-days: 30
 
       - name: Coverage summary
         if: always()
         run: |
           echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
-          cat coverage-report.md >> $GITHUB_STEP_SUMMARY
+          poetry run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
 
   lint:
     name: Code Quality
