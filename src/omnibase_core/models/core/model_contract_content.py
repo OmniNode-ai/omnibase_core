@@ -16,6 +16,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, field_validator
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
 from omnibase_core.models.core.model_contract_definitions import (
     ModelContractDefinitions,
 )
@@ -79,9 +80,9 @@ class ModelContractContent(BaseModel):
     primary_actions: list[str] | None = Field(
         default=None, description="Primary actions"
     )
-    validation_rules: dict[str, Any] | list[dict[str, Any]] | None = Field(
+    validation_rules: ModelValidationRules | None = Field(
         default=None,
-        description="Validation rules (can be dict[str, Any]or list[Any]format)",
+        description="Validation rules for contract enforcement",
     )
 
     # === INFRASTRUCTURE FIELDS ===
@@ -245,3 +246,32 @@ class ModelContractContent(BaseModel):
                 # Already a ModelContractDependency instance
                 result.append(item)
         return result
+
+    @field_validator("validation_rules", mode="before")
+    @classmethod
+    def convert_validation_rules(cls, v: object) -> ModelValidationRules | None:
+        """Convert various validation rule formats to ModelValidationRules.
+
+        Supports conversion from dict, list, string, and None formats to
+        strongly-typed ModelValidationRules using the shared converter utility.
+
+        Args:
+            v: Validation rules value (dict, list, str, ModelValidationRules, or None)
+
+        Returns:
+            ModelValidationRules instance or None
+        """
+        if v is None:
+            return None
+
+        # If already a ModelValidationRules instance, return it directly
+        # This handles re-validation in pytest-xdist workers
+        if isinstance(v, ModelValidationRules):
+            return v
+
+        # Local import to avoid circular import
+        from omnibase_core.models.utils.model_validation_rules_converter import (
+            ModelValidationRulesConverter,
+        )
+
+        return ModelValidationRulesConverter.convert_to_validation_rules(v)
