@@ -149,7 +149,8 @@ jobs:
             --junitxml=junit-${{ matrix.split }}.xml \
             --cov=src/omnibase_core \
             --cov-report=term-missing:skip-covered \
-            --cov-context=test
+            --cov-context=test \
+            --no-cov-on-fail
           # Per-test timeout: 60 seconds prevents infinite hangs
           #   - Longest test: ~30 seconds (2x safety margin)
           #   - Thread method: Avoids signal handler issues in parallel execution
@@ -157,6 +158,7 @@ jobs:
           # All splits use -n auto (full parallelism) - shorter splits reduce
           # resource pressure and runner cancellation probability
           # Coverage collected per split and combined in coverage-combine job
+          # --no-cov-on-fail: Don't fail on low coverage per split (combined check in coverage-combine)
 
       - name: Upload test results
         if: always()
