@@ -171,7 +171,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-data-${{ matrix.split }}
-          path: .coverage
+          path: .coverage.*
           retention-days: 7
 
   # Coverage combine - merge coverage from all 16 splits
@@ -232,9 +232,11 @@ jobs:
 
       - name: Combine coverage files
         run: |
-          # Move all .coverage files to root directory
-          find coverage-data/ -name '.coverage' -exec mv {} coverage-data/.coverage.{} \;
-          mv coverage-data/.coverage.* .
+          # Find and move all .coverage.* files from nested artifact directories to root
+          find coverage-data/ -name '.coverage.*' -exec cp {} . \;
+
+          # List coverage files for debugging
+          ls -la .coverage.* || echo "No coverage files found"
 
           # Combine all coverage files
           poetry run coverage combine .coverage.*
