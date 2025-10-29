@@ -225,3 +225,4 @@ async def test_event_publishing():
 **Related Documentation**:
 - [ONEX Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 - [Testing Guide](../guides/TESTING_GUIDE.md)
+- [In-Memory Event Bus Research](../research/IN_MEMORY_EVENT_BUS_RESEARCH_REPORT.md) - Comprehensive analysis of event bus implementation patterns and architectural considerations

@@ -145,6 +145,13 @@ omnibase_core/docs/
 | [Union Type Quick Reference](research/UNION_QUICK_REFERENCE.md) | Union type best practices and migration guide | ✅ Available |
 | [Union Type Remediation Plan](research/UNION_REMEDIATION_PLAN.md) | Comprehensive strategy for eliminating Union types | ✅ Available |
 
+### Release Notes
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [Release Notes v0.1.1](release-notes/RELEASE_NOTES_v0.1.1.md) | Quality & documentation improvements | ✅ Current |
+| [Release Notes v0.1.0](release-notes/RELEASE_NOTES_v0.1.0.md) | Initial public release | ✅ Available |
+
 ---
 
 ## 🔧 Specialized Topics

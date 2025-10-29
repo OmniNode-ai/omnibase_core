@@ -7,6 +7,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-10-29
+
+### Added
+
+#### Discovery System Enhancements
+- **TypedDict for Discovery Stats**: Introduced `TypedDictDiscoveryStats` for type-safe statistics tracking in discovery system
+- **Filtered Requests Counter**: Added `filtered_requests` counter to track requests that don't match discovery criteria (separate from errors and throttling)
+- **Enhanced Error Tracking**: Added `error_count` field to discovery stats for comprehensive observability
+
+#### Node Introspection Improvements
+- **ONEX Architecture Classification**: Added `node_type` field with 4-node validation (effect, compute, reducer, orchestrator) to `ModelNodeIntrospectionEvent`
+- **Node Role Support**: Added optional `node_role` field for specialization within node types
+- **Source Node Tracking**: Added `source_node_id` field to `ModelOnexEnvelopeV1` for node-to-node event correlation and tracking
+
+#### Documentation Enhancements
+- **Mermaid Diagrams**: Added 5 visual diagrams for ONEX architecture flows:
+  - Four-node architecture flow with side effects
+  - Intent emission and execution sequence (pure FSM pattern)
+  - Action validation and execution flow (lease-based orchestration)
+  - Service wrapper decision flowchart
+  - Event-driven communication integrated into Intent flow
+- **Research Documentation**:
+  - In-Memory Event Bus Research Report (746 lines)
+  - Union Type Quick Reference (319 lines)
+  - Union Type Remediation Plan (1045 lines)
+  - Ecosystem Directory Structure documentation (396 lines)
+- **Enhanced Architecture Docs**: Improved ONEX four-node architecture documentation with better examples and terminology
+- **Getting Started Updates**: Enhanced Quick Start guide with production patterns (ModelServiceCompute)
+- **Node Building Guides**: Improved node type tutorials with FSM and Intent/Action pattern introductions
+
+### Changed
+
+#### Discovery System Improvements
+- **Error Handling**: Replaced silent exception handling with structured logging (ProtocolLogger warnings) for non-fatal discovery errors
+- **TypedDict Usage**: Simplified TypedDict usage by removing defensive isinstance checks (trust TypedDict type safety)
+- **Stats Initialization**: Updated discovery stats initialization and reset methods to include new `error_count` field
+
+#### Validation Improvements
+- **Validation Rules**: Replaced improper `dict[str, Any] | list[dict[str, Any]] | None` Union pattern with strongly-typed `ModelValidationRules | None`
+- **Field Validators**: Enhanced validation using `ModelValidationRulesConverter` for backward compatibility with dict/list/string formats
+
+### Fixed
+
+#### Build & CI Fixes
+- **Import Path**: Corrected import path for `EnumCoreErrorCode` from `omnibase_core.enums.enum_core_error_code` to `omnibase_core.errors.error_codes`
+- **Import Ordering**: Fixed isort import ordering in `mixin_discovery_responder.py` (omnibase_core before omnibase_spi)
+- **Missing Parameters**: Added missing `node_type` parameter to `create_from_node_info()` calls in introspection publisher
+
+#### Node Introspection Fixes
+- **Explicit Node Type**: Required explicit `get_node_type()` implementation in nodes, removing fallback to `__class__.__name__` which could produce invalid values
+- **Validation Error Prevention**: Prevents runtime ValidationError from invalid node_type patterns through early error detection
+- **Test Updates**: Updated 5 introspection publisher tests to include required `node_type` parameter
+
+#### Configuration Fixes
+- **isort/Ruff Conflict**: Resolved infinite loop where isort and ruff conflicted on import ordering for `mixin_discovery_responder.py`
+- **Pre-commit Configuration**: Added proper exclusions in both ruff and isort configurations for files with intentional import ordering
+
+#### Documentation Fixes
+- **Docstring Typos**: Fixed 6 docstring typos:
+  - "list[Any]en" → "listen"
+  - "list[Any]: List of capabilities" → "list[str]: List of capabilities"
+  - "list[Any]rather" → "list rather"
+  - "list[Any]ings" → "listings"
+  - "list[Any]ener" → "listener"
+- **Broken Path References**: Fixed 3 broken path references to THREADING.md
+- **Cross-Linking**: Added 5+ navigation paths connecting beginner to advanced topics
+
+### Refactored
+
+#### Validation System
+- **Backward Compatibility Removal**: Removed field_validator for `validation_rules` that provided automatic conversion from legacy dict/list/string formats
+- **Strong Typing Enforcement**: `validation_rules` now strictly requires `ModelValidationRules | None` without automatic conversions
+- **Cleaner Code**: Eliminated conversion logic and hidden transformations
+
+### Tests
+
+#### New Test Coverage
+- **TypedDict Tests**: Added 234 comprehensive tests for `TypedDictDiscoveryStats`:
+  - Structure validation tests
+  - Field type and edge case tests (zero values, high volume, None handling)
+  - Incremental update and reset scenarios
+  - Error tracking and throttling scenarios
+- **Test Updates**: Updated introspection publisher tests for new `node_type` parameter requirement
+
+### Chore
+
+#### Repository Maintenance
+- **Temporary File Cleanup**: Removed spurious temporary files that shouldn't be in version control:
+  - ADVANCED_DOCS_VALIDATION_REPORT.md
+  - performance_analysis_results.txt
+- **MCP Configuration**: Cleaned up `.mcp.json` by removing all MCP server configurations and resetting to empty mcpServers object
+- **Dependencies**: Updated `poetry.lock` and `pyproject.toml` for related dependencies
+
 ## [0.1.0] - 2025-10-21
 
 ### Added

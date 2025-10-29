@@ -179,6 +179,8 @@ ProtocolEventOrchestrator     # Multi-event coordination
 **Key Pattern**: Pub/Sub with protocol-based contracts
 **Usage**: `MixinEventDrivenNode` uses `ProtocolEventBus` extensively
 
+**Further Reading**: For in-depth analysis of event bus implementation patterns, inter-node communication strategies, and architectural trade-offs, see [In-Memory Event Bus Research Report](../research/IN_MEMORY_EVENT_BUS_RESEARCH_REPORT.md).
+
 ---
 
 #### 2.3 File Handling Protocols
