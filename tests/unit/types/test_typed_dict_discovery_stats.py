@@ -16,12 +16,14 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 5,
             "responses_sent": 3,
             "throttled_requests": 2,
+            "filtered_requests": 1,
             "last_request_time": 1234.56,
             "error_count": 1,
         }
         assert stats["requests_received"] == 5
         assert stats["responses_sent"] == 3
         assert stats["throttled_requests"] == 2
+        assert stats["filtered_requests"] == 1
         assert stats["last_request_time"] == 1234.56
         assert stats["error_count"] == 1
 
@@ -31,6 +33,7 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": None,
             "error_count": 0,
         }
@@ -43,10 +46,11 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 1,
             "responses_sent": 1,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": 1.0,
             "error_count": 0,
         }
-        assert len(stats) == 5
+        assert len(stats) == 6
 
     def test_typed_dict_zero_values(self):
         """Test TypedDict with all zero values."""
@@ -54,12 +58,14 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": None,
             "error_count": 0,
         }
         assert stats["requests_received"] == 0
         assert stats["responses_sent"] == 0
         assert stats["throttled_requests"] == 0
+        assert stats["filtered_requests"] == 0
         assert stats["last_request_time"] is None
         assert stats["error_count"] == 0
 
@@ -69,12 +75,14 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 10000,
             "responses_sent": 9500,
             "throttled_requests": 500,
+            "filtered_requests": 200,
             "last_request_time": 1234567890.123456,
             "error_count": 50,
         }
         assert stats["requests_received"] == 10000
         assert stats["responses_sent"] == 9500
         assert stats["throttled_requests"] == 500
+        assert stats["filtered_requests"] == 200
         assert stats["last_request_time"] == 1234567890.123456
         assert stats["error_count"] == 50
 
@@ -84,6 +92,7 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 100,
             "responses_sent": 80,
             "throttled_requests": 20,
+            "filtered_requests": 0,
             "last_request_time": 1640000000.0,
             "error_count": 0,
         }
@@ -98,6 +107,7 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 50,
             "responses_sent": 45,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": 1640000000.0,
             "error_count": 5,
         }
@@ -112,12 +122,14 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 10,
             "responses_sent": 8,
             "throttled_requests": 2,
+            "filtered_requests": 1,
             "last_request_time": 1234.56,
             "error_count": 0,
         }
         assert isinstance(stats["requests_received"], int)
         assert isinstance(stats["responses_sent"], int)
         assert isinstance(stats["throttled_requests"], int)
+        assert isinstance(stats["filtered_requests"], int)
         assert isinstance(stats["last_request_time"], float)
         assert isinstance(stats["error_count"], int)
 
@@ -127,12 +139,14 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 10,
             "responses_sent": 8,
             "throttled_requests": 2,
+            "filtered_requests": 1,
             "last_request_time": None,
             "error_count": 0,
         }
         assert isinstance(stats["requests_received"], int)
         assert isinstance(stats["responses_sent"], int)
         assert isinstance(stats["throttled_requests"], int)
+        assert isinstance(stats["filtered_requests"], int)
         assert stats["last_request_time"] is None
         assert isinstance(stats["error_count"], int)
 
@@ -142,6 +156,7 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": None,
             "error_count": 0,
         }
@@ -160,6 +175,7 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": None,
             "error_count": 0,
         }
@@ -178,6 +194,7 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": None,
             "error_count": 0,
         }
@@ -196,6 +213,7 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 100,
             "responses_sent": 95,
             "throttled_requests": 5,
+            "filtered_requests": 2,
             "last_request_time": 1640000000.0,
             "error_count": 3,
         }
@@ -204,11 +222,13 @@ class TestTypedDictDiscoveryStats:
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": None,
             "error_count": 0,
         }
         assert stats["requests_received"] == 0
         assert stats["responses_sent"] == 0
         assert stats["throttled_requests"] == 0
+        assert stats["filtered_requests"] == 0
         assert stats["last_request_time"] is None
         assert stats["error_count"] == 0

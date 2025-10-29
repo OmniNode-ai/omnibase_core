@@ -31,7 +31,7 @@ class ModelFunctionNodeSummary(BaseModel):
     """
     Simplified function node summary.
 
-    Focused on essential information for list[Any]ings and overviews.
+    Focused on essential information for listings and overviews.
     Eliminates redundant fields from the original 19-field summary.
     Implements omnibase_spi protocols:
     - Identifiable: UUID-based identification

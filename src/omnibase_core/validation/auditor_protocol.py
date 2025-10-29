@@ -169,7 +169,7 @@ class ModelProtocolAuditor:
         # Validate SPI protocols directory exists
         if not spi_protocols_path.exists():
             logger.warning(f"SPI protocols directory not found: {spi_protocols_path}")
-            # Continue with empty SPI protocols list[Any]rather than failing
+            # Continue with empty SPI protocols list rather than failing
 
         # Get protocols from both repositories
         current_protocols = (

@@ -816,7 +816,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
                 "Ensure SQLite library is installed",
             ],
             "oracle": [
-                "Check Oracle list[Any]ener configuration",
+                "Check Oracle listener configuration",
                 "Verify TNS names resolution",
                 "Check Oracle SSL/TLS configuration",
                 "Monitor v$session for connection states",

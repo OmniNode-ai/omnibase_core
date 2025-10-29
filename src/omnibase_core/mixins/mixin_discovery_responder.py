@@ -39,7 +39,7 @@ class MixinDiscoveryResponder:
     Mixin for ONEX nodes to respond to discovery broadcasts.
 
     DISCOVERY RESPONDER PATTERN:
-    - All nodes list[Any]en to 'onex.discovery.broadcast' channel
+    - All nodes listen to 'onex.discovery.broadcast' channel
     - Respond to DISCOVERY_REQUEST events with introspection data
     - Include health status, capabilities, and full introspection
     - Rate limiting prevents discovery spam
@@ -66,6 +66,7 @@ class MixinDiscoveryResponder:
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": None,
             "error_count": 0,
         }
@@ -258,6 +259,7 @@ class MixinDiscoveryResponder:
 
             # Check if we match filter criteria
             if not self._matches_discovery_criteria(request_metadata):  # type: ignore[unreachable]
+                self._discovery_stats["filtered_requests"] += 1
                 return  # Doesn't match criteria
 
             # Generate discovery response
@@ -474,7 +476,7 @@ class MixinDiscoveryResponder:
         Override this method in subclasses to provide specific capabilities.
 
         Returns:
-            list[Any]: List of capabilities supported by the node
+            list[str]: List of capabilities supported by the node
         """
         capabilities = ["discovery", "introspection"]
 
@@ -591,6 +593,7 @@ class MixinDiscoveryResponder:
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": None,
             "error_count": 0,
         }
