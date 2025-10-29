@@ -54,10 +54,14 @@ class MixinIntrospectionPublisher:
             from uuid import UUID, uuid4
 
             correlation_id = uuid4()
+            node_type = getattr(
+                self, "get_node_type", lambda: self.__class__.__name__
+            )()
             introspection_event = ModelNodeIntrospectionEvent.create_from_node_info(
                 node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
                 node_name=introspection_data.node_name,
                 version=introspection_data.version,
+                node_type=node_type,
                 actions=introspection_data.capabilities.actions,
                 protocols=introspection_data.capabilities.protocols,
                 metadata=introspection_data.capabilities.metadata,
