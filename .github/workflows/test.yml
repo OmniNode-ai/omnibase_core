@@ -146,13 +146,17 @@ jobs:
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
-            --junitxml=junit-${{ matrix.split }}.xml
+            --junitxml=junit-${{ matrix.split }}.xml \
+            --cov=src/omnibase_core \
+            --cov-report=term-missing:skip-covered \
+            --cov-context=test
           # Per-test timeout: 60 seconds prevents infinite hangs
           #   - Longest test: ~30 seconds (2x safety margin)
           #   - Thread method: Avoids signal handler issues in parallel execution
           #   - No false positives observed at this threshold
           # All splits use -n auto (full parallelism) - shorter splits reduce
           # resource pressure and runner cancellation probability
+          # Coverage collected per split and combined in coverage-combine job
 
       - name: Upload test results
         if: always()
@@ -162,23 +166,31 @@ jobs:
           path: junit-${{ matrix.split }}.xml
           retention-days: 7
 
-  # Coverage report (runs on main branch and PRs to main)
+      - name: Upload coverage data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-data-${{ matrix.split }}
+          path: .coverage
+          retention-days: 7
+
+  # Coverage combine - merge coverage from all 16 splits
   # Rationale:
+  #   - Eliminates redundant test execution (was re-running all 10,987 tests)
+  #   - Combines .coverage files from all splits into unified report
   #   - Main branch: Track overall coverage trends
   #   - PRs to main: Validate production-bound changes
   #   - PRs to develop: Skipped to save CI time (use local coverage)
-  coverage:
+  coverage-combine:
     name: Coverage Report
     if: github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.base_ref == 'main')
     needs: test-parallel
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -192,8 +204,6 @@ jobs:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
-
-      # Note: omnibase_spi is now public - no auth required
 
       - name: Load cached venv
         id: cached-poetry-dependencies
@@ -214,16 +224,29 @@ jobs:
       - name: Install project
         run: poetry install --no-interaction
 
-      - name: Run tests with coverage
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-data-*
+          path: coverage-data/
+
+      - name: Combine coverage files
         run: |
-          poetry run pytest tests/ \
-            -n auto \
-            --cov=src/omnibase_core \
-            --cov-report=term-missing \
-            --cov-report=xml \
-            --cov-report=html \
-            --cov-fail-under=60 \
-            --tb=short
+          # Move all .coverage files to root directory
+          find coverage-data/ -name '.coverage' -exec mv {} coverage-data/.coverage.{} \;
+          mv coverage-data/.coverage.* .
+
+          # Combine all coverage files
+          poetry run coverage combine .coverage.*
+
+          # Generate reports
+          poetry run coverage report --format=markdown > coverage-report.md
+          poetry run coverage xml
+          poetry run coverage html
+
+      - name: Check coverage threshold
+        run: |
+          poetry run coverage report --fail-under=60
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
@@ -233,13 +256,14 @@ jobs:
           path: |
             coverage.xml
             htmlcov/
+            coverage-report.md
           retention-days: 30
 
       - name: Coverage summary
         if: always()
         run: |
           echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
-          poetry run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
+          cat coverage-report.md >> $GITHUB_STEP_SUMMARY
 
   lint:
     name: Code Quality
