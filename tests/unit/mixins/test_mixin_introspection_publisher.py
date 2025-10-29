@@ -33,6 +33,10 @@ class TestNode(MixinIntrospectionPublisher):
         self.event_bus = None
         self.metadata_loader = None
 
+    def get_node_type(self) -> str:
+        """Return valid ONEX node type for testing."""
+        return "compute"
+
 
 class TestMixinIntrospectionPublisher:
     """Test MixinIntrospectionPublisher functionality."""
@@ -380,6 +384,7 @@ class TestMixinIntrospectionPublisher:
             node_id=node._node_id,
             node_name="test_node",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="compute",
             actions=["health_check"],
             protocols=["event_bus"],
             metadata={"description": "Test node"},
@@ -409,6 +414,7 @@ class TestMixinIntrospectionPublisher:
             node_id=node._node_id,
             node_name="test_node",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="compute",
             actions=["health_check"],
             protocols=["event_bus"],
             metadata={"description": "Test node"},
@@ -436,6 +442,7 @@ class TestMixinIntrospectionPublisher:
             node_id=node._node_id,
             node_name="test_node",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="compute",
             actions=["health_check"],
             protocols=["event_bus"],
             metadata={"description": "Test node"},
@@ -456,6 +463,7 @@ class TestMixinIntrospectionPublisher:
             node_id=node._node_id,
             node_name="test_node",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="compute",
             actions=["health_check"],
             protocols=["event_bus"],
             metadata={"description": "Test node"},
