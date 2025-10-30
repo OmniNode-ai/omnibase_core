@@ -1,13 +1,13 @@
-from typing import Any
-
-from pydantic import BaseModel, Field
-
 """
 Argument Value Model.
 
 Type-safe argument value wrapper replacing Any usage
 with structured argument value handling.
 """
+
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 # Define allowed argument value types
 # union-ok: Value wrapper legitimately needs multiple primitive types for runtime flexibility
