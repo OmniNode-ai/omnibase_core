@@ -270,9 +270,7 @@ class MixinDiscoveryResponder:
                 return  # Doesn't match criteria
 
             # Generate discovery response (updates metrics on success)
-            await self._send_discovery_response(
-                onex_event, request_metadata, current_time
-            )
+            await self._send_discovery_response(onex_event, request_metadata)
 
         except Exception as e:
             # Log non-fatal discovery errors for observability
@@ -339,7 +337,6 @@ class MixinDiscoveryResponder:
         self,
         original_event: OnexEvent,
         request: ModelDiscoveryRequestModelMetadata,
-        request_time: float,
     ) -> None:
         """
         Send discovery response back to requester.
@@ -347,7 +344,6 @@ class MixinDiscoveryResponder:
         Args:
             original_event: Original discovery request event
             request: Request metadata
-            request_time: Time when request was received (for metrics)
         """
         try:
             response_start = time.time()
@@ -457,8 +453,8 @@ class MixinDiscoveryResponder:
                     "operation": "_send_discovery_response",
                 },
             )
-            # Track error metrics
-            self._discovery_stats["error_count"] += 1
+            # Note: error_count is incremented by the caller (_handle_discovery_request)
+            # to avoid double-counting when exception is re-raised
 
             # Re-raise to signal failure to caller
             raise ModelOnexError(

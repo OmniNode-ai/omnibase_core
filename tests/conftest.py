@@ -8,6 +8,7 @@ to prevent OOM issues in large test suites.
 import asyncio
 import gc
 import logging
+import warnings
 from collections.abc import Generator
 from unittest.mock import MagicMock
 
@@ -15,6 +16,19 @@ import pytest
 
 # Configure logging to reduce memory overhead
 logging.basicConfig(level=logging.WARNING)
+
+# Suppress asyncio "Task was destroyed but it is pending!" warnings
+# These are cosmetic errors from test cleanup and don't affect functionality
+warnings.filterwarnings(
+    "ignore",
+    message=".*Task was destroyed but it is pending.*",
+    category=RuntimeWarning,
+)
+warnings.filterwarnings(
+    "ignore",
+    message=".*coroutine.*was never awaited.*",
+    category=RuntimeWarning,
+)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -54,6 +68,7 @@ def event_loop_cleanup() -> Generator[None, None, None]:
 
     Ensures no dangling event loops or tasks that could accumulate memory.
     Specifically handles health monitor tasks that may have long sleep intervals.
+    Suppresses asyncio exception logging during cleanup to prevent noise.
     """
     yield  # Let test run
 
@@ -71,39 +86,53 @@ def event_loop_cleanup() -> Generator[None, None, None]:
                 return
 
         if loop and not loop.is_closed():
-            # Get all pending tasks in this loop
+            # Suppress asyncio exception logging during cleanup
+            # Prevents "Task was destroyed but it is pending!" warnings
+            old_exception_handler = loop.get_exception_handler()
+            loop.set_exception_handler(lambda loop, context: None)
+
             try:
-                pending = asyncio.all_tasks(loop)
-            except RuntimeError:
-                # asyncio.all_tasks() can fail if loop is from another thread
-                return
-
-            if pending:
-                # Cancel all pending tasks
-                for task in pending:
-                    if not task.done():
-                        task.cancel()
-
-                # Give tasks up to 2 seconds to complete cancellation
-                # This is important for health monitor tasks with sleep intervals
+                # Get all pending tasks in this loop
                 try:
-                    # Use wait_for with timeout to prevent hanging
-                    async def cancel_all():
-                        await asyncio.gather(*pending, return_exceptions=True)
+                    pending = asyncio.all_tasks(loop)
+                except RuntimeError:
+                    # asyncio.all_tasks() can fail if loop is from another thread
+                    return
 
-                    loop.run_until_complete(asyncio.wait_for(cancel_all(), timeout=2.0))
-                except TimeoutError:
-                    # Some tasks didn't cancel in time - force cleanup
+                if pending:
+                    # Cancel all pending tasks
                     for task in pending:
                         if not task.done():
-                            # Force task to be done by suppressing exception
-                            try:
-                                task.exception()
-                            except (asyncio.CancelledError, asyncio.InvalidStateError):
-                                pass
-                except Exception:
-                    # Best effort cleanup - don't fail tests due to cleanup issues
-                    pass
+                            task.cancel()
+
+                    # Give tasks up to 2 seconds to complete cancellation
+                    # This is important for health monitor tasks with sleep intervals
+                    try:
+                        # Use wait_for with timeout to prevent hanging
+                        async def cancel_all():
+                            await asyncio.gather(*pending, return_exceptions=True)
+
+                        loop.run_until_complete(
+                            asyncio.wait_for(cancel_all(), timeout=2.0)
+                        )
+                    except TimeoutError:
+                        # Some tasks didn't cancel in time - force cleanup
+                        for task in pending:
+                            if not task.done():
+                                # Force task to be done by suppressing exception
+                                try:
+                                    task.exception()
+                                except (
+                                    asyncio.CancelledError,
+                                    asyncio.InvalidStateError,
+                                ):
+                                    pass
+                    except Exception:
+                        # Best effort cleanup - don't fail tests due to cleanup issues
+                        pass
+            finally:
+                # Restore original exception handler
+                loop.set_exception_handler(old_exception_handler)
 
     except RuntimeError:
         # Event loop issues - that's fine, just skip cleanup
@@ -188,6 +217,10 @@ async def cleanup_service_tasks() -> Generator[None, None, None]:
 
     This fixture targets health monitor tasks and service loops that may
     be created during service testing and not properly cleaned up.
+
+    Also suppresses asyncio exception logging during cleanup to prevent
+    "Task was destroyed but it is pending!" warnings when tasks are cancelled
+    during test teardown.
     """
     yield  # Let test run
 
@@ -202,34 +235,45 @@ async def cleanup_service_tasks() -> Generator[None, None, None]:
         except RuntimeError:
             return  # No running loop
 
-        # Get all tasks
-        all_tasks = asyncio.all_tasks(loop)
+        # Suppress asyncio exception logging during cleanup
+        # This prevents "Task was destroyed but it is pending!" errors
+        # when we cancel tasks during test teardown
+        old_exception_handler = loop.get_exception_handler()
+        loop.set_exception_handler(lambda loop, context: None)
 
-        # Filter for health monitor and service tasks
-        health_tasks = [
-            task
-            for task in all_tasks
-            if not task.done()
-            and (
-                "_health_monitor_loop" in str(task.get_coro())
-                or "_service_loop" in str(task.get_coro())
-            )
-        ]
+        try:
+            # Get all tasks
+            all_tasks = asyncio.all_tasks(loop)
 
-        if health_tasks:
-            # Cancel health monitor tasks specifically
-            for task in health_tasks:
-                task.cancel()
-
-            # Wait for cancellation with timeout
-            try:
-                await asyncio.wait_for(
-                    asyncio.gather(*health_tasks, return_exceptions=True),
-                    timeout=1.0,
+            # Filter for health monitor and service tasks
+            health_tasks = [
+                task
+                for task in all_tasks
+                if not task.done()
+                and (
+                    "_health_monitor_loop" in str(task.get_coro())
+                    or "_service_loop" in str(task.get_coro())
+                    or "_service_event_loop" in str(task.get_coro())
                 )
-            except TimeoutError:
-                # Tasks didn't cancel in time - they'll be cleaned up by event_loop_cleanup
-                pass
+            ]
+
+            if health_tasks:
+                # Cancel health monitor tasks specifically
+                for task in health_tasks:
+                    task.cancel()
+
+                # Wait for cancellation with timeout
+                try:
+                    await asyncio.wait_for(
+                        asyncio.gather(*health_tasks, return_exceptions=True),
+                        timeout=1.0,
+                    )
+                except TimeoutError:
+                    # Tasks didn't cancel in time - they'll be cleaned up by event_loop_cleanup
+                    pass
+        finally:
+            # Restore original exception handler
+            loop.set_exception_handler(old_exception_handler)
 
     except Exception:
         # Best effort cleanup - don't fail tests

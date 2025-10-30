@@ -24,6 +24,8 @@ def cleanup_pending_tasks():
     This fixture runs after every test in the services directory to ensure
     all health monitoring tasks and service tasks are properly cancelled,
     preventing "Task was destroyed but it is pending!" warnings.
+
+    Suppresses asyncio exception logging during cleanup to prevent noise.
     """
     yield  # Let the test run
 
@@ -32,40 +34,49 @@ def cleanup_pending_tasks():
         # Get all pending tasks in the current event loop
         loop = asyncio.get_event_loop()
         if loop and not loop.is_closed():
-            # Get current task to exclude it from cancellation
+            # Suppress asyncio exception logging during cleanup
+            old_exception_handler = loop.get_exception_handler()
+            loop.set_exception_handler(lambda loop, context: None)
+
             try:
-                current_task = asyncio.current_task(loop)
-            except RuntimeError:
-                current_task = None
-
-            # Get all tasks except the current one
-            pending = [
-                task
-                for task in asyncio.all_tasks(loop)
-                if task is not current_task and not task.done()
-            ]
-
-            if pending:
-                # Cancel all pending tasks
-                for task in pending:
-                    if not task.done():
-                        task.cancel()
-
-                # Give tasks a moment to process cancellation
-                # Use a short sleep to allow CancelledError to propagate
+                # Get current task to exclude it from cancellation
                 try:
-                    loop.run_until_complete(asyncio.sleep(0.1))
-                except Exception:
-                    pass
+                    current_task = asyncio.current_task(loop)
+                except RuntimeError:
+                    current_task = None
 
-                # Now gather all the cancelled tasks
-                try:
-                    loop.run_until_complete(
-                        asyncio.gather(*pending, return_exceptions=True)
-                    )
-                except Exception:
-                    # Best effort - some tasks may still be pending
-                    pass
+                # Get all tasks except the current one
+                pending = [
+                    task
+                    for task in asyncio.all_tasks(loop)
+                    if task is not current_task and not task.done()
+                ]
+
+                if pending:
+                    # Cancel all pending tasks
+                    for task in pending:
+                        if not task.done():
+                            task.cancel()
+
+                    # Give tasks a moment to process cancellation
+                    # Use a short sleep to allow CancelledError to propagate
+                    try:
+                        loop.run_until_complete(asyncio.sleep(0.1))
+                    except Exception:
+                        pass
+
+                    # Now gather all the cancelled tasks
+                    try:
+                        loop.run_until_complete(
+                            asyncio.gather(*pending, return_exceptions=True)
+                        )
+                    except Exception:
+                        # Best effort - some tasks may still be pending
+                        pass
+            finally:
+                # Restore original exception handler
+                loop.set_exception_handler(old_exception_handler)
+
     except RuntimeError:
         # No event loop or loop already closed - this is fine
         pass
