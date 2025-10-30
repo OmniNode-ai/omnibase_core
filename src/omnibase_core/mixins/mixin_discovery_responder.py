@@ -215,6 +215,21 @@ class MixinDiscoveryResponder:
             # Track error metrics
             self._discovery_stats["error_count"] += 1
 
+            # Acknowledge message even on error to prevent infinite redelivery
+            # Discovery failures are non-fatal and should not block the system
+            try:
+                await message.ack()
+            except Exception as ack_error:
+                emit_log_event(
+                    LogLevel.ERROR,
+                    "Failed to acknowledge discovery message after error",
+                    {
+                        "component": "DiscoveryResponder",
+                        "error": str(ack_error),
+                        "operation": "_on_discovery_message",
+                    },
+                )
+
     async def _handle_discovery_request(
         self, envelope: "ModelEventEnvelope[Any]"
     ) -> None:
