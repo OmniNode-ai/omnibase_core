@@ -1,6 +1,6 @@
 # CLAUDE.md - Omnibase Core Project Instructions
 
-> **Version**: 0.1.0 (Release Branch: `release/0.1.0`)
+> **Version**: 0.2.0 (Release Branch: `release/0.2.0`)
 > **Python**: 3.12+
 > **Framework**: ONEX Core - Foundational implementations for the ONEX architecture
 
@@ -648,23 +648,24 @@ poetry show                                 # List dependencies
 
 ---
 
-## Recent Updates (v0.1.0)
+## Recent Updates (v0.2.0)
 
+- ✅ **Upgraded to omnibase_spi v0.2.0** - 9 new protocols for enhanced type safety
+- ✅ Added container types documentation (ModelContainer vs ModelONEXContainer)
+- ✅ Fixed formatter conflicts (isort/ruff) with --filter-files flag
 - ✅ Added 400+ comprehensive tests (commit: 0c28533e)
 - ✅ Increased CI splits from 10 to 12 for better resource management
 - ✅ Fixed event loop hangs in CI
-- ✅ Pinned omnibase_spi to v0.1.1
 - ✅ Updated security dependencies (pypdf 6.0+, starlette 0.48.0+)
 - ✅ Reorganized documentation structure
 - ✅ Added comprehensive node building guides
-- ✅ Added container types documentation (ModelContainer vs ModelONEXContainer)
 
 ---
 
-**Last Updated**: 2025-10-25
-**Project Version**: 0.1.0
+**Last Updated**: 2025-10-30
+**Project Version**: 0.2.0
 **Python Version**: 3.12+
-**Branch**: release/0.1.0
+**Branch**: release/0.2.0
 
 ---
 
