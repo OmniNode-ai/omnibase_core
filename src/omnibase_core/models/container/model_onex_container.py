@@ -301,7 +301,8 @@ class ModelONEXContainer:
         try:
             start_time = datetime.now()
 
-            # TODO: Protocol service resolver not yet available - requires omnibase-spi integration
+            # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
+            # Note: ProtocolServiceResolver added in omnibase_spi v0.1.2
             # Use protocol service resolver for external dependencies
             if protocol_name in [
                 "ProtocolServiceDiscovery",
@@ -528,7 +529,8 @@ class ModelONEXContainer:
 
     async def get_external_services_health(self) -> dict[str, object]:
         """Get health status for all external services."""
-        # TODO: Requires omnibase-spi protocol service resolver
+        # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
+        # Note: ProtocolServiceResolver added in omnibase_spi v0.1.2
         # service_resolver = get_service_resolver()
         # return await service_resolver.get_all_service_health()
         return {
@@ -538,7 +540,8 @@ class ModelONEXContainer:
 
     async def refresh_external_services(self) -> None:
         """Force refresh all external service connections."""
-        # TODO: Requires omnibase-spi protocol service resolver
+        # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
+        # Note: ProtocolServiceResolver added in omnibase_spi v0.1.2
         # service_resolver = get_service_resolver()
 
         # Refresh service discovery if cached

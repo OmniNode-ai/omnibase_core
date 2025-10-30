@@ -47,8 +47,8 @@ repos:
         entry: poetry run isort
         language: system
         types: [python]
-        args: [--profile, black, --line-length, "88", --skip, src/omnibase_core/mixins/mixin_event_bus.py, --skip, src/omnibase_core/mixins/mixin_event_handler.py, --skip, src/omnibase_core/mixins/mixin_discovery_responder.py]
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/|src/omnibase_core/mixins/mixin_event_bus\.py|src/omnibase_core/mixins/mixin_event_handler\.py|src/omnibase_core/mixins/mixin_discovery_responder\.py)$
+        args: [--filter-files, --profile, black, --line-length, "88"]
+        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/)
         stages: [commit]
 
       - id: ruff-fix

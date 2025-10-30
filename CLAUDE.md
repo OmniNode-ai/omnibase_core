@@ -139,6 +139,57 @@ class NodeMyServiceCompute(NodeCoreBase):
 
 **CRITICAL**: Always call `super().__init__(container)` - this eliminates 80+ lines of boilerplate.
 
+### Container Types: CRITICAL DISTINCTION
+
+⚠️ **IMPORTANT**: omnibase_core has TWO different container types that are NOT interchangeable!
+
+#### ModelONEXContainer - Dependency Injection Container
+
+**Location**: `omnibase_core.models.container.model_onex_container`
+
+**Purpose**: Service resolution, workflow orchestration, lifecycle management
+
+**Usage**: ✅ **ALWAYS use in node constructors**
+
+```python
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+class MyNode(NodeCoreBase):
+    def __init__(self, container: ModelONEXContainer):  # ✅ Correct
+        super().__init__(container)
+        self.logger = container.get_service(ProtocolLogger)
+```
+
+#### ModelContainer[T] - Generic Value Wrapper
+
+**Location**: `omnibase_core.models.core.model_container`
+
+**Purpose**: Wrapping single values with metadata and validation
+
+**Usage**: ✅ **NEVER use in node constructors** - only for value wrapping
+
+```python
+from omnibase_core.models.core.model_container import ModelContainer
+
+# Wrap a value with metadata
+config = ModelContainer.create(
+    value="production",
+    container_type="environment",
+    source="env_var"
+)
+```
+
+#### Quick Reference
+
+| Feature | ModelContainer[T] | ModelONEXContainer |
+|---------|-------------------|-------------------|
+| **Purpose** | Value wrapper | Dependency injection |
+| **In Node `__init__`** | ❌ NEVER | ✅ ALWAYS |
+| **Service Resolution** | ❌ No | ✅ Yes (`get_service()`) |
+| **Primary Use** | Wrapping values | Resolving services |
+
+**See**: [docs/architecture/CONTAINER_TYPES.md](docs/architecture/CONTAINER_TYPES.md) for complete details.
+
 ---
 
 ## Project Structure
@@ -481,20 +532,30 @@ class MyNode(NodeCoreBase, MixinDiscoveryResponder):
    pip install package-name
    ```
 
-4. **Share node instances across threads**
+4. **Confuse ModelContainer with ModelONEXContainer**
+   ```python
+   # WRONG - ModelContainer[T] is a value wrapper, NOT a DI container
+   from omnibase_core.models.core.model_container import ModelContainer
+
+   class MyNode(NodeCoreBase):
+       def __init__(self, container: ModelContainer):  # ❌ WRONG!
+           super().__init__(container)  # Will fail!
+   ```
+
+5. **Share node instances across threads**
    ```python
    # WRONG
    node = NodeCompute(container)
    threading.Thread(target=node.process).start()  # UNSAFE
    ```
 
-5. **Use concrete class names for DI**
+6. **Use concrete class names for DI**
    ```python
    # WRONG
    service = container.get_service("EventBusService")
    ```
 
-6. **Skip isinstance checks with protocols**
+7. **Skip isinstance checks with protocols**
    ```python
    # WRONG - protocols use duck typing
    if isinstance(service, ProtocolEventBus):
@@ -520,18 +581,28 @@ class MyNode(NodeCoreBase, MixinDiscoveryResponder):
    poetry add package-name
    ```
 
-4. **Use thread-local or separate instances**
+4. **Use ModelONEXContainer for dependency injection**
+   ```python
+   # ✅ Correct - use ModelONEXContainer in node constructors
+   from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+   class MyNode(NodeCoreBase):
+       def __init__(self, container: ModelONEXContainer):  # ✅ Correct
+           super().__init__(container)
+   ```
+
+5. **Use thread-local or separate instances**
    ```python
    # Each thread gets its own instance
    node = NodeCompute(container)
    ```
 
-5. **Use protocol names for DI**
+6. **Use protocol names for DI**
    ```python
    event_bus = container.get_service("ProtocolEventBus")
    ```
 
-6. **Use duck typing with protocols**
+7. **Use duck typing with protocols**
    ```python
    # Just use the protocol interface directly
    service.publish(event)
@@ -586,6 +657,7 @@ poetry show                                 # List dependencies
 - ✅ Updated security dependencies (pypdf 6.0+, starlette 0.48.0+)
 - ✅ Reorganized documentation structure
 - ✅ Added comprehensive node building guides
+- ✅ Added container types documentation (ModelContainer vs ModelONEXContainer)
 
 ---
 

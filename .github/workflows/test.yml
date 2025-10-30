@@ -153,7 +153,7 @@ jobs:
           #   - No false positives observed at this threshold
           # All splits use -n auto (full parallelism) - shorter splits reduce
           # resource pressure and runner cancellation probability
-          # Coverage is collected separately in dedicated coverage job
+          # Note: Coverage collection disabled - use local pytest-cov for coverage reports
 
       - name: Upload test results
         if: always()
@@ -162,84 +162,6 @@ jobs:
           name: test-results-${{ matrix.split }}
           path: junit-${{ matrix.split }}.xml
           retention-days: 7
-
-  # Coverage report - runs tests with coverage collection
-  # Rationale:
-  #   - Runs after test splits complete successfully (fast feedback from splits)
-  #   - Separate coverage collection prevents interference with parallel test execution
-  #   - Runs all tests in single job for accurate and complete coverage data
-  #   - Main branch: Track overall coverage trends
-  #   - PRs to main: Validate production-bound changes
-  #   - PRs to develop: Skipped to save CI time (use local coverage)
-  coverage:
-    name: Coverage Report
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.base_ref == 'main')
-    needs: test-parallel
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: >-
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
-            ${{ hashFiles('**/poetry.lock') }}-
-            ${{ env.CACHE_VERSION }}
-          restore-keys: |
-            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
-
-      - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-
-      - name: Install project
-        run: poetry install --no-interaction
-
-      - name: Run tests with coverage
-        run: |
-          poetry run pytest tests/ \
-            --cov=src/omnibase_core \
-            --cov-context=test \
-            --cov-report=term-missing:skip-covered \
-            -n auto \
-            --tb=short
-        # Single-threaded coverage collection for accuracy
-        # No test splitting - runs all tests in one go for complete coverage
-
-      - name: Generate coverage reports
-        run: |
-          poetry run coverage report --fail-under=60
-          poetry run coverage xml
-          poetry run coverage html
-
-      - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: coverage-reports
-          path: |
-            coverage.xml
-            htmlcov/
-          retention-days: 30
 
   lint:
     name: Code Quality

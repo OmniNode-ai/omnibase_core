@@ -26,7 +26,7 @@ class ModelNodeState:
     contract_path: Path
     node_id: UUID
     contract_content: Any
-    registry_reference: Any | None
+    container_reference: Any | None
     node_name: str
     version: ModelSemVer
     node_tier: int

@@ -147,7 +147,7 @@ def main():
         "src/omnibase_core/models/core/model_template_context.py",
         "src/omnibase_core/models/core/model_group_dependency.py",
         "src/omnibase_core/models/service/model_workflow_status_result.py",
-        "src/omnibase_core/models/core/model_registry_reference.py",
+        "src/omnibase_core/models/core/model_container_reference.py",
         "src/omnibase_core/models/configuration/model_handler_protocol.py",
         "src/omnibase_core/models/core/model_checkpoint_data.py",
         "src/omnibase_core/models/configuration/model_load_balancing_policy.py",

@@ -83,6 +83,7 @@ omnibase_core/docs/
 |----------|-------------|--------|
 | [Architecture Overview](architecture/OVERVIEW.md) | High-level system design | ✅ Complete |
 | [**Four-Node Pattern**](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX architecture ⭐ **Excellent!** | ✅ Complete |
+| [**Container Types**](architecture/CONTAINER_TYPES.md) | ModelContainer vs ModelONEXContainer ⚠️ **CRITICAL** | ✅ Complete |
 | [Dependency Injection](architecture/DEPENDENCY_INJECTION.md) | ModelONEXContainer patterns | ✅ Complete |
 | [Contract System](architecture/CONTRACT_SYSTEM.md) | Contract architecture | ✅ Complete |
 | [Type System](architecture/TYPE_SYSTEM.md) | Typing patterns and conventions | ✅ Complete |
