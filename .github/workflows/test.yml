@@ -146,6 +146,8 @@ jobs:
             --timeout=60 \
             --timeout-method=thread \
             --tb=short \
+            --cov=src/omnibase_core \
+            --cov-context=test \
             --junitxml=junit-${{ matrix.split }}.xml
           # Per-test timeout: 60 seconds prevents infinite hangs
           #   - Longest test: ~30 seconds (2x safety margin)
@@ -153,7 +155,7 @@ jobs:
           #   - No false positives observed at this threshold
           # All splits use -n auto (full parallelism) - shorter splits reduce
           # resource pressure and runner cancellation probability
-          # Coverage collected separately in coverage job (not per-split)
+          # Coverage collected per-split and aggregated in coverage job
 
       - name: Upload test results
         if: always()
@@ -163,19 +165,28 @@ jobs:
           path: junit-${{ matrix.split }}.xml
           retention-days: 7
 
-  # Coverage report - runs all tests with coverage
+      - name: Upload coverage data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-data-${{ matrix.split }}
+          path: .coverage.*
+          retention-days: 7
+
+  # Coverage report - aggregates coverage from all test splits
   # Rationale:
   #   - Runs after splits complete successfully (fast feedback from splits)
-  #   - Collects comprehensive coverage data in single job
+  #   - Aggregates coverage data from all 16 splits (no re-run of tests)
   #   - Main branch: Track overall coverage trends
   #   - PRs to main: Validate production-bound changes
   #   - PRs to develop: Skipped to save CI time (use local coverage)
+  #   - Aggregation takes <1 minute vs 15+ minutes re-running all tests
   coverage:
     name: Coverage Report
     if: github.ref == 'refs/heads/main' || (github.event_name == 'pull_request' && github.base_ref == 'main')
     needs: test-parallel
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
 
     steps:
       - name: Checkout code
@@ -213,16 +224,23 @@ jobs:
       - name: Install project
         run: poetry install --no-interaction
 
-      - name: Run tests with coverage
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-data-*
+          path: coverage-data
+          merge-multiple: true
+
+      - name: Combine coverage data
         run: |
-          poetry run pytest tests/ \
-            -n auto \
-            --cov=src/omnibase_core \
-            --cov-report=term-missing \
-            --cov-report=xml \
-            --cov-report=html \
-            --cov-fail-under=60 \
-            --tb=short
+          ls -la coverage-data/
+          poetry run coverage combine coverage-data/.coverage.*
+
+      - name: Generate coverage reports
+        run: |
+          poetry run coverage report --fail-under=60
+          poetry run coverage xml
+          poetry run coverage html
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
