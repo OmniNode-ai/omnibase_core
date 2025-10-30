@@ -8,12 +8,10 @@ Mixins follow the single responsibility principle and provide specific capabilit
 that can be composed into concrete node implementations.
 """
 
-# TODO: Update to ProtocolEventBusProvider once omnibase_spi v0.1.2+ is released
-# Note: ProtocolRegistryWithBus renamed to ProtocolEventBusProvider in omnibase_spi (pending release)
 # Core mixins
-# Import protocols from omnibase_spi
+# Import protocols from omnibase_spi v0.2.0
+from omnibase_spi.protocols import ProtocolEventBusRegistry as RegistryWithBus
 from omnibase_spi.protocols.types import ProtocolLogEmitter as LogEmitter
-from omnibase_spi.protocols.types import ProtocolRegistryWithBus as RegistryWithBus
 
 from omnibase_core.mixins.mixin_canonical_serialization import (
     MixinCanonicalYAMLSerializer,

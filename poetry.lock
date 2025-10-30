@@ -2348,7 +2348,7 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "omnibase-spi"
-version = "0.1.0"
+version = "0.2.0"
 description = "ONEX Service Provider Interface - Protocol definitions"
 optional = false
 python-versions = "^3.12"
@@ -2363,8 +2363,8 @@ typing-extensions = ">=4.5.0"
 [package.source]
 type = "git"
 url = "https://github.com/OmniNode-ai/omnibase_spi.git"
-reference = "v0.1.1"
-resolved_reference = "65e4c39c59d318ed0f1da1433c8d87a459ead55a"
+reference = "release/0.2.0"
+resolved_reference = "99911221579215c2c0d049cddaacafb35dba0c08"
 
 [[package]]
 name = "openai"
@@ -4429,4 +4429,4 @@ monitoring = ["prometheus-client", "sentry-sdk"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "eb5a592d3a1d23ea056ac206f0cefe5896d819f967f06c2c9e26e79f75430651"
+content-hash = "0fcc853d245fce543fbdbffa87fdb1c39852fce40140ff73043ce91be7c7555b"
