@@ -5,6 +5,7 @@ This module contains models that are used across multiple domains
 and are not specific to any particular functionality area.
 """
 
+from .model_discriminated_value import ModelDiscriminatedValue
 from .model_error_context import ModelErrorContext
 from .model_flexible_value import ModelFlexibleValue
 from .model_numeric_value import ModelNumericValue
@@ -14,8 +15,10 @@ from .model_validation_result import (
     ModelValidationMetadata,
     ModelValidationResult,
 )
+from .model_value_union import ModelValueUnion
 
 __all__ = [
+    "ModelDiscriminatedValue",
     "ModelErrorContext",
     "ModelFlexibleValue",
     "ModelNumericValue",
@@ -23,4 +26,5 @@ __all__ = [
     "ModelValidationIssue",
     "ModelValidationMetadata",
     "ModelValidationResult",
+    "ModelValueUnion",
 ]

@@ -36,6 +36,9 @@ from .enum_data_classification import EnumDataClassification
 # Detection and security enums
 from .enum_detection_type import EnumDetectionType
 
+# Value type enums
+from .enum_discriminated_value_type import EnumDiscriminatedValueType
+
 # Effect-related enums (from nodes)
 from .enum_effect_types import (
     EnumCircuitBreakerState,
@@ -159,8 +162,6 @@ from .enum_uri_type import EnumUriType
 
 # Validation-related enums
 from .enum_validation import EnumErrorSeverity, EnumValidationLevel, EnumValidationMode
-
-# Value type enums
 from .enum_value_type import EnumValueType
 
 # Version and contract enums
