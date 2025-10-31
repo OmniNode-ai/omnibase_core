@@ -8,6 +8,7 @@ and are not specific to any particular functionality area.
 from .model_discriminated_value import ModelDiscriminatedValue
 from .model_error_context import ModelErrorContext
 from .model_flexible_value import ModelFlexibleValue
+from .model_multi_type_value import ModelMultiTypeValue
 from .model_numeric_value import ModelNumericValue
 from .model_schema_value import ModelSchemaValue
 from .model_validation_result import (
@@ -21,6 +22,7 @@ __all__ = [
     "ModelDiscriminatedValue",
     "ModelErrorContext",
     "ModelFlexibleValue",
+    "ModelMultiTypeValue",
     "ModelNumericValue",
     "ModelSchemaValue",
     "ModelValidationIssue",

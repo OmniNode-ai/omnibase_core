@@ -14,6 +14,7 @@ from .model_permission_constraints import ModelPermissionConstraints
 from .model_permission_custom_constraints import ModelPermissionCustomConstraints
 from .model_permission_scope import ModelPermissionScope
 from .model_permission_session_info import ModelPermissionSessionInfo
+from .model_policy_value import ModelPolicyValue
 from .model_risk_assessment import ModelRiskAssessment
 from .model_secret_backend import ModelSecretBackend
 from .model_secret_config import ModelSecretConfig
@@ -47,6 +48,7 @@ __all__ = [
     "ModelPermissionCustomConstraints",
     "ModelPermissionScope",
     "ModelPermissionSessionInfo",
+    "ModelPolicyValue",
     "ModelRiskAssessment",
     "ModelSecretBackend",
     "ModelSecretConfig",
