@@ -104,6 +104,7 @@ from .enum_node_status import EnumNodeStatus
 # Node-related enums
 from .enum_node_type import EnumNodeType
 from .enum_notification_method import EnumNotificationMethod
+from .enum_numeric_value_type import EnumNumericValueType
 
 # Response and reply enums
 from .enum_onex_reply_status import EnumOnexReplyStatus
@@ -218,6 +219,7 @@ __all__ = [
     "EnumValidationLevel",
     "EnumValidationMode",
     "EnumValueType",
+    "EnumNumericValueType",
     # Orchestrator domain (from nodes)
     "EnumActionType",
     "EnumBranchCondition",
