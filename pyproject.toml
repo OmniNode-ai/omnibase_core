@@ -33,7 +33,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed"
 ]
-dependencies = ["omnibase-spi @ git+https://github.com/OmniNode-ai/omnibase_spi.git@release/0.2.0"]
+dependencies = ["omnibase-spi @ git+https://github.com/OmniNode-ai/omnibase_spi.git@main"]
 
 [project.urls]
 homepage = "https://github.com/OmniNode-ai/omnibase_core"
