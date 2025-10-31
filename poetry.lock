@@ -704,7 +704,7 @@ typing-extensions = ">=4.5.0"
 [package.source]
 type = "git"
 url = "https://github.com/OmniNode-ai/omnibase_spi.git"
-reference = "main"
+reference = "v0.2.0"
 resolved_reference = "4c16335aa1a15a9ff587adc9ba485d96a59d0ea0"
 
 [[package]]
@@ -1561,4 +1561,4 @@ monitoring = ["prometheus-client", "sentry-sdk"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "86d83fa324ad6b9b83d07ac220410eb8fe25e77e1173c6c1023de886c3b73d67"
+content-hash = "940c3733d602d37fbf2a4ca06176961c4b150c06b40da1dfd0dbb6b3659c8119"
