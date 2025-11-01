@@ -52,7 +52,7 @@ def reduce_state(
 
 ### Pattern 1: Request-Response
 
-```
+```text
 ┌─────────┐     event      ┌─────────┐     event      ┌─────────┐
 │ Client  │ ──────────────> │  Node   │ ──────────────> │ Client  │
 └─────────┘                 └─────────┘                 └─────────┘
@@ -60,7 +60,7 @@ def reduce_state(
 
 ### Pattern 2: Publish-Subscribe
 
-```
+```text
 ┌─────────┐                 ┌─────────────┐
 │Publisher│ ───────────────>│  Event Bus  │
 └─────────┘                 └──────┬──────┘
@@ -75,7 +75,7 @@ def reduce_state(
 
 ### Pattern 3: Intent → Action Flow (Pure FSM)
 
-```
+```text
 ┌─────────┐   Action   ┌─────────┐  Intents  ┌────────┐
 │Orchestr │ ─────────> │ Reducer │ ────────> │ Effect │
 └─────────┘            └─────────┘           └────────┘

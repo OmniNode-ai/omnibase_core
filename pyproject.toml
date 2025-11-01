@@ -289,6 +289,16 @@ addopts = [
     "--timeout-method=thread",  # Use thread-based timeout for better compatibility
     "--dist=loadscope",  # Group tests by module to reduce memory overhead
 ]
+filterwarnings = [
+    # Suppress asyncio "Task was destroyed but it is pending!" warnings
+    # These are expected during test cleanup when fixtures cancel pending tasks
+    # The cleanup fixtures (event_loop_cleanup, cleanup_service_tasks) properly
+    # cancel tasks, so these warnings are cosmetic and don't indicate real issues
+    "ignore:.*Task was destroyed but it is pending.*:RuntimeWarning",
+    # NOTE: "coroutine was never awaited" warnings are NOT suppressed
+    # These indicate real bugs where async functions were called but never executed
+    # If you encounter this warning, FIX the test by properly awaiting the coroutine
+]
 # Memory optimization notes:
 # - Limited to 4 workers to prevent OOM on machines with 16GB RAM
 # - Use --timeout to prevent hanging tests accumulating memory

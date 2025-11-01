@@ -159,7 +159,7 @@ The `EnhancedContractValidator` handles:
 ### 7. Implementation Patterns
 
 **File Organization:**
-```
+```text
 src/omnibase_core/nodes/canary/
 ├── mixins/                          # Mixin contract definitions
 │   ├── mixin_health_check.yaml

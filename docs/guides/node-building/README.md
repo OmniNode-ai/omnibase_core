@@ -169,7 +169,7 @@ touch src/your_project/nodes/__init__.py
 
 ### Project Structure
 
-```
+```text
 your_project/
 ├── pyproject.toml                    # Poetry configuration
 ├── src/

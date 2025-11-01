@@ -8,7 +8,7 @@ Since omnibase_core is a dependency for all repositories except omnibase_spi, we
 ## 📦 Repository Roles
 
 ### **omnibase_core (Validation Hub)**
-```
+```text
 src/omnibase_core/validation/
 ├── __init__.py                          # Export validation functions
 ├── protocol_auditor.py                  # Core audit logic (importable)
@@ -18,7 +18,7 @@ src/omnibase_core/validation/
 ```
 
 ### **Other Service Repositories (Importers)**
-```
+```bash
 # In their pre-commit-config.yaml or validation scripts
 from omnibase_core.validation import audit_protocols, migrate_protocols
 
@@ -27,7 +27,7 @@ audit_protocols(repository_path=".", spi_path="../omnibase_spi")
 ```
 
 ### **omnibase_spi (Special Case)**
-```
+```bash
 # Gets a COPY of validation scripts (can't import omnibase_core)
 scripts/validation/
 ├── audit_protocol_duplicates.py        # Copied from omnibase_core

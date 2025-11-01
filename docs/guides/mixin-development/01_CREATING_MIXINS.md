@@ -58,7 +58,7 @@ applicable_node_types: ["REDUCER", "ORCHESTRATOR"]
 
 Define what actions your mixin provides:
 
-```
+```text
 Error Handling Actions:
 1. handle_error - Process and categorize errors
 2. circuit_breaker_check - Check circuit breaker status
@@ -516,7 +516,7 @@ Provides standardized error handling, circuit breaker patterns, and retry logic 
 subcontracts:
   - path: "../../mixins/mixin_error_handling.yaml"
     integration_field: "error_handling_configuration"
-```
+```markdown
 
 ### Advanced Configuration
 
@@ -529,7 +529,7 @@ error_config = ModelErrorHandlingSubcontract(
     error_retry_attempts=5,
     error_retry_delay_ms=2000
 )
-```
+```markdown
 
 ## Best Practices
 

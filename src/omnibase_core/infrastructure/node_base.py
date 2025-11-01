@@ -277,7 +277,7 @@ class NodeBase(
             contract_path=contract_path,
             node_id=node_id,
             contract_content=contract_content,
-            container_reference=None,  # Reserved for future use; kept for schema compatibility
+            container_reference=None,  # Not used; container managed via self._container instance variable
             node_name=contract_content.node_name,
             version=contract_content.contract_version,  # Use ModelSemVer directly
             node_tier=1,

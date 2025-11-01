@@ -32,7 +32,7 @@ Each has a specific role. Together, they create a complete system.
 
 ## Core Concept
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────┐
 │                         ONEX Node                             │
 │                                                               │
@@ -191,7 +191,7 @@ class NodeDataProcessorOrchestrator:
 
 ### The Four Node Types
 
-```
+```text
 External World          │      ONEX System        │   Data Flow
                        │                          │
 ┌─────────────────┐    │                          │

@@ -185,7 +185,7 @@ ORCHESTRATOR nodes support three execution modes:
 
 The orchestrator builds a **dependency graph** to determine execution order:
 
-```
+```text
 Step 1 (Validate) ─┐
                    ├──> Step 3 (Aggregate)
 Step 2 (Fetch) ────┘

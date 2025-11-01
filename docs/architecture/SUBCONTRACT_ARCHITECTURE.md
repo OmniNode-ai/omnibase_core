@@ -16,7 +16,7 @@ The ONEX Subcontract Package provides specialized contract models for complex op
 
 ### Package Structure
 
-```
+```text
 src/omnibase_core/models/contracts/subcontracts/
 ├── __init__.py                                 # Package exports and registry
 ├── model_aggregation_subcontract.py          # Data aggregation operations

@@ -472,7 +472,7 @@ class DataAggregationReducerService(NodeReducer):
 ModelIntent represents a **declarative description** of a side effect that should be executed, emitted by a pure Reducer and executed by an Effect node. This pattern maintains the Reducer's purity while enabling complex side effects.
 
 **Pure FSM Pattern**:
-```
+```text
 δ(state, action) → (new_state, intents[])
 ```
 

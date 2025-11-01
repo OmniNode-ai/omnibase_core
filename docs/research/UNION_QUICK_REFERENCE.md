@@ -294,7 +294,7 @@ field: str | None  # or Optional[str]
 
 ## Quick Decision Tree
 
-```
+```text
 Union type needed?
 │
 ├─ Single type + None? → Use Optional[T] or T | None

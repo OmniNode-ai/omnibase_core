@@ -24,7 +24,7 @@ The Pure FSM (Finite State Machine) Reducer pattern ensures that Reducer nodes o
 
 ### Core Formula
 
-```
+```text
 δ(state, action) → (new_state, intents[])
 ```
 
@@ -1332,7 +1332,7 @@ class NodeDependencyGraphReducer(NodeReducer):
 
 ### 4-Node Architecture Flow
 
-```
+```text
 ┌─────────────────┐
 │  Orchestrator   │  Coordinates workflow
 └────────┬────────┘

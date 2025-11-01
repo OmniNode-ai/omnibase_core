@@ -663,7 +663,7 @@ poetry run pytest tests/nodes/test_node_price_calculator.py --cov=src/your_proje
 ```
 
 **Expected output**:
-```
+```text
 tests/nodes/test_node_price_calculator.py::test_basic_calculation PASSED
 tests/nodes/test_node_price_calculator.py::test_percentage_discount PASSED
 tests/nodes/test_node_price_calculator.py::test_flat_discount PASSED

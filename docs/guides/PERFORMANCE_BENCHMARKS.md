@@ -93,7 +93,7 @@ poetry run python -m pytest tests/performance/ -m "not slow" -v -s
 
 Performance tests output detailed metrics:
 
-```
+```text
 ✅ Single dependency validation: 0.016ms average
 ✅ Non-circular validation (100 deps): 0.76ms
 ✅ Circular detection (50 attempts): 2.38ms

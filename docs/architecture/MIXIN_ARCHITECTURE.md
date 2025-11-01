@@ -205,7 +205,7 @@ Specialized mixins enforce architectural boundaries:
 
 ### Directory Structure
 
-```
+```text
 src/omnibase_core/
 ├── nodes/canary/
 │   ├── mixins/                          # Mixin contract definitions

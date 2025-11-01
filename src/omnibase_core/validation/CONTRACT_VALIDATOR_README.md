@@ -101,7 +101,7 @@ Main validator class for contract validation.
 
 #### Methods
 
-**`validate_contract_yaml(contract_content: str, contract_type: Literal["effect", "compute", "reducer", "orchestrator"]) -> ContractValidationResult`**
+##### `validate_contract_yaml(contract_content: str, contract_type: Literal["effect", "compute", "reducer", "orchestrator"]) -> ContractValidationResult`
 
 Validates a YAML contract against ONEX standards.
 
@@ -110,7 +110,7 @@ Validates a YAML contract against ONEX standards.
   - `contract_type`: Type of contract to validate against
 - **Returns:** `ContractValidationResult` with validation details
 
-**`validate_model_compliance(model_code: str, contract_yaml: str) -> ContractValidationResult`**
+##### `validate_model_compliance(model_code: str, contract_yaml: str) -> ContractValidationResult`
 
 Validates Pydantic model code against a contract.
 
@@ -119,7 +119,7 @@ Validates Pydantic model code against a contract.
   - `contract_yaml`: YAML contract content as string
 - **Returns:** `ContractValidationResult` with compliance details
 
-**`validate_contract_file(file_path: str | Path, contract_type: Literal["effect", "compute", "reducer", "orchestrator"]) -> ContractValidationResult`**
+##### `validate_contract_file(file_path: str | Path, contract_type: Literal["effect", "compute", "reducer", "orchestrator"]) -> ContractValidationResult`
 
 Validates a YAML contract file.
 
@@ -153,7 +153,8 @@ The validator uses a weighted scoring system:
 | 0.5 - 0.79 | Needs Work | Has violations but recoverable |
 | 0.0 - 0.49 | Critical | Severe violations, needs major fixes |
 
-**Scoring Formula:**
+### Scoring Formula:
+
 - Base score: 1.0
 - Each violation: -0.20
 - Each warning: -0.05

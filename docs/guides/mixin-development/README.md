@@ -217,7 +217,7 @@ touch src/your_project/model/subcontracts/model_your_feature_subcontract.py
 
 ### Project Structure
 
-```
+```text
 your_project/
 ├── pyproject.toml
 ├── src/

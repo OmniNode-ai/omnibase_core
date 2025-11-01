@@ -10,7 +10,7 @@ This template provides a complete "cookie cutter" approach for generating consis
 
 ## 📁 Directory Structure Template
 
-```
+```text
 src/{REPOSITORY_NAME}/nodes/node_{DOMAIN}_{MICROSERVICE_NAME}_effect/
 ├── __init__.py                                    # Package exports
 ├── v1_0_0/                                       # Versioned implementation
@@ -1116,7 +1116,7 @@ request = Model{MICROSERVICE_NAME_PASCAL}Input(
 # Execute operation
 result = await effect_node.process(request)
 print(f"Success: {result.success}")
-```
+```bash
 
 ## Configuration
 
@@ -1130,7 +1130,7 @@ config = Model{MICROSERVICE_NAME_PASCAL}Config.for_environment("production")
 
 # Development configuration
 config = Model{MICROSERVICE_NAME_PASCAL}Config.for_environment("development")
-```
+```bash
 
 ## Operations
 
@@ -1171,7 +1171,7 @@ The node provides comprehensive monitoring:
 ```bash
 poetry install
 poetry run pytest tests/
-```
+```bash
 
 ### Testing
 ```bash
@@ -1183,7 +1183,7 @@ poetry run pytest tests/integration/
 
 # Contract tests
 poetry run pytest tests/contracts/
-```
+```markdown
 
 ## License
 

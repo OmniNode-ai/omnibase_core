@@ -920,7 +920,7 @@ Performance:
 ```python
 # WRONG
 field_value: Union[str, int, float, bool, list, dict]
-```
+```bash
 
 ✅ **ALWAYS** use ModelSchemaValue:
 ```python
@@ -935,7 +935,7 @@ value = ModelSchemaValue.from_value(raw_value)
 # Type-safe access
 if value.is_string():
     text = value.get_string()
-```
+```bash
 
 ✅ **For discriminated unions**, use Pydantic discriminator:
 ```python
@@ -955,7 +955,7 @@ OptionUnion = Annotated[
     ModelStringOption | ModelIntOption,
     Field(discriminator="option_type")
 ]
-```
+```markdown
 
 ---
 

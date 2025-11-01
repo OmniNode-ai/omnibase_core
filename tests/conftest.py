@@ -3,12 +3,19 @@ Root conftest.py for test suite.
 
 Provides memory optimization, resource cleanup, and shared fixtures
 to prevent OOM issues in large test suites.
+
+Warning Suppression:
+-------------------
+Asyncio warnings are configured in pyproject.toml [tool.pytest.ini_options]:
+- "Task was destroyed but it is pending!" warnings are suppressed (expected during cleanup)
+- "coroutine was never awaited" warnings are NOT suppressed (indicate real bugs)
+
+See pyproject.toml filterwarnings configuration for details.
 """
 
 import asyncio
 import gc
 import logging
-import warnings
 from collections.abc import Generator
 from unittest.mock import MagicMock
 
@@ -16,21 +23,6 @@ import pytest
 
 # Configure logging to reduce memory overhead
 logging.basicConfig(level=logging.WARNING)
-
-# Suppress asyncio "Task was destroyed but it is pending!" warnings
-# These are cosmetic errors from test cleanup and don't affect functionality
-# The cleanup fixtures properly cancel tasks, so this warning is expected
-warnings.filterwarnings(
-    "ignore",
-    message=".*Task was destroyed but it is pending.*",
-    category=RuntimeWarning,
-)
-
-# NOTE: "coroutine was never awaited" warnings are NOT suppressed globally
-# These warnings indicate real bugs where async functions were called but never executed
-# If you encounter this warning, FIX the test by properly awaiting the coroutine
-# Only suppress this warning locally in specific tests if you're intentionally testing
-# error handling for unawaited coroutines (and document why!)
 
 
 @pytest.fixture(scope="session", autouse=True)

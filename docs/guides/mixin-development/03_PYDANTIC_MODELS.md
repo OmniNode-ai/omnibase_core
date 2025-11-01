@@ -21,7 +21,7 @@ This guide teaches you how to create strongly-typed Pydantic backing models for 
 
 ### Relationship to YAML Contracts
 
-```
+```text
 YAML Contract (Definition)
     ↓ [Contract Loader]
 Pydantic Model (Runtime)

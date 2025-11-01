@@ -11,7 +11,7 @@ This guide teaches you how to integrate mixins into ONEX nodes. You'll learn how
 
 ## Integration Flow
 
-```
+```text
 1. Create Mixin YAML Contract
 2. Create Pydantic Backing Model
 3. Reference Mixin in Node Contract     ← This guide
@@ -66,7 +66,7 @@ subcontracts:
 
 **Relative Paths**: Paths are relative to the node contract file location.
 
-```
+```text
 Project Structure:
 src/your_project/
 ├── mixins/
@@ -124,14 +124,14 @@ poetry run onex run contract_validator \
 ### Common Validation Errors
 
 **Error 1: Path Not Found**
-```
+```yaml
 Error: Subcontract file not found: ../../../mixins/mixin_error_handling.yaml
 ```
 
 **Solution**: Verify relative path is correct from contract location.
 
 **Error 2: Node Type Constraint Violation**
-```
+```yaml
 Error: Mixin 'mixin_state_management' not applicable to node type 'COMPUTE'
        Applicable types: ['REDUCER', 'ORCHESTRATOR']
 ```
@@ -139,7 +139,7 @@ Error: Mixin 'mixin_state_management' not applicable to node type 'COMPUTE'
 **Solution**: Only use mixins allowed for your node type.
 
 **Error 3: Duplicate Integration Field**
-```
+```yaml
 Error: Integration field 'error_handling_configuration' used multiple times
 ```
 

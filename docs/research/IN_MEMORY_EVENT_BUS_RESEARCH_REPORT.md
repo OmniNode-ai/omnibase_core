@@ -473,17 +473,20 @@ class TestKafkaEventBusAdapterWithInMemory:
 
 ### 6.2 Estimated Improvement with In-Memory Adapter
 
-**Approach 1: Integration Tests Only**
+#### Approach 1: Integration Tests Only
+
 - **Method**: Add integration tests using `InMemoryEventBusAdapter`
 - **Estimated Coverage**: 70-80%
 - **Rationale**: Tests actual code paths without external Kafka dependency
 
-**Approach 2: Hybrid (Unit + Integration)**
+#### Approach 2: Hybrid (Unit + Integration)
+
 - **Method**: Keep mocked unit tests + add in-memory integration tests
 - **Estimated Coverage**: 85-95%
 - **Rationale**: Unit tests cover edge cases, integration tests cover real flows
 
-**Approach 3: Full Real Testing**
+#### Approach 3: Full Real Testing
+
 - **Method**: Use testcontainers with real Kafka + in-memory for local tests
 - **Estimated Coverage**: 95-100%
 - **Rationale**: Tests against actual Kafka behavior
@@ -642,7 +645,7 @@ class TestKafkaEventBusAdapterWithInMemory:
 ### 10.1 File Locations
 
 **Protocols** (omnibase_spi v0.1.0):
-```
+```text
 omnibase_spi/protocols/event_bus/
 ├── protocol_event_bus_in_memory.py      # ✅ IN_MEMORY protocol
 ├── protocol_event_bus.py                # Base event bus protocol
@@ -651,14 +654,14 @@ omnibase_spi/protocols/event_bus/
 ```
 
 **Implementations** (omnibase_core):
-```
+```text
 src/omnibase_core/infrastructure/
 ├── kafka_event_bus_adapter.py           # ✅ Kafka implementation
 └── in_memory_event_bus_adapter.py       # ❌ TO BE CREATED
 ```
 
 **Tests**:
-```
+```text
 tests/
 ├── unit/infrastructure/
 │   ├── test_kafka_event_bus_adapter.py            # ✅ Mock tests (0% coverage)

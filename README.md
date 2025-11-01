@@ -24,7 +24,7 @@ This repository contains the core building blocks that all ONEX tools and servic
 
 ## Repository Structure
 
-```
+```text
 src/omnibase_core/
 ├── core/                           # Core framework components
 │   ├── infrastructure_service_bases.py  # Consolidated 4-node base class exports

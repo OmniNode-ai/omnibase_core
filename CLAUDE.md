@@ -4,6 +4,8 @@
 > **Python**: 3.12+
 > **Framework**: ONEX Core - Foundational implementations for the ONEX architecture
 
+> **📚 Shared Infrastructure**: For common OmniNode infrastructure (PostgreSQL, Kafka/Redpanda, remote server topology, Docker networking, environment variables), see **`~/.claude/CLAUDE.md`**. This file contains omnibase_core-specific architecture, patterns, and development only.
+
 ---
 
 ## Table of Contents
@@ -88,7 +90,7 @@ When spawning polymorphic agents or AI assistants:
 
 ### ONEX Four-Node Architecture
 
-```
+```text
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 │   EFFECT    │───▶│   COMPUTE   │───▶│   REDUCER   │───▶│ORCHESTRATOR │
 │   (Input)   │    │ (Process)   │    │(Aggregate)  │    │(Coordinate) │
@@ -194,7 +196,7 @@ config = ModelContainer.create(
 
 ## Project Structure
 
-```
+```text
 omnibase_core/
 ├── src/omnibase_core/          # Source code
 │   ├── constants/              # Project constants
@@ -394,7 +396,7 @@ pre-commit run mypy --all-files
 
 ### Error Handling
 
-**Always use ModelOnexError, never generic Exception:**
+#### Always use ModelOnexError, never generic Exception:
 
 ```python
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -414,7 +416,7 @@ except Exception as e:
     raise ModelOnexError("Operation failed") from e
 ```
 
-**Use @standard_error_handling decorator:**
+#### Use @standard_error_handling decorator:
 
 ```python
 from omnibase_core.decorators.error_handling import standard_error_handling

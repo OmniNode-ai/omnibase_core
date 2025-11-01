@@ -256,13 +256,13 @@ The hook is automatically configured in `.pre-commit-config.yaml`:
 
 ### Successful Validation
 
-```
+```text
 ✅ String Typing Validation PASSED (15 files checked)
 ```
 
 ### Validation with Issues
 
-```
+```text
 🔍 String Typing Validation Results
 ==================================================
 

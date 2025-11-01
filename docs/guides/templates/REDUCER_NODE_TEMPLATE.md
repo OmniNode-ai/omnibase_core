@@ -21,7 +21,7 @@ This template provides the **pure FSM architecture pattern** for ONEX REDUCER no
 
 ## Directory Structure
 
-```
+```text
 {REPOSITORY_NAME}/
 ├── src/
 │   └── {REPOSITORY_NAME}/

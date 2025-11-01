@@ -4,7 +4,8 @@
 
 Service wrappers are **pre-composed node classes** that eliminate boilerplate by wiring together commonly used mixins with ONEX node base classes. They provide production-ready capabilities out of the box: health monitoring, event publishing, performance metrics, and caching.
 
-**Problem They Solve:**
+### Problem They Solve:
+
 Without service wrappers, every node developer must manually:
 1. Choose which mixins to include
 2. Remember correct inheritance order (MRO matters!)
@@ -18,15 +19,18 @@ Service wrappers reduce this to **one import, one inheritance**.
 ## Standard Service Wrappers
 
 ### 1. ModelServiceEffect
+
 **Purpose:** Effect nodes performing I/O operations, external API calls, or database operations.
 
-**Included Mixins:**
+#### Included Mixins:
+
 - `NodeEffect` - Transaction management, retry, circuit breaker semantics
 - `MixinHealthCheck` - Health monitoring endpoints
 - `MixinEventBus` - Event emission for state changes
 - `MixinMetrics` - Performance metrics collection
 
-**Usage:**
+#### Usage:
+
 ```python
 from omnibase_core.models.nodes.node_services import ModelServiceEffect
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
@@ -48,7 +52,8 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
         return {"status": "success", "data": result}
 ```
 
-**What You Get Automatically:**
+#### What You Get Automatically:
+
 - ✅ Health check endpoint: `GET /health` → `{"status": "healthy", "message": "..."}`
 - ✅ Event emission: `await self.publish_event(...)` → publishes to event bus
 - ✅ Metrics tracking: Request latency, throughput, error rates automatically collected
@@ -59,15 +64,18 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 ---
 
 ### 2. ModelServiceCompute
+
 **Purpose:** Compute nodes performing pure transformations, calculations, or data processing.
 
-**Included Mixins:**
+#### Included Mixins:
+
 - `NodeCompute` - Pure function semantics, deterministic outputs
 - `MixinHealthCheck` - Health monitoring
 - `MixinCaching` - Multi-level result caching (L1/L2)
 - `MixinMetrics` - Performance metrics
 
-**Usage:**
+#### Usage:
+
 ```python
 from omnibase_core.models.nodes.node_services import ModelServiceCompute
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
@@ -92,28 +100,33 @@ class NodeDataTransformerCompute(ModelServiceCompute):
         return result
 ```
 
-**What You Get Automatically:**
+#### What You Get Automatically:
+
 - ✅ Result caching: LRU cache with configurable TTL
 - ✅ Cache key generation: Deterministic key generation from inputs
 - ✅ Cache hit/miss tracking: Metrics for cache performance
 - ✅ Health check: Cache service health included in node health
 - ✅ Performance metrics: Computation latency, cache hit ratio
 
-**Why Caching Matters:**
+#### Why Caching Matters:
+
 Compute nodes often perform expensive operations (ML inference, complex transformations, aggregations). Caching eliminates redundant computation for identical inputs, reducing latency from seconds to milliseconds.
 
 ---
 
 ### 3. ModelServiceOrchestrator
+
 **Purpose:** Orchestrator nodes coordinating multi-node workflows and managing dependencies.
 
-**Included Mixins:**
+#### Included Mixins:
+
 - `NodeOrchestrator` - Workflow coordination, dependency management
 - `MixinHealthCheck` - Health monitoring (aggregates subnode health)
 - `MixinEventBus` - Event emission for workflow lifecycle
 - `MixinMetrics` - Workflow performance metrics
 
-**Usage:**
+#### Usage:
+
 ```python
 from omnibase_core.models.nodes.node_services import ModelServiceOrchestrator
 from omnibase_core.models.contracts.model_contract_orchestrator import ModelContractOrchestrator
@@ -145,7 +158,8 @@ class NodeWorkflowOrchestrator(ModelServiceOrchestrator):
         return results
 ```
 
-**What You Get Automatically:**
+#### What You Get Automatically:
+
 - ✅ Event-driven coordination: Workflow lifecycle events (started, completed, failed)
 - ✅ Subnode health aggregation: Overall workflow health based on subnode health
 - ✅ Correlation tracking: All workflow events share correlation ID
@@ -155,15 +169,18 @@ class NodeWorkflowOrchestrator(ModelServiceOrchestrator):
 ---
 
 ### 4. ModelServiceReducer
+
 **Purpose:** Reducer nodes performing aggregation, state management, or data persistence.
 
-**Included Mixins:**
+#### Included Mixins:
+
 - `NodeReducer` - Aggregation semantics, state management
 - `MixinHealthCheck` - Health monitoring (includes state persistence checks)
 - `MixinCaching` - Result caching for expensive aggregations
 - `MixinMetrics` - Aggregation performance metrics
 
-**Usage:**
+#### Usage:
+
 ```python
 from omnibase_core.models.nodes.node_services import ModelServiceReducer
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
@@ -188,13 +205,15 @@ class NodeMetricsAggregatorReducer(ModelServiceReducer):
         return aggregated_data
 ```
 
-**What You Get Automatically:**
+#### What You Get Automatically:
+
 - ✅ Aggregation result caching: Avoids re-computing expensive aggregations
 - ✅ State persistence health: Monitors state storage availability
 - ✅ Performance metrics: Aggregation latency, data volume processed
 - ✅ Cache invalidation: Automatic cache clearing on state changes
 
-**Why Caching Matters:**
+#### Why Caching Matters:
+
 Reducers often aggregate large datasets (sum, average, group-by operations). Caching aggregated results eliminates redundant computation for repeated queries over the same time window or dataset.
 
 ---
@@ -313,12 +332,13 @@ class SecureDataProcessor(
 
 Python's MRO (Method Resolution Order) determines which method gets called when multiple classes define the same method. Understanding MRO is critical for mixin composition.
 
-**MRO Principles:**
+#### MRO Principles:
+
 1. **Child classes take precedence** over parent classes
 2. **Left-to-right order** in inheritance list matters
 3. **All `__init__` methods are called** via `super().__init__()`
 
-**Standard Service MRO Examples:**
+#### Standard Service MRO Examples:
 
 ```python
 # ModelServiceEffect MRO
@@ -330,7 +350,8 @@ ModelServiceCompute → NodeCompute → MixinHealthCheck → MixinCaching
 → MixinMetrics → NodeCoreBase → ABC
 ```
 
-**Best Practice:**
+#### Best Practice:
+
 Always put the **most specific** class first (node type), followed by mixins in **order of dependency**. For example:
 - Put `MixinValidation` before `MixinSecurity` (validate before securing)
 - Put `MixinRetry` before `MixinCircuitBreaker` (retry before circuit breaking)
@@ -360,7 +381,8 @@ class MyDatabaseWriter(ModelServiceEffect):
         pass
 ```
 
-**Migration Benefits:**
+#### Migration Benefits:
+
 - ✅ **Less code**: No manual mixin wiring
 - ✅ **Consistent capabilities**: All nodes get health checks, metrics, events/caching
 - ✅ **Easier testing**: Standard mixin mocks available
@@ -435,7 +457,8 @@ class TestDataTransformerIntegration:
 | **ModelServiceOrchestrator** | ~15-30ms | ~20-40KB | Workflow coordinators, multi-step processes |
 | **ModelServiceReducer** | ~10-25ms | ~15-35KB (with cache) | Metrics aggregators, log analyzers, analytics |
 
-**Overhead Breakdown:**
+### Overhead Breakdown:
+
 - Health check: ~5-10ms per check
 - Event emission: ~5-10ms per event (depends on backend)
 - Metrics collection: ~1-5ms per operation
@@ -525,14 +548,16 @@ if self.cache_hit_ratio < 0.5:
 
 **Service wrappers eliminate boilerplate** by pre-composing commonly used mixins with ONEX node base classes. They provide production-ready capabilities (health checks, events, metrics, caching) out of the box, reducing development time and ensuring consistency across nodes.
 
-**Key Takeaways:**
+### Key Takeaways:
+
 - ✅ Use standard services for 80% of nodes
 - ✅ Use custom composition for specialized requirements
 - ✅ Understand MRO when creating custom compositions
 - ✅ Monitor cache hit ratios and health check results
 - ✅ Always propagate correlation IDs through events
 
-**Next Steps:**
+### Next Steps:
+
 1. Choose the appropriate service wrapper for your node type
 2. Implement your business logic in `execute_*` method
 3. Add custom health checks if needed

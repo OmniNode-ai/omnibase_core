@@ -8,7 +8,7 @@
 
 The Reducer node implements a pure function that transforms state without performing I/O or side effects:
 
-```
+```text
 δ(state, action) → (new_state, intents[])
 ```
 
@@ -39,7 +39,7 @@ This separation enables:
 
 The Reducer implements a pure finite state machine:
 
-```
+```text
 δ(state, action) → (new_state, intents[])
 ```
 

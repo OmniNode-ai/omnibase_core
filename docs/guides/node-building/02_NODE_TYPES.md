@@ -10,7 +10,7 @@ The ONEX framework defines **four fundamental node types**, each designed for a 
 
 ## The Four Node Types
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                    ONEX Four-Node Architecture                 │
 ├────────────────────────────────────────────────────────────────┤
@@ -710,7 +710,7 @@ Use this table to choose the right node type:
 
 ## Decision Flowchart
 
-```
+```text
 Start: What does this node need to do?
 │
 ├─ Interact with external systems? ────────────────────────────────▶ EFFECT

@@ -14,7 +14,7 @@ This template provides the unified architecture pattern for ONEX COMPUTE nodes. 
 
 ## Directory Structure
 
-```
+```text
 {REPOSITORY_NAME}/
 ├── src/
 │   └── {REPOSITORY_NAME}/

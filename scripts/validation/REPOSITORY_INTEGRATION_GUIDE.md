@@ -5,7 +5,7 @@ This guide shows how other omni* repositories can integrate with the centralized
 
 ## 🎯 Architecture Overview
 
-```
+```text
 omnibase_core (Validation Hub)
 ├── src/omnibase_core/validation/
 │   ├── __init__.py                    # Importable validation functions

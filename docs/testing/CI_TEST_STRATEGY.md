@@ -37,7 +37,8 @@ poetry run pytest tests/unit/enums tests/unit/errors \
   --maxfail=5 -x --tb=short
 ```
 
-**Why smoke tests?**
+#### Why smoke tests?
+
 - 🚀 10-second feedback on fundamental breakage
 - 💰 Prevents wasted CI resources on obviously broken builds
 - ✅ Validates environment setup before expensive parallel runs
@@ -60,7 +61,8 @@ poetry run pytest tests/ \
 - Increased from 12 to 16 to reduce Split 7 cancellations
 - `-n auto` for additional parallelism within each split
 
-**Why 16 splits?**
+#### Why 16 splits?
+
 - ⚡ Faster feedback (4 min vs 60+ min sequential)
 - 🔄 Reduced runner cancellation exposure
 - 💾 Better memory management (~687 tests/runner)
@@ -90,7 +92,8 @@ poetry run pytest tests/ \
 - ❌ **PRs to develop**: Skipped (saves ~15 min CI time)
 - 📊 **Reports**: Terminal, XML (CI tools), HTML (artifacts)
 
-**Why skip coverage on develop PRs?**
+#### Why skip coverage on develop PRs?
+
 - 💰 Saves ~15 minutes per PR (~30 CI credits)
 - 🚀 Faster feedback for feature development
 - ✅ Coverage validated before main merge anyway
@@ -107,7 +110,8 @@ poetry run isort --check-only src/ tests/
 poetry run mypy src/omnibase_core  # Strict mode: 0 errors across 1865 files
 ```
 
-**Why always lint?**
+#### Why always lint?
+
 - ✅ Enforces consistent code style
 - 🔒 100% mypy strict compliance (0 errors)
 - 🚫 Prevents technical debt accumulation
@@ -122,7 +126,8 @@ poetry run mypy src/omnibase_core  # Strict mode: 0 errors across 1865 files
 python3 scripts/validate-doc-links.py --fix-case
 ```
 
-**Why validate docs in CI?**
+#### Why validate docs in CI?
+
 - 📚 Catches broken documentation links early
 - ✅ Ensures docs stay in sync with code
 - 🔗 Validates cross-references and navigation

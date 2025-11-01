@@ -40,7 +40,7 @@ poetry run python scripts/analyze_pydantic_errors.py --output my_report.json
 
 #### Example Output
 
-```
+```text
 ================================================================================
 PYDANTIC CALL-ARG ERROR ANALYSIS REPORT
 ================================================================================
@@ -108,7 +108,7 @@ poetry run python scripts/fix_pydantic_field_syntax.py --all
 
 #### Example Output
 
-```
+```text
 model_health_check_config.py:
   Line 72: expected_response_body
     Before: expected_response_body: str | None = Field(

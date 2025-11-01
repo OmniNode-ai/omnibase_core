@@ -396,7 +396,7 @@ else:
 
 ### High-Level Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      omnibase_spi                            │
 │  (Protocol Definitions - Service Provider Interface)        │
@@ -456,7 +456,7 @@ else:
 ### Critical Import Chains
 
 #### Chain 1: Type Constraints (Circular Dependency Resolution)
-```
+```text
 1. types/core_types.py               (no external deps)
 2. errors/error_codes.py             → types/core_types
 3. models/common/model_schema_value  → errors/error_codes
@@ -468,7 +468,7 @@ else:
 **Key**: Step 4 uses `TYPE_CHECKING` to avoid runtime import, breaking the cycle.
 
 #### Chain 2: Event Bus Integration
-```
+```text
 omnibase_spi.protocols.event_bus
   → ProtocolEventBus
     → omnibase_core.mixins.mixin_event_driven_node
@@ -477,7 +477,7 @@ omnibase_spi.protocols.event_bus
 ```
 
 #### Chain 3: Metadata Loading
-```
+```text
 omnibase_spi.protocols.schema
   → ProtocolSchemaLoader
     → omnibase_core.mixins.mixin_event_driven_node
@@ -793,7 +793,7 @@ class PatternChecker(Protocol):
 ## Protocol Hierarchy
 
 ### Core Type Protocols
-```
+```text
 ProtocolSerializable (SPI)
   ↓
 SerializableMixin (omnibase_core)
@@ -804,7 +804,7 @@ ModelGitHubActionsWorkflow
 ```
 
 ### Status Protocols
-```
+```text
 EnumStatusProtocol (omnibase_core)
   ↓ (implementations)
 EnumScenarioStatusV2
@@ -814,7 +814,7 @@ EnumExecutionStatusV2
 ```
 
 ### Validation Protocols
-```
+```text
 PatternChecker (omnibase_core)
   ↓ (implementations)
 PydanticPatternChecker

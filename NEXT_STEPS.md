@@ -21,16 +21,19 @@ poetry run pytest tests/ -x -v
 
 ### 2. Priority Order
 
-**PHASE 2A: Models & Services (17 errors, 3-4 hours)**
+#### PHASE 2A: Models & Services (17 errors, 3-4 hours)
+
 1. Models/Core Registry (10 errors)
 2. Container Generics (5 errors)
 3. Discovery Events (2 errors)
 
-**PHASE 2B: Infrastructure (2 errors, 30 minutes)**
+#### PHASE 2B: Infrastructure (2 errors, 30 minutes)
+
 4. node_base.py (1 error)
 5. node_core_base.py (1 error)
 
-**PHASE 2C: Mixins (45 errors, 6-8 hours)**
+#### PHASE 2C: Mixins (45 errors, 6-8 hours)
+
 6. High-impact mixins (7 files with 20+ errors)
 7. Remaining mixins (6 files with remaining errors)
 

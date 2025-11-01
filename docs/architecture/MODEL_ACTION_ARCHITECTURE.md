@@ -17,7 +17,7 @@ ModelAction is a strongly-typed Pydantic model that encapsulates:
 
 Actions flow from the **Orchestrator** node to downstream nodes (Compute, Effect, Reducer):
 
-```
+```text
 ┌──────────────────┐
 │  ORCHESTRATOR    │
 │  (Coordinates)   │
@@ -262,7 +262,7 @@ class NodeDataProcessorCompute(NodeCoreBase):
 
 **Epoch Monotonicity Guarantee**:
 
-```
+```text
 Orchestrator State:      epoch=0 → emit → epoch=1 → emit → epoch=2 → emit → epoch=3
                                     │              │              │
                                     ▼              ▼              ▼
@@ -273,7 +273,7 @@ Downstream Validation:      epoch >= 0       epoch >= 1       epoch >= 2
 ```
 
 If actions arrive out-of-order, epochs detect the issue:
-```
+```text
 Received: Action(epoch=2) → OK, process and set last_processed_epoch=2
 Received: Action(epoch=1) → REJECT, epoch < last_processed_epoch (stale!)
 ```

@@ -24,7 +24,7 @@ REDUCER nodes in ONEX are **pure finite state machines**:
 - **Effect Delegation**: Let Effect nodes handle I/O, logging, metrics
 
 **Core Concept**:
-```
+```text
 δ(state, action) → (new_state, intents[])
 ```
 

@@ -15,7 +15,7 @@ This guide covers comprehensive testing strategies for nodes using `MixinIntentP
 `MixinIntentPublisher` is a mixin that allows nodes (especially REDUCER and COMPUTE nodes) to coordinate event publishing without performing direct I/O. Instead of publishing events directly to Kafka, nodes publish "intents" to a coordination topic.
 
 **Architecture**:
-```
+```text
 Node (pure logic) → publish_event_intent() → Kafka (intent topic)
     → IntentExecutor (future) → Kafka (domain topic)
 ```

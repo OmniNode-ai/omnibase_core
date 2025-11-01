@@ -21,7 +21,7 @@ The `scripts/run-coverage-parallel.sh` script runs pytest with coverage collecti
 
 ### Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                  Parallel Test Execution                     │
 ├─────────────────────────────────────────────────────────────┤
@@ -82,7 +82,7 @@ export WORKERS_PER_SPLIT=6
 
 ### Expected Output
 
-```
+```text
 🧪 Running parallel coverage tests (12 splits)
 📊 Resource Configuration:
    • Concurrent splits: 3
@@ -278,7 +278,7 @@ export WORKERS_PER_SPLIT=3
 ### Issue: Resource warning displayed
 
 **Example**:
-```
+```text
 ⚠️  WARNING: Total workers (16) exceeds 2× CPU cores (8)
 ```
 

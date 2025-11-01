@@ -17,7 +17,7 @@ This guide provides best practices for configuring `ModelComputeCacheConfig` to 
 ### Cache Size Guidelines
 
 Cache memory usage follows this approximate formula:
-```
+```text
 Total Memory (MB) = (max_size × avg_entry_size_kb) / 1024
 ```
 

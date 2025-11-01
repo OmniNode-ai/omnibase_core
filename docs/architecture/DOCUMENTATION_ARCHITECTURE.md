@@ -18,7 +18,7 @@ This document defines the comprehensive documentation architecture for the omnib
 
 ## Documentation Structure
 
-```
+```text
 docs/
 ├── INDEX.md                          # Main navigation hub
 ├── DOCUMENTATION_ARCHITECTURE.md     # This file
@@ -130,7 +130,7 @@ The node building guide is the **highest priority** deliverable. It must be:
 
 ### Node Building Guide Structure
 
-```
+```text
 guides/node-building/
 ├── README.md                           # Overview and navigation
 ├── 01_WHAT_IS_A_NODE.md                # Definition, purpose, role in ONEX

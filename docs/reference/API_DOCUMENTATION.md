@@ -21,7 +21,7 @@ This document provides comprehensive API documentation for all contract models i
 
 All contract models follow the ONEX Four-Node Architecture:
 
-```
+```text
 EFFECT → COMPUTE → REDUCER → ORCHESTRATOR
 ```
 

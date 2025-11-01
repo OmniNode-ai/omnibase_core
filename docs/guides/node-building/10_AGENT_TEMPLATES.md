@@ -251,7 +251,7 @@ While agent-specific templates are being developed, AI agents can use:
 # 4. Adapt variable names and logic
 # 5. Generate tests based on patterns
 # 6. Validate with poetry run commands
-```
+```markdown
 
 ### Tutorial-Based Learning
 - [COMPUTE Node Tutorial](03_COMPUTE_NODE_TUTORIAL.md) - Step-by-step example
@@ -316,7 +316,7 @@ agent_workflow:
     artifacts:
       - "src/shipping/node_shipping_calculator_compute.py"
       - "tests/unit/test_node_shipping_calculator.py"
-```
+```markdown
 
 ## Related Documentation
 

@@ -135,7 +135,7 @@ These are **NOT dependency injection registries** - they serve business logic pu
 
 ### Dependency Injection (ServiceRegistry)
 
-```
+```text
 User Code
     │
     ▼
@@ -155,7 +155,7 @@ ServiceRegistry.resolve_service(ProtocolLogger)
 
 ### Business Registry (Action Discovery)
 
-```
+```text
 Node Contract (contract.yaml)
     │
     ▼
@@ -175,7 +175,7 @@ ModelActionRegistry.register_action(action)
 
 ### Runtime Discovery (MixinServiceRegistry)
 
-```
+```python
 Tool Node Starts
     │
     ▼
@@ -466,7 +466,7 @@ ProtocolServiceDiscovery, and other external dependencies.
 ProtocolServiceResolver is now available for implementation of external service health checks.
 Current behavior: Returns "unavailable" status message (graceful degradation).
 Implementation ready to proceed using omnibase_spi v0.1.2.
-```
+```markdown
 
 ---
 

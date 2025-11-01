@@ -9,7 +9,7 @@ Running all 12 test splits in parallel on a local machine causes resource exhaus
 ### The Root Cause
 
 **CI Environment (Correct)**:
-```
+```text
 12 GitHub Actions runners (physically separate machines)
 ├─ Runner 1: Split 1 with -n auto (8-12 workers) ✅ Isolated resources
 ├─ Runner 2: Split 2 with -n auto (8-12 workers) ✅ Isolated resources
@@ -21,7 +21,7 @@ Total: 12 runners × ~10 workers = 120 workers across 12 SEPARATE machines ✅
 ```
 
 **Local Environment (WRONG - Before Fix)**:
-```
+```text
 1 Local machine (single shared resource pool)
 ├─ Split 1 with -n auto (8-12 workers) ⚠️  Sharing CPU/memory
 ├─ Split 2 with -n auto (8-12 workers) ⚠️  Sharing CPU/memory
@@ -436,7 +436,7 @@ COVERAGE_FILE=.coverage.6 poetry run pytest tests/ \
 ### Issue: Resource warning triggered
 
 **Symptoms**:
-```
+```text
 ⚠️  WARNING: Total workers (16) exceeds 2× CPU cores (8)
    This may cause resource exhaustion. Consider reducing:
    export MAX_CONCURRENT_SPLITS=2
@@ -455,7 +455,7 @@ COVERAGE_FILE=.coverage.6 poetry run pytest tests/ \
 
 **Theory**: Total workers should balance parallelism with overhead
 
-```
+```text
 Optimal Total Workers = (CPU Cores × Efficiency Factor) / Overhead Factor
 
 Where:

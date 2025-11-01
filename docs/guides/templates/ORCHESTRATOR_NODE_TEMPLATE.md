@@ -45,7 +45,7 @@ action = ModelAction(
 
 ## Directory Structure
 
-```
+```text
 {REPOSITORY_NAME}/
 ├── src/
 │   └── {REPOSITORY_NAME}/
