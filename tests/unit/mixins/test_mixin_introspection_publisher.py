@@ -367,7 +367,7 @@ class TestMixinIntrospectionPublisher:
         node._publish_introspection_event()
 
         # Verify event bus publish was called
-        assert mock_event_bus.publish.called or mock_event_bus.publish.call_count >= 0
+        assert mock_event_bus.publish.called
 
     def test_publish_with_retry_basic(self):
         """Test publishing with retry logic."""

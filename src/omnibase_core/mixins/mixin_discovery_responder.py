@@ -315,7 +315,13 @@ class MixinDiscoveryResponder:
         """
         # Check node type filter
         if request.node_types:
-            node_type = self.__class__.__name__
+            # Use canonical node_type from get_node_type() if available,
+            # otherwise use class name as default
+            node_type = (
+                self.get_node_type()
+                if hasattr(self, "get_node_type")
+                else self.__class__.__name__
+            )
             if node_type not in request.node_types:
                 return False
 

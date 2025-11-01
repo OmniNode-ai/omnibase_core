@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.1] - 2025-10-29
+## [0.2.0] - 2025-10-31
 
 ### Added
 
@@ -36,8 +36,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enhanced Architecture Docs**: Improved ONEX four-node architecture documentation with better examples and terminology
 - **Getting Started Updates**: Enhanced Quick Start guide with production patterns (ModelServiceCompute)
 - **Node Building Guides**: Improved node type tutorials with FSM and Intent/Action pattern introductions
+- **Container Types Documentation**: Comprehensive 657-line guide (docs/architecture/CONTAINER_TYPES.md) clarifying ModelContainer vs ModelONEXContainer distinction
+- **Architectural Decision Record**: ADR-001 documenting protocol-based DI architecture design rationale
+- **Container Type Compliance Report**: Audit report validating correct container type usage across codebase
 
 ### Changed
+
+#### Dependencies
+- **omnibase_spi Upgrade**: Updated from v0.1.1 → v0.2.0 with 9 new protocols for enhanced type safety and capability expansion
 
 #### Discovery System Improvements
 - **Error Handling**: Replaced silent exception handling with structured logging (ProtocolLogger warnings) for non-fatal discovery errors
