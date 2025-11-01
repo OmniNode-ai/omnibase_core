@@ -197,7 +197,7 @@ To prevent future confusion and help developers understand the distinction:
 ### Unit Tests
 
 **ModelContainer Tests** (37 tests):
-```
+```text
 tests/unit/models/core/test_model_container.py::TestModelContainer - ✅ ALL PASSED
 tests/unit/models/core/test_model_container.py::TestModelContainerIntegration - ✅ ALL PASSED
 tests/unit/models/core/test_model_container.py::TestModelContainerEdgeCases - ✅ ALL PASSED
@@ -205,7 +205,7 @@ tests/unit/models/core/test_model_container.py::TestModelContainerSerialization 
 ```
 
 **NodeBase Tests** (33 tests):
-```
+```text
 tests/unit/infrastructure/test_node_base.py::TestNodeBaseInitialization - ✅ ALL PASSED
 tests/unit/infrastructure/test_node_base.py::TestNodeBaseProperties - ✅ ALL PASSED
 tests/unit/infrastructure/test_node_base.py::TestNodeBaseSyncExecution - ✅ ALL PASSED
@@ -238,7 +238,8 @@ Both container types pass strict type checking with:
 
 The compliance document identified the following in omninode_bridge:
 
-**Issue #6: Container Type Confusion**
+#### Issue #6: Container Type Confusion
+
 - `ModelContainer[T]` (generic value wrapper) was being used instead of `ModelONEXContainer` (DI container)
 - Caused `AttributeError: 'ModelContainer' object has no attribute 'get_service'`
 - Led to incorrect node initialization patterns

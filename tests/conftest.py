@@ -19,16 +19,18 @@ logging.basicConfig(level=logging.WARNING)
 
 # Suppress asyncio "Task was destroyed but it is pending!" warnings
 # These are cosmetic errors from test cleanup and don't affect functionality
+# The cleanup fixtures properly cancel tasks, so this warning is expected
 warnings.filterwarnings(
     "ignore",
     message=".*Task was destroyed but it is pending.*",
     category=RuntimeWarning,
 )
-warnings.filterwarnings(
-    "ignore",
-    message=".*coroutine.*was never awaited.*",
-    category=RuntimeWarning,
-)
+
+# NOTE: "coroutine was never awaited" warnings are NOT suppressed globally
+# These warnings indicate real bugs where async functions were called but never executed
+# If you encounter this warning, FIX the test by properly awaiting the coroutine
+# Only suppress this warning locally in specific tests if you're intentionally testing
+# error handling for unawaited coroutines (and document why!)
 
 
 @pytest.fixture(scope="session", autouse=True)

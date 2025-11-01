@@ -36,7 +36,7 @@ def cleanup_pending_tasks():
         if loop and not loop.is_closed():
             # Suppress asyncio exception logging during cleanup
             old_exception_handler = loop.get_exception_handler()
-            loop.set_exception_handler(lambda loop, context: None)
+            loop.set_exception_handler(lambda _loop, _context: None)
 
             try:
                 # Get current task to exclude it from cancellation

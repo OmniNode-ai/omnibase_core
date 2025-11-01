@@ -256,7 +256,7 @@ async def get_external_services_health(self) -> dict[str, object]:
 
 ### Current DI Architecture (Protocol-Based)
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    ModelONEXContainer                       │
 │  ┌──────────────────────────────────────────────────────┐  │

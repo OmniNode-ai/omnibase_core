@@ -866,7 +866,7 @@ class ModelMaskedDataCompat(BaseModel):
 
 **Target Metrics** (to be filled post-remediation):
 
-```
+```text
 Union Validation Results:
   Total unions found: 4,700
   Legitimate unions: 4,700 (100%)
@@ -955,7 +955,6 @@ OptionUnion = Annotated[
     ModelStringOption | ModelIntOption,
     Field(discriminator="option_type")
 ]
-```
 ```
 
 ---

@@ -11,12 +11,12 @@ The ONEX ecosystem consists of multiple repositories with distinct purposes and 
 
 ### Core Repository: `omnibase_core`
 
-**Purpose**: Core framework providing base classes, mixins, and essential implementations  
-**Location**: `/Volumes/PRO-G40/Code/omnibase_core`  
-**Package Name**: `omnibase_core`  
-**Version**: `0.1.0`
+**Purpose**: Core framework providing base classes, mixins, and essential implementations
+**Location**: `/Volumes/PRO-G40/Code/omnibase_core`
+**Package Name**: `omnibase_core`
+**Version**: `0.2.0`
 
-```
+```text
 omnibase_core/
 ├── src/
 │   └── omnibase_core/
@@ -73,11 +73,11 @@ omnibase_core/
 ### Bridge Repository: `omninode_bridge`
 
 **Purpose**: Bridge between ONEX framework and external services  
-**Location**: `/Volumes/PRO-G40/Code/omninode_bridge`  
-**Package Name**: `omninode_bridge`  
+**Location**: `/Volumes/PRO-G40/Code/omninode_bridge`
+**Package Name**: `omninode_bridge`
 **Version**: `0.1.0`
 
-```
+```text
 omninode_bridge/
 ├── src/
 │   └── omninode_bridge/
@@ -113,11 +113,11 @@ omninode_bridge/
 ### Intelligence Repository: `omniarchon`
 
 **Purpose**: AI coding assistant intelligence platform  
-**Location**: `/Volumes/PRO-G40/Code/omniarchon`  
-**Package Name**: `archon`  
+**Location**: `/Volumes/PRO-G40/Code/omniarchon`
+**Package Name**: `archon`
 **Version**: `0.1.0`
 
-```
+```text
 omniarchon/
 ├── python/                     # Main Python package
 │   ├── src/
@@ -145,11 +145,11 @@ omniarchon/
 ### Infrastructure Repository: `omnibase_infra`
 
 **Purpose**: Infrastructure-specific nodes and services  
-**Location**: `/Volumes/PRO-G40/Code/omnibase_infra`  
-**Package Name**: `omnibase_infra`  
+**Location**: `/Volumes/PRO-G40/Code/omnibase_infra`
+**Package Name**: `omnibase_infra`
 **Version**: `0.1.0`
 
-```
+```text
 omnibase_infra/
 ├── src/
 │   └── omnibase_infra/
@@ -174,11 +174,11 @@ omnibase_infra/
 ### Memory Repository: `omnimemory`
 
 **Purpose**: Memory and persistence layer  
-**Location**: `/Volumes/PRO-G40/Code/omnimemory`  
-**Package Name**: `omnimemory`  
+**Location**: `/Volumes/PRO-G40/Code/omnimemory`
+**Package Name**: `omnimemory`
 **Version**: `0.1.0`
 
-```
+```text
 omnimemory/
 ├── src/
 │   └── omnimemory/
@@ -193,11 +193,11 @@ omnimemory/
 ### Legacy Repository: `omnibase_3`
 
 **Purpose**: Legacy implementation and reference  
-**Location**: `/Volumes/PRO-G40/Code/omnibase_3`  
-**Package Name**: `omnibase`  
+**Location**: `/Volumes/PRO-G40/Code/omnibase_3`
+**Package Name**: `omnibase`
 **Version**: `0.1.0`
 
-```
+```text
 omnibase_3/
 ├── src/
 │   └── omnibase/               # Legacy core implementation
@@ -249,7 +249,7 @@ pydantic = "^2.11.7"
 
 ### Dependency Relationships
 
-```
+```text
 omnibase_core (core framework)
 ├── omninode_bridge (depends on omnibase_core)
 ├── omnibase_infra (depends on omnibase_core)
@@ -379,7 +379,7 @@ All repositories use semantic versioning with `0.1.0` as the current version. De
 
 Each repository follows a consistent testing pattern:
 
-```
+```text
 tests/
 ├── unit/                       # Unit tests
 │   ├── mixins/                # Mixin tests

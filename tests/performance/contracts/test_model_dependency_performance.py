@@ -122,12 +122,12 @@ class TestModelDependencyPerformance:
 
         # Performance targets
         # Note: Threshold increased to 3.0s to account for parallel test execution variance:
-        # - 9000 operations (1000 iterations × 9 malicious patterns)
+        # - 9000 operations (1000 iterations x 9 malicious patterns)
         # - Baseline: ~1.05-1.26s (0.14ms per operation)
         # - Each validation performs: path traversal checks, shell injection detection,
         #   privileged keyword scanning, and creates full ModelOnexError with context
         # - 3.0s accommodates:
-        #   * Parallel test execution load (16 splits × 4-12 workers per split)
+        #   * Parallel test execution load (16 splits x 4-12 workers per split)
         #   * CI/CD environment CPU contention and variance
         #   * System load from concurrent pytest-xdist workers
         # - Still catches actual regressions (>3.0s = >333μs per operation vs 140μs baseline)

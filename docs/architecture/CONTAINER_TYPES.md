@@ -183,7 +183,7 @@ wrapped_value = ModelContainer.create(
 
 ## Decision Tree: Which Container to Use?
 
-```
+```text
 Are you writing a node class?
 ├─ Yes → Use ModelONEXContainer in __init__
 │         def __init__(self, container: ModelONEXContainer)

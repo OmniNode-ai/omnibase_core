@@ -26,7 +26,7 @@
 **File**: `src/omnibase_core/infrastructure/kafka_event_bus_adapter.py`
 
 **Coverage Status**:
-```
+```python
 Coverage: 0.00%
 Reason: Module was never imported during testing (all mocked)
 Tests: 13 tests pass using AsyncMock
