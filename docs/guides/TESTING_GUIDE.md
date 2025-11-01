@@ -771,10 +771,10 @@ The project uses a sophisticated CI pipeline with parallel test execution for op
 
 **Strategy Rationale**:
 - **Total Tests**: 12,198 tests
-- **Split Count**: 12 parallel jobs
-- **Tests per Split**: ~916 tests/split
+- **Split Count (CI)**: 20 parallel jobs (~610 tests/split)
+- **Split Count (Local)**: 12 parallel jobs (~1,016 tests/split)
 - **Duration**: 3-5 minutes per split (vs ~40+ minutes sequential)
-- **Speedup**: 12x parallelization
+- **Speedup**: 12-20x parallelization
 - **Resource Management**: Prevents memory exhaustion with controlled parallelism
 
 **Split Configuration**:

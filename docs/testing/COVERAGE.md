@@ -171,15 +171,15 @@ skip_covered = false
 ### Split Configuration
 
 The script uses 12 splits with resource constraints:
-- **Splits**: 12 total (mirrors CI split count)
+- **Splits**: 12 total for local testing (CI uses 20 splits)
 - **Concurrency**: Max 3 splits run simultaneously (default, configurable)
 - **Workers per split**: 4 workers (explicit, not auto-detected)
 - **Total workers**: 3 splits × 4 workers = 12 concurrent workers (safe for 8+ core machines)
-- **Test distribution**: pytest-split ensures deterministic, balanced distribution (~916 tests per split)
+- **Test distribution**: pytest-split ensures deterministic, balanced distribution (~1,016 tests per split for local)
 
 **Key Difference from CI**:
-- CI: 12 splits on 12 separate runners with `-n auto` each (isolated resources)
-- Local: 12 splits batched (3 at a time) with `-n 4` each (shared resources, constrained)
+- CI: 20 splits on 20 separate runners (~610 tests/split) with `-n auto` each (isolated resources)
+- Local: 12 splits batched (3 at a time, ~1,016 tests/split) with `-n 4` each (shared resources, constrained)
 
 ## Technical Details
 
