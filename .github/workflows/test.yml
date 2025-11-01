@@ -74,7 +74,7 @@ jobs:
 
   # Parallel test execution - split into 20 groups for speed and memory management
   # Split strategy rationale:
-  #   - 10,987 total tests ÷ 20 splits = ~549 tests/split
+  #   - 12,198 total tests ÷ 20 splits = ~610 tests/split
   #   - Target: 1.5-3 minutes per split (prevents runner timeouts/cancellations)
   #   - 20x parallelization speedup vs sequential execution
   #   - Increased from 16 to 20 splits to eliminate Split 10 timeout issues

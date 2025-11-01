@@ -6,12 +6,12 @@ This document outlines the comprehensive CI/CD test strategy for omnibase_core, 
 
 ## Current Test Suite Stats
 
-- **Total Tests**: 10,987 tests (updated from 11,446 - split optimization)
-- **Test Categories**: Unit (400+), Integration, Validation, Nodes, Models, Mixins
-- **Parallel Splits**: 16 splits (~687 tests/split)
+- **Total Tests**: 12,198 tests (verified by pytest --collect-only)
+- **Test Categories**: Unit (12,000+), Integration, Validation, Nodes, Models, Mixins
+- **Parallel Splits**: 20 splits (~610 tests/split)
 - **Execution Time**:
   - Smoke tests: 5-10 seconds
-  - Full suite (parallel): 2-4 minutes per split, ~4 minutes total (16x parallelism)
+  - Full suite (parallel): 2-4 minutes per split, ~4 minutes total (20x parallelism)
   - Full suite (sequential): ~60-80 minutes
 - **Coverage Requirement**: 60% minimum (fail_under=60)
 
@@ -19,11 +19,11 @@ This document outlines the comprehensive CI/CD test strategy for omnibase_core, 
 
 | Trigger | Smoke | Full Suite | Coverage | Lint | Docs | Total Time |
 |---------|-------|------------|----------|------|------|------------|
-| **PR → develop** | ✅ Yes | ✅ Yes (16 splits) | ❌ No | ✅ Yes | ✅ Yes | ~5-7 min |
-| **PR → main** | ✅ Yes | ✅ Yes (16 splits) | ✅ Yes | ✅ Yes | ✅ Yes | ~20 min |
-| **Push → develop** | ✅ Yes | ✅ Yes (16 splits) | ❌ No | ✅ Yes | ✅ Yes | ~5-7 min |
-| **Push → main** | ✅ Yes | ✅ Yes (16 splits) | ✅ Yes | ✅ Yes | ✅ Yes | ~20 min |
-| **Release build** | ✅ Yes | ✅ Yes (16 splits) | ✅ Yes | ✅ Yes | ✅ Yes | ~20 min |
+| **PR → develop** | ✅ Yes | ✅ Yes (20 splits) | ❌ No | ✅ Yes | ✅ Yes | ~5-7 min |
+| **PR → main** | ✅ Yes | ✅ Yes (20 splits) | ✅ Yes | ✅ Yes | ✅ Yes | ~20 min |
+| **Push → develop** | ✅ Yes | ✅ Yes (20 splits) | ❌ No | ✅ Yes | ✅ Yes | ~5-7 min |
+| **Push → main** | ✅ Yes | ✅ Yes (20 splits) | ✅ Yes | ✅ Yes | ✅ Yes | ~20 min |
+| **Release build** | ✅ Yes | ✅ Yes (20 splits) | ✅ Yes | ✅ Yes | ✅ Yes | ~20 min |
 
 ## CI Job Breakdown
 
@@ -43,25 +43,25 @@ poetry run pytest tests/unit/enums tests/unit/errors \
 - 💰 Prevents wasted CI resources on obviously broken builds
 - ✅ Validates environment setup before expensive parallel runs
 
-### 2. Parallel Test Execution (16 splits, ~4 min total)
+### 2. Parallel Test Execution (20 splits, ~4 min total)
 **Purpose**: Comprehensive test validation with optimal speed/resource balance
-**Scope**: All 10,987 tests split into 16 groups
+**Scope**: All 12,198 tests split into 20 groups
 **Trigger**: All pushes and PRs
 **Configuration**:
 ```yaml
 poetry run pytest tests/ \
-  --splits 16 --group ${{ matrix.split }} \
+  --splits 20 --group ${{ matrix.split }} \
   -n auto --timeout=60 --tb=short
 ```
 
 **Split Strategy Rationale**:
-- 10,987 tests ÷ 16 = ~687 tests/split
+- 10,987 tests ÷ 16 = ~610 tests/split
 - Target: 2-4 minutes per split (reduces runner cancellation)
 - 16x parallelization vs sequential execution
 - Increased from 12 to 16 to reduce Split 7 cancellations
 - `-n auto` for additional parallelism within each split
 
-#### Why 16 splits?
+#### Why 20 splits?
 
 - ⚡ Faster feedback (4 min vs 60+ min sequential)
 - 🔄 Reduced runner cancellation exposure
@@ -195,7 +195,7 @@ poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 **Cost Reduction Strategy**:
 1. ✅ Skip coverage on develop PRs (saves ~300 min/month)
 2. ✅ Use pytest-testmon locally (reduces unnecessary CI runs)
-3. ✅ Optimize split count (16 splits = optimal speed/cost)
+3. ✅ Optimize split count (20 splits = optimal speed/cost)
 4. ✅ Smoke tests prevent wasted parallel runs
 
 ## CI Failure Scenarios & Response
@@ -244,7 +244,7 @@ poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 
 ### ✅ Recommended Strategy (Current)
 
-**PRs & Feature Branches**: Full suite (16 splits)
+**PRs & Feature Branches**: Full suite (20 splits)
 - **Rationale**: 10,987 tests run in ~4 min with parallelism (acceptable speed)
 - **Benefit**: Catch issues early, prevent broken merges
 - **Cost**: ~7 min per develop PR, ~20 min per main PR
@@ -271,15 +271,32 @@ poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 - ❌ Expensive CI costs (10x current)
 - ❌ Blocks developer productivity
 
+## CI Performance Monitoring
+
+For operational guidance on monitoring CI health, detecting performance regressions, and investigating anomalies, see:
+
+📊 **[CI Monitoring Guide](../ci/CI_MONITORING_GUIDE.md)** - Includes:
+- Alert thresholds based on baseline benchmarks (avg 2m58s per split)
+- Step-by-step investigation workflow for slow splits
+- Common issues and resolutions
+- Metrics tracking and historical analysis
+- Tools and commands (`gh run view`, profiling, etc.)
+
+**Quick Reference**:
+- **Normal**: 2m30s - 3m30s per split
+- **Warning**: 3m30s - 4m30s (review within 1 business day)
+- **Critical**: > 4m30s (investigate immediately)
+
 ## References
 
 - [pytest-testmon Documentation](https://github.com/tarpas/pytest-testmon)
 - [TESTMON_USAGE.md](./TESTMON_USAGE.md) - Local testmon usage guide
 - [pytest.ini Configuration](../../pyproject.toml) - Test configuration
 - [CI Workflow](../../.github/workflows/test.yml) - GitHub Actions configuration
+- [CI Monitoring Guide](../ci/CI_MONITORING_GUIDE.md) - Performance monitoring and alerting
 
 ---
 
-**Last Updated**: 2025-10-29
-**Test Suite Version**: 0.1.1 (10,987 tests)
-**CI Strategy Version**: v2.0 (16 splits + conditional coverage)
+**Last Updated**: 2025-11-01
+**Test Suite Version**: 0.2.0 (12,198 tests)
+**CI Strategy Version**: v2.1 (20 splits + conditional coverage + monitoring)

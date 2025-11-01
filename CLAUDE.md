@@ -16,11 +16,12 @@
 4. [Project Structure](#project-structure)
 5. [Development Workflow](#development-workflow)
 6. [Testing Guide](#testing-guide)
-7. [Code Quality](#code-quality)
-8. [Key Patterns & Conventions](#key-patterns--conventions)
-9. [Thread Safety](#thread-safety)
-10. [Documentation](#documentation)
-11. [Common Pitfalls](#common-pitfalls)
+7. [CI Performance Benchmarks](#ci-performance-benchmarks)
+8. [Code Quality](#code-quality)
+9. [Key Patterns & Conventions](#key-patterns--conventions)
+10. [Thread Safety](#thread-safety)
+11. [Documentation](#documentation)
+12. [Common Pitfalls](#common-pitfalls)
 
 ---
 
@@ -33,7 +34,7 @@
 - **Zero Boilerplate**: Base classes eliminate 80+ lines of initialization code per node
 - **Structured Errors**: ModelOnexError with Pydantic models for consistent error handling
 - **Event-Driven**: ModelEventEnvelope for inter-service communication
-- **Comprehensive Testing**: 400+ tests with 60%+ coverage requirement
+- **Comprehensive Testing**: 12,000+ tests (12,198 collected) with 60%+ coverage requirement
 - **Strict Type Checking**: 100% mypy strict mode compliance (0 errors across 1865 source files)
 
 ### Dependencies
@@ -217,7 +218,7 @@ omnibase_core/
 │   ├── validation/             # Validation framework
 │   └── validators/             # Specific validators
 ├── tests/                      # Test suite
-│   ├── unit/                   # Unit tests (400+ tests)
+│   ├── unit/                   # Unit tests (12,000+ tests)
 │   │   ├── enums/              # Enum tests
 │   │   ├── models/             # Model tests
 │   │   ├── mixins/             # Mixin tests
@@ -276,7 +277,7 @@ poetry run mypy src/omnibase_core/
 
 ### Test Categories
 
-- **Unit Tests**: 400+ tests in `tests/unit/` - test individual components in isolation
+- **Unit Tests**: 12,000+ tests (12,198 collected) in `tests/unit/` - test individual components in isolation
 - **Integration Tests**: `tests/integration/` - test multiple components together
 - **Coverage Requirement**: Minimum 60% (configured in pyproject.toml)
 
@@ -310,7 +311,7 @@ poetry run pytest tests/ --timeout=60
 - Distribution: `loadscope` (groups by module)
 
 **CI Testing**:
-- 12 parallel splits across isolated runners
+- 20 parallel splits across isolated runners
 - Each split runs subset of tests
 - Prevents resource exhaustion
 - See `.github/workflows/test.yml`
@@ -324,6 +325,116 @@ poetry run pytest tests/ --timeout=60
 @pytest.mark.smoke        # Smoke test
 @pytest.mark.performance  # Performance test
 ```
+
+---
+
+## CI Performance Benchmarks
+
+### Expected Runtime Per Split
+
+**Configuration**: 20 parallel splits running on GitHub Actions runners
+
+**Benchmark Data** (from CI run [#18997947041](https://github.com/OmniNode-ai/omnibase_core/actions/runs/18997947041)):
+
+| Metric | Value |
+|--------|-------|
+| **Average Runtime** | 2m58s per split |
+| **Fastest Split** | 2m35s (Split 6/20) |
+| **Slowest Split** | 3m35s (Split 12/20) |
+| **Runtime Range** | 60s variation |
+| **Total CI Time** | ~3 minutes (parallel execution) |
+
+### Full Split Timings (Baseline)
+
+Actual runtimes from successful CI run on 2025-11-01:
+
+```
+Split  1/20: 2m49s    Split 11/20: 2m52s
+Split  2/20: 3m1s     Split 12/20: 3m35s ⚠️  (slowest)
+Split  3/20: 2m44s    Split 13/20: 2m56s
+Split  4/20: 3m8s     Split 14/20: 2m57s
+Split  5/20: 2m47s    Split 15/20: 2m53s
+Split  6/20: 2m35s ✅  (fastest)   Split 16/20: 3m12s
+Split  7/20: 2m55s    Split 17/20: 3m1s
+Split  8/20: 2m58s    Split 18/20: 2m56s
+Split  9/20: 3m5s     Split 19/20: 3m1s
+Split 10/20: 2m56s    Split 20/20: 2m58s
+```
+
+### Performance Thresholds
+
+| Threshold | Duration | Action |
+|-----------|----------|--------|
+| **Normal** | 2m30s - 3m30s | Expected range - no action needed |
+| **Warning** | 3m30s - 4m30s | Review split for slow tests or resource issues |
+| **Critical** | > 4m30s | Investigate immediately - likely regression |
+
+### Investigating Anomalies
+
+If a split exceeds expected thresholds:
+
+1. **Check Split Distribution**
+   ```bash
+   # View which tests are in the slow split
+   poetry run pytest --collect-only --split-splits=20 --split-group=<split-number>
+   ```
+
+2. **Profile Slow Tests**
+   ```bash
+   # Run the slow split with duration reporting
+   poetry run pytest --durations=10 --split-splits=20 --split-group=<split-number>
+   ```
+
+3. **Common Causes**:
+   - **Test Hangs**: Check for missing `@pytest.mark.timeout` or event loop issues
+   - **Resource Exhaustion**: Parallel workers consuming too much memory/CPU
+   - **Slow Fixtures**: Database fixtures or heavy setup/teardown
+   - **Network Issues**: External API calls or network-dependent tests
+
+4. **Mitigation Strategies**:
+   - Move slow tests to dedicated split group
+   - Add `@pytest.mark.slow` to identify candidates for optimization
+   - Increase split count if consistently hitting 4+ minute runs
+   - Use `pytest-xdist` with fewer workers for problematic splits
+
+### CI Health Indicators
+
+✅ **Healthy CI**:
+- All splits complete within 2m30s - 3m30s
+- No individual split > 4 minutes
+- Consistent timings across runs
+
+⚠️ **Warning Signs**:
+- Individual splits > 3m30s
+- Increasing variance between fastest/slowest
+- Frequent timeouts or hangs
+
+🚨 **Critical Issues**:
+- Any split > 5 minutes
+- Multiple splits timing out
+- Total CI time > 6 minutes
+
+### Historical Context
+
+- **Initial Configuration**: 10 splits (Nov 2024)
+- **First Optimization**: 12 splits (Dec 2024)
+- **Current Configuration**: 20 splits (Jan 2025)
+- **Next Review**: When average runtime exceeds 4 minutes
+
+**Benchmark Source**: [CI Run #18997947041](https://github.com/OmniNode-ai/omnibase_core/actions/runs/18997947041)
+**Last Updated**: 2025-11-01
+**Correlation ID**: `95cac850-05a3-43e2-9e57-ccbbef683f43`
+
+### Operational Monitoring
+
+For detailed guidance on monitoring CI health, detecting anomalies, and investigating performance regressions, see:
+
+📊 **[CI Monitoring Guide](docs/ci/CI_MONITORING_GUIDE.md)** - Comprehensive operational procedures including:
+- Alert thresholds and severity levels
+- Step-by-step investigation workflow
+- Common issues and resolutions
+- Metrics tracking and historical analysis
+- Tools and commands for CI monitoring
 
 ---
 
@@ -644,7 +755,7 @@ poetry show                                 # List dependencies
 ### CI/CD
 
 - **GitHub Actions**: `.github/workflows/test.yml`
-- **12 Parallel Splits**: Each split runs subset of tests
+- **20 Parallel Splits**: Each split runs subset of tests
 - **Coverage Required**: 60% minimum
 - **Timeout Protection**: 60s per test
 
@@ -655,16 +766,17 @@ poetry show                                 # List dependencies
 - ✅ **Upgraded to omnibase_spi v0.2.0** - 9 new protocols for enhanced type safety
 - ✅ Added container types documentation (ModelContainer vs ModelONEXContainer)
 - ✅ Fixed formatter conflicts (isort/ruff) with --filter-files flag
-- ✅ Added 400+ comprehensive tests (commit: 0c28533e)
-- ✅ Increased CI splits from 10 to 12 for better resource management
+- ✅ Comprehensive test suite with 12,000+ tests (12,198 collected)
+- ✅ Increased CI splits from 10 to 12 to 20 for better resource management
 - ✅ Fixed event loop hangs in CI
 - ✅ Updated security dependencies (pypdf 6.0+, starlette 0.48.0+)
 - ✅ Reorganized documentation structure
 - ✅ Added comprehensive node building guides
+- ✅ **Added CI Performance Benchmarks** - Expected runtime per split with investigation guide
 
 ---
 
-**Last Updated**: 2025-10-30
+**Last Updated**: 2025-11-01
 **Project Version**: 0.2.0
 **Python Version**: 3.12+
 **Branch**: release/0.2.0

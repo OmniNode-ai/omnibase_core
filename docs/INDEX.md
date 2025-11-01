@@ -172,6 +172,15 @@ omnibase_core/docs/
 |----------|-------------|--------|
 | [**Threading Guide**](guides/THREADING.md) | Thread safety and concurrency | ✅ Excellent |
 
+### Testing & CI
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [**CI Monitoring Guide**](ci/CI_MONITORING_GUIDE.md) | CI performance monitoring, alerting, and investigation | ✅ Complete |
+| [CI Test Strategy](testing/CI_TEST_STRATEGY.md) | CI/CD test strategy and optimization | ✅ Complete |
+| [Parallel Testing](testing/PARALLEL_TESTING.md) | Parallel test execution configuration | ✅ Complete |
+| [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
+
 ### Architecture Patterns
 
 | Document | Description | Status |
@@ -204,6 +213,7 @@ omnibase_core/docs/
 | **Make nodes thread-safe** | [Threading Guide](guides/THREADING.md) |
 | **Understand the architecture** | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
 | **Test my node** | [Testing Guide](guides/TESTING_GUIDE.md) |
+| **Monitor CI performance** | [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) |
 | **Debug an issue** | Debugging Guide 🚧 Coming Soon |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
 

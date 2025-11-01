@@ -347,7 +347,7 @@ Then re-run the script to validate against new threshold.
 ## Performance Metrics
 
 Based on typical runs with default configuration (3 concurrent splits × 4 workers):
-- **Total Tests**: ~10,987 tests across 12 splits
+- **Total Tests**: 12,198 tests across 12 splits
 - **Execution Time**: 5-8 minutes (vs 30+ sequential, vs 3-5 CI parallel)
 - **Speedup Factor**: ~4-6x faster than sequential
 - **Coverage Accuracy**: Identical to sequential runs
