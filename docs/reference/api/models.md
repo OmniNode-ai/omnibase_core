@@ -188,12 +188,12 @@ exists = cache.contains("key")
 
 #### ModelCircuitBreaker
 
-**Location**: `omnibase_core.models.model_circuit_breaker`
+**Location**: `omnibase_core.models.infrastructure.model_circuit_breaker`
 
 **Purpose**: Circuit breaker for failure handling.
 
 ```python
-from omnibase_core.models.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.infrastructure.model_circuit_breaker import ModelCircuitBreaker
 
 breaker = ModelCircuitBreaker(
     failure_threshold=5,
@@ -223,12 +223,12 @@ else:
 
 #### ModelEffectTransaction
 
-**Location**: `omnibase_core.models.model_effect_transaction`
+**Location**: `omnibase_core.models.infrastructure.model_effect_transaction`
 
 **Purpose**: Transaction management for side effects.
 
 ```python
-from omnibase_core.models.model_effect_transaction import ModelEffectTransaction
+from omnibase_core.models.infrastructure.model_effect_transaction import ModelEffectTransaction
 
 async with ModelEffectTransaction() as transaction:
     # Add operations to transaction

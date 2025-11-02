@@ -10,9 +10,9 @@ from typing import Any
 
 import yaml
 
-from omnibase_core.discovery.model_mixin_info import ModelMixinInfo
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.discovery.model_mixin_info import ModelMixinInfo
 
 # Discovery constants
 MAX_METADATA_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10MB limit for metadata files

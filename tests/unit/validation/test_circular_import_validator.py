@@ -16,7 +16,7 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_module_import_result import ModelModuleImportResult
 from omnibase_core.models.model_validation_result import ModelValidationResult
-from omnibase_core.validators.circular_import_validator import CircularImportValidator
+from omnibase_core.validation.circular_import_validator import CircularImportValidator
 
 
 class TestCircularImportValidatorInitialization:

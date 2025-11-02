@@ -93,6 +93,24 @@ repos:
         exclude: ^(tests/|archive/|archived/|scripts/validation/).*\.py$
         stages: [pre-commit]
         # Note: Takes ~14s on full codebase - consider optimizing script for incremental checks
+        # Architectural exemptions documented in validate_naming.py ARCHITECTURAL_EXEMPTIONS
+
+      - id: validate-file-locations
+        name: ONEX File Location Enforcement
+        entry: poetry run python scripts/validation/validate-file-locations.py
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/).*\.py$
+        stages: [pre-commit]
+
+      - id: validate-no-duplicate-dirs
+        name: ONEX Duplicate Directory Detection
+        entry: poetry run python scripts/validation/validate-no-duplicate-dirs.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
 
       # String Version Anti-Pattern Detection
       # Prevents use of ModelSemVer.parse("X.Y.Z") and direct version string literals

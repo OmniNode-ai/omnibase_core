@@ -47,7 +47,8 @@ from .enum_effect_types import (
 )
 
 # Execution-related enums
-from .enum_execution import EnumExecutionMode, EnumOperationStatus
+from .enum_execution_mode import EnumExecutionMode
+from .enum_execution_trigger import EnumExecutionTrigger
 
 # Function-related enums
 from .enum_function_language import EnumFunctionLanguage
@@ -108,6 +109,7 @@ from .enum_numeric_value_type import EnumNumericValueType
 
 # Response and reply enums
 from .enum_onex_reply_status import EnumOnexReplyStatus
+from .enum_operation_status import EnumOperationStatus
 
 # Orchestrator-related enums (from nodes)
 from .enum_orchestrator_types import (
@@ -206,6 +208,7 @@ __all__ = [
     "EnumTransactionState",
     # Execution domain
     "EnumExecutionMode",
+    "EnumExecutionTrigger",
     # Log level domain
     "EnumLogLevel",
     # Health and status domain
@@ -223,7 +226,6 @@ __all__ = [
     # Orchestrator domain (from nodes)
     "EnumActionType",
     "EnumBranchCondition",
-    "EnumExecutionMode",
     "EnumWorkflowState",
     # Reducer domain (from nodes)
     "EnumConflictResolution",

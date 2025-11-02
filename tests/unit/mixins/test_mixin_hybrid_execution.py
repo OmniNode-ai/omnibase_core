@@ -28,8 +28,8 @@ from uuid import uuid4
 import pytest
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_execution_mode import EnumExecutionMode as ExecutionMode
 from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
-from omnibase_core.mixins.enum_execution_mode import MixinExecutionMode as ExecutionMode
 from omnibase_core.mixins.mixin_hybrid_execution import MixinHybridExecution
 
 

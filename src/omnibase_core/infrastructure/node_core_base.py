@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 from pathlib import Path
 
@@ -25,14 +27,17 @@ Author: ONEX Framework Team
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 # Removed: EnumCoreErrorCode doesn't exist in enums module
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+# Deferred import to avoid circular dependency
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
 class NodeCoreBase(ABC):
@@ -569,7 +574,7 @@ class NodeCoreBase(ABC):
     # across node_effect.py, node_compute.py, node_orchestrator.py, node_reducer.py
     # ========================================================================
 
-    def _find_contract_path(self) -> "Path":
+    def _find_contract_path(self) -> Path:
         """
         Find contract.yaml file using stack frame inspection.
 
@@ -629,7 +634,7 @@ class NodeCoreBase(ABC):
     def _resolve_contract_references(
         self,
         data: Any,
-        base_path: "Path",
+        base_path: Path,
         reference_resolver: Any,
     ) -> Any:
         """

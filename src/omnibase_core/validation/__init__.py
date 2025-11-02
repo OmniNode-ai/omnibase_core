@@ -28,9 +28,15 @@ Usage Examples:
     python -m omnibase_core.validation all
 """
 
+# Import models and enums used by CircularImportValidator
+from omnibase_core.enums.enum_import_status import EnumImportStatus
+from omnibase_core.models.model_module_import_result import ModelModuleImportResult
+from omnibase_core.models.model_validation_result import ModelValidationResult
+
 # Import validation functions for easy access
 from .architecture import validate_architecture_directory, validate_one_model_per_file
 from .auditor_protocol import ModelProtocolAuditor
+from .circular_import_validator import CircularImportValidator
 
 # Import CLI for module execution
 from .cli import ModelValidationSuite
@@ -100,8 +106,12 @@ def validate_all(
 
 __all__ = [
     # Core classes and types
+    "CircularImportValidator",
     "ConfigurationError",
+    "EnumImportStatus",
     "ModelContractValidationResult",
+    "ModelModuleImportResult",
+    "ModelValidationResult",
     "ProtocolContractValidator",
     "InputValidationError",
     "ModelProtocolAuditor",

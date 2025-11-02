@@ -22,7 +22,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_environment import EnumEnvironment
-from omnibase_core.enums.enum_execution_mode import EnumExecutionMode
+from omnibase_core.enums.enum_execution_trigger import EnumExecutionTrigger
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
@@ -48,9 +48,9 @@ class ModelExampleContextData(BaseModel):
     )
 
     # Execution context
-    execution_mode: EnumExecutionMode = Field(
-        default=EnumExecutionMode.AUTO,
-        description="Execution mode",
+    execution_mode: EnumExecutionTrigger = Field(
+        default=EnumExecutionTrigger.AUTO,
+        description="Execution trigger mode",
     )
     timeout_seconds: float = Field(default=30.0, description="Timeout in seconds")
 

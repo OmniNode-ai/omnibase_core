@@ -31,11 +31,11 @@ Validation Tools:
         python -m omnibase_core.validation all
 
 Validators:
-    The validators module provides reusable validation tools that can be used
+    The validation module provides reusable validation tools that can be used
     by any project consuming omnibase_core as a dependency.
 
     Quick usage:
-        from omnibase_core.validators import CircularImportValidator
+        from omnibase_core.validation import CircularImportValidator
 
         # Detect circular imports
         validator = CircularImportValidator(source_path="/path/to/src")

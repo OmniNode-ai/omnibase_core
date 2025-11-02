@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_environment import EnumEnvironment
-from omnibase_core.enums.enum_execution_mode import EnumExecutionMode
+from omnibase_core.enums.enum_execution_trigger import EnumExecutionTrigger
 from omnibase_core.models.config.model_example_context_data import (
     ModelExampleContextData,
 )
@@ -24,7 +24,7 @@ class TestModelExampleContextData:
 
         assert context.context_type == EnumContextType.USER
         assert context.environment == EnumEnvironment.DEVELOPMENT
-        assert context.execution_mode == EnumExecutionMode.AUTO
+        assert context.execution_mode == EnumExecutionTrigger.AUTO
         assert context.timeout_seconds == 30.0
         assert context.environment_variables == {}
         assert context.configuration_overrides == {}
@@ -43,7 +43,7 @@ class TestModelExampleContextData:
         context = ModelExampleContextData(
             context_type=EnumContextType.SYSTEM,
             environment=EnumEnvironment.STAGING,
-            execution_mode=EnumExecutionMode.MANUAL,
+            execution_mode=EnumExecutionTrigger.MANUAL,
             timeout_seconds=60.0,
             environment_variables={"DEBUG": "true"},
             user_id=test_user_id,
@@ -55,7 +55,7 @@ class TestModelExampleContextData:
 
         assert context.context_type == EnumContextType.SYSTEM
         assert context.environment == EnumEnvironment.STAGING
-        assert context.execution_mode == EnumExecutionMode.MANUAL
+        assert context.execution_mode == EnumExecutionTrigger.MANUAL
         assert context.timeout_seconds == 60.0
         assert context.environment_variables == {"DEBUG": "true"}
         assert context.user_id == test_user_id
@@ -136,7 +136,7 @@ class TestModelExampleContextData:
         context = ModelExampleContextData(
             context_type=EnumContextType.BATCH,
             environment=EnumEnvironment.PRODUCTION,
-            execution_mode=EnumExecutionMode.SCHEDULED,
+            execution_mode=EnumExecutionTrigger.SCHEDULED,
             timeout_seconds=300.0,
             environment_variables={
                 "DATABASE_URL": "postgresql://localhost:5432/test",
@@ -160,7 +160,7 @@ class TestModelExampleContextData:
         # Verify all fields
         assert context.context_type == EnumContextType.BATCH
         assert context.environment == EnumEnvironment.PRODUCTION
-        assert context.execution_mode == EnumExecutionMode.SCHEDULED
+        assert context.execution_mode == EnumExecutionTrigger.SCHEDULED
         assert context.timeout_seconds == 300.0
         assert len(context.environment_variables) == 3
         assert (
@@ -227,7 +227,7 @@ class TestModelExampleContextData:
 
         assert context.context_type == EnumContextType.API
         assert context.environment == EnumEnvironment.TESTING
-        assert context.execution_mode == EnumExecutionMode.AUTO
+        assert context.execution_mode == EnumExecutionTrigger.AUTO
         assert context.timeout_seconds == 45.0
         assert context.environment_variables == {"MODE": "test"}
         assert context.configuration_overrides == {"debug": "true", "port": "8080"}
@@ -269,7 +269,7 @@ class TestModelExampleContextData:
         original = ModelExampleContextData(
             context_type=EnumContextType.INTERACTIVE,
             environment=EnumEnvironment.TESTING,
-            execution_mode=EnumExecutionMode.MANUAL,
+            execution_mode=EnumExecutionTrigger.MANUAL,
             timeout_seconds=120.0,
             environment_variables={"ROUND_TRIP": "test"},
             configuration_overrides={"setting": "42", "enabled": "true"},

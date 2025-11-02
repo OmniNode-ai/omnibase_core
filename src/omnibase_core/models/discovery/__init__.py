@@ -54,6 +54,7 @@ from .model_hub_consul_registration_io import (
 from .model_hub_registration_event import ModelHubRegistrationEvent
 from .model_introspection_filters import ModelIntrospectionFilters
 from .model_introspection_response_event import ModelIntrospectionResponseEvent
+from .model_mixin_info import ModelMixinInfo
 from .model_node_health_event import ModelNodeHealthEvent
 from .model_node_introspection_event import (
     ModelNodeCapabilities,
@@ -94,6 +95,7 @@ __all__ = [
     "ModelHubRegistrationEvent",
     "ModelIntrospectionFilters",
     "ModelIntrospectionResponseEvent",
+    "ModelMixinInfo",
     "ModelNodeCapabilities",
     "ModelNodeHealthEvent",
     "ModelNodeIntrospectionEvent",

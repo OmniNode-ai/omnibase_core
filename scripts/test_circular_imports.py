@@ -3,13 +3,13 @@
 Comprehensive Circular Import Test
 
 Tests all Python modules in the codebase for circular import issues.
-This script now uses the reusable CircularImportValidator from omnibase_core.validators.
+This script now uses the reusable CircularImportValidator from omnibase_core.validation.
 """
 
 import sys
 from pathlib import Path
 
-from omnibase_core.validators import CircularImportValidator
+from omnibase_core.validation import CircularImportValidator
 
 
 def main() -> int:

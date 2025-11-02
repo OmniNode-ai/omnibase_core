@@ -183,7 +183,7 @@ Use thread-local circuit breakers for isolated failure tracking:
 
 ```python
 import threading
-from omnibase_core.models.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.infrastructure.model_circuit_breaker import ModelCircuitBreaker
 
 class ThreadLocalCircuitBreakerManager:
     """Manages thread-local circuit breakers."""
@@ -208,7 +208,7 @@ Add synchronization to circuit breaker operations:
 
 ```python
 from threading import Lock
-from omnibase_core.models.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.infrastructure.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.enums.enum_effect_types import EnumCircuitBreakerState
 
 class ThreadSafeCircuitBreaker:
@@ -257,7 +257,7 @@ class ThreadSafeCircuitBreaker:
 
 ```python
 from uuid import uuid4
-from omnibase_core.models.model_effect_transaction import ModelEffectTransaction
+from omnibase_core.models.infrastructure.model_effect_transaction import ModelEffectTransaction
 
 async def execute_isolated_effect(effect_node, operation_data):
     """Execute effect with transaction isolation.

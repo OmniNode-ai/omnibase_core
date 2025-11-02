@@ -1,5 +1,5 @@
 """
-Test suite for validators package __init__.py.
+Test suite for validation package __init__.py.
 
 Tests that all validators and related models are properly exported
 and accessible from the package level.
@@ -8,12 +8,12 @@ and accessible from the package level.
 import pytest
 
 
-class TestValidatorsPackageExports:
-    """Test validators package exports."""
+class TestValidationPackageExports:
+    """Test validation package exports."""
 
     def test_circular_import_validator_export(self) -> None:
         """Test that CircularImportValidator is exported."""
-        from omnibase_core.validators import CircularImportValidator
+        from omnibase_core.validation import CircularImportValidator
 
         assert CircularImportValidator is not None
         assert hasattr(CircularImportValidator, "__init__")
@@ -23,7 +23,7 @@ class TestValidatorsPackageExports:
         """Test that ModelValidationResult is exported."""
         import dataclasses
 
-        from omnibase_core.validators import ModelValidationResult
+        from omnibase_core.validation import ModelValidationResult
 
         assert ModelValidationResult is not None
         # Verify it's a dataclass
@@ -38,7 +38,7 @@ class TestValidatorsPackageExports:
         """Test that ModelModuleImportResult is exported."""
         import dataclasses
 
-        from omnibase_core.validators import ModelModuleImportResult
+        from omnibase_core.validation import ModelModuleImportResult
 
         assert ModelModuleImportResult is not None
         # Verify it's a dataclass
@@ -50,7 +50,7 @@ class TestValidatorsPackageExports:
 
     def test_enum_import_status_export(self) -> None:
         """Test that EnumImportStatus is exported."""
-        from omnibase_core.validators import EnumImportStatus
+        from omnibase_core.validation import EnumImportStatus
 
         assert EnumImportStatus is not None
         # Verify it has expected enum values
@@ -60,7 +60,7 @@ class TestValidatorsPackageExports:
 
     def test_all_exports_list(self) -> None:
         """Test that __all__ contains expected exports."""
-        from omnibase_core import validators
+        from omnibase_core import validation
 
         expected_exports = [
             "CircularImportValidator",
@@ -69,13 +69,19 @@ class TestValidatorsPackageExports:
             "EnumImportStatus",
         ]
 
-        assert hasattr(validators, "__all__")
-        assert set(validators.__all__) == set(expected_exports)
+        assert hasattr(validation, "__all__")
+        # CircularImportValidator should be in the validation __all__ list
+        assert "CircularImportValidator" in validation.__all__
+        # Check that all expected exports are in __all__
+        for export in expected_exports:
+            assert (
+                export in validation.__all__
+            ), f"{export} not found in validation.__all__"
 
     def test_package_imports_work(self) -> None:
         """Test that package-level imports work correctly."""
         # Test wildcard import pattern
-        from omnibase_core.validators import (
+        from omnibase_core.validation import (
             CircularImportValidator,
             EnumImportStatus,
             ModelModuleImportResult,
@@ -90,7 +96,7 @@ class TestValidatorsPackageExports:
 
     def test_validator_instantiation_from_package(self, tmp_path) -> None:
         """Test that validator can be instantiated from package import."""
-        from omnibase_core.validators import CircularImportValidator
+        from omnibase_core.validation import CircularImportValidator
 
         # Should be able to create instance
         validator = CircularImportValidator(source_path=tmp_path)

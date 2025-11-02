@@ -10,9 +10,9 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.discovery.mixin_discovery import MixinDiscovery
-from omnibase_core.discovery.model_mixin_info import ModelMixinInfo
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.discovery.model_mixin_info import ModelMixinInfo
 from omnibase_core.primitives.model_semver import ModelSemVer
 
 

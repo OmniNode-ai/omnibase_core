@@ -1,6 +1,6 @@
 from typing import Any
 
-from .error_fail_fast import FailFastError
+from omnibase_core.mixins.error_fail_fast import FailFastError
 
 
 class ValidationFailedError(FailFastError):

@@ -79,6 +79,75 @@ class NamingConventionValidator:
         r".*Exception$",  # Exception classes
     ]
 
+    # Architectural exemptions - intentional design decisions where naming deviates from standard conventions
+    # These are documented, justified architectural patterns that serve specific purposes
+    ARCHITECTURAL_EXEMPTIONS = {
+        # UTILITY MODELS: Models that serve utility functions, not domain data
+        # Location: utils/ - These are helper models for utility operations
+        # Rationale: Utility models don't belong in models/ as they're not domain data models
+        "utils/": [
+            "ModelFieldConverterRegistry",  # Field conversion utility model
+        ],
+        # PRIMITIVE TYPE WRAPPERS: Models wrapping primitive types
+        # Location: primitives/ - Fundamental type wrappers like ModelSemVer
+        # Rationale: Primitive wrappers are foundational types, not business models
+        "primitives/": [
+            "ModelSemVer",  # Semantic version primitive wrapper
+        ],
+        # VALIDATION FRAMEWORK MODELS: Models specific to validation infrastructure
+        # Location: validation/ - Validation-specific data models
+        # Rationale: Validation models are tightly coupled to validation logic
+        "validation/": [
+            "Model*",  # All validation-specific models
+        ],
+        # INFRASTRUCTURE BASE CLASSES: Abstract base classes (archetypes, not implementations)
+        # Location: infrastructure/ - Core infrastructure patterns
+        # Rationale: NodeBase and NodeCoreBase are abstract archetypes, not concrete node implementations
+        #            Concrete nodes (NodeComputeCache, NodeEffectAuth, etc.) live in nodes/ and follow Node* naming
+        "infrastructure/": [
+            "NodeBase",  # Abstract base for all nodes
+            "NodeCoreBase",  # Abstract core base with DI support
+        ],
+        # CONTAINER INFRASTRUCTURE: Service registry and DI infrastructure
+        # Location: container/ - Dependency injection infrastructure
+        # Rationale: ServiceRegistry is infrastructure, not a domain service implementation
+        "container/": [
+            "ServiceRegistry",  # DI service registry infrastructure
+        ],
+    }
+
+    @staticmethod
+    def _matches_architectural_exemption(class_name: str, file_path: Path) -> bool:
+        """Check if a class matches documented architectural exemptions.
+
+        Architectural exemptions are intentional design decisions where classes
+        are placed outside their typical naming convention directory for valid
+        architectural reasons (e.g., utilities, primitives, infrastructure).
+
+        Returns:
+            True if class is architecturally exempt from standard naming rules
+        """
+        for (
+            directory,
+            exempted_patterns,
+        ) in NamingConventionValidator.ARCHITECTURAL_EXEMPTIONS.items():
+            # Check if file is in the exempted directory
+            if directory not in str(file_path):
+                continue
+
+            # Check if class matches any exempted pattern
+            for pattern in exempted_patterns:
+                if pattern.endswith("*"):
+                    # Wildcard pattern (e.g., "Model*")
+                    prefix = pattern[:-1]
+                    if class_name.startswith(prefix):
+                        return True
+                elif class_name == pattern:
+                    # Exact match
+                    return True
+
+        return False
+
     def __init__(self, repo_path: Path):
         self.repo_path = repo_path
         self.violations: list[NamingViolation] = []
@@ -315,7 +384,27 @@ class NamingConventionValidator:
 
         # Check if this file is in the right directory for this category
         expected_dir = rules["directory"]
-        in_correct_directory = expected_dir is None or expected_dir in str(file_path)
+
+        # Check architectural exemptions FIRST - these override standard directory rules
+        if self._matches_architectural_exemption(class_name, file_path):
+            # This class is architecturally exempt - skip all directory validation
+            return
+
+        # Special handling for Model* classes - allow in models/, infrastructure/, and container/
+        # These directories can contain Model* classes that are not Pydantic data models:
+        # - models/: Primary location for Pydantic data models
+        # - infrastructure/: Infrastructure classes (ModelCircuitBreaker, ModelComputeCache, etc.)
+        # - container/: DI container classes (ModelONEXContainer)
+        if category == "models" and class_name.startswith("Model"):
+            ALLOWED_MODEL_DIRECTORIES = ["models/", "infrastructure/", "container/"]
+            in_correct_directory = any(
+                allowed_dir in str(file_path)
+                for allowed_dir in ALLOWED_MODEL_DIRECTORIES
+            )
+        else:
+            in_correct_directory = expected_dir is None or expected_dir in str(
+                file_path
+            )
 
         # If class matches pattern but file is in wrong place
         if re.match(pattern, class_name) and not in_correct_directory:
@@ -434,6 +523,11 @@ def main():
     parser = argparse.ArgumentParser(description="Validate omni* naming conventions")
     parser.add_argument("repo_path", help="Path to repository root")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+    parser.add_argument(
+        "--fail-on-warnings",
+        action="store_true",
+        help="Exit with error code if warnings are found (in addition to errors)",
+    )
 
     args = parser.parse_args()
 
@@ -447,12 +541,23 @@ def main():
 
     print(validator.generate_report())
 
-    if is_valid:
+    errors = len([v for v in validator.violations if v.severity == "error"])
+    warnings = len([v for v in validator.violations if v.severity == "warning"])
+
+    # Exit with error if we have errors, or if we have warnings and --fail-on-warnings is set
+    has_failures = errors > 0 or (args.fail_on_warnings and warnings > 0)
+
+    if not has_failures:
         print("\n✅ SUCCESS: All naming conventions are compliant!")
         sys.exit(0)
     else:
-        errors = len([v for v in validator.violations if v.severity == "error"])
-        print(f"\n❌ FAILURE: {errors} naming violations must be fixed!")
+        if args.fail_on_warnings and warnings > 0:
+            print(
+                f"\n❌ FAILURE: {errors} error(s) and {warnings} warning(s) must be fixed!"
+            )
+            print("   (--fail-on-warnings flag is set)")
+        else:
+            print(f"\n❌ FAILURE: {errors} naming violations must be fixed!")
         sys.exit(1)
 
 
