@@ -10,7 +10,10 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_metadata_tool_complexity import EnumMetadataToolComplexity
 from omnibase_core.enums.enum_metadata_tool_status import EnumMetadataToolStatus
 from omnibase_core.enums.enum_metadata_tool_type import EnumMetadataToolType
-from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
+)
 
 from .model_audit_entry import ModelAuditEntry
 from .model_metadata_tool_usage_metrics import ModelMetadataToolUsageMetrics

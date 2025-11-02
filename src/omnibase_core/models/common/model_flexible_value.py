@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_error_context import ModelErrorContext
 from .model_schema_value import ModelSchemaValue

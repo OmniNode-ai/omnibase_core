@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 if TYPE_CHECKING:
-    from omnibase_core.primitives.model_semver import ModelSemVer
+    from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TypedDictUsageMetadata(TypedDict, total=False):

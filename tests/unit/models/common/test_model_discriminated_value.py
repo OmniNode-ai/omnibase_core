@@ -5,10 +5,10 @@ import json
 import pytest
 
 from omnibase_core.enums.enum_discriminated_value_type import EnumDiscriminatedValueType
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_discriminated_value import (
     ModelDiscriminatedValue,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelDiscriminatedValueInstantiation:

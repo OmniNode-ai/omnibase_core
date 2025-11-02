@@ -3,8 +3,8 @@ from typing import Optional, Union
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 ONEX-Compliant JSON Data Model for Configuration System

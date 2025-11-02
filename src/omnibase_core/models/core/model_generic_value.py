@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 
 from omnibase_core.enums.enum_value_type import EnumValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelGenericValue(BaseModel):

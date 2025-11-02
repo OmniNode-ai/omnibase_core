@@ -19,8 +19,8 @@ from uuid import UUID
 import pytest
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.contracts.model_trigger_mappings import ModelTriggerMappings
+from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
 
 class TestModelTriggerMappings:

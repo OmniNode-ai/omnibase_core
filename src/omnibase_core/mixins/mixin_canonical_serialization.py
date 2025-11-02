@@ -30,9 +30,9 @@ from pydantic import Field
 
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 def _strip_comment_prefix(
@@ -130,7 +130,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 import uuid as uuid_lib
                 from datetime import datetime, timezone
 
-                from omnibase_core.primitives.model_semver import ModelSemVer
+                from omnibase_core.models.primitives.model_semver import ModelSemVer
 
                 # Handle version conversion if it's a string
                 version_value = original_dict.get("version")
@@ -282,7 +282,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             from omnibase_core.models.core.model_onex_version import (
                 ModelOnexVersionInfo,
             )
-            from omnibase_core.primitives.model_semver import ModelSemVer
+            from omnibase_core.models.primitives.model_semver import ModelSemVer
 
             canonical_versions = ModelOnexVersionInfo(
                 metadata_version=ModelSemVer(major=0, minor=1, patch=0),

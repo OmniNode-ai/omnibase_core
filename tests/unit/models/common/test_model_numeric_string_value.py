@@ -23,11 +23,11 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_numeric_value_type import EnumNumericValueType
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_coercion_mode import EnumCoercionMode
 from omnibase_core.models.common.model_numeric_string_value import (
     ModelNumericStringValue,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # ============================================================================
 # Part 1: Basic Creation (15 tests)

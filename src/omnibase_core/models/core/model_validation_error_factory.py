@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Generic, TypedDict, TypeVar
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Validation Error Factory Pattern for Model Creation.

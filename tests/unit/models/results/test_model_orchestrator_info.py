@@ -17,11 +17,11 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.results.model_orchestrator_info import ModelOrchestratorInfo
 from omnibase_core.models.results.model_orchestrator_metrics import (
     ModelOrchestratorMetrics,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestModelOrchestratorInfoBasicInstantiation:

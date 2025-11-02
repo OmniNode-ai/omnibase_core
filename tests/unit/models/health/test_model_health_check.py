@@ -4,7 +4,7 @@ import pytest
 from pydantic import HttpUrl
 
 from omnibase_core.enums.enum_health_check_type import EnumHealthCheckType
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.health.model_health_check import ModelHealthCheck
 
 

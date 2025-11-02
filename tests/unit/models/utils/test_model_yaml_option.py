@@ -10,7 +10,7 @@ import pytest
 
 from omnibase_core.enums.enum_yaml_option_type import EnumYamlOptionType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.utils.model_yaml_option import ModelYamlOption
 
 

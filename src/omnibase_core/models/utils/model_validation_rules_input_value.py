@@ -12,8 +12,8 @@ from omnibase_core.enums.enum_validation_rules_input_type import (
     EnumValidationRulesInputType,
 )
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelValidationRulesInputValue(BaseModel):

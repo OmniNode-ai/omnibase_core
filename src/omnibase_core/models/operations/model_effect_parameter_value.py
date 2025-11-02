@@ -6,7 +6,7 @@ from typing import Union
 from pydantic import Field, ValidationInfo, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nStrongly-typed effect parameter value model.\n\nRepresents discriminated union for effect parameter values.\nFollows ONEX strong typing principles and one-model-per-file architecture.\n"
 from typing import Any

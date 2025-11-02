@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_handler_source import EnumHandlerSource
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_can_handle_result import ModelCanHandleResult
 from .model_serialized_block import ModelSerializedBlock

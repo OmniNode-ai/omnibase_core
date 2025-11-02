@@ -42,7 +42,7 @@ from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Safe runtime imports
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict

@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_policy_value import ModelPolicyValue
 
 

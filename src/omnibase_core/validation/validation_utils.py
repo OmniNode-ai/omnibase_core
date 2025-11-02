@@ -10,15 +10,17 @@ import hashlib
 import logging
 from pathlib import Path
 
+from omnibase_core.models.validation.model_duplication_info import DuplicationInfo
+from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
+from omnibase_core.models.validation.model_protocol_signature_extractor import (
+    ProtocolSignatureExtractor,
+)
+from omnibase_core.models.validation.model_validation_result import ValidationResult
 from omnibase_core.types.typed_dict_validation_metadata_type import (
     TypedDictValidationMetadataType,
 )
 
 from .exceptions import InputValidationError
-from .model_duplication_info import DuplicationInfo
-from .model_protocol_info import ModelProtocolInfo
-from .model_protocol_signature_extractor import ProtocolSignatureExtractor
-from .model_validation_result import ValidationResult
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)

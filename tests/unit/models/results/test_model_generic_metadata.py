@@ -16,8 +16,8 @@ from datetime import datetime
 import pytest
 from pydantic import BaseModel, ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.results.model_generic_metadata import ModelGenericMetadata
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestModelGenericMetadataBasicInstantiation:

@@ -16,9 +16,12 @@ from omnibase_spi.protocols.validation.protocol_quality_validator import (
     ProtocolQualityValidator,
 )
 
+from omnibase_core.models.validation.model_audit_result import ModelAuditResult
+from omnibase_core.models.validation.model_duplication_report import (
+    ModelDuplicationReport,
+)
+
 from .exceptions import ConfigurationError, InputValidationError
-from .model_audit_result import ModelAuditResult
-from .model_duplication_report import ModelDuplicationReport
 from .validation_utils import (
     DuplicationInfo,
     ModelProtocolInfo,

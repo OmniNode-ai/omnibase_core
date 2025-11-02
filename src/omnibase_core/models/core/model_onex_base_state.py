@@ -4,8 +4,11 @@ from typing import Any, Optional, cast
 from pydantic import field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
+)
 
 from .model_onex_output_state import ModelOnexOutputState
 

@@ -44,7 +44,7 @@ from omnibase_core.models.discovery.model_request_introspection_event import (
 # from omnibase_core.nodes.node_registry.v1_0_0.tools.tool_unified_discovery import (
 #     ToolUnifiedDiscovery,
 # )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Marker for skipping tests that require unimplemented tools
 pytest.skip(

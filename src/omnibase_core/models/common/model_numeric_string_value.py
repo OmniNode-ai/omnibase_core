@@ -7,8 +7,8 @@ from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_numeric_value_type import EnumNumericValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_coercion_mode import EnumCoercionMode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 ModelNumericStringValue

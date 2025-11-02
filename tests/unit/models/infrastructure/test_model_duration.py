@@ -3,7 +3,7 @@
 import pytest
 
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
-from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.infrastructure.model_duration import ModelDuration
 
 

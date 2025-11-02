@@ -60,7 +60,7 @@ from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 # Note: EnumOnexErrorCode is defined in this file and in error_codes.py
 # This file appears to be a legacy/duplicate file that's not imported anywhere
 # TODO: Consider removing this file entirely in favor of error_codes.py
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.uuid_service import UtilUUID
 
 

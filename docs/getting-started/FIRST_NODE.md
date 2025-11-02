@@ -219,7 +219,7 @@ import time
 from typing import Dict, Any
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from ..models.temperature_input import TemperatureInput
@@ -359,7 +359,7 @@ class TemperatureConverterCompute(NodeCompute):
 
 import pytest
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from temperature_converter.nodes.temperature_converter_compute import TemperatureConverterCompute
 from temperature_converter.enums.temperature_unit import TemperatureUnit

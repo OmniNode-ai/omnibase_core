@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 from pydantic import Field
 
 from omnibase_core.errors import OnexError
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Unified Event Bus Mixin for ONEX Nodes

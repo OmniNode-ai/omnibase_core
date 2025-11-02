@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Metadata Field Info Model
@@ -19,7 +19,7 @@ from pydantic import BaseModel
 from omnibase_core.enums.enum_field_type import EnumFieldType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.infrastructure.model_value import ModelValue
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 from .model_field_identity import ModelFieldIdentity

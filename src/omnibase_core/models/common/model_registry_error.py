@@ -12,7 +12,7 @@ from pydantic import Field
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.errors.error_codes import EnumRegistryErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelRegistryError(ModelOnexError):

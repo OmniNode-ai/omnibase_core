@@ -1,4 +1,4 @@
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors import ModelOnexError
 
 """
 EnumBackendType: Enumeration of secret backend types.

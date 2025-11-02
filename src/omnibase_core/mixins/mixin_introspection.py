@@ -63,7 +63,10 @@ from omnibase_core.models.core.model_state import ModelState
 from omnibase_core.models.core.model_state_field import ModelStateField
 from omnibase_core.models.core.model_state_models import ModelStates
 from omnibase_core.models.core.model_version_status import ModelVersionStatus
-from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
+)
 
 
 class MixinNodeIntrospection(ABC):

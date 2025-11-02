@@ -9,7 +9,7 @@ from omnibase_core.models.configuration.model_performance_constraints import (
     ModelPerformanceConstraints,
 )
 from omnibase_core.models.core.model_capability import ModelCapability
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelNodeType(BaseModel):

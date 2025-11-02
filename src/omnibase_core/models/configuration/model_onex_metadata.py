@@ -16,7 +16,7 @@ from omnibase_core.enums.enum_metadata import (
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_node_metadata import Namespace
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.enums import EnumProtocolVersion

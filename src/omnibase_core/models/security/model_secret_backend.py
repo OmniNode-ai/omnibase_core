@@ -11,7 +11,7 @@ from omnibase_core.enums.enum_scalability_level import EnumScalabilityLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 from omnibase_core.enums.enum_throughput_level import EnumThroughputLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_backend_capabilities import ModelBackendCapabilities
 from .model_backend_config import ModelBackendConfig

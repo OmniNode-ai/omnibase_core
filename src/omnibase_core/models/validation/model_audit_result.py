@@ -12,8 +12,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from .exceptions import ConfigurationError, InputValidationError
-from .validation_utils import (
+from omnibase_core.validation.exceptions import ConfigurationError, InputValidationError
+from omnibase_core.validation.validation_utils import (
     DuplicationInfo,
     ModelProtocolInfo,
     determine_repository_name,

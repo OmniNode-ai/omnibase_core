@@ -17,10 +17,10 @@ from omnibase_core.enums.enum_metadata_tool_complexity import EnumMetadataToolCo
 from omnibase_core.enums.enum_metadata_tool_status import EnumMetadataToolStatus
 from omnibase_core.enums.enum_metadata_tool_type import EnumMetadataToolType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_audit_entry import ModelAuditEntry
 from omnibase_core.models.core.model_function_tool import ModelFunctionTool
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_metadata_tool_analytics import ModelMetadataToolAnalytics
 from .model_metadata_tool_info import ModelMetadataToolInfo
@@ -246,7 +246,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                 self.root["_tool_info"][name] = tool_info.model_dump()
             elif name not in self.root.get("_tool_info", {}):
                 # Create default tool info
-                from omnibase_core.primitives.model_semver import (
+                from omnibase_core.models.primitives.model_semver import (
                     parse_semver_from_string,
                 )
 
@@ -621,7 +621,9 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         collection = cls(tools_dict)
 
         # Add basic tool info for each tool
-        from omnibase_core.primitives.model_semver import parse_semver_from_string
+        from omnibase_core.models.primitives.model_semver import (
+            parse_semver_from_string,
+        )
 
         for name, tool in tools_dict.items():
             if hasattr(tool, "name") and hasattr(tool, "description"):

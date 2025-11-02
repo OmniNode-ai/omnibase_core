@@ -225,7 +225,7 @@ import time
 from typing import Dict
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_price_calculator_input import ModelPriceCalculatorInput

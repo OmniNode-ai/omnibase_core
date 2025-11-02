@@ -149,7 +149,7 @@ class BadNode(NodeCompute):
 **✅ Good Practice**: Proper error handling with context
 
 ```python
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 class GoodNode(NodeCompute):

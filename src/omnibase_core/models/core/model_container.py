@@ -16,7 +16,7 @@ repetitive patterns while maintaining type safety.
 
 from typing import TYPE_CHECKING
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from collections.abc import Callable as CallableABC

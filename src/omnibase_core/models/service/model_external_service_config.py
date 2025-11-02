@@ -2,7 +2,6 @@ from typing import Any, Generic
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_database_connection_config import (
     ModelDatabaseConnectionConfig,
 )
@@ -15,6 +14,7 @@ from omnibase_core.models.configuration.model_rest_api_connection_config import 
     ModelRestApiConnectionConfig,
 )
 from omnibase_core.models.core.model_retry_config import ModelRetryConfig
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_security_utils import ModelSecurityUtils
 from omnibase_core.models.service.model_masked_config import ModelMaskedConfig
 

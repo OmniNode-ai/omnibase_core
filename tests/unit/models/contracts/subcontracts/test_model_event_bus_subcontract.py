@@ -6,11 +6,11 @@ Comprehensive tests for event bus subcontract configuration and validation.
 
 import pytest
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.subcontracts.model_event_bus_subcontract import (
     ModelEventBusSubcontract,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelEventBusSubcontractInitialization:

@@ -5,8 +5,8 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
-from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.infrastructure.model_timeout import ModelTimeout
 
 

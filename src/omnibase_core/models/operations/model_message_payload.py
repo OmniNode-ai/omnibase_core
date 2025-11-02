@@ -26,7 +26,7 @@ from omnibase_core.models.operations.model_notification_message_content import (
 from omnibase_core.models.operations.model_query_message_content import (
     ModelQueryMessageContent,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 # Discriminator function for message content union

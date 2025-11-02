@@ -5,7 +5,7 @@ from typing import TypedDict, Union
 
 from pydantic import model_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Unified CLI interface for all omnibase_core validation tools.

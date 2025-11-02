@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Structured Description Model.

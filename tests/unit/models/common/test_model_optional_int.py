@@ -6,11 +6,11 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_optional_int import (
     EnumCoercionMode,
     ModelOptionalInt,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelOptionalIntNoneHandling:

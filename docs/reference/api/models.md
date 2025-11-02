@@ -80,7 +80,7 @@ output_data = ModelComputeOutput(
 **Purpose**: Standard error model for ONEX framework.
 
 ```python
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 error = ModelOnexError(

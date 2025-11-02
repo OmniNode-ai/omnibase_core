@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_group_status import EnumGroupStatus
-    from omnibase_core.primitives.model_semver import SemVerField
+    from omnibase_core.models.primitives.model_semver import SemVerField
 
 
 class ModelGroupTool(BaseModel):

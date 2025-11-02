@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.validation.exceptions import InputValidationError
-from omnibase_core.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.validation.validation_utils import (
     ProtocolSignatureExtractor,
     determine_repository_name,

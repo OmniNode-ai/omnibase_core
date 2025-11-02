@@ -12,7 +12,6 @@ from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 from omnibase_core.enums import EnumLifecycle, EnumMetaType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Removed mixin imports - these violate ONEX architecture where models should be pure data structures
 # Hash computation and YAML serialization are now available as utility functions
@@ -28,8 +27,9 @@ from omnibase_core.models.core.model_project_metadata import get_canonical_versi
 from omnibase_core.models.core.model_serializable_dict import ModelSerializableDict
 from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.models.core.model_tool_collection import ModelToolCollection
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_metadata_constants import get_namespace_prefix
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Default version constants - overridden at serialization time by get_canonical_versions()
 # Using ModelSemVer to avoid hardcoded version strings

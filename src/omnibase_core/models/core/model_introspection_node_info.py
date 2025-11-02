@@ -1,6 +1,6 @@
 from pydantic import Field, field_validator
 
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Model for node information in introspection metadata.
@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from omnibase_core.models.core.model_introspection_node_info_config import (
     ModelIntrospectionNodeInfoConfig,
 )
-from omnibase_core.primitives.model_semver import parse_semver_from_string
+from omnibase_core.models.primitives.model_semver import parse_semver_from_string
 
 
 class ModelIntrospectionNodeInfo(BaseModel):

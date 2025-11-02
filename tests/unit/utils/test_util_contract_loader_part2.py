@@ -33,14 +33,14 @@ import pytest
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_contract_content import ModelContractContent
 from omnibase_core.models.core.model_contract_definitions import (
     ModelContractDefinitions,
 )
 from omnibase_core.models.core.model_tool_specification import ModelToolSpecification
 from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.util_contract_loader import ProtocolContractLoader
 
 # ===== Test Fixtures =====

@@ -15,7 +15,7 @@ Safe Runtime Imports (OK to import at module level):
 
 import ast
 
-from .model_union_pattern import ModelUnionPattern
+from omnibase_core.models.validation.model_union_pattern import ModelUnionPattern
 
 
 class UnionUsageChecker(ast.NodeVisitor):

@@ -37,11 +37,11 @@ from omnibase_core.enums.enum_reducer_types import (
     EnumStreamingMode,
 )
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_conflict_resolver import ModelConflictResolver
 from omnibase_core.models.model_intent import ModelIntent
 from omnibase_core.models.model_reducer_input import ModelReducerInput, T_Input

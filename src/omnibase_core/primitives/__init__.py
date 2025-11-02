@@ -17,7 +17,7 @@ Primitives should be:
 - Represent atomic concepts (version, timestamp, ID, etc.)
 """
 
-from omnibase_core.primitives.model_semver import (
+from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     SemVerField,
     parse_input_state_version,

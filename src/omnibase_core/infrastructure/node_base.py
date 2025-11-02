@@ -3,8 +3,8 @@ from __future__ import annotations
 import uuid
 from typing import Any, Generic, Optional, TypeVar
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 NodeBase for ONEX ModelArchitecture.

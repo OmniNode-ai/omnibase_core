@@ -14,7 +14,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Default version constants
 DEFAULT_METADATA_VERSION = ModelSemVer(major=0, minor=1, patch=0)

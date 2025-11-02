@@ -23,7 +23,7 @@ from pydantic import BaseModel, ValidationError
 
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 # Test payload models

@@ -5,7 +5,7 @@ from typing import Optional, cast
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 ModelTypedMapping

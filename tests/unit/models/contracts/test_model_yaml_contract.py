@@ -6,8 +6,8 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
+from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
 
 class TestModelYamlContract:

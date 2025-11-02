@@ -7,7 +7,7 @@ from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.discovery.model_nodeintrospectionevent import (
     ModelNodeIntrospectionEvent,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 "\nIntrospection Publisher Mixin.\n\nThis mixin handles:\n- Gathering node introspection data from various sources\n- Publishing NODE_INTROSPECTION_EVENT for service discovery\n- Extracting actions, protocols, metadata from nodes\n- Retry logic for failed publishes\n"
 import re
@@ -18,7 +18,6 @@ from pydantic import BaseModel, ValidationError
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_node_introspection_data import (
     MixinNodeIntrospectionData,
@@ -27,6 +26,7 @@ from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 _COMPONENT_NAME = Path(__file__).stem
 DEFAULT_AUTHOR = "ONEX"

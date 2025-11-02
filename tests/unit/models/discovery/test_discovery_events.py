@@ -24,7 +24,7 @@ from omnibase_core.models.discovery.model_tool_discovery_request import (
 from omnibase_core.models.discovery.model_tool_discovery_response import (
     ModelDiscoveredTool,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestNodeIntrospectionEvent:

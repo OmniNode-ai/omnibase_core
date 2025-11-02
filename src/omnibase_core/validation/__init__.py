@@ -51,8 +51,6 @@ from .exceptions import (
     InputValidationError,
     ValidationFrameworkError,
 )
-from .model_audit_result import ModelAuditResult
-from .model_duplication_report import ModelDuplicationReport
 from .patterns import validate_patterns_directory, validate_patterns_file
 from .types import validate_union_usage_directory, validate_union_usage_file
 from .validation_utils import ModelProtocolInfo, ValidationResult
@@ -119,8 +117,6 @@ __all__ = [
     "ValidationFrameworkError",
     "ValidationResult",
     "ModelValidationSuite",
-    "ModelAuditResult",
-    "ModelDuplicationReport",
     "validate_all",
     # Main validation functions (recommended)
     "validate_architecture",

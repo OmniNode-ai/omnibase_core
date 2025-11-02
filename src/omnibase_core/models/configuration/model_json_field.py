@@ -5,7 +5,7 @@ from pydantic_core.core_schema import ValidationInfo
 
 from omnibase_core.enums.enum_json_value_type import EnumJsonValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelJsonField(BaseModel):

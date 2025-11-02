@@ -14,7 +14,6 @@ from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_transition_type import EnumTransitionType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_conditional_transition import (
     ModelConditionalTransition,
 )
@@ -25,6 +24,7 @@ from omnibase_core.models.core.model_state_transition_condition import (
 from omnibase_core.models.core.model_tool_based_transition import (
     ModelToolBasedTransition,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelStateTransition(BaseModel):

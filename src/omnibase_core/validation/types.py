@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Generic, Optional, TypeVar, Union
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Type validation tools for ONEX compliance.
@@ -21,8 +21,8 @@ from pathlib import Path
 from typing import Any
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.validation.model_union_pattern import ModelUnionPattern
 
-from .model_union_pattern import ModelUnionPattern
 from .union_usage_checker import UnionUsageChecker
 from .validation_utils import ValidationResult
 

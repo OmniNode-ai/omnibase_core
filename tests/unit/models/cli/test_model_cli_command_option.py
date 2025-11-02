@@ -12,8 +12,8 @@ import pytest
 
 from omnibase_core.enums.enum_cli_option_value_type import EnumCliOptionValueType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.cli.model_cli_command_option import ModelCliCommandOption
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelCliCommandOptionBasic:

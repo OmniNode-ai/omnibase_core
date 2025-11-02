@@ -23,9 +23,9 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.contracts import load_and_validate_yaml_model
 
 # Note: Event bus uses duck-typing interface, not a formal protocol

@@ -3,10 +3,10 @@
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract import (
     ModelEventTypeSubcontract,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelEventTypeSubcontractValidation:

@@ -14,8 +14,8 @@ import pytest
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestExitWithStatus:

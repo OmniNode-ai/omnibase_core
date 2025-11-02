@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Standard error handling decorators for ONEX framework.

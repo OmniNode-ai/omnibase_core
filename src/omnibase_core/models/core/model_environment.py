@@ -30,13 +30,13 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-
-# Safe runtime import - error_codes only imports from types.core_types
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_environment_properties import (
     ModelEnvironmentProperties,
 )
 from omnibase_core.models.core.model_feature_flags import ModelFeatureFlags
+
+# Safe runtime import - error_codes only imports from types.core_types
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from omnibase_core.models.configuration.model_resource_limits import (

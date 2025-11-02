@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 
 from pydantic import Field
 
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 "\nInstance Metadata Model\n\nAdditional metadata for node instances including deployment information,\nversion details, and custom attributes.\n"
 from datetime import datetime

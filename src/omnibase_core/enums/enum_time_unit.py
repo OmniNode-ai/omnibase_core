@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """
 Time Unit Enumeration.

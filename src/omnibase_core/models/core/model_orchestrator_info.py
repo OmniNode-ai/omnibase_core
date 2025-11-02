@@ -12,11 +12,11 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_orchestrator_metrics import (
     ModelOrchestratorMetrics,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelOrchestratorInfo(BaseModel):
@@ -130,7 +130,9 @@ class ModelOrchestratorInfo(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         if isinstance(v, str):
-            from omnibase_core.primitives.model_semver import parse_semver_from_string
+            from omnibase_core.models.primitives.model_semver import (
+                parse_semver_from_string,
+            )
 
             return parse_semver_from_string(v)
         msg = "orchestrator_version must be ModelSemVer, dict, or str"

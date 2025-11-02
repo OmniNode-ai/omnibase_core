@@ -8,9 +8,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.utils.model_contract_data import ModelContractData
 from omnibase_core.types.typed_dict_node_rule_structure import (
     TypedDictNodeRuleStructure,

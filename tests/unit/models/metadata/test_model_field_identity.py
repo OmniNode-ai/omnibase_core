@@ -418,7 +418,7 @@ class TestModelFieldIdentityErrorBranches:
     def test_set_metadata_with_validation_error(self):
         """Test set_metadata exception handling (lines 104-105 branch)."""
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         identity_id = uuid4()
         field_id = uuid4()
@@ -433,7 +433,7 @@ class TestModelFieldIdentityErrorBranches:
 
     def test_set_metadata_with_type_error(self):
         """Test set_metadata with wrong type causing exception."""
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         identity_id = uuid4()
         field_id = uuid4()

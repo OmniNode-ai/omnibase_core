@@ -11,9 +11,8 @@ from dataclasses import dataclass
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )
-
-from .migration_types import TypedDictMigrationStepDict
-from .validation_utils import ModelProtocolInfo
+from omnibase_core.validation.migration_types import TypedDictMigrationStepDict
+from omnibase_core.validation.validation_utils import ModelProtocolInfo
 
 
 @dataclass

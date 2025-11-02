@@ -4,7 +4,7 @@ from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_service_type_category import EnumServiceTypeCategory
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Service Type Model for ONEX Configuration-Driven Registry System.

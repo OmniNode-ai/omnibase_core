@@ -6,11 +6,11 @@ Comprehensive tests for logging subcontract configuration and validation.
 
 import pytest
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.subcontracts.model_logging_subcontract import (
     ModelLoggingSubcontract,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelLoggingSubcontractInitialization:

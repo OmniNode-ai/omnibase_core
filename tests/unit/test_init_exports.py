@@ -141,7 +141,7 @@ class TestInitCircularImports:
     def test_init_getattr_handles_missing_attributes(self):
         """Test that __getattr__ raises proper error for missing attributes."""
         import omnibase_core
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         with pytest.raises(ModelOnexError) as exc_info:
             _ = omnibase_core.NonExistentAttribute

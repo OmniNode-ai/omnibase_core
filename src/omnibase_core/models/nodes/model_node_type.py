@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nNode Type Model\n\nReplaces EnumNodeType with a proper model that includes metadata,\ndescriptions, and categorization for each node type.\n"
 from typing import Any
@@ -17,7 +17,7 @@ from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.constraints import (
     Identifiable,
     ProtocolMetadataProvider,
@@ -779,7 +779,7 @@ class ModelNodeType(BaseModel):
 
                     # Can be used for JSON serialization
                     import json
-        from omnibase_core.primitives.model_semver import ModelSemVer
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
                     json_str = json.dumps(serialized, default=str)
                     ```
 

@@ -16,7 +16,7 @@ from typing import Any
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.errors.error_codes import get_exit_code_for_status
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_bootstrap import emit_log_event_sync
 
 

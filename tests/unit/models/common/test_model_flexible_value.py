@@ -5,9 +5,9 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
-from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
 
 class TestModelFlexibleValueInstantiation:

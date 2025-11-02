@@ -15,9 +15,9 @@ from pydantic import BaseModel, Field, field_validator
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
 from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelCompensationPlan(BaseModel):

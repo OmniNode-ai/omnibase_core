@@ -4,7 +4,7 @@ import uuid
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 CLI Execution Input Data Model.

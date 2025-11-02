@@ -24,8 +24,8 @@ from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types
 from omnibase_core.types.constraints import PrimitiveValueType
@@ -66,7 +66,7 @@ from omnibase_core.models.contracts.subcontracts.model_state_management_subcontr
 from omnibase_core.models.contracts.subcontracts.model_workflow_coordination_subcontract import (
     ModelWorkflowCoordinationSubcontract,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelContractReducer(ModelContractBase):

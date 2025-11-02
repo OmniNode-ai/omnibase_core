@@ -45,6 +45,6 @@ from omnibase_core.models.model_compute_output import ModelComputeOutput
 
 ### Error Handling
 ```python
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 ```

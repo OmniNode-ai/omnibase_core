@@ -7,13 +7,13 @@ Tests validator conversion from @field_validator to @model_validator(mode="after
 import pytest
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.subcontracts.model_route_definition import (
     ModelRouteDefinition,
 )
 from omnibase_core.models.contracts.subcontracts.model_routing_subcontract import (
     ModelRoutingSubcontract,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestRoutingSubcontractValidators:

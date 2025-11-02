@@ -1,7 +1,7 @@
 from typing import Any, Generic, TypeVar
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Hybrid Execution Mixin for ONEX Tool Nodes.

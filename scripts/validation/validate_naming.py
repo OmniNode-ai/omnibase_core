@@ -82,24 +82,6 @@ class NamingConventionValidator:
     # Architectural exemptions - intentional design decisions where naming deviates from standard conventions
     # These are documented, justified architectural patterns that serve specific purposes
     ARCHITECTURAL_EXEMPTIONS = {
-        # UTILITY MODELS: Models that serve utility functions, not domain data
-        # Location: utils/ - These are helper models for utility operations
-        # Rationale: Utility models don't belong in models/ as they're not domain data models
-        "utils/": [
-            "ModelFieldConverterRegistry",  # Field conversion utility model
-        ],
-        # PRIMITIVE TYPE WRAPPERS: Models wrapping primitive types
-        # Location: primitives/ - Fundamental type wrappers like ModelSemVer
-        # Rationale: Primitive wrappers are foundational types, not business models
-        "primitives/": [
-            "ModelSemVer",  # Semantic version primitive wrapper
-        ],
-        # VALIDATION FRAMEWORK MODELS: Models specific to validation infrastructure
-        # Location: validation/ - Validation-specific data models
-        # Rationale: Validation models are tightly coupled to validation logic
-        "validation/": [
-            "Model*",  # All validation-specific models
-        ],
         # INFRASTRUCTURE BASE CLASSES: Abstract base classes (archetypes, not implementations)
         # Location: infrastructure/ - Core infrastructure patterns
         # Rationale: NodeBase and NodeCoreBase are abstract archetypes, not concrete node implementations
@@ -113,6 +95,21 @@ class NamingConventionValidator:
         # Rationale: ServiceRegistry is infrastructure, not a domain service implementation
         "container/": [
             "ServiceRegistry",  # DI service registry infrastructure
+        ],
+        # VALIDATION UTILITY CLASSES: Data classes and utilities for validation framework
+        # Location: models/validation/ - Validation-specific utility classes
+        # Rationale: These are utility/data classes (dataclass, not Pydantic), not business models
+        #            They support validation infrastructure and don't need Model* prefix
+        "models/validation/": [
+            "DuplicationInfo",  # Dataclass for duplication tracking
+            "ProtocolSignatureExtractor",  # AST visitor for protocol extraction
+            "ValidationResult",  # Dataclass for validation results
+        ],
+        # MIXIN DATA CLASSES: Data classes stored in models/mixins
+        # Location: models/mixins/ - Mixin-related data structures
+        # Rationale: Dataclass for service registry, follows Mixin* naming appropriate to its purpose
+        "models/mixins/": [
+            "MixinServiceRegistryEntry",  # Dataclass for service registry entries
         ],
     }
 

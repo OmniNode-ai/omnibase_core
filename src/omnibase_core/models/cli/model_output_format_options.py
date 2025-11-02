@@ -6,7 +6,7 @@ from typing import TypedDict, TypeVar
 
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Output format options model for CLI operations.
@@ -50,10 +50,10 @@ def allow_dict_any(func: F) -> F:
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.utils.model_field_converter import ModelFieldConverterRegistry
 from omnibase_core.types.typed_dict_output_format_options_kwargs import (
     TypedDictOutputFormatOptionsKwargs,
 )
-from omnibase_core.utils.model_field_converter import ModelFieldConverterRegistry
 
 
 class ModelOutputFormatOptions(BaseModel):

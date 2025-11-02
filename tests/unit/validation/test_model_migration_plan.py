@@ -15,8 +15,8 @@ import pytest
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )
+from omnibase_core.models.validation.model_migration_plan import ModelMigrationPlan
 from omnibase_core.validation.migration_types import TypedDictMigrationStepDict
-from omnibase_core.validation.model_migration_plan import ModelMigrationPlan
 from omnibase_core.validation.validation_utils import ModelProtocolInfo
 
 

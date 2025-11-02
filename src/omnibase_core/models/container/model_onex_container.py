@@ -4,7 +4,7 @@ from typing import Any, Optional, TypeVar, cast
 
 from pydantic import BaseModel
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Model ONEX Dependency Injection Container.

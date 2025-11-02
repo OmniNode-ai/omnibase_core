@@ -18,10 +18,10 @@ import pytest
 
 from omnibase_core.enums.enum_cli_input_value_type import EnumCliInputValueType
 from omnibase_core.enums.enum_data_type import EnumDataType
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.cli.model_cli_execution_input_data import (
     ModelCliExecutionInputData,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelCliExecutionInputDataValueValidation:

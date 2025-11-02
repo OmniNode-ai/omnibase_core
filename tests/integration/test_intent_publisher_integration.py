@@ -23,9 +23,9 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel, Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.mixins.mixin_intent_publisher import MixinIntentPublisher
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_intent_events import (
     TOPIC_EVENT_PUBLISH_INTENT,
     ModelEventPublishIntent,

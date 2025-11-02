@@ -5,7 +5,7 @@ from typing import TypeVar
 
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Property collection model for environment properties.

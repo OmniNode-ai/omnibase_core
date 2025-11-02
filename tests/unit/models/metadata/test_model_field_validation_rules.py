@@ -424,7 +424,7 @@ class TestModelFieldValidationRulesErrorBranches:
     def test_set_metadata_with_validation_error(self):
         """Test set_metadata exception handling (lines 162-163 branch)."""
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         rules = ModelFieldValidationRules()
         # Try to set min_length to invalid type
@@ -436,7 +436,7 @@ class TestModelFieldValidationRulesErrorBranches:
 
     def test_set_metadata_with_type_conversion_error(self):
         """Test set_metadata with value that causes type error."""
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         rules = ModelFieldValidationRules()
         # Try to set max_length to a value that fails validation
@@ -448,7 +448,7 @@ class TestModelFieldValidationRulesErrorBranches:
 
     def test_set_metadata_with_invalid_numeric_value(self):
         """Test set_metadata with invalid ModelNumericValue."""
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         rules = ModelFieldValidationRules()
         # Try to set min_value to wrong type

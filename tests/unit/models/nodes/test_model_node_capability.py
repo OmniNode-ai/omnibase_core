@@ -16,9 +16,9 @@ import pytest
 
 from omnibase_core.enums.enum_performance_impact import EnumPerformanceImpact
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.nodes.model_node_capability import ModelNodeCapability
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelNodeCapability:

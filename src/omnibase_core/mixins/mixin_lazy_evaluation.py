@@ -5,7 +5,7 @@ from typing import Any, Generic, Optional, TypeVar, Union
 
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Lazy Evaluation Mixin for Performance Optimization

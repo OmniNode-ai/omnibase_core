@@ -7,8 +7,8 @@ from typing import Any
 import pytest
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_multi_type_value import ModelMultiTypeValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelMultiTypeValueBasics:
