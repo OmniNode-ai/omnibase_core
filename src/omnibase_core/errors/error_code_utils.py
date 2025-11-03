@@ -1,80 +1,13 @@
-import uuid
-from datetime import datetime
-from uuid import UUID
+"""Error Code Utilities.
 
-from pydantic import Field
-
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
-
-# === OmniNode:Metadata ===
-# metadata_version: 0.1.0
-# protocol_version: 1.1.0
-# owner: OmniNode Team
-# copyright: OmniNode Team
-# schema_version: 1.1.0
-# name: error_codes.py
-# version: 1.0.0
-# uuid: 4dbf1549-9218-47b6-9188-3589104a38f5
-# author: OmniNode Team
-# created_at: 2025-05-25T16:50:14.043960
-# last_modified_at: 2025-05-25T22:11:50.165848
-# description: Stamped by ToolPython
-# state_contract: state_contract://default
-# lifecycle: active
-# hash: 2169ab95a8612c7ab87a2015a94c9d110046d8d9d45d76142fe96ae4a00c114a
-# entrypoint: python@error_codes.py
-# runtime_language_hint: python>=3.11
-# namespace: onex.stamped.error_codes
-# meta_type: tool
-# === /OmniNode:Metadata ===
-
-"""
-Shared error codes and exit code mapping for all ONEX nodes.
-
-This module provides the foundation for consistent error handling and CLI exit
-code mapping across the entire ONEX ecosystem. All nodes should use these
-patterns for error handling and CLI integration.
-
-Exit Code Conventions:
-- 0: Success (EnumOnexStatus.SUCCESS)
-- 1: General error (EnumOnexStatus.ERROR, EnumOnexStatus.UNKNOWN)
-- 2: Warning (EnumOnexStatus.WARNING)
-- 3: Partial success (EnumOnexStatus.PARTIAL)
-- 4: Skipped (EnumOnexStatus.SKIPPED)
-- 5: Fixed (EnumOnexStatus.FIXED)
-- 6: Info (EnumOnexStatus.INFO)
-
-Error Code Format: ONEX_<COMPONENT>_<NUMBER>_<DESCRIPTION>
+Utility functions for error code and exit code mapping.
 """
 
-import re
-from datetime import UTC
-from enum import Enum
-from typing import Any
-
-from pydantic import BaseModel, ConfigDict
-
+from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-
-# Import ModelOnexError from canonical location to avoid duplication
-# Note: EnumOnexErrorCode is defined in this file and in error_codes.py
-# This file appears to be a legacy/duplicate file that's not imported anywhere
-# TODO: Consider removing this file entirely in favor of error_codes.py
+from omnibase_core.enums.enum_registry_error_code import EnumOnexErrorCode
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.uuid_service import UtilUUID
-
-
-class EnumCLIExitCode(int, Enum):
-    """Standard CLI exit codes for ONEX operations."""
-
-    SUCCESS = 0
-    ERROR = 1
-    WARNING = 2
-    PARTIAL = 3
-    SKIPPED = 4
-    FIXED = 5
-    INFO = 6
-
 
 # Global mapping from EnumOnexStatus to CLI exit codes
 STATUS_TO_EXIT_CODE: dict[EnumOnexStatus, EnumCLIExitCode] = {
@@ -112,45 +45,6 @@ def get_exit_code_for_status(status: EnumOnexStatus) -> int:
     """
     return STATUS_TO_EXIT_CODE.get(status, EnumCLIExitCode.ERROR).value
 
-
-class EnumOnexErrorCode(str, Enum):
-    """
-    Base class for ONEX error codes.
-
-    All node-specific error code enums should inherit from this class
-    to ensure consistent behavior and interface.
-
-    Subclasses should implement the abstract methods to provide
-    component-specific information.
-    """
-
-    def get_component(self) -> str:
-        """Get the component identifier for this error code."""
-        msg = "Subclasses must implement get_component()"
-        raise NotImplementedError(msg)  # stub-ok: abstract method
-
-    def get_number(self) -> int:
-        """Get the numeric identifier for this error code."""
-        msg = "Subclasses must implement get_number()"
-        raise NotImplementedError(msg)  # stub-ok: abstract method
-
-    def get_description(self) -> str:
-        """Get a human-readable description for this error code."""
-        msg = "Subclasses must implement get_description()"
-        raise NotImplementedError(msg)  # stub-ok: abstract method
-
-    def get_exit_code(self) -> int:
-        """
-        Get the appropriate CLI exit code for this error.
-
-        Default implementation returns ERROR (1). Subclasses can override
-        for more specific mapping.
-        """
-        return EnumCLIExitCode.ERROR.value
-
-
-# EnumCoreErrorCode is imported from canonical location at line 8
-# Removed duplicate definition - use the imported version from omnibase_core.errors.error_codes
 
 # Mapping from core error codes to exit codes
 CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
@@ -277,13 +171,6 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
     return descriptions.get(error_code, "Unknown error")
 
 
-# ModelOnexError is now defined in omnibase_core.errors.error_codes
-# Import from there instead of duplicating the definition
-
-# Import extracted classes instead of duplicating definitions
-from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
-from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
-
 # Registry for component-specific error code mappings
 _ERROR_CODE_REGISTRIES: dict[str, type[EnumOnexErrorCode]] = {}
 
@@ -333,35 +220,13 @@ def list_registered_components() -> list[str]:
     return list(_ERROR_CODE_REGISTRIES.keys())
 
 
-class ModelRegistryErrorCode(EnumOnexErrorCode):
-    """
-    Canonical error codes for ONEX tool/handler registries.
-    Use these for all registry-driven error handling (tool not found, duplicate, etc.).
-    """
-
-    TOOL_NOT_FOUND = "ONEX_REGISTRY_001_TOOL_NOT_FOUND"
-    DUPLICATE_TOOL = "ONEX_REGISTRY_002_DUPLICATE_TOOL"
-    INVALID_MODE = "ONEX_REGISTRY_003_INVALID_MODE"
-    REGISTRY_UNAVAILABLE = "ONEX_REGISTRY_004_REGISTRY_UNAVAILABLE"
-
-    def get_component(self) -> str:
-        return "REGISTRY"
-
-    def get_number(self) -> int:
-        match = re.search(r"ONEX_REGISTRY_(\d+)_", self.value)
-        return int(match.group(1)) if match else 0
-
-    def get_description(self) -> str:
-        descriptions = {
-            self.TOOL_NOT_FOUND: "Requested tool is not registered in the registry.",
-            self.DUPLICATE_TOOL: "A tool with this name is already registered.",
-            self.INVALID_MODE: "The requested registry mode is invalid or unsupported.",
-            self.REGISTRY_UNAVAILABLE: "The registry is unavailable or not initialized.",
-        }
-        return descriptions.get(self, "Unknown registry error.")
-
-    def get_exit_code(self) -> int:
-        return EnumCLIExitCode.ERROR.value
-
-
-# ModelRegistryErrorModel has been extracted to model_registry_error_model.py
+__all__ = [
+    "STATUS_TO_EXIT_CODE",
+    "CORE_ERROR_CODE_TO_EXIT_CODE",
+    "get_exit_code_for_status",
+    "get_exit_code_for_core_error",
+    "get_core_error_description",
+    "register_error_codes",
+    "get_error_codes_for_component",
+    "list_registered_components",
+]

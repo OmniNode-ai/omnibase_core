@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from omnibase_core.models.validation.model_audit_result import ModelAuditResult
-from omnibase_core.models.validation.model_duplication_info import DuplicationInfo
+from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
 )
@@ -1225,7 +1225,7 @@ class ProtocolExample(Protocol):
             imports=[],
         )
 
-        dup_info = DuplicationInfo(
+        dup_info = ModelDuplicationInfo(
             signature_hash="abc123",
             protocols=[protocol],
             duplication_type="exact",

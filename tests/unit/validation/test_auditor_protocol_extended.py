@@ -18,12 +18,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.validation.auditor_protocol import (
     ModelAuditResult,
     ModelDuplicationReport,
     ModelProtocolAuditor,
 )
-from omnibase_core.validation.validation_utils import DuplicationInfo, ModelProtocolInfo
+from omnibase_core.validation.validation_utils import ModelProtocolInfo
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
@@ -160,7 +161,7 @@ class TestPrintDuplicationReport:
             imports=[],
         )
 
-        exact_dup = DuplicationInfo(
+        exact_dup = ModelDuplicationInfo(
             signature_hash="hash123",
             protocols=[protocol1, protocol2],
             duplication_type="exact",
@@ -210,7 +211,7 @@ class TestPrintDuplicationReport:
             imports=[],
         )
 
-        conflict = DuplicationInfo(
+        conflict = ModelDuplicationInfo(
             signature_hash="conflict",
             protocols=[protocol1, protocol2],
             duplication_type="name_conflict",
@@ -311,14 +312,14 @@ class TestPrintDuplicationReport:
             imports=[],
         )
 
-        exact_dup = DuplicationInfo(
+        exact_dup = ModelDuplicationInfo(
             signature_hash="h1",
             protocols=[protocol1, protocol2],
             duplication_type="exact",
             recommendation="Remove",
         )
 
-        conflict = DuplicationInfo(
+        conflict = ModelDuplicationInfo(
             signature_hash="conflict",
             protocols=[protocol2, protocol3],
             duplication_type="name_conflict",

@@ -18,12 +18,14 @@ from typing import TYPE_CHECKING
 import pytest
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.validation.model_validation_result import (
+    ModelValidationResult,
+)
 from omnibase_core.validation.cli import (
     ModelValidationSuite,
     create_parser,
     format_result,
 )
-from omnibase_core.validation.validation_utils import ValidationResult
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
@@ -73,7 +75,7 @@ class TestModelValidationSuite:
         )
 
         # Should succeed without error
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_run_all_validations_success(self, tmp_path: Path) -> None:
         """Test run_all_validations executes all validators."""
@@ -91,9 +93,9 @@ class TestModelValidationSuite:
         assert "contracts" in results
         assert "patterns" in results
 
-        # All results should be ValidationResult objects
+        # All results should be ModelValidationResult objects
         for validation_type, result in results.items():
-            assert isinstance(result, ValidationResult)
+            assert isinstance(result, ModelValidationResult)
 
     def test_run_all_validations_handles_errors(self, tmp_path: Path) -> None:
         """Test run_all_validations handles validator errors gracefully."""
@@ -109,7 +111,7 @@ class TestModelValidationSuite:
 
         # Some results should have errors
         for validation_type, result in results.items():
-            assert isinstance(result, ValidationResult)
+            assert isinstance(result, ModelValidationResult)
 
     def test_list_validators(self, capsys: CaptureFixture[str]) -> None:
         """Test list_validators prints available validators."""
@@ -236,7 +238,7 @@ class TestFormatResult:
 
     def test_format_result_success(self, capsys: CaptureFixture[str]) -> None:
         """Test formatting successful validation result."""
-        result = ValidationResult(
+        result = ModelValidationResult(
             success=True,
             errors=[],
             files_checked=10,
@@ -250,7 +252,7 @@ class TestFormatResult:
 
     def test_format_result_failure(self, capsys: CaptureFixture[str]) -> None:
         """Test formatting failed validation result."""
-        result = ValidationResult(
+        result = ModelValidationResult(
             success=False,
             errors=["Error 1", "Error 2"],
             files_checked=5,
@@ -266,7 +268,7 @@ class TestFormatResult:
 
     def test_format_result_verbose(self, capsys: CaptureFixture[str]) -> None:
         """Test verbose formatting includes extra details."""
-        result = ValidationResult(
+        result = ModelValidationResult(
             success=True,
             errors=[],
             files_checked=15,
@@ -284,7 +286,7 @@ class TestFormatResult:
         capsys: CaptureFixture[str],
     ) -> None:
         """Test formatting with violations metadata."""
-        result = ValidationResult(
+        result = ModelValidationResult(
             success=False,
             errors=["Violation 1"],
             files_checked=5,
@@ -302,7 +304,7 @@ class TestFormatResult:
     ) -> None:
         """Test formatting with many errors requires verbose mode."""
         errors = [f"Error {i}" for i in range(15)]
-        result = ValidationResult(
+        result = ModelValidationResult(
             success=False,
             errors=errors,
             files_checked=10,
@@ -321,7 +323,7 @@ class TestFormatResult:
     ) -> None:
         """Test verbose mode shows truncated error list."""
         errors = [f"Error {i}" for i in range(15)]
-        result = ValidationResult(
+        result = ModelValidationResult(
             success=False,
             errors=errors,
             files_checked=10,
@@ -353,7 +355,7 @@ class ModelTest:
 
         result = suite.run_validation("architecture", tmp_path)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.files_checked > 0
 
     def test_validation_workflow_union_usage(self, tmp_path: Path) -> None:
@@ -378,7 +380,7 @@ def func(x: Union[str, int]) -> None:
             strict=False,
         )
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.files_checked > 0
 
     def test_validation_workflow_contracts(self, tmp_path: Path) -> None:
@@ -391,7 +393,7 @@ def func(x: Union[str, int]) -> None:
 
         result = suite.run_validation("contracts", tmp_path)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_validation_workflow_patterns(self, tmp_path: Path) -> None:
         """Test complete validation workflow for patterns."""
@@ -408,7 +410,7 @@ def example_function():
 
         result = suite.run_validation("patterns", tmp_path, strict=False)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.files_checked > 0
 
     def test_empty_directory_handling(self, tmp_path: Path) -> None:
@@ -417,7 +419,7 @@ def example_function():
 
         result = suite.run_validation("architecture", tmp_path)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.success is True  # Empty directory should pass
 
     def test_kwargs_filtering_architecture(self, tmp_path: Path) -> None:
@@ -433,7 +435,7 @@ def example_function():
             strict=True,  # Not relevant (union-usage, patterns)
         )
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_kwargs_filtering_union_usage(self, tmp_path: Path) -> None:
         """Test union-usage validation only receives relevant kwargs."""
@@ -450,7 +452,7 @@ def example_function():
             max_violations=10,  # Not relevant (architecture)
         )
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
 
 class TestEdgeCases:
@@ -465,7 +467,7 @@ class TestEdgeCases:
         # Should not raise exception, but return result indicating no files
         result = suite.run_validation("architecture", nonexistent)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_validation_with_file_instead_of_directory(self, tmp_path: Path) -> None:
         """Test validation handles file path instead of directory."""
@@ -478,7 +480,7 @@ class TestEdgeCases:
         # Pass file path instead of directory
         result = suite.run_validation("architecture", test_file)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_all_validations_mixed_results(self, tmp_path: Path) -> None:
         """Test run_all_validations with mixed success/failure results."""

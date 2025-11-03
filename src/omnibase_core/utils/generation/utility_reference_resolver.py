@@ -11,8 +11,7 @@ from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-
-from .model_ref_info import ModelRefInfo
+from omnibase_core.models.utils.generation.model_ref_info import ModelRefInfo
 
 
 class UtilityReferenceResolver:

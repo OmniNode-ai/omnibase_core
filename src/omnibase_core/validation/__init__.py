@@ -28,9 +28,13 @@ Usage Examples:
     python -m omnibase_core.validation all
 """
 
-# Import models and enums used by CircularImportValidator
+# Import models and enums
 from omnibase_core.enums.enum_import_status import EnumImportStatus
 from omnibase_core.models.model_module_import_result import ModelModuleImportResult
+
+# Import BOTH validation result classes (different purposes!)
+# - ModelValidationResult (from models/) is for circular import validation
+# - ModelValidationResult (from models/validation/) is for general validation
 from omnibase_core.models.model_validation_result import (
     ModelValidationResult as CircularImportValidationResult,
 )
