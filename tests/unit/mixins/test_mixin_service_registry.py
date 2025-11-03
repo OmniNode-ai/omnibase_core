@@ -10,9 +10,9 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.mixins.mixin_service_registry import (
-    MixinServiceRegistry,
-    MixinServiceRegistryEntry,
+from omnibase_core.mixins.mixin_service_registry import MixinServiceRegistry
+from omnibase_core.models.mixins.model_service_registry_entry import (
+    ModelServiceRegistryEntry,
 )
 
 
@@ -255,7 +255,7 @@ class TestMixinServiceRegistry:
 
         # Register a node first
         node_id = uuid4()
-        entry = MixinServiceRegistryEntry(
+        entry = ModelServiceRegistryEntry(
             node_id=node_id,
             service_name="test_node",
             metadata={},
@@ -297,7 +297,7 @@ class TestMixinServiceRegistry:
 
         # Register a node
         node_id = uuid4()
-        entry = MixinServiceRegistryEntry(
+        entry = ModelServiceRegistryEntry(
             node_id=node_id,
             service_name="test_node",
             metadata={},
@@ -343,7 +343,7 @@ class TestMixinServiceRegistry:
 
         # Register a node first
         node_id = uuid4()
-        entry = MixinServiceRegistryEntry(
+        entry = ModelServiceRegistryEntry(
             node_id=node_id,
             service_name="test_node",
             metadata={},
@@ -375,7 +375,7 @@ class TestMixinServiceRegistry:
 
         # Add some services to registry
         node_id = uuid4()
-        entry = MixinServiceRegistryEntry(
+        entry = ModelServiceRegistryEntry(
             node_id=node_id,
             service_name="test_node",
             metadata={},
@@ -451,7 +451,7 @@ class TestMixinServiceRegistry:
         # Add some entries
         for i in range(3):
             node_id = uuid4()
-            entry = MixinServiceRegistryEntry(
+            entry = ModelServiceRegistryEntry(
                 node_id=node_id,
                 service_name=f"test_node_{i}",
                 metadata={},
@@ -469,7 +469,7 @@ class TestMixinServiceRegistry:
         # Add online and offline entries
         for i in range(2):
             node_id = uuid4()
-            entry = MixinServiceRegistryEntry(
+            entry = ModelServiceRegistryEntry(
                 node_id=node_id,
                 service_name=f"online_node_{i}",
                 metadata={},
@@ -478,7 +478,7 @@ class TestMixinServiceRegistry:
 
         for i in range(2):
             node_id = uuid4()
-            entry = MixinServiceRegistryEntry(
+            entry = ModelServiceRegistryEntry(
                 node_id=node_id,
                 service_name=f"offline_node_{i}",
                 metadata={},
@@ -497,7 +497,7 @@ class TestMixinServiceRegistry:
         hub = TestServiceHub()
 
         node_id = uuid4()
-        entry = MixinServiceRegistryEntry(
+        entry = ModelServiceRegistryEntry(
             node_id=node_id,
             service_name="target_node",
             metadata={},
@@ -523,7 +523,7 @@ class TestMixinServiceRegistry:
 
         # Add node with specific capability
         node_id = uuid4()
-        entry = MixinServiceRegistryEntry(
+        entry = ModelServiceRegistryEntry(
             node_id=node_id,
             service_name="capable_node",
             metadata={},
@@ -533,7 +533,7 @@ class TestMixinServiceRegistry:
 
         # Add node without capability
         node_id2 = uuid4()
-        entry2 = MixinServiceRegistryEntry(
+        entry2 = ModelServiceRegistryEntry(
             node_id=node_id2,
             service_name="other_node",
             metadata={},
@@ -551,7 +551,7 @@ class TestMixinServiceRegistry:
 
         # Add online node with capability
         node_id = uuid4()
-        entry = MixinServiceRegistryEntry(
+        entry = ModelServiceRegistryEntry(
             node_id=node_id,
             service_name="online_node",
             metadata={},
@@ -561,7 +561,7 @@ class TestMixinServiceRegistry:
 
         # Add offline node with capability
         node_id2 = uuid4()
-        entry2 = MixinServiceRegistryEntry(
+        entry2 = ModelServiceRegistryEntry(
             node_id=node_id2,
             service_name="offline_node",
             metadata={},
@@ -591,7 +591,7 @@ class TestMixinServiceRegistry:
 
         # Add entry
         node_id = uuid4()
-        entry = MixinServiceRegistryEntry(
+        entry = ModelServiceRegistryEntry(
             node_id=node_id,
             service_name="test_node",
             metadata={},
@@ -611,7 +611,7 @@ class TestMixinServiceRegistry:
         hub = TestServiceHub()
 
         node_id = uuid4()
-        entry = MixinServiceRegistryEntry(
+        entry = ModelServiceRegistryEntry(
             node_id=node_id,
             service_name="test_node",
             metadata={},
@@ -630,7 +630,7 @@ class TestMixinServiceRegistry:
         # Add online and offline entries
         for i in range(3):
             node_id = uuid4()
-            entry = MixinServiceRegistryEntry(
+            entry = ModelServiceRegistryEntry(
                 node_id=node_id,
                 service_name=f"online_node_{i}",
                 metadata={},
@@ -639,7 +639,7 @@ class TestMixinServiceRegistry:
 
         for i in range(2):
             node_id = uuid4()
-            entry = MixinServiceRegistryEntry(
+            entry = ModelServiceRegistryEntry(
                 node_id=node_id,
                 service_name=f"offline_node_{i}",
                 metadata={},

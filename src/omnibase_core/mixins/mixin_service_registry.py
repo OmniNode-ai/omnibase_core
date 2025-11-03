@@ -24,8 +24,9 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 logger = logging.getLogger(__name__)
 
 from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
-
-from .model_service_registry_entry import MixinServiceRegistryEntry
+from omnibase_core.models.mixins.model_service_registry_entry import (
+    ModelServiceRegistryEntry,
+)
 
 
 class MixinServiceRegistry:
@@ -47,7 +48,7 @@ class MixinServiceRegistry:
         super().__init__(*args, **kwargs)
 
         # Service registry
-        self.service_registry: dict[str, MixinServiceRegistryEntry] = {}
+        self.service_registry: dict[str, ModelServiceRegistryEntry] = {}
         self.discovery_callbacks: list[Callable[..., Any]] = []
 
         # Configuration
@@ -239,7 +240,7 @@ class MixinServiceRegistry:
             node_id_str = str(node_id)
 
             if node_id_str not in self.service_registry:
-                entry = MixinServiceRegistryEntry(
+                entry = ModelServiceRegistryEntry(
                     node_id=node_id,
                     service_name=service_name,
                     metadata=event_data.get("metadata", {}),
@@ -464,7 +465,7 @@ class MixinServiceRegistry:
     def get_registered_tools(
         self,
         status_filter: str | None = None,
-    ) -> list[MixinServiceRegistryEntry]:
+    ) -> list[ModelServiceRegistryEntry]:
         """
         Get list[Any]of registered tools.
 
@@ -472,7 +473,7 @@ class MixinServiceRegistry:
             status_filter: Optional status filter ("online", "offline")
 
         Returns:
-            List of MixinServiceRegistryEntry objects
+            List of ModelServiceRegistryEntry objects
         """
         tools = list(self.service_registry.values())
 
@@ -481,7 +482,7 @@ class MixinServiceRegistry:
 
         return tools
 
-    def get_tool_by_name(self, service_name: str) -> MixinServiceRegistryEntry | None:
+    def get_tool_by_name(self, service_name: str) -> ModelServiceRegistryEntry | None:
         """Get tool by service name."""
         for entry in self.service_registry.values():
             if entry.service_name == service_name:
@@ -490,7 +491,7 @@ class MixinServiceRegistry:
 
     def get_tools_by_capability(
         self, capability: str
-    ) -> list[MixinServiceRegistryEntry]:
+    ) -> list[ModelServiceRegistryEntry]:
         """Get tools that have a specific capability."""
         matching_tools = []
         for entry in self.service_registry.values():

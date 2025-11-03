@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
-from .validation_utils import ValidationResult
+from .validation_utils import ModelValidationResult
 
 # Constants
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks
@@ -163,7 +163,7 @@ def validate_no_manual_yaml(directory: Path) -> list[str]:
     return errors
 
 
-def validate_contracts_directory(directory: Path) -> ValidationResult:
+def validate_contracts_directory(directory: Path) -> ModelValidationResult:
     """Validate all contract files in a directory."""
     yaml_files: list[Path] = []
 
@@ -194,7 +194,7 @@ def validate_contracts_directory(directory: Path) -> ValidationResult:
 
     success = len(all_errors) == 0
 
-    return ValidationResult(
+    return ModelValidationResult(
         success=success,
         errors=all_errors,
         files_checked=len(yaml_files),
@@ -239,7 +239,7 @@ def validate_contracts_cli() -> int:
         print("🔍 YAML Contract Validation")
         print("=" * 40)
 
-        overall_result = ValidationResult(success=True, errors=[], files_checked=0)
+        overall_result = ModelValidationResult(success=True, errors=[], files_checked=0)
 
         for directory in args.directories:
             dir_path = Path(directory)

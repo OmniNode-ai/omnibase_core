@@ -47,14 +47,14 @@ from collections.abc import Callable as CallableABC
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .validation.validation_utils import ValidationResult
+    from .validation.validation_utils import ModelValidationResult
 
 
 def get_validation_tools() -> tuple[
-    Callable[[str, int], "ValidationResult"],
-    Callable[[str, int, bool], "ValidationResult"],
-    Callable[[str], "ValidationResult"],
-    Callable[[str, bool], "ValidationResult"],
+    Callable[[str, int], "ModelValidationResult"],
+    Callable[[str, int, bool], "ModelValidationResult"],
+    Callable[[str], "ModelValidationResult"],
+    Callable[[str, bool], "ModelValidationResult"],
 ]:
     """
     Lazy load validation tools to avoid import-time penalty.
@@ -78,9 +78,9 @@ def get_validation_tools() -> tuple[
 
 
 def get_validation_suite() -> tuple[
-    type["ValidationResult"],
+    type["ModelValidationResult"],
     type,
-    Callable[[str], dict[str, "ValidationResult"]],
+    Callable[[str], dict[str, "ModelValidationResult"]],
 ]:
     """
     Lazy load complete validation suite.
@@ -88,9 +88,9 @@ def get_validation_suite() -> tuple[
     Returns:
         Complete validation functions
     """
-    from .validation import ModelValidationSuite, ValidationResult, validate_all
+    from .validation import ModelValidationResult, ModelValidationSuite, validate_all
 
-    return ValidationResult, ModelValidationSuite, validate_all
+    return ModelValidationResult, ModelValidationSuite, validate_all
 
 
 def get_all_validation() -> dict[str, object]:
@@ -101,8 +101,8 @@ def get_all_validation() -> dict[str, object]:
         All validation tools
     """
     from omnibase_core.validation import (
+        ModelValidationResult,
         ModelValidationSuite,
-        ValidationResult,
         validate_all,
         validate_architecture,
         validate_contracts,
@@ -111,7 +111,7 @@ def get_all_validation() -> dict[str, object]:
     )
 
     return {
-        "ValidationResult": ValidationResult,
+        "ModelValidationResult": ModelValidationResult,
         "ModelValidationSuite": ModelValidationSuite,
         "validate_all": validate_all,
         "validate_architecture": validate_architecture,

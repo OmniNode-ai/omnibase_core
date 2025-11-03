@@ -14,7 +14,7 @@ from pathlib import Path
 
 from omnibase_core.validation.exceptions import ConfigurationError, InputValidationError
 from omnibase_core.validation.validation_utils import (
-    DuplicationInfo,
+    ModelDuplicationInfo,
     ModelProtocolInfo,
     determine_repository_name,
     extract_protocols_from_directory,
@@ -32,7 +32,7 @@ class ModelDuplicationReport:
     success: bool
     source_repository: str
     target_repository: str
-    exact_duplicates: list[DuplicationInfo]
-    name_conflicts: list[DuplicationInfo]
+    exact_duplicates: list[ModelDuplicationInfo]
+    name_conflicts: list[ModelDuplicationInfo]
     migration_candidates: list[ModelProtocolInfo]
     recommendations: list[str]

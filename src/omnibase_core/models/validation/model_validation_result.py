@@ -19,7 +19,7 @@ from omnibase_core.types.typed_dict_validation_metadata_type import (
 
 
 @dataclass
-class ValidationResult:
+class ModelValidationResult:
     """Result of a validation operation."""
 
     success: bool

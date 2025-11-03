@@ -71,8 +71,8 @@ def __getattr__(name: str) -> object:
         "validate_union_usage",
     }:
         from .validation import (
+            ModelValidationResult,
             ModelValidationSuite,
-            ValidationResult,
             validate_all,
             validate_architecture,
             validate_contracts,
@@ -85,18 +85,18 @@ def __getattr__(name: str) -> object:
 
     if name in {
         "CircularImportValidator",
+        "CircularImportValidationResult",
         "EnumImportStatus",
         "ModelModuleImportResult",
-        "ModelValidationResult",
     }:
-        from .validators import (
+        from .validation import (
+            CircularImportValidationResult,
             CircularImportValidator,
             EnumImportStatus,
             ModelModuleImportResult,
-            ModelValidationResult,
         )
 
-        # Return the requested attribute from validators module
+        # Return the requested attribute from validation module
         return locals()[name]
 
     # Import here to avoid circular dependency

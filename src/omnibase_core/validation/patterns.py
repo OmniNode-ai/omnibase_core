@@ -22,7 +22,7 @@ from typing import Protocol
 from .checker_generic_pattern import GenericPatternChecker
 from .checker_naming_convention import NamingConventionChecker
 from .checker_pydantic_pattern import PydanticPatternChecker
-from .validation_utils import ValidationResult
+from .validation_utils import ModelValidationResult
 
 
 class PatternChecker(Protocol):
@@ -65,7 +65,7 @@ def validate_patterns_file(file_path: Path) -> list[str]:
 def validate_patterns_directory(
     directory: Path,
     strict: bool = False,
-) -> ValidationResult:
+) -> ModelValidationResult:
     """Validate patterns in a directory."""
     python_files = []
 
@@ -95,7 +95,7 @@ def validate_patterns_directory(
 
     success = len(all_errors) == 0 or not strict
 
-    return ValidationResult(
+    return ModelValidationResult(
         success=success,
         errors=all_errors,
         files_checked=len(python_files),
@@ -130,7 +130,7 @@ def validate_patterns_cli() -> int:
     print("🔍 ONEX Pattern Validation")
     print("=" * 40)
 
-    overall_result = ValidationResult(success=True, errors=[], files_checked=0)
+    overall_result = ModelValidationResult(success=True, errors=[], files_checked=0)
 
     for directory in args.directories:
         dir_path = Path(directory)

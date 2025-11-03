@@ -8,7 +8,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
-    from omnibase_core.validation.validation_utils import ValidationResult
+    from omnibase_core.validation.validation_utils import ModelValidationResult
 
 
 class TypedDictValidatorInfo(TypedDict):
@@ -17,7 +17,7 @@ class TypedDictValidatorInfo(TypedDict):
     Contains validator metadata including function, description, and arguments.
     """
 
-    func: Callable[..., "ValidationResult"]
+    func: Callable[..., "ModelValidationResult"]
     description: str
     args: list[str]
 

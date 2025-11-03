@@ -17,7 +17,7 @@ from .model_protocol_info import ModelProtocolInfo
 
 
 @dataclass
-class DuplicationInfo:
+class ModelDuplicationInfo:
     """Information about protocol duplications."""
 
     signature_hash: str

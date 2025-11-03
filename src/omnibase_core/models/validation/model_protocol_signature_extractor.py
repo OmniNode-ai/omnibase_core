@@ -10,7 +10,7 @@ AST NodeVisitor for extracting protocol signatures for comparison.
 import ast
 
 
-class ProtocolSignatureExtractor(ast.NodeVisitor):
+class ModelProtocolSignatureExtractor(ast.NodeVisitor):
     """Extracts protocol signature for comparison."""
 
     def __init__(self) -> None:
@@ -59,4 +59,4 @@ class ProtocolSignatureExtractor(ast.NodeVisitor):
 
 
 # Export the class
-__all__ = ["ProtocolSignatureExtractor"]
+__all__ = ["ModelProtocolSignatureExtractor"]

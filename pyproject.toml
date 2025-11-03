@@ -235,6 +235,8 @@ extend_skip = [
     "src/omnibase_core/models/container/model_service_instance.py",
     "src/omnibase_core/models/container/model_onex_container.py",
     "src/omnibase_core/models/container/model_service_registration.py",
+    # Skip file with isort/ruff conflict
+    "src/omnibase_core/validation/auditor_protocol.py",
     "src/omnibase_core/models/container/model_registry_status.py",
     "src/omnibase_core/models/common/model_value_container.py",
     "src/omnibase_core/models/metadata/model_generic_metadata.py",

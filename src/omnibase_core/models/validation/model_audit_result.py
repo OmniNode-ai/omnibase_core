@@ -14,7 +14,7 @@ from pathlib import Path
 
 from omnibase_core.validation.exceptions import ConfigurationError, InputValidationError
 from omnibase_core.validation.validation_utils import (
-    DuplicationInfo,
+    ModelDuplicationInfo,
     ModelProtocolInfo,
     determine_repository_name,
     extract_protocols_from_directory,

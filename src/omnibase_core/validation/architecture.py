@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 from typing import TypedDict
 
-from .validation_utils import ValidationResult
+from .validation_utils import ModelValidationResult
 
 
 class ModelCounter(ast.NodeVisitor):
@@ -133,7 +133,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
 
 def validate_architecture_directory(
     directory: Path, max_violations: int = 0
-) -> ValidationResult:
+) -> ModelValidationResult:
     """Validate ONEX architecture for a directory."""
     python_files = []
 
@@ -167,7 +167,7 @@ def validate_architecture_directory(
 
     success = total_violations <= max_violations
 
-    return ValidationResult(
+    return ModelValidationResult(
         success=success,
         errors=all_errors,
         files_checked=len(python_files),
@@ -202,7 +202,7 @@ def validate_architecture_cli() -> int:
     print("=" * 50)
     print("📋 Enforcing architectural separation of concerns")
 
-    overall_result = ValidationResult(success=True, errors=[], files_checked=0)
+    overall_result = ModelValidationResult(success=True, errors=[], files_checked=0)
 
     for directory in args.directories:
         dir_path = Path(directory)

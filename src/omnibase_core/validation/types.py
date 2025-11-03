@@ -24,7 +24,7 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.validation.model_union_pattern import ModelUnionPattern
 
 from .union_usage_checker import UnionUsageChecker
-from .validation_utils import ValidationResult
+from .validation_utils import ModelValidationResult
 
 
 def validate_union_usage_file(
@@ -60,7 +60,7 @@ def validate_union_usage_file(
 
 def validate_union_usage_directory(
     directory: Path, max_unions: int = 100, strict: bool = False
-) -> ValidationResult:
+) -> ModelValidationResult:
     """Validate Union usage in a directory."""
     python_files = []
     for py_file in directory.rglob("*.py"):
@@ -81,7 +81,7 @@ def validate_union_usage_directory(
         python_files.append(py_file)
 
     if not python_files:
-        return ValidationResult(
+        return ModelValidationResult(
             success=True,
             errors=[],
             files_checked=0,
@@ -103,7 +103,7 @@ def validate_union_usage_directory(
 
     success = (total_unions <= max_unions) and (not total_issues or not strict)
 
-    return ValidationResult(
+    return ModelValidationResult(
         success=success,
         errors=total_issues,
         files_checked=len(python_files),

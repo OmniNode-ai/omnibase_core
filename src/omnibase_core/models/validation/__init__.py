@@ -6,8 +6,8 @@ Validation models for error tracking and validation results.
 Note: Most imports are omitted to avoid circular dependencies with validation module.
 Import validation models directly when needed:
     from omnibase_core.models.validation.model_audit_result import ModelAuditResult
-    from omnibase_core.models.validation.model_duplication_info import DuplicationInfo
-    from omnibase_core.models.validation.model_protocol_signature_extractor import ProtocolSignatureExtractor
+    from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
+    from omnibase_core.models.validation.model_protocol_signature_extractor import ModelProtocolSignatureExtractor
 """
 
 # Only import non-circular models (Pydantic models that don't import from validation)
@@ -30,12 +30,12 @@ __all__ = [
     # Utility classes (import directly from their modules to avoid circular imports)
     # "ModelAuditResult",  # from .model_audit_result
     # "ModelContractValidationResult",  # from .model_contract_validation_result
-    # "DuplicationInfo",  # from .model_duplication_info
+    # "ModelDuplicationInfo",  # from .model_duplication_info
     # "ModelDuplicationReport",  # from .model_duplication_report
     # "ModelMigrationPlan",  # from .model_migration_plan
     # "ModelMigrationResult",  # from .model_migration_result
     # "ModelProtocolInfo",  # from .model_protocol_info
-    # "ProtocolSignatureExtractor",  # from .model_protocol_signature_extractor
+    # "ModelProtocolSignatureExtractor",  # from .model_protocol_signature_extractor
     # "ModelUnionPattern",  # from .model_union_pattern
-    # "ValidationResult",  # from .model_validation_result
+    # "ModelValidationResult",  # from .model_validation_result
 ]

@@ -3,7 +3,7 @@ from typing import Any
 from uuid import UUID
 
 
-class MixinServiceRegistryEntry:
+class ModelServiceRegistryEntry:
     """Registry entry for a discovered service/tool."""
 
     def __init__(
