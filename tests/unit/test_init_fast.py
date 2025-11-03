@@ -64,7 +64,7 @@ class TestLazyValidationLoading:
         ), "Validation modules imported at module level (not lazy)"
 
     def test_get_validation_suite_returns_correct_types(self):
-        """Test that get_validation_suite returns ValidationResult, ModelValidationSuite, and validate_all."""
+        """Test that get_validation_suite returns ModelValidationResult, ModelValidationSuite, and validate_all."""
         from omnibase_core.__init___fast import get_validation_suite
 
         result = get_validation_suite()
@@ -72,10 +72,10 @@ class TestLazyValidationLoading:
         assert isinstance(result, tuple)
         assert len(result) == 3
 
-        ValidationResult, ModelValidationSuite, validate_all = result
+        ModelValidationResult, ModelValidationSuite, validate_all = result
 
         # Verify types
-        assert isinstance(ValidationResult, type)
+        assert isinstance(ModelValidationResult, type)
         assert isinstance(ModelValidationSuite, type)
         assert callable(validate_all)
 
@@ -83,10 +83,12 @@ class TestLazyValidationLoading:
         """Test that get_validation_suite returns the correct class types."""
         from omnibase_core.__init___fast import get_validation_suite
 
-        ValidationResult, ModelValidationSuite, validate_all = get_validation_suite()
+        ModelValidationResult, ModelValidationSuite, validate_all = (
+            get_validation_suite()
+        )
 
         # Verify class names
-        assert ValidationResult.__name__ == "ValidationResult"
+        assert ModelValidationResult.__name__ == "ModelValidationResult"
         assert ModelValidationSuite.__name__ == "ModelValidationSuite"
         assert validate_all.__name__ == "validate_all"
 
@@ -101,7 +103,7 @@ class TestLazyValidationLoading:
 
         # Verify expected keys
         expected_keys = {
-            "ValidationResult",
+            "ModelValidationResult",
             "ModelValidationSuite",
             "validate_all",
             "validate_architecture",
@@ -118,7 +120,7 @@ class TestLazyValidationLoading:
         all_validation = get_all_validation()
 
         # Classes should be types
-        assert isinstance(all_validation["ValidationResult"], type)
+        assert isinstance(all_validation["ModelValidationResult"], type)
         assert isinstance(all_validation["ModelValidationSuite"], type)
 
         # Functions should be callable

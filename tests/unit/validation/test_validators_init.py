@@ -20,7 +20,24 @@ class TestValidationPackageExports:
         assert hasattr(CircularImportValidator, "validate")
 
     def test_model_validation_result_export(self) -> None:
-        """Test that ModelValidationResult is exported."""
+        """Test that CircularImportValidationResult is exported (for circular import validation)."""
+        import dataclasses
+
+        from omnibase_core.validation import CircularImportValidationResult
+
+        assert CircularImportValidationResult is not None
+        # Verify it's a dataclass
+        assert dataclasses.is_dataclass(CircularImportValidationResult)
+        # Verify it has expected fields for circular import validation
+        field_names = [
+            f.name for f in dataclasses.fields(CircularImportValidationResult)
+        ]
+        assert "total_files" in field_names
+        # Verify it has expected methods
+        assert hasattr(CircularImportValidationResult, "add_result")
+
+    def test_general_validation_result_export(self) -> None:
+        """Test that ModelValidationResult is exported (for general validation)."""
         import dataclasses
 
         from omnibase_core.validation import ModelValidationResult
@@ -28,11 +45,11 @@ class TestValidationPackageExports:
         assert ModelValidationResult is not None
         # Verify it's a dataclass
         assert dataclasses.is_dataclass(ModelValidationResult)
-        # Verify it has expected fields
+        # Verify it has expected fields for general validation
         field_names = [f.name for f in dataclasses.fields(ModelValidationResult)]
-        assert "total_files" in field_names
-        # Verify it has expected methods
-        assert hasattr(ModelValidationResult, "add_result")
+        assert "files_checked" in field_names
+        assert "success" in field_names
+        assert "errors" in field_names
 
     def test_model_module_import_result_export(self) -> None:
         """Test that ModelModuleImportResult is exported."""

@@ -62,7 +62,7 @@ def __getattr__(name: str) -> object:
 
         return ModelOnexError
     if name in {
-        "ValidationResult",
+        "ModelValidationResult",
         "ModelValidationSuite",
         "validate_all",
         "validate_architecture",
@@ -117,7 +117,7 @@ __all__ = [
     "ModelOnexError",
     # Validation tools (main exports for other repositories)
     "ModelValidationSuite",
-    "ValidationResult",
+    "ModelValidationResult",
     "validate_all",
     "validate_architecture",
     "validate_contracts",

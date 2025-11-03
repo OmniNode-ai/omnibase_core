@@ -27,7 +27,7 @@ class TestInitExports:
             "EnumCoreErrorCode",
             "ModelOnexError",
             "ModelValidationSuite",
-            "ValidationResult",
+            "ModelValidationResult",
             "validate_all",
             "validate_architecture",
             "validate_contracts",
@@ -153,11 +153,11 @@ class TestInitValidationExports:
     """Test validation tool exports from __init__.py."""
 
     def test_init_validation_result_export(self):
-        """Test that ValidationResult is properly exported."""
-        from omnibase_core import ValidationResult
+        """Test that ModelValidationResult is properly exported."""
+        from omnibase_core import ModelValidationResult
 
-        assert ValidationResult is not None
-        assert isinstance(ValidationResult, type)
+        assert ModelValidationResult is not None
+        assert isinstance(ModelValidationResult, type)
 
     def test_init_model_validation_suite_export(self):
         """Test that ModelValidationSuite is properly exported."""
@@ -253,9 +253,13 @@ class TestInitLazyLoadingBehavior:
             del sys.modules[mod]
 
         # Access validation functions through lazy loading
-        from omnibase_core import ValidationResult, validate_all, validate_architecture
+        from omnibase_core import (
+            ModelValidationResult,
+            validate_all,
+            validate_architecture,
+        )
 
-        assert ValidationResult is not None
+        assert ModelValidationResult is not None
         assert validate_all is not None
         assert validate_architecture is not None
 
