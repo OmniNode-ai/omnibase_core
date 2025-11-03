@@ -45,7 +45,7 @@ class ModelAuditValue(BaseModel):
     change_count: int = Field(default=0, description="Number of fields changed")
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dict[str, Any]ionary for current standards."""
+        """Convert to dictionary for current standards."""
         result = {}
         for change in self.field_changes:
             if not change.is_sensitive():
@@ -59,7 +59,7 @@ class ModelAuditValue(BaseModel):
     def from_dict(
         cls, data: dict[str, Any] | None, is_new: bool = False
     ) -> Optional["ModelAuditValue"]:
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         if data is None:
             return None
         if "field_changes" not in data and isinstance(data, dict):

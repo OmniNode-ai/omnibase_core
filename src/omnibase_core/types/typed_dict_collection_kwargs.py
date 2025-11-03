@@ -1,6 +1,6 @@
 """Collection TypedDict definitions.
 
-Type-safe dict[str, Any]ionary definitions for collection creation parameters.
+Type-safe dictionary definitions for collection creation parameters.
 """
 
 from .typed_dict_collection_create_kwargs import TypedDictCollectionCreateKwargs

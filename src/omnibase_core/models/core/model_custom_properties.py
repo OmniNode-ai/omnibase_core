@@ -123,7 +123,7 @@ class ModelCustomProperties(BaseModel):
         return removed
 
     def get_all_custom_fields(self) -> dict[str, PrimitiveValueType]:
-        """Get all custom fields as a unified dict[str, Any]ionary with raw values."""
+        """Get all custom fields as a unified dictionary with raw values."""
         result: dict[str, PrimitiveValueType] = {}
         for key, string_value in self.custom_strings.items():
             result[key] = string_value
@@ -195,14 +195,14 @@ class ModelCustomProperties(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, PrimitiveValueType]) -> ModelCustomProperties:
-        """Create ModelCustomProperties from dict[str, Any]ionary of raw values."""
+        """Create ModelCustomProperties from dictionary of raw values."""
         instance = cls()
         for key, value in data.items():
             instance.set_custom_value(key, value)
         return instance
 
     def update_from_dict(self, data: Mapping[str, PrimitiveValueType | None]) -> None:
-        """Update custom properties from dict[str, Any]ionary of raw values. Skips None values."""
+        """Update custom properties from dictionary of raw values. Skips None values."""
         for key, value in data.items():
             if value is not None:
                 self.set_custom_value(key, value)
@@ -284,7 +284,7 @@ class ModelCustomProperties(BaseModel):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

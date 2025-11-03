@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import Field
 
 """
-Model for Docker Compose service dict[str, Any]ionary representation.
+Model for Docker Compose service dictionary representation.
 """
 
 from pydantic import BaseModel

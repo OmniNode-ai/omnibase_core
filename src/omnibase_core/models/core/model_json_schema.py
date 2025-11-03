@@ -8,7 +8,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 """
 Model for representing JSON schema structures with proper type safety.
 
-This model replaces dict[str, Any]ionary usage when working with JSON schemas
+This model replaces dictionary usage when working with JSON schemas
 by providing a structured representation of schema data.
 """
 
@@ -93,7 +93,7 @@ class ModelJsonSchema(BaseModel):
     @classmethod
     def from_dict(cls, schema_dict: dict[str, Any]) -> "ModelJsonSchema":
         """
-        Create ModelJsonSchema from a dict[str, Any]ionary.
+        Create ModelJsonSchema from a dictionary.
 
         Args:
             schema_dict: Dictionary representation of JSON schema
@@ -158,7 +158,7 @@ class ModelJsonSchema(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Convert back to dict[str, Any]ionary representation.
+        Convert back to dictionary representation.
 
         Returns:
             Dictionary representation of the schema

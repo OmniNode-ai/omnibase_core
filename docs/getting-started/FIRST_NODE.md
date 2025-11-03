@@ -44,7 +44,7 @@ touch src/temperature_converter/__init__.py
 touch src/temperature_converter/nodes/__init__.py
 touch src/temperature_converter/models/__init__.py
 touch src/temperature_converter/enums/__init__.py
-```
+```python
 
 ### Step 2: Define Enums
 
@@ -76,7 +76,7 @@ class TemperatureUnit(str, Enum):
             self.KELVIN: "K"
         }
         return symbols[self]
-```
+```python
 
 ### Step 3: Define Input Model
 
@@ -157,7 +157,7 @@ class TemperatureInput(BaseModel):
                 raise ValueError("Temperature cannot be below absolute zero (0K)")
 
         return v
-```
+```python
 
 ### Step 4: Define Output Model
 
@@ -206,7 +206,7 @@ class TemperatureOutput(BaseModel):
 
     success: bool = Field(default=True, description="Whether conversion was successful")
     error_message: Optional[str] = Field(default=None, description="Error message if conversion failed")
-```
+```python
 
 ### Step 5: Implement the Node
 
@@ -348,7 +348,7 @@ class TemperatureConverterCompute(NodeCompute):
             "total_operations": total_operations,
             "success_rate_percent": round(success_rate, 2)
         }
-```
+```python
 
 ### Step 6: Write Comprehensive Tests
 
@@ -558,7 +558,7 @@ async def test_processing_time_tracking(converter):
     assert "processing_time_ms" in result
     assert isinstance(result["processing_time_ms"], float)
     assert result["processing_time_ms"] >= 0
-```
+```python
 
 ### Step 7: Run Tests and Validation
 
@@ -571,7 +571,7 @@ poetry run mypy src/
 
 # Run linting
 poetry run ruff check src/ tests/
-```
+```python
 
 ### Step 8: Create Usage Example
 
@@ -617,7 +617,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-```
+```bash
 
 Run it:
 
@@ -634,7 +634,7 @@ poetry run python example_usage.py
 # -40°C = -40.0°F
 #
 # Statistics: 5 conversions, 100.0% success rate
-```
+```python
 
 ## What You Learned
 
@@ -699,7 +699,7 @@ poetry shell
 
 # Check imports
 poetry run python -c "from temperature_converter.nodes.temperature_converter_compute import TemperatureConverterCompute"
-```
+```python
 
 #### Test Failures
 ```bash
@@ -708,13 +708,13 @@ poetry run pytest tests/ -vvs
 
 # Run specific test
 poetry run pytest tests/nodes/test_temperature_converter.py::test_celsius_to_fahrenheit -v
-```
+```bash
 
 #### Type Checking Issues
 ```bash
 # Run MyPy with more details
 poetry run mypy src/ --show-error-codes
-```
+```python
 
 ## Summary
 

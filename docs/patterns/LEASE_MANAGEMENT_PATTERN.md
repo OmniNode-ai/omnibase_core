@@ -63,7 +63,7 @@ class NodeMyOrchestrator(NodeCoreBase):
 
         # Track workflow state
         self.workflow_state = "initialized"
-```
+```python
 
 ### 2. Action Emission with Lease
 
@@ -92,7 +92,7 @@ class NodeMyOrchestrator(NodeCoreBase):
 
         # Increment epoch after emitting action
         self.current_epoch += 1
-```
+```python
 
 ### 3. Lease Validation
 
@@ -151,7 +151,7 @@ class NodeDataProcessorCompute(NodeCoreBase):
         self.last_processed_epoch = action.epoch
 
         return result
-```
+```python
 
 ### 4. Epoch Increment
 
@@ -180,7 +180,7 @@ class NodeMyOrchestrator(NodeCoreBase):
             await self.update_workflow_state("step_completed")
         else:
             await self.update_workflow_state("step_failed")
-```
+```python
 
 ## Lease Patterns
 
@@ -246,7 +246,7 @@ class NodeWorkflowOrchestrator(NodeCoreBase):
             EnumActionType.STORE_RESULTS,
             {"processed_data": self.processed_data}
         )
-```
+```python
 
 ### Lease Validation in Compute/Effect
 
@@ -302,7 +302,7 @@ class NodeMyCompute(NodeCoreBase):
         self.last_processed_epoch = action.epoch
 
         return result
-```
+```python
 
 ## Optimistic Concurrency Control
 
@@ -348,7 +348,7 @@ class NodeMyCompute(NodeCoreBase):
         else:
             # Current epoch - process action normally
             self._process_action(action)
-```
+```python
 
 ### Multi-Orchestrator Coordination
 
@@ -381,7 +381,7 @@ class NodePrimaryOrchestrator(NodeCoreBase):
 
         # Secondary claims new lease
         secondary_orchestrator.claim_lease(new_lease_id, self.current_epoch + 1)
-```
+```python
 
 ## Lease Expiration
 
@@ -433,7 +433,7 @@ class NodeMyOrchestrator(NodeCoreBase):
                     "ttl_seconds": self.lease_metadata.ttl_seconds,
                 }
             )
-```
+```python
 
 ### Lease Renewal
 
@@ -463,7 +463,7 @@ class NodeMyOrchestrator(NodeCoreBase):
 
             # Execute step
             await self.execute_step(step)
-```
+```python
 
 ### Lease Revocation
 
@@ -502,7 +502,7 @@ class NodeLeaseManager(NodeCoreBase):
         await self.event_bus.publish(revocation_event)
 
         self.logger.warning(f"Revoked lease {lease_id}: {reason}")
-```
+```python
 
 ## Best Practices
 
@@ -516,7 +516,7 @@ class NodeMyOrchestrator(NodeCoreBase):
         super().__init__(container)
         self.lease_id = uuid4()  # ✅ REQUIRED
         self.current_epoch = 0
-```
+```python
 
 ### 2. Validate lease_id Before Action Execution
 
@@ -530,7 +530,7 @@ async def process(self, action: ModelAction):
 
     # Now safe to process
     result = await self._execute(action)
-```
+```python
 
 ### 3. Increment Epoch on Every State Change
 
@@ -540,7 +540,7 @@ Maintain strict epoch discipline:
 async def update_state(self, new_state: str):
     self.workflow_state = new_state
     self.current_epoch += 1  # ✅ REQUIRED
-```
+```python
 
 ### 4. Reject Stale Actions (Old Epoch)
 
@@ -549,7 +549,7 @@ Never process actions from the past:
 ```python
 if action.epoch < self.last_processed_epoch:
     raise OnexError("Stale action")  # ✅ REQUIRED
-```
+```python
 
 ### 5. Use TTL for Lease Expiration
 
@@ -561,7 +561,7 @@ self.lease_metadata = ModelLeaseMetadata(
     acquired_at=datetime.now(),
     ttl_seconds=300,  # ✅ RECOMMENDED: 5 minutes
 )
-```
+```python
 
 ### 6. Log Lease Violations for Debugging
 
@@ -579,7 +579,7 @@ except OnexError as e:
         }
     )
     raise
-```
+```text
 
 ## Anti-Patterns
 
@@ -590,14 +590,14 @@ except OnexError as e:
 # BAD: Multiple Orchestrators sharing same lease
 orchestrator_a.lease_id = shared_lease
 orchestrator_b.lease_id = shared_lease  # Violates single-writer semantics
-```
+```text
 
 **Right:**
 ```python
 # GOOD: Each Orchestrator has unique lease
 orchestrator_a.lease_id = uuid4()
 orchestrator_b.lease_id = uuid4()
-```
+```python
 
 ### ❌ Skipping Epoch Validation
 
@@ -606,7 +606,7 @@ orchestrator_b.lease_id = uuid4()
 async def process(self, action: ModelAction):
     # BAD: No epoch validation
     return await self._execute(action)
-```
+```python
 
 **Right:**
 ```python
@@ -615,7 +615,7 @@ async def process(self, action: ModelAction):
     if action.epoch < self.last_processed_epoch:
         raise OnexError("Stale action")
     return await self._execute(action)
-```
+```python
 
 ### ❌ Not Incrementing Epoch on State Changes
 
@@ -624,7 +624,7 @@ async def process(self, action: ModelAction):
 async def update_state(self, new_state: str):
     # BAD: State changed but epoch not incremented
     self.workflow_state = new_state
-```
+```python
 
 **Right:**
 ```python
@@ -632,7 +632,7 @@ async def update_state(self, new_state: str):
     # GOOD: Increment epoch with state change
     self.workflow_state = new_state
     self.current_epoch += 1
-```
+```python
 
 ### ❌ Reusing Expired Leases
 
@@ -641,7 +641,7 @@ async def update_state(self, new_state: str):
 if self.lease_metadata.is_expired():
     # BAD: Continue using expired lease
     await self.emit_action(action_type, payload)
-```
+```python
 
 **Right:**
 ```python
@@ -649,7 +649,7 @@ if self.lease_metadata.is_expired():
     # GOOD: Renew or re-acquire lease
     await self.renew_lease()
     await self.emit_action(action_type, payload)
-```
+```text
 
 ### ❌ Allowing Actions Without lease_id
 
@@ -660,7 +660,7 @@ action = ModelAction(
     payload={"data": value},
     # BAD: No lease_id
 )
-```
+```python
 
 **Right:**
 ```python
@@ -670,7 +670,7 @@ action = ModelAction(
     lease_id=self.lease_id,  # GOOD: Include lease
     epoch=self.current_epoch,
 )
-```
+```python
 
 ## Testing Lease Management
 
@@ -737,7 +737,7 @@ def test_epoch_increment_on_state_change():
     orchestrator.update_workflow_state("processing")
 
     assert orchestrator.current_epoch == initial_epoch + 1
-```
+```python
 
 ### Integration Tests
 
@@ -786,7 +786,7 @@ async def test_lease_expiration():
     # Verify cannot emit actions with expired lease
     with pytest.raises(OnexError):
         orchestrator.check_lease_validity()
-```
+```text
 
 ## Summary
 

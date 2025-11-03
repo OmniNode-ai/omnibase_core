@@ -68,7 +68,7 @@ Split  7/20: 2m55s    Split 17/20: 3m1s
 Split  8/20: 2m58s    Split 18/20: 2m56s
 Split  9/20: 3m5s     Split 19/20: 3m1s
 Split 10/20: 2m56s    Split 20/20: 2m58s
-```
+```bash
 
 **Interpretation**:
 - **Normal Range**: 2m35s - 3m35s (60s spread)
@@ -181,7 +181,7 @@ gh run view <run-id>
 
 # List all runs for comparison
 gh run list --workflow=test.yml --limit 10
-```
+```text
 
 **Questions to Answer**:
 - Which split(s) are slow?
@@ -190,10 +190,10 @@ gh run list --workflow=test.yml --limit 10
 - What changed since the last run?
 
 **Output Example**:
-```
+```text
 ✓ test / test (20 splits) / split-12 (2025-11-01T10:35:42Z)
   Duration: 4m25s ⚠️ WARNING (exceeds 3m30s threshold)
-```
+```python
 
 ### Step 2: Check Test Distribution
 
@@ -204,7 +204,7 @@ poetry run pytest --collect-only --split-splits=20 --split-group=12
 
 # Count tests per split
 poetry run pytest --collect-only --quiet | wc -l
-```
+```text
 
 **Questions to Answer**:
 - How many tests are in the slow split?
@@ -212,11 +212,11 @@ poetry run pytest --collect-only --quiet | wc -l
 - Is the distribution balanced?
 
 **Expected Output**:
-```
+```text
 Split 12/20: 653 tests collected
 Average per split: 610 tests
 Variance: +43 tests (+7%)
-```
+```python
 
 **Action**:
 - If variance >15%: Consider rebalancing splits
@@ -237,7 +237,7 @@ poetry run pytest tests/ \
 poetry run pytest tests/ \
   --split-splits=20 --split-group=12 \
   --durations=0 | sort -t: -k2 -n | tail -20
-```
+```text
 
 **Questions to Answer**:
 - Which tests are slowest?
@@ -246,12 +246,12 @@ poetry run pytest tests/ \
 - Are tests hanging/timing out?
 
 **Expected Output**:
-```
+```text
 slowest durations:
 15.23s call     tests/unit/models/test_large_model.py::test_complex_validation
 12.45s call     tests/unit/nodes/test_orchestrator_workflow.py::test_multi_step
 8.92s setup    tests/integration/test_database_fixture.py::test_transaction
-```
+```python
 
 **Action**:
 - If outliers >10s: Mark with `@pytest.mark.slow`
@@ -292,7 +292,7 @@ gh run list --workflow=test.yml --json databaseId,conclusion,createdAt,updatedAt
 
 # View specific run
 gh run view <run-id> --log | grep "split-12"
-```
+```python
 
 **Questions to Answer**:
 - Is this a new regression?
@@ -341,7 +341,7 @@ poetry run pytest tests/ --split-splits=20 --split-group=12 --durations=10
 
 # Push fix and monitor next CI run
 git push && gh run watch
-```
+```python
 
 ---
 
@@ -361,7 +361,7 @@ git push && gh run watch
 # Identify slow tests in split 12
 poetry run pytest --collect-only --split-splits=20 --split-group=12 | grep integration
 poetry run pytest tests/ --split-splits=20 --split-group=12 --durations=20
-```
+```python
 
 **Resolution**:
 - ✅ **Accepted variance** (within 60s baseline range)
@@ -385,7 +385,7 @@ curl https://www.githubstatus.com/api/v2/status.json
 
 # Compare multiple recent runs
 gh run list --workflow=test.yml --limit 5
-```
+```python
 
 **Resolution**:
 - Retry workflow
@@ -410,7 +410,7 @@ git log --all --pretty=format:"%h %ad" --date=short | while read commit date; do
   count=$(poetry run pytest --collect-only --quiet 2>/dev/null | grep "test" | wc -l)
   echo "$date,$commit,$count"
 done > test_growth.csv
-```
+```python
 
 **Resolution**:
 - Increase split count (20 → 24 → 30)
@@ -438,7 +438,7 @@ poetry run pytest tests/ \
 
 # Check for event loop warnings
 grep "Event loop" <ci-log-file>
-```
+```python
 
 **Resolution**:
 - See [docs/testing/TEST-SUITE-EVENT-LOOP-FIX-SUMMARY.md](../testing/TEST-SUITE-EVENT-LOOP-FIX-SUMMARY.md)
@@ -462,7 +462,7 @@ poetry run pytest tests/ --split-splits=20 --split-group=12 -n 2
 
 # Profile memory usage (local)
 poetry run pytest tests/ --memray --split-splits=20 --split-group=12
-```
+```python
 
 **Resolution**:
 - Reduce parallel workers: `-n auto` → `-n 2` or `-n 0`
@@ -531,7 +531,7 @@ gh run watch
 
 # Rerun failed jobs
 gh run rerun <run-id>
-```
+```python
 
 ### Local Testing Commands
 
@@ -554,7 +554,7 @@ poetry run pytest tests/ \
   --split-splits=20 --split-group=12 \
   -v --tb=short \
   --durations=0 | tee split_12_timing.log
-```
+```bash
 
 ### Custom Monitoring Scripts
 
@@ -572,7 +572,7 @@ gh run list --workflow=test.yml --limit $RUNS --json databaseId,createdAt,conclu
     echo "Run: $run_id ($conclusion) - $created_at"
     # Extract split durations (requires parsing logs)
   done
-```
+```python
 
 **Create `scripts/analyze_split_times.py`**:
 ```python
@@ -599,7 +599,7 @@ def analyze_splits(log_file):
 if __name__ == "__main__":
     results = analyze_splits(sys.argv[1])
     print(json.dumps(results, indent=2))
-```
+```text
 
 ### Reporting Dashboard (Manual)
 
@@ -611,11 +611,11 @@ if __name__ == "__main__":
 | 2025-11-08 | ... | ... | ... | ... | ... | ... |
 
 **Google Sheets Formula** (for trend analysis):
-```
+```text
 =AVERAGE(C2:C10)  // Average of last 10 runs
 =SPARKLINE(C2:C10)  // Visual trend
 =IF(C2>210,"⚠️ WARNING","✅ OK")  // Alert if >3m30s
-```
+```python
 
 ---
 
@@ -728,7 +728,7 @@ poetry run pytest tests/ --split-splits=20 --split-group=12 --durations=20
 
 # Monitor CI in real-time
 gh run watch
-```
+```yaml
 
 ---
 

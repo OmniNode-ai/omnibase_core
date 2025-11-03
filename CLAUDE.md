@@ -39,7 +39,7 @@
 
 ### Dependencies
 
-- **Core**: omnibase_spi (v0.1.1) - Protocol definitions
+- **Core**: omnibase_spi (v0.2.0) - Protocol definitions
 - **Framework**: Pydantic 2.11+, FastAPI 0.120+
 - **Testing**: pytest 8.4+, pytest-asyncio, pytest-xdist, pytest-split, pytest-cov
 

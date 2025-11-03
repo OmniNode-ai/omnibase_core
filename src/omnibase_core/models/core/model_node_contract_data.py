@@ -19,7 +19,7 @@ class ModelNodeContractData(BaseModel):
     Pydantic model for node contract data.
 
     Ensures contract data has required fields and provides type safety
-    for node initialization instead of manual dict[str, Any]ionary access.
+    for node initialization instead of manual dictionary access.
     """
 
     version: ModelSemVer = Field(
@@ -32,7 +32,7 @@ class ModelNodeContractData(BaseModel):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelNodeContractData":
         """
-        Create model from dict[str, Any]ionary data.
+        Create model from dictionary data.
 
         Args:
             data: Dictionary containing contract data

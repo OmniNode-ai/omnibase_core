@@ -19,7 +19,7 @@ This guide provides best practices for configuring `ModelComputeCacheConfig` to 
 Cache memory usage follows this approximate formula:
 ```text
 Total Memory (MB) = (max_size × avg_entry_size_kb) / 1024
-```
+```python
 
 **Default Entry Size:** ~1KB per cached computation (varies by computation complexity)
 
@@ -69,7 +69,7 @@ container = await create_model_onex_container(
     enable_cache=True,
     compute_cache_config=medium_config
 )
-```
+```yaml
 
 ---
 
@@ -97,7 +97,7 @@ config = ModelComputeCacheConfig(
     max_size=512,
     eviction_policy="lru"
 )
-```
+```text
 
 ### LFU (Least Frequently Used)
 
@@ -121,7 +121,7 @@ config = ModelComputeCacheConfig(
     max_size=1024,
     eviction_policy="lfu"
 )
-```
+```text
 
 ### FIFO (First In, First Out)
 
@@ -145,7 +145,7 @@ config = ModelComputeCacheConfig(
     max_size=256,
     eviction_policy="fifo"
 )
-```
+```yaml
 
 ---
 
@@ -197,7 +197,7 @@ config = ModelComputeCacheConfig(enable_stats=True)
 
 # Ultra-low latency (disable stats)
 config = ModelComputeCacheConfig(enable_stats=False)
-```
+```python
 
 ### Key Metrics to Monitor
 
@@ -213,7 +213,7 @@ print(f"Hit Rate: {stats['hit_rate']}%")  # Target: > 70%
 print(f"Evictions: {stats['evictions']}")  # High evictions = undersized cache
 print(f"Expirations: {stats['expirations']}")  # High = TTL too short
 print(f"Total Requests: {stats['total_requests']}")
-```
+```python
 
 ### Performance Targets
 
@@ -237,7 +237,7 @@ def check_cache_health(node: NodeCompute) -> dict[str, bool]:
         ) <= 0.1,
         "memory_ok": stats["total_entries"] < (stats["max_size"] * 0.8)
     }
-```
+```yaml
 
 ---
 
@@ -275,7 +275,7 @@ if stats.get("hit_rate", 0) < 50:
     container = await create_model_onex_container(
         compute_cache_config=new_config
     )
-```
+```text
 
 ### A/B Testing Cache Configurations
 
@@ -296,7 +296,7 @@ for config in configs:
 
     # Benchmark and compare metrics
     # ... (implementation specific)
-```
+```text
 
 ### Multi-Tier Caching
 
@@ -312,7 +312,7 @@ compute_config = ModelComputeCacheConfig(
 
 # L2: External Redis cache (larger, distributed)
 # ... (implementation specific to deployment)
-```
+```yaml
 
 ---
 

@@ -1,8 +1,8 @@
 # Container Types in omnibase_core
 
 **Status**: ✅ Complete
-**Version**: 0.1.0
-**Last Updated**: 2025-10-30
+**Version**: 0.2.0
+**Last Updated**: 2025-11-03
 
 ---
 
@@ -48,7 +48,7 @@ config_value.validate_with(
     validator=lambda x: x in ["production", "development"],
     error_message="Invalid environment"
 )
-```
+```python
 
 **Key Characteristics**:
 - Generic type parameter `T` for the wrapped value
@@ -96,7 +96,7 @@ class MyNode(NodeCoreBase):
 
         # Resolve dependencies
         self.logger = container.get_service(ProtocolLogger)
-```
+```python
 
 **Key Characteristics**:
 - Provides service resolution via `get_service()`
@@ -134,7 +134,7 @@ from omnibase_core.models.core.model_container import ModelContainer
 class MyNode(NodeCoreBase):
     def __init__(self, container: ModelContainer):  # ❌ WRONG!
         super().__init__(container)  # Will fail!
-```
+```python
 
 **Problem**: `ModelContainer` is a value wrapper, not a DI container. It doesn't have `get_service()` method.
 
@@ -148,7 +148,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 class MyNode(NodeCoreBase):
     def __init__(self, container: ModelONEXContainer):  # ✅ Correct!
         super().__init__(container)
-```
+```python
 
 ---
 
@@ -160,7 +160,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 # Trying to wrap a value
 container = ModelONEXContainer()
 container.value = "my_data"  # ❌ WRONG!
-```
+```python
 
 **Problem**: `ModelONEXContainer` is for dependency injection, not value wrapping.
 
@@ -177,7 +177,7 @@ wrapped_value = ModelContainer.create(
     container_type="config",
     source="user_input"
 )
-```
+```python
 
 ---
 
@@ -197,7 +197,7 @@ Are you writing a node class?
                 │         container.get_service(ProtocolLogger)
                 │
                 └─ No → You probably don't need either container type
-```
+```python
 
 ---
 
@@ -245,7 +245,7 @@ class NodeDataProcessor(NodeCoreBase):
         self.logger.info("Processing data")
         # Process data...
         return result
-```
+```python
 
 ### Example 2: Configuration Value (Use ModelContainer[T])
 
@@ -273,7 +273,7 @@ class ConfigManager:
             validator=lambda x: len(x) > 0,
             error_message="Config value cannot be empty"
         )
-```
+```python
 
 ### Example 3: Service Factory (Use ModelONEXContainer)
 
@@ -294,7 +294,7 @@ async def create_service_layer(
         "event_bus": event_bus,
         "container": container  # Pass container for further resolution
     }
-```
+```python
 
 ---
 
@@ -319,7 +319,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 class MyNode(NodeCoreBase):
     def __init__(self, container: ModelONEXContainer):  # ✅
         super().__init__(container)
-```
+```python
 
 ---
 
@@ -341,7 +341,7 @@ def process_value(value_container: ModelContainer[str]) -> str:
 # DI container type hint
 def create_node(di_container: ModelONEXContainer) -> NodeCoreBase:
     return MyNode(di_container)
-```
+```python
 
 ### mypy Strict Compliance
 
@@ -374,7 +374,7 @@ def test_value_container():
     # Transform value
     doubled = container.map_value(lambda x: x * 2)
     assert doubled.get_value() == 84
-```
+```python
 
 ### Testing with ModelONEXContainer
 
@@ -392,7 +392,7 @@ async def test_service_resolution():
     # Create node with container
     node = MyNode(container)
     assert node.container is container
-```
+```python
 
 ---
 

@@ -5,7 +5,7 @@ from pydantic import Field
 """
 Configuration Merge Result Model for ONEX Configuration System.
 
-Strongly typed model to replace dict[str, Any]ionary usage in configuration merging.
+Strongly typed model to replace dictionary usage in configuration merging.
 """
 
 from pydantic import BaseModel
@@ -19,7 +19,7 @@ class ModelConfigurationMergeResult(BaseModel):
     """
     Strongly typed model for configuration merge results.
 
-    Replaces dict[str, Any]ionary usage in configuration management
+    Replaces dictionary usage in configuration management
     with proper Pydantic validation and type safety.
     """
 

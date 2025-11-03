@@ -39,7 +39,7 @@ src/omnibase_core/models/contracts/subcontracts/
 ├── model_fsm_operation.py                    # FSM operation definitions
 ├── model_route_definition.py                 # Route specification models
 └── model_routing_metrics.py                  # Routing performance metrics
-```
+```python
 
 ## Core Subcontract Types
 
@@ -139,7 +139,7 @@ realtime_aggregation = ModelAggregationSubcontract(
     ),
     correlation_id=uuid4()
 )
-```
+```python
 
 **Integration with REDUCER Nodes**:
 
@@ -172,7 +172,7 @@ class AggregationReducerService(NodeReducerService):
 
         # Fallback to standard reduction
         return await super().execute_reduction(contract)
-```
+```python
 
 ### 2. Finite State Machine (FSM) Subcontract
 
@@ -337,7 +337,7 @@ pipeline_fsm = ModelFSMSubcontract(
     final_states=["pipeline_complete"],
     correlation_id=uuid4()
 )
-```
+```python
 
 **Integration with ORCHESTRATOR Nodes**:
 
@@ -371,7 +371,7 @@ class FSMOrchestratorService(NodeOrchestratorService):
             )
 
         return await super().execute_orchestration(contract)
-```
+```python
 
 ### 3. Routing Subcontract
 
@@ -478,7 +478,7 @@ microservice_routing = ModelRoutingSubcontract(
     ),
     correlation_id=uuid4()
 )
-```
+```python
 
 **Integration with EFFECT Nodes**:
 
@@ -518,7 +518,7 @@ class RoutingEffectService(NodeEffectService):
             )
 
         return await super().execute_effect(contract)
-```
+```python
 
 ### 4. Caching Subcontract
 
@@ -577,7 +577,7 @@ caching_strategy = ModelCachingSubcontract(
     },
     correlation_id=uuid4()
 )
-```
+```python
 
 ## Advanced Subcontract Patterns
 
@@ -629,7 +629,7 @@ complex_reducer_contract = ModelContractReducer(
     execution_order=["caching", "aggregation", "fsm"],
     failure_handling="rollback_on_error"
 )
-```
+```python
 
 ### 2. Event-Driven Subcontract Coordination
 
@@ -667,7 +667,7 @@ event_driven_processing = ModelEventTypeSubcontract(
     },
     correlation_id=uuid4()
 )
-```
+```text
 
 ### 3. Performance-Optimized Subcontract Chain
 
@@ -725,7 +725,7 @@ trading_subcontract_chain = [
         correlation_id=uuid4()
     )
 ]
-```
+```python
 
 ## Subcontract Testing Strategies
 
@@ -815,7 +815,7 @@ class TestAggregationSubcontract:
             correlation_id=uuid4()
         )
         assert valid_subcontract.correlation_id is not None
-```
+```python
 
 ### Integration Testing with Node Services
 
@@ -886,7 +886,7 @@ class TestSubcontractIntegration:
         # Verify FSM execution
         assert result.correlation_id == orchestrator_contract.correlation_id
         assert result.subcontract_results["fsm"]["final_state"] == "end"
-```
+```text
 
 ## Performance Optimization Guidelines
 
@@ -912,7 +912,7 @@ memory_optimized_aggregation = ModelAggregationSubcontract(
     ),
     correlation_id=uuid4()
 )
-```
+```text
 
 ### 2. Parallel Processing
 
@@ -926,7 +926,7 @@ parallel_processing_config = ModelAggregationPerformance(
     result_consolidation="streaming",  # Stream results as they become available
     correlation_id=uuid4()
 )
-```
+```text
 
 ### 3. Caching Optimization
 
@@ -958,7 +958,7 @@ performance_caching = ModelCachingSubcontract(
     },
     correlation_id=uuid4()
 )
-```
+```python
 
 ## Monitoring and Observability
 
@@ -1042,7 +1042,7 @@ class SubcontractMetricsCollector:
         })
 
         return metrics
-```
+```python
 
 ### Health Monitoring
 
@@ -1091,7 +1091,7 @@ class SubcontractHealthMonitor:
             health_status["status"] = "warning"
 
         return health_status
-```
+```python
 
 ## Best Practices and Recommendations
 

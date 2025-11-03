@@ -281,7 +281,7 @@ class ModelSchema(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelSchema"]:
-        """Create from JSON Schema dict[str, Any]ionary."""
+        """Create from JSON Schema dictionary."""
         if data is None:
             return None
         properties = None

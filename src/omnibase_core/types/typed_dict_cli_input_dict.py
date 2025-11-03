@@ -14,7 +14,7 @@ from uuid import UUID
 
 
 class TypedDictCliInputDict(TypedDict, total=False):
-    """Type definition for CLI input dict[str, Any]ionary."""
+    """Type definition for CLI input dictionary."""
 
     action: str
     output_format: str

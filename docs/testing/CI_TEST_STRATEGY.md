@@ -35,7 +35,7 @@ This document outlines the comprehensive CI/CD test strategy for omnibase_core, 
 ```yaml
 poetry run pytest tests/unit/enums tests/unit/errors \
   --maxfail=5 -x --tb=short
-```
+```python
 
 #### Why smoke tests?
 
@@ -52,7 +52,7 @@ poetry run pytest tests/unit/enums tests/unit/errors \
 poetry run pytest tests/ \
   --splits 20 --group ${{ matrix.split }} \
   -n auto --timeout=60 --tb=short
-```
+```python
 
 **Split Strategy Rationale**:
 - 10,987 tests ÷ 16 = ~610 tests/split
@@ -84,7 +84,7 @@ poetry run pytest tests/ \
   --cov-report=xml \
   --cov-report=html \
   --cov-fail-under=60
-```
+```bash
 
 **Coverage Strategy**:
 - ✅ **Main branch**: Track overall coverage trends
@@ -108,7 +108,7 @@ poetry run pytest tests/ \
 poetry run black --check src/ tests/
 poetry run isort --check-only src/ tests/
 poetry run mypy src/omnibase_core  # Strict mode: 0 errors across 1865 files
-```
+```bash
 
 #### Why always lint?
 
@@ -124,7 +124,7 @@ poetry run mypy src/omnibase_core  # Strict mode: 0 errors across 1865 files
 **Configuration**:
 ```yaml
 python3 scripts/validate-doc-links.py --fix-case
-```
+```python
 
 #### Why validate docs in CI?
 
@@ -144,7 +144,7 @@ poetry run pytest --testmon --cov --cov-report=term-missing
 
 # 3. Reset testmon after major refactor
 poetry run pytest --testmon-noselect
-```
+```python
 
 **Speedup Example**: 10,987 tests → ~50 tests for small changes (~220x faster)
 
@@ -157,7 +157,7 @@ poetry run pytest --testmon --cov --cov-fail-under=60
 poetry run black src/ tests/
 poetry run isort src/ tests/
 poetry run mypy src/omnibase_core
-```
+```python
 
 ### Full Suite (Before Push to Main)
 ```bash
@@ -166,7 +166,7 @@ poetry run pytest tests/
 
 # With coverage
 poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
-```
+```python
 
 ## Test Selection Strategy
 

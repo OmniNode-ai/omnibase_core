@@ -49,7 +49,7 @@ template:
       - name: "Checkpoint name"
         command: "poetry run pytest ..."
         expected_result: "Success criteria"
-```
+```text
 
 ### 2. COMPUTE Node Templates
 
@@ -65,7 +65,7 @@ template:
 # - Node implementation
 # - Test suite
 # - Validation commands
-```
+```text
 
 #### Template: Batch Data Processor
 **Purpose**: Processing collections of items
@@ -91,7 +91,7 @@ template:
 # - Error handling and rollback
 # - Idempotency considerations
 # - Test suite with mocks
-```
+```text
 
 #### Template: HTTP API Client
 **Purpose**: Call external REST APIs with retry logic
@@ -117,7 +117,7 @@ template:
 # - State transition validation
 # - Event handling
 # - Test suite for all transitions
-```
+```python
 
 #### Template: Metrics Aggregator
 **Purpose**: Collect and aggregate metrics data
@@ -143,7 +143,7 @@ template:
 # - Error recovery strategies
 # - Progress tracking
 # - Test suite for workflow
-```
+```text
 
 #### Template: Parallel Workflow
 **Purpose**: Execute independent nodes concurrently
@@ -171,7 +171,7 @@ agent_decision_flow:
   question_3: "Does it coordinate other nodes?"
     yes: "Use ORCHESTRATOR template"
     no: "Use EFFECT template"
-```
+```python
 
 #### Pattern: Validation Workflow
 ```yaml
@@ -183,7 +183,7 @@ agent_validation_steps:
   5. Check: Type checking passes
   6. Check: Coverage > 90%
   7. Confirm: Ready for integration
-```
+```python
 
 ### 7. Copy-Paste Ready Templates
 
@@ -208,7 +208,7 @@ STEP 4: Integrate into your project
 # poetry run mypy src/your_module/node_your_name_type.py
 # poetry run pytest tests/unit/test_node_your_name.py -xvs
 # Expected: All tests pass, type checking passes
-```
+```python
 
 ### 8. Agent-Specific Utilities
 
@@ -219,7 +219,7 @@ STEP 4: Integrate into your project
 # - Node type from template
 # - Required dependencies from template
 # - Validation commands from template
-```
+```text
 
 #### Automated Validation Scripts
 ```bash
@@ -230,7 +230,7 @@ STEP 4: Integrate into your project
 # - Runs tests
 # - Verifies coverage
 # - Reports success/failure
-```
+```python
 
 ## Temporary Resources
 

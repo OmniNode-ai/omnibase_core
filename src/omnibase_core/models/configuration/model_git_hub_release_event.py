@@ -38,7 +38,7 @@ class ModelGitHubReleaseEvent(BaseModel):
         cls,
         data: dict[str, Any] | None,
     ) -> Optional["ModelGitHubReleaseEvent"]:
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         if data is None:
             return None
         return cls(**data)

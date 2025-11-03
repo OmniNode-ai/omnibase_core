@@ -36,7 +36,7 @@ capabilities:
     provides: [operation_timing, error_rate_tracking, success_metrics]
   configuration_management:
     provides: [type_safe_config, environment_variables, runtime_validation]
-```
+```python
 
 **Why This Works**:
 - Single source of truth for cross-cutting concerns
@@ -65,7 +65,7 @@ class HandleErrorInput(BaseModel):
         if v is not None and (len(v) < 8 or len(v) > 128):
             raise ValueError("correlation_id must be between 8-128 characters")
         return v
-```
+```python
 
 2. **Configuration Models** with defaults and constraints:
 ```python
@@ -73,7 +73,7 @@ class ErrorHandlingConfig(BaseModel):
     sanitize_production_errors: bool = Field(True, description="Enable sensitive data sanitization")
     max_context_fields: int = Field(20, ge=1, description="Maximum context fields to include")
     correlation_id_required: bool = Field(False, description="Whether correlation ID is required")
-```
+```python
 
 3. **Enum-Based State Management**:
 ```python
@@ -81,7 +81,7 @@ class CircuitBreakerState(str, Enum):
     CLOSED = "CLOSED"
     OPEN = "OPEN"
     HALF_OPEN = "HALF_OPEN"
-```
+```python
 
 **Benefits Achieved**:
 - Complete runtime validation of all inputs/outputs
@@ -105,7 +105,7 @@ capabilities:
       - secure_error_messages      # Generate safe error messages
       - correlation_id_validation  # Validate tracking identifiers
       - operation_context_management # Manage context safely
-```
+```yaml
 
 2. **Configuration-Driven Security**:
 ```yaml
@@ -115,7 +115,7 @@ configuration:
       type: boolean
       default: true
       description: "Enable sensitive data sanitization in production"
-```
+```python
 
 3. **Safe Error Handling Pattern**:
 ```python
@@ -124,7 +124,7 @@ class HandleErrorOutput(BaseModel):
     safe_context: Dict[str, Any] = Field(..., description="Sanitized context safe for logging")
     error_id: str = Field(..., description="Unique identifier for error tracking")
     correlation_id: Optional[str] = Field(None, description="Request correlation ID")
-```
+```text
 
 **Security Benefits**:
 - Prevents information disclosure in production
@@ -145,7 +145,7 @@ integration:
   cleanup_order: 99             # Cleanup late to support other mixins
   required_for_health_check: true
   provides_base_functionality: true
-```
+```yaml
 
 2. **Dependency Declaration**:
 ```yaml
@@ -156,7 +156,7 @@ dependencies:
   internal_modules:
     - omnibase_core.core.onex_error
     - omnibase_core.enums.enum_health_status
-```
+```yaml
 
 3. **Metrics Integration**:
 ```yaml
@@ -170,7 +170,7 @@ metrics:
     - operation_name
     - node_type
     - error_type
-```
+```python
 
 **Integration Benefits**:
 - Seamless integration with existing ONEX infrastructure
@@ -252,7 +252,7 @@ actions:
 configuration:
   capability_config:
     setting: {type, default, description}
-```
+```python
 
 ### Type Safety Implementation Pattern
 
@@ -277,7 +277,7 @@ class ActionOutput(BaseModel):
 # 4. Configuration models with defaults
 class CapabilityConfig(BaseModel):
     setting: Type = Field(default_value, description="Configuration setting")
-```
+```python
 
 ### Security-First Error Handling Pattern
 

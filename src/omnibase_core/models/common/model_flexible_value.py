@@ -171,7 +171,7 @@ class ModelFlexibleValue(BaseModel):
         value: dict[str, ModelSchemaValue],
         source: str | None = None,
     ) -> ModelFlexibleValue:
-        """Create flexible value from dict[str, Any]ionary of ModelSchemaValue."""
+        """Create flexible value from dictionary of ModelSchemaValue."""
         return cls(
             value_type=EnumFlexibleValueType.DICT,
             dict_value=value,
@@ -185,7 +185,7 @@ class ModelFlexibleValue(BaseModel):
         value: dict[str, object],
         source: str | None = None,
     ) -> ModelFlexibleValue:
-        """Create flexible value from raw dict[str, Any]ionary, converting to ModelSchemaValue format."""
+        """Create flexible value from raw dictionary, converting to ModelSchemaValue format."""
         converted_value = {
             key: ModelSchemaValue.from_value(val) for key, val in value.items()
         }
@@ -354,7 +354,7 @@ class ModelFlexibleValue(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, object]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

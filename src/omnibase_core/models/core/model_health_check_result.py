@@ -67,7 +67,7 @@ class ModelHealthCheckResult(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelHealthCheckResult":
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         return cls(**data)
 
     @property

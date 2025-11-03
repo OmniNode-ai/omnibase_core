@@ -53,7 +53,7 @@ class ModelSecurityContext(BaseModel):
     def from_dict(
         cls, data: dict[str, str | int | bool | list[str] | datetime | None] | None
     ) -> Optional["ModelSecurityContext"]:
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         if data is None:
             return None
         from typing import Optional, cast

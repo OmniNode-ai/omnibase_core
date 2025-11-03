@@ -68,7 +68,7 @@ health_check_config:
   interval_seconds: 30
   timeout_ms: 5000
   retry_attempts: 3
-```
+```python
 
 ### Layer 2: Pydantic Model Files
 
@@ -107,7 +107,7 @@ class ModelHealthCheckSubcontract(BaseModel):
                 "retry_attempts": 3
             }
         }
-```
+```yaml
 
 ### Layer 3: Integration Layer
 
@@ -132,7 +132,7 @@ subcontracts:
     integration_field: "health_check_configuration"
   - path: "../../subcontracts/performance_monitoring_subcontract.yaml"
     integration_field: "performance_monitoring_configuration"
-```
+```python
 
 ## Node Type Constraints
 
@@ -230,7 +230,7 @@ src/omnibase_core/
     ├── model_performance_monitoring_subcontract.py
     ├── model_event_handling_subcontract.py
     └── ...
-```
+```python
 
 ### Naming Conventions
 
@@ -314,7 +314,7 @@ def load_node_contract(contract_path: Path) -> ModelContractContent:
     validate_complete_contract(contract)
 
     return contract
-```
+```yaml
 
 ## Integration with Contract System
 
@@ -327,7 +327,7 @@ Nodes consume mixins through the `subcontracts` section of their contract:
 subcontracts:
   - path: "../../subcontracts/health_check_subcontract.yaml"
     integration_field: "health_check_configuration"
-```
+```python
 
 **Path Resolution**:
 - Relative paths from node contract location
@@ -351,7 +351,7 @@ subcontracts:
     integration_field: "performance_monitoring_configuration"
   - path: "../../subcontracts/event_handling_subcontract.yaml"
     integration_field: "event_handling_configuration"
-```
+```python
 
 **Composition Rules**:
 - Each mixin contributes independent capabilities
@@ -387,7 +387,7 @@ class MyComputeNode(NodeCompute):
             await self._record_metrics(result, perf_config)
 
         return result
-```
+```python
 
 ## Architectural Principles
 

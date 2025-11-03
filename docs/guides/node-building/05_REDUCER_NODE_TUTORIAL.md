@@ -26,7 +26,7 @@ REDUCER nodes in ONEX are **pure finite state machines**:
 **Core Concept**:
 ```text
 δ(state, action) → (new_state, intents[])
-```
+```python
 
 **Tutorial Structure**:
 1. Understand pure FSM vs. stateful patterns
@@ -59,7 +59,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
         emit_log_event(LogLevel.INFO, "Aggregation complete")
 
         return result
-```
+```python
 
 ### ✅ New Pattern (Pure FSM, Intent Emission)
 ```python
@@ -108,7 +108,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
             items_processed=len(aggregated_data),
             intents=intents,  # Side effects described, not executed
         )
-```
+```python
 
 **Key Difference**:
 - **Reducer**: Describes what side effects *should* happen (Intents)
@@ -129,7 +129,7 @@ poetry install
 
 # Run existing reducer tests
 poetry run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1
-```
+```python
 
 ---
 
@@ -222,7 +222,7 @@ class ModelMetricsAggregationInput(BaseModel):
         """Pydantic configuration."""
 
         frozen = True
-```
+```python
 
 ### Output Model with Intent Support
 
@@ -347,7 +347,7 @@ class ModelMetricsAggregationOutput(BaseModel):
         """Pydantic configuration."""
 
         frozen = True
-```
+```python
 
 ---
 
@@ -651,7 +651,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
                 **input_data.metadata,
             },
         )
-```
+```python
 
 ---
 
@@ -686,7 +686,7 @@ Intent Flow Example:
                intent.payload["context"],
            )
 """
-```
+```python
 
 ### Effect Node for Intent Execution
 
@@ -760,7 +760,7 @@ class NodeIntentExecutorEffect(NodeEffect):
 
         # In real implementation, write to database
         print(f"💾 Persisting aggregation: {payload['operation_id']}")
-```
+```python
 
 ---
 
@@ -988,7 +988,7 @@ async def test_intent_priority_ordering(aggregator_node):
 
     if persist_intents:
         assert persist_intents[0].priority == 1  # Highest priority
-```
+```python
 
 ---
 
@@ -1052,7 +1052,7 @@ async def aggregate_server_metrics():
 
 
 asyncio.run(aggregate_server_metrics())
-```
+```python
 
 ### Orchestrator Pattern for Full Workflow
 
@@ -1113,7 +1113,7 @@ async def main():
 
 
 asyncio.run(main())
-```
+```python
 
 ---
 
@@ -1139,7 +1139,7 @@ INTENT_TYPES = {
     "send_notification": "Notification Effect Node",
     "trigger_workflow": "Workflow Orchestrator Node",
 }
-```
+```text
 
 ### Conflict Resolution Strategies
 
@@ -1151,7 +1151,7 @@ EnumConflictResolution.TAKE_MAX     # Keep maximum value
 EnumConflictResolution.TAKE_MIN     # Keep minimum value
 EnumConflictResolution.TAKE_LATEST  # Use latest value
 EnumConflictResolution.MERGE        # Merge lists/objects
-```
+```python
 
 ---
 
@@ -1182,7 +1182,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
         super().__init__(container)
         # Initialize intent publisher (REQUIRED)
         self._init_intent_publisher(container)
-```
+```python
 
 **Step 2: Publish Events as Intents**
 
@@ -1224,7 +1224,7 @@ async def aggregate_metrics(
         sources_processed=len(input_data.data_sources),
         items_processed=len(aggregated_data),
     )
-```
+```yaml
 
 **Step 3: Update Contract**
 
@@ -1236,7 +1236,7 @@ subcontracts:
 
 mixins:
   - "MixinIntentPublisher"
-```
+```python
 
 ### Testing with MixinIntentPublisher
 
@@ -1278,7 +1278,7 @@ async def test_reducer_publishes_aggregated_metrics():
     intent_payload = intent_envelope["payload"]
     assert intent_payload["target_topic"] == "dev.omninode-bridge.metrics.aggregated.v1"
     assert intent_payload["target_event_payload"]["aggregated_value"] == 150.0
-```
+```python
 
 ### Pattern Comparison
 
@@ -1293,7 +1293,7 @@ intents = [
     )
 ]
 return ModelMetricsAggregationOutput(result=data, intents=intents)
-```
+```python
 
 **MixinIntentPublisher (Event Publishing)**:
 ```python
@@ -1304,7 +1304,7 @@ await self.publish_event_intent(
     event=my_event_model
 )
 return ModelMetricsAggregationOutput(result=data)
-```
+```python
 
 **Key Differences**:
 - ModelIntent: Returned in output, executed by orchestrator
@@ -1384,7 +1384,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
         """Pure aggregation logic (no I/O)."""
         # Implementation...
         pass
-```
+```python
 
 ### Further Reading
 
@@ -1442,7 +1442,7 @@ async def process(self, input_data):
         )
     ]
     return ModelOutput(result=result, intents=intents)
-```
+```yaml
 
 ---
 

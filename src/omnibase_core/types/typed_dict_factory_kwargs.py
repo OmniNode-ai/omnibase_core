@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 """
-Typed dict[str, Any]ionary for factory method parameters.
+Typed dictionary for factory method parameters.
 
 Provides structured parameter types for model factory operations.
 Restructured using composition to reduce string field count and follow ONEX one-model-per-file pattern.
@@ -29,7 +29,7 @@ class TypedDictFactoryKwargs(
     total=False,
 ):
     """
-    Typed dict[str, Any]ionary for factory method parameters.
+    Typed dictionary for factory method parameters.
 
     Restructured using composition to reduce string field count.
     Follows ONEX one-model-per-file architecture pattern.

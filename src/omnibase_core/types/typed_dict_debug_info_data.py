@@ -13,7 +13,7 @@ from typing import TypedDict
 
 
 class TypedDictDebugInfoData(TypedDict, total=False):
-    """Strongly-typed dict[str, Any]ionary for debug information."""
+    """Strongly-typed dictionary for debug information."""
 
     key: str
     value: str  # Debug values are typically displayed as strings

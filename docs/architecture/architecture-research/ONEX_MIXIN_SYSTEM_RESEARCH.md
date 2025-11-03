@@ -69,7 +69,7 @@ metrics:
     type: "counter|gauge|histogram"
     description: "Metric description"
     labels: ["label1", "label2"]
-```
+```python
 
 ### 3. Node Type Constraints
 
@@ -121,7 +121,7 @@ class ModelMainSubcontract(BaseModel):
 
     class Config:
         json_schema_extra = {"example": {...}}
-```
+```yaml
 
 ### 5. Mixin Composition in Node Contracts
 
@@ -134,7 +134,7 @@ subcontracts:
     integration_field: "health_check_configuration"
   - path: "../../subcontracts/performance_monitoring_subcontract.yaml"
     integration_field: "performance_monitoring_configuration"
-```
+```python
 
 **Key Points:**
 - `path`: Relative path to mixin YAML file
@@ -175,7 +175,7 @@ src/omnibase_core/model/subcontracts/  # Pydantic models
 ├── model_health_check_subcontract.py
 ├── model_performance_monitoring_subcontract.py
 └── ...
-```
+```python
 
 **Naming Conventions:**
 - Mixin YAML files: `mixin_[capability_name].yaml`
@@ -218,7 +218,7 @@ error_handling_config:
   sensitive_data_scrubbing: true
 
 # Define error categories, metrics, and recovery strategies...
-```
+```python
 
 ### 9. Best Practices
 

@@ -83,7 +83,7 @@ class ModelResultAccessor(ModelFieldAccessor):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         # Accessor classes don't have specific model fields - serialize accessible data
         result: dict[str, Any] = {
             "accessor_type": self.__class__.__name__,

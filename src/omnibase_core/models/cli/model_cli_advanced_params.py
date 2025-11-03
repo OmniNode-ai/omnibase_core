@@ -150,7 +150,7 @@ class ModelCliAdvancedParams(BaseModel):
         if not isinstance(v, dict):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="node_config_overrides must be a dict[str, Any]ionary",
+                message="node_config_overrides must be a dictionary",
             )
 
         result = {}
@@ -179,7 +179,7 @@ class ModelCliAdvancedParams(BaseModel):
         if not isinstance(v, dict):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="custom_parameters must be a dict[str, Any]ionary",
+                message="custom_parameters must be a dictionary",
             )
 
         result = {}
@@ -271,7 +271,7 @@ class ModelCliAdvancedParams(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:

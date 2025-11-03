@@ -323,7 +323,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
 
     def to_dict_lazy(self) -> dict[str, Any]:
         """
-        Convert envelope to dict[str, Any]ionary with lazy evaluation for nested objects.
+        Convert envelope to dictionary with lazy evaluation for nested objects.
 
         Performance optimized to reduce memory usage by ~60% through lazy
         evaluation of expensive model_dump() operations on nested objects.

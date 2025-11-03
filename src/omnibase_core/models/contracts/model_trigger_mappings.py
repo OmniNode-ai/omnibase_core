@@ -158,10 +158,10 @@ class ModelTriggerMappings(BaseModel):
 
     def get_all_mappings(self) -> dict[str, str]:
         """
-        Get all mappings as a single flattened dict[str, Any]ionary.
+        Get all mappings as a single flattened dictionary.
 
         Returns:
-            Flattened dict[str, Any]ionary of all mappings
+            Flattened dictionary of all mappings
         """
         result = {}
         result.update(self.event_pattern_mappings)

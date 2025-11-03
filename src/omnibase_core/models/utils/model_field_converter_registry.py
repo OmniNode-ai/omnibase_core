@@ -204,7 +204,7 @@ class ModelFieldConverterRegistry:
 
     def convert_data(self, data: dict[str, str]) -> dict[str, ModelSchemaValue]:
         """
-        Convert a dict[str, Any]ionary of string data to typed values.
+        Convert a dictionary of string data to typed values.
 
         Args:
             data: Dictionary with string values

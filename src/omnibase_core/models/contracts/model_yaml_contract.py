@@ -168,7 +168,7 @@ class ModelYamlContract(BaseModel):
     @classmethod
     def from_yaml_dict(cls, yaml_data: dict[str, object]) -> "ModelYamlContract":
         """
-        Alternative constructor for YAML dict[str, Any]ionary data.
+        Alternative constructor for YAML dictionary data.
 
         Args:
             yaml_data: Dictionary loaded from YAML file

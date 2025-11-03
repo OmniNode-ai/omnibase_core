@@ -181,10 +181,10 @@ class ModelUnifiedHubContract(BaseModel):
     @classmethod
     def from_dict(cls, contract_data: dict[str, Any]) -> "ModelUnifiedHubContract":
         """
-        Create unified contract from raw dict[str, Any]ionary data.
+        Create unified contract from raw dictionary data.
 
         Args:
-            contract_data: Raw contract dict[str, Any]ionary from YAML/JSON
+            contract_data: Raw contract dictionary from YAML/JSON
 
         Returns:
             ModelUnifiedHubContract instance

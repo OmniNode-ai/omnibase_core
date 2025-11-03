@@ -12,7 +12,7 @@ from typing import TypedDict
 
 
 class TypedDictPerformanceMetricData(TypedDict, total=False):
-    """Strongly-typed dict[str, Any]ionary for performance metric values."""
+    """Strongly-typed dictionary for performance metric values."""
 
     name: str
     value: float  # All metrics can be represented as float

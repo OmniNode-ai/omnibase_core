@@ -23,7 +23,7 @@ Type-safe service resolution without registry coupling:
 ```python
 logger = container.get_service("ProtocolLogger")
 event_bus = container.get_service("ProtocolEventBus")
-```
+```python
 
 ### Zero Boilerplate Development
 Pre-composed service classes eliminate 80+ lines of initialization:
@@ -31,7 +31,7 @@ Pre-composed service classes eliminate 80+ lines of initialization:
 class MyNode(NodeComputeService):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)  # All boilerplate handled!
-```
+```python
 
 ### Comprehensive Mixin System
 15+ reusable mixins for cross-cutting concerns:
@@ -53,7 +53,7 @@ raise OnexError(
     error_code=EnumErrorCode.OPERATION_FAILED,
     context={"correlation_id": correlation_id}
 )
-```
+```python
 
 ### Production-Ready Validation
 - 60+ Pydantic models with comprehensive runtime validation
@@ -74,7 +74,7 @@ poetry add git+https://github.com/OmniNode-ai/omnibase_core.git@v0.1.0
 
 # Using pip
 pip install git+https://github.com/OmniNode-ai/omnibase_core.git@v0.1.0
-```
+```python
 
 ### Development Installation
 ```bash
@@ -90,7 +90,7 @@ poetry run pytest tests/
 
 # Run type checking
 poetry run mypy src/omnibase_core/
-```
+```python
 
 ## Quick Start
 
@@ -110,7 +110,7 @@ class NodeMyServiceCompute(NodeCoreBase):
         """Transform input data."""
         result = input_data.value * 2  # Simple computation
         return {"result": result}
-```
+```python
 
 ### Learn More
 - **Getting Started**: [Quick Start Guide](../getting-started/QUICK_START.md)
@@ -133,7 +133,7 @@ from omnibase_core.enums.enum_workflow_execution import EnumThunkType
 # v0.1.0
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
-```
+```python
 
 **Field Changes**:
 - `thunk_id` → `action_id`
@@ -159,7 +159,7 @@ intent = ModelIntent(
     payload={"data": value}
 )
 await self.emit_intent(intent)
-```
+```python
 
 ## Known Issues
 

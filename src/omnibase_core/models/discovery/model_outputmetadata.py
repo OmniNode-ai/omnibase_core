@@ -18,7 +18,7 @@ class ModelOutputMetadata(BaseModel):
     )
 
     def get_metadata_dict(self) -> dict[str, str | int | float | bool]:
-        """Convert to dict[str, Any]ionary format for current standards."""
+        """Convert to dictionary format for current standards."""
         return {item.key: item.value for item in self.items}
 
     @classmethod
@@ -26,7 +26,7 @@ class ModelOutputMetadata(BaseModel):
         cls,
         metadata_dict: dict[str, str | int | float | bool],
     ) -> "ModelOutputMetadata":
-        """Create from dict[str, Any]ionary with type inference."""
+        """Create from dictionary with type inference."""
         items = []
         for key, value in metadata_dict.items():
             # Check bool before int since bool is a subclass of int in Python

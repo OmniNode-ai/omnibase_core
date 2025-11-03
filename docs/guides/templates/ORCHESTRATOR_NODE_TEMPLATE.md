@@ -41,7 +41,7 @@ action = ModelAction(
     epoch=self.current_epoch,  # Optimistic concurrency
     priority=5,
 )
-```
+```python
 
 ## Directory Structure
 
@@ -97,7 +97,7 @@ action = ModelAction(
                     ├── test_contracts.py
                     ├── test_models.py
                     └── test_workflows.py
-```
+```python
 
 ## Template Files
 
@@ -838,7 +838,7 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(
                 "error": sanitized_error,
                 "timestamp": time.time()
             }
-```
+```text
 
 This template provides the complete ORCHESTRATOR node implementation with workflow orchestration, state management, error recovery, and comprehensive monitoring. The full template would continue with the remaining files (configuration, models, enums, workflows, utils, subcontracts, and manifest) following the same unified architecture patterns established in the previous templates.
 

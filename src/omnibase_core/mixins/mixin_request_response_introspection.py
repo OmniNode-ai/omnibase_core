@@ -194,7 +194,7 @@ class MixinRequestResponseIntrospection:
                 event_dict = event.__dict__ if hasattr(event, "__dict__") else event
                 request_event = ModelRequestIntrospectionEvent(**event_dict)
             elif isinstance(event, dict):
-                # Event bus delivers as dict[str, Any]ionary - reconstruct typed object
+                # Event bus delivers as dictionary - reconstruct typed object
                 request_event = ModelRequestIntrospectionEvent(**event)
             else:
                 emit_log_event_sync(

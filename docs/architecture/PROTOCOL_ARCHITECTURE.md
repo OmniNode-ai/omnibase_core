@@ -41,7 +41,7 @@ class PatternChecker(Protocol):
     def visit(self, node: ast.AST) -> None:
         """Visit an AST node."""
         ...
-```
+```python
 
 **Purpose**: Structural subtyping for AST validation checkers
 **Pattern**: Visitor pattern protocol
@@ -72,7 +72,7 @@ class SerializableMixin(Protocol):
 
     @classmethod
     def from_serializable_dict(cls: type[T], data: dict[str, Any]) -> T: ...
-```
+```python
 
 **Purpose**: Recursive serialization for ONEX models
 **Pattern**: Two-way transformation protocol
@@ -103,7 +103,7 @@ class EnumStatusProtocol(Protocol):
     def to_base_status(self) -> EnumBaseStatus:
         """Convert this status to its base status equivalent."""
         ...
-```
+```python
 
 **Purpose**: Enum migration and status normalization
 **Pattern**: Adapter protocol for enum interoperability
@@ -138,7 +138,7 @@ ProtocolConfigurable      # configure() method
 ProtocolExecutable        # execute() method
 ProtocolValidatable       # validate_instance() method
 ProtocolMetadataProvider  # metadata property
-```
+```text
 
 **Data Protocols** (shape contracts):
 ```python
@@ -148,7 +148,7 @@ ProtocolHealthCheck        # Health check result structure
 ProtocolLogEntry           # Structured logging data
 ProtocolMetadata           # Generic metadata structure
 ProtocolSemVer            # Semantic version structure
-```
+```python
 
 **Usage in omnibase_core**:
 ```python
@@ -161,7 +161,7 @@ from omnibase_spi.protocols.types import (
     ProtocolValidatable,
     ProtocolMetadataProvider,
 )
-```
+```yaml
 
 ---
 
@@ -174,7 +174,7 @@ ProtocolEventPublisher        # Event publishing
 ProtocolEventSubscription     # Subscription management
 ProtocolEventEnvelope         # Event wrapper protocol
 ProtocolEventOrchestrator     # Multi-event coordination
-```
+```yaml
 
 **Key Pattern**: Pub/Sub with protocol-based contracts
 **Usage**: `MixinEventDrivenNode` uses `ProtocolEventBus` extensively
@@ -192,7 +192,7 @@ ProtocolFileWriter            # File writing interface
 ProtocolFileTypeHandler       # MIME type handling
 ProtocolDirectoryTraverser    # Directory navigation
 ProtocolFileProcessing        # Processing pipeline
-```
+```yaml
 
 **Key Pattern**: Strategy pattern for file operations
 
@@ -205,7 +205,7 @@ ProtocolFileProcessing        # Processing pipeline
 ProtocolSchemaLoader          # Schema loading interface
 ProtocolValidationResult      # Validation output
 ProtocolModelValidatable      # Model validation
-```
+```yaml
 
 **Usage**: `MixinEventDrivenNode` injects `ProtocolSchemaLoader`
 
@@ -219,7 +219,7 @@ ProtocolTool                  # MCP tool interface
 ProtocolMCPRegistry           # Tool registry
 ProtocolMCPDiscovery          # Tool discovery
 ProtocolMCPValidator          # Tool validation
-```
+```yaml
 
 **Key Pattern**: Plugin architecture with protocol contracts
 
@@ -233,7 +233,7 @@ ProtocolWorkflowDefinition    # Workflow structure
 ProtocolWorkflowContext       # Execution context
 ProtocolWorkflowEvent         # Event-driven workflow
 ProtocolTaskConfiguration     # Task config
-```
+```python
 
 **Key Pattern**: Event-driven workflow with FSM support
 
@@ -258,7 +258,7 @@ class ModelBase(BaseModel):
 # Usage with type hints
 def serialize_model(obj: ProtocolSerializable) -> dict[str, Any]:
     return obj.model_dump()  # Type-safe!
-```
+```python
 
 **Benefits**:
 - No tight coupling to concrete types
@@ -287,7 +287,7 @@ class MixinEventDrivenNode:
 
         self.event_bus = event_bus
         self.metadata_loader = metadata_loader
-```
+```python
 
 **Benefits**:
 - Clear interface boundaries
@@ -314,7 +314,7 @@ def is_identifiable(obj: object) -> bool:
 # Usage
 if is_serializable(unknown_obj):
     result = unknown_obj.model_dump()  # Type-narrowed!
-```
+```python
 
 **Type Guards Available**:
 - `is_serializable()`
@@ -345,7 +345,7 @@ def process_entity(
         "id": entity.id,
         "data": entity.model_dump(),
     }
-```
+```python
 
 ---
 
@@ -363,7 +363,7 @@ from omnibase_spi.protocols.types import (
 # Shorter aliases for common use
 ConfigurableType = TypeVar("ConfigurableType", bound=Configurable)
 ExecutableType = TypeVar("ExecutableType", bound=Executable)
-```
+```python
 
 **Rationale**: Cleaner code, avoid Protocol prefix repetition
 
@@ -386,7 +386,7 @@ else:
             globals()["ModelBaseCollection"] = ModelBaseCollection
             return globals()[name]
         raise AttributeError(f"module has no attribute {name!r}")
-```
+```bash
 
 **Critical Pattern**: Used to break `models.* → types.constraints → models.base` cycle
 
@@ -449,7 +449,7 @@ else:
 │  │  └── models/core/model_status_protocol.py::EnumStatusProtocol │
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
-```
+```yaml
 
 ---
 
@@ -463,7 +463,7 @@ else:
 4. types/constraints.py              → TYPE_CHECKING(errors/error_codes)
 5. models/*                          → types/constraints (runtime)
 6. types/constraints.__getattr__()   → models/base (lazy)
-```
+```text
 
 **Key**: Step 4 uses `TYPE_CHECKING` to avoid runtime import, breaking the cycle.
 
@@ -474,7 +474,7 @@ omnibase_spi.protocols.event_bus
     → omnibase_core.mixins.mixin_event_driven_node
       → Constructor injection: event_bus: ProtocolEventBus
         → Runtime validation + event handlers
-```
+```text
 
 #### Chain 3: Metadata Loading
 ```text
@@ -483,7 +483,7 @@ omnibase_spi.protocols.schema
     → omnibase_core.mixins.mixin_event_driven_node
       → DI: metadata_loader: ProtocolSchemaLoader | None
         → Fallback via registry lookup
-```
+```python
 
 ---
 
@@ -503,7 +503,7 @@ class BadImplementation:
 # Usage
 def process(obj: ProtocolSerializable):
     obj.serialize()  # Runtime AttributeError!
-```
+```python
 
 **Mitigation**: Use `runtime_checkable` + type guards
 
@@ -518,7 +518,7 @@ def process(obj: ProtocolSerializable):
 class BadSerializer:
     def model_dump(self) -> str:  # Should be dict[str, Any]
         return "not a dict"
-```
+```python
 
 **Detection**: Mypy type checking
 
@@ -540,7 +540,7 @@ class ProtocolPrimitiveValue(Protocol):
     pass
 
 PrimitiveValueType = TypeVar("PrimitiveValueType", str, int, float, bool)
-```
+```python
 
 **Recommendation**: Replace `object` with proper TypeVar or Union
 
@@ -552,7 +552,7 @@ PrimitiveValueType = TypeVar("PrimitiveValueType", str, int, float, bool)
 ```python
 class PatternChecker(Protocol):
     issues: list[str]  # ⚠️ Mutable state in protocol
-```
+```python
 
 **Issue**: Protocols with mutable state can cause shared-state bugs
 
@@ -565,7 +565,7 @@ class PatternChecker(Protocol):
 class PatternChecker(Protocol):
     def visit(self, node: ast.AST) -> None: ...
     def get_issues(self) -> list[str]: ...  # Getter instead of property
-```
+```python
 
 ---
 
@@ -588,7 +588,7 @@ class PatternChecker(Protocol):
 # Enables runtime checks
 if isinstance(obj, PatternChecker):
     obj.visit(ast_node)
-```
+```python
 
 **Recommendation**: Add `@runtime_checkable` to all protocols for isinstance() support
 
@@ -612,7 +612,7 @@ from typing import Protocol, runtime_checkable
 class PatternChecker(Protocol):
     issues: list[str]
     def visit(self, node: ast.AST) -> None: ...
-```
+```python
 
 **Benefits**:
 - Enable isinstance() checks
@@ -634,7 +634,7 @@ PrimitiveValueType = TypeVar("PrimitiveValueType", str, int, float, bool)
 
 # Or use Union for flexibility
 ContextValueType = str | int | float | bool | list[Any] | dict[str, Any]
-```
+```python
 
 **Benefits**:
 - Better type safety
@@ -679,7 +679,7 @@ class SerializableMixin(ProtocolTwoWaySerializer[T]):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> T:
         return cls.from_serializable_dict(data)
-```
+```python
 
 ---
 
@@ -715,7 +715,7 @@ def test_serializable_mixin_protocol():
     hints = get_type_hints(ModelNodeMetadataBlock)
     assert "to_serializable_dict" in dir(ModelNodeMetadataBlock)
     assert "from_serializable_dict" in dir(ModelNodeMetadataBlock)
-```
+```python
 
 **Testing Strategy**:
 - Runtime isinstance() checks
@@ -786,7 +786,7 @@ class PatternChecker(Protocol):
     def visit(self, node: ast.AST) -> None:
         """Visit an AST node and collect validation issues."""
         ...
-```
+```yaml
 
 ---
 
@@ -801,7 +801,7 @@ SerializableMixin (omnibase_core)
 ModelNodeMetadataBlock
 ModelProjectMetadataBlock
 ModelGitHubActionsWorkflow
-```
+```text
 
 ### Status Protocols
 ```text
@@ -811,7 +811,7 @@ EnumScenarioStatusV2
 EnumGeneralStatus
 EnumFunctionLifecycleStatus
 EnumExecutionStatusV2
-```
+```python
 
 ### Validation Protocols
 ```text
@@ -820,7 +820,7 @@ PatternChecker (omnibase_core)
 PydanticPatternChecker
 NamingConventionChecker
 GenericPatternChecker
-```
+```python
 
 ---
 
@@ -860,7 +860,7 @@ GenericPatternChecker
 class BadProtocol(Protocol):
     def method(self) -> str:
         return "default"  # Protocols should not have implementations
-```
+```python
 
 **Reason**: Protocols define contracts, not implementations. Use abstract base classes for default behavior.
 
@@ -871,7 +871,7 @@ class BadProtocol(Protocol):
 # BAD: Protocol that's too specific
 class ProtocolUserManagerWithDatabaseAndCacheAndLogging(Protocol):
     def get_user_from_database_with_cache_and_logging(self, id: int) -> User: ...
-```
+```python
 
 **Reason**: Protocols should be small, composable interfaces.
 
@@ -882,7 +882,7 @@ class ProtocolUserRepository(Protocol):
 
 class ProtocolCacheable(Protocol):
     def cache_get(self, key: str) -> Any: ...
-```
+```python
 
 ---
 
@@ -896,7 +896,7 @@ def process(
     d: Protocol4,
     e: Protocol5,
 ): ...
-```
+```bash
 
 **Reason**: Too many protocols = cognitive overload
 
@@ -908,7 +908,7 @@ def process(
 ```python
 # BAD: Ignoring mypy errors
 obj: ProtocolSerializable = some_object  # type: ignore
-```
+```bash
 
 **Reason**: Type ignores hide protocol violations
 
@@ -925,7 +925,7 @@ poetry run mypy src/omnibase_core --strict-optional --check-untyped-defs
 
 # Protocol-specific checks
 poetry run mypy src/omnibase_core --warn-redundant-casts --warn-unreachable
-```
+```python
 
 ### Runtime Validation
 ```python
@@ -936,7 +936,7 @@ if is_serializable(obj):
     data = obj.model_dump()  # Type-safe!
 else:
     raise TypeError(f"{obj} does not implement Serializable protocol")
-```
+```python
 
 ### Protocol Discovery
 ```bash
@@ -948,7 +948,7 @@ grep -r ": Protocol" src/omnibase_core --include="*.py"
 
 # Count protocol implementations
 grep -r "def model_dump\|def serialize\|def get_name" src/omnibase_core --include="*.py" | wc -l
-```
+```bash
 
 ---
 

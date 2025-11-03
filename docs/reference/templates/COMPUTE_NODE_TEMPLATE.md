@@ -55,7 +55,7 @@ This template provides the unified architecture pattern for ONEX COMPUTE nodes. 
                     ├── test_config.py
                     ├── test_contracts.py
                     └── test_models.py
-```
+```python
 
 ## Template Files
 
@@ -345,7 +345,7 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Compute(
                 "error": sanitized_error,
                 "timestamp": time.time()
             }
-```
+```python
 
 ### 2. Configuration (`config.py`)
 
@@ -542,7 +542,7 @@ class {DomainCamelCase}{MicroserviceCamelCase}ComputeConfig(BaseNodeConfig):
                 }
             }
         }
-```
+```python
 
 ### 3. Input Model (`model_{DOMAIN}_{MICROSERVICE_NAME}_compute_input.py`)
 
@@ -717,7 +717,7 @@ class Model{DomainCamelCase}{MicroserviceCamelCase}ComputeInput(BaseModel):
                 "request_timestamp": 1640995200.0
             }
         }
-```
+```python
 
 ### 4. Output Model (`model_{DOMAIN}_{MICROSERVICE_NAME}_compute_output.py`)
 
@@ -838,7 +838,7 @@ class Model{DomainCamelCase}{MicroserviceCamelCase}ComputeOutput(BaseModel):
                 "cpu_utilization_percent": 23.7
             }
         }
-```
+```python
 
 ### 5. Operation Type Enum (`enum_{DOMAIN}_{MICROSERVICE_NAME}_operation_type.py`)
 
@@ -955,7 +955,7 @@ class Enum{DomainCamelCase}{MicroserviceCamelCase}OperationType(str, Enum):
             cls.FILTER,
             cls.SORT
         ]
-```
+```yaml
 
 ### 6. YAML Subcontracts
 
@@ -1143,7 +1143,7 @@ examples:
             include_headers: true
       output_format: "standard"
       request_timestamp: 1640995200.0
-```
+```yaml
 
 ### 7. Output Subcontract (`subcontracts/output_subcontract.yaml`)
 
@@ -1355,7 +1355,7 @@ examples:
       timestamp: 1640995206.456
       processing_time_ms: 5.2
       result_confidence: 0.0
-```
+```yaml
 
 ### 8. Config Subcontract (`subcontracts/config_subcontract.yaml`)
 
@@ -1612,7 +1612,7 @@ examples:
         memory_limit_mb: 256
       circuit_breaker_threshold: 10
       circuit_breaker_timeout: 120
-```
+```python
 
 ### 9. Manifest (`manifest.yaml`)
 
@@ -1910,7 +1910,7 @@ integrations:
     - service_type: "metrics"
       protocol: "prometheus"
       optional: true
-```
+```python
 
 ## Usage Instructions
 

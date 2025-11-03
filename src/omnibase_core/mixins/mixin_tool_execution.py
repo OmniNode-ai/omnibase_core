@@ -164,7 +164,7 @@ class MixinToolExecution:
 
     def _output_state_to_dict(self, output_state: Any) -> dict[str, Any]:
         """
-        Convert output state to dict[str, Any]ionary for response.
+        Convert output state to dictionary for response.
 
         Override this method to customize output conversion for your tool.
         """

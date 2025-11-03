@@ -27,7 +27,7 @@ description: "Provides structured logging capabilities"
 # ✓ Single concern: Caching
 mixin_name: "mixin_caching"
 description: "Provides multi-tier caching strategies"
-```
+```yaml
 
 **✗ Bad Examples**:
 ```yaml
@@ -38,7 +38,7 @@ description: "Provides error handling, logging, and caching"
 # ✗ Too broad
 mixin_name: "mixin_everything"
 description: "All the features you need"
-```
+```yaml
 
 ### 2. Composability
 
@@ -56,7 +56,7 @@ subcontracts:
 
   - path: "../../mixins/mixin_caching.yaml"
     integration_field: "caching_configuration"  # ✓ Unique field
-```
+```yaml
 
 **✗ Bad Design**:
 ```yaml
@@ -67,7 +67,7 @@ subcontracts:
 
   - path: "../../mixins/mixin_caching.yaml"
     integration_field: "config"  # ✗ Conflict!
-```
+```yaml
 
 ### 3. Explicit Over Implicit
 
@@ -86,14 +86,14 @@ requires_dependencies:
     type: "protocol"
     description: "Optional metrics collection"
     optional: true  # ✓ Clearly optional
-```
+```text
 
 **✗ Bad Practice**:
 ```yaml
 # Implicit dependencies (undocumented)
 # Code assumes logging exists but doesn't declare it
 # ✗ No requires_dependencies section
-```
+```text
 
 ## Naming Conventions
 
@@ -113,7 +113,7 @@ error_handling.yaml         # Missing 'mixin_' prefix
 mixin-error-handling.yaml   # Use underscores, not hyphens
 ErrorHandling.yaml          # Use lowercase
 mixin_errors.yaml           # Too vague
-```
+```python
 
 ### Pydantic Model Files
 
@@ -129,7 +129,7 @@ model_rate_limiting_subcontract.py
 error_handling_model.py     # Wrong pattern
 model_error_handling.py     # Missing '_subcontract'
 ModelErrorHandling.py       # Use lowercase
-```
+```python
 
 ### Pydantic Model Classes
 
@@ -149,7 +149,7 @@ class ErrorHandlingSubcontract(BaseModel):  # Missing 'Model' prefix
 
 class ModelErrorHandling(BaseModel):  # Missing 'Subcontract' suffix
     ...
-```
+```text
 
 ### Integration Fields
 
@@ -165,7 +165,7 @@ integration_field: "authentication_configuration"
 integration_field: "config"                  # Too generic
 integration_field: "error_handling"          # Missing '_configuration'
 integration_field: "error_handling_config"   # Use 'configuration', not 'config'
-```
+```text
 
 ## Configuration Best Practices
 
@@ -185,7 +185,7 @@ error_handling_config:
   # enable_circuit_breaker: false     # ✗ Unsafe default
   # circuit_failure_threshold: 1000   # ✗ Way too high
   # error_retry_attempts: 100         # ✗ Way too many
-```
+```python
 
 ### Configuration Validation
 
@@ -213,7 +213,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
     # ✗ Bad: No constraints
     # circuit_failure_threshold: int = 5  # Any value allowed
     # error_retry_attempts: int = 3       # Could be negative or huge
-```
+```python
 
 ### Environment-Specific Configuration
 
@@ -245,7 +245,7 @@ class ModelCircuitBreakerSubcontract(BaseModel):
             )
         else:
             return cls()  # Use defaults
-```
+```bash
 
 ## Action Design
 
@@ -275,7 +275,7 @@ actions:
     outputs: ["result"]            # ✗ What is "result"?
     required: true
     # ✗ Missing timeout
-```
+```yaml
 
 ### Timeout Guidelines
 
@@ -303,7 +303,7 @@ actions:
 
   - name: "batch_process"
     timeout_ms: 60000      # ✓ Large batch processing
-```
+```python
 
 ## Validation Best Practices
 
@@ -347,7 +347,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
             )
 
         return values
-```
+```python
 
 ### Validation Error Messages
 
@@ -373,7 +373,7 @@ def validate_timeout(cls, v: int) -> int:
     if v < 1000:
         raise ValueError("Invalid timeout")  # ✗ Not helpful
     return v
-```
+```yaml
 
 ## Documentation
 
@@ -407,7 +407,7 @@ description: |
 
   **Examples**:
   See docs/guides/mixin-development/examples/error_handling_examples.md
-```
+```python
 
 ### Inline Code Documentation
 
@@ -463,7 +463,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
             "Recommended: 5 for development, 10 for production."
         )
     )
-```
+```python
 
 ## Testing
 
@@ -558,7 +558,7 @@ class TestModelErrorHandlingSubcontract:
         assert prod_config.enable_circuit_breaker is True
         assert prod_config.circuit_failure_threshold >= 5
         assert prod_config.error_retry_attempts <= 10
-```
+```bash
 
 ## Tools and Utilities
 
@@ -577,7 +577,7 @@ poetry run onex run contract_validator \
     --contract src/your_project/nodes/api_client_effect/v1_0_0/contract.yaml \
     --check-mixins \
     --verbose
-```
+```python
 
 ### Type Generation
 
@@ -590,7 +590,7 @@ poetry run onex run generate_model \
     --output src/your_project/model/subcontracts/model_error_handling_subcontract.py
 
 # Note: Review and customize generated model
-```
+```bash
 
 ### Mixin Inspector
 
@@ -607,7 +607,7 @@ poetry run onex run inspect_mixin \
 # - api_client_effect (v1.0.0)
 # - database_connector_effect (v1.0.0)
 # - external_api_gateway_effect (v2.0.0)
-```
+```python
 
 ### Documentation Generator
 
@@ -619,7 +619,7 @@ poetry run onex run generate_mixin_docs \
     --mixin src/your_project/mixins/mixin_error_handling.yaml \
     --output docs/mixins/ERROR_HANDLING_MIXIN.md \
     --include-examples
-```
+```python
 
 ## Performance Optimization
 
@@ -641,7 +641,7 @@ class NodeApiClientEffect(NodeEffect):
         if self._error_config is None:
             self._error_config = self.contract.error_handling_configuration
         return self._error_config
-```
+```python
 
 ### Caching Mixin Results
 
@@ -657,7 +657,7 @@ class NodeDataProcessor(NodeCompute):
     def calculate_retry_delay(self, attempt: int) -> int:
         """Calculate retry delay with caching."""
         return self.error_config.calculate_retry_delay(attempt)
-```
+```python
 
 ### Minimize Validation
 
@@ -684,7 +684,7 @@ class NodeApiClientEffect(NodeEffect):
         """Validate error handling configuration."""
         if self.error_config.circuit_failure_threshold < 1:
             raise ValueError("Invalid circuit breaker threshold")
-```
+```python
 
 ## Common Pitfalls
 
@@ -698,7 +698,7 @@ class ErrorHandlingMixin:
     def handle_error(self, error):
         # ✗ Assumes node has _log_error method
         self._log_error(error)
-```
+```python
 
 **✅ Good**: Mixin uses protocols/interfaces
 
@@ -711,7 +711,7 @@ class ErrorHandlingMixin:
     def handle_error(self, error):
         # ✓ Uses injected logger
         self.logger.log_error(error)
-```
+```text
 
 ### Pitfall 2: Configuration Conflicts
 
@@ -724,7 +724,7 @@ mixin_error_handling:
 
 mixin_circuit_breaker:
   timeout_ms: 10000  # ✗ Which timeout wins?
-```
+```text
 
 **✅ Good**: Clear separation of concerns
 
@@ -735,7 +735,7 @@ error_handling_config:
 
 circuit_breaker_config:
   circuit_timeout_ms: 10000  # ✓ Specific to circuit breaker
-```
+```yaml
 
 ### Pitfall 3: Missing Node Type Constraints
 
@@ -746,7 +746,7 @@ circuit_breaker_config:
 mixin_name: "mixin_state_persistence"
 applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 # ✗ COMPUTE nodes should be stateless!
-```
+```yaml
 
 **✅ Good**: Correct node type constraints
 
@@ -755,7 +755,7 @@ applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 mixin_name: "mixin_state_persistence"
 applicable_node_types: ["REDUCER"]
 # ✓ Only stateful nodes
-```
+```python
 
 ## Checklist
 

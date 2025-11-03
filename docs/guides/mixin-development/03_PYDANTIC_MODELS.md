@@ -27,7 +27,7 @@ YAML Contract (Definition)
 Pydantic Model (Runtime)
     ↓ [Validation]
 Node Implementation (Usage)
-```
+```bash
 
 ## Step 1: File Setup
 
@@ -41,7 +41,7 @@ cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/model/subcontracts/
 
 # Create your model file
 touch model_error_handling_subcontract.py
-```
+```python
 
 ### Basic Imports
 
@@ -56,7 +56,7 @@ from enum import Enum
 from typing import List, Optional, Dict, Any, Union
 from pydantic import BaseModel, Field, validator, root_validator
 from uuid import UUID
-```
+```python
 
 ## Step 2: Define Supporting Models
 
@@ -86,7 +86,7 @@ class EnumHandlingStrategy(str, Enum):
     FAIL_FAST = "fail_fast"     # Fail immediately
     FALLBACK = "fallback"       # Use fallback value
     IGNORE = "ignore"           # Log and continue
-```
+```python
 
 ### Result Models
 
@@ -178,7 +178,7 @@ class ModelRetryDecision(BaseModel):
         default=False,
         description="Whether max retry attempts reached"
     )
-```
+```python
 
 ## Step 3: Main Subcontract Model
 
@@ -302,7 +302,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
                 ]
             }
         }
-```
+```python
 
 ### Adding Validators
 
@@ -358,7 +358,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
             )
 
         return values
-```
+```python
 
 ### Helper Methods
 
@@ -382,7 +382,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
             self.enable_circuit_breaker
             and failure_count >= self.circuit_failure_threshold
         )
-```
+```python
 
 ## Step 4: Export Model
 
@@ -410,7 +410,7 @@ __all__ = [
     "EnumCircuitBreakerState",
     "EnumHandlingStrategy",
 ]
-```
+```python
 
 ## Step 5: Test Your Model
 
@@ -580,7 +580,7 @@ class TestModelErrorHandlingSubcontract:
         model = ModelErrorHandlingSubcontract.model_validate_json(json_data)
         assert model.circuit_failure_threshold == 10
         assert model.error_retry_attempts == 5
-```
+```python
 
 ## Common Patterns
 
@@ -593,7 +593,7 @@ class ModelOptionalConfig(BaseModel):
     required_field: str = Field(..., description="This field is required")
     optional_field: Optional[str] = Field(None, description="This field is optional")
     optional_with_default: str = Field("default", description="Optional with default")
-```
+```python
 
 ### Pattern 2: Constrained Values
 
@@ -606,7 +606,7 @@ class ModelConstrainedValues(BaseModel):
     percentage: float = Field(..., ge=0.0, le=1.0, description="0.0 to 1.0")
     non_empty_string: str = Field(..., min_length=1, description="Cannot be empty")
     max_length_string: str = Field(..., max_length=256, description="Max 256 chars")
-```
+```python
 
 ### Pattern 3: Complex Nested Models
 
@@ -623,7 +623,7 @@ class ModelMainConfig(BaseModel):
         default_factory=ModelNestedConfig,
         description="Nested configuration"
     )
-```
+```python
 
 ### Pattern 4: Discriminated Unions
 
@@ -643,7 +643,7 @@ class ModelStrategyB(BaseModel):
 class ModelMainWithStrategy(BaseModel):
     """Model with strategy selection."""
     strategy: Union[ModelStrategyA, ModelStrategyB] = Field(..., discriminator="type")
-```
+```text
 
 ## Best Practices
 
@@ -658,7 +658,7 @@ timeout_ms: int = Field(
     le=60000,
     description="Operation timeout in milliseconds. Must be between 100ms and 60s."
 )
-```
+```python
 
 ### 2. Validation
 
@@ -671,7 +671,7 @@ def validate_connections(cls, v: int, values: dict) -> int:
     if v < min_connections:
         raise ValueError(f"max_connections ({v}) must be >= min_connections ({min_connections})")
     return v
-```
+```python
 
 ### 3. Helper Methods
 
@@ -685,7 +685,7 @@ def is_enabled(self) -> bool:
 def get_timeout_seconds(self) -> float:
     """Get timeout in seconds."""
     return self.timeout_ms / 1000.0
-```
+```python
 
 ### 4. Examples
 
@@ -700,7 +700,7 @@ class Config:
             "enabled": True
         }
     }
-```
+```python
 
 ## Troubleshooting
 

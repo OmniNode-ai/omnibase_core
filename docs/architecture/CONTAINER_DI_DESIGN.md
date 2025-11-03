@@ -303,7 +303,7 @@ class ModelServiceMetadata(BaseModel):
     configuration: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=datetime.now)
     last_modified_at: datetime | None = None
-```
+```python
 
 #### Step 2: Implement Core ServiceRegistry
 
@@ -360,7 +360,7 @@ class ServiceRegistry:
         # Track in instances
         # Apply dependency injection
         # Return instance
-```
+```python
 
 #### Step 3: Migrate Existing Services
 
@@ -385,7 +385,7 @@ async def migrate_existing_services(
     )
 
     # ... repeat for all 30+ services
-```
+```python
 
 #### Step 4: Update Container Integration
 
@@ -420,7 +420,7 @@ class ModelONEXContainer:
         except Exception:
             # Fallback to old approach for backward compatibility
             return await self._legacy_get_service(protocol_type, service_name)
-```
+```text
 
 ### Backward Compatibility Strategy
 
@@ -443,7 +443,7 @@ class ModelONEXContainer:
 ```python
 # String-based resolution
 service = container.get_service("contract_validator_registry")
-```
+```python
 
 #### New Approach (v1.0 - Compatible)
 ```python
@@ -453,7 +453,7 @@ validator = await container.get_service_async(ProtocolContractValidator)
 
 # String-based still works (deprecated)
 service = container.get_service("contract_validator_registry")  # Deprecation warning
-```
+```python
 
 #### New Approach (v2.0 - Registry Only)
 ```python
@@ -461,7 +461,7 @@ service = container.get_service("contract_validator_registry")  # Deprecation wa
 from omnibase_spi import ProtocolContractValidator
 registry = container.service_registry
 validator = await registry.resolve_service(ProtocolContractValidator)
-```
+```python
 
 ## Testing Strategy
 

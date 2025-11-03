@@ -30,7 +30,7 @@
 Coverage: 0.00%
 Reason: Module was never imported during testing (all mocked)
 Tests: 13 tests pass using AsyncMock
-```
+```python
 
 **Problem**: Tests mock `AIOKafkaProducer` and `AIOKafkaConsumer`, preventing real code execution:
 
@@ -42,7 +42,7 @@ async def test_publish_success(self, mock_producer_class: Mock, adapter: KafkaEv
     mock_producer.send_and_wait = AsyncMock()
     mock_producer_class.return_value = mock_producer
     # ... rest of test
-```
+```python
 
 ### 1.2 Test File Analysis
 
@@ -83,7 +83,7 @@ class ProtocolEventBusInMemory(Protocol):
     async def get_event_history(self) -> list[ProtocolEventMessage]: ...
     def clear_event_history(self) -> None: ...
     async def get_subscriber_count(self) -> int: ...
-```
+```python
 
 **Capabilities**:
 - ✅ Event history tracking (debugging)
@@ -103,7 +103,7 @@ from omnibase_spi.protocols.event_bus import (
     ProtocolAsyncEventBus,               # Async-only event bus
     ProtocolSyncEventBus,                # Sync-only event bus
 )
-```
+```python
 
 ### 2.3 Execution Mode Support
 
@@ -113,7 +113,7 @@ class EnumPublisherType(str, Enum):
     IN_MEMORY = "IN_MEMORY"  # ✅ Use in-memory Event Bus
     AUTO = "AUTO"            # Automatically select based on context
     HYBRID = "HYBRID"        # Use hybrid routing between both
-```
+```python
 
 **Model**: `ModelExecutionMode.INMEMORY()`
 ```python
@@ -132,7 +132,7 @@ def INMEMORY(cls) -> "ModelExecutionMode":
         reliability_level="medium",
         description="Asynchronous execution with in-memory event bus",
     )
-```
+```python
 
 ---
 
@@ -195,7 +195,7 @@ async def subscribe(
 ) -> Callable[[], Awaitable[None]]
 
 async def close() -> None
-```
+```python
 
 ---
 
@@ -350,7 +350,7 @@ class InMemoryEventBusAdapter(ProtocolEventBusInMemory):
     ) -> "InMemoryEventBusAdapter":
         """Create adapter from ONEX container."""
         return cls(container=container)
-```
+```python
 
 ### 5.2 Integration Test Pattern
 
@@ -459,7 +459,7 @@ class TestKafkaEventBusAdapterWithInMemory:
         # Cleanup
         await unsub2()
         await unsub3()
-```
+```python
 
 ---
 
@@ -651,14 +651,14 @@ omnibase_spi/protocols/event_bus/
 ├── protocol_event_bus.py                # Base event bus protocol
 ├── protocol_kafka_adapter.py            # Kafka adapter protocol
 └── protocol_event_bus_types.py          # Event message types
-```
+```text
 
 **Implementations** (omnibase_core):
 ```text
 src/omnibase_core/infrastructure/
 ├── kafka_event_bus_adapter.py           # ✅ Kafka implementation
 └── in_memory_event_bus_adapter.py       # ❌ TO BE CREATED
-```
+```text
 
 **Tests**:
 ```text
@@ -668,7 +668,7 @@ tests/
 │   └── test_in_memory_event_bus_adapter.py        # ❌ TO BE CREATED
 └── integration/infrastructure/
     └── test_kafka_event_bus_integration.py        # ❌ TO BE CREATED
-```
+```python
 
 ### 10.2 Related Enums and Models
 
@@ -679,7 +679,7 @@ class EnumPublisherType(str, Enum):
     IN_MEMORY = "IN_MEMORY"  # Use in-memory Event Bus
     AUTO = "AUTO"            # Automatically select
     HYBRID = "HYBRID"        # Hybrid routing
-```
+```python
 
 **ModelExecutionMode**:
 ```python
@@ -698,7 +698,7 @@ def INMEMORY(cls) -> "ModelExecutionMode":
         typical_latency_ms=20,
         reliability_level="medium",
     )
-```
+```text
 
 ### 10.3 Key Dependencies
 
@@ -706,7 +706,7 @@ def INMEMORY(cls) -> "ModelExecutionMode":
 ```toml
 [tool.poetry.dependencies]
 aiokafka = "^0.8.0"  # Kafka client library
-```
+```text
 
 **New** (InMemoryEventBusAdapter):
 ```toml
@@ -715,7 +715,7 @@ aiokafka = "^0.8.0"  # Kafka client library
 # - collections.defaultdict
 # - asyncio
 # - uuid
-```
+```python
 
 ---
 

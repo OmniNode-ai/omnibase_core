@@ -74,7 +74,7 @@ if field_value.is_string():
     text = field_value.get_string()
 elif field_value.is_number():
     num = field_value.get_number()
-```
+```python
 
 **Applicable To**:
 - All primitive soup unions (186 instances)
@@ -116,7 +116,7 @@ config_value: ModelFlexibleValue = ModelFlexibleValue.from_any(
 # Type-safe access with validation state
 if config_value.is_validated and config_value.is_primitive():
     value = config_value.get_value()
-```
+```python
 
 **Applicable To**:
 - Configuration values requiring source tracking
@@ -189,7 +189,7 @@ ModelFilterUnion = Annotated[
     | ModelStringFilter,
     Field(discriminator="filter_type"),
 ]
-```
+```python
 
 **Effort**: 4 hours (Medium complexity)
 **Breaking Changes**: Yes - all filter models need `filter_type` field
@@ -234,7 +234,7 @@ class ModelEnvironmentValue(BaseModel):
                 datetime_value=value
             )
         return cls(value=ModelSchemaValue.from_value(value))
-```
+```python
 
 **Effort**: 2 hours (Low complexity - extends existing model)
 **Breaking Changes**: No - can be introduced gradually
@@ -270,7 +270,7 @@ masked_value: ModelSchemaValue = Field(
     ...,
     description="Masked data value - type-safe representation"
 )
-```
+```python
 
 **Justification**:
 - ModelSchemaValue already handles all these types
@@ -306,7 +306,7 @@ parameter_value: ModelSchemaValue = Field(
     ...,
     description="Workflow parameter value - supports all JSON types"
 )
-```
+```python
 
 **Effort**: 1 hour (Simple replacement)
 **Breaking Changes**: Minimal - compatible serialization
@@ -356,7 +356,7 @@ ModelActionPayloadUnion = Annotated[
     | ModelValidationActionPayload,
     Field(discriminator="action_type"),
 ]
-```
+```python
 
 **Effort**: 3 hours (Verify + refine existing pattern)
 **Breaking Changes**: Minimal if already discriminated
@@ -613,7 +613,7 @@ class ModelMaskedData(BaseModel):
         ...,
         description="Masked value"
     )
-```
+```python
 
 **After**:
 ```python
@@ -638,7 +638,7 @@ class ModelMaskedData(BaseModel):
         if self.original_value.is_string():
             return self.original_value.get_string()
         return str(self.original_value.to_value())
-```
+```python
 
 **Migration Code**:
 ```python
@@ -652,7 +652,7 @@ masked_data_dict = {
     "original_value": migrate_to_schema_value(old_data["original_value"]),
     "masked_value": migrate_to_schema_value(old_data["masked_value"]),
 }
-```
+```python
 
 ---
 
@@ -667,7 +667,7 @@ class ModelToolParameters(BaseModel):
         ...,
         description="Default parameter value"
     )
-```
+```python
 
 **After**:
 ```python
@@ -688,7 +688,7 @@ class ModelToolParameters(BaseModel):
         if "default_value" in data and not isinstance(data["default_value"], ModelSchemaValue):
             data["default_value"] = ModelSchemaValue.from_value(data["default_value"])
         return cls(**data)
-```
+```yaml
 
 ---
 
@@ -706,7 +706,7 @@ FilterUnion = Union[
     ModelStatusFilter,
     ModelStringFilter,
 ]
-```
+```python
 
 **After**:
 ```python
@@ -744,7 +744,7 @@ def apply_filter(filter_obj: ModelFilterUnion) -> Any:
         # Type checker knows this is ModelNumericFilter
         return apply_numeric_filter(filter_obj)
     # ... other cases
-```
+```python
 
 ---
 
@@ -782,7 +782,7 @@ class ModelMaskedDataCompat(BaseModel):
         if self.masked_value is None and self.masked_value_legacy is not None:
             self.masked_value = ModelSchemaValue.from_value(self.masked_value_legacy)
         return self
-```
+```python
 
 ---
 
@@ -887,7 +887,7 @@ Performance:
   Serialization: <5% regression
   Memory: <10% increase
   Query time: No regression
-```
+```python
 
 ---
 

@@ -34,17 +34,17 @@ from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-```
+```python
 
 ### Container and Models
 ```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.model_compute_input import ModelComputeInput
 from omnibase_core.models.model_compute_output import ModelComputeOutput
-```
+```python
 
 ### Error Handling
 ```python
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-```
+```text

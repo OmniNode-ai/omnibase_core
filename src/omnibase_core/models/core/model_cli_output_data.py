@@ -309,7 +309,7 @@ class ModelCliOutputData(BaseModel):
             self.custom_fields.set_field(field_name, value)
 
     def to_dict(self, include_none: bool = False) -> dict[str, Any]:
-        """Convert to dict[str, Any]ionary, optionally including None values."""
+        """Convert to dictionary, optionally including None values."""
         # Use model_dump() as base and filter None values if requested
         data = {}
 
@@ -329,7 +329,7 @@ class ModelCliOutputData(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelCliOutputData":
-        """Create from dict[str, Any]ionary, handling unknown fields gracefully."""
+        """Create from dictionary, handling unknown fields gracefully."""
         known_fields = set(cls.model_fields.keys())
         standard_data = {}
         custom_data = {}

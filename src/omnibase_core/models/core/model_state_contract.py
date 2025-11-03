@@ -223,7 +223,7 @@ class ModelStateContract(BaseModel):
 
     def to_yaml_dict(self) -> dict[str, Any]:
         """
-        Convert the model to a dict[str, Any]ionary suitable for YAML serialization.
+        Convert the model to a dictionary suitable for YAML serialization.
 
         This method ensures that the output follows the expected contract.yaml
         structure and excludes None values for cleaner output.
@@ -242,7 +242,7 @@ class ModelStateContract(BaseModel):
     @classmethod
     def from_yaml_dict(cls, data: dict[str, Any]) -> "ModelStateContract":
         """
-        Create a ModelStateContract from a dict[str, Any]ionary loaded from YAML.
+        Create a ModelStateContract from a dictionary loaded from YAML.
 
         This method handles various legacy formats and normalizes them
         to the canonical structure.

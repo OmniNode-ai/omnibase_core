@@ -672,7 +672,7 @@ class ModelNodeType(BaseModel):
 
     def get_metadata(self) -> dict[str, Any]:
         """
-        Get node type metadata as a dict[str, Any]ionary.
+        Get node type metadata as a dictionary.
 
         Implements the ProtocolMetadataProvider protocol by extracting
         metadata from common fields. Useful for serialization, logging,
@@ -711,10 +711,10 @@ class ModelNodeType(BaseModel):
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
         """
-        Set node type metadata from a dict[str, Any]ionary.
+        Set node type metadata from a dictionary.
 
         Implements the ProtocolMetadataProvider protocol by updating
-        instance attributes from a metadata dict[str, Any]ionary. Only updates
+        instance attributes from a metadata dictionary. Only updates
         attributes that already exist on the instance.
 
         Args:
@@ -757,10 +757,10 @@ class ModelNodeType(BaseModel):
 
     def serialize(self) -> dict[str, Any]:
         """
-                Serialize the node type to a dict[str, Any]ionary.
+                Serialize the node type to a dictionary.
 
                 Implements the Serializable protocol by converting the instance
-                to a dict[str, Any]ionary representation suitable for JSON serialization,
+                to a dictionary representation suitable for JSON serialization,
                 storage, or transmission.
 
                 Returns:

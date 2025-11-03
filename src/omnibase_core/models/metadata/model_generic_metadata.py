@@ -230,7 +230,7 @@ class ModelGenericMetadata(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
-        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         # TypedDict only has: name, description, version, tags, metadata
         # Convert types to match TypedDict expectations
         metadata: TypedDictMetadataDict = TypedDictMetadataDict(
@@ -258,7 +258,7 @@ class ModelGenericMetadata(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
-        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             # TypedDict has: name, description, version, tags, metadata
             if "name" in metadata:
@@ -282,7 +282,7 @@ class ModelGenericMetadata(BaseModel):
             return False
 
     def serialize(self) -> dict[str, BasicValueType]:
-        """Serialize metadata to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize metadata to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

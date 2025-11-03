@@ -134,7 +134,7 @@ class ModelAlgorithmConfig(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```
+```python
 
 ### ModelBackupConfig Template
 
@@ -261,7 +261,7 @@ class ModelBackupConfig(BaseModel):
         extra="forbid",
         validate_assignment=True
     )
-```
+```python
 
 ### ModelEventDescriptor Template
 
@@ -391,7 +391,7 @@ class ModelEventDescriptor(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```
+```python
 
 ## Subcontract Model Docstring Templates
 
@@ -550,7 +550,7 @@ class ModelAggregationSubcontract(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```
+```python
 
 ### ModelFSMSubcontract Template
 
@@ -822,7 +822,7 @@ class ModelFSMSubcontract(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```
+```python
 
 ## TypedDict Docstring Templates
 
@@ -1004,7 +1004,7 @@ class TypedDictPerformanceMetricData(TypedDict):
     unit: NotRequired[str]
     tags: NotRequired[dict[str, str]]
     context: NotRequired[dict[str, Any]]
-```
+```python
 
 ## Enum Docstring Templates
 
@@ -1174,7 +1174,7 @@ class EnumWorkflowCoordination(str, Enum):
     CONDITIONAL = "conditional"
     EVENT_DRIVEN = "event_driven"
     HYBRID = "hybrid"
-```
+```yaml
 
 ## Best Practices for Docstring Implementation
 

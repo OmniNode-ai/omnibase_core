@@ -23,7 +23,7 @@ The omnibase_core documentation contained multiple inconsistent and outdated tes
 ```bash
 $ poetry run pytest --collect-only -q 2>/dev/null | tail -n 1
 12198 tests collected in 20.10s
-```
+```python
 
 **Actual Test Count**: **12,198 tests**
 
@@ -125,7 +125,7 @@ poetry run pytest --collect-only -v
 # Count by category
 poetry run pytest --collect-only tests/unit/ -q 2>/dev/null | tail -n 1
 poetry run pytest --collect-only tests/integration/ -q 2>/dev/null | tail -n 1
-```
+```python
 
 ---
 

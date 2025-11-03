@@ -172,7 +172,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize configuration to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize configuration to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def configure(self, **kwargs: Any) -> bool:

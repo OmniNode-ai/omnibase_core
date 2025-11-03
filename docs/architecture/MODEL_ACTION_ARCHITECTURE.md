@@ -29,7 +29,7 @@ Actions flow from the **Orchestrator** node to downstream nodes (Compute, Effect
 │  (Validates lease_id & epoch)          │
 │  (Executes action)                     │
 └────────────────────────────────────────┘
-```
+```python
 
 **Key Characteristics:**
 - **Unidirectional**: Actions flow from Orchestrator → downstream nodes
@@ -91,7 +91,7 @@ action = ModelAction(
     lease_id=orchestrator.lease_id,  # Proves ownership
     epoch=orchestrator.current_epoch,  # Tracks version
 )
-```
+```python
 
 ### Migration Notes
 
@@ -169,7 +169,7 @@ class NodeMyOrchestrator(NodeCoreBase):
 
         await self.event_bus.publish(action)
         self.current_epoch += 1  # Increment after emission
-```
+```text
 
 **Prevents Concurrent Modification**:
 
@@ -187,7 +187,7 @@ action_b = ModelAction(lease_id=orchestrator_b.lease_id, ...)
 # Downstream node validates: only ONE lease_id accepted per workflow
 if action.lease_id != current_workflow_lease_id:
     raise OnexError("Invalid lease_id: workflow owned by different orchestrator")
-```
+```python
 
 ### epoch Field
 
@@ -229,7 +229,7 @@ class NodeMyOrchestrator(NodeCoreBase):
 
         # Increment epoch AFTER emission
         self.current_epoch += 1  # Now at version 1, 2, 3, ...
-```
+```python
 
 **Epoch Validation Pattern**:
 
@@ -258,7 +258,7 @@ class NodeDataProcessorCompute(NodeCoreBase):
         self.last_processed_epoch = action.epoch
 
         return result
-```
+```text
 
 **Epoch Monotonicity Guarantee**:
 
@@ -270,13 +270,13 @@ Actions Emitted:            Action(epoch=0)  Action(epoch=1)  Action(epoch=2)
                                     │              │              │
                                     ▼              ▼              ▼
 Downstream Validation:      epoch >= 0       epoch >= 1       epoch >= 2
-```
+```text
 
 If actions arrive out-of-order, epochs detect the issue:
 ```text
 Received: Action(epoch=2) → OK, process and set last_processed_epoch=2
 Received: Action(epoch=1) → REJECT, epoch < last_processed_epoch (stale!)
-```
+```text
 
 ## ModelAction Fields
 
@@ -287,7 +287,7 @@ action_id: UUID = Field(
     default_factory=uuid4,
     description="Unique action identifier (UUID)"
 )
-```
+```yaml
 
 **Purpose**: Globally unique identifier for distributed tracing and action tracking.
 
@@ -302,7 +302,7 @@ action_type: EnumActionType = Field(
     ...,
     description="Type of action for routing"
 )
-```
+```yaml
 
 **Values**:
 - `EnumActionType.COMPUTE` - Pure computation/transformation
@@ -320,7 +320,7 @@ target_node_type: str = Field(
     ...,
     description="Target node type for execution"
 )
-```
+```python
 
 **Purpose**: Specifies which node class should execute this action.
 
@@ -335,7 +335,7 @@ payload: dict[str, Any] = Field(
     default_factory=dict,
     description="Action payload data"
 )
-```
+```yaml
 
 **Purpose**: Execution context and input data for action processing.
 
@@ -348,7 +348,7 @@ dependencies: list[UUID] = Field(
     default_factory=list,
     description="List of dependency action IDs (UUIDs)"
 )
-```
+```text
 
 **Purpose**: Declare action dependencies for execution ordering.
 
@@ -359,7 +359,7 @@ action_b = ModelAction(
     dependencies=[action_a.action_id],  # Wait for action_a to complete
     ...
 )
-```
+```yaml
 
 ---
 
@@ -368,7 +368,7 @@ priority: int = Field(
     default=1,
     description="Execution priority (higher = more urgent)"
 )
-```
+```yaml
 
 **Range**: 1 (lowest) to 10 (highest)
 
@@ -381,7 +381,7 @@ timeout_ms: int = Field(
     default=30000,
     description="Execution timeout in milliseconds"
 )
-```
+```yaml
 
 **Default**: 30 seconds (30000ms)
 
@@ -401,7 +401,7 @@ epoch: int = Field(
     ...,
     description="Monotonically increasing version number"
 )
-```
+```yaml
 
 **See**: [Lease Management](#lease-management) section above for detailed semantics.
 
@@ -414,7 +414,7 @@ retry_count: int = Field(
     default=0,
     description="Number of retry attempts"
 )
-```
+```yaml
 
 **Purpose**: Track retry attempts for idempotency and circuit breaking.
 
@@ -425,7 +425,7 @@ metadata: dict[str, Any] = Field(
     default_factory=dict,
     description="Additional metadata"
 )
-```
+```yaml
 
 **Purpose**: Extensible metadata for logging, tracing, or custom processing.
 
@@ -442,7 +442,7 @@ created_at: datetime = Field(
     default_factory=datetime.now,
     description="Action creation timestamp"
 )
-```
+```python
 
 **Purpose**: Audit trail and action lifecycle tracking.
 
@@ -502,7 +502,7 @@ class NodeWorkflowOrchestrator(NodeCoreBase):
 
         await self.event_bus.publish(effect_action)
         self.current_epoch += 1  # Increment to version 2
-```
+```python
 
 **Action with Metadata**:
 
@@ -521,7 +521,7 @@ action = ModelAction(
         "tenant_id": "tenant-123",
     },
 )
-```
+```python
 
 **Conditional Action Emission**:
 
@@ -545,7 +545,7 @@ async def emit_conditional_action(self, condition: bool, payload: dict):
 
     await self.event_bus.publish(action)
     self.current_epoch += 1
-```
+```python
 
 ### Validating Actions
 
@@ -598,7 +598,7 @@ class NodeDataTransformerCompute(NodeCoreBase):
 
         last_epoch = self.active_leases.get(workflow_id, -1)
         return action.epoch >= last_epoch
-```
+```python
 
 **Stale Action Detection**:
 
@@ -627,7 +627,7 @@ class ActionValidator:
     ) -> bool:
         """Check if all action dependencies are satisfied."""
         return all(dep_id in completed_actions for dep_id in action.dependencies)
-```
+```python
 
 **Comprehensive Validation Pattern**:
 
@@ -657,7 +657,7 @@ async def validate_and_process_action(
 
     # All validations passed - safe to process
     return await execute_action(action)
-```
+```text
 
 ## Best Practices
 
@@ -671,7 +671,7 @@ action = ModelAction(
     target_node_type="NodeProcessorCompute",
     # Missing lease_id and epoch!
 )
-```
+```python
 
 **✅ CORRECT - Lease ownership guaranteed**:
 ```python
@@ -691,7 +691,7 @@ class NodeMyOrchestrator(NodeCoreBase):
         )
         await self.publish(action)
         self.current_epoch += 1  # ✅ Increment after emission
-```
+```python
 
 ---
 
@@ -708,7 +708,7 @@ async def emit_multiple_actions(self):
         )
         await self.publish(action)
     # self.current_epoch never incremented
-```
+```python
 
 **✅ CORRECT - Epoch tracks each state change**:
 ```python
@@ -721,7 +721,7 @@ async def emit_multiple_actions(self):
         )
         await self.publish(action)
         self.current_epoch += 1  # ✅ Increment after each emission
-```
+```python
 
 ---
 
@@ -733,7 +733,7 @@ async def process_action(self, action: ModelAction):
     # ❌ Blindly execute without checking lease_id or epoch
     result = await self._execute(action.payload)
     return result
-```
+```python
 
 **✅ CORRECT - Comprehensive lease validation**:
 ```python
@@ -753,7 +753,7 @@ async def process_action(self, action: ModelAction):
     self.last_processed_epoch = action.epoch
 
     return result
-```
+```yaml
 
 ---
 
@@ -765,7 +765,7 @@ action = ModelAction(
     action_type=EnumActionType.COMPUTE,
     payload={"data": some_data},  # ❌ What keys? What types?
 )
-```
+```python
 
 **✅ CORRECT - Strongly-typed payload schema**:
 ```python
@@ -788,7 +788,7 @@ action = ModelAction(
     action_type=EnumActionType.COMPUTE,
     payload=payload.model_dump(),  # ✅ Validated payload
 )
-```
+```python
 
 ---
 
@@ -837,7 +837,7 @@ async def orchestrate_multi_step_workflow(self, input_data: dict):
     )
     await self.publish(store_action)
     self.current_epoch += 1
-```
+```python
 
 ---
 
@@ -879,7 +879,7 @@ async def emit_action_with_logging(self, action_type, payload):
         previous_epoch=self.current_epoch - 1,
         current_epoch=self.current_epoch,
     )
-```
+```python
 
 ## Related Documentation
 

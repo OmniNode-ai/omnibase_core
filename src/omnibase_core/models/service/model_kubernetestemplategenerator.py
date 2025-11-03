@@ -19,7 +19,7 @@ class ModelKubernetesTemplateGenerator:
         Generate Kubernetes Deployment manifest.
 
         Returns:
-            Kubernetes Deployment configuration dict[str, Any]ionary
+            Kubernetes Deployment configuration dictionary
         """
         app_name = self.config.node_name.replace("_", "-")
         labels = self.config.get_kubernetes_labels()
@@ -103,7 +103,7 @@ class ModelKubernetesTemplateGenerator:
         Generate Kubernetes Service manifest.
 
         Returns:
-            Kubernetes Service configuration dict[str, Any]ionary
+            Kubernetes Service configuration dictionary
         """
         app_name = self.config.node_name.replace("_", "-")
 
@@ -146,7 +146,7 @@ class ModelKubernetesTemplateGenerator:
         Generate Kubernetes ConfigMap for configuration.
 
         Returns:
-            Kubernetes ConfigMap configuration dict[str, Any]ionary
+            Kubernetes ConfigMap configuration dictionary
         """
         app_name = self.config.node_name.replace("_", "-")
 

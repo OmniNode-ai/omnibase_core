@@ -420,7 +420,7 @@ class ModelToolCollection(BaseModel):
         collection_name: str = "imported",
         auto_validate: bool = True,
     ) -> "ModelToolCollection":
-        """Create collection from existing tools dict[str, Any]ionary."""
+        """Create collection from existing tools dictionary."""
         collection = cls(collection_name=collection_name, auto_validation=auto_validate)
 
         for name, tool_class in tools_dict.items():

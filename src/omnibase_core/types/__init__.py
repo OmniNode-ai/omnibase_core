@@ -7,7 +7,7 @@ from pydantic import Field
 ONEX Types Module.
 
 This module contains TypedDict definitions and type constraints following ONEX patterns.
-TypedDicts provide type safety for dict[str, Any]ionary structures without runtime overhead.
+TypedDicts provide type safety for dictionary structures without runtime overhead.
 Type constraints provide protocols and type variables for better generic programming.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):

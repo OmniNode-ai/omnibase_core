@@ -507,7 +507,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
         try:
             # Initialize custom_fields if it's None with explicit type annotation
             if not hasattr(self, "custom_fields") or self.custom_fields is None:
-                # Explicitly type the dict[str, Any]ionary to avoid MyPy inference issues
+                # Explicitly type the dictionary to avoid MyPy inference issues
 
                 self.custom_fields: dict[str, PrimitiveValueType] = {}
 
@@ -566,7 +566,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

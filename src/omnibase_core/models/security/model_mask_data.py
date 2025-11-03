@@ -36,7 +36,7 @@ class ModelMaskData(BaseModel):
     )
 
     def to_dict(self) -> dict[str, str | int | bool | list[str] | dict[str, Any]]:
-        """Convert to a dict[str, Any]ionary representation."""
+        """Convert to a dictionary representation."""
         # Custom flattening logic with recursive nested data handling
         result: dict[str, str | int | bool | list[str] | dict[str, Any]] = {}
         result.update(self.string_data)
@@ -52,7 +52,7 @@ class ModelMaskData(BaseModel):
         cls,
         data: dict[str, str | int | bool | list[str] | dict[str, Any]],
     ) -> "ModelMaskData":
-        """Create from a dict[str, Any]ionary."""
+        """Create from a dictionary."""
         string_data: dict[str, str] = {}
         integer_data: dict[str, int] = {}
         boolean_data: dict[str, bool] = {}

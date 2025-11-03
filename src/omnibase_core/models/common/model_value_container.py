@@ -201,7 +201,7 @@ class ModelValueContainer(BaseModel):
         return True
 
     def _validate_metadata(self) -> bool:
-        """Validate metadata dict[str, Any]ionary."""
+        """Validate metadata dictionary."""
         try:
             # Metadata must be string-to-string mapping
             if not all(

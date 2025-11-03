@@ -23,7 +23,7 @@ def process_data(data: str, config: dict[str, Any] | None = None) -> None:
 # ✅ GOOD: Return types
 def find_user(user_id: UUID) -> User | None:
     pass
-```
+```python
 
 ### Pattern 2: Discriminated Unions with Type Safety
 **Use:** When you need to represent multiple possible data structures
@@ -46,7 +46,7 @@ class ModelMigrationConflictUnion(BaseModel):
     source_signature: str | None = None
     spi_signature: str | None = None
     # ... other discriminated fields
-```
+```python
 
 ### Pattern 3: Generic Result/Error Patterns
 **Use:** For error handling and result types
@@ -66,7 +66,7 @@ class Result(Generic[T, E]):
 # ✅ GOOD: Function signatures using Result patterns
 def safe_operation() -> Result[User, ValidationError]:
     pass
-```
+```python
 
 ## ❌ Anti-Patterns (Blocked by Validation)
 
@@ -82,7 +82,7 @@ class ModelPrimitiveValue(BaseModel):
     integer_value: int | None = None
     boolean_value: bool | None = None
     float_value: float | None = None
-```
+```python
 
 ### Anti-Pattern 2: Mixed Primitive/Complex
 ```python
@@ -95,7 +95,7 @@ class ModelFlexibleValue(BaseModel):
     primitive_value: str | int | None = None
     collection_value: list[Any] | None = None
     mapping_value: dict[str, Any] | None = None
-```
+```python
 
 ### Anti-Pattern 3: Lazy Union Usage
 ```python
@@ -108,7 +108,7 @@ class ModelDataValue(BaseModel):
     text_data: str | None = None
     structured_data: dict[str, str] | None = None
     collection_data: list[str] | None = None
-```
+```text
 
 ### Anti-Pattern 4: Old Optional Syntax
 ```python
@@ -117,7 +117,7 @@ Union[str, None]  # Use modern syntax
 
 # ✅ GOOD: Modern optional syntax
 str | None
-```
+```python
 
 ## Validation Rules
 
@@ -147,7 +147,7 @@ class ModelYourDataUnion(BaseModel):
     def validate_discriminator_consistency(cls, v, info):
         # Add validation logic to ensure only appropriate field is set
         return v
-```
+```python
 
 ### Step 3: Migrate Existing Usage
 1. Replace union type annotations with new model
@@ -165,7 +165,7 @@ class ModelSchemaValue(BaseModel):
     string_value: str | None = None
     number_value: ModelNumericValue | None = None
     # ... other typed fields
-```
+```python
 
 ### ModelMigrationConflictUnion (Conflict Resolution)
 ```python
@@ -173,7 +173,7 @@ class ModelSchemaValue(BaseModel):
 class ModelMigrationConflictUnion(BaseModel):
     conflict_type: Literal["name_conflict", "exact_duplicate"]  # Discriminator
     # ... discriminated fields based on conflict_type
-```
+```yaml
 
 ## Best Practices
 

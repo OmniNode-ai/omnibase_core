@@ -27,7 +27,7 @@ container.register_service("MyService", my_service_instance)
 
 # Resolve services
 service = container.get_service("MyService")
-```
+```python
 
 #### Key Methods
 
@@ -52,7 +52,7 @@ input_data = ModelComputeInput(
     data={"values": [1, 2, 3, 4, 5]},
     correlation_id="12345"
 )
-```
+```python
 
 #### ModelComputeOutput
 
@@ -69,7 +69,7 @@ output_data = ModelComputeOutput(
     processing_time_ms=2.5,
     correlation_id="12345"
 )
-```
+```python
 
 ### Error Models
 
@@ -88,7 +88,7 @@ error = ModelOnexError(
     message="Invalid input data",
     context={"field": "value", "expected": "string"}
 )
-```
+```python
 
 #### Key Properties
 
@@ -115,7 +115,7 @@ event = ModelEventEnvelope(
     source_node="compute_node_1",
     target_node="effect_node_1"
 )
-```
+```python
 
 ### Intent and Action Models
 
@@ -134,7 +134,7 @@ intent = ModelIntent(
     payload={"table": "users", "data": {"name": "John"}},
     priority="high"
 )
-```
+```python
 
 #### ModelAction
 
@@ -151,7 +151,7 @@ action = ModelAction(
     payload={"field": "status", "value": "completed"},
     timestamp=time.time()
 )
-```
+```python
 
 ### Cache Models
 
@@ -174,7 +174,7 @@ result = cache.get("key")
 
 # Check if exists
 exists = cache.contains("key")
-```
+```python
 
 #### Key Methods
 
@@ -210,7 +210,7 @@ if breaker.can_execute():
         raise
 else:
     raise Exception("Circuit breaker is open")
-```
+```python
 
 #### Key Methods
 
@@ -240,7 +240,7 @@ async with ModelEffectTransaction() as transaction:
 
     # Transaction commits automatically on success
     # or rolls back on exception
-```
+```python
 
 ## Validation Patterns
 
@@ -271,7 +271,7 @@ class MyInputModel(BaseModel):
         if len(set(v)) != len(v):
             raise ValueError("Tags must be unique")
         return v
-```
+```python
 
 ### Output Validation
 
@@ -293,7 +293,7 @@ class MyOutputModel(BaseModel):
         if not success and v is None:
             raise ValueError("Error message required when success is False")
         return v
-```
+```python
 
 ## Serialization Patterns
 
@@ -311,7 +311,7 @@ dict_data = model.dict()
 
 # Convert from dict
 model = MyModel(**dict_data)
-```
+```python
 
 ### Custom Serialization
 
@@ -338,7 +338,7 @@ class CustomModel(BaseModel):
             "data": self.data,
             "version": "1.0"
         }
-```
+```python
 
 ## Error Handling Patterns
 
@@ -364,7 +364,7 @@ except ValidationError as e:
         message="Input validation failed",
         context={"errors": error_details}
     )
-```
+```python
 
 ### Model Error Conversion
 
@@ -390,7 +390,7 @@ def convert_to_onex_error(error: Exception, context: Dict[str, Any]) -> ModelOne
             message=f"Processing failed: {str(error)}",
             context=context
         )
-```
+```python
 
 ## Performance Considerations
 
@@ -403,7 +403,7 @@ from functools import lru_cache
 def create_model_from_dict(model_class: type, data: Dict[str, Any]) -> BaseModel:
     """Cache model creation for performance."""
     return model_class(**data)
-```
+```python
 
 ### Lazy Loading
 
@@ -426,7 +426,7 @@ class LazyModel(BaseModel):
         """Load expensive data."""
         # Expensive operation here
         return {"loaded": "data"}
-```
+```python
 
 ## Related Documentation
 

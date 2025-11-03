@@ -118,7 +118,7 @@ class ModelExecutionContext(BaseModel):
         return ModelExecutionContext(**data)
 
     def to_environment_dict(self) -> dict[str, str]:
-        """Convert to environment variables dict[str, Any]ionary."""
+        """Convert to environment variables dictionary."""
         env_dict = self.environment_variables.copy()
         env_dict["ONEX_EXECUTION_MODE"] = self.execution_mode.value
         env_dict["ONEX_ENVIRONMENT"] = self.environment.name

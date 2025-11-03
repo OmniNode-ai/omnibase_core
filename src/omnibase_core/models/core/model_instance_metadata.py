@@ -108,7 +108,7 @@ class ModelInstanceMetadata(BaseModel):
         Check if instance matches label selector.
 
         Args:
-            selector: Label selector dict[str, Any]ionary
+            selector: Label selector dictionary
 
         Returns:
             True if all selector labels match

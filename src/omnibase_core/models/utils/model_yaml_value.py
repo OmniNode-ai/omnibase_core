@@ -53,7 +53,7 @@ class ModelYamlValue(BaseModel):
 
     @classmethod
     def from_dict_data(cls, value: dict[str, ModelSchemaValue]) -> "ModelYamlValue":
-        """Create from dict[str, Any]ionary of ModelSchemaValue."""
+        """Create from dictionary of ModelSchemaValue."""
         dict_value = {k: cls.from_schema_value(v) for k, v in value.items()}
         return cls(
             value_type=EnumYamlValueType.DICT,
@@ -106,7 +106,7 @@ class ModelYamlValue(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

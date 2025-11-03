@@ -296,7 +296,7 @@ class NodeCoreBase(ABC):
         Get node performance and quality metrics.
 
         Returns:
-            Performance metrics dict[str, Any]ionary with timing and success metrics
+            Performance metrics dictionary with timing and success metrics
         """
         # Calculate derived metrics
         total_ops = self.metrics["total_operations"]

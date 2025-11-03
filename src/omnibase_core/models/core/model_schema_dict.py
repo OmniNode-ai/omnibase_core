@@ -7,7 +7,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 """
 Model for representing schema dict[str, Any]ionaries with proper type safety.
 
-This model replaces dict[str, Any]ionary usage in schema definitions by providing
+This model replaces dictionary usage in schema definitions by providing
 a structured representation of schema dict[str, Any]ionaries.
 """
 
@@ -143,12 +143,12 @@ class ModelSchemaDict(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Convert to standard dict[str, Any]ionary format.
+        Convert to standard dictionary format.
 
         Returns:
             Dictionary representation
         """
-        # Custom reconstruction logic for schema dict[str, Any]ionary format
+        # Custom reconstruction logic for schema dictionary format
         result: dict[str, Any] = {}
 
         # Add core fields
@@ -238,7 +238,7 @@ class ModelSchemaDict(BaseModel):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelSchemaDict":
         """
-        Create from dict[str, Any]ionary.
+        Create from dictionary.
 
         Args:
             data: Dictionary to convert

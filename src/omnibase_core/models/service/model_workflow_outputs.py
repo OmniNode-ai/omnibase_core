@@ -102,8 +102,8 @@ class ModelWorkflowOutputs(BaseModel):
         return self.custom_outputs.fields.get(key, default)
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dict[str, Any]ionary for current standards."""
-        # Create dict[str, Any]ionary with all standard fields and merge custom fields
+        """Convert to dictionary for current standards."""
+        # Create dictionary with all standard fields and merge custom fields
         result: dict[str, Any] = {
             "result": self.result,
             "status_message": self.status_message,

@@ -79,7 +79,7 @@ docs/
 │
 └── reports/                          # Analysis reports (existing)
     └── (various analysis reports)
-```
+```python
 
 ## Document Types
 
@@ -143,7 +143,7 @@ guides/node-building/
 ├── 08-TESTING_GUIDE.md                 # Testing each node type
 ├── 09-common-pitfalls.md               # What to avoid
 └── 10-agent-templates.md               # Agent-friendly templates
-```
+```python
 
 ### Agent-Friendly Format Requirements
 

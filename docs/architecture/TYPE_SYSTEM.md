@@ -25,7 +25,7 @@ class MyModel(BaseModel):
     name: str
     value: int = Field(ge=0, description="Non-negative integer")
     optional_data: Optional[dict] = None
-```
+```python
 
 ### Type Annotations
 
@@ -45,7 +45,7 @@ async def fetch_data(
     timeout: float = 30.0
 ) -> List[dict]:
     pass
-```
+```python
 
 ### Protocol Definitions
 
@@ -58,7 +58,7 @@ class ProtocolCache(Protocol):
     def get(self, key: str) -> Optional[Any]: ...
     def set(self, key: str, value: Any, ttl: int) -> None: ...
     def delete(self, key: str) -> bool: ...
-```
+```python
 
 ## Common Types
 
@@ -76,7 +76,7 @@ class Failure(TypedDict):
     error: str
 
 Result = Union[Success, Failure]
-```
+```python
 
 ### Generic Types
 
@@ -91,7 +91,7 @@ class Container(Generic[T]):
 
     def get(self) -> T:
         return self.value
-```
+```bash
 
 ## Type Checking
 
@@ -104,7 +104,7 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-```
+```bash
 
 ### Running Type Checks
 
@@ -117,7 +117,7 @@ poetry run mypy src/ --verbose
 
 # Check specific file
 poetry run mypy src/my_module.py
-```
+```python
 
 ## Best Practices
 
@@ -131,7 +131,7 @@ def calculate(x, y):
 # ✅ Right: Explicit return type
 def calculate(x: float, y: float) -> float:
     return x + y
-```
+```python
 
 ### 2. Use Optional for Nullable Values
 
@@ -143,7 +143,7 @@ def get_user(id: str) -> dict:
 # ✅ Right: Explicit Optional
 def get_user(id: str) -> Optional[dict]:
     return None  # OK
-```
+```python
 
 ### 3. Use TypedDict for Structured Dicts
 
@@ -164,7 +164,7 @@ class OutputData(TypedDict):
 
 def process(data: InputData) -> OutputData:
     pass
-```
+```python
 
 ## Advanced Patterns
 
@@ -177,7 +177,7 @@ ExecutionMode = Literal["sequential", "parallel", "batch"]
 
 def execute(mode: ExecutionMode) -> None:
     pass
-```
+```python
 
 ### Union Types
 
@@ -186,7 +186,7 @@ from typing import Union
 
 def process(data: Union[str, int, float]) -> str:
     return str(data)
-```
+```python
 
 ### Type Guards
 
@@ -195,7 +195,7 @@ from typing import TypeGuard
 
 def is_string_list(val: list) -> TypeGuard[List[str]]:
     return all(isinstance(x, str) for x in val)
-```
+```python
 
 ## Next Steps
 

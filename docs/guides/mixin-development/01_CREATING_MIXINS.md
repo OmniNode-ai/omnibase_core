@@ -50,7 +50,7 @@ applicable_node_types: ["EFFECT"]
 
 # REDUCER and ORCHESTRATOR only
 applicable_node_types: ["REDUCER", "ORCHESTRATOR"]
-```
+```text
 
 **Error Handling Mixin Decision**: Core mixin - all nodes need error handling.
 
@@ -64,7 +64,7 @@ Error Handling Actions:
 2. circuit_breaker_check - Check circuit breaker status
 3. should_retry - Determine if operation should retry
 4. record_error_metric - Track error occurrences
-```
+```bash
 
 ## Step 2: Create YAML Contract
 
@@ -76,7 +76,7 @@ cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/nodes/canary/mixins/
 
 # Create your mixin file
 touch mixin_error_handling.yaml
-```
+```yaml
 
 ### Write Basic Structure
 
@@ -89,7 +89,7 @@ mixin_version:
   patch: 0
 description: "Standardized error handling, circuit breakers, and fault tolerance for ONEX nodes"
 applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
-```
+```yaml
 
 ### Define Actions
 
@@ -141,7 +141,7 @@ actions:
       - "metric_recorded"     # Confirmation boolean
     required: false
     timeout_ms: 500
-```
+```yaml
 
 ### Add Configuration Section
 
@@ -175,7 +175,7 @@ error_handling_config:
   enable_error_metrics: true
   sensitive_data_scrubbing: true
   error_log_level: "ERROR"
-```
+```yaml
 
 ### Define Output Models
 
@@ -202,7 +202,7 @@ output_models:
     retry_delay_ms: "integer"
     retry_attempt: "integer"
     max_attempts_reached: "boolean"
-```
+```yaml
 
 ### Declare Dependencies
 
@@ -228,7 +228,7 @@ requires_dependencies:
     type: "protocol"
     description: "Requires metrics collection for error tracking"
     optional: true
-```
+```yaml
 
 ### Add Metrics (Optional)
 
@@ -263,7 +263,7 @@ metrics:
     labels:
       - "error_category"
     buckets: [1, 5, 10, 50, 100, 500, 1000, 5000]
-```
+```bash
 
 ## Step 3: Validate YAML Contract
 
@@ -279,7 +279,7 @@ poetry run onex run contract_validator --contract src/omnibase_core/nodes/canary
 # ✓ All required fields present
 # ✓ Node type constraints valid
 # ✓ Action definitions complete
-```
+```yaml
 
 ### Common Validation Errors
 
@@ -294,7 +294,7 @@ mixin_version: {major: 1, minor: 0, patch: 0}
 mixin_name: "mixin_example"
 mixin_version: {major: 1, minor: 0, patch: 0}
 description: "Example mixin description"
-```
+```text
 
 **Invalid Node Types**:
 ```yaml
@@ -304,7 +304,7 @@ applicable_node_types: ["COMPUTE", "INVALID_TYPE"]
 
 # ✅ Correct
 applicable_node_types: ["COMPUTE", "EFFECT"]
-```
+```yaml
 
 **Incomplete Actions**:
 ```yaml
@@ -321,7 +321,7 @@ actions:
     description: "Process data"
     inputs: ["data"]
     outputs: ["result"]
-```
+```python
 
 ## Step 4: Create Pydantic Backing Model
 
@@ -382,7 +382,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
                 "error_retry_attempts": 3
             }
         }
-```
+```python
 
 ## Step 5: Test Your Mixin
 
@@ -429,7 +429,7 @@ def test_error_handling_subcontract_custom_error_types():
 
     assert "CustomError1" in mixin.retriable_error_types
     assert "FatalCustomError" in mixin.fatal_error_types
-```
+```python
 
 ### Integration Test with Node
 
@@ -484,7 +484,7 @@ async def test_error_handling_mixin_integration():
     # Test error handling
     with pytest.raises(RuntimeError):
         await node.execute_compute(contract)
-```
+```python
 
 ## Step 6: Document Your Mixin
 
@@ -537,7 +537,7 @@ error_config = ModelErrorHandlingSubcontract(
 2. **Configure Retry Types**: Specify which errors are retriable
 3. **Set Appropriate Thresholds**: Based on your SLA requirements
 4. **Monitor Metrics**: Track error rates and circuit breaker states
-```
+```text
 
 ## Common Patterns
 
@@ -545,7 +545,7 @@ error_config = ModelErrorHandlingSubcontract(
 
 ```yaml
 applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
-```
+```text
 
 **Use Cases**: Health checks, performance monitoring, logging
 
@@ -553,7 +553,7 @@ applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 
 ```yaml
 applicable_node_types: ["EFFECT"]
-```
+```text
 
 **Use Cases**: External dependencies, circuit breakers, API clients
 
@@ -561,7 +561,7 @@ applicable_node_types: ["EFFECT"]
 
 ```yaml
 applicable_node_types: ["REDUCER"]
-```
+```text
 
 **Use Cases**: State management, aggregation, caching
 
@@ -569,7 +569,7 @@ applicable_node_types: ["REDUCER"]
 
 ```yaml
 applicable_node_types: ["ORCHESTRATOR"]
-```
+```python
 
 **Use Cases**: Workflow coordination, FSM, routing
 

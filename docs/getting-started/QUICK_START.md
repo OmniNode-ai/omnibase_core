@@ -34,7 +34,7 @@ mkdir -p src/my_project/nodes
 mkdir -p tests
 touch src/my_project/__init__.py
 touch src/my_project/nodes/__init__.py
-```
+```python
 
 ## Step 2: Create Your Node
 
@@ -94,7 +94,7 @@ class NodeDoublerCompute(ModelServiceCompute):
             "original_value": numeric_value,
             "operation": "double"
         }
-```
+```python
 
 > **💡 Why ModelServiceCompute?**
 >
@@ -179,7 +179,7 @@ async def test_non_numeric_value_raises_error(doubler_node):
     """Test that non-numeric value raises ValueError."""
     with pytest.raises(ValueError, match="Value must be numeric"):
         await doubler_node.process({"value": "not a number"})
-```
+```python
 
 ## Step 4: Run Your Tests
 
@@ -194,7 +194,7 @@ poetry run pytest tests/test_doubler.py -v
 # tests/test_doubler.py::test_double_float PASSED
 # tests/test_doubler.py::test_missing_value_raises_error PASSED
 # tests/test_doubler.py::test_non_numeric_value_raises_error PASSED
-```
+```python
 
 ## Step 5: Use Your Node
 
@@ -235,7 +235,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-```
+```bash
 
 Run it:
 
@@ -249,7 +249,7 @@ poetry run python example_usage.py
 # Input: -5 → Output: -10
 # Input: 0 → Output: 0
 # Input: 3.14 → Output: 6.28
-```
+```python
 
 ## What Just Happened?
 
@@ -304,7 +304,7 @@ class DoublerOutput(BaseModel):
     result: float = Field(description="Doubled value")
     original_value: float = Field(description="Original input value")
     operation: str = Field(default="double", description="Operation performed")
-```
+```python
 
 ### Add Caching
 
@@ -321,7 +321,7 @@ async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
     result = await self._compute(input_data)
     self._cache[cache_key] = result
     return result
-```
+```python
 
 ### Add Logging
 
@@ -335,7 +335,7 @@ async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
     result = await self._compute(input_data)
     logger.info(f"Result: {result}")
     return result
-```
+```python
 
 ## Troubleshooting
 
@@ -347,7 +347,7 @@ poetry shell
 
 # Check installation
 poetry run python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('OK')"
-```
+```python
 
 ### Test Failures
 
@@ -357,7 +357,7 @@ poetry run pytest tests/test_doubler.py -vvs
 
 # Run specific test
 poetry run pytest tests/test_doubler.py::test_double_positive_number -v
-```
+```bash
 
 ### Type Checking
 
@@ -367,7 +367,7 @@ poetry add --group dev mypy
 
 # Run type checking
 poetry run mypy src/my_project/nodes/node_doubler_compute.py
-```
+```yaml
 
 ## Summary
 

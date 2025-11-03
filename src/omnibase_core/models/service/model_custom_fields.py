@@ -7,7 +7,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
-Custom fields model to replace dict[str, Any]ionary usage for custom/extensible fields.
+Custom fields model to replace dictionary usage for custom/extensible fields.
 
 This module now imports from separated model files for better organization
 and compliance with one-model-per-file naming conventions.
@@ -25,7 +25,7 @@ from .model_error_details import ModelErrorDetails
 
 
 @allow_dict_str_any(
-    "Custom fields require flexible dict[str, Any]ionary for extensibility across 20+ models",
+    "Custom fields require flexible dictionary for extensibility across 20+ models",
 )
 @allow_any_type(
     "Custom field values need Any type for flexibility in graph nodes, orchestrator steps, and metadata",
@@ -106,7 +106,7 @@ class ModelCustomFields(BaseModel):
         """
         DEPRECATED: Use model_dump(exclude_none=True) instead.
 
-        Convert to dict[str, Any]ionary for current standards.
+        Convert to dictionary for current standards.
         This method will be removed in a future release.
         """
         # Custom compatibility logic - return just the field values

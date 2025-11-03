@@ -41,7 +41,7 @@ os.environ['DB_PASSWORD'] = 'secure_password'
 config = ModelDatabaseConfig.from_environment(prefix='DB')
 
 print(f"Connecting to: {config.host}:{config.port}")
-```
+```python
 
 ## Core Classes
 
@@ -61,7 +61,7 @@ class ModelEnvironmentConfig(BaseModel):
     ) -> T:
         """Create configuration from environment variables."""
         ...
-```
+```text
 
 #### Parameters
 
@@ -77,7 +77,7 @@ Manages environment variable prefix formatting.
 ```python
 prefix = ModelEnvironmentPrefix(prefix="MYAPP", separator="_")
 key = prefix.format_key("database_host")  # -> "MYAPP_DATABASE_HOST"
-```
+```python
 
 ### Configuration Registry
 
@@ -98,7 +98,7 @@ configs = config_registry.list_configs()
 
 # Reload all configurations
 config_registry.reload_all()
-```
+```python
 
 ## Environment Variable Mapping
 
@@ -110,7 +110,7 @@ The system automatically generates multiple possible environment variable keys f
 class ModelConfig(ModelEnvironmentConfig):
     api_key: str = Field(...)
     maxRetries: int = Field(...)  # camelCase
-```
+```python
 
 For `api_key` with prefix `APP`:
 - `APP_API_KEY` (preferred)
@@ -141,19 +141,19 @@ export ENABLE_DEBUG=0
 export ENABLE_DEBUG=no
 export ENABLE_DEBUG=off
 export ENABLE_DEBUG=anything_else
-```
+```bash
 
 #### List Conversion
 ```bash
 # Converts to ['auth', 'logging', 'metrics']
 export FEATURES=auth,logging,metrics
-```
+```bash
 
 #### Dictionary Conversion
 ```bash
 # Converts to {'key1': 'value1', 'key2': 'value2'}
 export SETTINGS=key1=value1,key2=value2
-```
+```python
 
 ## Advanced Features
 
@@ -174,7 +174,7 @@ class ModelApplicationConfig(ModelEnvironmentConfig):
 # APP_DATABASE_PORT=5432
 
 config = ModelApplicationConfig.from_environment(prefix='APP')
-```
+```python
 
 ### Production Environment Detection
 
@@ -185,7 +185,7 @@ from omnibase_core.core.configuration import is_production_environment
 if is_production_environment():
     # Apply production-specific validation
     pass
-```
+```python
 
 ### Custom Validation
 
@@ -199,7 +199,7 @@ class ModelAPIConfig(ModelEnvironmentConfig):
         if is_production_environment() and not v:
             raise ValueError("API key is required in production")
         return v
-```
+```text
 
 ### Configuration Documentation
 
@@ -213,7 +213,7 @@ for doc in docs:
     print(f"Description: {doc['description']}")
     print(f"Type: {doc['type']}")
     print(f"Required: {doc['required']}")
-```
+```python
 
 ## Utility Functions
 
@@ -232,7 +232,7 @@ debug = get_env_bool('DEBUG', False)
 port = get_env_int('PORT', 8000)
 timeout = get_env_float('TIMEOUT', 30.0)
 features = get_env_list('FEATURES', ['default'])
-```
+```text
 
 ## Best Practices
 
@@ -245,7 +245,7 @@ redis_config = ModelRedisConfig.from_environment(prefix='REDIS')
 
 # Avoid - Generic prefixes that can conflict
 config = ModelConfig.from_environment(prefix='APP')
-```
+```python
 
 ### 2. Provide Sensible Defaults
 
@@ -255,7 +255,7 @@ class ModelServiceConfig(ModelEnvironmentConfig):
     max_retries: int = Field(default=3, description="Maximum retry attempts")
     # Don't set defaults for sensitive or required configuration
     api_key: str = Field(..., description="API authentication key")
-```
+```python
 
 ### 3. Use Validation for Critical Settings
 
@@ -278,7 +278,7 @@ class ModelDatabaseConfig(ModelEnvironmentConfig):
         if is_production_environment() and not v:
             raise ValueError("Password required in production")
         return v
-```
+```python
 
 ### 4. Use Registry for Shared Configurations
 
@@ -293,7 +293,7 @@ from omnibase_core.core.configuration import config_registry
 def get_database_connection():
     db_config = config_registry.get('database')
     return connect(db_config.connection_string())
-```
+```python
 
 ### 5. Handle Sensitive Configuration Securely
 
@@ -307,7 +307,7 @@ class ModelSecureConfig(ModelEnvironmentConfig):
         if mask_sensitive:
             summary['api_key'] = '***MASKED***'
         return summary
-```
+```python
 
 ## Environment File Support
 
@@ -323,7 +323,7 @@ config = ModelDatabaseConfig.from_environment(
     prefix='DB',
     env_file=Path('.env')
 )
-```
+```text
 
 ### Multiple Environment Files
 
@@ -333,7 +333,7 @@ if is_production_environment():
     config = ModelConfig.from_environment(env_file=Path('.env.prod'))
 else:
     config = ModelConfig.from_environment(env_file=Path('.env.dev'))
-```
+```bash
 
 ## Error Handling
 
@@ -349,7 +349,7 @@ except ValidationError as e:
 
 # Non-strict mode - uses defaults for missing/invalid values
 config = ModelConfig.from_environment(strict=False)
-```
+```python
 
 ### Common Issues and Solutions
 
@@ -361,7 +361,7 @@ class ModelConfig(ModelEnvironmentConfig):
 
 # Solution: Set environment variable or provide override
 config = ModelConfig.from_environment(api_key="fallback-key")
-```
+```text
 
 #### Type Conversion Errors
 ```python
@@ -370,7 +370,7 @@ config = ModelConfig.from_environment(api_key="fallback-key")
 
 # Solution: The system will log warning and use default
 port = get_env_int('PORT', 8000)  # Uses 8000 if PORT is invalid
-```
+```python
 
 ## Integration Examples
 
@@ -391,7 +391,7 @@ app = FastAPI(debug=config.debug)
 @app.get("/health")
 async def health():
     return {"status": "healthy", "config": config.get_env_summary()}
-```
+```python
 
 ### Database Connection
 
@@ -412,7 +412,7 @@ class ModelDatabaseConfig(ModelEnvironmentConfig):
 async def get_db_pool():
     db_config = ModelDatabaseConfig.from_environment(prefix='DB')
     return await asyncpg.create_pool(db_config.get_dsn())
-```
+```python
 
 ## Migration Guide
 
@@ -425,7 +425,7 @@ import os
 host = os.getenv('DB_HOST', 'localhost')
 port = int(os.getenv('DB_PORT', '5432'))
 debug = os.getenv('DEBUG', 'false').lower() == 'true'
-```
+```python
 
 **After:**
 ```python
@@ -435,7 +435,7 @@ class ModelConfig(ModelEnvironmentConfig):
     debug: bool = Field(default=False)
 
 config = ModelConfig.from_environment()
-```
+```python
 
 ### From Existing Configuration Classes
 
@@ -445,7 +445,7 @@ class Config:
     def __init__(self):
         self.host = os.getenv('HOST', 'localhost')
         self.port = int(os.getenv('PORT', '8000'))
-```
+```python
 
 **After:**
 ```python
@@ -454,7 +454,7 @@ class ModelConfig(ModelEnvironmentConfig):
     port: int = Field(default=8000)
 
 config = ModelConfig.from_environment()
-```
+```python
 
 ## Troubleshooting
 
@@ -472,7 +472,7 @@ print(f"Looking for environment variables: {keys}")
 # Check loaded configuration
 config = ModelConfig.from_environment()
 print(f"Configuration summary: {config.get_env_summary()}")
-```
+```python
 
 ### Verify Environment Detection
 
@@ -484,6 +484,6 @@ print(f"Environment variables checked:")
 print(f"  ENVIRONMENT: {os.getenv('ENVIRONMENT')}")
 print(f"  NODE_ENV: {os.getenv('NODE_ENV')}")
 print(f"  DEBUG: {os.getenv('DEBUG')}")
-```
+```text
 
 This comprehensive configuration management system provides robust, type-safe, and flexible environment variable handling for all ONEX components while maintaining security and ease of use.

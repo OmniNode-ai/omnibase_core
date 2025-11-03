@@ -85,7 +85,7 @@ class ModelCliToolExecutionInput(BaseModel):
 
     def to_legacy_dict(self) -> dict[str, Any]:
         """
-        Convert to legacy dict[str, Any]ionary format for current standards.
+        Convert to legacy dictionary format for current standards.
 
         Returns:
             Dictionary representation compatible with existing code
@@ -119,10 +119,10 @@ class ModelCliToolExecutionInput(BaseModel):
     @classmethod
     def from_legacy_dict(cls, data: dict[str, Any]) -> "ModelCliToolExecutionInput":
         """
-        Create instance from legacy dict[str, Any]ionary format.
+        Create instance from legacy dictionary format.
 
         Args:
-            data: Legacy dict[str, Any]ionary parameters
+            data: Legacy dictionary parameters
 
         Returns:
             ModelCliToolExecutionInput instance

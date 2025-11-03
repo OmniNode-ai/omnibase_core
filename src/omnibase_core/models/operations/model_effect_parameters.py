@@ -87,7 +87,7 @@ class ModelEffectParameters(BaseModel):
         )
 
     def serialize(self) -> dict[str, object]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

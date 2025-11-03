@@ -125,7 +125,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         # Factory instances don't have model_dump - serialize factory state instead
         return {
             "model_class": self.model_class.__name__,

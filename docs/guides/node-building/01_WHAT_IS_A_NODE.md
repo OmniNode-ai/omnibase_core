@@ -46,7 +46,7 @@ Each has a specific role. Together, they create a complete system.
 │  • Error handling built-in                                   │
 │  • Performance tracking                                      │
 └──────────────────────────────────────────────────────────────┘
-```
+```python
 
 ## Key Characteristics
 
@@ -67,7 +67,7 @@ class NodeDataValidatorAndSaverComputeEffect:
     async def process(self, input_data):
         validated = self.validate(input_data)
         self.save_to_database(validated)  # Mixing COMPUTE and EFFECT!
-```
+```python
 
 ### 2. Strongly Typed
 
@@ -81,7 +81,7 @@ async def process(
 ) -> ModelComputeOutput[T_Output]:          # ← Typed output
     """Process with type safety."""
     # Type checking happens automatically via Pydantic
-```
+```python
 
 ### 3. Dependency Injection
 
@@ -94,7 +94,7 @@ class NodeMyServiceCompute(NodeCoreBase):
         # Container provides all dependencies
         self.logger = container.logger
         self.config = container.compute_cache_config
-```
+```python
 
 No manual dependency wiring. The container handles it.
 
@@ -112,7 +112,7 @@ raise ModelOnexError(
     message="Input validation failed",
     context={"field": "email", "value": input_value}
 )
-```
+```python
 
 ### 5. Performance Tracking
 
@@ -129,7 +129,7 @@ self.computation_metrics[operation_id] = {
     "duration_ms": processing_time_ms,
     "operation_type": input_data.operation_type
 }
-```
+```python
 
 ## Why Nodes?
 
@@ -148,7 +148,7 @@ class DataService:
         # Notify other services
         self.notify(transformed)
         # All responsibilities mixed together!
-```
+```python
 
 ### Solution: Node-Based Architecture
 
@@ -179,7 +179,7 @@ class NodeDataProcessorOrchestrator:
         transformed = await self.transformer.process(fetched)
         result = await self.saver.process(transformed)
         return result
-```
+```text
 
 **Benefits**:
 - Each component testable in isolation
@@ -210,7 +210,7 @@ External World          │      ONEX System        │   Data Flow
                        │         ▼                │
                        │  ORCHESTRATOR Node ──────┼───▶ Coordinated result
                        │  (Coordinate)            │
-```
+```text
 
 ### Data Flow Example
 
@@ -248,7 +248,7 @@ save_result = await effect_node.process(
 result = await orchestrator_node.process(
     ModelOrchestratorInput(user_signup_request=user)
 )
-```
+```python
 
 ## Real-World Example
 
@@ -319,7 +319,7 @@ class NodeCompute(NodeCoreBase):
             processing_time_ms=processing_time,
             cache_hit=False
         )
-```
+```python
 
 **Notice**:
 - ✅ Single responsibility: Pure computation
@@ -398,7 +398,7 @@ class NodeMyServiceCompute(NodeCoreBase):
         # Execute operation
         # Return output
         pass
-```
+```python
 
 **Essential imports**:
 - `NodeCoreBase` - Base class for all nodes

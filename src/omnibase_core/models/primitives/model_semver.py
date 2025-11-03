@@ -162,10 +162,10 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
 
 def parse_input_state_version(input_state: dict[str, Any]) -> "ModelSemVer":
     """
-    Parse a version from an input state dict[str, Any], requiring structured dict[str, Any]ionary format.
+    Parse a version from an input state dict[str, Any], requiring structured dictionary format.
 
     Args:
-        input_state: The input state dict[str, Any]ionary (must have a 'version' key)
+        input_state: The input state dictionary (must have a 'version' key)
 
     Returns:
         ModelSemVer instance
@@ -200,7 +200,7 @@ def parse_input_state_version(input_state: dict[str, Any]) -> "ModelSemVer":
             return ModelSemVer(**v)
         except Exception as e:
             msg = (
-                f"Invalid version dict[str, Any]ionary format. Expected {{major: int, minor: int, patch: int}}. "
+                f"Invalid version dictionary format. Expected {{major: int, minor: int, patch: int}}. "
                 f"Got: {v}. Error: {e}"
             )
             raise ModelOnexError(
@@ -209,7 +209,7 @@ def parse_input_state_version(input_state: dict[str, Any]) -> "ModelSemVer":
             ) from e
 
     msg = (
-        f"Version must be a ModelSemVer instance or dict[str, Any]ionary with {{major, minor, patch}} keys. "
+        f"Version must be a ModelSemVer instance or dictionary with {{major, minor, patch}} keys. "
         f"Got {type(v).__name__}: {v}"
     )
     raise ModelOnexError(

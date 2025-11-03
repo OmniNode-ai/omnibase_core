@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import Field
 
 """
-Error summary model to replace dict[str, Any]ionary usage for get_error_summary() returns.
+Error summary model to replace dictionary usage for get_error_summary() returns.
 """
 
 from datetime import datetime
@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict, field_serializer
 class ModelErrorSummary(BaseModel):
     """
     Error summary with typed fields.
-    Replaces dict[str, Any]ionary for get_error_summary() returns.
+    Replaces dictionary for get_error_summary() returns.
     """
 
     # Error identification
@@ -74,7 +74,7 @@ class ModelErrorSummary(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelErrorSummary"]:
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         if data is None:
             return None
         return cls(**data)

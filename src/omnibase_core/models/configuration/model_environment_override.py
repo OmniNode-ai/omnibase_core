@@ -15,7 +15,7 @@ class ModelEnvironmentOverride(BaseModel):
     """
     Strongly typed model for environment variable overrides.
 
-    Replaces dict[str, Any]ionary usage in environment override handling
+    Replaces dictionary usage in environment override handling
     with proper Pydantic validation and type safety.
     """
 
@@ -25,7 +25,7 @@ class ModelEnvironmentOverride(BaseModel):
     )
 
     def to_config_dict(self) -> dict[str, Any]:
-        """Convert to configuration dict[str, Any]ionary format."""
+        """Convert to configuration dictionary format."""
         overrides = {}
         if self.registry_mode is not None:
             overrides["default_mode"] = self.registry_mode

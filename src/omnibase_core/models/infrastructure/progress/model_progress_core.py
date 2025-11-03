@@ -202,7 +202,7 @@ class ModelProgressCore(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         # Explicit typing to ensure MyPy recognizes the return type
         result: dict[str, Any] = self.model_dump(exclude_none=False, by_alias=True)
         return result

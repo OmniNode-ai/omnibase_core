@@ -167,7 +167,7 @@ class ModelSecurityLevel(BaseModel):
         return all(std in self.compliance_requirements for std in required_standards)
 
     def to_environment_dict(self) -> dict[str, str]:
-        """Convert to environment variables dict[str, Any]ionary."""
+        """Convert to environment variables dictionary."""
         return {
             "ONEX_SECURITY_LEVEL": self.level_name,
             "ONEX_SECURITY_SCORE": str(self.security_score),

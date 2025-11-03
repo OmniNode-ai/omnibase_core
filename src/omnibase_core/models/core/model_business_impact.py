@@ -10,7 +10,7 @@ __all__ = [
 ]
 
 """
-Business impact model to replace dict[str, Any]ionary usage for business metrics.
+Business impact model to replace dictionary usage for business metrics.
 """
 
 from datetime import datetime
@@ -22,7 +22,7 @@ from pydantic import BaseModel, ConfigDict, field_serializer
 class ModelBusinessImpact(BaseModel):
     """
     Business impact assessment with typed fields.
-    Replaces dict[str, Any]ionary for get_business_impact() returns.
+    Replaces dictionary for get_business_impact() returns.
     """
 
     # Impact assessment
@@ -139,7 +139,7 @@ class ModelBusinessImpact(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelBusinessImpact":
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         return cls(**data)
 
     @field_serializer("assessment_timestamp")

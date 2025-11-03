@@ -224,7 +224,7 @@ class ModelOutputFormatOptions(BaseModel):
         """Create instance from string-based configuration data."""
 
         # Create converter registry and register all known fields
-        # This replaces the large conditional field_mappings dict[str, Any]ionary
+        # This replaces the large conditional field_mappings dictionary
         registry = ModelFieldConverterRegistry()
 
         # Register boolean fields
@@ -303,7 +303,7 @@ class ModelOutputFormatOptions(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:

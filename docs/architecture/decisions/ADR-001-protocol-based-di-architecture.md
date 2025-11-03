@@ -151,7 +151,7 @@ ServiceRegistry.resolve_service(ProtocolLogger)
     ├─→ Resolve by lifecycle (singleton/transient)
     │
     └─→ Return typed instance: logger (type: ProtocolLogger)
-```
+```python
 
 ### Business Registry (Action Discovery)
 
@@ -171,7 +171,7 @@ ModelCliAction.from_contract_action(...)  # Pydantic model
 ModelActionRegistry.register_action(action)
     │
     └─→ Stored in _actions dict for CLI routing
-```
+```python
 
 ### Runtime Discovery (MixinServiceRegistry)
 
@@ -191,7 +191,7 @@ Create MixinServiceRegistryEntry (Pydantic)
 Store in self.service_registry[tool_id]
     │
     └─→ Tool available in live catalog
-```
+```python
 
 ---
 
@@ -235,7 +235,7 @@ await registry.register_instance(
 logger1 = await registry.resolve_service(ProtocolLogger)
 logger2 = await registry.resolve_service(ProtocolLogger)
 assert logger1 is logger2  # Same instance
-```
+```text
 
 ### Transient (Planned v2.0)
 
@@ -251,7 +251,7 @@ await registry.register_factory(
 pool1 = await registry.resolve_service(ProtocolConnectionPool)
 pool2 = await registry.resolve_service(ProtocolConnectionPool)
 assert pool1 is not pool2  # Different instances
-```
+```text
 
 ### Scoped (Planned v2.0)
 
@@ -269,7 +269,7 @@ async with registry.create_scope("request") as scope:
     ctx1 = await scope.resolve_service(ProtocolRequestContext)
     ctx2 = await scope.resolve_service(ProtocolRequestContext)
     assert ctx1 is ctx2  # Same within scope
-```
+```python
 
 ---
 
@@ -298,7 +298,7 @@ async def get_service_async(
     }
     provider_name = provider_map.get(protocol_type.__name__)
     return getattr(self._base_container, provider_name)()
-```
+```python
 
 **Migration Path**: v1.0 uses fallback, v2.0 will be ServiceRegistry-only.
 
@@ -340,7 +340,7 @@ registry.register(LoggerImpl, singleton=True)
 
 # Resolve by concrete class
 logger = registry.resolve(LoggerImpl)
-```
+```text
 
 **Rejected Because**:
 - ❌ Tight coupling to implementation
@@ -357,7 +357,7 @@ registry.register("logger", logger_instance)
 
 # Resolve by string
 logger = registry.resolve("logger")
-```
+```python
 
 **Rejected Because**:
 - ❌ No type safety (returns `Any`)
@@ -373,7 +373,7 @@ logger = registry.resolve("logger")
 class MyService:
     def __init__(self, logger: ProtocolLogger):
         self.logger = logger
-```
+```python
 
 **Rejected Because**:
 - ❌ Requires complex decorator machinery
@@ -385,7 +385,7 @@ class MyService:
 
 ## Implementation Notes
 
-### Current Status (v0.1.1)
+### Current Status (v0.2.0)
 
 **Implemented**:
 - ✅ ServiceRegistry with protocol-based resolution
@@ -432,14 +432,14 @@ The codebase contains TODO comments that are often misinterpreted as "legacy reg
 **Current**:
 ```python
 # TODO: These imports require omnibase-spi protocols that may not be available yet
-```
+```bash
 
 **Clarified**:
 ```python
 # FUTURE (v2.0): Protocol integrations pending omnibase-spi v0.2.0
 # These protocols will enable external service discovery and database pooling.
 # Tracking: https://github.com/OmniNode-ai/omnibase_spi/issues/42
-```
+```python
 
 ### model_onex_container.py Lines 304-305
 
@@ -447,7 +447,7 @@ The codebase contains TODO comments that are often misinterpreted as "legacy reg
 ```python
 # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
 # Note: ProtocolServiceResolver added in omnibase_spi v0.1.2
-```
+```python
 
 **Status**:
 ProtocolServiceResolver is now available in omnibase_spi v0.1.2 and ready for implementation.
@@ -460,7 +460,7 @@ ProtocolServiceDiscovery, and other external dependencies.
 ```python
 # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
 # Note: ProtocolServiceResolver added in omnibase_spi v0.1.2
-```
+```python
 
 **Status**:
 ProtocolServiceResolver is now available for implementation of external service health checks.

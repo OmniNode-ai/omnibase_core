@@ -23,7 +23,7 @@ with patch("llama_index.core.workflow"):
 
 # Verify event loop was properly closed
 mock_loop.close.assert_called_once()
-```
+```bash
 
 ## Files Modified
 
@@ -70,7 +70,7 @@ Fixed 6 tests that were creating real event loops:
 
 # After (all splits parallel):
 -n auto
-```
+```python
 
 **Impact**:
 - Restores parallel execution for ~1,099 tests in split 6
@@ -95,7 +95,7 @@ def test_workflow_execution(mock_event_loop):
 
     # Verify event loop was properly closed
     mock_event_loop.close.assert_called_once()
-```
+```python
 
 **Features**:
 - Pre-configured MagicMock with sensible defaults
@@ -129,7 +129,7 @@ Scanned entire test suite for event loop creation patterns:
 ✅ 6 newly fixed tests: PASSED
 ✅ 1 previously fixed test: PASSED
 ✅ All 47 tests in file: PASSED
-```
+```python
 
 **Expected CI Impact**:
 - Split 6 will now run with parallel execution

@@ -315,7 +315,7 @@ class ModelOnexError(Exception):
         return self.message
 
     def model_dump(self) -> dict[str, Any]:
-        """Convert error to dict[str, Any]ionary for serialization."""
+        """Convert error to dictionary for serialization."""
         return self.model.model_dump()
 
     def model_dump_json(self) -> str:
@@ -328,7 +328,7 @@ class ModelOnexError(Exception):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelOnexError":
-        """Create ModelOnexError from dict[str, Any]ionary."""
+        """Create ModelOnexError from dictionary."""
         # Local import to avoid circular dependency
         from omnibase_core.models.common.model_onex_error_data import (
             _ModelOnexErrorData,

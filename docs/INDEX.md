@@ -27,7 +27,7 @@ omnibase_core/docs/
 ├── Architecture             → System design and concepts
 ├── Reference                → Templates and API docs
 └── Specialized Topics       → Threading, errors, patterns
-```
+```python
 
 ---
 
@@ -150,7 +150,8 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [Release Notes v0.1.1](release-notes/RELEASE_NOTES_v0.1.1.md) | Quality & documentation improvements | ✅ Current |
+| Release Notes v0.2.0 | Discovery enhancements, omnibase_spi v0.2.0 upgrade, container types documentation | ✅ Current |
+| [Release Notes v0.1.1](release-notes/RELEASE_NOTES_v0.1.1.md) | Quality & documentation improvements | ✅ Available |
 | [Release Notes v0.1.0](release-notes/RELEASE_NOTES_v0.1.0.md) | Initial public release | ✅ Available |
 
 ---
