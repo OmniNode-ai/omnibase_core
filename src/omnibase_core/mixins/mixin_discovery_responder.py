@@ -418,7 +418,11 @@ class MixinDiscoveryResponder:
                 introspection=introspection_data,
                 health_status=self.get_health_status(),
                 capabilities=self.get_discovery_capabilities(),
-                node_type=self.__class__.__name__,
+                node_type=(
+                    self.get_node_type()
+                    if hasattr(self, "get_node_type")
+                    else introspection_data.get("node_type", self.__class__.__name__)
+                ),
                 version=version_semver,
                 event_channels=event_channels_list,
                 response_time_ms=(time.time() - response_start) * 1000,

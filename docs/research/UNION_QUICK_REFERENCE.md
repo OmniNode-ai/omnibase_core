@@ -310,7 +310,7 @@ Union type needed?
 │
 └─ Complex custom pattern?
    └─ → Design new discriminated union model
-```bash
+```
 
 ---
 
