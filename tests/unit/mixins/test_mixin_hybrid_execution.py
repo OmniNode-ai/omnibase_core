@@ -217,6 +217,7 @@ class TestExecuteWithModeSelection:
         assert tool.process_called
         assert result.value == "processed: test"
 
+    @pytest.mark.timeout(5)  # Prevent CI hangs
     def test_execute_with_explicit_workflow_mode(self) -> None:
         """Test execute with explicit WORKFLOW mode override."""
         tool = MockTool()
@@ -227,10 +228,13 @@ class TestExecuteWithModeSelection:
         mock_loop.run_until_complete.return_value = SimpleInputState(
             value="workflow: test"
         )
+        mock_loop.is_running.return_value = False
+        mock_loop.is_closed.return_value = False
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
+                with patch("asyncio.get_event_loop", return_value=mock_loop):
+                    tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
 
         assert tool._execution_mode == ExecutionMode.WORKFLOW
         assert tool.workflow_created
@@ -262,6 +266,7 @@ class TestExecuteWithModeSelection:
 
             mock_determine.assert_called_once_with(input_state)
 
+    @pytest.mark.timeout(5)  # Prevent CI hangs
     def test_execute_with_orchestrated_mode(self) -> None:
         """Test execute with ORCHESTRATED mode."""
         tool = MockTool()
@@ -272,10 +277,15 @@ class TestExecuteWithModeSelection:
         mock_loop.run_until_complete.return_value = SimpleInputState(
             value="workflow: test"
         )
+        # Ensure is_running() returns False to prevent "already running" errors
+        mock_loop.is_running.return_value = False
+        # Ensure is_closed() returns False initially
+        mock_loop.is_closed.return_value = False
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                tool.execute(input_state, mode=ExecutionMode.ORCHESTRATED)
+                with patch("asyncio.get_event_loop", return_value=mock_loop):
+                    tool.execute(input_state, mode=ExecutionMode.ORCHESTRATED)
 
         # Orchestrated falls back to workflow mode
         assert tool._execution_mode == ExecutionMode.ORCHESTRATED
@@ -326,6 +336,7 @@ class TestExecuteDirect:
 class TestExecuteWorkflow:
     """Test workflow execution path with multiple branches."""
 
+    @pytest.mark.timeout(5)  # Prevent CI hangs
     def test_execute_workflow_success(self) -> None:
         """Test successful workflow execution."""
         tool = MockTool()
@@ -336,10 +347,13 @@ class TestExecuteWorkflow:
         mock_loop.run_until_complete.return_value = SimpleInputState(
             value="workflow: workflow_test"
         )
+        mock_loop.is_running.return_value = False
+        mock_loop.is_closed.return_value = False
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                result = tool._execute_workflow(input_state)
+                with patch("asyncio.get_event_loop", return_value=mock_loop):
+                    result = tool._execute_workflow(input_state)
 
         assert tool.workflow_created
         assert result.value == "workflow: workflow_test"
@@ -389,6 +403,7 @@ class TestExecuteWorkflow:
         assert tool.process_called
         assert result.value == "processed: test"
 
+    @pytest.mark.timeout(5)  # Prevent CI hangs
     def test_execute_workflow_records_metrics(self) -> None:
         """Test workflow execution records metrics."""
         tool = MockTool()
@@ -399,10 +414,13 @@ class TestExecuteWorkflow:
         mock_loop.run_until_complete.return_value = SimpleInputState(
             value="workflow: test"
         )
+        mock_loop.is_running.return_value = False
+        mock_loop.is_closed.return_value = False
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                tool._execute_workflow(input_state)
+                with patch("asyncio.get_event_loop", return_value=mock_loop):
+                    tool._execute_workflow(input_state)
 
         assert tool._workflow_metrics is not None
         assert tool._workflow_metrics.status == EnumWorkflowStatus.COMPLETED
@@ -415,6 +433,7 @@ class TestExecuteWorkflow:
 class TestExecuteOrchestrated:
     """Test orchestrated execution path."""
 
+    @pytest.mark.timeout(5)  # Prevent CI hangs
     def test_execute_orchestrated_falls_back_to_workflow(self) -> None:
         """Test orchestrated mode falls back to workflow mode."""
         tool = MockTool()
@@ -425,10 +444,13 @@ class TestExecuteOrchestrated:
         mock_loop.run_until_complete.return_value = SimpleInputState(
             value="workflow: test"
         )
+        mock_loop.is_running.return_value = False
+        mock_loop.is_closed.return_value = False
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                tool._execute_orchestrated(input_state)
+                with patch("asyncio.get_event_loop", return_value=mock_loop):
+                    tool._execute_orchestrated(input_state)
 
         # Should execute workflow
         assert tool.workflow_created
@@ -616,6 +638,7 @@ class TestPropertiesAccessors:
         tool._execution_mode = ExecutionMode.DIRECT
         assert tool.execution_mode == ExecutionMode.DIRECT
 
+    @pytest.mark.timeout(5)  # Prevent CI hangs
     def test_workflow_metrics_property(self) -> None:
         """Test workflow_metrics property."""
         tool = MockTool()
@@ -630,10 +653,13 @@ class TestPropertiesAccessors:
         mock_loop.run_until_complete.return_value = SimpleInputState(
             value="workflow: test"
         )
+        mock_loop.is_running.return_value = False
+        mock_loop.is_closed.return_value = False
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                tool._execute_workflow(input_state)
+                with patch("asyncio.get_event_loop", return_value=mock_loop):
+                    tool._execute_workflow(input_state)
 
         assert tool.workflow_metrics is not None
         assert tool.workflow_metrics.status == EnumWorkflowStatus.COMPLETED
@@ -700,6 +726,7 @@ class TestEdgeCases:
 
         assert tool._execution_mode is not None
 
+    @pytest.mark.timeout(5)  # Prevent CI hangs
     def test_multiple_executions_update_mode(self) -> None:
         """Test multiple executions correctly update mode."""
         tool = MockTool()
@@ -715,11 +742,14 @@ class TestEdgeCases:
         mock_loop.run_until_complete.return_value = SimpleInputState(
             value="workflow: test"
         )
+        mock_loop.is_running.return_value = False
+        mock_loop.is_closed.return_value = False
 
         with patch("llama_index.core.workflow"):
             with patch("asyncio.new_event_loop", return_value=mock_loop):
-                tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
-                assert tool._execution_mode == ExecutionMode.WORKFLOW
+                with patch("asyncio.get_event_loop", return_value=mock_loop):
+                    tool.execute(input_state, mode=ExecutionMode.WORKFLOW)
+                    assert tool._execution_mode == ExecutionMode.WORKFLOW
 
         # Verify event loop was properly closed
         mock_loop.close.assert_called_once()
