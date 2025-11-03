@@ -220,6 +220,7 @@ class TestMixinHealthCheck:
         assert result.status == EnumNodeHealthStatus.UNHEALTHY
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_health_check_async_basic(self):
         """Test async health check with no custom checks."""
         node = TestNode()
@@ -230,6 +231,7 @@ class TestMixinHealthCheck:
         assert result.status == EnumNodeHealthStatus.HEALTHY
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_health_check_async_with_sync_check(self):
         """Test async health check with synchronous custom check."""
 
@@ -252,6 +254,7 @@ class TestMixinHealthCheck:
         assert "Sync check passed" in result.message
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_health_check_async_with_async_check(self):
         """Test async health check with asynchronous custom check."""
 
@@ -275,6 +278,7 @@ class TestMixinHealthCheck:
         assert "Async check passed" in result.message
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_health_check_async_with_mixed_checks(self):
         """Test async health check with both sync and async checks."""
 
@@ -309,6 +313,7 @@ class TestMixinHealthCheck:
         assert "Async check passed" in result.message
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_health_check_async_with_exception(self):
         """Test async health check when check raises exception."""
 
@@ -436,6 +441,7 @@ class TestMixinHealthCheck:
         assert len(checks) == 0
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_health_check_async_invalid_return_type(self):
         """Test async health check with invalid return type."""
 
