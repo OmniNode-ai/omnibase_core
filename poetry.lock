@@ -324,19 +324,6 @@ jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
 uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
-name = "cachetools"
-version = "6.2.1"
-description = "Extensible memoizing collections and decorators"
-optional = true
-python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"kubernetes\" or extra == \"full\""
-files = [
-    {file = "cachetools-6.2.1-py3-none-any.whl", hash = "sha256:09868944b6dde876dfd44e1d47e18484541eaf12f26f29b7af91b26cc892d701"},
-    {file = "cachetools-6.2.1.tar.gz", hash = "sha256:3f391e4bd8f8bf0931169baf7456cc822705f4e2a31f840d218f445b9a854201"},
-]
-
-[[package]]
 name = "certifi"
 version = "2025.10.5"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -965,34 +952,6 @@ test-full = ["adlfs", "aiohttp (!=4.0.0a0,!=4.0.0a1)", "cloudpickle", "dask", "d
 tqdm = ["tqdm"]
 
 [[package]]
-name = "google-auth"
-version = "2.42.1"
-description = "Google Authentication Library"
-optional = true
-python-versions = ">=3.7"
-groups = ["main"]
-markers = "extra == \"kubernetes\" or extra == \"full\""
-files = [
-    {file = "google_auth-2.42.1-py2.py3-none-any.whl", hash = "sha256:eb73d71c91fc95dbd221a2eb87477c278a355e7367a35c0d84e6b0e5f9b4ad11"},
-    {file = "google_auth-2.42.1.tar.gz", hash = "sha256:30178b7a21aa50bffbdc1ffcb34ff770a2f65c712170ecd5446c4bef4dc2b94e"},
-]
-
-[package.dependencies]
-cachetools = ">=2.0.0,<7.0"
-pyasn1-modules = ">=0.2.1"
-rsa = ">=3.1.4,<5"
-
-[package.extras]
-aiohttp = ["aiohttp (>=3.6.2,<4.0.0)", "requests (>=2.20.0,<3.0.0)"]
-enterprise-cert = ["cryptography", "pyopenssl"]
-pyjwt = ["cryptography (<39.0.0) ; python_version < \"3.8\"", "cryptography (>=38.0.3)", "pyjwt (>=2.0)"]
-pyopenssl = ["cryptography (<39.0.0) ; python_version < \"3.8\"", "cryptography (>=38.0.3)", "pyopenssl (>=20.0.0)"]
-reauth = ["pyu2f (>=0.1.5)"]
-requests = ["requests (>=2.20.0,<3.0.0)"]
-testing = ["aiohttp (<3.10.0)", "aiohttp (>=3.6.2,<4.0.0)", "aioresponses", "cryptography (<39.0.0) ; python_version < \"3.8\"", "cryptography (<39.0.0) ; python_version < \"3.8\"", "cryptography (>=38.0.3)", "cryptography (>=38.0.3)", "flask", "freezegun", "grpcio", "mock", "oauth2client", "packaging", "pyjwt (>=2.0)", "pyopenssl (<24.3.0)", "pyopenssl (>=20.0.0)", "pytest", "pytest-asyncio", "pytest-cov", "pytest-localserver", "pyu2f (>=0.1.5)", "requests (>=2.20.0,<3.0.0)", "responses", "urllib3"]
-urllib3 = ["packaging", "urllib3"]
-
-[[package]]
 name = "greenlet"
 version = "3.2.4"
 description = "Lightweight in-process concurrent programming"
@@ -1333,34 +1292,6 @@ files = [
     {file = "joblib-1.5.2-py3-none-any.whl", hash = "sha256:4e1f0bdbb987e6d843c70cf43714cb276623def372df3c22fe5266b2670bc241"},
     {file = "joblib-1.5.2.tar.gz", hash = "sha256:3faa5c39054b2f03ca547da9b2f52fde67c06240c31853f306aea97f13647b55"},
 ]
-
-[[package]]
-name = "kubernetes"
-version = "29.0.0"
-description = "Kubernetes python client"
-optional = true
-python-versions = ">=3.6"
-groups = ["main"]
-markers = "extra == \"kubernetes\" or extra == \"full\""
-files = [
-    {file = "kubernetes-29.0.0-py2.py3-none-any.whl", hash = "sha256:ab8cb0e0576ccdfb71886366efb102c6a20f268d817be065ce7f9909c631e43e"},
-    {file = "kubernetes-29.0.0.tar.gz", hash = "sha256:c4812e227ae74d07d53c88293e564e54b850452715a59a927e7e1bc6b9a60459"},
-]
-
-[package.dependencies]
-certifi = ">=14.05.14"
-google-auth = ">=1.0.1"
-oauthlib = ">=3.2.2"
-python-dateutil = ">=2.5.3"
-pyyaml = ">=5.4.1"
-requests = "*"
-requests-oauthlib = "*"
-six = ">=1.9.0"
-urllib3 = ">=1.24.2"
-websocket-client = ">=0.32.0,<0.40.0 || >0.40.0,<0.41.dev0 || >=0.43.dev0"
-
-[package.extras]
-adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "llama-cloud"
@@ -2138,24 +2069,6 @@ files = [
 ]
 
 [[package]]
-name = "oauthlib"
-version = "3.3.1"
-description = "A generic, spec-compliant, thorough implementation of the OAuth request-signing logic"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"kubernetes\" or extra == \"full\""
-files = [
-    {file = "oauthlib-3.3.1-py3-none-any.whl", hash = "sha256:88119c938d2b8fb88561af5f6ee0eec8cc8d552b7bb1f712743136eb7523b7a1"},
-    {file = "oauthlib-3.3.1.tar.gz", hash = "sha256:0f0f8aa759826a193cf66c12ea1af1637f87b9b4622d46e866952bb022e538c9"},
-]
-
-[package.extras]
-rsa = ["cryptography (>=3.0.0)"]
-signals = ["blinker (>=1.4.0)"]
-signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
-
-[[package]]
 name = "omnibase-spi"
 version = "0.2.0"
 description = "ONEX Service Provider Interface - Protocol definitions"
@@ -2472,22 +2385,6 @@ pyyaml = ">=5.1"
 virtualenv = ">=20.10.0"
 
 [[package]]
-name = "prometheus-client"
-version = "0.19.0"
-description = "Python client for the Prometheus monitoring system."
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"monitoring\" or extra == \"full\""
-files = [
-    {file = "prometheus_client-0.19.0-py3-none-any.whl", hash = "sha256:c88b1e6ecf6b41cd8fb5731c7ae919bf66df6ec6fafa555cd6c0e16ca169ae92"},
-    {file = "prometheus_client-0.19.0.tar.gz", hash = "sha256:4585b0d1223148c27a225b10dbec5ae9bc4c81a99a3fa80774fa6209935324e1"},
-]
-
-[package.extras]
-twisted = ["twisted"]
-
-[[package]]
 name = "propcache"
 version = "0.4.1"
 description = "Accelerated property cache"
@@ -2681,35 +2578,6 @@ files = [
 [package.extras]
 dev = ["abi3audit", "black", "check-manifest", "coverage", "packaging", "pylint", "pyperf", "pypinfo", "pyreadline ; os_name == \"nt\"", "pytest", "pytest-cov", "pytest-instafail", "pytest-subtests", "pytest-xdist", "pywin32 ; os_name == \"nt\" and platform_python_implementation != \"PyPy\"", "requests", "rstcheck", "ruff", "setuptools", "sphinx", "sphinx_rtd_theme", "toml-sort", "twine", "validate-pyproject[all]", "virtualenv", "vulture", "wheel", "wheel ; os_name == \"nt\" and platform_python_implementation != \"PyPy\"", "wmi ; os_name == \"nt\" and platform_python_implementation != \"PyPy\""]
 test = ["pytest", "pytest-instafail", "pytest-subtests", "pytest-xdist", "pywin32 ; os_name == \"nt\" and platform_python_implementation != \"PyPy\"", "setuptools", "wheel ; os_name == \"nt\" and platform_python_implementation != \"PyPy\"", "wmi ; os_name == \"nt\" and platform_python_implementation != \"PyPy\""]
-
-[[package]]
-name = "pyasn1"
-version = "0.6.1"
-description = "Pure-Python implementation of ASN.1 types and DER/BER/CER codecs (X.208)"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"kubernetes\" or extra == \"full\""
-files = [
-    {file = "pyasn1-0.6.1-py3-none-any.whl", hash = "sha256:0d632f46f2ba09143da3a8afe9e33fb6f92fa2320ab7e886e2d0f7672af84629"},
-    {file = "pyasn1-0.6.1.tar.gz", hash = "sha256:6f580d2bdd84365380830acf45550f2511469f673cb4a5ae3857a3170128b034"},
-]
-
-[[package]]
-name = "pyasn1-modules"
-version = "0.4.2"
-description = "A collection of ASN.1-based protocols modules"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"kubernetes\" or extra == \"full\""
-files = [
-    {file = "pyasn1_modules-0.4.2-py3-none-any.whl", hash = "sha256:29253a9207ce32b64c3ac6600edc75368f98473906e8fd1043bd6b5b1de2c14a"},
-    {file = "pyasn1_modules-0.4.2.tar.gz", hash = "sha256:677091de870a80aae844b1ca6134f54652fa2c8c5a52aa396440ac3106e941e6"},
-]
-
-[package.dependencies]
-pyasn1 = ">=0.6.1,<0.7.0"
 
 [[package]]
 name = "pydantic"
@@ -3315,42 +3183,6 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
-name = "requests-oauthlib"
-version = "2.0.0"
-description = "OAuthlib authentication support for Requests."
-optional = true
-python-versions = ">=3.4"
-groups = ["main"]
-markers = "extra == \"kubernetes\" or extra == \"full\""
-files = [
-    {file = "requests-oauthlib-2.0.0.tar.gz", hash = "sha256:b3dffaebd884d8cd778494369603a9e7b58d29111bf6b41bdc2dcd87203af4e9"},
-    {file = "requests_oauthlib-2.0.0-py2.py3-none-any.whl", hash = "sha256:7dd8a5c40426b779b0868c404bdef9768deccf22749cde15852df527e6269b36"},
-]
-
-[package.dependencies]
-oauthlib = ">=3.0.0"
-requests = ">=2.0.0"
-
-[package.extras]
-rsa = ["oauthlib[signedtoken] (>=3.0.0)"]
-
-[[package]]
-name = "rsa"
-version = "4.9.1"
-description = "Pure-Python RSA implementation"
-optional = true
-python-versions = "<4,>=3.6"
-groups = ["main"]
-markers = "extra == \"kubernetes\" or extra == \"full\""
-files = [
-    {file = "rsa-4.9.1-py3-none-any.whl", hash = "sha256:68635866661c6836b8d39430f97a996acbd61bfa49406748ea243539fe239762"},
-    {file = "rsa-4.9.1.tar.gz", hash = "sha256:e7bdbfdb5497da4c07dfd35530e1a902659db6ff241e39d9953cad06ebd0ae75"},
-]
-
-[package.dependencies]
-pyasn1 = ">=0.1.3"
-
-[[package]]
 name = "ruff"
 version = "0.8.6"
 description = "An extremely fast Python linter and code formatter, written in Rust."
@@ -3377,55 +3209,6 @@ files = [
     {file = "ruff-0.8.6-py3-none-win_arm64.whl", hash = "sha256:7d7fc2377a04b6e04ffe588caad613d0c460eb2ecba4c0ccbbfe2bc973cbc162"},
     {file = "ruff-0.8.6.tar.gz", hash = "sha256:dcad24b81b62650b0eb8814f576fc65cfee8674772a6e24c9b747911801eeaa5"},
 ]
-
-[[package]]
-name = "sentry-sdk"
-version = "1.45.1"
-description = "Python client for Sentry (https://sentry.io)"
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"monitoring\" or extra == \"full\""
-files = [
-    {file = "sentry_sdk-1.45.1-py2.py3-none-any.whl", hash = "sha256:608887855ccfe39032bfd03936e3a1c4f4fc99b3a4ac49ced54a4220de61c9c1"},
-    {file = "sentry_sdk-1.45.1.tar.gz", hash = "sha256:a16c997c0f4e3df63c0fc5e4207ccb1ab37900433e0f72fef88315d317829a26"},
-]
-
-[package.dependencies]
-certifi = "*"
-urllib3 = {version = ">=1.26.11", markers = "python_version >= \"3.6\""}
-
-[package.extras]
-aiohttp = ["aiohttp (>=3.5)"]
-arq = ["arq (>=0.23)"]
-asyncpg = ["asyncpg (>=0.23)"]
-beam = ["apache-beam (>=2.12)"]
-bottle = ["bottle (>=0.12.13)"]
-celery = ["celery (>=3)"]
-celery-redbeat = ["celery-redbeat (>=2)"]
-chalice = ["chalice (>=1.16.0)"]
-clickhouse-driver = ["clickhouse-driver (>=0.2.0)"]
-django = ["django (>=1.8)"]
-falcon = ["falcon (>=1.4)"]
-fastapi = ["fastapi (>=0.79.0)"]
-flask = ["blinker (>=1.1)", "flask (>=0.11)", "markupsafe"]
-grpcio = ["grpcio (>=1.21.1)"]
-httpx = ["httpx (>=0.16.0)"]
-huey = ["huey (>=2)"]
-loguru = ["loguru (>=0.5)"]
-openai = ["openai (>=1.0.0)", "tiktoken (>=0.3.0)"]
-opentelemetry = ["opentelemetry-distro (>=0.35b0)"]
-opentelemetry-experimental = ["opentelemetry-distro (>=0.40b0,<1.0)", "opentelemetry-instrumentation-aiohttp-client (>=0.40b0,<1.0)", "opentelemetry-instrumentation-django (>=0.40b0,<1.0)", "opentelemetry-instrumentation-fastapi (>=0.40b0,<1.0)", "opentelemetry-instrumentation-flask (>=0.40b0,<1.0)", "opentelemetry-instrumentation-requests (>=0.40b0,<1.0)", "opentelemetry-instrumentation-sqlite3 (>=0.40b0,<1.0)", "opentelemetry-instrumentation-urllib (>=0.40b0,<1.0)"]
-pure-eval = ["asttokens", "executing", "pure-eval"]
-pymongo = ["pymongo (>=3.1)"]
-pyspark = ["pyspark (>=2.4.4)"]
-quart = ["blinker (>=1.1)", "quart (>=0.16.1)"]
-rq = ["rq (>=0.6)"]
-sanic = ["sanic (>=0.8)"]
-sqlalchemy = ["sqlalchemy (>=1.2)"]
-starlette = ["starlette (>=0.19.1)"]
-starlite = ["starlite (>=1.48)"]
-tornado = ["tornado (>=5)"]
 
 [[package]]
 name = "setuptools"
@@ -3826,24 +3609,6 @@ docs = ["furo (>=2023.7.26)", "proselint (>=0.13)", "sphinx (>=7.1.2,!=7.3)", "s
 test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=23.1)", "pytest (>=7.4)", "pytest-env (>=0.8.2)", "pytest-freezer (>=0.4.8) ; platform_python_implementation == \"PyPy\" or platform_python_implementation == \"GraalVM\" or platform_python_implementation == \"CPython\" and sys_platform == \"win32\" and python_version >= \"3.13\"", "pytest-mock (>=3.11.1)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)", "setuptools (>=68)", "time-machine (>=2.10) ; platform_python_implementation == \"CPython\""]
 
 [[package]]
-name = "websocket-client"
-version = "1.9.0"
-description = "WebSocket client for Python with low level API options"
-optional = true
-python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"kubernetes\" or extra == \"full\""
-files = [
-    {file = "websocket_client-1.9.0-py3-none-any.whl", hash = "sha256:af248a825037ef591efbf6ed20cc5faa03d3b47b9e5a2230a529eeee1c1fc3ef"},
-    {file = "websocket_client-1.9.0.tar.gz", hash = "sha256:9e813624b6eb619999a97dc7958469217c3176312b3a16a4bd1bc7e08a46ec98"},
-]
-
-[package.extras]
-docs = ["Sphinx (>=6.0)", "myst-parser (>=2.0.0)", "sphinx_rtd_theme (>=1.1.0)"]
-optional = ["python-socks", "wsaccel"]
-test = ["pytest", "websockets"]
-
-[[package]]
 name = "wrapt"
 version = "1.17.3"
 description = "Module for decorators, wrappers and monkey patching."
@@ -4081,11 +3846,9 @@ propcache = ">=0.2.1"
 
 [extras]
 cli = ["psutil"]
-full = ["kubernetes", "prometheus-client", "psutil", "sentry-sdk"]
-kubernetes = ["kubernetes"]
-monitoring = ["prometheus-client", "sentry-sdk"]
+full = ["psutil"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "7615649ea7350a8cb7bc8506a5dfa5a16736bfecce3a4f3b796dc90597b1bad7"
+content-hash = "00cdd5cad69a1c989a509f7c554f6f9735e9882e78e0bd4ad3ab2b3be19dc7c2"

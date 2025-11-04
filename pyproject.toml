@@ -45,9 +45,7 @@ omni-agent = "omnibase_core.cli.commands:cli"
 
 [project.optional-dependencies]
 cli = ["psutil"]
-monitoring = ["prometheus-client", "sentry-sdk"]
-kubernetes = ["kubernetes"]
-full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
+full = ["psutil"]
 
 [tool.poetry]
 # Note: name and version are defined in [project] section above (PEP 621)
@@ -82,9 +80,6 @@ aiohttp = "^3.9.0"
 
 # Optional CLI Dependencies
 psutil = {version = "^5.9.0", optional = true}
-kubernetes = {version = "^29.0.0", optional = true}
-prometheus-client = {version = "^0.19.0", optional = true}
-sentry-sdk = {version = "^1.40.0", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.0"
