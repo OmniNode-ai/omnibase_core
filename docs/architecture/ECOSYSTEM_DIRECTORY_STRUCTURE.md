@@ -56,7 +56,7 @@ omnibase_core/
 ├── docs/                       # Documentation
 ├── pyproject.toml             # Project manifest
 └── README.md
-```text
+```
 
 **Key Mixins Available**:
 - `MixinNodeService` - Persistent service capabilities
@@ -102,7 +102,7 @@ omninode_bridge/
 ├── docs/
 ├── pyproject.toml
 └── BRIDGE_MIGRATION_PLAN.md   # Migration strategy
-```text
+```
 
 **Bridge Node Patterns**:
 - `NodeDeploymentReceiverEffect(NodeEffect)` - Docker deployment
@@ -138,7 +138,7 @@ omniarchon/
 ├── skills/                    # AI skills
 ├── tests/                     # Test suite
 └── README.md
-```text
+```
 
 **Note**: Uses `omnibase_core` as dependency via Git repository
 
@@ -164,7 +164,7 @@ omnibase_infra/
 ├── tests/
 ├── archive/                    # Archived implementations
 └── pyproject.toml
-```text
+```
 
 **Infrastructure Node Patterns**:
 - `NodeEffectService` - Legacy service base class
@@ -188,7 +188,7 @@ omnimemory/
 │       └── utils/              # Memory utilities
 ├── tests/
 └── pyproject.toml
-```text
+```
 
 ### Legacy Repository: `omnibase_3`
 
@@ -205,7 +205,7 @@ omnibase_3/
 ├── reference_implementations/  # Reference patterns
 ├── examples/
 └── scripts/
-```python
+```
 
 ## Manifest Patterns
 
@@ -245,7 +245,7 @@ python = "^3.12"
 # Core dependencies
 pydantic = "^2.11.7"
 # ... other dependencies
-```text
+```
 
 ### Dependency Relationships
 
@@ -255,7 +255,7 @@ omnibase_core (core framework)
 ├── omnibase_infra (depends on omnibase_core)
 ├── omniarchon (depends on omnibase_core via Git)
 └── omnimemory (standalone)
-```python
+```
 
 ## Node Implementation Patterns
 
@@ -269,7 +269,7 @@ from omnibase_core.models.nodes.node_services import ModelServiceCompute
 class MyComputeNode(ModelServiceCompute):
     """Production-ready compute node with all capabilities."""
     pass
-```python
+```
 
 **Benefits**:
 - ✅ All production capabilities included
@@ -289,7 +289,7 @@ from omninode_bridge.nodes.mixins.health_mixin import HealthCheckMixin
 class MyBridgeEffect(NodeEffect, HealthCheckMixin):
     """Bridge-style node with custom mixin composition."""
     pass
-```python
+```
 
 **Use Cases**:
 - Legacy compatibility
@@ -306,7 +306,7 @@ from omnibase_core.core.node_effect_service import NodeEffectService
 class MyInfraEffect(NodeEffectService):
     """Legacy infrastructure node."""
     pass
-```text
+```
 
 **Note**: `NodeEffectService` is deprecated in favor of `ModelService*` wrappers
 
@@ -387,7 +387,7 @@ tests/
 │   └── nodes/                 # Node tests
 ├── integration/               # Integration tests
 └── fixtures/                  # Test fixtures
-```yaml
+```
 
 ---
 

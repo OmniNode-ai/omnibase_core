@@ -25,19 +25,19 @@
 ### Import
 ```python
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-```text
+```
 
 ### Quick Replace Pattern
 
 ❌ **Before (Invalid)**:
 ```python
 field_value: Union[str, int, float, bool, list, dict, None]
-```text
+```
 
 ✅ **After (Valid)**:
 ```python
 field_value: ModelSchemaValue
-```text
+```
 
 ### Creation
 ```python
@@ -51,7 +51,7 @@ value = ModelSchemaValue.create_boolean(True)
 value = ModelSchemaValue.create_array([1, 2, 3])
 value = ModelSchemaValue.create_object({"key": "value"})
 value = ModelSchemaValue.create_null()
-```text
+```
 
 ### Type-Safe Access
 ```python
@@ -65,7 +65,7 @@ elif value.is_array():
     items = value.get_array()
 elif value.is_object():
     obj = value.get_object()
-```python
+```
 
 ### Conversion
 ```python
@@ -74,7 +74,7 @@ python_value = value.to_value()
 
 # Serialization (automatic in Pydantic)
 data = model.model_dump()
-```python
+```
 
 ---
 
@@ -85,7 +85,7 @@ data = model.model_dump()
 ### Import
 ```python
 from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
-```text
+```
 
 ### Creation
 ```python
@@ -96,7 +96,7 @@ value = ModelFlexibleValue.from_any(raw_value, source="user_input")
 value = ModelFlexibleValue.from_string("text", source="config")
 value = ModelFlexibleValue.from_integer(42)
 value = ModelFlexibleValue.from_dict({"key": "value"})
-```python
+```
 
 ### Features
 - Enum-based type discriminator
@@ -127,7 +127,7 @@ OptionUnion = Annotated[
     ModelOptionA | ModelOptionB,
     Field(discriminator="option_type")
 ]
-```bash
+```
 
 ---
 
@@ -158,12 +158,12 @@ OptionUnion = Annotated[
 ### Check Invalid Unions
 ```bash
 poetry run python scripts/validation/validate-union-usage.py --allow-invalid 0
-```python
+```
 
 ### Run Tests
 ```bash
 poetry run pytest tests/ -xvs
-```bash
+```
 
 ### Type Check
 ```bash
@@ -173,7 +173,7 @@ poetry run mypy src/omnibase_core/
 ### Full Quality Check
 ```bash
 pre-commit run --all-files
-```python
+```
 
 ---
 
@@ -221,14 +221,14 @@ class ModelMaskedData(BaseModel):
         if self.original_value.is_string():
             return self.original_value.get_string()
         return str(self.original_value.to_value())
-```python
+```
 
 **Migration Helper**:
 ```python
 def migrate_to_schema_value(old_value: Any) -> ModelSchemaValue:
     """Migrate old union values to ModelSchemaValue."""
     return ModelSchemaValue.from_value(old_value)
-```yaml
+```
 
 ---
 
@@ -238,37 +238,37 @@ def migrate_to_schema_value(old_value: Any) -> ModelSchemaValue:
 ```python
 # WRONG
 new_field: Union[str, int, bool, float]
-```text
+```
 
 ❌ **Don't**: Use Any in unions
 ```python
 # WRONG
 field: Union[str, Any, dict]
-```text
+```
 
 ❌ **Don't**: Skip discriminator in multi-type unions
 ```python
 # WRONG (if >5 types or semantically different)
 field: Union[TypeA, TypeB, TypeC, TypeD, TypeE]
-```text
+```
 
 ✅ **Do**: Use ModelSchemaValue for mixed primitives
 ```python
 # CORRECT
 field: ModelSchemaValue
-```text
+```
 
 ✅ **Do**: Use discriminated unions for fixed types
 ```python
 # CORRECT
 field: Annotated[TypeA | TypeB, Field(discriminator="type")]
-```text
+```
 
 ✅ **Do**: Use Optional for nullable single types
 ```python
 # CORRECT
 field: str | None  # or Optional[str]
-```python
+```
 
 ---
 
