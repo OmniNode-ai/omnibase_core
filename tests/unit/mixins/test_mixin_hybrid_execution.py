@@ -68,11 +68,12 @@ class MockTool(MixinHybridExecution[SimpleInputState, SimpleInputState]):
         workflow = Mock()
         workflow._steps_executed = 3
 
-        # Use AsyncMock to prevent real async execution and event loop hangs
-        # AsyncMock returns a mock coroutine that doesn't require actual event loop
-        workflow.run = AsyncMock(
-            return_value=SimpleInputState(value=f"workflow: {input_state.value}")
-        )
+        # Create a simple sync mock that the mocked event loop will handle
+        # The mock event loop's run_until_complete will return the configured value
+        # avoiding any real async execution or coroutine handling
+        workflow.run = Mock(
+            return_value=None
+        )  # Value doesn't matter - mocked loop handles it
         workflow.__class__.__name__ = "MockWorkflow"
         return workflow
 
