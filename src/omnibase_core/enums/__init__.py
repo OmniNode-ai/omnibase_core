@@ -36,6 +36,9 @@ from .enum_data_classification import EnumDataClassification
 # Detection and security enums
 from .enum_detection_type import EnumDetectionType
 
+# Value type enums
+from .enum_discriminated_value_type import EnumDiscriminatedValueType
+
 # Effect-related enums (from nodes)
 from .enum_effect_types import (
     EnumCircuitBreakerState,
@@ -44,7 +47,8 @@ from .enum_effect_types import (
 )
 
 # Execution-related enums
-from .enum_execution import EnumExecutionMode, EnumOperationStatus
+from .enum_execution_mode import EnumExecutionMode
+from .enum_execution_trigger import EnumExecutionTrigger
 
 # Function-related enums
 from .enum_function_language import EnumFunctionLanguage
@@ -101,9 +105,11 @@ from .enum_node_status import EnumNodeStatus
 # Node-related enums
 from .enum_node_type import EnumNodeType
 from .enum_notification_method import EnumNotificationMethod
+from .enum_numeric_value_type import EnumNumericValueType
 
 # Response and reply enums
 from .enum_onex_reply_status import EnumOnexReplyStatus
+from .enum_operation_status import EnumOperationStatus
 
 # Orchestrator-related enums (from nodes)
 from .enum_orchestrator_types import (
@@ -159,8 +165,6 @@ from .enum_uri_type import EnumUriType
 
 # Validation-related enums
 from .enum_validation import EnumErrorSeverity, EnumValidationLevel, EnumValidationMode
-
-# Value type enums
 from .enum_value_type import EnumValueType
 
 # Version and contract enums
@@ -204,6 +208,7 @@ __all__ = [
     "EnumTransactionState",
     # Execution domain
     "EnumExecutionMode",
+    "EnumExecutionTrigger",
     # Log level domain
     "EnumLogLevel",
     # Health and status domain
@@ -217,10 +222,10 @@ __all__ = [
     "EnumValidationLevel",
     "EnumValidationMode",
     "EnumValueType",
+    "EnumNumericValueType",
     # Orchestrator domain (from nodes)
     "EnumActionType",
     "EnumBranchCondition",
-    "EnumExecutionMode",
     "EnumWorkflowState",
     # Reducer domain (from nodes)
     "EnumConflictResolution",

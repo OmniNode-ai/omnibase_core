@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TypedDict, Union
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Protocol migrator for safe migration of protocols to omnibase_spi.
@@ -16,17 +16,17 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )
+from omnibase_core.models.validation.model_migration_plan import ModelMigrationPlan
+from omnibase_core.models.validation.model_migration_result import ModelMigrationResult
 
 from .migration_types import (
     TypedDictMigrationDuplicateConflictDict,
     TypedDictMigrationNameConflictDict,
     TypedDictMigrationStepDict,
 )
-from .model_migration_plan import ModelMigrationPlan
-from .model_migration_result import ModelMigrationResult
 from .validation_utils import (
     ModelProtocolInfo,
-    ValidationResult,
+    ModelValidationResult,
     determine_repository_name,
     extract_protocols_from_directory,
     suggest_spi_location,
@@ -412,7 +412,7 @@ class ProtocolMigrator:
 
         return references
 
-    def rollback_migration(self, result: ModelMigrationResult) -> ValidationResult:
+    def rollback_migration(self, result: ModelMigrationResult) -> ModelValidationResult:
         """
         Rollback a migration if needed.
 
@@ -423,7 +423,7 @@ class ProtocolMigrator:
             ValidationResult indicating rollback success
         """
         if not result.rollback_available:
-            return ValidationResult(
+            return ModelValidationResult(
                 success=False,
                 errors=[
                     "Rollback not available - migration was not executed or was a dry run",
@@ -462,7 +462,7 @@ class ProtocolMigrator:
                 message=f"Rollback failed: {'; '.join(errors)}",
             )
 
-        return ValidationResult(
+        return ModelValidationResult(
             success=True,
             errors=[],
         )

@@ -40,7 +40,7 @@ print(result.result)
 #     "tax": 3.24,       # 8% tax on discounted amount
 #     "total": 43.74
 # }
-```
+```python
 
 ## Project Setup
 
@@ -58,7 +58,7 @@ mkdir -p tests/nodes
 touch src/your_project/nodes/__init__.py
 touch src/your_project/nodes/node_price_calculator_compute.py
 touch tests/nodes/test_node_price_calculator.py
-```
+```python
 
 ### 2. Install Dependencies
 
@@ -68,13 +68,13 @@ poetry add omnibase_core
 
 # Add dev dependencies for testing
 poetry add --group dev pytest pytest-asyncio
-```
+```python
 
 ### 3. Verify Installation
 
 ```bash
 poetry run python -c "from omnibase_core.infrastructure.node_core_base import NodeCoreBase; print('✓ Ready!')"
-```
+```python
 
 ## Step 1: Define Input Model
 
@@ -143,7 +143,7 @@ class ModelPriceCalculatorInput(BaseModel):
                 "tax_rate": 0.08
             }
         }
-```
+```python
 
 **Key points**:
 - ✅ Uses Pydantic for automatic validation
@@ -205,7 +205,7 @@ class ModelPriceCalculatorOutput(BaseModel):
                 "cache_hit": False
             }
         }
-```
+```python
 
 **Key points**:
 - ✅ All calculation results included
@@ -225,7 +225,7 @@ import time
 from typing import Dict
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_price_calculator_input import ModelPriceCalculatorInput
@@ -468,7 +468,7 @@ class NodePriceCalculatorCompute(NodeCoreBase):
                 if total_requests > 0 else 0.0
             )
         }
-```
+```python
 
 **Key points**:
 - ✅ Inherits from `NodeCoreBase`
@@ -647,7 +647,7 @@ async def test_metrics(calculator):
     assert metrics["computations"] == 1  # First request computed
     assert metrics["cache_hits"] == 1    # Second request cached
     assert metrics["cache_hit_rate"] == 0.5  # 50% hit rate
-```
+```python
 
 ## Step 5: Run Tests
 
@@ -660,10 +660,10 @@ poetry run pytest tests/nodes/test_node_price_calculator.py::test_basic_calculat
 
 # Run with coverage
 poetry run pytest tests/nodes/test_node_price_calculator.py --cov=src/your_project/nodes --cov-report=term-missing
-```
+```text
 
 **Expected output**:
-```
+```text
 tests/nodes/test_node_price_calculator.py::test_basic_calculation PASSED
 tests/nodes/test_node_price_calculator.py::test_percentage_discount PASSED
 tests/nodes/test_node_price_calculator.py::test_flat_discount PASSED
@@ -674,7 +674,7 @@ tests/nodes/test_node_price_calculator.py::test_validation_error_negative_price 
 tests/nodes/test_node_price_calculator.py::test_metrics PASSED
 
 ================================ 8 passed in 0.12s ================================
-```
+```python
 
 ## Step 6: Use Your Node
 
@@ -711,7 +711,7 @@ print(f"Discount: -${result.discount:.2f}")
 print(f"Tax: ${result.tax:.2f}")
 print(f"Total: ${result.total:.2f}")
 print(f"Processing time: {result.processing_time_ms:.2f}ms")
-```
+```python
 
 ## What You've Built
 
@@ -740,7 +740,7 @@ async def process(self, input_data):
         }
     )
     # ... rest of processing
-```
+```python
 
 ### 2. Add Redis Caching
 
@@ -767,7 +767,7 @@ async def process(self, input_data):
         result.json()
     )
     return result
-```
+```python
 
 ### 3. Add Parallel Processing
 
@@ -780,7 +780,7 @@ async def process_batch(
     tasks = [self.process(input_data) for input_data in inputs]
     results = await asyncio.gather(*tasks)
     return results
-```
+```python
 
 ## Next Steps
 
@@ -807,21 +807,21 @@ You've successfully built a COMPUTE node! Now:
 # If you see import errors
 poetry install
 poetry run python -c "from omnibase_core.infrastructure.node_core_base import NodeCoreBase"
-```
+```bash
 
 ### Type Checking Failures
 
 ```bash
 # Run mypy to check types
 poetry run mypy src/your_project/nodes/node_price_calculator_compute.py
-```
+```python
 
 ### Test Failures
 
 ```bash
 # Run tests with verbose output
 poetry run pytest tests/nodes/test_node_price_calculator.py -vvs
-```
+```text
 
 ## Summary
 

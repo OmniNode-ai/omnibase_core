@@ -9,9 +9,16 @@ that can be composed into concrete node implementations.
 """
 
 # Core mixins
-# Import protocols from omnibase_spi
+# Import protocols from omnibase_spi v0.2.0
+from omnibase_spi.protocols import ProtocolEventBusRegistry as RegistryWithBus
 from omnibase_spi.protocols.types import ProtocolLogEmitter as LogEmitter
-from omnibase_spi.protocols.types import ProtocolRegistryWithBus as RegistryWithBus
+
+# Protocol name transition: ProtocolRegistryWithBus → ProtocolEventBusRegistry
+# omnibase_spi v0.2.0 renamed ProtocolRegistryWithBus to ProtocolEventBusRegistry
+# Alias provided for smooth upgrade: use ProtocolEventBusRegistry in new code
+# This alias may be removed in future versions
+ProtocolEventBusRegistry = RegistryWithBus
+ProtocolRegistryWithBus = ProtocolEventBusRegistry  # Legacy name alias
 
 from omnibase_core.mixins.mixin_canonical_serialization import (
     MixinCanonicalYAMLSerializer,
@@ -88,6 +95,8 @@ __all__ = [
     "MixinLogData",
     "LogEmitter",
     "RegistryWithBus",
+    "ProtocolEventBusRegistry",  # New canonical name (omnibase_spi v0.2.0+)
+    "ProtocolRegistryWithBus",  # DEPRECATED: Use ProtocolEventBusRegistry instead
     "MixinNodeIntrospection",
     "MixinSensitiveFieldRedaction",
     "SerializableMixin",

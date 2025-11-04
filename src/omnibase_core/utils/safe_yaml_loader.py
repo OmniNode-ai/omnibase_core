@@ -1,7 +1,7 @@
 import json
 from typing import Optional, TypeVar
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Safe YAML loading utilities using yaml.safe_load plus Pydantic validation.

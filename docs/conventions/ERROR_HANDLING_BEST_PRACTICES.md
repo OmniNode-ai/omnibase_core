@@ -91,7 +91,7 @@ class OnexError(Exception):
         """Human-readable error representation."""
         context = f" (correlation_id: {self.correlation_id})" if self.correlation_id else ""
         return f"{self.error_code}: {self.message}{context}"
-```
+```python
 
 ### Specialized Error Classes
 
@@ -149,7 +149,7 @@ def validate_contract(contract: ModelContractBase) -> None:
             ],
             contract_type=type(contract).__name__
         ) from e
-```
+```python
 
 #### Node Operation Errors
 
@@ -230,7 +230,7 @@ class OrchestratorNodeError(NodeOperationError):
             node_type="orchestrator",
             **kwargs
         )
-```
+```python
 
 #### Subcontract Execution Errors
 
@@ -328,7 +328,7 @@ class RoutingError(SubcontractExecutionError):
             subcontract_type="routing",
             **kwargs
         )
-```
+```python
 
 ## Error Handling Patterns
 
@@ -516,7 +516,7 @@ class DatabaseEffectService(NodeEffectService):
                 for operation in operations:
                     await conn.execute(operation["query"], operation["parameters"])
                 return True
-```
+```python
 
 ### Pattern 2: Circuit Breaker Pattern
 
@@ -758,7 +758,7 @@ class ExternalServiceEffectNode(ModelServiceEffect):
         """Make the actual API call."""
         # Implementation of API call
         pass
-```
+```python
 
 ### Pattern 3: Retry Logic with Exponential Backoff
 
@@ -972,7 +972,7 @@ class ReliableEffectService(NodeEffectService):
             )
             response.raise_for_status()
             return response.json()
-```
+```python
 
 ## Error Recovery Strategies
 
@@ -1186,7 +1186,7 @@ class ResilientComputeService(NodeComputeService, GracefulDegradationMixin):
             "service_health": self.get_service_health(),
             "correlation_id": str(correlation_id)
         }
-```
+```python
 
 ## Error Monitoring and Observability
 
@@ -1277,7 +1277,7 @@ class ErrorMetricsCollector:
         }
 
         await self.metrics_service.send_metrics([metric])
-```
+```python
 
 ### Error Alerting
 
@@ -1335,7 +1335,7 @@ class ErrorAlertManager:
 
         await self.alert_service.send_alert(alert_data)
         self.last_alert_times[alert_key] = now
-```
+```python
 
 ## Testing Error Handling
 
@@ -1496,7 +1496,7 @@ class TestEffectService:
 
 class TestServiceWithDegradation(GracefulDegradationMixin):
     pass
-```
+```python
 
 ## Summary
 

@@ -4,7 +4,7 @@ import uuid
 
 from pydantic import Field, field_validator, model_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Dynamic CLI Action Model.
@@ -271,7 +271,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:

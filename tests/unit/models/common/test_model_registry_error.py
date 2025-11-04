@@ -87,7 +87,7 @@ class TestModelRegistryError:
 
     def test_inherits_from_onex_error(self):
         """Test ModelRegistryError inherits from ModelOnexError."""
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         error = ModelRegistryError(
             message="Test",

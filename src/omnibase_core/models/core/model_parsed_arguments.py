@@ -1,7 +1,7 @@
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Parsed Arguments Model
@@ -136,7 +136,7 @@ class ModelParsedArguments(BaseModel):
                 self.parsed_successfully = False
 
     def to_execution_dict(self) -> dict[str, Any]:
-        """Convert to dict[str, Any]ionary suitable for node execution."""
+        """Convert to dictionary suitable for node execution."""
         if not self.is_valid():
             msg = "Cannot convert invalid arguments to execution dict[str, Any]"
             raise ModelOnexError(
@@ -144,7 +144,7 @@ class ModelParsedArguments(BaseModel):
                 message=msg,
             )
 
-        # Start with the argument map dict[str, Any]ionary
+        # Start with the argument map dictionary
         result = self.arguments.to_dict()
 
         # Add command metadata

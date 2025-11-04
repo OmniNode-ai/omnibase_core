@@ -46,7 +46,7 @@ class ModelSecureCredentials(BaseModel, ABC):
 
     def get_masked_dict(self, mask_level: str = "standard") -> ModelMaskData:
         """
-        Get dict[str, Any]ionary representation with secrets masked based on security level.
+        Get dictionary representation with secrets masked based on security level.
 
         Args:
             mask_level: Masking level ('minimal', 'standard', 'aggressive')
@@ -258,7 +258,7 @@ class ModelSecureCredentials(BaseModel, ABC):
     # === Serialization & Logging ===
 
     def to_log_safe_dict(self) -> ModelLogSafeData:
-        """Get dict[str, Any]ionary safe for logging (all secrets masked)."""
+        """Get dictionary safe for logging (all secrets masked)."""
         mask_data = self.get_masked_dict(mask_level="standard")
         # Convert mask_data to proper dict[str, Any]format for log-safe data
         masked_dict = mask_data.to_dict()
@@ -304,7 +304,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         )
 
     def to_debug_dict(self) -> ModelDebugData:
-        """Get dict[str, Any]ionary for debugging (minimal masking)."""
+        """Get dictionary for debugging (minimal masking)."""
         mask_data = self.get_masked_dict(mask_level="minimal")
         # Convert mask_data to proper debug format
         masked_dict = mask_data.to_dict()
@@ -332,7 +332,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         )
 
     def to_audit_dict(self) -> ModelAuditData:
-        """Get dict[str, Any]ionary for audit logging (aggressive masking)."""
+        """Get dictionary for audit logging (aggressive masking)."""
         mask_data = self.get_masked_dict(mask_level="aggressive")
         # Convert mask_data to proper audit format with required fields
         masked_dict = mask_data.to_dict()

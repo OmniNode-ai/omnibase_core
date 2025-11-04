@@ -5,7 +5,7 @@ from typing import TypedDict, Union
 
 from pydantic import model_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Unified CLI interface for all omnibase_core validation tools.
@@ -33,7 +33,7 @@ from .architecture import validate_architecture_directory
 from .contracts import validate_contracts_directory
 from .patterns import validate_patterns_directory
 from .types import validate_union_usage_directory
-from .validation_utils import ValidationResult
+from .validation_utils import ModelValidationResult
 
 
 class ModelValidationSuite:
@@ -68,7 +68,7 @@ class ModelValidationSuite:
         validation_type: str,
         directory: Path,
         **kwargs: object,
-    ) -> ValidationResult:
+    ) -> ModelValidationResult:
         """Run a specific validation on a directory."""
         if validation_type not in self.validators:
             raise ModelOnexError(
@@ -90,7 +90,7 @@ class ModelValidationSuite:
         self,
         directory: Path,
         **kwargs: object,
-    ) -> dict[str, ValidationResult]:
+    ) -> dict[str, ModelValidationResult]:
         """Run all validations on a directory."""
         results = {}
 
@@ -100,7 +100,7 @@ class ModelValidationSuite:
                 results[validation_type] = result
             except Exception as e:
                 # Create error result
-                results[validation_type] = ValidationResult(
+                results[validation_type] = ModelValidationResult(
                     success=False,
                     errors=[f"Validation failed: {e}"],
                     files_checked=0,
@@ -208,7 +208,7 @@ Examples:
 
 def format_result(
     validation_type: str,
-    result: ValidationResult,
+    result: ModelValidationResult,
     verbose: bool = False,
 ) -> None:
     """Format and print validation results."""

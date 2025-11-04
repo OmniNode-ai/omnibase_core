@@ -10,7 +10,7 @@ from typing import Any, TypedDict
 
 
 class TypedDictResultFactoryKwargs(TypedDict, total=False):
-    """Typed dict[str, Any]ionary for result factory parameters."""
+    """Typed dictionary for result factory parameters."""
 
     success: bool
     exit_code: int

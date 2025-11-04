@@ -5,9 +5,12 @@ from typing import Optional
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
+)
 
 "\nUnified Schema Model for JSON Schema representation.\n\nThis module contains a unified ModelSchema class that can represent both\nfull JSON Schema documents and individual schema properties, eliminating\nthe need for separate ModelSchemaDefinition and ModelPropertySchema classes.\n"
 from typing import Any
@@ -278,7 +281,7 @@ class ModelSchema(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelSchema"]:
-        """Create from JSON Schema dict[str, Any]ionary."""
+        """Create from JSON Schema dictionary."""
         if data is None:
             return None
         properties = None

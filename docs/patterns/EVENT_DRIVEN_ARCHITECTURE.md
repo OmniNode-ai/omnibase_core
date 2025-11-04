@@ -21,7 +21,7 @@ envelope = ModelEventEnvelope(
     metadata={"source": "node_compute", "timestamp": datetime.now()},
     correlation_id=UUID("...")
 )
-```
+```python
 
 ### Intent Emission Pattern (REDUCER)
 
@@ -46,21 +46,21 @@ def reduce_state(
     ]
 
     return new_state, intents
-```
+```text
 
 ## Event Flow Patterns
 
 ### Pattern 1: Request-Response
 
-```
+```text
 ┌─────────┐     event      ┌─────────┐     event      ┌─────────┐
 │ Client  │ ──────────────> │  Node   │ ──────────────> │ Client  │
 └─────────┘                 └─────────┘                 └─────────┘
-```
+```text
 
 ### Pattern 2: Publish-Subscribe
 
-```
+```text
 ┌─────────┐                 ┌─────────────┐
 │Publisher│ ───────────────>│  Event Bus  │
 └─────────┘                 └──────┬──────┘
@@ -71,18 +71,18 @@ def reduce_state(
              ┌──────────┐   ┌──────────┐   ┌──────────┐
              │Subscriber│   │Subscriber│   │Subscriber│
              └──────────┘   └──────────┘   └──────────┘
-```
+```text
 
 ### Pattern 3: Intent → Action Flow (Pure FSM)
 
-```
+```text
 ┌─────────┐   Action   ┌─────────┐  Intents  ┌────────┐
 │Orchestr │ ─────────> │ Reducer │ ────────> │ Effect │
 └─────────┘            └─────────┘           └────────┘
                             │
                             v
                      New State (Pure)
-```
+```python
 
 ## Implementation Patterns
 
@@ -105,7 +105,7 @@ class MyNode(NodeComputeService):
         await event_bus.publish(event)
 
         return result
-```
+```python
 
 ### Event Subscription
 
@@ -127,7 +127,7 @@ class MyNode(NodeEffectService):
         """Handle computation complete event."""
         result = envelope.payload["result"]
         await self.save_result(result)
-```
+```python
 
 ### Intent Execution
 
@@ -143,7 +143,7 @@ class MyEffectNode(NodeEffectService):
                 await self.save_data(intent.payload)
             case "EXTERNAL_API":
                 await self.call_api(intent.payload)
-```
+```text
 
 ## Benefits
 
@@ -163,7 +163,7 @@ envelope = ModelEventEnvelope(
     payload=data,
     correlation_id=incoming_request.correlation_id  # Propagate
 )
-```
+```python
 
 ### 2. Type-Safe Event Types
 
@@ -178,7 +178,7 @@ envelope = ModelEventEnvelope(
     event_type=EnumEventType.DATA_PROCESSED,
     payload=data
 )
-```
+```python
 
 ### 3. Structured Event Payloads
 
@@ -192,7 +192,7 @@ class DataProcessedPayload(BaseModel):
     metrics: dict
 
 payload = DataProcessedPayload(result="success", metrics={...})
-```
+```python
 
 ## Testing Event-Driven Code
 
@@ -212,7 +212,7 @@ async def test_event_publishing():
     # Assert
     assert len(mock_event_bus.published_events) == 1
     assert mock_event_bus.published_events[0].event_type == "COMPUTATION_COMPLETE"
-```
+```yaml
 
 ## Next Steps
 
@@ -225,3 +225,4 @@ async def test_event_publishing():
 **Related Documentation**:
 - [ONEX Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 - [Testing Guide](../guides/TESTING_GUIDE.md)
+- [In-Memory Event Bus Research](../research/IN_MEMORY_EVENT_BUS_RESEARCH_REPORT.md) - Comprehensive analysis of event bus implementation patterns and architectural considerations

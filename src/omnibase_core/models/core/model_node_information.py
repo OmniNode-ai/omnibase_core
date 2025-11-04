@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_node_configuration import ModelNodeConfiguration
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 __all__ = [
     "ModelNodeConfiguration",
@@ -74,7 +74,7 @@ class ModelNodeInformation(BaseModel):
         cls,
         data: dict[str, Any] | None,
     ) -> Optional["ModelNodeInformation"]:
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         if data is None:
             return None
 

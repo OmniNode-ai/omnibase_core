@@ -16,7 +16,7 @@ class ModelToolParameters(BaseModel):
     def get_parameter_dict(
         self,
     ) -> dict[str, str | int | float | bool | list[str] | dict[str, str]]:
-        """Convert to dict[str, Any]ionary format for current standards."""
+        """Convert to dictionary format for current standards."""
         return {param.name: param.value for param in self.parameters}
 
     @classmethod
@@ -24,7 +24,7 @@ class ModelToolParameters(BaseModel):
         cls,
         param_dict: dict[str, str | int | float | bool | list[str] | dict[str, str]],
     ) -> "ModelToolParameters":
-        """Create from dict[str, Any]ionary with type inference."""
+        """Create from dictionary with type inference."""
         parameters = []
         for name, value in param_dict.items():
             # Check bool before int since bool is a subclass of int in Python

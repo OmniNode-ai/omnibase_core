@@ -29,7 +29,7 @@ class TestModelGenericMetadataGeneric:
 
     def test_generic_type_with_standard_fields(self):
         """Test that standard fields work correctly."""
-        from omnibase_core.primitives.model_semver import ModelSemVer
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         metadata = ModelGenericMetadata(
             name="test_metadata",
@@ -117,7 +117,7 @@ class TestModelGenericMetadataGeneric:
 
     def test_generic_from_dict_factory(self):
         """Test from_dict factory method."""
-        from omnibase_core.primitives.model_semver import ModelSemVer
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         data = {
             "name": "test_metadata",
@@ -182,7 +182,7 @@ class TestModelGenericMetadataGeneric:
 
     def test_generic_json_serialization(self):
         """Test JSON serialization."""
-        from omnibase_core.primitives.model_semver import ModelSemVer
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         metadata = ModelGenericMetadata(
             name="json_test",

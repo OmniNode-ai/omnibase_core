@@ -10,7 +10,6 @@ import pytest
 
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.mixins.mixin_canonical_serialization import (
     MixinCanonicalYAMLSerializer,
     _strip_comment_prefix,
@@ -20,6 +19,7 @@ from omnibase_core.mixins.mixin_canonical_serialization import (
 )
 from omnibase_core.models.core.model_entrypoint import EntrypointBlock
 from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestMixinCanonicalYAMLSerializer:

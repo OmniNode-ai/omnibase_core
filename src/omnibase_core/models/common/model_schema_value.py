@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 if TYPE_CHECKING:
-    from omnibase_core.errors.model_onex_error import ModelOnexError
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
@@ -305,7 +305,7 @@ class ModelSchemaValue(BaseModel):
         """Get string value, raising error if not a string."""
         if not self.is_string():
             from omnibase_core.errors.error_codes import EnumCoreErrorCode
-            from omnibase_core.errors.model_onex_error import ModelOnexError
+            from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
             msg = f"Expected string value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)
@@ -315,7 +315,7 @@ class ModelSchemaValue(BaseModel):
         """Get numeric value, raising error if not a number."""
         if not self.is_number():
             from omnibase_core.errors.error_codes import EnumCoreErrorCode
-            from omnibase_core.errors.model_onex_error import ModelOnexError
+            from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
             msg = f"Expected numeric value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)
@@ -325,7 +325,7 @@ class ModelSchemaValue(BaseModel):
         """Get boolean value, raising error if not a boolean."""
         if not self.is_boolean():
             from omnibase_core.errors.error_codes import EnumCoreErrorCode
-            from omnibase_core.errors.model_onex_error import ModelOnexError
+            from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
             msg = f"Expected boolean value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)
@@ -335,7 +335,7 @@ class ModelSchemaValue(BaseModel):
         """Get array value, raising error if not an array."""
         if not self.is_array():
             from omnibase_core.errors.error_codes import EnumCoreErrorCode
-            from omnibase_core.errors.model_onex_error import ModelOnexError
+            from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
             msg = f"Expected array value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)
@@ -345,7 +345,7 @@ class ModelSchemaValue(BaseModel):
         """Get object value, raising error if not an object."""
         if not self.is_object():
             from omnibase_core.errors.error_codes import EnumCoreErrorCode
-            from omnibase_core.errors.model_onex_error import ModelOnexError
+            from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
             msg = f"Expected object value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)

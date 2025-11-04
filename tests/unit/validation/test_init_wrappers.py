@@ -18,6 +18,9 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.models.validation.model_validation_result import (
+    ModelValidationResult,
+)
 from omnibase_core.validation import (
     validate_all,
     validate_architecture,
@@ -25,7 +28,6 @@ from omnibase_core.validation import (
     validate_patterns,
     validate_union_usage,
 )
-from omnibase_core.validation.validation_utils import ValidationResult
 
 
 class TestValidateArchitectureWrapper:
@@ -47,7 +49,7 @@ class TestValidateArchitectureWrapper:
             os.chdir(tmp_path)
             result = validate_architecture()
 
-            assert isinstance(result, ValidationResult)
+            assert isinstance(result, ModelValidationResult)
             assert result.files_checked >= 0
         finally:
             os.chdir(original_cwd)
@@ -61,7 +63,7 @@ class TestValidateArchitectureWrapper:
 
         result = validate_architecture(str(test_dir))
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.files_checked >= 0
 
     def test_validate_architecture_with_max_violations(self, tmp_path: Path) -> None:
@@ -85,7 +87,7 @@ class Model2(BaseModel):
 
         result = validate_architecture(str(test_dir), max_violations=5)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         # Should allow violations up to threshold
 
     def test_validate_architecture_nonexistent_directory(self) -> None:
@@ -93,7 +95,7 @@ class Model2(BaseModel):
         result = validate_architecture("/nonexistent/path/to/directory")
 
         # Should handle gracefully - may raise or return error result
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_validate_architecture_relative_path(self, tmp_path: Path) -> None:
         """Test validate_architecture converts relative paths correctly."""
@@ -103,7 +105,7 @@ class Model2(BaseModel):
 
         result = validate_architecture(str(test_dir))
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
 
 class TestValidateUnionUsageWrapper:
@@ -123,7 +125,7 @@ class TestValidateUnionUsageWrapper:
             os.chdir(tmp_path)
             result = validate_union_usage()
 
-            assert isinstance(result, ValidationResult)
+            assert isinstance(result, ModelValidationResult)
             assert result.files_checked >= 0
         finally:
             os.chdir(original_cwd)
@@ -144,7 +146,7 @@ def func(x: Union[str, int]) -> None:
 
         result = validate_union_usage(str(test_dir))
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.files_checked >= 0
 
     def test_validate_union_usage_with_max_unions(self, tmp_path: Path) -> None:
@@ -168,7 +170,7 @@ def func2(y: Union[bool, float]) -> None:
 
         result = validate_union_usage(str(test_dir), max_unions=10)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_validate_union_usage_with_strict_mode(self, tmp_path: Path) -> None:
         """Test validate_union_usage with strict mode enabled."""
@@ -184,7 +186,7 @@ def func(x: str | int) -> None:
 
         result = validate_union_usage(str(test_dir), strict=True)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_validate_union_usage_all_parameters(self, tmp_path: Path) -> None:
         """Test validate_union_usage with all parameters."""
@@ -194,7 +196,7 @@ def func(x: str | int) -> None:
 
         result = validate_union_usage(str(test_dir), max_unions=5, strict=True)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
 
 class TestValidateContractsWrapper:
@@ -212,7 +214,7 @@ class TestValidateContractsWrapper:
             os.chdir(tmp_path)
             result = validate_contracts()
 
-            assert isinstance(result, ValidationResult)
+            assert isinstance(result, ModelValidationResult)
         finally:
             os.chdir(original_cwd)
 
@@ -223,7 +225,7 @@ class TestValidateContractsWrapper:
 
         result = validate_contracts(str(test_dir))
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_validate_contracts_with_yaml_files(self, tmp_path: Path) -> None:
         """Test validate_contracts with actual YAML files."""
@@ -244,7 +246,7 @@ operations:
 
         result = validate_contracts(str(test_dir))
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_validate_contracts_empty_directory(self, tmp_path: Path) -> None:
         """Test validate_contracts with empty directory."""
@@ -253,7 +255,7 @@ operations:
 
         result = validate_contracts(str(test_dir))
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.success  # Empty directory is valid
 
 
@@ -274,7 +276,7 @@ class TestValidatePatternsWrapper:
             os.chdir(tmp_path)
             result = validate_patterns()
 
-            assert isinstance(result, ValidationResult)
+            assert isinstance(result, ModelValidationResult)
         finally:
             os.chdir(original_cwd)
 
@@ -294,7 +296,7 @@ class ModelUser(BaseModel):
 
         result = validate_patterns(str(test_dir))
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_validate_patterns_with_strict_mode(self, tmp_path: Path) -> None:
         """Test validate_patterns with strict mode enabled."""
@@ -312,7 +314,7 @@ class ModelExample(BaseModel):
 
         result = validate_patterns(str(test_dir), strict=True)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
     def test_validate_patterns_normal_mode(self, tmp_path: Path) -> None:
         """Test validate_patterns with normal (non-strict) mode."""
@@ -322,7 +324,7 @@ class ModelExample(BaseModel):
 
         result = validate_patterns(str(test_dir), strict=False)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
 
 
 class TestValidateAllWrapper:
@@ -367,9 +369,9 @@ class ModelTest(BaseModel):
         assert isinstance(results, dict)
         assert len(results) >= 1
 
-        # Check that all results are ValidationResult objects
+        # Check that all results are ModelValidationResult objects
         for validation_type, result in results.items():
-            assert isinstance(result, ValidationResult)
+            assert isinstance(result, ModelValidationResult)
 
     def test_validate_all_with_kwargs(self, tmp_path: Path) -> None:
         """Test validate_all passes kwargs to individual validators."""
@@ -426,7 +428,7 @@ def func(x: Union[str, int]) -> None:
 
         # All results should be valid
         for validation_type, result in results.items():
-            assert isinstance(result, ValidationResult)
+            assert isinstance(result, ModelValidationResult)
             assert result.files_checked >= 0
 
     def test_validate_all_empty_directory(self, tmp_path: Path) -> None:
@@ -439,14 +441,14 @@ def func(x: Union[str, int]) -> None:
         assert isinstance(results, dict)
         # Should succeed with empty results
         for result in results.values():
-            assert isinstance(result, ValidationResult)
+            assert isinstance(result, ModelValidationResult)
 
 
 class TestWrapperIntegration:
     """Integration tests for wrapper functions working together."""
 
     def test_all_wrappers_return_validation_result(self, tmp_path: Path) -> None:
-        """Test that all wrapper functions return ValidationResult."""
+        """Test that all wrapper functions return ModelValidationResult."""
         test_dir = tmp_path / "src"
         test_dir.mkdir()
         (test_dir / "test.py").write_text("# Test\n")
@@ -456,10 +458,10 @@ class TestWrapperIntegration:
         contracts_result = validate_contracts(str(test_dir))
         patterns_result = validate_patterns(str(test_dir))
 
-        assert isinstance(arch_result, ValidationResult)
-        assert isinstance(union_result, ValidationResult)
-        assert isinstance(contracts_result, ValidationResult)
-        assert isinstance(patterns_result, ValidationResult)
+        assert isinstance(arch_result, ModelValidationResult)
+        assert isinstance(union_result, ModelValidationResult)
+        assert isinstance(contracts_result, ModelValidationResult)
+        assert isinstance(patterns_result, ModelValidationResult)
 
     def test_wrappers_handle_same_directory(self, tmp_path: Path) -> None:
         """Test that all wrappers can handle the same directory."""
@@ -486,6 +488,6 @@ def process(x: Union[str, int]) -> None:
         patterns_result = validate_patterns(str(test_dir))
 
         assert all(
-            isinstance(r, ValidationResult)
+            isinstance(r, ModelValidationResult)
             for r in [arch_result, union_result, patterns_result]
         )

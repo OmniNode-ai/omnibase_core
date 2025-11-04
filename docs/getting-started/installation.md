@@ -30,7 +30,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 # Verify installation
 poetry --version
-```
+```bash
 
 #### 2. Install omnibase_core
 
@@ -38,7 +38,7 @@ poetry --version
 ```bash
 # In your project directory
 poetry add omnibase_core
-```
+```bash
 
 **Option B: For development**
 ```bash
@@ -51,7 +51,7 @@ poetry install
 
 # Activate virtual environment
 poetry shell
-```
+```bash
 
 ### Method 2: pip (Alternative)
 
@@ -68,7 +68,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -e .
-```
+```python
 
 ## Verification
 
@@ -80,7 +80,7 @@ poetry run python -c "from omnibase_core.nodes.node_compute import NodeCompute; 
 
 # With pip
 python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('✅ Installation successful!')"
-```
+```python
 
 ### 2. All Node Types Test
 
@@ -92,7 +92,7 @@ from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 print('✅ All node types imported successfully!')
 "
-```
+```bash
 
 ## Development Setup
 
@@ -104,7 +104,7 @@ poetry install --with dev
 
 # With pip
 pip install -e ".[dev]"
-```
+```python
 
 ### 2. Run Tests
 
@@ -114,7 +114,7 @@ poetry run pytest
 
 # With pip
 pytest
-```
+```bash
 
 ### 3. Run Linting
 
@@ -126,7 +126,7 @@ poetry run mypy .
 # With pip
 ruff check .
 mypy .
-```
+```text
 
 ## IDE Setup
 
@@ -145,7 +145,7 @@ mypy .
     "python.linting.mypyEnabled": true,
     "python.formatting.provider": "black"
 }
-```
+```python
 
 ### PyCharm
 
@@ -165,7 +165,7 @@ poetry shell  # or source venv/bin/activate
 
 # Reinstall if needed
 poetry install --force
-```
+```text
 
 #### Python Version Issues
 
@@ -176,7 +176,7 @@ python --version  # Should be 3.12+
 # If using pyenv, install correct version
 pyenv install 3.12.0
 pyenv local 3.12.0
-```
+```bash
 
 #### Poetry Issues
 
@@ -186,7 +186,7 @@ poetry cache clear --all pypi
 
 # Reinstall Poetry
 curl -sSL https://install.python-poetry.org | python3 -
-```
+```python
 
 ### Verification Commands
 
@@ -202,7 +202,7 @@ print('✅ All node types imported successfully!')
 
 # Check version
 poetry run python -c "import omnibase_core; print(f'omnibase_core version: {omnibase_core.__version__}')"
-```
+```yaml
 
 ## Next Steps
 

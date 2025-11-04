@@ -30,10 +30,10 @@ class ModelJWTPayload(BaseModel):
 
     @classmethod
     def from_jwt_dict(cls, payload_dict: dict[str, Any]) -> "ModelJWTPayload":
-        """Create payload model from JWT dict[str, Any]ionary.
+        """Create payload model from JWT dictionary.
 
         Args:
-            payload_dict: Raw JWT payload dict[str, Any]ionary
+            payload_dict: Raw JWT payload dictionary
 
         Returns:
             Typed JWT payload model

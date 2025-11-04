@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field, model_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Error Value Model.
@@ -198,7 +198,7 @@ class ModelErrorValue(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         # Explicit typing to ensure MyPy recognizes the return type
         result: dict[str, Any] = self.model_dump(exclude_none=False, by_alias=True)
         return result

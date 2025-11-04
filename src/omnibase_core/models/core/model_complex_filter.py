@@ -23,6 +23,7 @@ class ModelComplexFilter(ModelCustomFilterBase):
 
     filter_type: str = Field(default="complex", description="Filter type identifier")
     sub_filters: list[
+        # union-ok: Composite filter pattern legitimately needs union of all filter types
         ModelStringFilter
         | ModelNumericFilter
         | ModelDateTimeFilter

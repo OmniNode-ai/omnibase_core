@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from omnibase_core.errors.model_onex_error import ModelOnexError
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from omnibase_core.enums.enum_base_status import EnumBaseStatus
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
@@ -103,7 +103,7 @@ def _get_core_error_code() -> type[EnumCoreErrorCode]:
 
 def _get_onex_error() -> type[ModelOnexError]:
     """Get ModelOnexError class at runtime to avoid circular import."""
-    from omnibase_core.errors.model_onex_error import ModelOnexError
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
     return ModelOnexError
 

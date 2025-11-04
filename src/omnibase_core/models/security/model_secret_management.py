@@ -1,7 +1,7 @@
 from typing import Any
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 ONEX Secret Management Models and Utilities.
@@ -76,7 +76,7 @@ def validate_secret_configuration(config_type: str, **kwargs: Any) -> dict[str, 
         **kwargs: Configuration parameters
 
     Returns:
-        Validation result dict[str, Any]ionary
+        Validation result dictionary
     """
     if config_type == "database":
         try:
@@ -114,7 +114,7 @@ def get_security_recommendations(
 
     Args:
         config_type: Type of configuration ('database', 'backend')
-        config_dict: Configuration dict[str, Any]ionary
+        config_dict: Configuration dictionary
 
     Returns:
         List of security recommendations

@@ -1,7 +1,7 @@
 from typing import Union
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Action Payload Type Hierarchies.
@@ -43,6 +43,7 @@ from omnibase_core.models.core.model_validation_action_payload import (
 )
 
 # Union type for all payload types
+# union-ok: Factory pattern legitimately needs union of all action payload types
 SpecificActionPayload = Union[
     ModelLifecycleActionPayload,
     ModelOperationalActionPayload,

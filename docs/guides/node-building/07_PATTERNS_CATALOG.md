@@ -86,7 +86,7 @@ class DataTransformationCompute(NodeCompute):
                 normalized[normalized_key] = value
 
         return normalized
-```
+```python
 
 ### 2. Calculation Engine Pattern
 
@@ -166,7 +166,7 @@ class CalculationEngineCompute(NodeCompute):
 
     async def _log(self, a: float, b: float) -> float:
         return math.log(a)
-```
+```python
 
 ### 3. Validation Engine Pattern
 
@@ -315,7 +315,7 @@ class ValidationEngineCompute(NodeCompute):
         if not pattern:
             return False
         return bool(re.match(pattern, value))
-```
+```python
 
 ## EFFECT Node Patterns
 
@@ -452,7 +452,7 @@ class DatabaseOperationsEffect(NodeEffect):
         """Rollback a database transaction."""
         # Implementation would use actual database service
         pass
-```
+```python
 
 ### 2. API Integration Pattern
 
@@ -568,7 +568,7 @@ class APIIntegrationEffect(NodeEffect):
         """Async context manager exit."""
         if self.session:
             await self.session.close()
-```
+```python
 
 ## REDUCER Node Patterns
 
@@ -672,7 +672,7 @@ class OrderStateMachineReducer(NodeReducer):
     def get_state_history(self) -> List[Dict[str, Any]]:
         """Get state transition history."""
         return self.state["history"].copy()
-```
+```python
 
 ### 2. Data Aggregation Pattern
 
@@ -786,7 +786,7 @@ class DataAggregationReducer(NodeReducer):
                 point for point in self.aggregated_data[group_key]
                 if point["timestamp"] >= cutoff_time
             ]
-```
+```python
 
 ## ORCHESTRATOR Node Patterns
 
@@ -996,7 +996,7 @@ class WorkflowOrchestrator(NodeOrchestrator):
     def get_active_workflows(self) -> Dict[str, Dict[str, Any]]:
         """Get all active workflows."""
         return self.active_workflows.copy()
-```
+```python
 
 ## Cross-Cutting Patterns
 
@@ -1107,7 +1107,7 @@ class CachedComputeNode(NodeCompute, CachingMixin):
         """Actual processing logic."""
         # Your business logic here
         return {"result": "processed"}
-```
+```python
 
 ### 2. Metrics Collection Pattern
 
@@ -1213,7 +1213,7 @@ class MetricsComputeNode(NodeCompute, MetricsMixin):
         """Actual processing logic."""
         # Your business logic here
         return {"result": "processed"}
-```
+```python
 
 ## Error Handling Patterns
 
@@ -1250,7 +1250,7 @@ class RetryableNode(NodeCompute):
         """Actual processing logic that may fail."""
         # Your business logic here
         return {"result": "processed"}
-```
+```python
 
 ### 2. Circuit Breaker Pattern
 
@@ -1285,7 +1285,7 @@ class CircuitBreakerNode(NodeEffect):
     async def _fallback_operation(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """Fallback operation when circuit breaker is open."""
         return {"result": "fallback", "circuit_breaker_open": True}
-```
+```python
 
 ## Performance Patterns
 
@@ -1349,7 +1349,7 @@ class BatchProcessingNode(NodeCompute):
         """Process a single item."""
         # Your business logic here
         return {"processed": True, "item": item}
-```
+```python
 
 ### 2. Streaming Processing Pattern
 
@@ -1415,7 +1415,7 @@ class StreamingProcessingNode(NodeCompute):
         """Process a single item."""
         # Your business logic here
         return {"processed": True, "item": item}
-```
+```python
 
 ## Testing Patterns
 
@@ -1475,7 +1475,7 @@ async def test_with_mock_services(mock_container):
     """Test node with mock services."""
     # Your test logic here
     pass
-```
+```python
 
 ### 2. Test Data Factory Pattern
 
@@ -1547,7 +1547,7 @@ async def test_with_factory_data(test_data):
     # Your test logic here
     assert user_data["name"] == "TestUser"
     assert order_data["user_id"] == user_data["id"]
-```
+```text
 
 ## Related Documentation
 

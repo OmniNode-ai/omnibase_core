@@ -4,7 +4,7 @@ from typing import Any, Union
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Metadata value model.
@@ -307,7 +307,7 @@ class ModelMetadataValue(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, object]:
-        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata: dict[str, object] = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -320,7 +320,7 @@ class ModelMetadataValue(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, object]) -> bool:
-        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             # Set metadata with runtime validation for type safety
             for key, value in metadata.items():
@@ -336,7 +336,7 @@ class ModelMetadataValue(BaseModel):
             ) from e
 
     def serialize(self) -> dict[str, object]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

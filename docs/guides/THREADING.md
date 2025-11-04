@@ -95,7 +95,7 @@ class ThreadSafeComputeCache:
             result = compute_fn(key)
             self._cache.put(key, result, ttl_minutes)
             return result
-```
+```python
 
 ### Cache Synchronization Strategies
 
@@ -118,7 +118,7 @@ def get_compute_node(container):
 async def process_computation(data):
     compute_node = get_compute_node(my_container)
     return await compute_node.process(data)
-```
+```python
 
 **Option 2: Shared NodeCompute with Locked Cache**
 
@@ -135,7 +135,7 @@ compute_node.computation_cache = ThreadSafeComputeCache(
 )
 
 # Now safe to share across threads
-```
+```python
 
 **Important Atomicity Note**: While the `ThreadSafeComputeCache` wrapper makes individual `get()` and `put()` operations thread-safe, the common cache pattern of "check cache → compute if missing → cache result" requires special handling. For atomic compute-and-cache operations, use the `compute_if_absent()` method (shown above), which holds the lock during the entire check-compute-cache sequence. Alternatively, use Option 1 (per-thread instances) to avoid coordination overhead entirely.
 
@@ -175,7 +175,7 @@ class SingleThreadedEffectNode(NodeEffect):
         """Process effects sequentially."""
         async with self._execution_lock:
             return await super().process(input_data)
-```
+```python
 
 **Option 2: Per-Thread Circuit Breakers**
 
@@ -183,7 +183,7 @@ Use thread-local circuit breakers for isolated failure tracking:
 
 ```python
 import threading
-from omnibase_core.models.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.infrastructure.model_circuit_breaker import ModelCircuitBreaker
 
 class ThreadLocalCircuitBreakerManager:
     """Manages thread-local circuit breakers."""
@@ -200,7 +200,7 @@ class ThreadLocalCircuitBreakerManager:
             self._thread_local.breakers[service_name] = ModelCircuitBreaker()
 
         return self._thread_local.breakers[service_name]
-```
+```python
 
 **Option 3: Atomic Counters with Locks**
 
@@ -208,7 +208,7 @@ Add synchronization to circuit breaker operations:
 
 ```python
 from threading import Lock
-from omnibase_core.models.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.infrastructure.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.enums.enum_effect_types import EnumCircuitBreakerState
 
 class ThreadSafeCircuitBreaker:
@@ -241,7 +241,7 @@ class ThreadSafeCircuitBreaker:
         """Thread-safe state retrieval."""
         with self._lock:
             return self._breaker.state
-```
+```python
 
 ## Transaction Thread Safety
 
@@ -257,7 +257,7 @@ class ThreadSafeCircuitBreaker:
 
 ```python
 from uuid import uuid4
-from omnibase_core.models.model_effect_transaction import ModelEffectTransaction
+from omnibase_core.models.infrastructure.model_effect_transaction import ModelEffectTransaction
 
 async def execute_isolated_effect(effect_node, operation_data):
     """Execute effect with transaction isolation.
@@ -271,7 +271,7 @@ async def execute_isolated_effect(effect_node, operation_data):
         # Transaction is isolated to this execution context
         result = await effect_node._execute_effect(operation_data, transaction)
         return result
-```
+```python
 
 ### Transaction Cleanup in Concurrent Environments
 
@@ -296,7 +296,7 @@ async def safe_transaction_cleanup(effect_node):
 
         if cleanup_tasks:
             await asyncio.gather(*cleanup_tasks, return_exceptions=True)
-```
+```python
 
 ## General Thread Safety Guidelines
 
@@ -314,7 +314,7 @@ input_data = ModelComputeInput(
 )
 
 # Safe to share across threads - no mutable state
-```
+```python
 
 ### Mutable State Requires Synchronization
 
@@ -339,7 +339,7 @@ class ThreadSafeMetrics:
         """Thread-safe metric retrieval."""
         with self._lock:
             return self._metrics.copy()
-```
+```python
 
 ### Container Sharing
 
@@ -361,7 +361,7 @@ def worker_thread(container):
     logger = container.get_service("ProtocolLogger")
     event_bus = container.get_service("ProtocolEventBus")
     # Use services (check individual service thread safety)
-```
+```python
 
 ### Node Instance Sharing
 
@@ -390,7 +390,7 @@ async def worker1():
 async def worker2():
     node = get_thread_local_compute()
     await node.process(input2)  # No race
-```
+```python
 
 ## Production Checklist
 
@@ -434,7 +434,7 @@ class FineGrainedCache:
     def get_key_lock(self, key):
         # Lock only specific key
         pass
-```
+```python
 
 ### Lock-Free Alternatives
 
@@ -451,7 +451,7 @@ work_queue.put(computation_task)
 
 # Consumer
 task = work_queue.get()
-```
+```python
 
 ### Async vs Thread Safety
 
@@ -466,7 +466,7 @@ async def safe_async_processing():
     result1 = await async_operation1()
     result2 = await async_operation2()
     return result1 + result2
-```
+```text
 
 **However**: If using `run_in_executor()` or `ThreadPoolExecutor`, thread safety concerns return:
 
@@ -474,7 +474,7 @@ async def safe_async_processing():
 # This introduces thread safety concerns!
 loop = asyncio.get_event_loop()
 result = await loop.run_in_executor(thread_pool, blocking_operation)
-```
+```python
 
 ## Testing Thread Safety
 

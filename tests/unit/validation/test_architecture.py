@@ -7,6 +7,12 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from omnibase_core.models.validation.model_audit_result import ModelAuditResult
+from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
+from omnibase_core.models.validation.model_duplication_report import (
+    ModelDuplicationReport,
+)
+from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.validation.architecture import (
     ModelCounter,
     validate_architecture_directory,
@@ -14,10 +20,6 @@ from omnibase_core.validation.architecture import (
 )
 from omnibase_core.validation.auditor_protocol import ModelProtocolAuditor
 from omnibase_core.validation.exceptions import ConfigurationError, InputValidationError
-from omnibase_core.validation.model_audit_result import ModelAuditResult
-from omnibase_core.validation.model_duplication_info import DuplicationInfo
-from omnibase_core.validation.model_duplication_report import ModelDuplicationReport
-from omnibase_core.validation.model_protocol_info import ModelProtocolInfo
 
 
 class TestModelCounter:
@@ -1223,7 +1225,7 @@ class ProtocolExample(Protocol):
             imports=[],
         )
 
-        dup_info = DuplicationInfo(
+        dup_info = ModelDuplicationInfo(
             signature_hash="abc123",
             protocols=[protocol],
             duplication_type="exact",

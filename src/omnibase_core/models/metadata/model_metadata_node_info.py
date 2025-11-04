@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic import Field
 
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Metadata Node Info Model.
@@ -483,7 +483,7 @@ class ModelMetadataNodeInfo(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -496,7 +496,7 @@ class ModelMetadataNodeInfo(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol).
+        """Set metadata from dictionary (ProtocolMetadataProvider protocol).
 
         Raises:
             AttributeError: If setting an attribute fails
@@ -508,7 +508,7 @@ class ModelMetadataNodeInfo(BaseModel):
         return True
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

@@ -17,7 +17,7 @@ logger = ConcreteLogger()
 
 # ✅ Right: Protocol-based resolution
 logger = container.get_service("ProtocolLogger")
-```
+```python
 
 ## Container Architecture
 
@@ -34,7 +34,7 @@ class ModelONEXContainer(BaseModel):
     def register_service(self, protocol_name: str, implementation: Any):
         """Register service implementation."""
         pass
-```
+```text
 
 ## Service Registration
 
@@ -47,7 +47,7 @@ container = ModelONEXContainer()
 container.register_service("ProtocolLogger", my_logger_instance)
 container.register_service("ProtocolEventBus", event_bus_instance)
 container.register_service("ProtocolCache", cache_instance)
-```
+```python
 
 ### Service Resolution
 
@@ -59,7 +59,7 @@ class MyNode(NodeComputeService):
         # Resolve dependencies by protocol
         self.logger = container.get_service("ProtocolLogger")
         self.cache = container.get_service("ProtocolCache")
-```
+```python
 
 ## Protocol Definitions
 
@@ -71,7 +71,7 @@ from typing import Protocol
 class ProtocolLogger(Protocol):
     def info(self, message: str) -> None: ...
     def error(self, message: str, exc_info: bool = False) -> None: ...
-```
+```python
 
 ## Benefits
 
@@ -95,7 +95,7 @@ class MockLogger:
 # Use in tests
 test_container = ModelONEXContainer()
 test_container.register_service("ProtocolLogger", MockLogger())
-```
+```yaml
 
 ## Common Protocols
 

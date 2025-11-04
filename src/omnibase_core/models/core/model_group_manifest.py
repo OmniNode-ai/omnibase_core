@@ -14,14 +14,14 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 from omnibase_core.enums.enum_group_status import EnumGroupStatus
 from omnibase_core.enums.enum_security_profile import EnumSecurityProfile
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_group_dependency import ModelGroupDependency
 from omnibase_core.models.core.model_group_manifest_config import ModelConfig
 from omnibase_core.models.core.model_group_service_configuration import (
     ModelGroupServiceConfiguration,
 )
 from omnibase_core.models.core.model_group_tool import ModelGroupTool
-from omnibase_core.primitives.model_semver import ModelSemVer, SemVerField
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer, SemVerField
 
 
 class ModelGroupManifest(BaseModel):

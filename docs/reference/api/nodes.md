@@ -25,7 +25,7 @@ class MyComputeNode(NodeCompute):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Your computation logic here
         return {"result": "computed_value"}
-```
+```python
 
 #### Key Methods
 
@@ -57,7 +57,7 @@ class DatabaseEffectNode(NodeEffect):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Your side effect logic here
         return {"status": "completed"}
-```
+```python
 
 #### Key Methods
 
@@ -89,7 +89,7 @@ class MetricsReducerNode(NodeReducer):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Your state management logic here
         return {"state": "updated"}
-```
+```python
 
 #### Key Methods
 
@@ -121,7 +121,7 @@ class WorkflowOrchestratorNode(NodeOrchestrator):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Your orchestration logic here
         return {"workflow": "completed"}
-```
+```python
 
 #### Key Methods
 
@@ -152,7 +152,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 
 # Pre-composed with MixinNodeService, NodeCompute, MixinHealthCheck, MixinCaching, MixinMetrics
 service = ModelServiceCompute(container)
-```
+```python
 
 ### ModelServiceEffect
 
@@ -166,7 +166,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 
 # Pre-composed with MixinNodeService, NodeEffect, MixinHealthCheck, MixinEventBus, MixinMetrics
 service = ModelServiceEffect(container)
-```
+```python
 
 ### ModelServiceReducer
 
@@ -180,7 +180,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 
 # Pre-composed with MixinNodeService, NodeReducer, MixinHealthCheck, MixinCaching, MixinMetrics
 service = ModelServiceReducer(container)
-```
+```python
 
 ### ModelServiceOrchestrator
 
@@ -194,7 +194,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 
 # Pre-composed with MixinNodeService, NodeOrchestrator, MixinHealthCheck, MixinEventBus, MixinMetrics
 service = ModelServiceOrchestrator(container)
-```
+```python
 
 ## Base Infrastructure Classes
 
@@ -210,7 +210,7 @@ from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 class MyCustomNode(NodeCoreBase):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
-```
+```python
 
 #### Key Methods
 
@@ -260,12 +260,12 @@ class MyBusinessLogicNode(NodeCompute):
         """Execute core business logic."""
         # Add business logic
         return "processed_result"
-```
+```python
 
 ### Error Handling Pattern
 
 ```python
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -284,7 +284,7 @@ async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
             message=f"Processing failed: {str(e)}",
             context={"input_data": input_data}
         ) from e
-```
+```python
 
 ### Health Check Pattern
 
@@ -312,7 +312,7 @@ async def health_check(self) -> Dict[str, Any]:
             "error": str(e),
             "timestamp": time.time()
         }
-```
+```python
 
 ## Thread Safety
 
@@ -334,7 +334,7 @@ def get_node_instance(container):
 # Option 2: Use service wrappers with thread-safe mixins
 from omnibase_core.models.nodes.node_services.model_service_compute import ModelServiceCompute
 service = ModelServiceCompute(container)  # May include thread-safe patterns
-```
+```python
 
 ## Performance Considerations
 
@@ -356,7 +356,7 @@ class MyComputeNode(NodeCompute):
         # Cache result
         self.computation_cache.put(cache_key, result)
         return result
-```
+```python
 
 ### Metrics Collection
 
@@ -378,7 +378,7 @@ class MyNode(NodeCompute):
             # Record error metrics
             self.record_metric("error_count", 1)
             raise
-```
+```text
 
 ## Related Documentation
 

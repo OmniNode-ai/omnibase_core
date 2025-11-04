@@ -27,7 +27,7 @@ class TestInitExports:
             "EnumCoreErrorCode",
             "ModelOnexError",
             "ModelValidationSuite",
-            "ValidationResult",
+            "ModelValidationResult",
             "validate_all",
             "validate_architecture",
             "validate_contracts",
@@ -141,7 +141,7 @@ class TestInitCircularImports:
     def test_init_getattr_handles_missing_attributes(self):
         """Test that __getattr__ raises proper error for missing attributes."""
         import omnibase_core
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         with pytest.raises(ModelOnexError) as exc_info:
             _ = omnibase_core.NonExistentAttribute
@@ -153,11 +153,11 @@ class TestInitValidationExports:
     """Test validation tool exports from __init__.py."""
 
     def test_init_validation_result_export(self):
-        """Test that ValidationResult is properly exported."""
-        from omnibase_core import ValidationResult
+        """Test that ModelValidationResult is properly exported."""
+        from omnibase_core import ModelValidationResult
 
-        assert ValidationResult is not None
-        assert isinstance(ValidationResult, type)
+        assert ModelValidationResult is not None
+        assert isinstance(ModelValidationResult, type)
 
     def test_init_model_validation_suite_export(self):
         """Test that ModelValidationSuite is properly exported."""
@@ -253,9 +253,13 @@ class TestInitLazyLoadingBehavior:
             del sys.modules[mod]
 
         # Access validation functions through lazy loading
-        from omnibase_core import ValidationResult, validate_all, validate_architecture
+        from omnibase_core import (
+            ModelValidationResult,
+            validate_all,
+            validate_architecture,
+        )
 
-        assert ValidationResult is not None
+        assert ModelValidationResult is not None
         assert validate_all is not None
         assert validate_architecture is not None
 

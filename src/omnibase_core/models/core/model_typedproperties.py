@@ -24,7 +24,7 @@ class ModelTypedProperties(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelTypedProperties"]:
-        """Create from legacy dict[str, Any]ionary format."""
+        """Create from legacy dictionary format."""
         if data is None:
             return None
 

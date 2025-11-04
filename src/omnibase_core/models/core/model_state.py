@@ -7,7 +7,7 @@ State model for node introspection.
 from pydantic import BaseModel
 
 from omnibase_core.models.core.model_state_field import ModelStateField
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelState(BaseModel):

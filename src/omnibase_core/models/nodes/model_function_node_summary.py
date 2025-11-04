@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Function node summary model.
@@ -31,7 +31,7 @@ class ModelFunctionNodeSummary(BaseModel):
     """
     Simplified function node summary.
 
-    Focused on essential information for list[Any]ings and overviews.
+    Focused on essential information for listings and overviews.
     Eliminates redundant fields from the original 19-field summary.
     Implements omnibase_spi protocols:
     - Identifiable: UUID-based identification
@@ -242,7 +242,7 @@ class ModelFunctionNodeSummary(BaseModel):
         )
 
     def get_metadata(self) -> dict[str, Any]:
-        """Get metadata as dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
+        """Get metadata as a dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
@@ -255,7 +255,7 @@ class ModelFunctionNodeSummary(BaseModel):
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
-        """Set metadata from dict[str, Any]ionary (ProtocolMetadataProvider protocol)."""
+        """Set metadata from a dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -267,7 +267,7 @@ class ModelFunctionNodeSummary(BaseModel):
             return False
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to a dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

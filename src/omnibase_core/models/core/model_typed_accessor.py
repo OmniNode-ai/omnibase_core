@@ -5,7 +5,7 @@ from typing import Generic, TypeVar
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Typed field accessor for specific value types.
@@ -65,7 +65,7 @@ class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         # Typed accessor classes don't have specific model fields - serialize accessible data
         result: dict[str, Any] = {
             "accessor_type": self.__class__.__name__,

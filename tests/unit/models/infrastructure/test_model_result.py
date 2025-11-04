@@ -11,7 +11,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.infrastructure.model_result import (
     ModelResult,
     collect_results,

@@ -15,15 +15,14 @@ from typing import Any, TypeVar
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .error_contract_violation import ContractViolationError
 from .error_dependency_failed import DependencyFailedError
 
 # Import extracted error classes
 from .error_fail_fast import FailFastError
-from .error_validation_failed import ValidationFailedError
 
 # Type variable for return types
 T = TypeVar("T")
@@ -110,7 +109,7 @@ class MixinFailFast:
             The value if not None
 
         Raises:
-            ValidationFailedError if value is None
+            ModelOnexError if value is None
         """
         if value is None:
             msg = f"Required field '{field_name}' is missing"
@@ -136,7 +135,7 @@ class MixinFailFast:
             The value if not empty
 
         Raises:
-            ValidationFailedError if value is empty
+            ModelOnexError if value is empty
         """
         if not value:
             msg = f"Field '{field_name}' cannot be empty"
@@ -164,7 +163,7 @@ class MixinFailFast:
             The value if type matches
 
         Raises:
-            ValidationFailedError if type doesn't match
+            ModelOnexError if type doesn't match
         """
         # Use duck typing by checking if value has expected type's attributes/methods
         actual_type = type(value)
@@ -239,7 +238,7 @@ class MixinFailFast:
             The value if allowed
 
         Raises:
-            ValidationFailedError if value not allowed
+            ModelOnexError if value not allowed
         """
         if value not in allowed_values:
             msg = f"Field '{field_name}' must be one of {allowed_values}, got '{value}'"

@@ -31,11 +31,11 @@ Validation Tools:
         python -m omnibase_core.validation all
 
 Validators:
-    The validators module provides reusable validation tools that can be used
+    The validation module provides reusable validation tools that can be used
     by any project consuming omnibase_core as a dependency.
 
     Quick usage:
-        from omnibase_core.validators import CircularImportValidator
+        from omnibase_core.validation import CircularImportValidator
 
         # Detect circular imports
         validator = CircularImportValidator(source_path="/path/to/src")
@@ -45,7 +45,7 @@ Validators:
 """
 
 # string-version-ok: Package metadata follows PEP 396 standard Python practice
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # Lazy import to avoid circular dependencies
 # Import error classes and validation functions only when accessed
@@ -58,11 +58,11 @@ def __getattr__(name: str) -> object:
 
         return EnumCoreErrorCode
     if name == "ModelOnexError":
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         return ModelOnexError
     if name in {
-        "ValidationResult",
+        "ModelValidationResult",
         "ModelValidationSuite",
         "validate_all",
         "validate_architecture",
@@ -71,8 +71,8 @@ def __getattr__(name: str) -> object:
         "validate_union_usage",
     }:
         from .validation import (
+            ModelValidationResult,
             ModelValidationSuite,
-            ValidationResult,
             validate_all,
             validate_architecture,
             validate_contracts,
@@ -85,23 +85,23 @@ def __getattr__(name: str) -> object:
 
     if name in {
         "CircularImportValidator",
+        "CircularImportValidationResult",
         "EnumImportStatus",
         "ModelModuleImportResult",
-        "ModelValidationResult",
     }:
-        from .validators import (
+        from .validation import (
+            CircularImportValidationResult,
             CircularImportValidator,
             EnumImportStatus,
             ModelModuleImportResult,
-            ModelValidationResult,
         )
 
-        # Return the requested attribute from validators module
+        # Return the requested attribute from validation module
         return locals()[name]
 
     # Import here to avoid circular dependency
     from omnibase_core.errors.error_codes import EnumCoreErrorCode
-    from omnibase_core.errors.model_onex_error import ModelOnexError
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
     msg = f"module '{__name__}' has no attribute '{name}'"
     raise ModelOnexError(
@@ -117,7 +117,7 @@ __all__ = [
     "ModelOnexError",
     # Validation tools (main exports for other repositories)
     "ModelValidationSuite",
-    "ValidationResult",
+    "ModelValidationResult",
     "validate_all",
     "validate_architecture",
     "validate_contracts",

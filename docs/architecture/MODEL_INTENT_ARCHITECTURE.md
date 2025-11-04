@@ -8,9 +8,9 @@
 
 The Reducer node implements a pure function that transforms state without performing I/O or side effects:
 
-```
+```text
 δ(state, action) → (new_state, intents[])
-```
+```python
 
 **Key Principles**:
 - **Purity**: Reducer contains no I/O, no logging, no metrics collection
@@ -39,9 +39,9 @@ This separation enables:
 
 The Reducer implements a pure finite state machine:
 
-```
+```text
 δ(state, action) → (new_state, intents[])
-```
+```python
 
 Where:
 - **δ** (delta): Pure transformation function
@@ -85,7 +85,7 @@ async def process(self, input_data):
     await self.db.save(result)
 
     return ModelReducerOutput(result=result)
-```
+```python
 
 **Pure Code (Intent Pattern)**:
 ```python
@@ -112,7 +112,7 @@ async def process(self, input_data):
     ]
 
     return ModelReducerOutput(result=result, intents=intents)
-```
+```python
 
 ---
 
@@ -152,7 +152,7 @@ def test_reducer_emits_metric_intent():
     metric_intents = [i for i in output.intents if i.intent_type == "log_metric"]
     assert len(metric_intents) == 1
     assert metric_intents[0].payload["metric_type"] == "reduction_metrics"
-```
+```text
 
 No mocks, no infrastructure, no external dependencies.
 
@@ -168,7 +168,7 @@ output2 = await reducer.process(input_data)
 # Always produces identical results
 assert output1.result == output2.result
 assert output1.intents == output2.intents
-```
+```text
 
 **3. Composability**
 
@@ -188,7 +188,7 @@ enriched = [
 sorted_intents = sorted(output.intents, key=lambda i: i.priority, reverse=True)
 for intent in sorted_intents:
     await effect_node.execute_intent(intent)
-```
+```python
 
 **4. Centralized Error Handling**
 
@@ -204,7 +204,7 @@ async def execute_intent(self, intent: ModelIntent):
         # Centralized error handling
         await self._handle_intent_failure(intent, e)
         raise
-```
+```python
 
 ### FSM Purity Guarantees
 
@@ -223,7 +223,7 @@ class NodeReducer(NodeCoreBase):
         # - No self.reduction_metrics (emit Intents instead)
         # - No self.active_windows (pass through state)
         # - No self.cache (stateless processing)
-```
+```text
 
 **Guarantee 2: Referential Transparency**
 
@@ -239,7 +239,7 @@ output = ModelReducerOutput(
         ModelIntent(intent_type="log_event", target="logging_service", ...),
     ],
 )
-```
+```python
 
 **Guarantee 3: No Side Effects During Execution**
 
@@ -258,7 +258,7 @@ async def process(self, input_data):
     # - No API calls
 
     return ModelReducerOutput(result=result, intents=intents)
-```
+```python
 
 ---
 
@@ -311,7 +311,7 @@ class ModelIntent(BaseModel):
         description="Optional epoch if this intent relates to versioned state",
         ge=0,
     )
-```
+```python
 
 ### Field Descriptions
 
@@ -423,7 +423,7 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
         items_processed=len(input_data.items),
         intents=intents,  # Attach Intents to output
     )
-```
+```python
 
 **Advanced Pattern: Conditional Intents**:
 
@@ -473,7 +473,7 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
         )
 
     return ModelReducerOutput(result=result, intents=intents)
-```
+```python
 
 **Pattern: Lease-Tracked Intents**:
 
@@ -492,7 +492,7 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
     )
 
     return ModelReducerOutput(result=result, intents=[intent])
-```
+```python
 
 ### Processing Intents (Effect Node)
 
@@ -575,7 +575,7 @@ class NodeEffect(NodeCoreBase):
             tx.add_operation("write", intent.payload, lambda: db_service.delete(...))
 
         return {"written": True, "result": result}
-```
+```python
 
 **Error Handling for Failed Intents**:
 
@@ -620,7 +620,7 @@ async def _handle_intent_failure(
         processing_time_ms=0,
         success=False,
     )
-```
+```yaml
 
 ---
 
@@ -645,7 +645,7 @@ ModelIntent(
     },
     priority=3,
 )
-```
+```yaml
 
 **Use Cases**:
 - Performance metrics (processing time, throughput)
@@ -673,7 +673,7 @@ ModelIntent(
     },
     priority=2,
 )
-```
+```bash
 
 **Use Cases**:
 - Operational logging (completion, progress)
@@ -697,7 +697,7 @@ ModelIntent(
     },
     priority=5,
 )
-```
+```python
 
 **Use Cases**:
 - Database writes (results, state)
@@ -722,7 +722,7 @@ ModelIntent(
     },
     priority=8,
 )
-```
+```python
 
 **Use Cases**:
 - Alerts (SLA violations, errors)
@@ -747,7 +747,7 @@ async def process(self, input_data):
     metrics.increment("reductions")
 
     return ModelReducerOutput(result=result)
-```
+```python
 
 **✅ Best Practice**:
 ```python
@@ -761,7 +761,7 @@ async def process(self, input_data):
     ]
 
     return ModelReducerOutput(result=result, intents=intents)
-```
+```python
 
 ---
 
@@ -780,7 +780,7 @@ async def process(self, input_data):
         json.dump(result, f)
 
     return ModelReducerOutput(result=result)
-```
+```python
 
 **✅ Best Practice**:
 ```python
@@ -802,7 +802,7 @@ async def process(self, input_data):
     ]
 
     return ModelReducerOutput(result=result, intents=intents)
-```
+```yaml
 
 ---
 
@@ -844,7 +844,7 @@ intents = [
         priority=1,
     ),
 ]
-```
+```python
 
 ---
 
@@ -872,7 +872,7 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
     ]
 
     return ModelReducerOutput(result=result, intents=intents)
-```
+```python
 
 **Benefits**:
 - Enables lease-based conflict resolution
@@ -905,7 +905,7 @@ async def test_reducer_emits_completion_intent():
     assert len(log_intents) == 1
     assert log_intents[0].payload["level"] == "INFO"
     assert "completed" in log_intents[0].payload["message"].lower()
-```
+```yaml
 
 **Separation of Concerns**:
 - **Reducer Tests**: Assert Intent emission (what side effects are requested)
@@ -928,7 +928,7 @@ ModelIntent(
     target="service1",        # Non-descriptive
     payload={"data": 123},
 )
-```
+```text
 
 **✅ Best Practice**:
 ```python
@@ -937,7 +937,7 @@ ModelIntent(
     target="prometheus_exporter",   # Specific target
     payload={"metric": "processing_time", "value": 123},
 )
-```
+```python
 
 ---
 

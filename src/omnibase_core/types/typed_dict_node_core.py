@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, TypedDict
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from omnibase_core.primitives.model_semver import ModelSemVer
+    from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TypedDictNodeCore(TypedDict):

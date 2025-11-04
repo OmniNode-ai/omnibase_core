@@ -119,7 +119,7 @@ class ModelPasswordPolicy(BaseModel):
 
     prevent_dictionary_words: bool = Field(
         default=False,
-        description="Prevent dict[str, Any]ionary words in passwords",
+        description="Prevent dictionary words in passwords",
     )
 
     require_change_on_first_login: bool = Field(

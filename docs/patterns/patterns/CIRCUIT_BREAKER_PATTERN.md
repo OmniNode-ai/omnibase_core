@@ -45,7 +45,7 @@ async def process_payment(amount: float):
     except CircuitBreakerException as e:
         logger.warning(f"Payment service unavailable: {e}")
         return {"status": "deferred", "message": "Payment will be processed later"}
-```
+```python
 
 ## Core Components
 
@@ -71,7 +71,7 @@ class ExternalDependencyCircuitBreaker:
     ) -> T:
         """Execute function through circuit breaker."""
         ...
-```
+```python
 
 ### Circuit Breaker States
 
@@ -107,7 +107,7 @@ config = ModelCircuitBreakerConfig(
     exponential_backoff=True,     # Increase backoff on repeated failures
     max_backoff_seconds=300       # Maximum backoff time
 )
-```
+```python
 
 ## Usage Patterns
 
@@ -129,7 +129,7 @@ async def example_function_call():
     except CircuitBreakerException:
         # Circuit is open - service is down
         return {"id": "user-123", "name": "Anonymous"}
-```
+```python
 
 ### 2. Fallback Pattern
 
@@ -151,7 +151,7 @@ async def example_with_fallback():
     )
 
     return recommendations
-```
+```python
 
 ### 3. Context Manager Pattern
 
@@ -170,7 +170,7 @@ async def example_context_manager():
         print("Analytics service unavailable - event cached locally")
     except Exception as e:
         print(f"Analytics tracking failed: {e}")
-```
+```python
 
 ### 4. Environment-Based Configuration
 
@@ -187,7 +187,7 @@ circuit_breaker = CircuitBreakerFactory.create_from_environment(
     "email-service",
     prefix="CB_EMAIL_SERVICE"
 )
-```
+```python
 
 ## Factory Methods
 
@@ -206,7 +206,7 @@ resilient_cb = CircuitBreakerFactory.create_resilient("background-service")
 
 # Environment-configured circuit breaker
 env_cb = CircuitBreakerFactory.create_from_environment("service-name")
-```
+```text
 
 ## Metrics and Monitoring
 
@@ -222,7 +222,7 @@ print(f"Success rate: {metrics.get_success_rate():.2%}")
 print(f"Failure rate: {metrics.get_failure_rate():.2%}")
 print(f"Average response time: {metrics.average_response_time_ms:.1f}ms")
 print(f"State changes: {metrics.state_changes}")
-```
+```python
 
 ### Event Handling
 
@@ -241,7 +241,7 @@ async def alert_on_failures(cb, event, metrics):
 # Register event listeners
 circuit_breaker.add_event_listener(CircuitBreakerEvent.STATE_CHANGE, log_state_changes)
 circuit_breaker.add_event_listener(CircuitBreakerEvent.FAILURE, alert_on_failures)
-```
+```python
 
 ### Global Registry
 
@@ -263,7 +263,7 @@ cb = get_circuit_breaker("payment-api")
 status_summary = list_circuit_breakers()
 for service, status in status_summary.items():
     print(f"{service}: {status['state']} (failure rate: {status['failure_rate']:.1%})")
-```
+```text
 
 ## Advanced Features
 
@@ -279,7 +279,7 @@ config = ModelCircuitBreakerConfig(
 circuit_breaker = ExternalDependencyCircuitBreaker("unreliable-service", config)
 
 # Backoff progression: 60s → 120s → 240s → 300s (capped)
-```
+```bash
 
 ### Slow Call Detection
 
@@ -290,7 +290,7 @@ config = ModelCircuitBreakerConfig(
 )
 
 # Circuit will open if 30% of requests take longer than 5 seconds
-```
+```text
 
 ### Manual Control
 
@@ -299,7 +299,7 @@ config = ModelCircuitBreakerConfig(
 await circuit_breaker.force_open()    # Force circuit open
 await circuit_breaker.force_close()   # Force circuit closed
 await circuit_breaker.reset()         # Reset all metrics and state
-```
+```python
 
 ## Integration Examples
 
@@ -333,7 +333,7 @@ class ResilientHTTPClient:
 # Usage
 client = ResilientHTTPClient("https://api.example.com", "example-api")
 data = await client.get("/users/123")
-```
+```python
 
 ### Database Integration
 
@@ -378,7 +378,7 @@ class ResilientDatabase:
 # Usage
 db = ResilientDatabase("postgresql://user:pass@localhost/db")
 users = await db.fetch("SELECT * FROM users WHERE active = $1", True)
-```
+```python
 
 ### Message Queue Integration
 
@@ -416,7 +416,7 @@ class ResilientMessagePublisher:
                 except Exception:
                     break  # Stop if service fails again
             self.local_queue.clear()
-```
+```text
 
 ## Best Practices
 
@@ -437,7 +437,7 @@ background_config = ModelCircuitBreakerConfig(
     recovery_timeout_seconds=120,
     exponential_backoff=True
 )
-```
+```python
 
 ### 2. Implement Meaningful Fallbacks
 
@@ -457,7 +457,7 @@ async def get_user_recommendations(user_id: str):
 async def process_payment(amount: float):
     return await circuit_breaker.call(lambda: payment_api.charge(amount))
     # No fallback - users can't complete purchases when service is down
-```
+```python
 
 ### 3. Monitor Circuit Breaker Health
 
@@ -477,7 +477,7 @@ async def circuit_breaker_health_check():
 
 # Run periodically
 asyncio.create_task(circuit_breaker_health_check())
-```
+```text
 
 ### 4. Use Environment Configuration
 
@@ -494,7 +494,7 @@ CB_PAYMENT_API_EXPONENTIAL_BACKOFF=false
 
 # Application code
 payment_cb = CircuitBreakerFactory.create_from_environment("payment-api")
-```
+```python
 
 ### 5. Handle Circuit Breaker Exceptions Appropriately
 
@@ -518,7 +518,7 @@ async def handle_user_request():
         # Actual service error
         logger.error(f"Service error: {e}")
         return {"status": "error", "message": "Service temporarily unavailable"}
-```
+```python
 
 ## Troubleshooting
 
@@ -545,7 +545,7 @@ print(f"  Total requests: {metrics.total_requests}")
 print(f"  Success rate: {metrics.get_success_rate():.2%}")
 print(f"  In current window: {metrics.requests_in_window}")
 print(f"  Window failure rate: {metrics.get_failure_rate():.2%}")
-```
+```text
 
 ### Common Issues
 
@@ -557,7 +557,7 @@ config = ModelCircuitBreakerConfig(
     failure_threshold=5,
     minimum_request_threshold=20  # Need 20 requests before evaluating
 )
-```
+```text
 
 #### Circuit Doesn't Open When Expected  
 ```python
@@ -567,7 +567,7 @@ config = ModelCircuitBreakerConfig(
     failure_rate_threshold=0.3,  # Lower threshold (30%)
     minimum_request_threshold=5  # Lower minimum requests
 )
-```
+```text
 
 #### Slow Recovery
 ```python
@@ -577,6 +577,6 @@ config = ModelCircuitBreakerConfig(
     recovery_timeout_seconds=30,  # Test recovery sooner
     exponential_backoff=False     # Disable backoff for faster recovery
 )
-```
+```text
 
 This comprehensive circuit breaker implementation provides robust fault tolerance for external dependencies while maintaining observability and configurability for various service interaction patterns.

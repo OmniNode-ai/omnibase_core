@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Fast Import Module - Aggressive Performance Optimization

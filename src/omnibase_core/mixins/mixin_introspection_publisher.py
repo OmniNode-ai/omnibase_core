@@ -7,7 +7,7 @@ from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.discovery.model_nodeintrospectionevent import (
     ModelNodeIntrospectionEvent,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 "\nIntrospection Publisher Mixin.\n\nThis mixin handles:\n- Gathering node introspection data from various sources\n- Publishing NODE_INTROSPECTION_EVENT for service discovery\n- Extracting actions, protocols, metadata from nodes\n- Retry logic for failed publishes\n"
 import re
@@ -17,6 +17,7 @@ from pathlib import Path
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_node_introspection_data import (
     MixinNodeIntrospectionData,
@@ -25,6 +26,7 @@ from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 _COMPONENT_NAME = Path(__file__).stem
 DEFAULT_AUTHOR = "ONEX"
@@ -54,13 +56,20 @@ class MixinIntrospectionPublisher:
             from uuid import UUID, uuid4
 
             correlation_id = uuid4()
+            # Require explicit get_node_type() implementation - no fallback
+            if not hasattr(self, "get_node_type"):
+                raise ModelOnexError(
+                    message=f"Node {self.__class__.__name__} must implement get_node_type() "
+                    "returning one of: effect, compute, reducer, orchestrator",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                )
+            node_type = self.get_node_type()
             introspection_event = ModelNodeIntrospectionEvent.create_from_node_info(
                 node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
                 node_name=introspection_data.node_name,
                 version=introspection_data.version,
+                node_type=node_type,
                 actions=introspection_data.capabilities.actions,
-                protocols=introspection_data.capabilities.protocols,
-                metadata=introspection_data.capabilities.metadata,
                 tags=introspection_data.tags,
                 health_endpoint=introspection_data.health_endpoint,
                 correlation_id=correlation_id,

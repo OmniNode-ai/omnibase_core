@@ -4,8 +4,8 @@ from typing import Optional, TypeVar
 
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Schema example model.
@@ -153,7 +153,7 @@ class ModelSchemaExample(BaseModel):
 
     def update_from_dict(self, data: dict[str, ModelSchemaValue]) -> None:
         """
-        Update example data from a dict[str, Any]ionary.
+        Update example data from a dictionary.
 
         Args:
             data: Dictionary of ModelSchemaValue objects to add to example data
@@ -170,7 +170,7 @@ class ModelSchemaExample(BaseModel):
 
     def get_example_data_as_dict(self) -> dict[str, ModelSchemaValue]:
         """
-        Get example data as a dict[str, Any]ionary of ModelSchemaValue objects.
+        Get example data as a dictionary of ModelSchemaValue objects.
 
         Note: This method returns ModelSchemaValue objects directly.
         For raw Python values, use .get_raw_value() on individual keys.
@@ -195,7 +195,7 @@ class ModelSchemaExample(BaseModel):
         schema_version: ModelSemVer | None = None,
     ) -> ModelSchemaExample:
         """
-        Create ModelSchemaExample from a dict[str, Any]ionary.
+        Create ModelSchemaExample from a dictionary.
 
         Args:
             data: Dictionary data to store as example
@@ -296,7 +296,7 @@ class ModelSchemaExample(BaseModel):
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

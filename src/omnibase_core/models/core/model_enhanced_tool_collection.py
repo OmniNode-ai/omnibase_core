@@ -1,7 +1,7 @@
 from pydantic import Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Enhanced tool collection models.
@@ -19,7 +19,10 @@ from uuid import UUID
 from pydantic import BaseModel, ValidationInfo, computed_field
 
 from omnibase_core.models.core.model_performance_summary import ModelPerformanceSummary
-from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
+)
 
 from .model_tool_metadata import (
     EnumToolCapabilityLevel,
@@ -417,7 +420,7 @@ class ModelToolCollection(BaseModel):
         collection_name: str = "imported",
         auto_validate: bool = True,
     ) -> "ModelToolCollection":
-        """Create collection from existing tools dict[str, Any]ionary."""
+        """Create collection from existing tools dictionary."""
         collection = cls(collection_name=collection_name, auto_validation=auto_validate)
 
         for name, tool_class in tools_dict.items():

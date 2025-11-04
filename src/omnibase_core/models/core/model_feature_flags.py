@@ -145,7 +145,7 @@ class ModelFeatureFlags(BaseModel):
                 self.flag_metadata[flag] = metadata
 
     def to_environment_dict(self, prefix: str = "ONEX_FEATURE_") -> dict[str, str]:
-        """Convert to environment variables dict[str, Any]ionary."""
+        """Convert to environment variables dictionary."""
         env_dict = {}
         for flag, enabled in self.flags.items():
             env_var_name = f"{prefix}{flag.upper()}"

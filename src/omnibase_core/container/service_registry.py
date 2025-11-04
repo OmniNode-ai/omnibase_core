@@ -12,7 +12,6 @@ from omnibase_spi.protocols.container import (
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_registry_config import (
     ModelServiceRegistryConfig,
@@ -25,6 +24,7 @@ from omnibase_core.models.container.model_service_metadata import ModelServiceMe
 from omnibase_core.models.container.model_service_registration import (
     ModelServiceRegistration,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Define LiteralOperationStatus locally to avoid runtime import
 LiteralOperationStatus = Literal[

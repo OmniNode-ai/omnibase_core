@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 ModelWorkflowCoordinator

@@ -3,7 +3,7 @@
 import pytest
 
 from omnibase_core.models.metadata.model_input_state_class import ModelInputState
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelInputState:

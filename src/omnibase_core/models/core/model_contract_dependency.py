@@ -8,7 +8,10 @@ Author: ONEX Framework Team
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.primitives.model_semver import ModelSemVer, parse_semver_from_string
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
+)
 
 
 class ModelContractDependency(BaseModel):

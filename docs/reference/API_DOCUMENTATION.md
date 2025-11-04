@@ -21,9 +21,9 @@ This document provides comprehensive API documentation for all contract models i
 
 All contract models follow the ONEX Four-Node Architecture:
 
-```
+```text
 EFFECT → COMPUTE → REDUCER → ORCHESTRATOR
-```
+```python
 
 #### Node Types and Responsibilities
 
@@ -85,7 +85,7 @@ class ModelContractBase(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```
+```python
 
 ### ModelContractCompute
 
@@ -139,7 +139,7 @@ class ModelContractCompute(ModelContractBase):
     output_transformation: ModelOutputTransformationConfig
     performance_requirements: ModelPerformanceRequirements
     parallel_config: Optional[ModelParallelConfig] = None
-```
+```python
 
 ### ModelContractEffect
 
@@ -197,7 +197,7 @@ class ModelContractEffect(ModelContractBase):
     retry_config: ModelEffectRetryConfig
     caching_config: Optional[ModelCachingConfig] = None
     validation_rules: ModelValidationRules
-```
+```python
 
 ### ModelContractReducer
 
@@ -254,7 +254,7 @@ class ModelContractReducer(ModelContractBase):
     streaming_config: Optional[ModelStreamingConfig] = None
     transaction_config: Optional[ModelTransactionConfig] = None
     backup_config: Optional[ModelBackupConfig] = None
-```
+```python
 
 ### ModelContractOrchestrator
 
@@ -313,7 +313,7 @@ class ModelContractOrchestrator(ModelContractBase):
     dependency_resolution: List[ModelDependency]
     lifecycle_config: ModelLifecycleConfig
     conflict_resolution: ModelConflictResolutionConfig
-```
+```python
 
 ## Configuration Models
 
@@ -388,7 +388,7 @@ class ModelAlgorithmConfig(BaseModel):
         if not v or not isinstance(v, str):
             raise ValueError("algorithm_type must be a non-empty string")
         return v.lower()
-```
+```python
 
 ### ModelValidationRules
 
@@ -529,7 +529,7 @@ class ModelValidationRules(BaseModel):
             return True
         except ValueError:
             return False
-```
+```python
 
 ## Subcontract Models
 
@@ -600,7 +600,7 @@ class ModelAggregationSubcontract(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```
+```python
 
 ### ModelFSMSubcontract
 
@@ -721,7 +721,7 @@ class ModelFSMSubcontract(BaseModel):
                 errors.append(f"Transition to unknown state: {transition.to_state}")
 
         return errors
-```
+```python
 
 ## Enums
 
@@ -760,7 +760,7 @@ class EnumDependencyType(str, Enum):
     REQUIRED = "required"
     OPTIONAL = "optional"
     PREFERRED = "preferred"
-```
+```python
 
 ### EnumWorkflowCoordination
 
@@ -806,7 +806,7 @@ class EnumWorkflowCoordination(str, Enum):
     CONDITIONAL = "conditional"
     EVENT_DRIVEN = "event_driven"
     HYBRID = "hybrid"
-```
+```python
 
 ## TypedDict Definitions
 
@@ -860,7 +860,7 @@ class TypedDictCapabilityFactoryKwargs(TypedDict):
     priority: NotRequired[int]
     tags: NotRequired[List[str]]
     metadata: NotRequired[dict[str, Any]]
-```
+```python
 
 ### TypedDictPerformanceMetricData
 
@@ -922,7 +922,7 @@ class TypedDictPerformanceMetricData(TypedDict):
     unit: NotRequired[str]
     tags: NotRequired[dict[str, str]]
     context: NotRequired[dict[str, Any]]
-```
+```python
 
 ## Error Handling
 
@@ -941,7 +941,7 @@ class ContractValidationError(OnexError):
 class ConfigurationError(OnexError):
     """Configuration-related error."""
     pass
-```
+```python
 
 ### Error Context
 
@@ -960,7 +960,7 @@ except ValidationError as e:
             "timestamp": datetime.now(UTC)
         }
     ) from e
-```
+```python
 
 ## Migration Guide
 
@@ -1008,7 +1008,7 @@ from omnibase_core.models.some_typed_dict import SomeTypedDict
 
 # New import
 from omnibase_core.types.typed_dict_some_typed_dict import TypedDictSomeTypedDict
-```
+```python
 
 ### Enum Migration
 
@@ -1020,7 +1020,7 @@ from omnibase_core.models.enums import SomeEnum
 
 # New import
 from omnibase_core.enums.enum_some_enum import EnumSomeEnum
-```
+```python
 
 ## Best Practices
 

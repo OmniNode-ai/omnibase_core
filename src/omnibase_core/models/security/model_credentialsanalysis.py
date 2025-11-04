@@ -42,8 +42,8 @@ class ModelCredentialsAnalysis(BaseModel):
     )
 
     def to_dict(self) -> dict[str, object]:
-        """Convert to dict[str, Any]ionary for current standards."""
-        # Custom dict[str, Any]ionary format for credentials analysis
+        """Convert to dictionary for current standards."""
+        # Custom dictionary format for credentials analysis
         return {
             "strength_score": self.strength_score,
             "password_entropy": self.password_entropy,

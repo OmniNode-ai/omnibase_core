@@ -37,7 +37,7 @@ from omnibase_core.models.contracts.subcontracts.model_health_check_result impor
 from omnibase_core.models.contracts.subcontracts.model_node_health_status import (
     ModelNodeHealthStatus,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelHealthCheckSubcontract(BaseModel):

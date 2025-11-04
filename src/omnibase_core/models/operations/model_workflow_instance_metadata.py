@@ -5,8 +5,8 @@ import uuid
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Strongly-typed workflow metadata structure.
@@ -113,7 +113,7 @@ class ModelWorkflowInstanceMetadata(BaseModel):
         )
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

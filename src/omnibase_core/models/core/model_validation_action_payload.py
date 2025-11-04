@@ -39,8 +39,8 @@ class ModelValidationActionPayload(ModelActionPayloadBase):
     def validate_validation_action(cls, v: ModelNodeActionType) -> ModelNodeActionType:
         """Validate that action_type is a valid validation action."""
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
         from omnibase_core.models.core.model_predefined_categories import VALIDATION
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         if v.category != VALIDATION:
             raise ModelOnexError(

@@ -2,8 +2,8 @@ from typing import Any, Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 YAML Contract Validation Model - ONEX Standards Compliant.
@@ -168,7 +168,7 @@ class ModelYamlContract(BaseModel):
     @classmethod
     def from_yaml_dict(cls, yaml_data: dict[str, object]) -> "ModelYamlContract":
         """
-        Alternative constructor for YAML dict[str, Any]ionary data.
+        Alternative constructor for YAML dictionary data.
 
         Args:
             yaml_data: Dictionary loaded from YAML file

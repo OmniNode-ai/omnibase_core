@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from pydantic import Field
 
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 "\nDependencies model for node introspection.\n"
 from pydantic import BaseModel

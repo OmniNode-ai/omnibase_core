@@ -74,7 +74,7 @@ async def test_compute_node_edge_cases(compute_node):
     # Test missing value
     result = await compute_node.process({})
     assert result["result"] == 0
-```
+```python
 
 #### EFFECT Node Testing
 
@@ -126,7 +126,7 @@ async def test_effect_node_failure(effect_node):
 
     with pytest.raises(ConnectionError):
         await effect_node.process({"input": "test"})
-```
+```python
 
 #### REDUCER Node Testing
 
@@ -188,13 +188,13 @@ async def test_reducer_node_state_persistence(reducer_node):
 
     assert result["state"]["count"] == 1
     assert result["state"]["items"] == ["test"]
-```
+```python
 
 ### Error Handling Testing
 
 ```python
 import pytest
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 class TestErrorHandlingNode(NodeCompute):
@@ -247,7 +247,7 @@ async def test_processing_error(error_node):
     error = exc_info.value
     assert error.error_code == EnumCoreErrorCode.PROCESSING_ERROR
     assert "Value must be positive" in error.message
-```
+```python
 
 ### Circuit Breaker Testing
 
@@ -313,7 +313,7 @@ async def test_circuit_breaker_recovery(circuit_breaker):
     result = await circuit_breaker.call(mock_func)
     assert result == "recovered"
     assert circuit_breaker.get_state() == "CLOSED"
-```
+```python
 
 ## Integration Testing
 
@@ -371,7 +371,7 @@ async def test_container_service_resolution(integration_container):
     await cache_service.set("test_key", "test_value")
     cached_value = await cache_service.get("test_key")
     assert cached_value == "test_value"
-```
+```python
 
 ### Event System Integration Testing
 
@@ -424,7 +424,7 @@ async def test_event_emission(event_node):
     assert event.payload == {"processed": True}
     assert event.source_node == "test_node"
     assert event.target_node == "effect_node"
-```
+```python
 
 ## Performance Testing
 
@@ -478,7 +478,7 @@ async def test_memory_usage(compute_node):
 
     # Memory increase should be reasonable (less than 10MB)
     assert memory_increase < 10 * 1024 * 1024
-```
+```python
 
 ### Stress Testing
 
@@ -511,7 +511,7 @@ async def test_stress_conditions(compute_node):
     # Check that all results are valid
     valid_results = [r for r in results if isinstance(r, dict)]
     assert len(valid_results) == 1000
-```
+```python
 
 ## Test Utilities
 
@@ -545,7 +545,7 @@ def mock_services():
         "cache": AsyncMock(),
         "api": AsyncMock()
     }
-```
+```python
 
 ### Test Helpers
 
@@ -598,7 +598,7 @@ async def test_with_helper(compute_node):
 
     assert len(results) == 100
     assert all(r["result"] == i * 2 for i, r in enumerate(results))
-```
+```python
 
 ## Test Configuration
 
@@ -621,7 +621,7 @@ markers =
     integration: Integration tests
     performance: Performance tests
     slow: Slow tests
-```
+```python
 
 ### conftest.py
 
@@ -648,7 +648,7 @@ def reset_container(container):
     yield
     # Cleanup if needed
     container.clear_services()
-```
+```python
 
 ## Best Practices
 
@@ -682,7 +682,7 @@ class TestNodeIntegration:
     def test_event_integration(self):
         """Test event system integration."""
         pass
-```
+```text
 
 ### 2. Test Data Management
 
@@ -705,7 +705,7 @@ EXPECTED_OUTPUTS = [
     {"result": 200},
     {"result": 0}
 ]
-```
+```python
 
 ### 3. Mocking Strategies
 
@@ -726,7 +726,7 @@ async def test_with_async_mock():
     mock_func = AsyncMock(return_value="mocked_result")
     result = await mock_func()
     assert result == "mocked_result"
-```
+```python
 
 ### 4. Test Coverage
 
@@ -750,7 +750,7 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError"
 ]
-```
+```python
 
 ## Continuous Integration
 
@@ -770,11 +770,11 @@ The project uses a sophisticated CI pipeline with parallel test execution for op
 #### Parallel Test Execution
 
 **Strategy Rationale**:
-- **Total Tests**: ~11,000 tests
-- **Split Count**: 12 parallel jobs
-- **Tests per Split**: ~916 tests/split
+- **Total Tests**: 12,198 tests
+- **Split Count (CI)**: 20 parallel jobs (~610 tests/split)
+- **Split Count (Local)**: 12 parallel jobs (~1,016 tests/split)
 - **Duration**: 3-5 minutes per split (vs ~40+ minutes sequential)
-- **Speedup**: 12x parallelization
+- **Speedup**: 12-20x parallelization
 - **Resource Management**: Prevents memory exhaustion with controlled parallelism
 
 **Split Configuration**:
@@ -788,7 +788,7 @@ poetry run pytest tests/ \
   --timeout=60 \
   --timeout-method=thread \
   --tb=short
-```
+```python
 
 **Why 12 Splits?**:
 - Increased from 10 to 12 splits to reduce resource exhaustion
@@ -811,7 +811,7 @@ poetry run pytest tests/ -n 8
 
 # Debug single test (disable parallelism)
 poetry run pytest tests/unit/test_specific.py -n 0 -xvs
-```
+```python
 
 **CI-equivalent local testing** (12 splits):
 ```bash
@@ -822,7 +822,7 @@ poetry run pytest tests/ --splits 12 --group 1 -n auto
 for i in {1..12}; do
   poetry run pytest tests/ --splits 12 --group $i -n auto
 done
-```
+```bash
 
 #### Timeout Configuration
 
@@ -845,7 +845,7 @@ done
 ```bash
 # CI runs strict mypy (0 errors required)
 poetry run mypy src/omnibase_core/
-```
+```python
 
 **Strict Mode**:
 - `disallow_untyped_defs = true`
@@ -862,7 +862,7 @@ poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing --cov
 
 # View HTML report
 open htmlcov/index.html
-```
+```text
 
 **CI Coverage**:
 - Only runs on `main` branch (saves CI time on PRs)

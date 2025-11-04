@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, field_serializer
 from omnibase_core.models.core.model_health_check_component import (
     ModelHealthCheckComponent,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 HealthCheckComponent = ModelHealthCheckComponent
 
@@ -67,7 +67,7 @@ class ModelHealthCheckResult(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelHealthCheckResult":
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         return cls(**data)
 
     @property

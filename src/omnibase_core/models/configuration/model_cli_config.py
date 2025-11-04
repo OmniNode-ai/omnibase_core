@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 __all__ = [
     "ModelAPIConfig",

@@ -6,7 +6,7 @@ from typing import TypedDict, TypeVar
 
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Output format options model for CLI operations.
@@ -50,10 +50,10 @@ def allow_dict_any(func: F) -> F:
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.utils.model_field_converter import ModelFieldConverterRegistry
 from omnibase_core.types.typed_dict_output_format_options_kwargs import (
     TypedDictOutputFormatOptionsKwargs,
 )
-from omnibase_core.utils.model_field_converter import ModelFieldConverterRegistry
 
 
 class ModelOutputFormatOptions(BaseModel):
@@ -224,7 +224,7 @@ class ModelOutputFormatOptions(BaseModel):
         """Create instance from string-based configuration data."""
 
         # Create converter registry and register all known fields
-        # This replaces the large conditional field_mappings dict[str, Any]ionary
+        # This replaces the large conditional field_mappings dictionary
         registry = ModelFieldConverterRegistry()
 
         # Register boolean fields
@@ -303,7 +303,7 @@ class ModelOutputFormatOptions(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:

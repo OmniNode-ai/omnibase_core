@@ -17,7 +17,7 @@ from pydantic import ValidationError
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
-from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.nodes import ModelNodeType
 
 
@@ -37,7 +37,7 @@ class TestModelNodeType:
         assert node_type.category == EnumConfigCategory.TESTING
         assert node_type.dependencies == []
         # version_compatibility is now ModelSemVer, not string
-        from omnibase_core.primitives.model_semver import ModelSemVer
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         assert node_type.version_compatibility == ModelSemVer(major=1, minor=0, patch=0)
         assert node_type.execution_priority == 50
@@ -48,7 +48,7 @@ class TestModelNodeType:
 
     def test_model_instantiation_with_all_fields(self):
         """Test model instantiation with all fields provided."""
-        from omnibase_core.primitives.model_semver import ModelSemVer
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         node_type = ModelNodeType(
             type_name=EnumTypeName.VALIDATION_ENGINE,
@@ -440,7 +440,7 @@ class TestModelNodeType:
 
     def test_model_serialization(self):
         """Test model serialization to dict."""
-        from omnibase_core.primitives.model_semver import ModelSemVer
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         node_type = ModelNodeType(
             type_name=EnumTypeName.CONTRACT_TO_MODEL,
@@ -475,7 +475,7 @@ class TestModelNodeType:
 
     def test_model_deserialization(self):
         """Test model deserialization from dict."""
-        from omnibase_core.primitives.model_semver import ModelSemVer
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         data = {
             "type_name": "VALIDATION_ENGINE",  # Valid EnumTypeName value
@@ -774,7 +774,7 @@ class TestModelNodeTypeEdgeCases:
 
     def test_version_compatibility_edge_cases(self):
         """Test edge cases for version compatibility."""
-        from omnibase_core.primitives.model_semver import ModelSemVer
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         # Various version scenarios
         version_scenarios = [

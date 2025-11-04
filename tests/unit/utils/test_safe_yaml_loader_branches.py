@@ -12,7 +12,7 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.safe_yaml_loader import (
     _dump_yaml_content,
     load_yaml_content_as_model,

@@ -76,7 +76,7 @@ class ModelConnectionProperties(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelConnectionProperties":
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         return cls(**data)
 
     @field_serializer("password")

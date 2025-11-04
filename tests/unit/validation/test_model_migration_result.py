@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import pytest
 
-from omnibase_core.validation.model_migration_result import ModelMigrationResult
+from omnibase_core.models.validation.model_migration_result import ModelMigrationResult
 
 
 class TestModelMigrationResult:

@@ -23,8 +23,8 @@ from omnibase_core.enums.enum_parameter_type import EnumParameterType
 from omnibase_core.enums.enum_service_health_status import EnumServiceHealthStatus
 from omnibase_core.enums.enum_service_type import EnumServiceType
 from omnibase_core.errors import EnumCoreErrorCode, OnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.service.model_service_health import ModelServiceHealth
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestEnumModelIntegration:

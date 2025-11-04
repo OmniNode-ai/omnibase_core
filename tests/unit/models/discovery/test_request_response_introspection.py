@@ -33,7 +33,7 @@ from omnibase_core.models.discovery.model_request_introspection_event import (
     ModelRequestIntrospectionEvent,
 )
 from omnibase_core.models.discovery.model_resource_usage import ModelResourceUsage
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestRequestIntrospectionEvent:

@@ -137,7 +137,7 @@ class MixinSensitiveFieldRedaction:
         additional_sensitive_fields: set[str] | None = None,
     ) -> dict[str, Any]:
         """
-        Redact sensitive fields in a dict[str, Any]ionary.
+        Redact sensitive fields in a dictionary.
 
         Args:
             data: Dictionary to redact sensitive fields from

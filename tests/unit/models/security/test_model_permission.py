@@ -29,12 +29,12 @@ src_path = Path(__file__).parent.parent.parent.parent.parent / "src"
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.security.model_permission import ModelPermission
 from omnibase_core.models.security.model_permission_evaluation_context import (
     ModelPermissionEvaluationContext,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestModelPermissionBasicInitialization:

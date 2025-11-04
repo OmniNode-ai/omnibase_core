@@ -10,11 +10,9 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
-from omnibase_spi.protocols.event_bus import ProtocolEventBus, ProtocolEventEnvelope
-
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,
@@ -25,14 +23,15 @@ from omnibase_core.models.core.model_event_type import (
     is_event_equal,
 )
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.typed_dict_discovery_stats import TypedDictDiscoveryStats
+from omnibase_spi.protocols.event_bus import ProtocolEventBus, ProtocolEventEnvelope
 
 if TYPE_CHECKING:
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_spi.protocols.types.protocol_event_bus_types import (
         ProtocolEventMessage,
     )
-
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 
 class MixinDiscoveryResponder:
@@ -40,7 +39,7 @@ class MixinDiscoveryResponder:
     Mixin for ONEX nodes to respond to discovery broadcasts.
 
     DISCOVERY RESPONDER PATTERN:
-    - All nodes list[Any]en to 'onex.discovery.broadcast' channel
+    - All nodes listen to 'onex.discovery.broadcast' channel
     - Respond to DISCOVERY_REQUEST events with introspection data
     - Include health status, capabilities, and full introspection
     - Rate limiting prevents discovery spam
@@ -56,6 +55,13 @@ class MixinDiscoveryResponder:
     - Current health status and capabilities
     - Event channels and version information
     - Response time metrics
+
+    THREAD SAFETY:
+    ⚠️ This mixin is NOT thread-safe by default:
+    - Instance state (_discovery_stats, _last_response_time) can be corrupted
+    - Concurrent access requires external synchronization (threading.Lock)
+    - Each thread should use its own instance, or wrap access with locks
+    - See docs/guides/THREADING.md for comprehensive threading guidelines
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -63,11 +69,13 @@ class MixinDiscoveryResponder:
         self._discovery_active = False
         self._last_response_time: float = 0.0
         self._response_throttle = 1.0  # Minimum seconds between responses
-        self._discovery_stats: dict[str, int | float | None] = {
+        self._discovery_stats: TypedDictDiscoveryStats = {
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": None,
+            "error_count": 0,
         }
         self._discovery_event_bus: ProtocolEventBus | None = None
         self._discovery_unsubscribe: Any = None  # Callable to unsubscribe
@@ -183,15 +191,44 @@ class MixinDiscoveryResponder:
             envelope_dict = json.loads(message.value.decode("utf-8"))
             envelope: ModelEventEnvelope[Any] = ModelEventEnvelope(**envelope_dict)
 
-            # Acknowledge message receipt
-            await message.ack()
-
             # Handle the discovery request
             await self._handle_discovery_request(envelope)
 
-        except Exception:
-            # Silently handle errors to avoid disrupting discovery
-            pass
+            # Acknowledge message receipt only after successful handling
+            await message.ack()
+
+        except Exception as e:
+            # Log non-fatal discovery errors for observability
+            from omnibase_core.logging.structured import (
+                emit_log_event_sync as emit_log_event,
+            )
+
+            emit_log_event(
+                LogLevel.WARNING,
+                "Discovery message processing failed (non-fatal)",
+                {
+                    "component": "DiscoveryResponder",
+                    "error": str(e),
+                    "operation": "_on_discovery_message",
+                },
+            )
+            # Track error metrics
+            self._discovery_stats["error_count"] += 1
+
+            # Acknowledge message even on error to prevent infinite redelivery
+            # Discovery failures are non-fatal and should not block the system
+            try:
+                await message.ack()
+            except Exception as ack_error:
+                emit_log_event(
+                    LogLevel.ERROR,
+                    "Failed to acknowledge discovery message after error",
+                    {
+                        "component": "DiscoveryResponder",
+                        "error": str(ack_error),
+                        "operation": "_on_discovery_message",
+                    },
+                )
 
     async def _handle_discovery_request(
         self, envelope: "ModelEventEnvelope[Any]"
@@ -227,20 +264,14 @@ class MixinDiscoveryResponder:
             if not is_event_equal(onex_event.event_type, "DISCOVERY_REQUEST"):
                 return  # Not a discovery request
 
-            # Type-safe increment (get returns int|float|None, but default ensures int)
-            current_requests = self._discovery_stats.get("requests_received", 0)
-            self._discovery_stats["requests_received"] = (
-                current_requests if isinstance(current_requests, int) else 0
-            ) + 1
+            # TypedDict ensures correct types at initialization
+            self._discovery_stats["requests_received"] += 1
             self._discovery_stats["last_request_time"] = time.time()
 
             # Check rate limiting
             current_time = time.time()
             if current_time - self._last_response_time < self._response_throttle:
-                current_throttled = self._discovery_stats.get("throttled_requests", 0)
-                self._discovery_stats["throttled_requests"] = (
-                    current_throttled if isinstance(current_throttled, int) else 0
-                ) + 1
+                self._discovery_stats["throttled_requests"] += 1
                 return  # Throttled
 
             # Extract request metadata
@@ -250,20 +281,25 @@ class MixinDiscoveryResponder:
 
             # Check if we match filter criteria
             if not self._matches_discovery_criteria(request_metadata):  # type: ignore[unreachable]
+                self._discovery_stats["filtered_requests"] += 1
                 return  # Doesn't match criteria
 
-            # Generate discovery response
+            # Generate discovery response (updates metrics on success)
             await self._send_discovery_response(onex_event, request_metadata)
 
-            self._last_response_time = current_time
-            current_responses = self._discovery_stats.get("responses_sent", 0)
-            self._discovery_stats["responses_sent"] = (
-                current_responses if isinstance(current_responses, int) else 0
-            ) + 1
-
-        except Exception:
-            # Silently handle errors to avoid disrupting discovery
-            pass
+        except Exception as e:
+            # Log non-fatal discovery errors for observability
+            emit_log_event(
+                LogLevel.WARNING,
+                "Discovery request handling failed (non-fatal)",
+                {
+                    "component": "DiscoveryResponder",
+                    "error": str(e),
+                    "operation": "_handle_discovery_request",
+                },
+            )
+            # Track error metrics
+            self._discovery_stats["error_count"] += 1
 
     def _matches_discovery_criteria(
         self, request: ModelDiscoveryRequestModelMetadata
@@ -279,7 +315,13 @@ class MixinDiscoveryResponder:
         """
         # Check node type filter
         if request.node_types:
-            node_type = self.__class__.__name__
+            # Use canonical node_type from get_node_type() if available,
+            # otherwise use class name as default
+            node_type = (
+                self.get_node_type()
+                if hasattr(self, "get_node_type")
+                else self.__class__.__name__
+            )
             if node_type not in request.node_types:
                 return False
 
@@ -376,7 +418,11 @@ class MixinDiscoveryResponder:
                 introspection=introspection_data,
                 health_status=self.get_health_status(),
                 capabilities=self.get_discovery_capabilities(),
-                node_type=self.__class__.__name__,
+                node_type=(
+                    self.get_node_type()
+                    if hasattr(self, "get_node_type")
+                    else introspection_data.get("node_type", self.__class__.__name__)
+                ),
                 version=version_semver,
                 event_channels=event_channels_list,
                 response_time_ms=(time.time() - response_start) * 1000,
@@ -415,9 +461,31 @@ class MixinDiscoveryResponder:
                     value=envelope_bytes,
                 )
 
-        except Exception:
-            # Log error but don't disrupt discovery
-            pass
+                # Update metrics only after successful publish
+                self._last_response_time = (
+                    time.time()
+                )  # Use actual publish time, not request time
+                self._discovery_stats["responses_sent"] += 1
+
+        except Exception as e:
+            # Log discovery errors for observability
+            emit_log_event(
+                LogLevel.WARNING,
+                "Discovery response sending failed",
+                {
+                    "component": "DiscoveryResponder",
+                    "error": str(e),
+                    "operation": "_send_discovery_response",
+                },
+            )
+            # Note: error_count is incremented by the caller (_handle_discovery_request)
+            # to avoid double-counting when exception is re-raised
+
+            # Re-raise to signal failure to caller
+            raise ModelOnexError(
+                message="Failed to send discovery response",
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            ) from e
 
     def _get_discovery_introspection(self) -> dict[str, Any]:
         """
@@ -449,7 +517,7 @@ class MixinDiscoveryResponder:
         Override this method in subclasses to provide specific capabilities.
 
         Returns:
-            list[Any]: List of capabilities supported by the node
+            list[str]: List of capabilities supported by the node
         """
         capabilities = ["discovery", "introspection"]
 
@@ -566,5 +634,7 @@ class MixinDiscoveryResponder:
             "requests_received": 0,
             "responses_sent": 0,
             "throttled_requests": 0,
+            "filtered_requests": 0,
             "last_request_time": None,
+            "error_count": 0,
         }

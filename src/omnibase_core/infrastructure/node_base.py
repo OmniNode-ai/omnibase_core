@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import uuid
 from typing import Any, Generic, Optional, TypeVar
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 NodeBase for ONEX ModelArchitecture.
@@ -42,7 +44,11 @@ from pydantic import BaseModel
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+# Deferred import to avoid circular dependency
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
 from omnibase_core.models.infrastructure.model_action import ModelAction
 from omnibase_core.models.infrastructure.model_node_state import ModelNodeState
 from omnibase_core.models.infrastructure.model_node_workflow_result import (
@@ -197,6 +203,11 @@ class NodeBase(
 
         # ONEX 2.0: Create container directly or use provided one
         if container is None:
+            # Deferred import to avoid circular dependency at module level
+            from omnibase_core.models.container.model_onex_container import (
+                ModelONEXContainer,
+            )
+
             # Direct ModelONEXContainer instantiation
             container = ModelONEXContainer()
 
@@ -277,7 +288,7 @@ class NodeBase(
             contract_path=contract_path,
             node_id=node_id,
             contract_content=contract_content,
-            registry_reference=None,  # No longer used
+            container_reference=None,  # Optional container reference metadata
             node_name=contract_content.node_name,
             version=contract_content.contract_version,  # Use ModelSemVer directly
             node_tier=1,

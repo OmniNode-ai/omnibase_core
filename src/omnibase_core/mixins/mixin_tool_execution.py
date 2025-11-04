@@ -15,7 +15,7 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_onex_event_metadata import ModelOnexEventMetadata
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class MixinToolExecution:
@@ -164,7 +164,7 @@ class MixinToolExecution:
 
     def _output_state_to_dict(self, output_state: Any) -> dict[str, Any]:
         """
-        Convert output state to dict[str, Any]ionary for response.
+        Convert output state to dictionary for response.
 
         Override this method to customize output conversion for your tool.
         """

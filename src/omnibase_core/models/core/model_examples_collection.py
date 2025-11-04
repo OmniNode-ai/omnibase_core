@@ -32,7 +32,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Safe runtime import - error_codes only imports from types.core_types
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_example import ModelExample
 from .model_example_metadata import ModelExampleMetadata

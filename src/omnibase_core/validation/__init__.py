@@ -28,9 +28,24 @@ Usage Examples:
     python -m omnibase_core.validation all
 """
 
+# Import models and enums
+from omnibase_core.enums.enum_import_status import EnumImportStatus
+from omnibase_core.models.model_module_import_result import ModelModuleImportResult
+
+# Import BOTH validation result classes (different purposes!)
+# - ModelValidationResult (from models/) is for circular import validation
+# - ModelValidationResult (from models/validation/) is for general validation
+from omnibase_core.models.model_validation_result import (
+    ModelValidationResult as CircularImportValidationResult,
+)
+from omnibase_core.models.validation.model_validation_result import (
+    ModelValidationResult,
+)
+
 # Import validation functions for easy access
 from .architecture import validate_architecture_directory, validate_one_model_per_file
 from .auditor_protocol import ModelProtocolAuditor
+from .circular_import_validator import CircularImportValidator
 
 # Import CLI for module execution
 from .cli import ModelValidationSuite
@@ -45,18 +60,16 @@ from .exceptions import (
     InputValidationError,
     ValidationFrameworkError,
 )
-from .model_audit_result import ModelAuditResult
-from .model_duplication_report import ModelDuplicationReport
 from .patterns import validate_patterns_directory, validate_patterns_file
 from .types import validate_union_usage_directory, validate_union_usage_file
-from .validation_utils import ModelProtocolInfo, ValidationResult
+from .validation_utils import ModelProtocolInfo
 
 
 # Main validation functions (recommended interface)
 def validate_architecture(
     directory_path: str = "src/",
     max_violations: int = 0,
-) -> ValidationResult:
+) -> ModelValidationResult:
     """Validate ONEX one-model-per-file architecture."""
     from pathlib import Path
 
@@ -67,13 +80,13 @@ def validate_union_usage(
     directory_path: str = "src/",
     max_unions: int = 100,
     strict: bool = False,
-) -> ValidationResult:
+) -> ModelValidationResult:
     """Validate Union type usage patterns."""
 
     return validate_union_usage_directory(Path(directory_path), max_unions, strict)
 
 
-def validate_contracts(directory_path: str = ".") -> ValidationResult:
+def validate_contracts(directory_path: str = ".") -> ModelValidationResult:
     """Validate YAML contract files."""
 
     return validate_contracts_directory(Path(directory_path))
@@ -82,7 +95,7 @@ def validate_contracts(directory_path: str = ".") -> ValidationResult:
 def validate_patterns(
     directory_path: str = "src/",
     strict: bool = False,
-) -> ValidationResult:
+) -> ModelValidationResult:
     """Validate code patterns and conventions."""
 
     return validate_patterns_directory(Path(directory_path), strict)
@@ -91,7 +104,7 @@ def validate_patterns(
 def validate_all(
     directory_path: str = "src/",
     **kwargs: object,
-) -> dict[str, ValidationResult]:
+) -> dict[str, ModelValidationResult]:
     """Run all validations and return results."""
 
     suite = ModelValidationSuite()
@@ -100,17 +113,19 @@ def validate_all(
 
 __all__ = [
     # Core classes and types
+    "CircularImportValidator",
+    "CircularImportValidationResult",
     "ConfigurationError",
+    "EnumImportStatus",
     "ModelContractValidationResult",
+    "ModelModuleImportResult",
+    "ModelValidationResult",
     "ProtocolContractValidator",
     "InputValidationError",
     "ModelProtocolAuditor",
     "ModelProtocolInfo",
     "ValidationFrameworkError",
-    "ValidationResult",
     "ModelValidationSuite",
-    "ModelAuditResult",
-    "ModelDuplicationReport",
     "validate_all",
     # Main validation functions (recommended)
     "validate_architecture",

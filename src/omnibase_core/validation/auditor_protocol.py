@@ -16,11 +16,14 @@ from omnibase_spi.protocols.validation.protocol_quality_validator import (
     ProtocolQualityValidator,
 )
 
+from omnibase_core.models.validation.model_audit_result import ModelAuditResult
+from omnibase_core.models.validation.model_duplication_report import (
+    ModelDuplicationReport,
+)
+
 from .exceptions import ConfigurationError, InputValidationError
-from .model_audit_result import ModelAuditResult
-from .model_duplication_report import ModelDuplicationReport
 from .validation_utils import (
-    DuplicationInfo,
+    ModelDuplicationInfo,
     ModelProtocolInfo,
     determine_repository_name,
     extract_protocols_from_directory,
@@ -169,7 +172,7 @@ class ModelProtocolAuditor:
         # Validate SPI protocols directory exists
         if not spi_protocols_path.exists():
             logger.warning(f"SPI protocols directory not found: {spi_protocols_path}")
-            # Continue with empty SPI protocols list[Any]rather than failing
+            # Continue with empty SPI protocols list rather than failing
 
         # Get protocols from both repositories
         current_protocols = (
@@ -244,7 +247,7 @@ class ModelProtocolAuditor:
 
     def _find_local_duplicates(
         self, protocols: list[ModelProtocolInfo]
-    ) -> list[DuplicationInfo]:
+    ) -> list[ModelDuplicationInfo]:
         """Find duplicate protocols within the same repository."""
         duplicates = []
         by_signature: dict[str, list[ModelProtocolInfo]] = defaultdict(list)
@@ -255,7 +258,7 @@ class ModelProtocolAuditor:
         for signature_hash, protocol_group in by_signature.items():
             if len(protocol_group) > 1:
                 duplicates.append(
-                    DuplicationInfo(
+                    ModelDuplicationInfo(
                         signature_hash=signature_hash,
                         protocols=protocol_group,
                         duplication_type="exact",
@@ -315,7 +318,7 @@ class ModelProtocolAuditor:
         self,
         source_protocols: list[ModelProtocolInfo],
         target_protocols: list[ModelProtocolInfo],
-    ) -> dict[str, list[DuplicationInfo]]:
+    ) -> dict[str, list[ModelDuplicationInfo]]:
         """Analyze duplications between two sets of protocols."""
         exact_duplicates = []
         name_conflicts = []
@@ -329,7 +332,7 @@ class ModelProtocolAuditor:
             if source_protocol.signature_hash in target_by_signature:
                 target_protocol = target_by_signature[source_protocol.signature_hash]
                 exact_duplicates.append(
-                    DuplicationInfo(
+                    ModelDuplicationInfo(
                         signature_hash=source_protocol.signature_hash,
                         protocols=[source_protocol, target_protocol],
                         duplication_type="exact",
@@ -342,7 +345,7 @@ class ModelProtocolAuditor:
                 target_protocol = target_by_name[source_protocol.name]
                 if source_protocol.signature_hash != target_protocol.signature_hash:
                     name_conflicts.append(
-                        DuplicationInfo(
+                        ModelDuplicationInfo(
                             signature_hash="conflict",
                             protocols=[source_protocol, target_protocol],
                             duplication_type="name_conflict",

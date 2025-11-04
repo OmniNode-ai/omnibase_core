@@ -26,7 +26,7 @@ flowchart LR
     style External fill:#fff,stroke:#999,stroke-dasharray: 5 5
     style Intents fill:#fff,stroke:#999,stroke-dasharray: 5 5
     style Actions fill:#fff,stroke:#999,stroke-dasharray: 5 5
-```
+```python
 
 ### Data Flow Direction
 
@@ -128,7 +128,7 @@ class DatabaseEffectService(NodeEffect):
         required_params = ["query", "parameters"]
         return all(param in contract.io_operation_config.parameters
                   for param in required_params)
-```
+```python
 
 **Best Practices**:
 - Always include correlation IDs in external calls
@@ -276,7 +276,7 @@ class DataTransformationComputeService(NodeCompute):
             return list(data)
         else:
             return data  # No transformation needed
-```
+```python
 
 **Best Practices**:
 - Implement comprehensive input validation
@@ -454,7 +454,7 @@ class DataAggregationReducerService(NodeReducer):
             backup_config.backup_location,
             backup_data
         )
-```
+```python
 
 **Best Practices**:
 - Implement transactional consistency where required
@@ -472,9 +472,9 @@ class DataAggregationReducerService(NodeReducer):
 ModelIntent represents a **declarative description** of a side effect that should be executed, emitted by a pure Reducer and executed by an Effect node. This pattern maintains the Reducer's purity while enabling complex side effects.
 
 **Pure FSM Pattern**:
-```
+```text
 δ(state, action) → (new_state, intents[])
-```
+```text
 
 Where:
 - `state`: Current immutable state
@@ -520,7 +520,7 @@ sequenceDiagram
     deactivate Executor
 
     Note over Reducer,Effect: Separation: Reducer declares WHAT<br/>Effect determines HOW
-```
+```python
 
 ### ModelIntent Structure
 
@@ -588,7 +588,7 @@ class ModelIntent(BaseModel):
 
     class Config:
         frozen = True  # Intents are immutable
-```
+```python
 
 ### Reducer Intent Emission Pattern
 
@@ -732,7 +732,7 @@ class OrderProcessingReducerService(NodeReducer):
     def _calculate_total(self, items: list) -> float:
         """Pure calculation - no side effects."""
         return sum(item.get("price", 0) * item.get("quantity", 1) for item in items)
-```
+```python
 
 ### Effect Node Intent Execution
 
@@ -807,7 +807,7 @@ class IntentExecutorEffectService(NodeEffect):
             elif operation == "update":
                 return await conn.execute_update(intent.target, data)
             # ... etc
-```
+```python
 
 ### Key Benefits
 
@@ -835,7 +835,7 @@ def test_place_order_transition():
     assert result.intents[0].intent_type == EnumIntentType.DATABASE_WRITE
     assert result.intents[1].intent_type == EnumIntentType.NOTIFICATION
     assert result.intents[2].intent_type == EnumIntentType.MESSAGE_PUBLISH
-```
+```python
 
 **Flexibility**:
 - Effect node can change implementation without affecting Reducer
@@ -857,7 +857,7 @@ async def execute_reduction(self, contract):
     await self.email_service.send_email(...)
 
     return ModelReducerOutput(aggregated_data=new_state)
-```
+```python
 
 **Correct Pattern** (Intent emission):
 ```python
@@ -875,7 +875,7 @@ def execute_reduction(self, contract):
         aggregated_data=new_state,
         intents=intents  # Effect node executes these
     )
-```
+```python
 
 ### 4. ORCHESTRATOR Node
 
@@ -1120,7 +1120,7 @@ class WorkflowOrchestratorService(NodeOrchestrator):
             return "skip"
         else:
             return "abort"
-```
+```text
 
 **Best Practices**:
 - Implement comprehensive dependency validation
@@ -1183,7 +1183,7 @@ sequenceDiagram
     deactivate Executor
 
     Note over Orch1,StateStore: Lease + Epoch = Reliable Coordination
-```
+```python
 
 ### ModelAction Structure
 
@@ -1262,7 +1262,7 @@ class ModelAction(BaseModel):
 
     class Config:
         frozen = True  # Actions are immutable once issued
-```
+```python
 
 ### Lease Management
 
@@ -1371,7 +1371,7 @@ class LeaseAwareOrchestratorService(NodeOrchestrator):
             ))
 
         return actions
-```
+```python
 
 ### Action Validation and Execution
 
@@ -1437,7 +1437,7 @@ class ActionValidator:
         await self.state_manager.increment_epoch(action.correlation_id)
 
         return result
-```
+```python
 
 ### Optimistic Concurrency with Epochs
 
@@ -1476,7 +1476,7 @@ class WorkflowStateManager:
             )
 
         return current_epoch + 1
-```
+```python
 
 ### Action vs Generic "Thunk"
 
@@ -1505,7 +1505,7 @@ class GenericThunk:
 # Usage
 thunk = GenericThunk(lambda: some_dangerous_operation())
 await orchestrator.execute(thunk)  # No lease check, no epoch validation!
-```
+```text
 
 **Correct Pattern** (Structured Action):
 ```python
@@ -1524,7 +1524,7 @@ action = ModelAction(
 
 # Validation happens automatically
 await action_executor.execute_validated_action(action)
-```
+```text
 
 ### Single-Writer Semantics Enforcement
 
@@ -1559,7 +1559,7 @@ action_b = ModelAction(
     ...
 )
 await execute_action(action_b)  # ❌ LeaseValidationError
-```
+```text
 
 ### Key Benefits
 
@@ -1593,7 +1593,7 @@ compute_contract = ModelContractCompute(
     algorithm_config=algorithm_config
 )
 compute_output = await compute_node.execute_compute(compute_contract)
-```
+```python
 
 ### Event-Driven Communication
 
@@ -1612,7 +1612,7 @@ await event_bus.publish(DataAvailableEvent(
 async def handle_data_available(event: DataAvailableEvent):
     # Process data from EFFECT node
     pass
-```
+```python
 
 ## Error Handling Patterns
 
@@ -1645,7 +1645,7 @@ async def execute_node_operation(self, contract):
                 "operation": "execute_node_operation"
             }
         ) from e
-```
+```python
 
 ### Cross-Node Error Propagation
 
@@ -1676,7 +1676,7 @@ class PipelineErrorContext:
                 "total_errors": len(self.error_chain)
             }
         )
-```
+```python
 
 ## Performance Optimization
 
@@ -1702,7 +1702,7 @@ class ParallelComputeService(NodeComputeService):
             # Merge results
             final_result = self._merge_results(results)
             return final_result
-```
+```python
 
 ### Resource Management
 
@@ -1720,7 +1720,7 @@ class ResourceManagedEffectService(NodeEffect):
             async with self.connection_pool.acquire() as connection:
                 # Use pooled connection for operation
                 return await self._execute_with_connection(connection, contract)
-```
+```python
 
 ## Monitoring and Observability
 
@@ -1767,7 +1767,7 @@ class MonitoredNodeService:
                 }
             )
             raise
-```
+```python
 
 ### Health Checks
 
@@ -1810,7 +1810,7 @@ class HealthCheckMixin:
                 status=EnumHealthStatus.UNHEALTHY,
                 details={"error": str(e)}
             )
-```
+```python
 
 ## Testing Strategies
 
@@ -1861,7 +1861,7 @@ class TestComputeNode(unittest.TestCase):
 
         # Verify computation result
         self.assertEqual(result.processed_data, 15)
-```
+```python
 
 ### Integration Testing
 
@@ -1916,7 +1916,7 @@ class TestPipelineIntegration(unittest.TestCase):
         # Verify complete pipeline
         self.assertEqual(final_result.correlation_id, correlation_id)
         self.assertIsNotNone(final_result.orchestration_result)
-```
+```python
 
 ## Best Practices Summary
 

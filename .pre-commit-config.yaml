@@ -47,8 +47,8 @@ repos:
         entry: poetry run isort
         language: system
         types: [python]
-        args: [--profile, black, --line-length, "88", --skip, src/omnibase_core/mixins/mixin_event_bus.py, --skip, src/omnibase_core/mixins/mixin_event_handler.py]
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/|src/omnibase_core/mixins/mixin_event_bus\.py|src/omnibase_core/mixins/mixin_event_handler\.py)$
+        args: [--filter-files, --profile, black, --line-length, "88"]
+        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/)
         stages: [commit]
 
       - id: ruff-fix
@@ -93,6 +93,24 @@ repos:
         exclude: ^(tests/|archive/|archived/|scripts/validation/).*\.py$
         stages: [pre-commit]
         # Note: Takes ~14s on full codebase - consider optimizing script for incremental checks
+        # Architectural exemptions documented in validate_naming.py ARCHITECTURAL_EXEMPTIONS
+
+      - id: validate-file-locations
+        name: ONEX File Location Enforcement
+        entry: poetry run python scripts/validation/validate-file-locations.py
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/).*\.py$
+        stages: [pre-commit]
+
+      - id: validate-no-duplicate-dirs
+        name: ONEX Duplicate Directory Detection
+        entry: poetry run python scripts/validation/validate-no-duplicate-dirs.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
 
       # String Version Anti-Pattern Detection
       # Prevents use of ModelSemVer.parse("X.Y.Z") and direct version string literals
@@ -151,7 +169,7 @@ repos:
       - id: validate-union-usage
         name: ONEX Union Usage Validation
         entry: poetry run python scripts/validation/validate-union-usage.py
-        args: ['--allow-invalid', '235']
+        args: ['--allow-invalid', '234']
         language: system
         pass_filenames: false
         files: ^src/.*\.py$
@@ -262,6 +280,16 @@ repos:
       - id: validate-no-model-primitive-unions
         name: ONEX Model-Primitive Union Prevention
         entry: ./scripts/validate-no-model-primitive-unions.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      # Documentation link validation - prevents broken links in CI
+      - id: validate-doc-links
+        name: ONEX Documentation Link Validation
+        entry: poetry run python scripts/validate-doc-links.py
+        args: [--fix-case]
         language: system
         pass_filenames: false
         always_run: true

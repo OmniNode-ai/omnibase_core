@@ -13,7 +13,7 @@ from typing_extensions import TypedDict
 
 
 class TypedDictFieldValue(TypedDict, total=False):
-    """Typed dict[str, Any]ionary for field values.
+    """Typed dictionary for field values.
     Implements omnibase_spi protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

@@ -21,7 +21,7 @@ from omnibase_core.enums.enum_numeric_type import EnumNumericType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 if TYPE_CHECKING:
-    from omnibase_core.errors.model_onex_error import ModelOnexError
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelNumericValue(BaseModel):
@@ -64,7 +64,7 @@ class ModelNumericValue(BaseModel):
         Raises ModelOnexError with VALIDATION_ERROR code for non-numeric values.
         """
         if not isinstance(v, (int, float)):
-            from omnibase_core.errors.model_onex_error import ModelOnexError
+            from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
             msg = f"Value must be numeric (int or float), got {type(v).__name__}"
             raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
@@ -181,7 +181,7 @@ class ModelNumericValue(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

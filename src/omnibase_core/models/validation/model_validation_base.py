@@ -147,7 +147,7 @@ class ModelValidationBase(BaseModel):
                 # This is just to ensure the serialization process works
                 if not model_dict:
                     self.add_validation_error(
-                        message="Model serialization succeeded but returned empty dict[str, Any]ionary",
+                        message="Model serialization succeeded but returned empty dictionary",
                         field="model_integrity",
                         error_code=validation_error_code,
                     )
@@ -212,7 +212,7 @@ class ModelValidationBase(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     model_config = {

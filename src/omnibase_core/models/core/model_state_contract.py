@@ -3,7 +3,7 @@ from typing import Generic, Optional
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -50,7 +50,7 @@ from omnibase_core.models.metadata.model_metadata_constants import (
     CONTRACT_VERSION_KEY,
     NODE_VERSION_KEY,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_error_state import ModelErrorState
 from .model_generic_metadata import ModelGenericMetadata
@@ -179,7 +179,9 @@ class ModelStateContract(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         # v must be str since union type is exhaustive
-        from omnibase_core.primitives.model_semver import parse_semver_from_string
+        from omnibase_core.models.primitives.model_semver import (
+            parse_semver_from_string,
+        )
 
         return parse_semver_from_string(v)
 
@@ -194,7 +196,9 @@ class ModelStateContract(BaseModel):
         if isinstance(v, dict):
             return ModelSemVer(**v)
         # v must be str since union type is exhaustive
-        from omnibase_core.primitives.model_semver import parse_semver_from_string
+        from omnibase_core.models.primitives.model_semver import (
+            parse_semver_from_string,
+        )
 
         return parse_semver_from_string(v)
 
@@ -219,7 +223,7 @@ class ModelStateContract(BaseModel):
 
     def to_yaml_dict(self) -> dict[str, Any]:
         """
-        Convert the model to a dict[str, Any]ionary suitable for YAML serialization.
+        Convert the model to a dictionary suitable for YAML serialization.
 
         This method ensures that the output follows the expected contract.yaml
         structure and excludes None values for cleaner output.
@@ -238,7 +242,7 @@ class ModelStateContract(BaseModel):
     @classmethod
     def from_yaml_dict(cls, data: dict[str, Any]) -> "ModelStateContract":
         """
-        Create a ModelStateContract from a dict[str, Any]ionary loaded from YAML.
+        Create a ModelStateContract from a dictionary loaded from YAML.
 
         This method handles various legacy formats and normalizes them
         to the canonical structure.

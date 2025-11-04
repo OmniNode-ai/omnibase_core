@@ -29,7 +29,7 @@ class ModelSecurityPolicyData(BaseModel):
     def data(
         self,
     ) -> dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None]:
-        """Get policy data as a regular dict[str, Any]ionary for current standards."""
+        """Get policy data as a regular dictionary for current standards."""
         return cast(
             dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None],
             self.typed_data.to_python_dict(),
@@ -76,7 +76,7 @@ class ModelSecurityPolicyData(BaseModel):
         data: dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None],
     ) -> "ModelSecurityPolicyData":
         """
-        Create from a regular dict[str, Any]ionary using ONEX-compliant patterns.
+        Create from a regular dictionary using ONEX-compliant patterns.
 
         Args:
             data: Dictionary of policy data

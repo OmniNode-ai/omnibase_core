@@ -15,11 +15,11 @@ from pydantic import BaseModel, Field, model_validator
 from omnibase_core.enums.enum_coordination_mode import EnumCoordinationMode
 from omnibase_core.enums.enum_hub_capability import EnumHubCapability
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_hub_configuration import ModelHubConfiguration
 from omnibase_core.models.core.model_hub_service_configuration import (
     ModelHubServiceConfiguration,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelUnifiedHubContract(BaseModel):
@@ -181,10 +181,10 @@ class ModelUnifiedHubContract(BaseModel):
     @classmethod
     def from_dict(cls, contract_data: dict[str, Any]) -> "ModelUnifiedHubContract":
         """
-        Create unified contract from raw dict[str, Any]ionary data.
+        Create unified contract from raw dictionary data.
 
         Args:
-            contract_data: Raw contract dict[str, Any]ionary from YAML/JSON
+            contract_data: Raw contract dictionary from YAML/JSON
 
         Returns:
             ModelUnifiedHubContract instance

@@ -251,7 +251,8 @@ class ModelBar:
 
 **Common Patterns**:
 
-**Pattern A: Pydantic .dict() Returns**
+#### Pattern A: Pydantic .dict() Returns
+
 ```python
 # Before
 def to_dict(self) -> dict[str, Any]:
@@ -262,7 +263,8 @@ def to_dict(self) -> dict[str, Any]:
     return self.model_dump()  # Properly typed in Pydantic v2
 ```
 
-**Pattern B: Dynamic Attribute Access**
+#### Pattern B: Dynamic Attribute Access
+
 ```python
 # Before
 def get_value(self, key: str) -> str:
@@ -276,7 +278,8 @@ def get_value(self, key: str) -> str:
     return cast(str, value)
 ```
 
-**Pattern C: Dictionary Merging**
+#### Pattern C: Dictionary Merging
+
 ```python
 # Before
 def merge_config(self, config: dict[str, Any]) -> dict[str, Any]:
@@ -327,7 +330,8 @@ poetry run black --check src/
 
 ### If Something Goes Wrong
 
-**Option 1: Use Git**
+#### Option 1: Use Git
+
 ```bash
 # See what changed
 git diff
@@ -416,7 +420,7 @@ repos:
 
 ### Common Issues
 
-**Issue 1: Script says "No errors found" but report shows errors**
+#### Issue 1: Script says "No errors found" but report shows errors
 
 **Cause**: Mypy cache is stale
 
@@ -431,7 +435,7 @@ poetry run mypy src/omnibase_core/ --strict
 
 ---
 
-**Issue 2: Tests fail after applying fixes**
+#### Issue 2: Tests fail after applying fixes
 
 **Cause**: Changes affected runtime behavior (shouldn't happen with these fixes)
 
@@ -449,7 +453,7 @@ git checkout -- src/path/to/changed/file.py
 
 ---
 
-**Issue 3: generate_all_exports.py creates duplicate __all__**
+#### Issue 3: generate_all_exports.py creates duplicate __all__
 
 **Cause**: Module already has `__all__` but script didn't detect it
 
@@ -461,7 +465,7 @@ git checkout -- src/path/to/changed/file.py
 
 ---
 
-**Issue 4: Permission denied when running scripts**
+#### Issue 4: Permission denied when running scripts
 
 **Solution**:
 ```bash

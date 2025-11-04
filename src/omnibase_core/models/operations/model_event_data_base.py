@@ -10,7 +10,7 @@ from omnibase_core.models.operations.model_event_context_info import (
     ModelEventContextInfo,
 )
 from omnibase_core.models.operations.model_event_source_info import ModelEventSourceInfo
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelEventDataBase(BaseModel):

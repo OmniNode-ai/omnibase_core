@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Model for ModelNodeBase representation in ONEX ModelNodeBase implementation.
@@ -18,8 +18,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
+from omnibase_core.models.core.model_container_reference import ModelContainerReference
 from omnibase_core.models.core.model_contract_content import ModelContractContent
-from omnibase_core.models.core.model_registry_reference import ModelRegistryReference
 
 
 class ModelNodeBase(BaseModel):
@@ -31,9 +31,9 @@ class ModelNodeBase(BaseModel):
         default=...,
         description="Loaded contract content",
     )
-    registry_reference: ModelRegistryReference = Field(
+    container_reference: ModelContainerReference = Field(
         default=...,
-        description="Registry reference metadata",
+        description="Container reference metadata",
     )
     node_name: str = Field(default=..., description="Node name from contract")
     version: ModelSemVer = Field(default=..., description="Node version")

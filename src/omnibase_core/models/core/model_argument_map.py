@@ -170,7 +170,7 @@ class ModelArgumentMap(BaseModel):
         self.positional_args.append(arg_value)
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dict[str, Any]ionary for easy serialization."""
+        """Convert to dictionary for easy serialization."""
         # Custom serialization logic for argument map format
         result = {}
 

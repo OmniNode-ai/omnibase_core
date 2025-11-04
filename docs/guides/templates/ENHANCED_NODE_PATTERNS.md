@@ -217,7 +217,7 @@ class Enhanced{NodeType}Config(BaseNodeConfig):
                 event_buffer_size=2000 if environment == "production" else 500
             )
         )
-```
+```python
 
 ### Enhanced Node Implementation Pattern
 
@@ -598,7 +598,7 @@ class Enhanced{NodeType}Node(
             },
             "health": self._health_status
         }
-```
+```python
 
 ### Enhanced Subcontract Pattern
 
@@ -845,7 +845,7 @@ examples:
         priority_level: "critical"
         max_processing_time_ms: 100
         enable_detailed_metrics: false
-```
+```python
 
 ## 🚀 Implementation Benefits
 

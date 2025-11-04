@@ -10,7 +10,7 @@ This template provides a complete "cookie cutter" approach for generating consis
 
 ## 📁 Directory Structure Template
 
-```
+```text
 src/{REPOSITORY_NAME}/nodes/node_{DOMAIN}_{MICROSERVICE_NAME}_effect/
 ├── __init__.py                                    # Package exports
 ├── v1_0_0/                                       # Versioned implementation
@@ -31,7 +31,7 @@ src/{REPOSITORY_NAME}/nodes/node_{DOMAIN}_{MICROSERVICE_NAME}_effect/
 │       ├── version_manifest.yaml
 │       └── compatibility_matrix.yaml
 └── README.md                                    # Node documentation
-```
+```python
 
 ## 🔧 Customization Points
 
@@ -462,7 +462,7 @@ async def main():
 if __name__ == "__main__":
     import asyncio
     asyncio.run(main())
-```
+```python
 
 ### 2. Input Model Template
 
@@ -508,7 +508,7 @@ class Model{MICROSERVICE_NAME_PASCAL}Input(BaseModel):
     )
 
     # Add domain-specific fields here
-```
+```python
 
 ### 3. Output Model Template
 
@@ -555,7 +555,7 @@ class Model{MICROSERVICE_NAME_PASCAL}Output(BaseModel):
     )
 
     # Add domain-specific response fields here
-```
+```python
 
 ### 4. Configuration Model Template
 
@@ -614,7 +614,7 @@ class Model{MICROSERVICE_NAME_PASCAL}Config(BaseModel):
             )
         else:
             return cls(**base_config)
-```
+```python
 
 ### 5. Operation Type Enum Template
 
@@ -634,7 +634,7 @@ class Enum{MICROSERVICE_NAME_PASCAL}OperationType(str, Enum):
     HEALTH_CHECK = "health_check"
 
     # Add domain-specific operation types here
-```
+```python
 
 ### 6. Package Export Templates
 
@@ -658,7 +658,7 @@ __all__ = [
     "Model{MICROSERVICE_NAME_PASCAL}Config",
     "Enum{MICROSERVICE_NAME_PASCAL}OperationType",
 ]
-```
+```python
 
 **File**: `v1_0_0/__init__.py`
 
@@ -678,7 +678,7 @@ __all__ = [
     "Model{MICROSERVICE_NAME_PASCAL}Config",
     "Enum{MICROSERVICE_NAME_PASCAL}OperationType",
 ]
-```
+```python
 
 ## 📋 Contract Templates
 
@@ -787,7 +787,7 @@ spec:
       - circuit_breaker_state
       - resource_availability
       - external_dependency_health
-```
+```yaml
 
 ### 8. Management Subcontract Template
 
@@ -919,7 +919,7 @@ spec:
       - architecture_version: "4.0"
       - interface_compliance: true
       - health_check_standard: true
-```
+```yaml
 
 ## 📊 Manifest Templates
 
@@ -1001,7 +1001,7 @@ spec:
     api_docs: docs/api.md
     contracts: contracts/
     examples: examples/
-```
+```yaml
 
 ### 10. Compatibility Matrix Template
 
@@ -1059,7 +1059,7 @@ spec:
     notice_period_months: 6
     support_period_months: 12
     removal_timeline: "following_major_version"
-```
+```python
 
 ## 📖 Documentation Template
 
@@ -1116,7 +1116,7 @@ request = Model{MICROSERVICE_NAME_PASCAL}Input(
 # Execute operation
 result = await effect_node.process(request)
 print(f"Success: {result.success}")
-```
+```bash
 
 ## Configuration
 
@@ -1130,7 +1130,7 @@ config = Model{MICROSERVICE_NAME_PASCAL}Config.for_environment("production")
 
 # Development configuration
 config = Model{MICROSERVICE_NAME_PASCAL}Config.for_environment("development")
-```
+```bash
 
 ## Operations
 
@@ -1171,7 +1171,7 @@ The node provides comprehensive monitoring:
 ```bash
 poetry install
 poetry run pytest tests/
-```
+```bash
 
 ### Testing
 ```bash
@@ -1183,12 +1183,12 @@ poetry run pytest tests/integration/
 
 # Contract tests
 poetry run pytest tests/contracts/
-```
+```markdown
 
 ## License
 
 MIT License - see LICENSE file for details.
-```
+```yaml
 
 ## 🚀 Usage Instructions
 

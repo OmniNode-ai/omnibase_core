@@ -94,5 +94,5 @@ class ModelCustomFields(BaseModel):
         return list(self.fields.keys())
 
     def to_dict(self) -> dict[str, CustomFieldValue]:
-        """Convert custom fields to dict[str, Any]ionary."""
+        """Convert custom fields to dictionary."""
         return self.fields.copy()

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Node state dataclass for ONEX nodes.
@@ -26,7 +26,7 @@ class ModelNodeState:
     contract_path: Path
     node_id: UUID
     contract_content: Any
-    registry_reference: Any | None
+    container_reference: Any | None
     node_name: str
     version: ModelSemVer
     node_tier: int

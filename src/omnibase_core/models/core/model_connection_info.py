@@ -15,7 +15,7 @@ from omnibase_core.models.core.model_connection_metrics import ModelConnectionMe
 from omnibase_core.models.core.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Compatibility alias
 ConnectionMetrics = ModelConnectionMetrics
@@ -110,7 +110,7 @@ class ModelConnectionInfo(BaseModel):
     model_config = ConfigDict()
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dict[str, Any]ionary for current standards."""
+        """Convert to dictionary for current standards."""
         # Use model_dump() as base and apply transformations
         data = self.model_dump(exclude_none=True)
 
@@ -138,7 +138,7 @@ class ModelConnectionInfo(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelConnectionInfo":
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         # Handle legacy format
         if "connection_id" not in data:
             data["connection_id"] = (

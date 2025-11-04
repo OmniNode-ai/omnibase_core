@@ -90,7 +90,8 @@ from omnibase_core.validation import validate_architecture
 result = validate_architecture("src/", max_violations=0)
 ```
 
-**Common Issues Fixed:**
+#### Common Issues Fixed:
+
 - Multiple Pydantic models in one file
 - Mixed model types in single file
 - Poor architectural organization
@@ -113,7 +114,8 @@ from omnibase_core.validation import validate_union_usage
 result = validate_union_usage("src/", max_unions=100, strict=True)
 ```
 
-**Examples of Issues Detected:**
+#### Examples of Issues Detected:
+
 ```python
 # ❌ Problematic patterns
 Union[str, int, bool, float]  # Too many primitives
@@ -163,7 +165,8 @@ from omnibase_core.validation import validate_patterns
 result = validate_patterns("src/", strict=True)
 ```
 
-**Examples of Issues Fixed:**
+#### Examples of Issues Fixed:
+
 ```python
 # ❌ Problematic patterns
 class User(BaseModel):           # Should be ModelUser

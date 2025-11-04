@@ -25,7 +25,7 @@ from omnibase_spi.protocols.container import (
     ProtocolServiceRegistration,
     ProtocolDIServiceInstance,
 )
-```
+```python
 
 **Benefits:**
 - Comprehensive DI system (singleton, transient, scoped, pooled)
@@ -56,7 +56,7 @@ from omnibase_spi.protocols.validation import (
     ProtocolQualityValidator,
     ProtocolValidator,
 )
-```
+```python
 
 **Benefits:**
 - Type-safe contracts ensure interface compliance
@@ -95,7 +95,7 @@ self.default_timeout_ms = 30000  # Hardcoded
 # After
 self.config = await container.get_service(ProtocolNodeConfiguration)
 self.default_timeout_ms = await self.config.get_timeout_ms("effect_execution", 30000)
-```
+```python
 
 **Benefits:**
 - Environment-specific configs (dev/staging/prod)

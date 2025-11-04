@@ -20,13 +20,13 @@ import pytest
 
 from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )
+from omnibase_core.models.validation.model_migration_plan import ModelMigrationPlan
+from omnibase_core.models.validation.model_migration_result import ModelMigrationResult
 from omnibase_core.validation.migrator_protocol import ProtocolMigrator
-from omnibase_core.validation.model_migration_plan import ModelMigrationPlan
-from omnibase_core.validation.model_migration_result import ModelMigrationResult
 from omnibase_core.validation.validation_utils import ModelProtocolInfo
 
 if TYPE_CHECKING:

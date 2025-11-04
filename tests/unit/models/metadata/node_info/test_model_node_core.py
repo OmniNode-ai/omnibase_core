@@ -8,7 +8,7 @@ from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplex
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.metadata.node_info.model_node_core import ModelNodeCore
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelNodeCoreInstantiation:
@@ -334,7 +334,7 @@ class TestModelNodeCoreProtocols:
 
     def test_set_metadata_with_exception(self):
         """Test set_metadata error handling."""
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         node = ModelNodeCore()
         # Setting invalid enum should raise ModelOnexError

@@ -4,7 +4,7 @@ import uuid
 
 from pydantic import Field, model_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Custom connection properties model for connection configuration.
@@ -574,7 +574,7 @@ class ModelCustomConnectionProperties(BaseModel):
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 

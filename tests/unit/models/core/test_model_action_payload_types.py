@@ -10,7 +10,6 @@ Tests the create_specific_action_payload factory function covering:
 import pytest
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_action_payload_types import (
     create_specific_action_payload,
@@ -52,6 +51,7 @@ from omnibase_core.models.core.model_transformation_action_payload import (
 from omnibase_core.models.core.model_validation_action_payload import (
     ModelValidationActionPayload,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 def make_action(name: str, category: ModelActionCategory) -> ModelNodeActionType:

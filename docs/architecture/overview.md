@@ -45,7 +45,7 @@ Nodes communicate through:
 
 ### High-Level Components
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    ONEX Framework                           │
 ├─────────────────────────────────────────────────────────────┤
@@ -62,7 +62,7 @@ Nodes communicate through:
 │  │  (Pydantic) │  │  (Async)    │  │ (Structured)│  │     │ │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────┘ │
 └─────────────────────────────────────────────────────────────┘
-```
+```python
 
 ### Node Responsibilities
 
@@ -174,7 +174,7 @@ container.register_service("CacheService", cache_service)
 
 # Resolve services
 db_service = container.get_service("DatabaseService")
-```
+```python
 
 ### Event System
 
@@ -189,12 +189,12 @@ event = ModelEventEnvelope(
     target_node="effect_node"
 )
 await node.emit_event(event)
-```
+```python
 
 ### Error Handling
 
 ```python
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 try:
@@ -205,7 +205,7 @@ except Exception as e:
         message=f"Processing failed: {str(e)}",
         context={"input_data": input_data}
     ) from e
-```
+```python
 
 ### Circuit Breaker Pattern
 
@@ -221,7 +221,7 @@ try:
     result = await breaker.call(risky_operation)
 except CircuitBreakerOpenException:
     result = fallback_operation()
-```
+```python
 
 ## Benefits
 
@@ -268,7 +268,7 @@ from omnibase_core.models.nodes.node_services import ModelServiceCompute
 
 class MyComputeService(ModelServiceCompute):
     pass
-```
+```python
 
 Or compose manually only when you need specialized capabilities:
 ```python
@@ -282,7 +282,7 @@ class MyComputeNode(NodeCompute):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Your business logic here
         return {"result": "processed"}
-```
+```python
 
 ### 3. Add Error Handling
 ```python
@@ -296,7 +296,7 @@ from omnibase_core.utils.standard_error_handling import standard_error_handling
 async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
     # Your logic here
     return {"result": "processed"}
-```
+```python
 
 ### 4. Add Testing
 ```python
@@ -315,7 +315,7 @@ def node(container):
 async def test_process(node):
     result = await node.process({"input": "test"})
     assert result["result"] == "processed"
-```
+```text
 
 ## Related Documentation
 

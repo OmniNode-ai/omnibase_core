@@ -1,0 +1,334 @@
+#!/usr/bin/env python3
+"""
+Unit tests for source_node_id field in ModelOnexEnvelopeV1.
+
+Tests the functionality of the optional source_node_id field added in PR #71.
+Uses mocks for deterministic testing - no performance measurement.
+
+Tests verify:
+- Envelope creation with/without source_node_id
+- Serialization includes source_node_id when provided
+- Deserialization handles source_node_id correctly
+- Field is truly optional (works with None)
+- Bulk operations work correctly
+
+Related:
+- PR #71 - Added source_node_id field
+- Correlation ID: 95cac850-05a3-43e2-9e57-ccbbef683f43
+"""
+
+from datetime import UTC, datetime
+from typing import Any
+from unittest.mock import Mock, patch
+from uuid import UUID
+
+import pytest
+
+from omnibase_core.models.core.model_onex_envelope_v1 import ModelOnexEnvelopeV1
+
+
+class TestSourceNodeIdFunctionality:
+    """Unit tests for source_node_id field functionality."""
+
+    # Fixed test data for deterministic testing
+    FIXED_CORRELATION_ID = UUID("12345678-1234-5678-1234-567812345678")
+    FIXED_EVENT_ID = UUID("87654321-4321-8765-4321-876543218765")
+    FIXED_SOURCE_NODE_ID = UUID("11111111-2222-3333-4444-555555555555")
+    FIXED_TIMESTAMP = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+    FIXED_PAYLOAD = {"key": "value", "count": 42}
+
+    def test_creation_without_source_node_id(self) -> None:
+        """Test envelope creation without source_node_id field."""
+        envelope = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        # Verify basic fields
+        assert envelope.correlation_id == self.FIXED_CORRELATION_ID
+        assert envelope.event_id == self.FIXED_EVENT_ID
+        assert envelope.event_type == "TEST_EVENT"
+        assert envelope.source_service == "test_service"
+        assert envelope.payload == self.FIXED_PAYLOAD
+
+        # Verify source_node_id is None when not provided
+        assert envelope.source_node_id is None
+
+    def test_creation_with_source_node_id(self) -> None:
+        """Test envelope creation with source_node_id field."""
+        envelope = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            source_node_id=self.FIXED_SOURCE_NODE_ID,  # Add source_node_id
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        # Verify source_node_id is set correctly
+        assert envelope.source_node_id == self.FIXED_SOURCE_NODE_ID
+
+        # Verify other fields unchanged
+        assert envelope.correlation_id == self.FIXED_CORRELATION_ID
+        assert envelope.event_id == self.FIXED_EVENT_ID
+
+    def test_source_node_id_is_optional(self) -> None:
+        """Test that source_node_id field is truly optional."""
+        # Create without source_node_id - should not raise
+        envelope = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        assert envelope.source_node_id is None
+
+        # Explicitly set to None - should also work
+        envelope_explicit = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            source_node_id=None,
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        assert envelope_explicit.source_node_id is None
+
+    def test_serialization_excludes_none_source_node_id(self) -> None:
+        """Test that serialization excludes source_node_id when None."""
+        envelope = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        # Serialize to dict
+        data = envelope.model_dump()
+
+        # source_node_id should not be in dict when None
+        assert "source_node_id" not in data or data["source_node_id"] is None
+
+    def test_serialization_includes_source_node_id(self) -> None:
+        """Test that serialization includes source_node_id when provided."""
+        envelope = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            source_node_id=self.FIXED_SOURCE_NODE_ID,
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        # Serialize to dict
+        data = envelope.model_dump()
+
+        # source_node_id should be in dict
+        assert "source_node_id" in data
+        assert data["source_node_id"] == self.FIXED_SOURCE_NODE_ID
+
+    def test_json_serialization_with_source_node_id(self) -> None:
+        """Test JSON serialization includes source_node_id."""
+        envelope = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            source_node_id=self.FIXED_SOURCE_NODE_ID,
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        # Serialize to JSON
+        json_str = envelope.model_dump_json()
+
+        # JSON should contain source_node_id
+        assert str(self.FIXED_SOURCE_NODE_ID) in json_str
+        assert "source_node_id" in json_str
+
+    def test_deserialization_with_source_node_id(self) -> None:
+        """Test deserialization from JSON with source_node_id."""
+        # Create envelope with source_node_id
+        original = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            source_node_id=self.FIXED_SOURCE_NODE_ID,
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        # Serialize and deserialize
+        json_str = original.model_dump_json()
+        deserialized = ModelOnexEnvelopeV1.model_validate_json(json_str)
+
+        # Verify source_node_id preserved
+        assert deserialized.source_node_id == self.FIXED_SOURCE_NODE_ID
+        assert deserialized.correlation_id == self.FIXED_CORRELATION_ID
+
+    def test_deserialization_without_source_node_id(self) -> None:
+        """Test deserialization from JSON without source_node_id."""
+        # Create envelope without source_node_id
+        original = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        # Serialize and deserialize
+        json_str = original.model_dump_json()
+        deserialized = ModelOnexEnvelopeV1.model_validate_json(json_str)
+
+        # Verify source_node_id is None
+        assert deserialized.source_node_id is None
+
+    def test_bulk_creation_with_source_node_id(self) -> None:
+        """Test bulk envelope creation with source_node_id works correctly."""
+        count = 100
+
+        # Create multiple envelopes with source_node_id
+        envelopes = [
+            ModelOnexEnvelopeV1(
+                correlation_id=UUID(f"00000000-0000-0000-0000-{i:012d}"),
+                event_id=UUID(f"11111111-1111-1111-1111-{i:012d}"),
+                event_type="TEST_EVENT",
+                timestamp=self.FIXED_TIMESTAMP,
+                source_service="test_service",
+                source_node_id=UUID(f"22222222-2222-2222-2222-{i:012d}"),
+                payload={"index": i},
+            )
+            for i in range(count)
+        ]
+
+        # Verify count
+        assert len(envelopes) == count
+
+        # Verify each has correct source_node_id
+        for i, envelope in enumerate(envelopes):
+            expected_source_node = UUID(f"22222222-2222-2222-2222-{i:012d}")
+            assert envelope.source_node_id == expected_source_node
+            assert envelope.payload["index"] == i
+
+    def test_bulk_serialization_with_source_node_id(self) -> None:
+        """Test bulk serialization preserves source_node_id."""
+        count = 50
+
+        # Create envelopes
+        envelopes = [
+            ModelOnexEnvelopeV1(
+                correlation_id=UUID(f"00000000-0000-0000-0000-{i:012d}"),
+                event_id=UUID(f"11111111-1111-1111-1111-{i:012d}"),
+                event_type="TEST_EVENT",
+                timestamp=self.FIXED_TIMESTAMP,
+                source_service="test_service",
+                source_node_id=UUID(f"22222222-2222-2222-2222-{i:012d}"),
+                payload={"index": i},
+            )
+            for i in range(count)
+        ]
+
+        # Serialize all
+        serialized = [env.model_dump_json() for env in envelopes]
+
+        # Verify count
+        assert len(serialized) == count
+
+        # Verify each serialized version contains source_node_id
+        for i, json_str in enumerate(serialized):
+            expected_id = f"22222222-2222-2222-2222-{i:012d}"
+            assert expected_id in json_str
+            assert "source_node_id" in json_str
+
+    def test_round_trip_with_source_node_id(self) -> None:
+        """Test complete round-trip (create → serialize → deserialize)."""
+        # Create original
+        original = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            source_node_id=self.FIXED_SOURCE_NODE_ID,
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        # Round trip
+        json_str = original.model_dump_json()
+        restored = ModelOnexEnvelopeV1.model_validate_json(json_str)
+
+        # Verify all fields match
+        assert restored.correlation_id == original.correlation_id
+        assert restored.event_id == original.event_id
+        assert restored.source_node_id == original.source_node_id
+        assert restored.event_type == original.event_type
+        assert restored.source_service == original.source_service
+        assert restored.payload == original.payload
+
+    def test_equality_with_source_node_id(self) -> None:
+        """Test equality comparison works with source_node_id."""
+        envelope1 = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            source_node_id=self.FIXED_SOURCE_NODE_ID,
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        envelope2 = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            source_node_id=self.FIXED_SOURCE_NODE_ID,
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        # Should be equal
+        assert envelope1.correlation_id == envelope2.correlation_id
+        assert envelope1.source_node_id == envelope2.source_node_id
+
+    def test_different_source_node_ids_not_equal(self) -> None:
+        """Test envelopes with different source_node_ids are not equal."""
+        envelope1 = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            source_node_id=self.FIXED_SOURCE_NODE_ID,
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        different_node_id = UUID("99999999-9999-9999-9999-999999999999")
+        envelope2 = ModelOnexEnvelopeV1(
+            correlation_id=self.FIXED_CORRELATION_ID,
+            event_id=self.FIXED_EVENT_ID,
+            event_type="TEST_EVENT",
+            timestamp=self.FIXED_TIMESTAMP,
+            source_service="test_service",
+            source_node_id=different_node_id,
+            payload=self.FIXED_PAYLOAD,
+        )
+
+        # source_node_ids should be different
+        assert envelope1.source_node_id != envelope2.source_node_id

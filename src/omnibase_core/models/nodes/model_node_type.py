@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nNode Type Model\n\nReplaces EnumNodeType with a proper model that includes metadata,\ndescriptions, and categorization for each node type.\n"
 from typing import Any
@@ -17,7 +17,7 @@ from omnibase_core.enums.enum_config_category import EnumConfigCategory
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.constraints import (
     Identifiable,
     ProtocolMetadataProvider,
@@ -672,7 +672,7 @@ class ModelNodeType(BaseModel):
 
     def get_metadata(self) -> dict[str, Any]:
         """
-        Get node type metadata as a dict[str, Any]ionary.
+        Get node type metadata as a dictionary.
 
         Implements the ProtocolMetadataProvider protocol by extracting
         metadata from common fields. Useful for serialization, logging,
@@ -711,10 +711,10 @@ class ModelNodeType(BaseModel):
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:
         """
-        Set node type metadata from a dict[str, Any]ionary.
+        Set node type metadata from a dictionary.
 
         Implements the ProtocolMetadataProvider protocol by updating
-        instance attributes from a metadata dict[str, Any]ionary. Only updates
+        instance attributes from a metadata dictionary. Only updates
         attributes that already exist on the instance.
 
         Args:
@@ -757,10 +757,10 @@ class ModelNodeType(BaseModel):
 
     def serialize(self) -> dict[str, Any]:
         """
-                Serialize the node type to a dict[str, Any]ionary.
+                Serialize the node type to a dictionary.
 
                 Implements the Serializable protocol by converting the instance
-                to a dict[str, Any]ionary representation suitable for JSON serialization,
+                to a dictionary representation suitable for JSON serialization,
                 storage, or transmission.
 
                 Returns:
@@ -779,7 +779,7 @@ class ModelNodeType(BaseModel):
 
                     # Can be used for JSON serialization
                     import json
-        from omnibase_core.primitives.model_semver import ModelSemVer
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
                     json_str = json.dumps(serialized, default=str)
                     ```
 

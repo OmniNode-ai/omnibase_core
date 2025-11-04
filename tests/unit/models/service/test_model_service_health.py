@@ -24,9 +24,9 @@ from omnibase_core.enums.enum_impact_severity import EnumImpactSeverity
 from omnibase_core.enums.enum_service_health_status import EnumServiceHealthStatus
 from omnibase_core.enums.enum_service_type import EnumServiceType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.service.model_service_health import ModelServiceHealth
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class TestModelServiceHealthInstantiation:

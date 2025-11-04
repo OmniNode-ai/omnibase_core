@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Generic, TypedDict, TypeVar
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Validation Error Factory Pattern for Model Creation.
@@ -125,7 +125,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         # Factory instances don't have model_dump - serialize factory state instead
         return {
             "model_class": self.model_class.__name__,

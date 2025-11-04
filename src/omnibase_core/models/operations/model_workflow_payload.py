@@ -7,8 +7,8 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_workflow_type import EnumWorkflowType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Import extracted workflow data classes
 from .model_conditional_workflow_data import ModelConditionalWorkflowData
@@ -99,7 +99,7 @@ class ModelWorkflowPayload(BaseModel):
         )
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

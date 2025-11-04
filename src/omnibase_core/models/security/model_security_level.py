@@ -5,6 +5,7 @@ from pydantic import Field
 "\nSecurity Level Model\n\nExtensible security configuration model that replaces hardcoded\nsecurity enums with flexible, nuanced security settings.\n"
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.security.model_custom_security_settings import (
     ModelCustomSecuritySettings,
 )
@@ -13,7 +14,6 @@ from omnibase_core.models.security.model_network_restrictions import (
 )
 from omnibase_core.models.security.model_password_policy import ModelPasswordPolicy
 from omnibase_core.models.security.model_session_policy import ModelSessionPolicy
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelSecurityLevel(BaseModel):
@@ -167,7 +167,7 @@ class ModelSecurityLevel(BaseModel):
         return all(std in self.compliance_requirements for std in required_standards)
 
     def to_environment_dict(self) -> dict[str, str]:
-        """Convert to environment variables dict[str, Any]ionary."""
+        """Convert to environment variables dictionary."""
         return {
             "ONEX_SECURITY_LEVEL": self.level_name,
             "ONEX_SECURITY_SCORE": str(self.security_score),

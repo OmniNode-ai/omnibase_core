@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import Field, field_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Trigger Mappings Model - ONEX Standards Compliant.
@@ -158,10 +158,10 @@ class ModelTriggerMappings(BaseModel):
 
     def get_all_mappings(self) -> dict[str, str]:
         """
-        Get all mappings as a single flattened dict[str, Any]ionary.
+        Get all mappings as a single flattened dictionary.
 
         Returns:
-            Flattened dict[str, Any]ionary of all mappings
+            Flattened dictionary of all mappings
         """
         result = {}
         result.update(self.event_pattern_mappings)

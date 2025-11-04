@@ -316,7 +316,7 @@ class TestModelAnalyticsCoreProtocols:
 
     def test_set_metadata_with_exception(self):
         """Test set_metadata error handling."""
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         analytics = ModelAnalyticsCore()
         # Setting invalid type should raise ModelOnexError

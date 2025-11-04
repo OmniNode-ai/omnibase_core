@@ -11,7 +11,7 @@ from typing_extensions import TypedDict
 
 
 class TypedDictCapabilityFactoryKwargs(TypedDict, total=False):
-    """Typed dict[str, Any]ionary for model capability factory parameters."""
+    """Typed dictionary for model capability factory parameters."""
 
     name: str
     value: str

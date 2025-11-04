@@ -4,7 +4,7 @@ from typing import TypedDict, Union
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Discriminated union model for migration conflicts.

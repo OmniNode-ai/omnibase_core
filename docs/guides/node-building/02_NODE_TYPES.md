@@ -10,7 +10,7 @@ The ONEX framework defines **four fundamental node types**, each designed for a 
 
 ## The Four Node Types
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                    ONEX Four-Node Architecture                 │
 ├────────────────────────────────────────────────────────────────┤
@@ -27,7 +27,7 @@ The ONEX framework defines **four fundamental node types**, each designed for a 
 │  • Messages     • Filter        • Group       • Error recovery │
 │                                                                │
 └────────────────────────────────────────────────────────────────┘
-```
+```python
 
 ## EFFECT Node
 
@@ -103,7 +103,7 @@ class NodeWeatherFetcherEffect(NodeCoreBase):
             result=weather_data,
             success=response.status == 200
         )
-```
+```python
 
 ### Key Patterns
 
@@ -114,7 +114,7 @@ def __init__(self, container: ModelONEXContainer):
     # Use connection pooling for efficiency
     self.db_pool = container.db_pool
     self.http_client = container.http_client
-```
+```python
 
 **Retry Logic**:
 ```python
@@ -126,7 +126,7 @@ async def process(self, input_data):
             if attempt == 2:  # Last attempt
                 raise
             await asyncio.sleep(2 ** attempt)  # Exponential backoff
-```
+```python
 
 **Idempotency**:
 ```python
@@ -143,7 +143,7 @@ async def process(self, input_data):
     result = await self._do_operation(input_data)
     await self.store_result(idempotency_key, result)
     return result
-```
+```python
 
 ---
 
@@ -231,7 +231,7 @@ class NodePriceCalculatorCompute(NodeCoreBase):
             processing_time_ms=5.2,
             cache_hit=False
         )
-```
+```python
 
 ### Key Patterns
 
@@ -258,7 +258,7 @@ async def process(self, input_data):
     self.computation_cache.set(cache_key, result)
 
     return ModelComputeOutput(result=result, cache_hit=False)
-```
+```python
 
 **Parallel Processing**:
 ```python
@@ -274,7 +274,7 @@ async def process(self, input_data):
         result=results,
         parallel_execution_used=True
     )
-```
+```python
 
 ---
 
@@ -309,7 +309,7 @@ Use a REDUCER node when you need to:
 
 ```python
 δ(state, action) → (new_state, intents[])
-```
+```python
 
 **Key Principles**:
 - **Pure Function**: No side effects, deterministic state transitions
@@ -355,7 +355,7 @@ class NodeOrderProcessingReducer(NodeCoreBase):
             ]
 
             return FSMTransitionResult(new_state=new_state, intents=intents)
-```
+```python
 
 > **Learn More**: See [ONEX_FOUR_NODE_ARCHITECTURE.md](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md#modelintent-architecture) for complete Intent/Action patterns and FSM implementation details.
 
@@ -427,7 +427,7 @@ class NodeDataMergerReducer(NodeCoreBase):
             sources_processed=len(sources),
             conflicts_resolved=self.conflicts_count
         )
-```
+```python
 
 ### Key Patterns
 
@@ -446,7 +446,7 @@ async def process(self, input_data):
         result=accumulator,
         streaming_mode=True
     )
-```
+```python
 
 **Conflict Resolution**:
 ```python
@@ -462,7 +462,7 @@ def _resolve_conflict(self, value_a, value_b, field_name):
 
     # Default: most recent
     return max(value_a, value_b, key=lambda v: v.timestamp)
-```
+```python
 
 ---
 
@@ -536,7 +536,7 @@ class NodeWorkflowOrchestrator(NodeCoreBase):
         finally:
             # Release lease on completion
             await self._release_workflow_lease(lease)
-```
+```python
 
 > **Learn More**: See [ONEX_FOUR_NODE_ARCHITECTURE.md](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md#modelaction-architecture) for complete Action patterns, lease management, and orchestration details.
 
@@ -641,7 +641,7 @@ class NodeDataAggregatorOrchestrator(NodeCoreBase):
             sources_fetched=3,
             parallel_execution=True
         )
-```
+```python
 
 ### Key Patterns
 
@@ -659,7 +659,7 @@ async def process(self, input_data):
     result_3 = await self.step_3.process(result_2)
 
     return ModelOrchestratorOutput(result=result_3)
-```
+```python
 
 **Parallel Workflow**:
 ```python
@@ -673,7 +673,7 @@ async def process(self, input_data):
     )
 
     return ModelOrchestratorOutput(results=results)
-```
+```python
 
 **Error Recovery**:
 ```python
@@ -689,7 +689,7 @@ async def process(self, input_data):
         # Compensate for step 1 (undo)
         await self.step_1_compensate.process(result_1)
         raise ModelOnexError("Workflow failed, compensated")
-```
+```yaml
 
 ---
 
@@ -710,7 +710,7 @@ Use this table to choose the right node type:
 
 ## Decision Flowchart
 
-```
+```text
 Start: What does this node need to do?
 │
 ├─ Interact with external systems? ────────────────────────────────▶ EFFECT
@@ -724,7 +724,7 @@ Start: What does this node need to do?
 │
 └─ Coordinate multiple operations? ────────────────────────────────▶ ORCHESTRATOR
     (Workflows, dependencies, sequences)
-```
+```python
 
 ## Common Patterns
 
@@ -742,7 +742,7 @@ saved = await effect_save.process(transformed)
 
 # ORCHESTRATOR: Coordinate workflow
 result = await orchestrator.process(input)
-```
+```python
 
 ### Pattern 2: Parallel Fetch-Merge
 
@@ -759,7 +759,7 @@ merged = await reducer_merge.process([source_a, source_b, source_c])
 
 # ORCHESTRATOR: Coordinate
 result = await orchestrator.process(input)
-```
+```text
 
 ### Pattern 3: Validate-Process-Aggregate
 
@@ -775,7 +775,7 @@ aggregated = await reducer_aggregate.process(processed)
 
 # ORCHESTRATOR: Coordinate
 result = await orchestrator.process(input)
-```
+```python
 
 ## Summary
 
@@ -857,7 +857,7 @@ flowchart TD
     style Custom2 fill:#ffe1e1,stroke:#cc0000
     style Custom3 fill:#ffe1e1,stroke:#cc0000
     style Custom4 fill:#ffe1e1,stroke:#cc0000
-```
+```python
 
 ### Why Service Wrappers? 🎯
 
@@ -909,4 +909,4 @@ class MyCustomNode(NodeCoreBase):
     async def process(self, input_data):
         # Specialized implementation
         return custom_logic(input_data)
-```
+```text

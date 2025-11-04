@@ -16,7 +16,7 @@ repetitive patterns while maintaining type safety.
 
 from typing import TYPE_CHECKING
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from collections.abc import Callable as CallableABC
@@ -316,7 +316,7 @@ class ModelContainer(BaseModel, Generic[T]):
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

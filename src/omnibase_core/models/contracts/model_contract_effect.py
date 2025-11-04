@@ -23,7 +23,7 @@ from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field, field_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types
 from omnibase_core.types.constraints import PrimitiveValueType
@@ -64,10 +64,10 @@ from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract im
 from omnibase_core.models.contracts.subcontracts.model_routing_subcontract import (
     ModelRoutingSubcontract,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.utils.model_subcontract_constraint_validator import (
     ModelSubcontractConstraintValidator,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 # Import centralized conversion utilities
 

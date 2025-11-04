@@ -52,7 +52,7 @@ class ModelGenericProperties(BaseModel):
     model_config = ConfigDict(extra="forbid")  # Strict validation
 
     def to_dict(self) -> dict[str, PropertyValue]:
-        """Convert to flat dict[str, Any]ionary for current standards."""
+        """Convert to flat dictionary for current standards."""
         # Custom flattening logic for current standards
         result: dict[str, PropertyValue] = {}
         result.update(self.string_properties)
@@ -67,13 +67,13 @@ class ModelGenericProperties(BaseModel):
         cls, data: dict[str, PropertyValue] | None
     ) -> Optional["ModelGenericProperties"]:
         """
-        Create ModelGenericProperties from flat dict[str, Any]ionary with automatic type categorization.
+        Create ModelGenericProperties from flat dictionary with automatic type categorization.
 
         Uses proper Pydantic validation and construction patterns.
         This replaces the old from_dict() factory method with ONEX-compliant implementation.
 
         Args:
-            data: Flat dict[str, Any]ionary with mixed property types, or None
+            data: Flat dictionary with mixed property types, or None
 
         Returns:
             ModelGenericProperties instance or None if data is None

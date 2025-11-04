@@ -7,12 +7,12 @@ from urllib.parse import urlparse
 from pydantic import Field, SecretStr, field_validator, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_connection_parse_result import (
     LatencyProfile,
     ParsedConnectionInfo,
     PoolRecommendations,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Moved to TYPE_CHECKING import
 
@@ -816,7 +816,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
                 "Ensure SQLite library is installed",
             ],
             "oracle": [
-                "Check Oracle list[Any]ener configuration",
+                "Check Oracle listener configuration",
                 "Verify TNS names resolution",
                 "Check Oracle SSL/TLS configuration",
                 "Monitor v$session for connection states",

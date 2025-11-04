@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import Field
 
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Custom settings model.
@@ -64,7 +64,7 @@ class ModelCustomSettings(BaseModel):
     allow_unknown: bool = Field(default=True, description="Allow unknown settings")
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dict[str, Any]ionary for current standards."""
+        """Convert to dictionary for current standards."""
         # Custom flattening logic for current standards
         result = {}
         result.update(self.general_settings)
@@ -77,7 +77,7 @@ class ModelCustomSettings(BaseModel):
         cls,
         data: dict[str, Any] | None,
     ) -> Optional["ModelCustomSettings"]:
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         if data is None:
             return None
 

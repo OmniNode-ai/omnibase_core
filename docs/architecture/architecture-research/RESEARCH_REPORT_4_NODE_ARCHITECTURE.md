@@ -71,7 +71,7 @@ class NodeCompute(NodeCoreBase):
     - Mathematical operations
     - Data transformations
     - Parallel execution support
-```
+```python
 
 **2. NodeEffect** (`node_effect.py`)
 ```python
@@ -84,7 +84,7 @@ class NodeEffect(NodeCoreBase):
     - Database operations
     - Retry logic and circuit breakers
     - Connection pooling
-```
+```python
 
 **3. NodeReducer** (`node_reducer.py`)
 ```python
@@ -97,7 +97,7 @@ class NodeReducer(NodeCoreBase):
     - Streaming data processing
     - Windowing for large datasets
     - Conflict resolution strategies
-```
+```python
 
 **4. NodeOrchestrator** (`node_orchestrator.py`)
 ```python
@@ -110,7 +110,7 @@ class NodeOrchestrator(NodeCoreBase):
     - Parallel execution coordination
     - Dependency graph management
     - Load balancing strategies
-```
+```python
 
 ## 2. Contract System Architecture
 
@@ -152,7 +152,7 @@ dependencies:
 input_state: {...}
 output_state: {...}
 definitions: {...}
-```
+```python
 
 ### 2.2 Contract Validation Patterns
 
@@ -186,7 +186,7 @@ from omnibase_core.models.nodes.node_services import ModelServiceEffect
 class NodeDatabaseWriter(ModelServiceEffect):
     """Effect node with health checks, events, and metrics pre-wired."""
     pass
-```
+```python
 
 ### 3.2 Service Lifecycle Management
 
@@ -249,7 +249,7 @@ class NodeTypeService(
     MixinHealthCheck,           # Health monitoring
 ):
     """Full service-ready node with all standard capabilities."""
-```
+```python
 
 **Pattern 2: Event-Driven Node Composition**
 ```python
@@ -260,7 +260,7 @@ class EventDrivenNode(
     MixinIntrospection,         # Runtime introspection
 ):
     """Event-driven node with introspection capabilities."""
-```
+```python
 
 ## 5. Implementation Comparison & Gap Analysis
 
@@ -317,7 +317,7 @@ class EventDrivenNode(
 # Service resolution via duck typing
 event_bus = container.get_service("ProtocolEventBus")
 metadata_loader = container.get_service("ProtocolSchemaLoader")
-```
+```python
 
 **Benefits:**
 - Loose coupling between services

@@ -18,13 +18,15 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from omnibase_core.models.validation.model_validation_result import (
+    ModelValidationResult,
+)
 from omnibase_core.validation.types import (
     ModelUnionPattern,
     UnionUsageChecker,
     validate_union_usage_directory,
     validate_union_usage_file,
 )
-from omnibase_core.validation.validation_utils import ValidationResult
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
@@ -394,7 +396,7 @@ def func(x: Union[str, int]) -> None:
 
         result = validate_union_usage_directory(tmp_path, max_unions=100, strict=False)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.success is True
         assert result.files_checked == 2
 
@@ -417,7 +419,7 @@ def func(x: Union[str, int]) -> None:
             strict=False,
         )
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.success is False
         assert result.metadata is not None
         assert result.metadata["total_unions"] > 3
@@ -436,7 +438,7 @@ def func(x: Union[str, int, bool, float]) -> None:
 
         result = validate_union_usage_directory(tmp_path, max_unions=100, strict=True)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         # Should fail in strict mode due to complex union
         assert result.success is False
         assert len(result.errors) > 0
@@ -457,7 +459,7 @@ def func(x: Union[str, int, bool, float]) -> None:
 
         result = validate_union_usage_directory(tmp_path)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         # Should only check 1 file (test.py)
         assert result.files_checked == 1
 
@@ -465,7 +467,7 @@ def func(x: Union[str, int, bool, float]) -> None:
         """Test validating empty directory."""
         result = validate_union_usage_directory(tmp_path)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.success is True
         assert result.files_checked == 0
         assert result.metadata is not None
@@ -484,7 +486,7 @@ def func(x: Union[str, int, bool, float]) -> None:
 
         result = validate_union_usage_directory(tmp_path)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.files_checked == 2
 
     def test_validate_directory_metadata(self, tmp_path: Path) -> None:
@@ -576,7 +578,7 @@ def func(x: typing.Union[str, int]) -> None:
 
         result = validate_union_usage_directory(tmp_path)
 
-        assert isinstance(result, ValidationResult)
+        assert isinstance(result, ModelValidationResult)
         assert result.files_checked == 1  # Should only check test.py
 
     def test_complex_union_all_patterns(self, tmp_path: Path) -> None:

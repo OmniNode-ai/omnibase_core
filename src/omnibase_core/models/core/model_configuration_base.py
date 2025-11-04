@@ -6,8 +6,8 @@ from typing import Generic, TypeVar
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Generic Configuration Base Class.
@@ -172,7 +172,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize configuration to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize configuration to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def configure(self, **kwargs: Any) -> bool:

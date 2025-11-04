@@ -22,7 +22,7 @@ from omnibase_core.models.discovery.model_node_introspection_event import (
 from omnibase_core.models.discovery.model_nodeintrospectionevent import (
     ModelNodeIntrospectionEvent,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestNode(MixinIntrospectionPublisher):
@@ -32,6 +32,10 @@ class TestNode(MixinIntrospectionPublisher):
         self._node_id = uuid4()
         self.event_bus = None
         self.metadata_loader = None
+
+    def get_node_type(self) -> str:
+        """Return valid ONEX node type for testing."""
+        return "compute"
 
 
 class TestMixinIntrospectionPublisher:
@@ -363,7 +367,7 @@ class TestMixinIntrospectionPublisher:
         node._publish_introspection_event()
 
         # Verify event bus publish was called
-        assert mock_event_bus.publish.called or mock_event_bus.publish.call_count >= 0
+        assert mock_event_bus.publish.called
 
     def test_publish_with_retry_basic(self):
         """Test publishing with retry logic."""
@@ -380,9 +384,8 @@ class TestMixinIntrospectionPublisher:
             node_id=node._node_id,
             node_name="test_node",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="compute",
             actions=["health_check"],
-            protocols=["event_bus"],
-            metadata={"description": "Test node"},
             tags=["test"],
             correlation_id=uuid4(),
         )
@@ -409,9 +412,8 @@ class TestMixinIntrospectionPublisher:
             node_id=node._node_id,
             node_name="test_node",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="compute",
             actions=["health_check"],
-            protocols=["event_bus"],
-            metadata={"description": "Test node"},
             tags=["test"],
             correlation_id=uuid4(),
         )
@@ -436,9 +438,8 @@ class TestMixinIntrospectionPublisher:
             node_id=node._node_id,
             node_name="test_node",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="compute",
             actions=["health_check"],
-            protocols=["event_bus"],
-            metadata={"description": "Test node"},
             tags=["test"],
             correlation_id=uuid4(),
         )
@@ -456,9 +457,8 @@ class TestMixinIntrospectionPublisher:
             node_id=node._node_id,
             node_name="test_node",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="compute",
             actions=["health_check"],
-            protocols=["event_bus"],
-            metadata={"description": "Test node"},
             tags=["test"],
             correlation_id=uuid4(),
         )

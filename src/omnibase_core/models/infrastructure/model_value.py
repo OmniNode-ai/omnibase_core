@@ -4,7 +4,7 @@ from typing import Any, Union
 
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 CLI value object model.
@@ -117,7 +117,7 @@ class ModelValue(BaseModel):
 
     @classmethod
     def from_dict_value(cls, value: dict[str, ModelSchemaValue]) -> ModelValue:
-        """Create CLI value wrapping a dict[str, Any]ionary value with proper ONEX typing."""
+        """Create CLI value wrapping a dictionary value with proper ONEX typing."""
         return cls(value_type=EnumCliValueType.DICT, raw_value=value)
 
     @classmethod
@@ -223,7 +223,7 @@ class ModelValue(BaseModel):
             ) from e
 
     def serialize(self) -> dict[str, object]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

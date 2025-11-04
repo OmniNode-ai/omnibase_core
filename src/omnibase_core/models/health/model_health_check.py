@@ -7,7 +7,7 @@ from omnibase_core.enums.enum_health_check_type import (
     EnumHealthCheckType as HealthCheckType,
 )
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Health Check Configuration Model for ONEX Configuration-Driven Registry System.

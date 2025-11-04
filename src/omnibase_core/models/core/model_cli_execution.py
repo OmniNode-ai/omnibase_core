@@ -171,7 +171,7 @@ class ModelCliExecution(BaseModel):
         return self.execution_context.should_retry()
 
     def to_execution_dict(self) -> dict[str, Any]:
-        """Convert to dict[str, Any]ionary for node execution."""
+        """Convert to dictionary for node execution."""
         execution_dict = self.parsed_arguments.to_execution_dict()
         execution_dict.update(
             {

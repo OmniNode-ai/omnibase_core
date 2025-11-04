@@ -21,7 +21,7 @@ import pytest
 import yaml
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.contracts import (
     MAX_FILE_SIZE,
     VALIDATION_TIMEOUT,
@@ -1177,7 +1177,7 @@ operations: []
         from unittest.mock import patch
 
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         (tmp_path / "test.yaml").write_text(
             """
@@ -1221,7 +1221,7 @@ operations: []
         from unittest.mock import patch
 
         from omnibase_core.errors.error_codes import EnumCoreErrorCode
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         (tmp_path / "test.yaml").write_text(
             """

@@ -1,7 +1,7 @@
 from pydantic import Field
 
 from omnibase_core.models.core.model_workflow import ModelWorkflow
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Workflow Metadata Model - ONEX Standards Compliant.

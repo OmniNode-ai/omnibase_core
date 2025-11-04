@@ -6,7 +6,7 @@ from typing import Generic, Optional, Union
 from pydantic import Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 ModelValueContainer
@@ -201,7 +201,7 @@ class ModelValueContainer(BaseModel):
         return True
 
     def _validate_metadata(self) -> bool:
-        """Validate metadata dict[str, Any]ionary."""
+        """Validate metadata dictionary."""
         try:
             # Metadata must be string-to-string mapping
             if not all(

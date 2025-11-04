@@ -11,7 +11,7 @@ Discovery Event Models for ONEX Event-Driven Service Discovery
 This module contains Pydantic models for the event-driven discovery lifecycle:
 - NODE_INTROSPECTION_EVENT: Node capability publishing
 - TOOL_DISCOVERY_REQUEST: Request for available tools
-- TOOL_DISCOVERY_RESPONSE: Response with tool list[Any]ings
+- TOOL_DISCOVERY_RESPONSE: Response with tool listings
 - NODE_HEALTH_EVENT: Health metric updates
 - NODE_SHUTDOWN_EVENT: Node deregistration
 - REQUEST_REAL_TIME_INTROSPECTION: Request real-time introspection
@@ -54,6 +54,7 @@ from .model_hub_consul_registration_io import (
 from .model_hub_registration_event import ModelHubRegistrationEvent
 from .model_introspection_filters import ModelIntrospectionFilters
 from .model_introspection_response_event import ModelIntrospectionResponseEvent
+from .model_mixin_info import ModelMixinInfo
 from .model_node_health_event import ModelNodeHealthEvent
 from .model_node_introspection_event import (
     ModelNodeCapabilities,
@@ -94,6 +95,7 @@ __all__ = [
     "ModelHubRegistrationEvent",
     "ModelIntrospectionFilters",
     "ModelIntrospectionResponseEvent",
+    "ModelMixinInfo",
     "ModelNodeCapabilities",
     "ModelNodeHealthEvent",
     "ModelNodeIntrospectionEvent",

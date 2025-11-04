@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts" / "valida
 
 from check_error_raising import ErrorRaisingDetector, check_file
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestErrorRaisingDetector:

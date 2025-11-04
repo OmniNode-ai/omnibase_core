@@ -5,7 +5,7 @@ from pydantic import Field
 """
 Model for representing advanced parameters with proper type safety.
 
-This model replaces dict[str, Any]ionary usage in CLI tool execution by providing
+This model replaces dictionary usage in CLI tool execution by providing
 a structured representation of advanced parameters.
 """
 
@@ -104,7 +104,7 @@ class ModelAdvancedParams(BaseModel):
 
     def to_dict(self) -> dict[str, Any]:
         """
-        Convert to dict[str, Any]ionary format for current standards.
+        Convert to dictionary format for current standards.
 
         Returns:
             Dictionary representation of advanced parameters
@@ -149,7 +149,7 @@ class ModelAdvancedParams(BaseModel):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelAdvancedParams":
         """
-        Create from dict[str, Any]ionary, intelligently categorizing parameters.
+        Create from dictionary, intelligently categorizing parameters.
 
         Args:
             data: Dictionary of parameters

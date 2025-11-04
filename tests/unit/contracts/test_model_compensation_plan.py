@@ -21,8 +21,8 @@ import pytest
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
 from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.contracts.model_compensation_plan import ModelCompensationPlan
+from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
 
 class TestModelCompensationPlan:

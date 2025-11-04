@@ -5,7 +5,7 @@ from typing import Optional, cast
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 ModelTypedMapping
@@ -173,7 +173,7 @@ class ModelTypedMapping(BaseModel):
         return list(self.data.keys())
 
     def to_python_dict(self) -> dict[str, Any]:
-        """Convert to a regular Python dict[str, Any]ionary with native types."""
+        """Convert to a regular Python dictionary with native types."""
         return {key: container.value for key, container in self.data.items()}
 
     # ✅ Factory method from_python_dict removed for ONEX compliance

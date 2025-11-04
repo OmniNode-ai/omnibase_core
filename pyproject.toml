@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "omnibase_core"
-version = "0.1.0"
+version = "0.2.0"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode Team", email = "team@omninode.ai"}
@@ -33,6 +33,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed"
 ]
+dependencies = ["omnibase-spi @ git+https://github.com/OmniNode-ai/omnibase_spi.git@v0.2.0", "dependency-injector (>=4.48.1,<5.0.0)", "llama-index (>=0.14.0,<0.15.0)"]
 
 [project.urls]
 homepage = "https://github.com/OmniNode-ai/omnibase_core"
@@ -44,9 +45,7 @@ omni-agent = "omnibase_core.cli.commands:cli"
 
 [project.optional-dependencies]
 cli = ["psutil"]
-monitoring = ["prometheus-client", "sentry-sdk"]
-kubernetes = ["kubernetes"]
-full = ["psutil", "prometheus-client", "sentry-sdk", "kubernetes"]
+full = ["psutil"]
 
 [tool.poetry]
 # Note: name and version are defined in [project] section above (PEP 621)
@@ -60,8 +59,8 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-# ONEX SPI dependency - Pinned to v0.1.1 tag for reproducibility
-omnibase_spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", tag = "v0.1.1"}
+# ONEX SPI dependency - Pinned to v0.2.0 tag for reproducibility
+omnibase-spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", tag = "v0.2.0"}
 pydantic = "^2.11.7"
 llama-index = "^0.14.0"  # Updated for pypdf 6.0+ security fix (CVE-2025-55197)
 pypdf = "^6.1.0"  # Security fix for CVE-2025-55197
@@ -82,9 +81,6 @@ aiohttp = "^3.9.0"
 
 # Optional CLI Dependencies
 psutil = {version = "^5.9.0", optional = true}
-kubernetes = {version = "^29.0.0", optional = true}
-prometheus-client = {version = "^0.19.0", optional = true}
-sentry-sdk = {version = "^1.40.0", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.0"
@@ -103,6 +99,7 @@ pytest-xdist = "^3.8.0"
 pytest-split = "^0.10.0"
 pytest-timeout = "^2.4.0"
 pytest-rerunfailures = "^16.1"
+pytest-testmon = "^2.1.3"
 
 [tool.ruff]
 target-version = "py312"
@@ -208,6 +205,10 @@ ignore = [
 "tests/unit/validation/test_protocol_compliance.py" = ["I001"]  # Import sorting conflicts with isort
 "src/omnibase_core/mixins/mixin_event_bus.py" = ["I001"]  # Import order conflicts with import semantics
 "src/omnibase_core/mixins/mixin_event_handler.py" = ["I001"]  # Import order conflicts with import semantics
+"src/omnibase_core/mixins/mixin_discovery_responder.py" = ["I001"]  # Import sorting skipped by isort - sync with isort skip list
+"src/omnibase_core/mixins/__init__.py" = ["I001"]  # Import order to avoid circular dependencies
+"src/omnibase_core/infrastructure/node_base.py" = ["I001"]  # Import order to avoid circular dependencies
+"src/omnibase_core/models/container/model_onex_container.py" = ["I001"]  # Import order to avoid circular dependencies
 
 [tool.isort]
 profile = "black"
@@ -230,6 +231,8 @@ extend_skip = [
     "src/omnibase_core/models/container/model_service_instance.py",
     "src/omnibase_core/models/container/model_onex_container.py",
     "src/omnibase_core/models/container/model_service_registration.py",
+    # Skip file with isort/ruff conflict
+    "src/omnibase_core/validation/auditor_protocol.py",
     "src/omnibase_core/models/container/model_registry_status.py",
     "src/omnibase_core/models/common/model_value_container.py",
     "src/omnibase_core/models/metadata/model_generic_metadata.py",
@@ -284,6 +287,16 @@ addopts = [
     "--timeout-method=thread",  # Use thread-based timeout for better compatibility
     "--dist=loadscope",  # Group tests by module to reduce memory overhead
 ]
+filterwarnings = [
+    # Suppress asyncio "Task was destroyed but it is pending!" warnings
+    # These are expected during test cleanup when fixtures cancel pending tasks
+    # The cleanup fixtures (event_loop_cleanup, cleanup_service_tasks) properly
+    # cancel tasks, so these warnings are cosmetic and don't indicate real issues
+    "ignore:.*Task was destroyed but it is pending.*:RuntimeWarning",
+    # NOTE: "coroutine was never awaited" warnings are NOT suppressed
+    # These indicate real bugs where async functions were called but never executed
+    # If you encounter this warning, FIX the test by properly awaiting the coroutine
+]
 # Memory optimization notes:
 # - Limited to 4 workers to prevent OOM on machines with 16GB RAM
 # - Use --timeout to prevent hanging tests accumulating memory
@@ -293,6 +306,12 @@ addopts = [
 #   Full suite: -n 4 --timeout=60 (default)
 #   CI/Large machines: -n 8 --timeout=120
 #   Debug single test: -n 0 (disable xdist)
+#
+# Intelligent test selection with pytest-testmon:
+#   Run only affected tests: poetry run pytest --testmon
+#   Reset testmon database: poetry run pytest --testmon-noselect
+#   Disable testmon: poetry run pytest --testmon-off
+#   Note: .testmondata file is gitignored and stores test dependencies
 
 [tool.coverage.run]
 source = ["src/omnibase_core"]

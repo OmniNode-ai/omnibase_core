@@ -75,7 +75,7 @@ Comprehensive validation report for documentation quality, accuracy, and complet
 
 ```bash
 poetry run python scripts/validation/validate_markdown_links.py
-```
+```python
 
 ### Code Example Testing
 
@@ -85,13 +85,13 @@ poetry run python scripts/validation/extract_code_examples.py
 
 # Run extracted examples
 poetry run pytest extracted_examples/
-```
+```bash
 
 ### Type Validation
 
 ```bash
 poetry run mypy src/
-```
+```yaml
 
 ## Next Steps
 

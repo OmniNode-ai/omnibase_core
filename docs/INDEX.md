@@ -18,7 +18,7 @@
 
 ## 📚 Documentation Structure
 
-```
+```text
 omnibase_core/docs/
 │
 ├── Getting Started          → New developer onboarding
@@ -27,7 +27,7 @@ omnibase_core/docs/
 ├── Architecture             → System design and concepts
 ├── Reference                → Templates and API docs
 └── Specialized Topics       → Threading, errors, patterns
-```
+```python
 
 ---
 
@@ -83,6 +83,7 @@ omnibase_core/docs/
 |----------|-------------|--------|
 | [Architecture Overview](architecture/OVERVIEW.md) | High-level system design | ✅ Complete |
 | [**Four-Node Pattern**](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX architecture ⭐ **Excellent!** | ✅ Complete |
+| [**Container Types**](architecture/CONTAINER_TYPES.md) | ModelContainer vs ModelONEXContainer ⚠️ **CRITICAL** | ✅ Complete |
 | [Dependency Injection](architecture/DEPENDENCY_INJECTION.md) | ModelONEXContainer patterns | ✅ Complete |
 | [Contract System](architecture/CONTRACT_SYSTEM.md) | Contract architecture | ✅ Complete |
 | [Type System](architecture/TYPE_SYSTEM.md) | Typing patterns and conventions | ✅ Complete |
@@ -90,6 +91,7 @@ omnibase_core/docs/
 | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design and subcontract patterns | ✅ Complete |
 | [Mixin Architecture](architecture/MIXIN_ARCHITECTURE.md) | Mixin system design and patterns | ✅ Complete |
 | [Protocol Architecture](architecture/PROTOCOL_ARCHITECTURE.md) | Protocol design and compliance | ✅ Complete |
+| [Ecosystem Directory Structure](architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md) | Repository organization and patterns across ONEX ecosystem | ✅ Available |
 
 ---
 
@@ -136,6 +138,22 @@ omnibase_core/docs/
 | [Configuration Management](patterns/patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns | ✅ Available |
 | [Performance Benchmarks](guides/PERFORMANCE_BENCHMARKS.md) | Performance testing | ✅ Available |
 
+### Research Documentation
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [In-Memory Event Bus Research](research/IN_MEMORY_EVENT_BUS_RESEARCH_REPORT.md) | Event handling patterns and implementation analysis | ✅ Available |
+| [Union Type Quick Reference](research/UNION_QUICK_REFERENCE.md) | Union type best practices and migration guide | ✅ Available |
+| [Union Type Remediation Plan](research/UNION_REMEDIATION_PLAN.md) | Comprehensive strategy for eliminating Union types | ✅ Available |
+
+### Release Notes
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| Release Notes v0.2.0 | Discovery enhancements, omnibase_spi v0.2.0 upgrade, container types documentation | ✅ Current |
+| [Release Notes v0.1.1](release-notes/RELEASE_NOTES_v0.1.1.md) | Quality & documentation improvements | ✅ Available |
+| [Release Notes v0.1.0](release-notes/RELEASE_NOTES_v0.1.0.md) | Initial public release | ✅ Available |
+
 ---
 
 ## 🔧 Specialized Topics
@@ -154,6 +172,15 @@ omnibase_core/docs/
 | Document | Description | Status |
 |----------|-------------|--------|
 | [**Threading Guide**](guides/THREADING.md) | Thread safety and concurrency | ✅ Excellent |
+
+### Testing & CI
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [**CI Monitoring Guide**](ci/CI_MONITORING_GUIDE.md) | CI performance monitoring, alerting, and investigation | ✅ Complete |
+| [CI Test Strategy](testing/CI_TEST_STRATEGY.md) | CI/CD test strategy and optimization | ✅ Complete |
+| [Parallel Testing](testing/PARALLEL_TESTING.md) | Parallel test execution configuration | ✅ Complete |
+| [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
 
 ### Architecture Patterns
 
@@ -187,6 +214,7 @@ omnibase_core/docs/
 | **Make nodes thread-safe** | [Threading Guide](guides/THREADING.md) |
 | **Understand the architecture** | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
 | **Test my node** | [Testing Guide](guides/TESTING_GUIDE.md) |
+| **Monitor CI performance** | [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) |
 | **Debug an issue** | Debugging Guide 🚧 Coming Soon |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
 

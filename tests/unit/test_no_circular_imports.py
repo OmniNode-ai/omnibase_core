@@ -37,7 +37,7 @@ def test_import_core_types():
 def test_import_error_codes():
     """Test that error_codes module can be imported."""
     from omnibase_core.errors.error_codes import EnumCoreErrorCode
-    from omnibase_core.errors.model_onex_error import ModelOnexError
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
     assert EnumCoreErrorCode is not None
     assert ModelOnexError is not None
@@ -180,7 +180,7 @@ def test_model_error_context_conversion():
 def test_onex_error_no_circular_dependency():
     """Test that OnexError can be created without triggering circular imports."""
     from omnibase_core.errors.error_codes import EnumCoreErrorCode
-    from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
     # Create an OnexError
     error = OnexError(

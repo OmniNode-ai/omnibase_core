@@ -30,7 +30,7 @@ class ModelGitHubActionsWorkflow(BaseModel):
 
     def to_serializable_dict(self) -> dict[str, Any]:
         """
-        Convert to a serializable dict[str, Any]ionary with proper field names.
+        Convert to a serializable dictionary with proper field names.
         """
 
         def serialize_value(val: Any) -> Any:
@@ -58,6 +58,6 @@ class ModelGitHubActionsWorkflow(BaseModel):
         data: dict[str, Any],
     ) -> "ModelGitHubActionsWorkflow":
         """
-        Create from a serializable dict[str, Any]ionary.
+        Create from a serializable dictionary.
         """
         return cls(**data)

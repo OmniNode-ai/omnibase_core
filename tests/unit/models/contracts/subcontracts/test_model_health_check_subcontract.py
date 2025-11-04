@@ -20,7 +20,7 @@ from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract 
     ModelHealthCheckSubcontract,
     ModelNodeHealthStatus,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelComponentHealth:

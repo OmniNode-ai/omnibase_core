@@ -12,8 +12,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.security.model_permission_custom_fields import (
     ModelPermissionCustomFields,
 )
@@ -23,7 +24,6 @@ from omnibase_core.models.security.model_permission_evaluation_context import (
 from omnibase_core.models.security.model_permission_metadata import (
     ModelPermissionMetadata,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelPermission(BaseModel):

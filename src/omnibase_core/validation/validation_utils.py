@@ -10,15 +10,19 @@ import hashlib
 import logging
 from pathlib import Path
 
+from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
+from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
+from omnibase_core.models.validation.model_protocol_signature_extractor import (
+    ModelProtocolSignatureExtractor,
+)
+from omnibase_core.models.validation.model_validation_result import (
+    ModelValidationResult,
+)
 from omnibase_core.types.typed_dict_validation_metadata_type import (
     TypedDictValidationMetadataType,
 )
 
 from .exceptions import InputValidationError
-from .model_duplication_info import DuplicationInfo
-from .model_protocol_info import ModelProtocolInfo
-from .model_protocol_signature_extractor import ProtocolSignatureExtractor
-from .model_validation_result import ValidationResult
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -31,7 +35,7 @@ def extract_protocol_signature(file_path: Path) -> ModelProtocolInfo | None:
             content = f.read()
             tree = ast.parse(content)
 
-        extractor = ProtocolSignatureExtractor()
+        extractor = ModelProtocolSignatureExtractor()
         extractor.visit(tree)
 
         if not extractor.class_name or not extractor.methods:
@@ -294,9 +298,9 @@ def extract_protocols_from_directory(directory: Path) -> list[ModelProtocolInfo]
 
 # Export all public functions, classes, and types
 __all__ = [
-    "DuplicationInfo",
+    "ModelDuplicationInfo",
     "ModelProtocolInfo",
-    "ValidationResult",
+    "ModelValidationResult",
     "determine_repository_name",
     "extract_protocol_signature",
     "extract_protocols_from_directory",

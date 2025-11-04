@@ -6,7 +6,7 @@ from pydantic import Field
 from omnibase_core.enums.enum_chain_validation_status import EnumChainValidationStatus
 from omnibase_core.enums.enum_compliance_framework import EnumComplianceFramework
 from omnibase_core.enums.enum_trust_level import EnumTrustLevel
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nModelSignatureChain: Tamper-evident signature chain for secure envelopes\n\nThis model manages a collection of cryptographic signatures from multiple nodes,\nproviding comprehensive audit trails and tamper detection for event routing.\n"
 import hashlib

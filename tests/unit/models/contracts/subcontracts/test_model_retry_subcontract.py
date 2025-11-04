@@ -12,11 +12,11 @@ Comprehensive test coverage for retry subcontract model including:
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.subcontracts.model_retry_subcontract import (
     ModelRetrySubcontract,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelRetrySubcontractBasics:

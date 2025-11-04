@@ -9,14 +9,12 @@ from omnibase_core.container.container_service_resolver import (
 )
 from omnibase_core.container.service_registry import ServiceRegistry
 from omnibase_core.models.container import (
+    ModelONEXContainer,
     ModelServiceInstance,
     ModelServiceMetadata,
     ModelServiceRegistration,
     ModelServiceRegistryConfig,
     ModelServiceRegistryStatus,
-)
-from omnibase_core.models.container.model_onex_container import (
-    ModelONEXContainer,
     create_model_onex_container,
     get_model_onex_container,
     get_model_onex_container_sync,

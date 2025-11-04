@@ -1,4 +1,4 @@
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -52,7 +52,7 @@ from omnibase_core.mixins.mixin_node_lifecycle import MixinNodeLifecycle
 from omnibase_core.mixins.mixin_request_response_introspection import (
     MixinRequestResponseIntrospection,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class MixinEventDrivenNode(

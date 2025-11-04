@@ -1,7 +1,7 @@
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_workflow import ModelWorkflow
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Model Workflow Condition - ONEX Standards Compliant Workflow Condition Specification.

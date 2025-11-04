@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, field_serializer
 
 from omnibase_core.enums.enum_audit_action import EnumAuditAction
 from omnibase_core.models.core.model_audit_value import ModelAuditValue
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelAuditEntry(BaseModel):
@@ -128,7 +128,7 @@ class ModelAuditEntry(BaseModel):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelAuditEntry":
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         return cls(**data)
 
     @field_serializer("timestamp", "review_timestamp")

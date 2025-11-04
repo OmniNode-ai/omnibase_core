@@ -17,6 +17,7 @@ from omnibase_core.models.core.model_generic_properties import ModelGenericPrope
 from omnibase_core.models.core.model_monitoring_metrics import ModelMonitoringMetrics
 from omnibase_core.models.core.model_trend_data import ModelTrendData
 from omnibase_core.models.health.model_tool_health import ModelToolHealth
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.registry.model_registry_business_impact_summary import (
     ModelRegistryBusinessImpactSummary,
 )
@@ -27,7 +28,6 @@ from omnibase_core.models.registry.model_registry_sla_compliance import (
     ModelRegistrySlaCompliance,
 )
 from omnibase_core.models.service.model_service_health import ModelServiceHealth
-from omnibase_core.primitives.model_semver import ModelSemVer
 
 
 class ModelRegistryHealthReport(BaseModel):

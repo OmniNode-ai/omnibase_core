@@ -1,7 +1,7 @@
 """
 Model for representing error context with proper type safety.
 
-This model replaces dict[str, Any]ionary usage in error contexts by providing
+This model replaces dictionary usage in error contexts by providing
 a structured representation of error context data.
 """
 
@@ -92,7 +92,7 @@ class ModelErrorContext(BaseModel):
     # Protocol method implementations
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:

@@ -95,7 +95,7 @@ metrics:                                      # Array: Metric definitions
       - "label1"
       - "label2"
     buckets: [1, 10, 100, 1000]              # Array: Histogram buckets (if type=histogram)
-```
+```yaml
 
 ## Field Definitions
 
@@ -115,7 +115,7 @@ mixin_name: "mixin_health_check"          # ✓ Good
 mixin_name: "mixin_error_handling"        # ✓ Good
 mixin_name: "health_check"                # ✗ Bad: Missing 'mixin_' prefix
 mixin_name: "mixin-health-check"          # ✗ Bad: Use underscores, not hyphens
-```
+```yaml
 
 #### mixin_version
 
@@ -127,7 +127,7 @@ mixin_version:
   major: integer  # Breaking changes
   minor: integer  # New features, backward compatible
   patch: integer  # Bug fixes
-```
+```yaml
 
 **Description**: Semantic versioning for the mixin. Follow [semver](https://semver.org/) principles.
 
@@ -144,7 +144,7 @@ mixin_version: {major: 1, minor: 1, patch: 1}
 
 # Breaking change
 mixin_version: {major: 2, minor: 0, patch: 0}
-```
+```yaml
 
 #### description
 
@@ -165,7 +165,7 @@ description: "Error handling"
 
 # ✗ Bad: Too technical
 description: "Implements circuit breaker pattern with exponential backoff retry mechanism and error classification taxonomy"
-```
+```text
 
 #### applicable_node_types
 
@@ -188,7 +188,7 @@ applicable_node_types: ["REDUCER", "ORCHESTRATOR"]
 
 # Multiple specific types
 applicable_node_types: ["EFFECT", "REDUCER"]
-```
+```yaml
 
 ### Actions Section
 
@@ -207,7 +207,7 @@ applicable_node_types: ["EFFECT", "REDUCER"]
   outputs: array<string>          # Required: Output parameter names
   required: boolean               # Required: Is action mandatory
   timeout_ms: integer             # Required: Action timeout (1-300000)
-```
+```yaml
 
 **Examples**:
 
@@ -244,7 +244,7 @@ actions:
     outputs: ["cache_warming_result"]
     required: false
     timeout_ms: 60000
-```
+```yaml
 
 ### Configuration Section
 
@@ -274,7 +274,7 @@ mixin_name_config:
   nested_config:
     sub_param1: value
     sub_param2: value
-```
+```yaml
 
 **Examples**:
 
@@ -314,7 +314,7 @@ caching_config:
     - level: "L2"
       type: "redis"
       connection_string: "redis://localhost:6379"
-```
+```bash
 
 ### Output Models Section
 
@@ -334,7 +334,7 @@ output_models:
       type: "object"
       properties:
         sub_field: "type"
-```
+```yaml
 
 **Type Definitions**:
 - `"string"` - String value
@@ -380,7 +380,7 @@ output_models:
     success_count: "integer"
     last_failure_time: "timestamp"
     next_retry_time: "timestamp"
-```
+```yaml
 
 ### Dependencies Section
 
@@ -397,7 +397,7 @@ dependencies:
   - name: string                  # Capability identifier
     type: string                  # Dependency type
     description: string           # What is provided
-```
+```yaml
 
 **Dependency Types**:
 - `"capability"` - Functional capability
@@ -420,7 +420,7 @@ dependencies:
   - name: "metrics_collection"
     type: "protocol"
     description: "Provides metrics collection interface"
-```
+```python
 
 #### requires_dependencies
 
@@ -436,7 +436,7 @@ requires_dependencies:
     type: string                  # Dependency type
     description: string           # Why it's needed
     optional: boolean             # Is it optional
-```
+```yaml
 
 **Examples**:
 
@@ -456,7 +456,7 @@ requires_dependencies:
     type: "service"
     description: "Required for finding dependent services"
     optional: false
-```
+```yaml
 
 ### Metrics Section
 
@@ -475,7 +475,7 @@ metrics:
     description: string           # What metric measures
     labels: array<string>         # Metric labels
     buckets: array<number>        # Histogram buckets (if type=histogram)
-```
+```yaml
 
 **Metric Types**:
 - `"counter"` - Monotonically increasing value (e.g., total errors)
@@ -511,7 +511,7 @@ metrics:
       - "operation_name"
       - "success"
     buckets: [1, 5, 10, 50, 100, 500, 1000, 5000, 10000]
-```
+```yaml
 
 ## Complete Examples
 
@@ -542,7 +542,7 @@ metrics:
     type: "counter"
     description: "Total log messages written"
     labels: ["level", "node_type"]
-```
+```yaml
 
 ### Example 2: EFFECT-Specific Mixin
 
@@ -604,7 +604,7 @@ metrics:
     description: "HTTP request duration"
     labels: ["method", "endpoint"]
     buckets: [10, 50, 100, 500, 1000, 5000, 10000]
-```
+```python
 
 ### Example 3: REDUCER-Specific Mixin
 
@@ -660,7 +660,7 @@ metrics:
     description: "Size of persisted state"
     labels: ["node_id"]
     buckets: [1024, 10240, 102400, 1048576, 10485760]
-```
+```python
 
 ## Validation Rules
 

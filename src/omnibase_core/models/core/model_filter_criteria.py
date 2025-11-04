@@ -78,7 +78,7 @@ class ModelFilterCriteria(BaseModel):
     model_config = ConfigDict()
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert to dict[str, Any]ionary for current standards."""
+        """Convert to dictionary for current standards."""
         # Use model_dump() as base and transform custom filters
         data = self.model_dump(exclude_none=True)
         # Convert custom filters to dict[str, Any]if present
@@ -91,7 +91,7 @@ class ModelFilterCriteria(BaseModel):
         cls,
         data: dict[str, Any] | None,
     ) -> Optional["ModelFilterCriteria"]:
-        """Create from dict[str, Any]ionary for easy migration."""
+        """Create from dictionary for easy migration."""
         if data is None:
             return None
 

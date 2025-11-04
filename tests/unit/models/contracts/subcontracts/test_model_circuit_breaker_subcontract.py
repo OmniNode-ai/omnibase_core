@@ -12,11 +12,11 @@ Comprehensive test coverage for circuit breaker subcontract model including:
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.subcontracts.model_circuit_breaker_subcontract import (
     ModelCircuitBreakerSubcontract,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelCircuitBreakerSubcontractBasics:

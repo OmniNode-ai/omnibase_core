@@ -3,7 +3,7 @@
 import pytest
 
 from omnibase_core.models.health.model_health_metadata import ModelHealthMetadata
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelHealthMetadataBasics:

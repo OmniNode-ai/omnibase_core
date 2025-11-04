@@ -12,7 +12,7 @@ class ModelCustomMetrics(BaseModel):
     )
 
     def get_metrics_dict(self) -> dict[str, str | int | float | bool]:
-        """Convert to dict[str, Any]ionary format."""
+        """Convert to dictionary format."""
         return {metric.name: metric.value for metric in self.metrics}
 
     @classmethod
@@ -20,7 +20,7 @@ class ModelCustomMetrics(BaseModel):
         cls,
         metrics_dict: dict[str, str | int | float | bool],
     ) -> "ModelCustomMetrics":
-        """Create from dict[str, Any]ionary with type inference."""
+        """Create from dictionary with type inference."""
         metrics = []
         for name, value in metrics_dict.items():
             # Check bool before int since bool is a subclass of int in Python

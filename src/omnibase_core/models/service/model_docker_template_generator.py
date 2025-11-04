@@ -110,7 +110,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
         Generate Docker Compose service definition.
 
         Returns:
-            Docker Compose service configuration dict[str, Any]ionary
+            Docker Compose service configuration dictionary
         """
         service_name = self.config.node_name.replace("_", "-")
 

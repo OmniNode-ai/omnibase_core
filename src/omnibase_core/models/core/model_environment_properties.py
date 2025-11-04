@@ -181,7 +181,7 @@ class ModelEnvironmentProperties(BaseModel):
         cls,
         properties: dict[str, PropertyValue],
     ) -> "ModelEnvironmentProperties":
-        """Create from a dict[str, Any]ionary of properties."""
+        """Create from a dictionary of properties."""
         return cls(properties=properties)
 
     @classmethod

@@ -6,13 +6,13 @@ import pytest
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.core import (
     ModelCapabilityFactory,
     ModelGenericFactory,
     ModelResultFactory,
     ModelValidationErrorFactory,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
 
 # Test models for factory testing

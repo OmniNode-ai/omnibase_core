@@ -110,7 +110,7 @@ print(f"Valid: {result.is_valid}, Score: {result.score}")
 
 # Protocol methods (stubs - will be implemented in future versions)
 # await validator.validate_file_compliance("path/to/file.py")
-```
+```python
 
 ### Using ModelProtocolAuditor
 
@@ -136,7 +136,7 @@ print(f"Duplicates: {result.duplicates_found}")
 
 # Protocol methods (stubs - will be implemented in future versions)
 # await auditor.validate_file_quality("path/to/file.py")
-```
+```python
 
 ## Protocol Compliance Testing
 
@@ -160,7 +160,7 @@ poetry run pytest tests/unit/validation/test_protocol_compliance.py -v
 
 # Run all validation tests (verify backward compatibility)
 poetry run pytest tests/unit/validation/ -v
-```
+```yaml
 
 ## Implementation Status
 
@@ -204,7 +204,7 @@ No changes required! All existing code continues to work:
 # This still works exactly as before
 validator = ProtocolContractValidator()
 result = validator.validate_contract_yaml(yaml_content)
-```
+```python
 
 ### For New Code Using Protocols
 
@@ -221,7 +221,7 @@ def validate_with_protocol(validator: ProtocolComplianceValidator) -> None:
 
     # Or future protocol methods
     # await validator.validate_file_compliance("file.py")
-```
+```python
 
 ## Design Decisions
 
@@ -252,7 +252,7 @@ All changes are purely additive:
 Protocol attributes use union types with None to indicate optional dependencies:
 ```python
 self.onex_standards: ProtocolONEXStandards | None = None
-```
+```text
 
 This allows:
 - Gradual adoption of protocol features

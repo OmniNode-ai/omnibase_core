@@ -5,7 +5,7 @@ from pydantic import Field
 """
 Serializable Dictionary Model for ONEX Configuration System.
 
-Strongly typed model for serializable dict[str, Any]ionary data.
+Strongly typed model for serializable dictionary data.
 """
 
 from pydantic import BaseModel
@@ -13,9 +13,9 @@ from pydantic import BaseModel
 
 class ModelSerializableDict(BaseModel):
     """
-    Strongly typed model for serializable dict[str, Any]ionary data.
+    Strongly typed model for serializable dictionary data.
 
-    Represents dict[str, Any]ionary data that can be serialized with proper type safety.
+    Represents dictionary data that can be serialized with proper type safety.
     """
 
     data: dict[str, str] = Field(

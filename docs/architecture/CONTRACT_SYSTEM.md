@@ -19,7 +19,7 @@ class ModelContractBase(BaseModel):
     version: str
     description: Optional[str]
     node_type: EnumNodeType
-```
+```python
 
 ### Specialized Contracts
 
@@ -46,7 +46,7 @@ class ModelContractReducer(ModelContractBase):
 class ModelContractOrchestrator(ModelContractBase):
     workflow_definition: dict
     execution_mode: str
-```
+```python
 
 ## Subcontracts
 
@@ -82,7 +82,7 @@ contract = ModelContractCompute(
     version="1.0.0",
     # Missing required node_type
 )  # Raises ValidationError
-```
+```python
 
 ## Benefits
 
@@ -100,7 +100,7 @@ contract = ModelContractCompute(
 class MyComplexContract(ModelContractBase):
     compute_config: ModelContractCompute
     effect_config: ModelContractEffect
-```
+```python
 
 ### Contract Extension
 
@@ -108,7 +108,7 @@ class MyComplexContract(ModelContractBase):
 class MyCustomContract(ModelContractCompute):
     custom_field: str
     advanced_options: dict
-```
+```python
 
 ## Next Steps
 

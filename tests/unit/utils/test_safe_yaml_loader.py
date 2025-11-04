@@ -22,9 +22,9 @@ import yaml
 from pydantic import BaseModel, ValidationError, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.config.model_schema_example import ModelSchemaExample
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.safe_yaml_loader import (
     extract_example_from_schema,
     load_and_validate_yaml_model,

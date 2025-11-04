@@ -14,7 +14,6 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Import extracted YAML model classes
 from omnibase_core.models.core.model_yaml_configuration import ModelYamlConfiguration
@@ -25,6 +24,7 @@ from omnibase_core.models.core.model_yaml_policy import ModelYamlPolicy
 from omnibase_core.models.core.model_yaml_registry import ModelYamlRegistry
 from omnibase_core.models.core.model_yaml_state import ModelYamlState
 from omnibase_core.models.core.model_yaml_with_examples import ModelYamlWithExamples
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 T = TypeVar("T", bound=BaseModel)
 

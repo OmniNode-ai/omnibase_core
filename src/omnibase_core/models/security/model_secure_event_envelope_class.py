@@ -14,13 +14,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_valid
 from omnibase_core.enums.enum_security_event_status import EnumSecurityEventStatus
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Import base envelope and security models
 from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_route_spec import ModelRouteSpec
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_policy_context import ModelPolicyContext
 from omnibase_core.models.security.model_security_context import ModelSecurityContext
 from omnibase_core.models.security.model_security_event import ModelSecurityEvent

@@ -4,6 +4,9 @@ Basic tests for discovery event models to validate schema definitions.
 
 from uuid import uuid4
 
+import pytest
+from pydantic import ValidationError
+
 from omnibase_core.models.discovery import (
     ModelNodeHealthEvent,
     ModelNodeIntrospectionEvent,
@@ -21,7 +24,7 @@ from omnibase_core.models.discovery.model_tool_discovery_request import (
 from omnibase_core.models.discovery.model_tool_discovery_response import (
     ModelDiscoveredTool,
 )
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestNodeIntrospectionEvent:
@@ -40,6 +43,7 @@ class TestNodeIntrospectionEvent:
             node_id=node_id,
             node_name="test_node",
             version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="effect",
             capabilities=capabilities,
             tags=["test", "generator"],
         )
@@ -57,9 +61,8 @@ class TestNodeIntrospectionEvent:
             node_id=node_id,
             node_name="node_generator",
             version=ModelSemVer(major=1, minor=2, patch=3),
+            node_type="compute",
             actions=["generate_complete_node", "health_check"],
-            protocols=["mcp", "graphql"],
-            metadata={"author": "ONEX"},
             tags=["generator", "validated"],
         )
 
@@ -68,6 +71,192 @@ class TestNodeIntrospectionEvent:
         assert event.version.minor == 2
         assert event.capabilities is not None
         assert len(event.tags) == 2
+
+
+class TestModelNodeIntrospectionEventNodeTypeEdgeCases:
+    """
+    Edge case tests for node_type validation in ModelNodeIntrospectionEvent.
+
+    The node_type field uses regex pattern: ^(effect|compute|reducer|orchestrator)$
+    These tests verify that invalid inputs are properly rejected.
+    """
+
+    def test_node_type_invalid_value(self):
+        """Test that invalid node_type value raises ValidationError"""
+        capabilities = ModelNodeCapabilities(
+            actions=["test_action"],
+            protocols=["mcp"],
+            metadata={},
+        )
+
+        node_id = uuid4()
+        with pytest.raises(ValidationError) as exc_info:
+            ModelNodeIntrospectionEvent(
+                node_id=node_id,
+                node_name="test_node",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                node_type="invalid_type",  # Invalid value
+                capabilities=capabilities,
+            )
+
+        # Verify the error is about node_type validation
+        errors = exc_info.value.errors()
+        assert any("node_type" in str(error.get("loc")) for error in errors)
+        assert any(
+            "String should match pattern" in str(error.get("msg")) for error in errors
+        )
+
+    def test_node_type_uppercase(self):
+        """Test that uppercase node_type raises ValidationError (case sensitive)"""
+        capabilities = ModelNodeCapabilities(
+            actions=["test_action"],
+            protocols=["mcp"],
+            metadata={},
+        )
+
+        node_id = uuid4()
+        with pytest.raises(ValidationError) as exc_info:
+            ModelNodeIntrospectionEvent(
+                node_id=node_id,
+                node_name="test_node",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                node_type="EFFECT",  # Uppercase - should fail
+                capabilities=capabilities,
+            )
+
+        # Verify the error is about node_type validation
+        errors = exc_info.value.errors()
+        assert any("node_type" in str(error.get("loc")) for error in errors)
+
+    def test_node_type_with_whitespace(self):
+        """Test that node_type with trailing whitespace raises ValidationError"""
+        capabilities = ModelNodeCapabilities(
+            actions=["test_action"],
+            protocols=["mcp"],
+            metadata={},
+        )
+
+        node_id = uuid4()
+        with pytest.raises(ValidationError) as exc_info:
+            ModelNodeIntrospectionEvent(
+                node_id=node_id,
+                node_name="test_node",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                node_type="effect ",  # Trailing space - should fail
+                capabilities=capabilities,
+            )
+
+        # Verify the error is about node_type validation
+        errors = exc_info.value.errors()
+        assert any("node_type" in str(error.get("loc")) for error in errors)
+
+    def test_node_type_empty_string(self):
+        """Test that empty string node_type raises ValidationError"""
+        capabilities = ModelNodeCapabilities(
+            actions=["test_action"],
+            protocols=["mcp"],
+            metadata={},
+        )
+
+        node_id = uuid4()
+        with pytest.raises(ValidationError) as exc_info:
+            ModelNodeIntrospectionEvent(
+                node_id=node_id,
+                node_name="test_node",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                node_type="",  # Empty string - should fail
+                capabilities=capabilities,
+            )
+
+        # Verify the error is about node_type validation
+        errors = exc_info.value.errors()
+        assert any("node_type" in str(error.get("loc")) for error in errors)
+
+    def test_node_type_partial_match(self):
+        """Test that partial match of valid node_type raises ValidationError"""
+        capabilities = ModelNodeCapabilities(
+            actions=["test_action"],
+            protocols=["mcp"],
+            metadata={},
+        )
+
+        node_id = uuid4()
+        with pytest.raises(ValidationError) as exc_info:
+            ModelNodeIntrospectionEvent(
+                node_id=node_id,
+                node_name="test_node",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                node_type="eff",  # Partial match - should fail
+                capabilities=capabilities,
+            )
+
+        # Verify the error is about node_type validation
+        errors = exc_info.value.errors()
+        assert any("node_type" in str(error.get("loc")) for error in errors)
+
+    def test_node_role_null_allowed(self):
+        """Test that node_role=None is valid (optional field)"""
+        capabilities = ModelNodeCapabilities(
+            actions=["test_action"],
+            protocols=["mcp"],
+            metadata={},
+        )
+
+        node_id = uuid4()
+        event = ModelNodeIntrospectionEvent(
+            node_id=node_id,
+            node_name="test_node",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="effect",
+            capabilities=capabilities,
+            node_role=None,  # Explicitly None - should be valid
+        )
+
+        assert event.node_role is None
+        assert event.node_type == "effect"
+
+    def test_node_role_empty_string(self):
+        """Test that node_role="" is valid (empty string allowed)"""
+        capabilities = ModelNodeCapabilities(
+            actions=["test_action"],
+            protocols=["mcp"],
+            metadata={},
+        )
+
+        node_id = uuid4()
+        event = ModelNodeIntrospectionEvent(
+            node_id=node_id,
+            node_name="test_node",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="compute",
+            capabilities=capabilities,
+            node_role="",  # Empty string - should be valid
+        )
+
+        assert event.node_role == ""
+        assert event.node_type == "compute"
+
+    def test_node_role_whitespace_only(self):
+        """Test that node_role with only whitespace is accepted (no trimming)"""
+        capabilities = ModelNodeCapabilities(
+            actions=["test_action"],
+            protocols=["mcp"],
+            metadata={},
+        )
+
+        node_id = uuid4()
+        event = ModelNodeIntrospectionEvent(
+            node_id=node_id,
+            node_name="test_node",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            node_type="reducer",
+            capabilities=capabilities,
+            node_role="   ",  # Whitespace only - should be valid (no trimming)
+        )
+
+        # Pydantic doesn't automatically trim whitespace unless configured
+        assert event.node_role == "   "
+        assert event.node_type == "reducer"
 
 
 class TestToolDiscoveryRequest:
@@ -272,6 +461,7 @@ def test_all_events_have_correlation_id_support():
         node_id=node_id,
         node_name="test",
         version=ModelSemVer(major=1, minor=0, patch=0),
+        node_type="effect",
         actions=["test"],
         correlation_id=correlation_id,
     )

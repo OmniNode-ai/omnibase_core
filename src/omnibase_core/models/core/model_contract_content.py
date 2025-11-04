@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Model for contract content representation in ONEX NodeBase implementation.
@@ -16,6 +16,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, field_validator
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
 from omnibase_core.models.core.model_contract_definitions import (
     ModelContractDefinitions,
 )
@@ -79,9 +80,26 @@ class ModelContractContent(BaseModel):
     primary_actions: list[str] | None = Field(
         default=None, description="Primary actions"
     )
-    validation_rules: dict[str, Any] | list[dict[str, Any]] | None = Field(
+
+    @field_validator("validation_rules", mode="before")
+    @classmethod
+    def validate_validation_rules_flexible(
+        cls, v: object
+    ) -> ModelValidationRules | None:
+        """Validate and convert flexible validation rules format using shared utility."""
+        if v is None:
+            return None
+        if isinstance(v, ModelValidationRules):
+            return v
+        from omnibase_core.models.utils.model_validation_rules_converter import (
+            ModelValidationRulesConverter,
+        )
+
+        return ModelValidationRulesConverter.convert_to_validation_rules(v)
+
+    validation_rules: ModelValidationRules | None = Field(
         default=None,
-        description="Validation rules (can be dict[str, Any]or list[Any]format)",
+        description="Validation rules for contract enforcement",
     )
 
     # === INFRASTRUCTURE FIELDS ===

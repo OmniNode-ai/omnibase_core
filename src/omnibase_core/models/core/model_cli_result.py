@@ -33,12 +33,12 @@ from typing import Any, Self
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-
-# Safe runtime import - error_codes only imports from types.core_types
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_cli_execution import ModelCliExecution
 from omnibase_core.models.core.model_cli_output_data import ModelCliOutputData
 from omnibase_core.models.core.model_duration import ModelDuration
+
+# Safe runtime import - error_codes only imports from types.core_types
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
 
 

@@ -69,7 +69,7 @@ class ModelCustomSecuritySettings(BaseModel):
         )
 
     def to_dict(self) -> dict[str, object]:
-        """Convert to dict[str, Any]ionary for current standards."""
+        """Convert to dictionary for current standards."""
         # Custom flattening logic for security settings
         result: dict[str, object] = {}
         result.update(dict(self.string_settings.items()))

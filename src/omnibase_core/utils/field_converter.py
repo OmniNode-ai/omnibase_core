@@ -5,7 +5,7 @@ from typing import Generic, TypeVar
 
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 FieldConverter

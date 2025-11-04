@@ -45,7 +45,7 @@ ValidationError: field 'config.cache_ttl' is required
   Hint: Add cache_ttl to your ModelCacheConfig
   Example: cache_ttl=3600
   Documentation: docs/reference/api/models.md#cache-config
-```
+```python
 
 ### Phase 2: Cross-Node Validation (v2.2.0)
 
@@ -64,7 +64,7 @@ def workflow():
     compute_output = compute_node.process(input_data)
     # Validates compute_output matches effect_node input contract
     effect_node.execute(compute_output)
-```
+```python
 
 ### Phase 3: Performance Validation (v2.3.0)
 
@@ -83,7 +83,7 @@ class NodeMyCompute(NodeComputeService):
         max_execution_time_ms=100,
         min_cache_hit_rate=0.8
     )
-```
+```python
 
 ### Phase 4: Schema Evolution (v3.0.0)
 
@@ -102,7 +102,7 @@ class ModelContractV2(ModelContractV1):
     __backward_compatible__ = True
 
     new_field: Optional[str] = None  # Added in v2
-```
+```yaml
 
 ## Implementation Timeline
 

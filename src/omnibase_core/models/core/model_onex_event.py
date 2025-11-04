@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # Import for event type validation
 from omnibase_core.constants.event_types import normalize_legacy_event_type
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_event_type import ModelEventType
 from .model_onex_event_metadata import ModelOnexEventMetadata

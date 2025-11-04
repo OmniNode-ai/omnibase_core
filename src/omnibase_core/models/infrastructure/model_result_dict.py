@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Result Dictionary Model.
@@ -24,8 +24,8 @@ class ModelResultDict(BaseModel):
     """
     Clean Pydantic model for Result serialization.
 
-    Represents the dict[str, Any]ionary structure when converting Results
-    to/from dict[str, Any]ionary format with proper type safety.
+    Represents the dictionary structure when converting Results
+    to/from dictionary format with proper type safety.
     Implements omnibase_spi protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
@@ -77,11 +77,11 @@ class ModelResultDict(BaseModel):
             ) from e
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dict[str, Any]ionary (Serializable protocol)."""
+        """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
 
-# Type alias for dict[str, Any]ionary-based data structures
+# Type alias for dictionary-based data structures
 ModelResultData = dict[str, ModelValue]  # Strongly-typed dict[str, Any]for common data
 
 # Export for use

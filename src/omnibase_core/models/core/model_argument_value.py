@@ -1,7 +1,3 @@
-from typing import Union
-
-from pydantic import Field
-
 """
 Argument Value Model.
 
@@ -11,10 +7,11 @@ with structured argument value handling.
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Define allowed argument value types
-ArgumentValueType = Union[str, int, bool, float, list[str], list[int], list[float]]
+# union-ok: Value wrapper legitimately needs multiple primitive types for runtime flexibility
+ArgumentValueType = str | int | bool | float | list[str] | list[int] | list[float]
 
 
 class ModelArgumentValue(BaseModel):
@@ -76,7 +73,7 @@ class ModelArgumentValue(BaseModel):
         return False
 
     def get_as_list(self) -> list[str]:
-        """Get value as list[Any]of strings."""
+        """Get value as list of strings."""
         if isinstance(self.value, list):
             return [str(item) for item in self.value]
         return [str(self.value)]

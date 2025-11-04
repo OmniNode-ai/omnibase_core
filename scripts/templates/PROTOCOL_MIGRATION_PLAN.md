@@ -19,7 +19,7 @@ find src/ -name "protocol_*.py" -o -name "*protocol*.py"
 ```
 
 ### **RULE 2: ALL protocols migrate to omnibase_spi**
-```
+```text
 ../omnibase_spi/src/omnibase_spi/protocols/
 ├── core/                    # ONEX architecture protocols
 ├── agent/                   # Agent coordination protocols

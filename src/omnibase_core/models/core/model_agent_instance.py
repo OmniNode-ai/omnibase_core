@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nModel for Claude Code agent instance.\n\nThis model represents a running Claude Code agent instance with its\nconfiguration, status, and runtime information.\n"
 import uuid

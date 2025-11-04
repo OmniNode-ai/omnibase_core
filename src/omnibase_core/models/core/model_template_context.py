@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from omnibase_core.models.core.model_metadata import ModelMetadata
 from omnibase_core.models.core.model_regeneration_target import ModelRegenerationTarget
 from omnibase_core.models.core.model_rendered_template import ModelRenderedTemplate
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 __all__ = ["ModelRegenerationTarget", "ModelRenderedTemplate", "ModelTemplateContext"]
 

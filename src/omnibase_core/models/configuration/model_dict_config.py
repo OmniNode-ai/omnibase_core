@@ -5,7 +5,7 @@ from pydantic import Field
 """
 Dictionary Configuration Model for ONEX Configuration System.
 
-Strongly typed model for dict[str, Any]ionary return types.
+Strongly typed model for dictionary return types.
 """
 
 from pydantic import BaseModel
@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 class ModelDictConfig(BaseModel):
     """
-    Strongly typed model for dict[str, Any]ionary return types.
+    Strongly typed model for dictionary return types.
 
     Represents configuration dict[str, Any]ionaries with proper type safety.
     """

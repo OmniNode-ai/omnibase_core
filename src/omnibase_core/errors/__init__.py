@@ -16,7 +16,7 @@ from omnibase_core.errors.error_codes import (
 )
 
 # ModelOnexError is imported via lazy import to avoid circular dependency
-# It's available as: from omnibase_core.errors.model_onex_error import ModelOnexError
+# It's available as: from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 # ModelOnexWarning, ModelRegistryError, and ModelCLIAdapter are imported via lazy import
@@ -49,7 +49,7 @@ __all__ = [
 def __getattr__(name: str) -> Any:
     """Lazy import mechanism to avoid circular dependencies."""
     if name == "ModelOnexError" or name == "OnexError":
-        from omnibase_core.errors.model_onex_error import ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         return ModelOnexError
     if name == "ModelOnexWarning":

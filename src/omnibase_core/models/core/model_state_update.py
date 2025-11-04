@@ -159,7 +159,7 @@ class ModelStateUpdate(BaseModel):
         value: dict[str, str | int | float | bool],
         condition: str | None = None,
     ) -> None:
-        """Convenience method to merge a dict[str, Any]ionary field."""
+        """Convenience method to merge a dictionary field."""
         # Convert to ModelSchemaValue
         schema_value = ModelSchemaValue.from_value(value)
         self.add_field_update(

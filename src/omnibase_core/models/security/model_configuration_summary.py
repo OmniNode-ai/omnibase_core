@@ -41,8 +41,8 @@ class ModelConfigurationSummary(BaseModel):
     )
 
     def to_dict(self) -> dict[str, object]:
-        """Convert to dict[str, Any]ionary for current standards."""
-        # Custom dict[str, Any]ionary format for configuration summary
+        """Convert to dictionary for current standards."""
+        # Custom dictionary format for configuration summary
         return {
             "backend_type": self.backend_type,
             "backend_capabilities": self.backend_capabilities,
