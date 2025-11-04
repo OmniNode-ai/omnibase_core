@@ -2,6 +2,9 @@
 """
 Performance benchmarks for source_node_id field overhead in ModelOnexEnvelopeV1.
 
+IMPORTANT: These are real performance benchmarks, not unit tests.
+They measure actual wall-clock time and are NOT suitable for CI.
+
 These tests measure the performance impact of the optional source_node_id field
 added in PR #71 (commit 28b0f4df). The field enables node-to-node event tracking.
 
@@ -25,12 +28,22 @@ Success Criteria:
 - Absolute times should remain fast (< 1ms per operation)
 - Bulk operations scale linearly with acceptable overhead (< 160%)
 
+Usage:
+Run manually for performance analysis:
+    poetry run pytest tests/performance/ -v -s
+
+Do NOT run in CI - results are unreliable in shared runners.
+
+For functional testing, see:
+    tests/unit/models/test_model_onex_envelope_source_node_id.py
+
 Related:
 - PR #71 feedback: "Nice to Have" - Performance benchmarks
 - Commit: 28b0f4df - Added source_node_id field
 - Correlation ID: 95cac850-05a3-43e2-9e57-ccbbef683f43
 """
 
+import os
 import sys
 import time
 from datetime import UTC, datetime
@@ -41,6 +54,12 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.models.core.model_onex_envelope_v1 import ModelOnexEnvelopeV1
+
+# Skip all performance tests in CI - they're unreliable in shared runners
+pytestmark = pytest.mark.skipif(
+    os.environ.get("CI") == "true",
+    reason="Performance benchmarks are not reliable in CI shared runners. Run manually for performance analysis.",
+)
 
 
 class TestSourceNodeIdOverhead:
