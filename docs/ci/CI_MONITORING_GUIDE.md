@@ -200,7 +200,7 @@ gh run list --workflow=test.yml --limit 10
 **Command**:
 ```bash
 # Collect tests in specific split (local simulation)
-poetry run pytest --collect-only --split-splits=20 --split-group=12
+poetry run pytest --collect-only --splits=20 --group=12
 
 # Count tests per split
 poetry run pytest --collect-only --quiet | wc -l
@@ -228,14 +228,14 @@ Variance: +43 tests (+7%)
 ```bash
 # Run slow split with duration reporting
 poetry run pytest tests/ \
-  --split-splits=20 --split-group=12 \
+  --splits=20 --group=12 \
   --durations=20 \
   --timeout=60 \
   -v
 
 # Alternative: Run with detailed timing
 poetry run pytest tests/ \
-  --split-splits=20 --split-group=12 \
+  --splits=20 --group=12 \
   --durations=0 | sort -t: -k2 -n | tail -20
 ```text
 
@@ -337,7 +337,7 @@ gh run view <run-id> --log | grep "split-12"
 **Verification**:
 ```bash
 # Run affected split locally to verify fix
-poetry run pytest tests/ --split-splits=20 --split-group=12 --durations=10
+poetry run pytest tests/ --splits=20 --group=12 --durations=10
 
 # Push fix and monitor next CI run
 git push && gh run watch
@@ -359,8 +359,8 @@ git push && gh run watch
 **Investigation**:
 ```bash
 # Identify slow tests in split 12
-poetry run pytest --collect-only --split-splits=20 --split-group=12 | grep integration
-poetry run pytest tests/ --split-splits=20 --split-group=12 --durations=20
+poetry run pytest --collect-only --splits=20 --group=12 | grep integration
+poetry run pytest tests/ --splits=20 --group=12 --durations=20
 ```python
 
 **Resolution**:
@@ -431,7 +431,7 @@ done > test_growth.csv
 ```bash
 # Run with detailed async debugging
 poetry run pytest tests/ \
-  --split-splits=20 --split-group=12 \
+  --splits=20 --group=12 \
   --log-cli-level=DEBUG \
   --capture=no \
   -xvs
@@ -458,10 +458,10 @@ grep "Event loop" <ci-log-file>
 **Investigation**:
 ```bash
 # Run with reduced workers
-poetry run pytest tests/ --split-splits=20 --split-group=12 -n 2
+poetry run pytest tests/ --splits=20 --group=12 -n 2
 
 # Profile memory usage (local)
-poetry run pytest tests/ --memray --split-splits=20 --split-group=12
+poetry run pytest tests/ --memray --splits=20 --group=12
 ```python
 
 **Resolution**:
@@ -537,21 +537,21 @@ gh run rerun <run-id>
 
 ```bash
 # Simulate specific split locally
-poetry run pytest tests/ --split-splits=20 --split-group=12
+poetry run pytest tests/ --splits=20 --group=12
 
 # Profile slowest tests in split
 poetry run pytest tests/ \
-  --split-splits=20 --split-group=12 \
+  --splits=20 --group=12 \
   --durations=20 \
   --timeout=60
 
 # Collect tests in split (no execution)
 poetry run pytest --collect-only \
-  --split-splits=20 --split-group=12
+  --splits=20 --group=12
 
 # Run with detailed timing
 poetry run pytest tests/ \
-  --split-splits=20 --split-group=12 \
+  --splits=20 --group=12 \
   -v --tb=short \
   --durations=0 | tee split_12_timing.log
 ```bash
@@ -710,8 +710,8 @@ if __name__ == "__main__":
 ### Investigation Checklist
 
 - [ ] Identify slow split(s) via `gh run view <run-id>`
-- [ ] Check test distribution: `pytest --collect-only --split-splits=20 --split-group=X`
-- [ ] Profile slow tests: `pytest --durations=20 --split-splits=20 --split-group=X`
+- [ ] Check test distribution: `pytest --collect-only --splits=20 --group=X`
+- [ ] Profile slow tests: `pytest --durations=20 --splits=20 --group=X`
 - [ ] Review resource usage in GitHub Actions logs
 - [ ] Compare with historical data: `gh run list --workflow=test.yml --limit 10`
 - [ ] Document root cause and resolution
@@ -724,7 +724,7 @@ if __name__ == "__main__":
 gh run view $(gh run list --workflow=test.yml --limit 1 --json databaseId --jq '.[0].databaseId')
 
 # Run slow split locally with profiling
-poetry run pytest tests/ --split-splits=20 --split-group=12 --durations=20
+poetry run pytest tests/ --splits=20 --group=12 --durations=20
 
 # Monitor CI in real-time
 gh run watch

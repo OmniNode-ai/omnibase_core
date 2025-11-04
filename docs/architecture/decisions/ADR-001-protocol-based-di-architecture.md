@@ -406,10 +406,11 @@ class MyService:
 
 ### Migration Path
 
-**Phase 1 (v0.1.x)**: Dual resolution
+**Phase 1 (v0.1.x - v0.2.x)**: Dual resolution ✅ **CURRENT**
 - ServiceRegistry available but optional
 - Fallback to legacy resolution if ServiceRegistry fails
 - Gradual migration of services to ServiceRegistry
+- **Status**: Active in v0.2.0
 
 **Phase 2 (v1.0.x)**: ServiceRegistry primary
 - ServiceRegistry becomes default resolution path
@@ -436,9 +437,9 @@ The codebase contains TODO comments that are often misinterpreted as "legacy reg
 
 **Clarified**:
 ```python
-# FUTURE (v2.0): Protocol integrations pending omnibase-spi v0.2.0
-# These protocols will enable external service discovery and database pooling.
-# Tracking: https://github.com/OmniNode-ai/omnibase_spi/issues/42
+# FUTURE (v2.0): Protocol integrations now available in omnibase-spi v0.2.0
+# These protocols enable external service discovery and database pooling.
+# Ready for implementation - Tracking: https://github.com/OmniNode-ai/omnibase_spi/issues/42
 ```python
 
 ### model_onex_container.py Lines 304-305
@@ -446,11 +447,11 @@ The codebase contains TODO comments that are often misinterpreted as "legacy reg
 **Current**:
 ```python
 # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
-# Note: ProtocolServiceResolver added in omnibase_spi v0.1.2
+# Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
 ```python
 
 **Status**:
-ProtocolServiceResolver is now available in omnibase_spi v0.1.2 and ready for implementation.
+ProtocolServiceResolver is now available in omnibase_spi v0.2.0 and ready for implementation.
 This will enable automatic service discovery for ProtocolDatabaseConnection,
 ProtocolServiceDiscovery, and other external dependencies.
 
@@ -459,13 +460,13 @@ ProtocolServiceDiscovery, and other external dependencies.
 **Current**:
 ```python
 # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
-# Note: ProtocolServiceResolver added in omnibase_spi v0.1.2
+# Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
 ```python
 
 **Status**:
 ProtocolServiceResolver is now available for implementation of external service health checks.
 Current behavior: Returns "unavailable" status message (graceful degradation).
-Implementation ready to proceed using omnibase_spi v0.1.2.
+Implementation ready to proceed using omnibase_spi v0.2.0.
 ```markdown
 
 ---
@@ -524,4 +525,4 @@ Implementation ready to proceed using omnibase_spi v0.1.2.
 
 ---
 
-**Next Review**: 2026-01-30 (or upon omnibase-spi v0.2.0 release)
+**Next Review**: 2026-01-30 ✅ **Review triggered**: omnibase-spi v0.2.0 released 2025-10-31

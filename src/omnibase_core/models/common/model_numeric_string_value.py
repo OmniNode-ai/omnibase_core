@@ -459,7 +459,7 @@ class ModelNumericStringValue(BaseModel):
                         return math.ceil(float_val)
                     elif coercion_mode == EnumCoercionMode.ROUND:
                         return round(float_val)
-                except (ValueError, TypeError) as e:
+                except (ValueError, TypeError, OverflowError) as e:
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=f"Cannot convert string '{self.str_value}' to int",

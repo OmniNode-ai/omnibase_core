@@ -729,7 +729,9 @@ class TestValidation:
 
     def test_invalid_value_type_literal_rejected(self) -> None:
         """Test invalid value_type literal is rejected."""
-        with pytest.raises(Exception):  # Pydantic validation error
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):  # Pydantic validation error
             ModelDictValueUnion(value=42, value_type="invalid")  # type: ignore[arg-type]
 
     def test_bool_not_confused_with_int(self) -> None:

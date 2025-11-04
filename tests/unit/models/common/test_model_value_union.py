@@ -352,9 +352,17 @@ class TestDictValidation:
         assert "exceeds maximum size" in str(exc_info.value).lower()
 
     def test_dict_with_non_string_keys_rejected(self):
-        """Test dict with non-string keys is rejected."""
-        # Pydantic will reject this at the field validation level since we specify dict[str, Any]
-        # This is actually good - it enforces type safety before our custom validators even run
+        """Test dict with non-string keys is rejected.
+
+        Pydantic v2 Behavior Note:
+        - Python dicts with non-string keys (int, float, bool, tuple) are REJECTED
+        - dict[str, Any] annotation enforces string keys at validation time
+        - NO AUTOMATIC COERCION happens (unlike some other type validators)
+        - This is correct and desired behavior - enforces type safety
+
+        This test validates that integer keys trigger a ValidationError with
+        specific error messages about key types.
+        """
         from pydantic import ValidationError
 
         invalid_dict = {1: "value1", 2: "value2"}
@@ -362,8 +370,42 @@ class TestDictValidation:
             ModelValueUnion(value=invalid_dict)
 
         # Verify Pydantic caught the string key violation
+        # The error will be in the last error of the union (after trying bool, int, float, str, list)
+        errors = exc_info.value.errors()
+        assert len(errors) > 0
+
+        # Check that at least one error mentions the dict key type issue
         error_str = str(exc_info.value).lower()
         assert "string" in error_str or "key" in error_str
+
+        # Verify the specific dict validation errors are present
+        dict_errors = [e for e in errors if "dict[str,any]" in str(e.get("loc", ""))]
+        assert len(dict_errors) > 0, "Should have dict key validation errors"
+
+    def test_dict_with_string_keys_accepted(self):
+        """Test dict with string keys (including stringified numbers) is accepted.
+
+        This test complements test_dict_with_non_string_keys_rejected by showing
+        that when keys are already strings (even if they look like numbers),
+        validation succeeds.
+
+        This is important because:
+        - JSON deserialization always produces string keys
+        - Explicit string keys in Python are valid
+        - Pydantic does NOT coerce non-string keys to strings
+        """
+        # Test 1: String keys that look like numbers
+        valid_dict = {"1": "value1", "2": "value2"}
+        value = ModelValueUnion(value=valid_dict)
+        assert value.value == {"1": "value1", "2": "value2"}
+        assert value.value_type == "dict"
+        assert all(isinstance(k, str) for k in value.value)
+
+        # Test 2: Mixed string keys
+        mixed_dict = {"1": "numeric", "key": "text", "true": "bool-like"}
+        value = ModelValueUnion(value=mixed_dict)
+        assert value.value == mixed_dict
+        assert value.value_type == "dict"
 
 
 class TestHelperMethods:

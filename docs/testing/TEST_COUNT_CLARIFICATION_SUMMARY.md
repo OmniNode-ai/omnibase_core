@@ -35,7 +35,7 @@ All test count references have been updated to reflect the accurate count of **1
 
 ### Primary Documentation
 
-1. **`/Volumes/PRO-G40/Code/omnibase_core/CLAUDE.md`**
+1. **`CLAUDE.md`** (project root)
    - Line 37: ✅ "12,000+ tests (12,198 collected) with 60%+ coverage requirement"
    - Line 221: ✅ "Unit tests (12,000+ tests)"
    - Line 280: ✅ "12,000+ tests (12,198 collected) in `tests/unit/`"
