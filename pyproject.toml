@@ -33,7 +33,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed"
 ]
-dependencies = ["omnibase-spi @ git+https://github.com/OmniNode-ai/omnibase_spi.git@v0.2.0", "dependency-injector (>=4.48.1,<5.0.0)", "llama-index (>=0.14.0,<0.15.0)"]
+dependencies = ["omnibase-spi>=0.2.0,<0.3.0", "dependency-injector (>=4.48.1,<5.0.0)", "llama-index (>=0.14.0,<0.15.0)"]
 
 [project.urls]
 homepage = "https://github.com/OmniNode-ai/omnibase_core"
@@ -59,8 +59,8 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-# ONEX SPI dependency - Pinned to v0.2.0 tag for reproducibility
-omnibase-spi = {git = "https://github.com/OmniNode-ai/omnibase_spi.git", tag = "v0.2.0"}
+# ONEX SPI dependency - Published on PyPI
+omnibase-spi = "^0.2.0"
 pydantic = "^2.11.7"
 llama-index = "^0.14.0"  # Updated for pypdf 6.0+ security fix (CVE-2025-55197)
 pypdf = "^6.1.0"  # Security fix for CVE-2025-55197
