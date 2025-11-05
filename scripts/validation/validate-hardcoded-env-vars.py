@@ -1,0 +1,493 @@
+#!/usr/bin/env python3
+"""
+Hardcoded Environment Variable Validator for ONEX Architecture
+
+Validates that:
+1. Environment variables are not hardcoded with literal values
+2. All environment variable assignments use os.getenv() or os.environ
+3. Configuration values come from environment or dependency injection
+
+Common anti-patterns detected:
+- DATABASE_URL = "postgresql://..." instead of os.getenv("DATABASE_URL")
+- API_ENDPOINT = "https://..." instead of os.getenv("API_ENDPOINT")
+- DEBUG = True instead of os.getenv("DEBUG", "false").lower() == "true"
+- PORT = 8000 instead of int(os.getenv("PORT", "8000"))
+
+Convention: Variable names in UPPER_CASE are assumed to be environment variables
+and should not have hardcoded values.
+
+Uses AST parsing for reliable detection of environment variable patterns.
+"""
+
+from __future__ import annotations
+
+import ast
+import os
+import re
+import sys
+from pathlib import Path
+from typing import NamedTuple
+
+
+class EnvVarViolation(NamedTuple):
+    """Represents a hardcoded environment variable violation."""
+
+    file_path: str
+    line_number: int
+    column: int
+    var_name: str
+    hardcoded_value: str
+    suggestion: str
+
+
+# Constants
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks
+
+# Add src to Python path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+
+class PythonEnvVarValidator(ast.NodeVisitor):
+    """AST visitor to validate environment variables are not hardcoded."""
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self.violations: list[EnvVarViolation] = []
+
+        # Common environment variable name patterns (all caps with underscores)
+        self.env_var_pattern = r"^[A-Z][A-Z0-9_]*$"
+
+        # Common environment variable prefixes
+        self.env_var_prefixes = [
+            "DATABASE_",
+            "DB_",
+            "REDIS_",
+            "KAFKA_",
+            "API_",
+            "APP_",
+            "SERVICE_",
+            "ONEX_",
+            "AWS_",
+            "AZURE_",
+            "GCP_",
+            "GOOGLE_",
+            "STRIPE_",
+            "TWILIO_",
+            "SENDGRID_",
+            "SMTP_",
+            "EMAIL_",
+            "LOG_",
+            "LOGGING_",
+            "SENTRY_",
+            "DATADOG_",
+            "NEW_RELIC_",
+        ]
+
+        # Common environment variable names (exact matches)
+        self.common_env_vars = {
+            "DEBUG",
+            "ENVIRONMENT",
+            "ENV",
+            "NODE_ENV",
+            "PORT",
+            "HOST",
+            "HOSTNAME",
+            "LOG_LEVEL",
+            "WORKERS",
+            "TIMEOUT",
+            "MAX_CONNECTIONS",
+            "POOL_SIZE",
+            "BASE_URL",
+            "API_URL",
+            "FRONTEND_URL",
+            "BACKEND_URL",
+            "CORS_ORIGINS",
+            "ALLOWED_HOSTS",
+            "SECRET_KEY",
+            "ENCRYPTION_KEY",
+            "JWT_SECRET",
+            "SESSION_SECRET",
+            "COOKIE_SECRET",
+        }
+
+        # Exceptions - legitimate constant definitions
+        self.exceptions = {
+            # HTTP status codes
+            "HTTP_OK",
+            "HTTP_CREATED",
+            "HTTP_BAD_REQUEST",
+            "HTTP_UNAUTHORIZED",
+            "HTTP_FORBIDDEN",
+            "HTTP_NOT_FOUND",
+            "HTTP_INTERNAL_ERROR",
+            # Common constants
+            "DEFAULT_TIMEOUT",
+            "MAX_RETRIES",
+            "MIN_LENGTH",
+            "MAX_LENGTH",
+            "DEFAULT_PORT",
+            "DEFAULT_HOST",
+            # Type definitions
+            "TYPE_STRING",
+            "TYPE_INTEGER",
+            "TYPE_BOOLEAN",
+            # Logging levels (when used as constants)
+            "LOG_LEVEL_DEBUG",
+            "LOG_LEVEL_INFO",
+            "LOG_LEVEL_WARNING",
+            "LOG_LEVEL_ERROR",
+            "LOG_LEVEL_CRITICAL",
+            # Protocol/Format constants
+            "PROTOCOL_HTTP",
+            "PROTOCOL_HTTPS",
+            "FORMAT_JSON",
+            "FORMAT_XML",
+            "FORMAT_YAML",
+            # Version constants
+            "API_VERSION",
+            "SCHEMA_VERSION",
+            # Enum-like constants
+            "STATUS_PENDING",
+            "STATUS_ACTIVE",
+            "STATUS_INACTIVE",
+            "STATUS_COMPLETED",
+            # Test constants
+            "TEST_DATABASE_URL",
+            "TEST_API_KEY",
+            "TEST_USER",
+            "TEST_PASSWORD",
+        }
+
+    def visit_Assign(self, node: ast.Assign):
+        """Visit assignments to detect hardcoded environment variables."""
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                var_name = target.id
+                self._check_env_var_assignment(
+                    var_name, node.value, node.lineno, node.col_offset
+                )
+        self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign):
+        """Visit annotated assignments."""
+        if isinstance(node.target, ast.Name) and node.value:
+            var_name = node.target.id
+            self._check_env_var_assignment(
+                var_name, node.value, node.lineno, node.col_offset
+            )
+        self.generic_visit(node)
+
+    def _check_env_var_assignment(
+        self, var_name: str, value_node: ast.AST, line_number: int, column: int
+    ):
+        """Check if an environment variable assignment is hardcoded."""
+        # Skip if not an environment variable pattern
+        if not self._is_env_var_name(var_name):
+            return
+
+        # Skip exceptions
+        if var_name in self.exceptions:
+            return
+
+        # Check if value is hardcoded (not from environment)
+        if self._is_hardcoded_value(value_node):
+            value_repr = self._get_value_repr(value_node)
+            suggestion = (
+                f"Use environment variable instead. "
+                f"Example: {var_name} = os.getenv('{var_name}', {value_repr})"
+            )
+
+            self.violations.append(
+                EnvVarViolation(
+                    file_path=self.file_path,
+                    line_number=line_number,
+                    column=column,
+                    var_name=var_name,
+                    hardcoded_value=value_repr,
+                    suggestion=suggestion,
+                )
+            )
+
+    def _is_env_var_name(self, var_name: str) -> bool:
+        """Check if variable name follows environment variable naming convention."""
+        # Must match UPPER_CASE pattern
+        if not re.match(self.env_var_pattern, var_name):
+            return False
+
+        # Check if it's a common environment variable name
+        if var_name in self.common_env_vars:
+            return True
+
+        # Check if it starts with a common environment variable prefix
+        for prefix in self.env_var_prefixes:
+            if var_name.startswith(prefix):
+                return True
+
+        # For other UPPER_CASE names, apply heuristics
+        # If it's a common config-like name, treat it as env var
+        config_keywords = [
+            "URL",
+            "URI",
+            "HOST",
+            "PORT",
+            "KEY",
+            "SECRET",
+            "TOKEN",
+            "PASSWORD",
+            "USER",
+            "USERNAME",
+            "DATABASE",
+            "REDIS",
+            "KAFKA",
+            "ENDPOINT",
+            "CONNECTION",
+            "CONFIG",
+            "SETTING",
+            "PATH",
+            "DIR",
+            "DIRECTORY",
+            "FILE",
+        ]
+
+        # If variable name contains any config keyword, it's likely an env var
+        for keyword in config_keywords:
+            if keyword in var_name:
+                return True
+
+        return False
+
+    def _is_hardcoded_value(self, value_node: ast.AST) -> bool:
+        """Check if value is hardcoded (not from environment or config)."""
+        # Constants are hardcoded
+        if isinstance(value_node, ast.Constant):
+            # Ignore None values (these are placeholders)
+            if value_node.value is None:
+                return False
+            return True
+
+        # Lists, dicts, sets are hardcoded
+        if isinstance(value_node, (ast.List, ast.Dict, ast.Set, ast.Tuple)):
+            return True
+
+        # Safe patterns - environment variable access
+        if isinstance(value_node, ast.Call):
+            func_name = self._get_call_func_name(value_node.func)
+            # os.getenv(), os.environ.get(), config.get(), etc.
+            safe_funcs = [
+                "getenv",
+                "os.getenv",
+                "environ.get",
+                "os.environ.get",
+                "get_service",
+                "get",
+                "get_config",
+                "load_config",
+            ]
+            if func_name in safe_funcs:
+                return False
+
+        # Subscript for environ["KEY"] or config["KEY"]
+        if isinstance(value_node, ast.Subscript):
+            if isinstance(value_node.value, ast.Attribute):
+                # os.environ["KEY"]
+                if value_node.value.attr in ["environ", "config"]:
+                    return False
+            if isinstance(value_node.value, ast.Name):
+                # environ["KEY"] or config["KEY"]
+                if value_node.value.id in ["environ", "config"]:
+                    return False
+
+        # Attribute access for config values
+        if isinstance(value_node, ast.Attribute):
+            # config.DATABASE_URL
+            if isinstance(value_node.value, ast.Name):
+                if value_node.value.id in ["config", "settings", "env"]:
+                    return False
+
+        return False
+
+    def _get_call_func_name(self, func_node: ast.AST) -> str:
+        """Extract the function name from a call node."""
+        if isinstance(func_node, ast.Name):
+            return func_node.id
+        elif isinstance(func_node, ast.Attribute):
+            # Handle os.getenv pattern
+            if isinstance(func_node.value, ast.Name):
+                return f"{func_node.value.id}.{func_node.attr}"
+            elif isinstance(func_node.value, ast.Attribute):
+                # Handle os.environ.get pattern
+                if isinstance(func_node.value.value, ast.Name):
+                    return f"{func_node.value.attr}.{func_node.attr}"
+            return func_node.attr
+        return ""
+
+    def _get_value_repr(self, value_node: ast.AST) -> str:
+        """Get a string representation of the value."""
+        if isinstance(value_node, ast.Constant):
+            if isinstance(value_node.value, str):
+                return f'"{value_node.value}"'
+            return str(value_node.value)
+        elif isinstance(value_node, ast.List):
+            return "[...]"
+        elif isinstance(value_node, ast.Dict):
+            return "{...}"
+        elif isinstance(value_node, ast.Set):
+            return "{...}"
+        else:
+            try:
+                return ast.unparse(value_node)
+            except AttributeError:
+                return "<value>"
+
+
+class HardcodedEnvVarValidator:
+    """Validates that Python files don't contain hardcoded environment variables."""
+
+    def __init__(self):
+        self.violations: list[EnvVarViolation] = []
+        self.checked_files = 0
+
+    def validate_python_file(self, python_path: Path) -> bool:
+        """Validate a Python file for hardcoded environment variables."""
+        # Check file existence and basic properties
+        if not python_path.exists():
+            return True  # Skip non-existent files
+
+        if not python_path.is_file():
+            return True  # Skip non-files
+
+        # Check file permissions
+        if not os.access(python_path, os.R_OK):
+            print(f"Warning: Cannot read file: {python_path}")
+            return True
+
+        # Check file size to prevent DoS attacks
+        try:
+            file_size = python_path.stat().st_size
+            if file_size > MAX_FILE_SIZE:
+                print(
+                    f"Warning: File too large ({file_size} bytes), max allowed: {MAX_FILE_SIZE}"
+                )
+                return True
+        except OSError:
+            return True
+
+        # Read file content with proper error handling
+        try:
+            with open(python_path, encoding="utf-8") as f:
+                content = f.read()
+        except (UnicodeDecodeError, PermissionError, OSError):
+            return True  # Skip files we can't read
+
+        # Skip empty files
+        if not content.strip():
+            return True
+
+        # Check for bypass comments
+        if "env-var-ok:" in content[:500]:  # Check first 500 chars
+            return True
+
+        self.checked_files += 1
+
+        # AST-based validation for hardcoded environment variables
+        ast_validator = PythonEnvVarValidator(str(python_path))
+        try:
+            tree = ast.parse(content, filename=str(python_path))
+            ast_validator.visit(tree)
+
+            # Add AST violations to our list
+            self.violations.extend(ast_validator.violations)
+
+        except SyntaxError:
+            # Skip files with syntax errors - they'll be caught by other tools
+            pass
+        except Exception as e:
+            print(f"Warning: Error during AST validation of {python_path}: {e}")
+
+        return len(ast_validator.violations) == 0
+
+    def print_results(self) -> None:
+        """Print validation results."""
+        if self.violations:
+            print("❌ Hardcoded Environment Variable Validation FAILED")
+            print("=" * 80)
+            print(
+                f"Found {len(self.violations)} hardcoded environment variables in {self.checked_files} files:"
+            )
+            print()
+
+            # Group by file
+            by_file: dict[str, list[EnvVarViolation]] = {}
+            for violation in self.violations:
+                if violation.file_path not in by_file:
+                    by_file[violation.file_path] = []
+                by_file[violation.file_path].append(violation)
+
+            for file_path, file_violations in by_file.items():
+                print(f"📁 {file_path}")
+                for violation in file_violations:
+                    print(
+                        f"  ⚠️  Line {violation.line_number}:{violation.column} - "
+                        f"'{violation.var_name}' is hardcoded to {violation.hardcoded_value}"
+                    )
+                    print(f"      💡 {violation.suggestion}")
+                print()
+
+            print("🔧 How to fix:")
+            print("   1. Use os.getenv() for environment variables:")
+            print('      Example: DATABASE_URL = os.getenv("DATABASE_URL")')
+            print("   2. Provide default values when appropriate:")
+            print('      Example: PORT = int(os.getenv("PORT", "8000"))')
+            print("   3. For booleans, parse string values:")
+            print(
+                '      Example: DEBUG = os.getenv("DEBUG", "false").lower() == "true"'
+            )
+            print("   4. For constants, use lowercase names:")
+            print("      Example: default_timeout = 30  # Not DEFAULT_TIMEOUT = 30")
+            print("   5. Add bypass comment if intentional:")
+            print("      Example: # env-var-ok: constant definition")
+            print()
+        else:
+            print(
+                f"✅ Hardcoded Environment Variable Validation PASSED ({self.checked_files} files checked)"
+            )
+
+
+def main() -> int:
+    """Main entry point for the validation hook."""
+    try:
+        if len(sys.argv) < 2:
+            print("Usage: validate-hardcoded-env-vars.py <file1> [file2] ...")
+            return 1
+
+        validator = HardcodedEnvVarValidator()
+        file_paths = [Path(arg) for arg in sys.argv[1:]]
+
+        # Filter to only Python files
+        python_files = [f for f in file_paths if f.suffix == ".py"]
+
+        if not python_files:
+            print(
+                "✅ Hardcoded Environment Variable Validation PASSED (no Python files to check)"
+            )
+            return 0
+
+        success = True
+        for python_path in python_files:
+            if not validator.validate_python_file(python_path):
+                success = False
+
+        validator.print_results()
+
+        return 0 if success else 1
+
+    except KeyboardInterrupt:
+        print("\nError: Validation interrupted by user")
+        return 1
+    except Exception as e:
+        print(f"Error: Unexpected error in main function: {e}")
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
