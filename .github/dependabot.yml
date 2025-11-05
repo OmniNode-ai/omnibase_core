@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: "poetry"
+    directory: "/" # Root directory where your pyproject.toml lives
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    versioning-strategy: "auto"
+    allow:
+      - dependency-type: "all"
