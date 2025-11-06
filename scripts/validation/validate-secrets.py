@@ -25,7 +25,82 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import NamedTuple
+from typing import Final, NamedTuple
+
+
+class BypassChecker:
+    """Unified bypass comment detection for security validators.
+
+    Provides consistent bypass checking across all security validation tools.
+    Supports both file-level bypasses (anywhere in file) and line-level
+    bypasses (inline with specific violations).
+    """
+
+    @staticmethod
+    def check_line_bypass(line: str, bypass_patterns: list[str]) -> bool:
+        """Check if a specific line has an inline bypass comment.
+
+        Args:
+            line: The line of code to check
+            bypass_patterns: List of bypass marker patterns to search for
+
+        Returns:
+            True if line contains any bypass pattern, False otherwise
+
+        Example:
+            >>> BypassChecker.check_line_bypass(
+            ...     'password = "test"  # secret-ok: test fixture',
+            ...     ["secret-ok:", "nosec"]
+            ... )
+            True
+        """
+        return any(pattern in line for pattern in bypass_patterns)
+
+    @staticmethod
+    def check_file_bypass(
+        content_lines: list[str], bypass_patterns: list[str], max_lines: int = 10
+    ) -> bool:
+        """Check if file has a bypass comment in the header.
+
+        Args:
+            content_lines: Lines of the file to check
+            bypass_patterns: List of bypass marker patterns to search for
+            max_lines: Maximum number of lines to check from file start (default: 10)
+
+        Returns:
+            True if file header contains any bypass pattern, False otherwise
+
+        Example:
+            >>> lines = ["# secret-ok: test file", "password = 'test'"]
+            >>> BypassChecker.check_file_bypass(lines, ["secret-ok:"])
+            True
+        """
+        # Check first N lines for bypass comment
+        for line in content_lines[:max_lines]:
+            stripped = line.strip()
+            if stripped.startswith("#"):
+                if any(pattern in line for pattern in bypass_patterns):
+                    return True
+        return False
+
+    @staticmethod
+    def extract_bypass_reason(line: str) -> str:
+        """Extract the reason/justification from a bypass comment.
+
+        Args:
+            line: Line containing bypass comment
+
+        Returns:
+            The comment text after the bypass marker, or empty string if no comment
+
+        Example:
+            >>> BypassChecker.extract_bypass_reason('password = "test"  # secret-ok: test fixture')
+            '# secret-ok: test fixture'
+        """
+        if "#" not in line:
+            return ""
+        comment_start = line.index("#")
+        return line[comment_start:].strip()
 
 
 class SecretViolation(NamedTuple):
@@ -43,6 +118,60 @@ class SecretViolation(NamedTuple):
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks
 VALIDATION_TIMEOUT = 600  # 10 minutes
 
+
+# Bypass patterns for allowing intentional hardcoded secrets (e.g., test fixtures)
+BYPASS_PATTERNS: Final[list[str]] = [
+    "secret-ok:",
+    "password-ok:",
+    "hardcoded-ok:",
+    "nosec",  # Common security scanner bypass
+    "noqa: secrets",  # Another common bypass pattern
+]
+
+# Pre-compiled regex patterns for performance (compiled once at module load)
+# Typical performance improvement: 2-5x faster for repeated pattern matching
+COMPILED_SECRET_PATTERNS: Final[list[re.Pattern[str]]] = [
+    # API Keys
+    re.compile(r".*api[_-]?key.*", re.IGNORECASE),
+    re.compile(r".*apikey.*", re.IGNORECASE),
+    # Passwords
+    re.compile(r".*password.*", re.IGNORECASE),
+    re.compile(r".*passwd.*", re.IGNORECASE),
+    re.compile(r".*pwd.*", re.IGNORECASE),
+    # Tokens
+    re.compile(r".*token.*", re.IGNORECASE),
+    re.compile(r".*auth.*token.*", re.IGNORECASE),
+    re.compile(r".*access.*token.*", re.IGNORECASE),
+    re.compile(r".*refresh.*token.*", re.IGNORECASE),
+    re.compile(r".*bearer.*", re.IGNORECASE),
+    # AWS Credentials
+    re.compile(r".*aws.*access.*key.*", re.IGNORECASE),
+    re.compile(r".*aws.*secret.*key.*", re.IGNORECASE),
+    re.compile(r".*aws.*session.*token.*", re.IGNORECASE),
+    re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS Access Key ID pattern
+    # Database & Connection Strings
+    re.compile(r".*connection.*string.*", re.IGNORECASE),
+    re.compile(r".*database.*url.*", re.IGNORECASE),
+    re.compile(r".*db.*url.*", re.IGNORECASE),
+    re.compile(r".*dsn.*", re.IGNORECASE),
+    # Generic Secrets
+    re.compile(r".*secret.*", re.IGNORECASE),
+    re.compile(r".*private.*key.*", re.IGNORECASE),
+    re.compile(r".*encryption.*key.*", re.IGNORECASE),
+    re.compile(r".*signing.*key.*", re.IGNORECASE),
+    # OAuth & Authentication
+    re.compile(r".*client.*secret.*", re.IGNORECASE),
+    re.compile(r".*consumer.*secret.*", re.IGNORECASE),
+    re.compile(r".*app.*secret.*", re.IGNORECASE),
+    # SSH & Keys
+    re.compile(r".*ssh.*key.*", re.IGNORECASE),
+    re.compile(r".*rsa.*key.*", re.IGNORECASE),
+    # Certificate & TLS
+    re.compile(r".*certificate.*", re.IGNORECASE),
+    re.compile(r".*cert.*key.*", re.IGNORECASE),
+    re.compile(r".*tls.*key.*", re.IGNORECASE),
+]
+
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -55,48 +184,7 @@ class PythonSecretValidator(ast.NodeVisitor):
         self.violations: list[SecretViolation] = []
         self.file_lines = file_lines or []
         self.class_stack: list[ast.ClassDef] = []  # Track class definition context
-
-        # Patterns for secret field names (case-insensitive matching)
-        self.secret_patterns = [
-            # API Keys
-            r".*api[_-]?key.*",
-            r".*apikey.*",
-            # Passwords
-            r".*password.*",
-            r".*passwd.*",
-            r".*pwd.*",
-            # Tokens
-            r".*token.*",
-            r".*auth.*token.*",
-            r".*access.*token.*",
-            r".*refresh.*token.*",
-            r".*bearer.*",
-            # AWS Credentials
-            r".*aws.*access.*key.*",
-            r".*aws.*secret.*key.*",
-            r".*aws.*session.*token.*",
-            # Database & Connection Strings
-            r".*connection.*string.*",
-            r".*database.*url.*",
-            r".*db.*url.*",
-            r".*dsn.*",
-            # Generic Secrets
-            r".*secret.*",
-            r".*private.*key.*",
-            r".*encryption.*key.*",
-            r".*signing.*key.*",
-            # OAuth & Authentication
-            r".*client.*secret.*",
-            r".*consumer.*secret.*",
-            r".*app.*secret.*",
-            # SSH & Keys
-            r".*ssh.*key.*",
-            r".*rsa.*key.*",
-            # Certificate & TLS
-            r".*certificate.*",
-            r".*cert.*key.*",
-            r".*tls.*key.*",
-        ]
+        self.bypass_usage: list[tuple[str, int, str]] = []  # (file, line, reason)
 
         # Exception patterns - legitimate use cases that shouldn't be flagged
         self.exceptions = {
@@ -160,15 +248,6 @@ class PythonSecretValidator(ast.NodeVisitor):
             "secret": ["secret"],  # Enum value pattern (when used in enum context)
         }
 
-        # Bypass comments to allow intentional hardcoded secrets (e.g., for testing)
-        self.bypass_patterns = [
-            "secret-ok:",
-            "password-ok:",
-            "hardcoded-ok:",
-            "nosec",  # Common security scanner bypass
-            "noqa: secrets",  # Another common bypass pattern
-        ]
-
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Track class definitions to detect Enum contexts."""
         self.class_stack.append(node)
@@ -228,12 +307,22 @@ class PythonSecretValidator(ast.NodeVisitor):
         return False
 
     def _has_inline_bypass(self, line_number: int) -> bool:
-        """Check if line has an inline bypass comment."""
+        """Check if line has an inline bypass comment.
+
+        Uses BypassChecker for consistent bypass detection across validators.
+        Tracks bypass usage for reporting.
+        """
         if not self.file_lines or line_number < 1 or line_number > len(self.file_lines):
             return False
 
         line = self.file_lines[line_number - 1]
-        return any(pattern in line for pattern in self.bypass_patterns)
+        is_bypass = BypassChecker.check_line_bypass(line, BYPASS_PATTERNS)
+
+        if is_bypass:
+            reason = BypassChecker.extract_bypass_reason(line)
+            self.bypass_usage.append((self.file_path, line_number, reason))
+
+        return is_bypass
 
     def _check_secret_assignment(
         self, field_name: str, value_node: ast.AST, line_number: int, column: int
@@ -285,9 +374,8 @@ class PythonSecretValidator(ast.NodeVisitor):
             )
 
     def _matches_secret_patterns(self, field_name: str) -> bool:
-        """Check if field name matches any secret pattern."""
-        field_lower = field_name.lower()
-        return any(re.match(pattern, field_lower) for pattern in self.secret_patterns)
+        """Check if field name matches any secret pattern using pre-compiled patterns."""
+        return any(pattern.match(field_name) for pattern in COMPILED_SECRET_PATTERNS)
 
     def _is_hardcoded_value(self, value_node: ast.AST) -> bool:
         """Check if value is a hardcoded string (not from environment or config)."""
@@ -361,6 +449,7 @@ class SecretValidator:
     def __init__(self) -> None:
         self.violations: list[SecretViolation] = []
         self.checked_files = 0
+        self.bypass_usage: list[tuple[str, int, str]] = []  # (file, line, reason)
 
     def validate_python_file(self, python_path: Path, content_lines: list[str]) -> bool:
         """Validate a Python file for hardcoded secrets."""
@@ -413,6 +502,8 @@ class SecretValidator:
 
             # Add AST violations to our list
             self.violations.extend(ast_validator.violations)
+            # Collect bypass usage for reporting
+            self.bypass_usage.extend(ast_validator.bypass_usage)
 
         except SyntaxError:
             # Skip files with syntax errors - they'll be caught by other tools
@@ -423,22 +514,11 @@ class SecretValidator:
         return len(ast_validator.violations) == 0
 
     def _has_bypass_comment(self, content_lines: list[str]) -> bool:
-        """Check if file has a bypass comment at the top."""
-        bypass_patterns = [
-            "secret-ok:",
-            "password-ok:",
-            "hardcoded-ok:",
-            "nosec",
-            "noqa: secrets",
-        ]
+        """Check if file has a bypass comment at the top.
 
-        # Check first 10 lines for bypass comment
-        for line in content_lines[:10]:
-            if line.strip().startswith("#"):
-                for pattern in bypass_patterns:
-                    if pattern in line:
-                        return True
-        return False
+        Uses BypassChecker for consistent bypass detection across validators.
+        """
+        return BypassChecker.check_file_bypass(content_lines, BYPASS_PATTERNS)
 
     def print_results(self) -> None:
         """Print validation results."""
@@ -482,16 +562,40 @@ class SecretValidator:
         else:
             print(f"✅ Secret Validation PASSED ({self.checked_files} files checked)")
 
+    def print_bypass_report(self) -> None:
+        """Print report of bypass comment usage."""
+        if not self.bypass_usage:
+            print("\n📊 Bypass Usage Report: No bypasses used")
+            return
+
+        print(f"\n📊 Bypass Usage Report: {len(self.bypass_usage)} bypass(es) found")
+        print("=" * 80)
+
+        for file_path, line_num, reason in sorted(self.bypass_usage):
+            print(f"  {file_path}:{line_num}")
+            print(f"    → {reason}")
+
+        print("=" * 80)
+
 
 def main() -> int:
     """Main entry point for the validation hook."""
     try:
-        if len(sys.argv) < 2:
-            print("Usage: validate-secrets.py <file1> [file2] ...")
-            return 1
+        import argparse
+
+        parser = argparse.ArgumentParser(
+            description="Validate Python files for hardcoded secrets"
+        )
+        parser.add_argument("files", nargs="+", help="Python files to validate")
+        parser.add_argument(
+            "--report-bypasses",
+            action="store_true",
+            help="Report all bypass comment usage",
+        )
+        args = parser.parse_args()
 
         validator = SecretValidator()
-        file_paths = [Path(arg) for arg in sys.argv[1:]]
+        file_paths = [Path(f) for f in args.files]
 
         # Filter to only Python files
         python_files = [f for f in file_paths if f.suffix == ".py"]
@@ -513,6 +617,10 @@ def main() -> int:
                 success = False
 
         validator.print_results()
+
+        # Print bypass report if requested or if validation failed
+        if args.report_bypasses or not success:
+            validator.print_bypass_report()
 
         return 0 if success else 1
 

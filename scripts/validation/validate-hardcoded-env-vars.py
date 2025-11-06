@@ -26,7 +26,73 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import NamedTuple
+from typing import Final, NamedTuple
+
+
+class BypassChecker:
+    """Unified bypass comment detection for security validators.
+
+    Provides consistent bypass checking across all security validation tools.
+    Supports both file-level bypasses (anywhere in file) and line-level
+    bypasses (inline with specific violations).
+    """
+
+    @staticmethod
+    def check_line_bypass(line: str, bypass_patterns: list[str]) -> bool:
+        """Check if a specific line has an inline bypass comment.
+
+        Args:
+            line: The line of code to check
+            bypass_patterns: List of bypass marker patterns to search for
+
+        Returns:
+            True if line contains any bypass pattern, False otherwise
+
+        Example:
+            >>> BypassChecker.check_line_bypass(
+            ...     'DATABASE_URL = "test"  # env-var-ok: test constant',
+            ...     ["env-var-ok:"]
+            ... )
+            True
+        """
+        return any(pattern in line for pattern in bypass_patterns)
+
+    @staticmethod
+    def check_file_bypass(content: str, bypass_patterns: list[str]) -> bool:
+        """Check if file has a bypass comment anywhere.
+
+        Args:
+            content: File content to check
+            bypass_patterns: List of bypass marker patterns to search for
+
+        Returns:
+            True if file contains any bypass pattern, False otherwise
+
+        Example:
+            >>> content = "# env-var-ok: test file\nDATABASE_URL = 'test'"
+            >>> BypassChecker.check_file_bypass(content, ["env-var-ok:"])
+            True
+        """
+        return any(pattern in content for pattern in bypass_patterns)
+
+    @staticmethod
+    def extract_bypass_reason(line: str) -> str:
+        """Extract the reason/justification from a bypass comment.
+
+        Args:
+            line: Line containing bypass comment
+
+        Returns:
+            The comment text after the bypass marker, or empty string if no comment
+
+        Example:
+            >>> BypassChecker.extract_bypass_reason('DATABASE_URL = "test"  # env-var-ok: test constant')
+            '# env-var-ok: test constant'
+        """
+        if "#" not in line:
+            return ""
+        comment_start = line.index("#")
+        return line[comment_start:].strip()
 
 
 class EnvVarViolation(NamedTuple):
@@ -43,6 +109,16 @@ class EnvVarViolation(NamedTuple):
 # Constants
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks
 
+
+# Bypass patterns for allowing intentional hardcoded environment variables
+BYPASS_PATTERNS: Final[list[str]] = [
+    "env-var-ok:",
+]
+
+# Pre-compiled regex pattern for performance (compiled once at module load)
+# Typical performance improvement: 2-5x faster for repeated pattern matching
+COMPILED_ENV_VAR_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[A-Z][A-Z0-9_]*$")
+
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -56,9 +132,7 @@ class PythonEnvVarValidator(ast.NodeVisitor):
         self.class_stack: list[ast.ClassDef] = (
             []
         )  # Track class context for Enum detection
-
-        # Common environment variable name patterns (all caps with underscores)
-        self.env_var_pattern = r"^[A-Z][A-Z0-9_]*$"
+        self.bypass_usage: list[tuple[str, int, str]] = []  # (file, line, reason)
 
         # Common environment variable prefixes
         self.env_var_prefixes = [
@@ -265,8 +339,8 @@ class PythonEnvVarValidator(ast.NodeVisitor):
 
         Avoids flagging legitimate constants, enum members, and error codes.
         """
-        # Must match UPPER_CASE pattern
-        if not re.match(self.env_var_pattern, var_name):
+        # Must match UPPER_CASE pattern using pre-compiled regex
+        if not COMPILED_ENV_VAR_PATTERN.match(var_name):
             return False
 
         # Check if it's a common environment variable name (exact match)
@@ -374,6 +448,7 @@ class HardcodedEnvVarValidator:
     def __init__(self) -> None:
         self.violations: list[EnvVarViolation] = []
         self.checked_files = 0
+        self.bypass_usage: list[tuple[str, int, str]] = []  # (file, line, reason)
 
     def validate_python_file(self, python_path: Path) -> bool:
         """Validate a Python file for hardcoded environment variables."""
@@ -411,8 +486,15 @@ class HardcodedEnvVarValidator:
         if not content.strip():
             return True
 
-        # Check for bypass comments
-        if "env-var-ok:" in content:  # Check entire file
+        # Check for bypass comments using BypassChecker
+        if BypassChecker.check_file_bypass(content, BYPASS_PATTERNS):
+            # Track file-level bypass
+            reason = "# env-var-ok: (file-level bypass)"
+            for line_num, line in enumerate(content.split("\n"), 1):
+                if any(pattern in line for pattern in BYPASS_PATTERNS):
+                    reason = BypassChecker.extract_bypass_reason(line)
+                    self.bypass_usage.append((str(python_path), line_num, reason))
+                    break
             return True
 
         self.checked_files += 1
@@ -425,6 +507,8 @@ class HardcodedEnvVarValidator:
 
             # Add AST violations to our list
             self.violations.extend(ast_validator.violations)
+            # Collect bypass usage for reporting
+            self.bypass_usage.extend(ast_validator.bypass_usage)
 
         except SyntaxError:
             # Skip files with syntax errors - they'll be caught by other tools
@@ -480,16 +564,40 @@ class HardcodedEnvVarValidator:
                 f"✅ Hardcoded Environment Variable Validation PASSED ({self.checked_files} files checked)"
             )
 
+    def print_bypass_report(self) -> None:
+        """Print report of bypass comment usage."""
+        if not self.bypass_usage:
+            print("\n📊 Bypass Usage Report: No bypasses used")
+            return
+
+        print(f"\n📊 Bypass Usage Report: {len(self.bypass_usage)} bypass(es) found")
+        print("=" * 80)
+
+        for file_path, line_num, reason in sorted(self.bypass_usage):
+            print(f"  {file_path}:{line_num}")
+            print(f"    → {reason}")
+
+        print("=" * 80)
+
 
 def main() -> int:
     """Main entry point for the validation hook."""
     try:
-        if len(sys.argv) < 2:
-            print("Usage: validate-hardcoded-env-vars.py <file1> [file2] ...")
-            return 1
+        import argparse
+
+        parser = argparse.ArgumentParser(
+            description="Validate Python files for hardcoded environment variables"
+        )
+        parser.add_argument("files", nargs="+", help="Python files to validate")
+        parser.add_argument(
+            "--report-bypasses",
+            action="store_true",
+            help="Report all bypass comment usage",
+        )
+        args = parser.parse_args()
 
         validator = HardcodedEnvVarValidator()
-        file_paths = [Path(arg) for arg in sys.argv[1:]]
+        file_paths = [Path(f) for f in args.files]
 
         # Filter to only Python files
         python_files = [f for f in file_paths if f.suffix == ".py"]
@@ -506,6 +614,10 @@ def main() -> int:
                 success = False
 
         validator.print_results()
+
+        # Print bypass report if requested or if validation failed
+        if args.report_bypasses or not success:
+            validator.print_bypass_report()
 
         return 0 if success else 1
 
