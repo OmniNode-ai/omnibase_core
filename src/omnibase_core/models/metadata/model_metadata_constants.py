@@ -2,6 +2,8 @@
 Metadata constants for ONEX Core Framework.
 """
 
+# env-var-ok: constant definitions for metadata keys, not environment variables
+
 # Version keys for metadata
 METADATA_VERSION_KEY = "metadata_version"
 PROTOCOL_VERSION_KEY = "protocol_version"

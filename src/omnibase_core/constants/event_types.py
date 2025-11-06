@@ -6,6 +6,8 @@ for inter-service communication, discovery, and introspection.
 All constants follow ONEX naming convention: module-level UPPER_SNAKE_CASE.
 """
 
+# env-var-ok: constant definitions for event types, not environment variables
+
 from typing import Any
 
 # Tool-related events

@@ -1,10 +1,12 @@
-import uuid
-
 """
 Constants for contract field names used across ONEX.
 
 Single source of truth for contract field names to avoid magic strings.
 """
+
+# env-var-ok: constant definitions for contract fields, not environment variables
+
+import uuid
 
 # Core contract fields
 CONTRACT_VERSION = "contract_version"

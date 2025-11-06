@@ -265,6 +265,26 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
+      # Security: Secret Detection (prevents hardcoded secrets)
+      - id: validate-secrets
+        name: ONEX Secret Detection
+        entry: poetry run python scripts/validation/validate-secrets.py
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
+        stages: [pre-commit]
+
+      # Security: Hardcoded Environment Variable Prevention
+      - id: validate-hardcoded-env-vars
+        name: ONEX Hardcoded Environment Variable Prevention
+        entry: poetry run python scripts/validation/validate-hardcoded-env-vars.py
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
+        stages: [pre-commit]
+
       - id: validate-exception-handling
         name: ONEX Exception Handling Validation
         entry: poetry run python scripts/validation/validate-exception-handling.py

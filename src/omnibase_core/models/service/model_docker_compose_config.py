@@ -3,6 +3,8 @@
 Configuration constants for Docker Compose generation.
 """
 
+# env-var-ok: constant definitions for Docker config, not environment variables
+
 
 class ModelDockerComposeConfig:
     """Configuration constants for Docker Compose generation."""

@@ -167,6 +167,12 @@ omnibase_core/docs/
 | [**Error Handling Best Practices**](conventions/ERROR_HANDLING_BEST_PRACTICES.md) | Comprehensive error handling guide | ✅ Excellent |
 | [Anti-Patterns](patterns/ANTI_PATTERNS.md) | What to avoid | ✅ Available |
 
+### Security & Validation
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [**Security Validators**](../scripts/validation/README.md) | Secret detection and environment variable validation | ✅ Complete |
+
 ### Concurrency & Threading
 
 | Document | Description | Status |
@@ -211,6 +217,7 @@ omnibase_core/docs/
 | **Understand node types** | [Node Types](guides/node-building/02_NODE_TYPES.md) |
 | **Use a production template** | [Node Templates](guides/templates/) |
 | **Handle errors properly** | [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md) |
+| **Secure my code** | [Security Validators](../scripts/validation/README.md) |
 | **Make nodes thread-safe** | [Threading Guide](guides/THREADING.md) |
 | **Understand the architecture** | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
 | **Test my node** | [Testing Guide](guides/TESTING_GUIDE.md) |
