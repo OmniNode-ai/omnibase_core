@@ -8,14 +8,14 @@ Tests hardcoded environment variable detection for:
 - Bypass comment handling
 """
 
+import importlib.util
+
+# Import the validator classes
+import sys
 import tempfile
 from pathlib import Path
 
 import pytest
-
-# Import the validator classes
-import sys
-import importlib.util
 
 # Load the validator module dynamically (script uses hyphens in filename)
 _validator_path = (
@@ -24,7 +24,9 @@ _validator_path = (
     / "validation"
     / "validate-hardcoded-env-vars.py"
 )
-_spec = importlib.util.spec_from_file_location("validate_hardcoded_env_vars", _validator_path)
+_spec = importlib.util.spec_from_file_location(
+    "validate_hardcoded_env_vars", _validator_path
+)
 _validator_module = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_validator_module)
 
@@ -302,15 +304,36 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
         assert len(validator.violations) == 1
 
+    def test_ignores_enum_members(self) -> None:
+        """Test that Enum class members are not flagged."""
+        code = """
+from enum import Enum
+
+class StatusEnum(Enum):
+    PENDING_KEY = "pending"
+    ACTIVE_KEY = "active"
+    COMPLETED_KEY = "completed"
+
+class ConfigEnum(Enum):
+    DATABASE_URL = "db_url_field"
+    API_KEY = "api_key_field"
+"""
+        validator = PythonEnvVarValidator("test.py")
+        import ast
+
+        tree = ast.parse(code)
+        validator.visit(tree)
+
+        # Enum members should not be flagged as env vars
+        assert len(validator.violations) == 0
+
 
 class TestHardcodedEnvVarValidator:
     """Test suite for HardcodedEnvVarValidator."""
 
     def test_validates_clean_file(self) -> None:
         """Test validation passes for file with proper env var usage."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write(
                 """
 import os
@@ -332,9 +355,7 @@ PORT = int(os.getenv("PORT", "8000"))
 
     def test_detects_hardcoded_env_var_in_file(self) -> None:
         """Test validation fails for file with hardcoded env var."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write(
                 """
 DATABASE_URL = "postgresql://localhost/mydb"
@@ -353,9 +374,7 @@ DATABASE_URL = "postgresql://localhost/mydb"
 
     def test_bypass_comment_works(self) -> None:
         """Test that bypass comment allows hardcoded env vars."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write(
                 """# env-var-ok: constant definition
 DATABASE_URL = "postgresql://localhost/mydb"
@@ -375,9 +394,7 @@ DATABASE_URL = "postgresql://localhost/mydb"
     def test_validates_multiple_files(self) -> None:
         """Test validation of multiple files."""
         # Create two temp files
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp1:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp1:
             tmp1.write(
                 """
 import os
@@ -386,9 +403,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
             )
             tmp1_path = Path(tmp1.name)
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp2:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp2:
             tmp2.write(
                 """
 API_KEY = "hardcoded_key"
@@ -410,9 +425,7 @@ API_KEY = "hardcoded_key"
 
     def test_handles_syntax_errors_gracefully(self) -> None:
         """Test that files with syntax errors are skipped."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write(
                 """
 def broken_syntax(

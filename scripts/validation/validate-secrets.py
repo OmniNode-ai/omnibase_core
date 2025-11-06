@@ -50,9 +50,11 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 class PythonSecretValidator(ast.NodeVisitor):
     """AST visitor to validate secrets are not hardcoded in Python files."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, file_lines: list[str] | None = None):
         self.file_path = file_path
         self.violations: list[SecretViolation] = []
+        self.file_lines = file_lines or []
+        self.class_stack: list[ast.ClassDef] = []  # Track class definition context
 
         # Patterns for secret field names (case-insensitive matching)
         self.secret_patterns = [
@@ -123,8 +125,6 @@ class PythonSecretValidator(ast.NodeVisitor):
             "secret_length",
             # Type hints & protocols
             "password_type",
-            "token_type",
-            "secret_type",
             # Metadata
             "password_updated_at",
             "password_created_at",
@@ -135,15 +135,47 @@ class PythonSecretValidator(ast.NodeVisitor):
             "secret_error",
         }
 
+        # Metadata patterns - recognize configuration/metadata assignments
+        # Maps variable name patterns to valid metadata values
+        self.metadata_patterns = {
+            "password_strength": [
+                "weak",
+                "very_weak",
+                "medium",
+                "moderate",
+                "strong",
+                "very_strong",
+            ],
+            "secret_rotation": [
+                "manual",
+                "automatic",
+                "disabled",
+                "manual_or_operator",
+            ],
+            "auth_type": ["bearer", "api_key", "oauth", "basic", "none"],
+            "token_type": ["bearer", "refresh", "access", "id_token"],
+            "api_key": ["api_key"],  # Enum value pattern
+            "bearer": ["bearer"],  # Enum value pattern
+            "password": ["password"],  # Enum value pattern (when used in enum context)
+            "secret": ["secret"],  # Enum value pattern (when used in enum context)
+        }
+
         # Bypass comments to allow intentional hardcoded secrets (e.g., for testing)
         self.bypass_patterns = [
             "secret-ok:",
             "password-ok:",
             "hardcoded-ok:",
             "nosec",  # Common security scanner bypass
+            "noqa: secrets",  # Another common bypass pattern
         ]
 
-    def visit_Assign(self, node: ast.Assign):
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        """Track class definitions to detect Enum contexts."""
+        self.class_stack.append(node)
+        self.generic_visit(node)
+        self.class_stack.pop()
+
+    def visit_Assign(self, node: ast.Assign) -> None:
         """Visit assignments to detect hardcoded secrets."""
         for target in node.targets:
             if isinstance(target, ast.Name):
@@ -153,7 +185,7 @@ class PythonSecretValidator(ast.NodeVisitor):
                 )
         self.generic_visit(node)
 
-    def visit_AnnAssign(self, node: ast.AnnAssign):
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Visit annotated assignments (field definitions with values)."""
         if isinstance(node.target, ast.Name) and node.value:
             field_name = node.target.id
@@ -162,7 +194,7 @@ class PythonSecretValidator(ast.NodeVisitor):
             )
         self.generic_visit(node)
 
-    def visit_keyword(self, node: ast.keyword):
+    def visit_keyword(self, node: ast.keyword) -> None:
         """Visit keyword arguments in function calls."""
         if node.arg:
             self._check_secret_assignment(
@@ -170,9 +202,42 @@ class PythonSecretValidator(ast.NodeVisitor):
             )
         self.generic_visit(node)
 
+    def _is_in_enum_class(self) -> bool:
+        """Check if current assignment is inside an Enum class definition."""
+        for class_node in self.class_stack:
+            for base in class_node.bases:
+                # Check if any base class contains "Enum" in its name
+                if isinstance(base, ast.Name) and "Enum" in base.id:
+                    return True
+                # Handle qualified names like enum.Enum
+                if isinstance(base, ast.Attribute) and "Enum" in base.attr:
+                    return True
+        return False
+
+    def _is_metadata_assignment(self, var_name: str, value: str) -> bool:
+        """Check if assignment is metadata (configuration), not an actual secret."""
+        var_lower = var_name.lower()
+        value_lower = value.lower()
+
+        # Check against known metadata patterns
+        for pattern, valid_values in self.metadata_patterns.items():
+            if pattern in var_lower:
+                if value_lower in valid_values:
+                    return True
+
+        return False
+
+    def _has_inline_bypass(self, line_number: int) -> bool:
+        """Check if line has an inline bypass comment."""
+        if not self.file_lines or line_number < 1 or line_number > len(self.file_lines):
+            return False
+
+        line = self.file_lines[line_number - 1]
+        return any(pattern in line for pattern in self.bypass_patterns)
+
     def _check_secret_assignment(
         self, field_name: str, value_node: ast.AST, line_number: int, column: int
-    ):
+    ) -> None:
         """Check if a field assignment contains a hardcoded secret."""
         # Skip exceptions
         if field_name.lower() in self.exceptions:
@@ -182,8 +247,27 @@ class PythonSecretValidator(ast.NodeVisitor):
         if not self._matches_secret_patterns(field_name):
             return
 
+        # Check if we're inside an Enum class - skip enum members
+        if self._is_in_enum_class():
+            return
+
+        # Check for inline bypass comment
+        if self._has_inline_bypass(line_number):
+            return
+
         # Check if value is a hardcoded string (not an environment variable lookup)
         if self._is_hardcoded_value(value_node):
+            # Extract the actual value for metadata check
+            value_str = ""
+            if isinstance(value_node, ast.Constant) and isinstance(
+                value_node.value, str
+            ):
+                value_str = value_node.value
+
+            # Check if this is a metadata assignment (not actual secret)
+            if value_str and self._is_metadata_assignment(field_name, value_str):
+                return
+
             suggestion = (
                 f"Use environment variable or secure configuration instead. "
                 f"Example: os.getenv('{field_name.upper()}') or container.get_service('ProtocolConfig')"
@@ -203,9 +287,7 @@ class PythonSecretValidator(ast.NodeVisitor):
     def _matches_secret_patterns(self, field_name: str) -> bool:
         """Check if field name matches any secret pattern."""
         field_lower = field_name.lower()
-        return any(
-            re.match(pattern, field_lower) for pattern in self.secret_patterns
-        )
+        return any(re.match(pattern, field_lower) for pattern in self.secret_patterns)
 
     def _is_hardcoded_value(self, value_node: ast.AST) -> bool:
         """Check if value is a hardcoded string (not from environment or config)."""
@@ -223,9 +305,11 @@ class PythonSecretValidator(ast.NodeVisitor):
         # JoinedStr (f-strings) might contain hardcoded secrets
         if isinstance(value_node, ast.JoinedStr):
             # Check if it contains any hardcoded values
-            for value in value_node.values:
-                if isinstance(value, ast.Constant) and isinstance(value.value, str):
-                    if len(value.value) >= 3:
+            for joined_value in value_node.values:
+                if isinstance(joined_value, ast.Constant) and isinstance(
+                    joined_value.value, str
+                ):
+                    if len(joined_value.value) >= 3:
                         return True
 
         # Safe patterns - environment variable access
@@ -274,7 +358,7 @@ class PythonSecretValidator(ast.NodeVisitor):
 class SecretValidator:
     """Validates that Python files don't contain hardcoded secrets."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.violations: list[SecretViolation] = []
         self.checked_files = 0
 
@@ -321,7 +405,8 @@ class SecretValidator:
         self.checked_files += 1
 
         # AST-based validation for hardcoded secrets
-        ast_validator = PythonSecretValidator(str(python_path))
+        # Pass file_lines to enable inline bypass comment detection
+        ast_validator = PythonSecretValidator(str(python_path), content_lines)
         try:
             tree = ast.parse(content, filename=str(python_path))
             ast_validator.visit(tree)
@@ -339,7 +424,13 @@ class SecretValidator:
 
     def _has_bypass_comment(self, content_lines: list[str]) -> bool:
         """Check if file has a bypass comment at the top."""
-        bypass_patterns = ["secret-ok:", "password-ok:", "hardcoded-ok:", "nosec"]
+        bypass_patterns = [
+            "secret-ok:",
+            "password-ok:",
+            "hardcoded-ok:",
+            "nosec",
+            "noqa: secrets",
+        ]
 
         # Check first 10 lines for bypass comment
         for line in content_lines[:10]:
@@ -385,6 +476,8 @@ class SecretValidator:
             print("      Example: config = container.get_service('ProtocolConfig')")
             print("   4. For test fixtures, add bypass comment:")
             print("      Example: # secret-ok: test fixture")
+            print("   5. Or use inline bypass:")
+            print("      Example: password = 'test'  # noqa: secrets")
             print()
         else:
             print(f"✅ Secret Validation PASSED ({self.checked_files} files checked)")

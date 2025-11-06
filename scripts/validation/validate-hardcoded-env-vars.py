@@ -53,6 +53,9 @@ class PythonEnvVarValidator(ast.NodeVisitor):
     def __init__(self, file_path: str):
         self.file_path = file_path
         self.violations: list[EnvVarViolation] = []
+        self.class_stack: list[ast.ClassDef] = (
+            []
+        )  # Track class context for Enum detection
 
         # Common environment variable name patterns (all caps with underscores)
         self.env_var_pattern = r"^[A-Z][A-Z0-9_]*$"
@@ -81,6 +84,26 @@ class PythonEnvVarValidator(ast.NodeVisitor):
             "SENTRY_",
             "DATADOG_",
             "NEW_RELIC_",
+        ]
+
+        # Common environment variable suffixes (more precise than broad keyword matching)
+        self.env_var_suffixes = [
+            "_URL",
+            "_URI",
+            "_KEY",
+            "_TOKEN",
+            "_SECRET",
+            "_PASSWORD",
+            "_HOST",
+            "_PORT",
+            "_USER",
+            "_USERNAME",
+            "_ENDPOINT",
+            "_CONNECTION",
+            "_SERVERS",  # For KAFKA_BOOTSTRAP_SERVERS
+            "_TOPIC",  # For KAFKA_TOPIC
+            "_BUCKET",  # For AWS_BUCKET
+            "_REGION",  # For AWS_REGION
         ]
 
         # Common environment variable names (exact matches)
@@ -158,7 +181,13 @@ class PythonEnvVarValidator(ast.NodeVisitor):
             "TEST_PASSWORD",
         }
 
-    def visit_Assign(self, node: ast.Assign):
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        """Visit class definitions to track Enum classes."""
+        self.class_stack.append(node)
+        self.generic_visit(node)
+        self.class_stack.pop()
+
+    def visit_Assign(self, node: ast.Assign) -> None:
         """Visit assignments to detect hardcoded environment variables."""
         for target in node.targets:
             if isinstance(target, ast.Name):
@@ -168,7 +197,7 @@ class PythonEnvVarValidator(ast.NodeVisitor):
                 )
         self.generic_visit(node)
 
-    def visit_AnnAssign(self, node: ast.AnnAssign):
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         """Visit annotated assignments."""
         if isinstance(node.target, ast.Name) and node.value:
             var_name = node.target.id
@@ -179,8 +208,12 @@ class PythonEnvVarValidator(ast.NodeVisitor):
 
     def _check_env_var_assignment(
         self, var_name: str, value_node: ast.AST, line_number: int, column: int
-    ):
+    ) -> None:
         """Check if an environment variable assignment is hardcoded."""
+        # Skip if inside an Enum class
+        if self._is_in_enum_class():
+            return
+
         # Skip if not an environment variable pattern
         if not self._is_env_var_name(var_name):
             return
@@ -208,13 +241,35 @@ class PythonEnvVarValidator(ast.NodeVisitor):
                 )
             )
 
+    def _is_in_enum_class(self) -> bool:
+        """Check if we're currently inside an Enum class definition."""
+        for class_node in self.class_stack:
+            # Check if any base class is an Enum
+            for base in class_node.bases:
+                base_name = ast.unparse(base)
+                if (
+                    "Enum" in base_name
+                    or "IntEnum" in base_name
+                    or "StrEnum" in base_name
+                ):
+                    return True
+        return False
+
     def _is_env_var_name(self, var_name: str) -> bool:
-        """Check if variable name follows environment variable naming convention."""
+        """Check if variable name follows environment variable naming convention.
+
+        Uses precise heuristics to avoid false positives:
+        1. Exact matches in common_env_vars (DEBUG, PORT, etc.)
+        2. Known prefixes (DATABASE_, API_, AWS_, etc.)
+        3. Known suffixes (_URL, _KEY, _TOKEN, etc.)
+
+        Avoids flagging legitimate constants, enum members, and error codes.
+        """
         # Must match UPPER_CASE pattern
         if not re.match(self.env_var_pattern, var_name):
             return False
 
-        # Check if it's a common environment variable name
+        # Check if it's a common environment variable name (exact match)
         if var_name in self.common_env_vars:
             return True
 
@@ -223,37 +278,12 @@ class PythonEnvVarValidator(ast.NodeVisitor):
             if var_name.startswith(prefix):
                 return True
 
-        # For other UPPER_CASE names, apply heuristics
-        # If it's a common config-like name, treat it as env var
-        config_keywords = [
-            "URL",
-            "URI",
-            "HOST",
-            "PORT",
-            "KEY",
-            "SECRET",
-            "TOKEN",
-            "PASSWORD",
-            "USER",
-            "USERNAME",
-            "DATABASE",
-            "REDIS",
-            "KAFKA",
-            "ENDPOINT",
-            "CONNECTION",
-            "CONFIG",
-            "SETTING",
-            "PATH",
-            "DIR",
-            "DIRECTORY",
-            "FILE",
-        ]
-
-        # If variable name contains any config keyword, it's likely an env var
-        for keyword in config_keywords:
-            if keyword in var_name:
+        # Check if it ends with a common environment variable suffix
+        for suffix in self.env_var_suffixes:
+            if var_name.endswith(suffix):
                 return True
 
+        # Not an environment variable pattern
         return False
 
     def _is_hardcoded_value(self, value_node: ast.AST) -> bool:
@@ -329,9 +359,7 @@ class PythonEnvVarValidator(ast.NodeVisitor):
             return str(value_node.value)
         elif isinstance(value_node, ast.List):
             return "[...]"
-        elif isinstance(value_node, ast.Dict):
-            return "{...}"
-        elif isinstance(value_node, ast.Set):
+        elif isinstance(value_node, ast.Dict) or isinstance(value_node, ast.Set):
             return "{...}"
         else:
             try:
@@ -343,7 +371,7 @@ class PythonEnvVarValidator(ast.NodeVisitor):
 class HardcodedEnvVarValidator:
     """Validates that Python files don't contain hardcoded environment variables."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.violations: list[EnvVarViolation] = []
         self.checked_files = 0
 
