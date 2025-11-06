@@ -8,14 +8,14 @@ Tests secret detection for:
 - Various secret pattern detection
 """
 
+import importlib.util
+
+# Import the validator classes
+import sys
 import tempfile
 from pathlib import Path
 
 import pytest
-
-# Import the validator classes
-import sys
-import importlib.util
 
 # Load the validator module dynamically (script uses hyphens in filename)
 _validator_path = (
@@ -241,9 +241,7 @@ class TestSecretValidator:
 
     def test_validates_clean_file(self) -> None:
         """Test validation passes for file with no secrets."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write(
                 """
 import os
@@ -267,9 +265,7 @@ password = os.getenv("PASSWORD")
 
     def test_detects_hardcoded_secret_in_file(self) -> None:
         """Test validation fails for file with hardcoded secret."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write(
                 """
 api_key = "sk-1234567890abcdef"
@@ -290,9 +286,7 @@ api_key = "sk-1234567890abcdef"
 
     def test_bypass_comment_works(self) -> None:
         """Test that bypass comment allows hardcoded secrets."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write(
                 """# secret-ok: test fixture
 api_key = "sk-1234567890abcdef"
@@ -313,9 +307,7 @@ api_key = "sk-1234567890abcdef"
 
     def test_handles_empty_file_gracefully(self) -> None:
         """Test that empty Python files are handled gracefully."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write("")
             tmp_path = Path(tmp.name)
 
@@ -333,9 +325,7 @@ api_key = "sk-1234567890abcdef"
 
     def test_handles_syntax_errors_gracefully(self) -> None:
         """Test that files with syntax errors are skipped."""
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False
-        ) as tmp:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
             tmp.write(
                 """
 def broken_syntax(

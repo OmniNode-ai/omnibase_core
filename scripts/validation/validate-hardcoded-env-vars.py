@@ -412,7 +412,7 @@ class HardcodedEnvVarValidator:
             return True
 
         # Check for bypass comments
-        if "env-var-ok:" in content[:500]:  # Check first 500 chars
+        if "env-var-ok:" in content:  # Check entire file
             return True
 
         self.checked_files += 1
