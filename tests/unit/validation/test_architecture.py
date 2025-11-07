@@ -19,7 +19,7 @@ from omnibase_core.validation.architecture import (
     validate_one_model_per_file,
 )
 from omnibase_core.validation.auditor_protocol import ModelProtocolAuditor
-from omnibase_core.validation.exceptions import ConfigurationError, InputValidationError
+from omnibase_core.errors.exceptions import ConfigurationError, InputValidationError
 
 
 class TestModelCounter:

@@ -6,7 +6,7 @@ Tests the custom exception hierarchy and error handling behavior.
 
 import pytest
 
-from omnibase_core.validation.exceptions import (
+from omnibase_core.errors.exceptions import (
     AuditError,
     ConfigurationError,
     FileProcessingError,

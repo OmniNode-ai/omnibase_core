@@ -324,7 +324,7 @@ class SecureDataProcessor(
 - **MixinSecurity**: Sensitive field redaction, input sanitization
 - **MixinValidation**: Fail-fast input validation, type checking
 
-**See:** `src/omnibase_core/mixins/mixin_metadata.yaml` for detailed mixin capabilities, configuration options, and integration patterns.
+**See:** `src/omnibase_core/data/config/mixin_metadata.yaml` for detailed mixin capabilities, configuration options, and integration patterns.
 
 ---
 
@@ -537,7 +537,7 @@ if self.cache_hit_ratio < 0.5:
 
 ## Further Reading
 
-- **Mixin Metadata:** `src/omnibase_core/mixins/mixin_metadata.yaml` - Detailed mixin capabilities
+- **Mixin Metadata:** `src/omnibase_core/data/config/mixin_metadata.yaml` - Detailed mixin capabilities
 - **ONEX Architecture Patterns:** See project documentation for ONEX architecture guidelines
 - **Node Base Classes:** `src/omnibase_core/nodes/node_*.py` (created by Agent 2)
 - **Container Documentation:** `src/omnibase_core/models/container/model_onex_container.py`
