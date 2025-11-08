@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_metadata import ModelMetadata
+from omnibase_core.models.core.model_core_metadata import ModelMetadata
 
 
 class ModelGeneratedModels(BaseModel):

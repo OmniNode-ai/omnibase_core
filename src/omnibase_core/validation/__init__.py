@@ -35,10 +35,10 @@ from omnibase_core.models.model_module_import_result import ModelModuleImportRes
 # Import BOTH validation result classes (different purposes!)
 # - ModelValidationResult (from models/) is for circular import validation
 # - ModelValidationResult (from models/validation/) is for general validation
-from omnibase_core.models.model_validation_result import (
+from omnibase_core.models.model_import_validation_result import (
     ModelValidationResult as CircularImportValidationResult,
 )
-from omnibase_core.models.validation.model_validation_result import (
+from omnibase_core.models.common.model_validation_result import (
     ModelValidationResult,
 )
 

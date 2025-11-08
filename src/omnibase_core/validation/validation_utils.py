@@ -15,7 +15,7 @@ from omnibase_core.models.validation.model_protocol_info import ModelProtocolInf
 from omnibase_core.models.validation.model_protocol_signature_extractor import (
     ModelProtocolSignatureExtractor,
 )
-from omnibase_core.models.validation.model_validation_result import (
+from omnibase_core.models.common.model_validation_result import (
     ModelValidationResult,
 )
 from omnibase_core.types.typed_dict_validation_metadata_type import (

@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from omnibase_core.models.validation.model_validation_result import (
+from omnibase_core.models.common.model_validation_result import (
     ModelValidationResult,
 )
 from omnibase_core.validation.types import (

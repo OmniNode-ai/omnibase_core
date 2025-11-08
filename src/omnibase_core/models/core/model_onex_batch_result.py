@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-    from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
+    from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 
     from .model_onex_message import ModelOnexMessage
     from .model_onex_result import ModelOnexResult

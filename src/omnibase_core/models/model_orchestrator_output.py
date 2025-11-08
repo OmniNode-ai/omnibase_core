@@ -12,7 +12,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_orchestrator_types import EnumWorkflowState
-from omnibase_core.models.model_action import ModelAction
+from omnibase_core.models.orchestrator.model_action import ModelAction
 
 
 class ModelOrchestratorOutput(BaseModel):

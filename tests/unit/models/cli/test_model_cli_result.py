@@ -25,7 +25,7 @@ from omnibase_core.models.cli.model_cli_execution import ModelCliExecution
 from omnibase_core.models.cli.model_cli_output_data import ModelCliOutputData
 from omnibase_core.models.cli.model_cli_result import ModelCliResult
 from omnibase_core.models.cli.model_cli_result_metadata import ModelCliResultMetadata
-from omnibase_core.models.cli.model_performance_metrics import ModelPerformanceMetrics
+from omnibase_core.models.cli.model_cli_performance_metrics import ModelPerformanceMetrics
 from omnibase_core.models.cli.model_trace_data import ModelTraceData
 from omnibase_core.models.infrastructure.model_duration import ModelDuration
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
