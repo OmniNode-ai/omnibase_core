@@ -14,7 +14,7 @@ from .model_backup_config import ModelBackupConfig
 from .model_branching_config import ModelBranchingConfig
 from .model_caching_config import ModelCachingConfig
 from .model_compensation_plan import ModelCompensationPlan
-from .model_condition_value import ModelConditionValue
+from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from .model_condition_value_list import ModelConditionValueList
 from .model_conflict_resolution_config import ModelConflictResolutionConfig
 from .model_contract_base import ModelContractBase
