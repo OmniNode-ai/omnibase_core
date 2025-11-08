@@ -11,7 +11,7 @@ import pytest
 
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.models.core.model_health_details import ModelHealthDetails
-from omnibase_core.models.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.health.model_health_status import ModelHealthStatus
 
 
 class TestModelHealthStatus:

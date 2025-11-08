@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from .model_burst_config import ModelBurstConfig
 from .model_per_user_limits import ModelPerUserLimits
 from .model_rate_limit_window import ModelRateLimitWindow
-from .model_retry_policy import ModelRetryPolicy
+from omnibase_core.models.infrastructure.model_retry_policy import ModelRetryPolicy
 from .model_throttling_behavior import ModelThrottlingBehavior
 
 
