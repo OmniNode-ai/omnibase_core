@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.core.model_environment_properties import (
+from omnibase_core.models.config.model_environment_properties import (
     ModelEnvironmentProperties,
 )
 from omnibase_core.models.core.model_feature_flags import ModelFeatureFlags
@@ -280,7 +280,7 @@ class ModelEnvironment(BaseModel):
         is_production = name in ["production", "prod"]
 
         # Set appropriate resource limits based on environment
-        from omnibase_core.models.common.model_resource_limits import (
+        from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
         )
 
@@ -348,7 +348,7 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_development(cls) -> "ModelEnvironment":
         """Create a development environment."""
-        from omnibase_core.models.common.model_resource_limits import (
+        from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
         )
 
@@ -375,7 +375,7 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_staging(cls) -> "ModelEnvironment":
         """Create a staging environment."""
-        from omnibase_core.models.common.model_resource_limits import (
+        from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
         )
 
@@ -401,7 +401,7 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_production(cls) -> "ModelEnvironment":
         """Create a production environment."""
-        from omnibase_core.models.common.model_resource_limits import (
+        from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
         )
         from omnibase_core.models.security.model_security_level import (

@@ -9,7 +9,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_auth_type import EnumAuthType
-from omnibase_core.models.contracts.model_external_service_config import (
+from omnibase_core.models.service.model_external_service_config import (
     ModelExternalServiceConfig,
 )
 

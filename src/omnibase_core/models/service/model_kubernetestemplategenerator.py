@@ -1,7 +1,7 @@
 import json
 from typing import Any
 
-from omnibase_core.models.configuration.model_node_service_config import (
+from omnibase_core.models.service.model_node_service_config import (
     ModelNodeServiceConfig,
 )
 from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml

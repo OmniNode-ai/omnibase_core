@@ -10,7 +10,7 @@ within the ONEX architecture.
 from pydantic import Field
 
 from omnibase_core.models.core.model_base_result import ModelBaseResult
-from omnibase_core.models.core.model_contract_data import ModelContractData
+from omnibase_core.models.utils.model_contract_data import ModelContractData
 from omnibase_core.models.core.model_node_data import ModelNodeData
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

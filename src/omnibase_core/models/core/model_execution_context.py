@@ -4,7 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_context_metadata import ModelContextMetadata
-from omnibase_core.models.core.model_duration import ModelDuration
+from omnibase_core.models.infrastructure.model_duration import ModelDuration
 from omnibase_core.models.core.model_environment import ModelEnvironment
 from omnibase_core.models.core.model_execution_mode import ModelExecutionMode
 

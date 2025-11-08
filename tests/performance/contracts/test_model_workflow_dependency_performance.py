@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
-from omnibase_core.models.contracts.model_condition_value import ModelConditionValue
+from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from omnibase_core.models.contracts.model_workflow_condition import (
     EnumConditionOperator,
     EnumConditionType,

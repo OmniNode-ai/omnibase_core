@@ -45,11 +45,11 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.orchestrator.model_action import ModelAction
-from omnibase_core.models.model_dependency_graph import ModelDependencyGraph
+from omnibase_core.models.workflows.model_dependency_graph import ModelDependencyGraph
 from omnibase_core.models.model_load_balancer import ModelLoadBalancer
 from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
-from omnibase_core.models.model_orchestrator_output import ModelOrchestratorOutput
-from omnibase_core.models.model_workflow_step import ModelWorkflowStep
+from omnibase_core.models.service.model_orchestrator_output import ModelOrchestratorOutput
+from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
 
 class NodeOrchestrator(NodeCoreBase):

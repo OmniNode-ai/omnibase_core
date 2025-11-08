@@ -14,7 +14,7 @@ from omnibase_core.models.core.model_container_instance_config import ModelConfi
 from omnibase_core.models.core.model_protocol_registration import (
     ModelProtocolRegistration,
 )
-from omnibase_core.models.core.model_service_registration import (
+from omnibase_core.models.container.model_service_registration import (
     ModelServiceRegistration,
 )
 

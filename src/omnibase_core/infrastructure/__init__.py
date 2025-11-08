@@ -5,7 +5,7 @@ This module contains node bases and infrastructure services.
 
 from omnibase_core.infrastructure.node_base import NodeBase
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
-from omnibase_core.models.infrastructure.model_circuit_breaker import (
+from omnibase_core.models.configuration.model_circuit_breaker import (
     ModelCircuitBreaker,
 )
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache

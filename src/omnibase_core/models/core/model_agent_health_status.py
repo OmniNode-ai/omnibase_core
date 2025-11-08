@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_health_check import (
+from omnibase_core.models.health.model_health_check import (
     EnumHealthStatusType,
     ModelHealthCheck,
 )

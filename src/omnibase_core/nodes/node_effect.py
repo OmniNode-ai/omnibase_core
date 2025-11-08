@@ -45,7 +45,7 @@ from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.infrastructure.model_circuit_breaker import (
+from omnibase_core.models.configuration.model_circuit_breaker import (
     ModelCircuitBreaker,
 )
 from omnibase_core.models.infrastructure.model_effect_transaction import (

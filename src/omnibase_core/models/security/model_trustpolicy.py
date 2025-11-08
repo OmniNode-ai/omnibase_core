@@ -27,7 +27,7 @@ from omnibase_core.models.security.model_rule_condition_value import (
 from omnibase_core.models.security.model_signature_requirements import (
     ModelSignatureRequirements,
 )
-from omnibase_core.models.security.model_trust_level import ModelTrustLevel
+from omnibase_core.models.core.model_trust_level import ModelTrustLevel
 
 
 class ModelTrustPolicy(BaseModel):
