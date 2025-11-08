@@ -50,7 +50,7 @@ from .model_fsm_state_transition import ModelFSMStateTransition
 from .model_fsm_subcontract import ModelFSMSubcontract
 from .model_fsm_transition_action import ModelFSMTransitionAction
 from .model_fsm_transition_condition import ModelFSMTransitionCondition
-from .model_health_check_result import ModelHealthCheckResult
+from omnibase_core.models.core.model_health_check_result import ModelHealthCheckResult
 from .model_health_check_subcontract import ModelHealthCheckSubcontract
 from .model_load_balancing import ModelLoadBalancing
 from .model_logging_subcontract import ModelLoggingSubcontract
@@ -81,7 +81,7 @@ from .model_workflow_coordination_subcontract import (
 from .model_workflow_definition import ModelWorkflowDefinition
 from .model_workflow_definition_metadata import ModelWorkflowDefinitionMetadata
 from .model_workflow_instance import ModelWorkflowInstance
-from .model_workflow_metrics import ModelWorkflowMetrics
+from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
 from .model_workflow_node import ModelWorkflowNode
 
 __all__ = [

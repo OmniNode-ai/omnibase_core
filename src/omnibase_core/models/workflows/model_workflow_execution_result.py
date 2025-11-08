@@ -19,7 +19,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
-from omnibase_core.models.contracts.subcontracts.model_workflow_metrics import (
+from omnibase_core.models.core.model_workflow_metrics import (
     ModelWorkflowMetrics,
 )
 from omnibase_core.types.constraints import PrimitiveValueType

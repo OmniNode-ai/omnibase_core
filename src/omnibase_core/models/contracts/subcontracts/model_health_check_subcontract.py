@@ -31,7 +31,7 @@ from omnibase_core.models.contracts.subcontracts.model_component_health_collecti
 from omnibase_core.models.contracts.subcontracts.model_dependency_health import (
     ModelDependencyHealth,
 )
-from omnibase_core.models.contracts.subcontracts.model_health_check_result import (
+from omnibase_core.models.core.model_health_check_result import (
     ModelHealthCheckResult,
 )
 from omnibase_core.models.contracts.subcontracts.model_node_health_status import (
