@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_custom_fields import ModelCustomFields
+from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 
 
 class ModelLogFormatting(BaseModel):

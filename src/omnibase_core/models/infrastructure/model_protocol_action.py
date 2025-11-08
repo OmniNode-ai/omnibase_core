@@ -11,7 +11,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from .model_action_payload import ModelActionPayload
+from omnibase_core.models.core.model_action_payload import ModelActionPayload
 
 
 class ModelAction(BaseModel):

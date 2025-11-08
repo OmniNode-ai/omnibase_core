@@ -53,7 +53,7 @@ from omnibase_core.models.metadata.model_metadata_constants import (
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_error_state import ModelErrorState
-from .model_generic_metadata import ModelGenericMetadata
+from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from .model_state_schema import ModelStateSchema
 
 # Compatibility aliases

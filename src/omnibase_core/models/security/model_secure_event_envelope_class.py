@@ -16,7 +16,7 @@ from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Import base envelope and security models
-from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_route_spec import ModelRouteSpec
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel

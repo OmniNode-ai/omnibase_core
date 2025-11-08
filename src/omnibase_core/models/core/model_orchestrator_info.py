@@ -12,7 +12,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.core.model_orchestrator_metrics import (
+from omnibase_core.models.results.model_orchestrator_metrics import (
     ModelOrchestratorMetrics,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

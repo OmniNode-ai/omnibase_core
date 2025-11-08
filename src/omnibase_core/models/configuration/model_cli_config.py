@@ -27,7 +27,7 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_api_config import ModelAPIConfig
 from .model_database_config import ModelDatabaseConfig
-from .model_monitoring_config import ModelMonitoringConfig
+from omnibase_core.models.configuration.model_monitoring_config import ModelMonitoringConfig
 from .model_output_config import ModelOutputConfig
 from .model_tier_config import ModelTierConfig
 

@@ -61,7 +61,7 @@ from .model_node_introspection_event import (
     ModelNodeIntrospectionEvent,
 )
 from .model_node_shutdown_event import ModelNodeShutdownEvent
-from .model_performance_metrics import ModelPerformanceMetrics
+from .model_discovery_performance_metrics import ModelPerformanceMetrics
 from .model_request_introspection_event import ModelRequestIntrospectionEvent
 from .model_resource_usage import ModelResourceUsage
 from .model_tool_discovery_error import ModelToolDiscoveryError

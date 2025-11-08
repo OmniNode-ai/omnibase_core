@@ -28,7 +28,7 @@ from .model_cli_debug_info import ModelCliDebugInfo
 from .model_cli_execution import ModelCliExecution
 from .model_cli_output_data import ModelCliOutputData
 from .model_cli_result_metadata import ModelCliResultMetadata
-from .model_performance_metrics import ModelPerformanceMetrics
+from omnibase_core.models.discovery.model_discovery_performance_metrics import ModelPerformanceMetrics
 from .model_result_summary import ModelResultSummary
 from .model_trace_data import ModelTraceData
 

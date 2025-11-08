@@ -23,7 +23,7 @@ from omnibase_core.enums.enum_tool_category import EnumToolCategory
 from omnibase_core.enums.enum_tool_criticality import EnumToolCriticality
 from omnibase_core.enums.enum_tool_missing_reason import EnumToolMissingReason
 
-from .model_generic_metadata import ModelGenericMetadata
+from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from .model_monitoring_metrics import ModelMonitoringMetrics
 
 

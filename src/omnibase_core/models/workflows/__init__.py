@@ -7,7 +7,7 @@ Models for workflow execution and coordination.
 """
 
 from .model_dependency_graph import ModelDependencyGraph
-from .model_workflow_execution_result import ModelWorkflowExecutionResult
+from omnibase_core.models.workflows.model_workflow_execution_result import ModelWorkflowExecutionResult
 from .model_workflow_input_state import ModelWorkflowInputState
 from .model_workflow_step_execution import ModelWorkflowStepExecution
 

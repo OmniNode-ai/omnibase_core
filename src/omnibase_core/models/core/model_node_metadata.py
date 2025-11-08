@@ -53,7 +53,7 @@ from omnibase_core.models.core.model_io_contract import ModelIOContract
 from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.models.core.model_trust_score_stub import ModelTrustScoreStub
 
-from .model_data_handling_declaration import ModelDataHandlingDeclaration
+from omnibase_core.models.config.model_data_handling_declaration import ModelDataHandlingDeclaration
 from .model_extension_value import ModelExtensionValue
 from .model_logging_config import EnumLogFormat, ModelLogFormat, ModelLoggingConfig
 from .model_namespace import ModelNamespace

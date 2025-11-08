@@ -53,7 +53,7 @@ from omnibase_core.models.core.model_error_codes import ModelErrorCodes
 
 # Import all separated models
 from omnibase_core.models.core.model_event_channels import ModelEventChannels
-from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
+from omnibase_core.models.nodes.model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.models.core.model_performance_profile_info import (
     ModelPerformanceProfileInfo,
 )

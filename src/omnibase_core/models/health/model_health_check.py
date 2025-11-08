@@ -22,7 +22,7 @@ from enum import Enum
 
 from pydantic import BaseModel, HttpUrl
 
-from omnibase_core.models.core import ModelGenericMetadata
+from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 
 
 class ModelHealthCheck(BaseModel):

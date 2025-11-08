@@ -23,7 +23,7 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 logger = logging.getLogger(__name__)
 
-from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.mixins.model_service_registry_entry import (
     ModelServiceRegistryEntry,
 )

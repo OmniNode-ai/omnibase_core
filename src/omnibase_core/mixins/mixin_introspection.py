@@ -55,7 +55,7 @@ from omnibase_core.models.core.model_node_introspection import (
 from omnibase_core.models.core.model_node_introspection_response import (
     ModelNodeIntrospectionResponse,
 )
-from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
+from omnibase_core.models.nodes.model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.models.core.model_performance_profile_info import (
     ModelPerformanceProfileInfo,
 )

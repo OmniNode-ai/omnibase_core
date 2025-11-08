@@ -427,7 +427,7 @@ class ModelRegistryHealthReport(BaseModel):
 
     def get_monitoring_metrics(self) -> ModelMonitoringMetrics:
         """Get comprehensive metrics for monitoring systems."""
-        from omnibase_core.models.core.model_metric_value import ModelMetricValue
+        from omnibase_core.models.discovery.model_metric_value import ModelMetricValue
 
         # Calculate averages
         self.get_average_tool_response_time()

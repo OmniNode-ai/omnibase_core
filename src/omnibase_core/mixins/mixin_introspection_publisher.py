@@ -347,7 +347,7 @@ class MixinIntrospectionPublisher:
         if not event_bus:
             return
         node_id = getattr(self, "_node_id", "unknown")
-        from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         source_node_id_str: str
         if isinstance(node_id, str):

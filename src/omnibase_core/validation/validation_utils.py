@@ -22,7 +22,7 @@ from omnibase_core.types.typed_dict_validation_metadata_type import (
     TypedDictValidationMetadataType,
 )
 
-from .exceptions import InputValidationError
+from omnibase_core.errors.exceptions import InputValidationError
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)

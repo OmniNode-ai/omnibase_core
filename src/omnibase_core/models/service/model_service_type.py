@@ -19,7 +19,7 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from omnibase_core.models.core import ModelGenericMetadata
+from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 
 
 class ModelServiceType(BaseModel):

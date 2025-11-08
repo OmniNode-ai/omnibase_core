@@ -18,7 +18,7 @@ from omnibase_core.utils.uuid_utilities import uuid_from_string
 
 from .model_current_tool_availability import ModelCurrentToolAvailability
 from .model_introspection_additional_info import ModelIntrospectionAdditionalInfo
-from .model_performance_metrics import ModelPerformanceMetrics
+from .model_discovery_performance_metrics import ModelPerformanceMetrics
 from .model_resource_usage import ModelResourceUsage
 
 

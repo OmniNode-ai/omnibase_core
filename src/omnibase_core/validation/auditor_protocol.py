@@ -21,7 +21,7 @@ from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
 )
 
-from .exceptions import ConfigurationError, InputValidationError
+from omnibase_core.errors.exceptions import ConfigurationError, InputValidationError
 from .validation_utils import (
     ModelDuplicationInfo,
     ModelProtocolInfo,

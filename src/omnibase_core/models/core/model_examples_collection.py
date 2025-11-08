@@ -34,8 +34,8 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 # Safe runtime import - error_codes only imports from types.core_types
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-from .model_example import ModelExample
-from .model_example_metadata import ModelExampleMetadata
+from omnibase_core.models.config.model_example import ModelExample
+from omnibase_core.models.config.model_example_metadata import ModelExampleMetadata
 
 
 class ModelExamplesCollection(BaseModel):

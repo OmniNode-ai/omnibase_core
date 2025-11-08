@@ -10,7 +10,7 @@ Type-safe circuit breaker metadata that replaces Dict[str, Any] usage.
 
 from pydantic import BaseModel
 
-from omnibase_core.models.core.model_custom_fields import ModelCustomFields
+from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 
 
 class ModelCircuitBreakerMetadata(BaseModel):

@@ -2,8 +2,6 @@ from typing import Generic
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_custom_fields import ModelCustomFields
-
 """Core models for OmniBase - Core domain models only.
 
 This module contains only core domain models to prevent circular dependencies.
@@ -32,7 +30,7 @@ from .model_generic_collection import ModelGenericCollection
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 
 # Generic metadata pattern
-from .model_generic_metadata import ModelGenericMetadata
+from .model_protocol_metadata import ModelGenericMetadata
 from .model_generic_properties import ModelGenericProperties
 
 # Event envelope patterns
@@ -72,14 +70,14 @@ try:
         ModelExecutionData,
         ModelNodeExecutionResult,
     )
-    from .model_node_info import ModelNodeInfo
+    from omnibase_core.models.core.model_node_info import ModelNodeInfo
     from .model_node_info_result import ModelNodeInfoResult
     from .model_node_information import ModelNodeConfiguration, ModelNodeInformation
     from .model_node_instance import ModelNodeInstance
     from .model_node_introspection_response import ModelNodeIntrospectionResponse
     from .model_node_metadata import ModelNodeMetadata
     from .model_node_metadata_block import ModelNodeMetadataBlock
-    from .model_node_metadata_info import ModelNodeMetadataInfo
+    from omnibase_core.models.nodes.model_node_metadata_info import ModelNodeMetadataInfo
     from .model_node_reference import ModelNodeReference
     from .model_node_reference_metadata import ModelNodeReferenceMetadata
     from .model_node_status import ModelNodeStatus

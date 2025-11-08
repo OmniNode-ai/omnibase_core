@@ -26,7 +26,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_retry_advanced import ModelRetryAdvanced
 from .model_retry_conditions import ModelRetryConditions
-from .model_retry_config import ModelRetryConfig
+from omnibase_core.models.core.model_retry_config import ModelRetryConfig
 from .model_retry_execution import ModelRetryExecution
 
 

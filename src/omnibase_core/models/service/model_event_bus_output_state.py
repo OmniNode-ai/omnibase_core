@@ -276,7 +276,7 @@ class ModelEventBusOutputState(BaseModel):
 
     def get_monitoring_metrics(self) -> ModelMonitoringMetrics:
         """Get metrics suitable for monitoring systems."""
-        from omnibase_core.models.core.model_metric_value import ModelMetricValue
+        from omnibase_core.models.discovery.model_metric_value import ModelMetricValue
         from omnibase_core.models.core.model_monitoring_metrics import (
             ModelMonitoringMetrics,
         )
