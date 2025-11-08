@@ -43,7 +43,7 @@ from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_effect_retry_config import (
     ModelEffectRetryConfig,
 )
-from omnibase_core.models.contracts.model_external_service_config import (
+from omnibase_core.models.service.model_external_service_config import (
     ModelExternalServiceConfig,
 )
 from omnibase_core.models.contracts.model_io_operation_config import (
