@@ -25,10 +25,10 @@ from .model_contract_reducer import ModelContractReducer
 from .model_dependency import ModelDependency
 from .model_effect_retry_config import ModelEffectRetryConfig
 from .model_event_coordination_config import ModelEventCoordinationConfig
-from .model_event_descriptor import ModelEventDescriptor
+from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
 from .model_event_registry_config import ModelEventRegistryConfig
 from .model_event_subscription import ModelEventSubscription
-from .model_external_service_config import ModelExternalServiceConfig
+from omnibase_core.models.service.model_external_service_config import ModelExternalServiceConfig
 from .model_filter_conditions import ModelFilterConditions
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig

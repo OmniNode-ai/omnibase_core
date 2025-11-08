@@ -34,7 +34,7 @@ from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_event_coordination_config import (
     ModelEventCoordinationConfig,
 )
-from omnibase_core.models.contracts.model_event_descriptor import ModelEventDescriptor
+from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
 from omnibase_core.models.contracts.model_event_registry_config import (
     ModelEventRegistryConfig,
 )
