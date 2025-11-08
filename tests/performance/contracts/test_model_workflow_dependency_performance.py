@@ -47,7 +47,7 @@ class TestModelWorkflowDependencyPerformance:
                 condition_type=EnumConditionType.WORKFLOW_STATE,
                 field_name="status",
                 operator=EnumConditionOperator.EQUALS,
-                expected_value=ModelConditionValue[str](value="completed"),
+                expected_value=ModelConditionValue(value="completed"),
             )
 
         version = None
