@@ -1,7 +1,7 @@
 """Schema validation models and compatibility aliases.
 
 This module provides a consolidated interface for all schema-related models,
-including compatibility aliases for backward compatibility.
+including compatibility aliases for consistent naming.
 """
 
 from omnibase_core.models.validation.model_required_fields_model import (

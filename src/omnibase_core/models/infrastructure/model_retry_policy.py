@@ -76,7 +76,7 @@ class ModelRetryPolicy(BaseModel):
     @property
     def backoff_strategy(self) -> EnumRetryBackoffStrategy:
         """Get backoff strategy from config."""
-        # Map new bool-based API to legacy enum for backwards compatibility
+        # Map bool-based API to enum representation
         return (
             EnumRetryBackoffStrategy.EXPONENTIAL
             if self.config.exponential_backoff

@@ -28,9 +28,6 @@ from .model_field_accessor import ModelFieldAccessor
 # Generic collection pattern
 from .model_generic_collection import ModelGenericCollection
 from .model_generic_collection_summary import ModelGenericCollectionSummary
-
-# Generic metadata pattern
-from .model_protocol_metadata import ModelGenericMetadata
 from .model_generic_properties import ModelGenericProperties
 
 # Event envelope patterns
@@ -38,6 +35,9 @@ from .model_onex_envelope_v1 import ModelOnexEnvelopeV1
 
 # Version information
 from .model_onex_version import ModelOnexVersionInfo
+
+# Generic metadata pattern
+from .model_protocol_metadata import ModelGenericMetadata
 from .model_result_accessor import ModelResultAccessor
 from .model_typed_accessor import ModelTypedAccessor
 from .model_typed_configuration import ModelTypedConfiguration
@@ -56,6 +56,11 @@ except ImportError:
 
 # Node models - migrated from archived
 try:
+    from omnibase_core.models.core.model_node_info import ModelNodeInfo
+    from omnibase_core.models.nodes.model_node_metadata_info import (
+        ModelNodeMetadataInfo,
+    )
+
     from .model_node_action import ModelNodeAction
     from .model_node_action_type import ModelNodeActionType
     from .model_node_action_validator import ModelNodeActionValidator
@@ -70,14 +75,12 @@ try:
         ModelExecutionData,
         ModelNodeExecutionResult,
     )
-    from omnibase_core.models.core.model_node_info import ModelNodeInfo
     from .model_node_info_result import ModelNodeInfoResult
     from .model_node_information import ModelNodeConfiguration, ModelNodeInformation
     from .model_node_instance import ModelNodeInstance
     from .model_node_introspection_response import ModelNodeIntrospectionResponse
     from .model_node_metadata import ModelNodeMetadata
     from .model_node_metadata_block import ModelNodeMetadataBlock
-    from omnibase_core.models.nodes.model_node_metadata_info import ModelNodeMetadataInfo
     from .model_node_reference import ModelNodeReference
     from .model_node_reference_metadata import ModelNodeReferenceMetadata
     from .model_node_status import ModelNodeStatus

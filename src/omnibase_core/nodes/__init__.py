@@ -27,9 +27,11 @@ from omnibase_core.models.model_compute_output import ModelComputeOutput
 from omnibase_core.models.model_effect_input import ModelEffectInput
 from omnibase_core.models.model_effect_output import ModelEffectOutput
 from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
-from omnibase_core.models.service.model_orchestrator_output import ModelOrchestratorOutput
 from omnibase_core.models.model_reducer_input import ModelReducerInput
 from omnibase_core.models.model_reducer_output import ModelReducerOutput
+from omnibase_core.models.service.model_orchestrator_output import (
+    ModelOrchestratorOutput,
+)
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator

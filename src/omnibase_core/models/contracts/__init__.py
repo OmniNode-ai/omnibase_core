@@ -6,6 +6,12 @@ Contract Models
 Models for validating various contract formats and subcontract compositions.
 """
 
+from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
+from omnibase_core.models.security.model_condition_value import ModelConditionValue
+from omnibase_core.models.service.model_external_service_config import (
+    ModelExternalServiceConfig,
+)
+
 from . import subcontracts
 from .model_action_emission_config import ModelActionEmissionConfig
 from .model_algorithm_config import ModelAlgorithmConfig
@@ -14,7 +20,6 @@ from .model_backup_config import ModelBackupConfig
 from .model_branching_config import ModelBranchingConfig
 from .model_caching_config import ModelCachingConfig
 from .model_compensation_plan import ModelCompensationPlan
-from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from .model_condition_value_list import ModelConditionValueList
 from .model_conflict_resolution_config import ModelConflictResolutionConfig
 from .model_contract_base import ModelContractBase
@@ -25,10 +30,8 @@ from .model_contract_reducer import ModelContractReducer
 from .model_dependency import ModelDependency
 from .model_effect_retry_config import ModelEffectRetryConfig
 from .model_event_coordination_config import ModelEventCoordinationConfig
-from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
 from .model_event_registry_config import ModelEventRegistryConfig
 from .model_event_subscription import ModelEventSubscription
-from omnibase_core.models.service.model_external_service_config import ModelExternalServiceConfig
 from .model_filter_conditions import ModelFilterConditions
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig

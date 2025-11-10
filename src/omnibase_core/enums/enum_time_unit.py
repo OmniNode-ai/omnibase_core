@@ -72,15 +72,15 @@ class EnumTimeUnit(str, Enum):
         if display_keys != all_members:
             missing = all_members - display_keys
             raise ModelOnexError(
-                message=f"Missing display names for: {missing}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
+                f"Missing display names for: {missing}",
             )
 
         if multiplier_keys != all_members:
             missing = all_members - multiplier_keys
             raise ModelOnexError(
-                message=f"Missing multipliers for: {missing}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                EnumCoreErrorCode.VALIDATION_ERROR,
+                f"Missing multipliers for: {missing}",
             )
 
 
