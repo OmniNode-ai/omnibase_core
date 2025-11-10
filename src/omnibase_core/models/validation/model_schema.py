@@ -18,6 +18,11 @@ from omnibase_core.models.validation.model_schema_property import ModelSchemaPro
 # Additional compatibility alias for ModelSchemaProperty
 SchemaPropertyModel = ModelSchemaProperty
 
+# Rebuild models to resolve forward references now that all models are imported
+ModelSchemaProperty.model_rebuild()
+ModelSchemaPropertiesModel.model_rebuild()
+ModelSchema.model_rebuild()
+
 __all__ = [
     "ModelSchema",
     "ModelSchemaPropertiesModel",

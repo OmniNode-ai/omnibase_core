@@ -4,11 +4,16 @@ Strongly typed model for the properties field in a JSON schema.
 Wraps a dict[str, Any]of property names to SchemaPropertyModel.
 """
 
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from pydantic import RootModel
 
-from omnibase_core.models.validation.model_schema_property import ModelSchemaProperty
+if TYPE_CHECKING:
+    from omnibase_core.models.validation.model_schema_property import (
+        ModelSchemaProperty,
+    )
 
 
 class ModelSchemaPropertiesModel(RootModel[Any]):

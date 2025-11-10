@@ -22,7 +22,7 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-from omnibase_core.models.core.model_schema import ModelSchema
+from omnibase_core.models.validation.model_schema import ModelSchema
 
 from .model_audit_entry import ModelAuditEntry
 from .model_tool_performance_metrics import ModelToolPerformanceMetrics
