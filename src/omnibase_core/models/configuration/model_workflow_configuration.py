@@ -1,5 +1,3 @@
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Workflow configuration model to replace Dict[str, Any] usage in workflow configs.
 

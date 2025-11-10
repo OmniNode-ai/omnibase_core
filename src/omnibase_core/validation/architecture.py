@@ -17,6 +17,10 @@ import sys
 from pathlib import Path
 from typing import TypedDict
 
+from omnibase_core.models.common.model_validation_metadata import (
+    ModelValidationMetadata,
+)
+
 from .validation_utils import ModelValidationResult
 
 
@@ -133,7 +137,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
 
 def validate_architecture_directory(
     directory: Path, max_violations: int = 0
-) -> ModelValidationResult:
+) -> ModelValidationResult[None]:
     """Validate ONEX architecture for a directory."""
     python_files = []
 
@@ -165,19 +169,19 @@ def validate_architecture_directory(
             files_with_violations.append(str(file_path))
             all_errors.extend([f"{file_path}: {error}" for error in errors])
 
-    success = total_violations <= max_violations
+    is_valid = total_violations <= max_violations
 
     return ModelValidationResult(
-        success=success,
+        is_valid=is_valid,
         errors=all_errors,
-        files_checked=len(python_files),
-        violations_found=total_violations,
-        files_with_violations=len(files_with_violations),
-        metadata={
-            "validation_type": "architecture",
-            "max_violations": max_violations,
-            "files_with_violations": files_with_violations,
-        },
+        metadata=ModelValidationMetadata(
+            validation_type="architecture",
+            files_processed=len(python_files),
+            max_violations=max_violations,
+            violations_found=total_violations,
+            files_with_violations_count=len(files_with_violations),
+            files_with_violations=files_with_violations,
+        ),
     )
 
 
@@ -202,7 +206,11 @@ def validate_architecture_cli() -> int:
     print("=" * 50)
     print("📋 Enforcing architectural separation of concerns")
 
-    overall_result = ModelValidationResult(success=True, errors=[], files_checked=0)
+    overall_result: ModelValidationResult[None] = ModelValidationResult(
+        is_valid=True,
+        errors=[],
+        metadata=ModelValidationMetadata(files_processed=0),
+    )
 
     for directory in args.directories:
         dir_path = Path(directory)
@@ -214,9 +222,12 @@ def validate_architecture_cli() -> int:
         result = validate_architecture_directory(dir_path, args.max_violations)
 
         # Merge results
-        overall_result.success = overall_result.success and result.success
+        overall_result.is_valid = overall_result.is_valid and result.is_valid
         overall_result.errors.extend(result.errors)
-        overall_result.files_checked += result.files_checked
+        if overall_result.metadata and result.metadata:
+            overall_result.metadata.files_processed = (
+                overall_result.metadata.files_processed or 0
+            ) + (result.metadata.files_processed or 0)
 
         if result.errors:
             print(f"\n❌ {directory}:")
@@ -224,11 +235,14 @@ def validate_architecture_cli() -> int:
                 print(f"   {error}")
 
     print("\n📊 One-Model-Per-File Validation Summary:")
-    print(f"   • Files checked: {overall_result.files_checked}")
+    files_processed = (
+        overall_result.metadata.files_processed if overall_result.metadata else 0
+    )
+    print(f"   • Files checked: {files_processed}")
     print(f"   • Total violations: {len(overall_result.errors)}")
     print(f"   • Max allowed: {args.max_violations}")
 
-    if overall_result.success:
+    if overall_result.is_valid:
         print("✅ One-model-per-file validation PASSED")
         return 0
     print("\n🚨 ARCHITECTURAL VIOLATIONS DETECTED!")

@@ -43,11 +43,9 @@ from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.configuration.model_circuit_breaker import (
-    ModelCircuitBreaker,
-)
 from omnibase_core.models.infrastructure.model_effect_transaction import (
     ModelEffectTransaction,
 )
@@ -325,7 +323,7 @@ class NodeEffect(NodeCoreBase):
                 circuit_breaker = self._get_circuit_breaker(
                     input_data.effect_type.value
                 )
-                if not circuit_breaker.can_execute():
+                if not circuit_breaker.should_allow_request():
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.OPERATION_FAILED,
                         message=f"Circuit breaker open for {input_data.effect_type.value}",
@@ -615,9 +613,13 @@ class NodeEffect(NodeCoreBase):
         circuit_breaker_metrics = {}
         for service_name, cb in self.circuit_breakers.items():
             circuit_breaker_metrics[f"circuit_breaker_{service_name}"] = {
-                "state": float(1 if cb.state == EnumCircuitBreakerState.CLOSED else 0),
+                "state": float(
+                    1 if cb.state == EnumCircuitBreakerState.CLOSED.value else 0
+                ),
                 "failure_count": float(cb.failure_count),
-                "is_open": float(1 if cb.state == EnumCircuitBreakerState.OPEN else 0),
+                "is_open": float(
+                    1 if cb.state == EnumCircuitBreakerState.OPEN.value else 0
+                ),
             }
 
         # Merge stored transaction metrics with real-time transaction stats

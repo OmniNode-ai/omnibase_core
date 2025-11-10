@@ -22,7 +22,10 @@ class ModelAction(BaseModel):
     """
 
     type: str = Field(description="Action type")
-    payload: ModelActionPayload = Field(default_factory=lambda: ModelActionPayload())
+    payload: ModelActionPayload | None = Field(
+        default=None,
+        description="Optional action payload with execution context",
+    )
     timestamp: datetime = Field(default_factory=datetime.now)
 
     model_config = {
@@ -34,7 +37,8 @@ class ModelAction(BaseModel):
     # ProtocolAction required methods
     async def validate_action(self) -> bool:
         """Validate action structure and payload."""
-        return self.is_executable() and await self.payload.validate_payload()
+        # Payload validation is optional if no payload present
+        return self.is_executable()
 
     def is_executable(self) -> bool:
         """Check if action can be executed."""

@@ -27,4 +27,7 @@ class EnumBackendType(Enum):
             return cls(value.lower())
         except ValueError:
             msg = f"Invalid backend type: {value}. Must be one of: {[e.value for e in cls]}"
-            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )

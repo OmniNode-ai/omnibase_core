@@ -43,9 +43,6 @@ from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_effect_retry_config import (
     ModelEffectRetryConfig,
 )
-from omnibase_core.models.service.model_external_service_config import (
-    ModelExternalServiceConfig,
-)
 from omnibase_core.models.contracts.model_io_operation_config import (
     ModelIOOperationConfig,
 )
@@ -65,6 +62,9 @@ from omnibase_core.models.contracts.subcontracts.model_routing_subcontract impor
     ModelRoutingSubcontract,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.service.model_external_service_config import (
+    ModelExternalServiceConfig,
+)
 from omnibase_core.models.utils.model_subcontract_constraint_validator import (
     ModelSubcontractConstraintValidator,
 )
@@ -368,11 +368,9 @@ class ModelContractEffect(ModelContractBase):
         """Validate external services configuration."""
         # Validate external services have proper configuration
         for service in self.external_services:
-            if (
-                service.authentication_method != EnumAuthType.NONE
-                and not service.endpoint_url
-            ):
-                msg = "External services with authentication must specify endpoint_url"
+            # Check that required services have valid connection config
+            if service.required and not service.connection_config:
+                msg = f"Required service '{service.service_name}' must have connection_config"
                 raise ModelOnexError(
                     message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,

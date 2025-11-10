@@ -36,8 +36,8 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-from omnibase_core.models.health.model_health_status import ModelHealthStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.health.model_health_status import ModelHealthStatus
 
 
 class MixinHealthCheck:
@@ -103,14 +103,7 @@ class MixinHealthCheck:
         )
 
         # Basic health - node is running
-        base_health = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            message=f"{self.__class__.__name__} is operational",
-            timestamp=datetime.now(UTC).isoformat(),
-            uptime_seconds=0,
-            memory_usage_mb=0,
-            cpu_usage_percent=0.0,
-        )
+        base_health = ModelHealthStatus.create_healthy(score=1.0)
 
         # Get custom health checks
         health_checks = self.get_health_checks()
@@ -119,7 +112,7 @@ class MixinHealthCheck:
             emit_log_event(
                 LogLevel.DEBUG,
                 "✅ HEALTH_CHECK: No custom checks, returning base health",
-                {"status": base_health.status.value},
+                {"status": base_health.status},
             )
             return base_health
 
@@ -161,33 +154,39 @@ class MixinHealthCheck:
                         {"check_name": check_func.__name__, "type": str(type(result))},
                     )
                     # Create fallback result for invalid return type
-                    result = ModelHealthStatus(
-                        status=EnumNodeHealthStatus.UNHEALTHY,
-                        message=f"Invalid return type from {check_func.__name__}: {type(result)}",
-                        timestamp=datetime.now(UTC).isoformat(),
-                        uptime_seconds=0,
-                        memory_usage_mb=0,
-                        cpu_usage_percent=0.0,
+                    from omnibase_core.models.health.model_health_issue import (
+                        ModelHealthIssue,
+                    )
+
+                    result = ModelHealthStatus.create_unhealthy(
+                        score=0.0,
+                        issues=[
+                            ModelHealthIssue.create_connectivity_issue(
+                                message=f"Invalid return type from {check_func.__name__}: {type(result)}",
+                                severity="critical",
+                            )
+                        ],
                     )
                 check_results.append(result)
 
                 # Update overall status (degraded if any check fails)
-                if result.status == EnumNodeHealthStatus.UNHEALTHY:
+                if result.status == "unhealthy":
                     overall_status = EnumNodeHealthStatus.UNHEALTHY
                 elif (
-                    result.status == EnumNodeHealthStatus.DEGRADED
+                    result.status == "degraded"
                     and overall_status != EnumNodeHealthStatus.UNHEALTHY
                 ):
                     overall_status = EnumNodeHealthStatus.DEGRADED
 
-                # Collect messages
-                if result.message:
-                    messages.append(f"{check_func.__name__}: {result.message}")
+                # Collect messages - use issues instead
+                if result.issues:
+                    for issue in result.issues:
+                        messages.append(f"{check_func.__name__}: {issue.message}")
 
                 emit_log_event(
                     LogLevel.DEBUG,
                     f"✅ Health check completed: {check_func.__name__}",
-                    {"check_name": check_func.__name__, "status": result.status.value},
+                    {"check_name": check_func.__name__, "status": result.status},
                 )
 
             except Exception as e:
@@ -202,28 +201,38 @@ class MixinHealthCheck:
                 messages.append(f"{check_func.__name__}: ERROR - {e!s}")
 
                 # Create error result
-                error_result = ModelHealthStatus(
-                    status=EnumNodeHealthStatus.UNHEALTHY,
-                    message=f"Check failed with error: {e!s}",
-                    timestamp=datetime.now(UTC).isoformat(),
-                    uptime_seconds=0,
-                    memory_usage_mb=0,
-                    cpu_usage_percent=0.0,
+                from omnibase_core.models.health.model_health_issue import (
+                    ModelHealthIssue,
+                )
+
+                error_result = ModelHealthStatus.create_unhealthy(
+                    score=0.0,
+                    issues=[
+                        ModelHealthIssue.create_connectivity_issue(
+                            message=f"Check failed with error: {e!s}",
+                            severity="critical",
+                        )
+                    ],
                 )
                 check_results.append(error_result)
 
         # Build final health status
-        final_message = base_health.message
-        if messages:
-            final_message = f"{base_health.message}. Checks: {'; '.join(messages)}"
+        # Calculate health score based on overall status
+        health_score = 1.0
+        if overall_status == EnumNodeHealthStatus.DEGRADED:
+            health_score = 0.6
+        elif overall_status == EnumNodeHealthStatus.UNHEALTHY:
+            health_score = 0.2
+
+        # Collect all issues from check results
+        all_issues = []
+        for check_result in check_results:
+            all_issues.extend(check_result.issues)
 
         final_health = ModelHealthStatus(
-            status=overall_status,
-            message=final_message,
-            timestamp=datetime.now(UTC).isoformat(),
-            uptime_seconds=0,
-            memory_usage_mb=0,
-            cpu_usage_percent=0.0,
+            status=overall_status.value,
+            health_score=health_score,
+            issues=all_issues,
         )
 
         emit_log_event(
@@ -252,14 +261,7 @@ class MixinHealthCheck:
         )
 
         # Basic health - node is running
-        base_health = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            message=f"{self.__class__.__name__} is operational",
-            timestamp=datetime.now(UTC).isoformat(),
-            uptime_seconds=0,
-            memory_usage_mb=0,
-            cpu_usage_percent=0.0,
-        )
+        base_health = ModelHealthStatus.create_healthy(score=1.0)
 
         # Get custom health checks
         health_checks = self.get_health_checks()
@@ -288,13 +290,18 @@ class MixinHealthCheck:
                                 "type": str(type(result)),
                             },
                         )
-                        sync_result = ModelHealthStatus(
-                            status=EnumNodeHealthStatus.UNHEALTHY,
-                            message=f"Invalid return type from {check_func.__name__}: {type(result)}",
-                            timestamp=datetime.now(UTC).isoformat(),
-                            uptime_seconds=0,
-                            memory_usage_mb=0,
-                            cpu_usage_percent=0.0,
+                        from omnibase_core.models.health.model_health_issue import (
+                            ModelHealthIssue,
+                        )
+
+                        sync_result = ModelHealthStatus.create_unhealthy(
+                            score=0.0,
+                            issues=[
+                                ModelHealthIssue.create_connectivity_issue(
+                                    message=f"Invalid return type from {check_func.__name__}: {type(result)}",
+                                    severity="critical",
+                                )
+                            ],
                         )
 
                     async def wrap_sync(
@@ -326,16 +333,18 @@ class MixinHealthCheck:
                 check_results.append(result)
 
                 # Update overall status
-                if result.status == EnumNodeHealthStatus.UNHEALTHY:
+                if result.status == "unhealthy":
                     overall_status = EnumNodeHealthStatus.UNHEALTHY
                 elif (
-                    result.status == EnumNodeHealthStatus.DEGRADED
+                    result.status == "degraded"
                     and overall_status != EnumNodeHealthStatus.UNHEALTHY
                 ):
                     overall_status = EnumNodeHealthStatus.DEGRADED
 
-                if result.message:
-                    messages.append(f"{check_name}: {result.message}")
+                # Collect messages from issues
+                if result.issues:
+                    for issue in result.issues:
+                        messages.append(f"{check_name}: {issue.message}")
 
             except Exception as e:
                 emit_log_event(
@@ -347,17 +356,22 @@ class MixinHealthCheck:
                 messages.append(f"{check_name}: ERROR - {e!s}")
 
         # Build final health status
-        final_message = base_health.message
-        if messages:
-            final_message = f"{base_health.message}. Checks: {'; '.join(messages)}"
+        # Calculate health score based on overall status
+        health_score = 1.0
+        if overall_status == EnumNodeHealthStatus.DEGRADED:
+            health_score = 0.6
+        elif overall_status == EnumNodeHealthStatus.UNHEALTHY:
+            health_score = 0.2
+
+        # Collect all issues from check results
+        all_issues = []
+        for check_result in check_results:
+            all_issues.extend(check_result.issues)
 
         return ModelHealthStatus(
-            status=overall_status,
-            message=final_message,
-            timestamp=datetime.now(UTC).isoformat(),
-            uptime_seconds=0,
-            memory_usage_mb=0,
-            cpu_usage_percent=0.0,
+            status=overall_status.value,
+            health_score=health_score,
+            issues=all_issues,
         )
 
     def get_health_status(self) -> dict[str, Any]:
@@ -378,10 +392,10 @@ class MixinHealthCheck:
         # Convert to dictionary format expected by tests
         return {
             "node_id": getattr(self, "node_id", "unknown"),
-            "is_healthy": health.status == EnumNodeHealthStatus.HEALTHY,
-            "status": health.status.value,
-            "message": health.message,
-            "timestamp": health.timestamp,
+            "is_healthy": health.status == "healthy",
+            "status": health.status,
+            "health_score": health.health_score,
+            "issues": [issue.message for issue in health.issues],
         }
 
     def check_dependency_health(
@@ -402,27 +416,34 @@ class MixinHealthCheck:
         try:
             is_healthy = check_func()
 
-            return ModelHealthStatus(
-                status=(
-                    EnumNodeHealthStatus.HEALTHY
-                    if is_healthy
-                    else EnumNodeHealthStatus.UNHEALTHY
-                ),
-                message=f"{dependency_name} is {'available' if is_healthy else 'unavailable'}",
-                timestamp=datetime.now(UTC).isoformat(),
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
-            )
+            if is_healthy:
+                return ModelHealthStatus.create_healthy(score=1.0)
+            else:
+                from omnibase_core.models.health.model_health_issue import (
+                    ModelHealthIssue,
+                )
+
+                return ModelHealthStatus.create_unhealthy(
+                    score=0.0,
+                    issues=[
+                        ModelHealthIssue.create_connectivity_issue(
+                            message=f"{dependency_name} is unavailable",
+                            severity="high",
+                        )
+                    ],
+                )
 
         except (
             Exception
         ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.UNHEALTHY,
-                message=f"{dependency_name} check failed: {e!s}",
-                timestamp=datetime.now(UTC).isoformat(),
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
+            from omnibase_core.models.health.model_health_issue import ModelHealthIssue
+
+            return ModelHealthStatus.create_unhealthy(
+                score=0.0,
+                issues=[
+                    ModelHealthIssue.create_connectivity_issue(
+                        message=f"{dependency_name} check failed: {e!s}",
+                        severity="critical",
+                    )
+                ],
             )

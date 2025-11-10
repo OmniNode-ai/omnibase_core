@@ -21,6 +21,9 @@ from pathlib import Path
 from typing import Any
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.common.model_validation_metadata import (
+    ModelValidationMetadata,
+)
 from omnibase_core.models.validation.model_union_pattern import ModelUnionPattern
 
 from .union_usage_checker import UnionUsageChecker
@@ -60,7 +63,7 @@ def validate_union_usage_file(
 
 def validate_union_usage_directory(
     directory: Path, max_unions: int = 100, strict: bool = False
-) -> ModelValidationResult:
+) -> ModelValidationResult[None]:
     """Validate Union usage in a directory."""
     python_files = []
     for py_file in directory.rglob("*.py"):
@@ -82,10 +85,11 @@ def validate_union_usage_directory(
 
     if not python_files:
         return ModelValidationResult(
-            success=True,
+            is_valid=True,
             errors=[],
-            files_checked=0,
-            metadata={"message": "No Python files to validate"},
+            metadata=ModelValidationMetadata(
+                files_processed=0,
+            ),
         )
 
     total_unions = 0
@@ -101,20 +105,20 @@ def validate_union_usage_directory(
         if issues:
             total_issues.extend([f"{py_file}: {issue}" for issue in issues])
 
-    success = (total_unions <= max_unions) and (not total_issues or not strict)
+    is_valid = (total_unions <= max_unions) and (not total_issues or not strict)
 
     return ModelValidationResult(
-        success=success,
+        is_valid=is_valid,
         errors=total_issues,
-        files_checked=len(python_files),
-        violations_found=len(total_issues),
-        metadata={
-            "validation_type": "union_usage",
-            "total_unions": total_unions,
-            "max_unions": max_unions,
-            "complex_patterns": len([p for p in all_patterns if p.type_count >= 3]),
-            "strict_mode": strict,
-        },
+        metadata=ModelValidationMetadata(
+            validation_type="union_usage",
+            files_processed=len(python_files),
+            violations_found=len(total_issues),
+            total_unions=total_unions,
+            max_unions=max_unions,
+            complex_patterns=len([p for p in all_patterns if p.type_count >= 3]),
+            strict_mode=strict,
+        ),
     )
 
 
@@ -169,7 +173,11 @@ Examples of problematic patterns:
         for error in result.errors:
             print(f"   {error}")
 
-    total_unions = result.metadata.get("total_unions", 0) if result.metadata else 0
+    total_unions = (
+        result.metadata.total_unions
+        if result.metadata and result.metadata.total_unions is not None
+        else 0
+    )
     if total_unions > args.max_unions:
         print(f"❌ Union count exceeded: {total_unions} > {args.max_unions}")
         return 1
@@ -178,10 +186,17 @@ Examples of problematic patterns:
         return 1
 
     total_unions_final = (
-        result.metadata.get("total_unions", 0) if result.metadata else 0
+        result.metadata.total_unions
+        if result.metadata and result.metadata.total_unions is not None
+        else 0
+    )
+    files_processed = (
+        result.metadata.files_processed
+        if result.metadata and result.metadata.files_processed is not None
+        else 0
     )
     print(
-        f"✅ Union validation: {total_unions_final} unions in {result.files_checked} files"
+        f"✅ Union validation: {total_unions_final} unions in {files_processed} files"
     )
     return 0
 

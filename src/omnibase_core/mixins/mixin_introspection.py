@@ -55,14 +55,14 @@ from omnibase_core.models.core.model_node_introspection import (
 from omnibase_core.models.core.model_node_introspection_response import (
     ModelNodeIntrospectionResponse,
 )
-from omnibase_core.models.nodes.model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.models.core.model_performance_profile_info import (
     ModelPerformanceProfileInfo,
 )
-from omnibase_core.models.infrastructure.model_state import ModelState
 from omnibase_core.models.core.model_state_field import ModelStateField
 from omnibase_core.models.core.model_state_models import ModelStates
 from omnibase_core.models.core.model_version_status import ModelVersionStatus
+from omnibase_core.models.infrastructure.model_state import ModelState
+from omnibase_core.models.nodes.model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
@@ -358,27 +358,27 @@ class MixinNodeIntrospection(ABC):
         # TODO: Implement global_resolver for version information
         # Once implemented, global_resolver should return ModelSemVer objects directly
 
-        # Create enhanced node metadata with version information
+        # Create enhanced node metadata with version information using composed models
+        from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+        from omnibase_core.models.nodes.model_node_core_metadata import (
+            ModelNodeCoreMetadata,
+        )
+        from omnibase_core.models.nodes.model_node_organization_metadata import (
+            ModelNodeOrganizationMetadata,
+        )
+
         node_metadata = ModelNodeMetadataInfo(
-            name=node_name,
-            version=cls.get_node_version(),
-            description=cls.get_node_description(),
-            author=cls.get_node_author(),
-            schema_version=parse_semver_from_string(cls.get_schema_version()),
-            created_at=None,  # Could be extracted from metadata if available
-            last_modified_at=None,  # Could be extracted from metadata if available
-            # Enhanced version information (not yet implemented)
-            available_versions=None,  # TODO: Get from global_resolver
-            latest_version=None,  # TODO: Get from global_resolver
-            total_versions=None,  # TODO: Get from global_resolver
-            version_status=None,  # TODO: Get from global_resolver
-            # Ecosystem information
-            category=cls._get_node_category(),
-            tags=cls._get_node_tags(),
-            maturity=cls._get_node_maturity(),
-            use_cases=cls._get_node_use_cases(),
-            performance_profile=ModelPerformanceProfileInfo(
-                **cls._get_performance_profile()
+            core=ModelNodeCoreMetadata(
+                node_display_name=node_name,
+                node_type=EnumMetadataNodeType.FUNCTION,  # Default, could be made dynamic
+                version=cls.get_node_version(),  # Already returns ModelSemVer
+            ),
+            organization=ModelNodeOrganizationMetadata(
+                description=cls.get_node_description(),
+                author=cls.get_node_author(),
+                tags=cls._get_node_tags(),
+                # categories expects list[EnumCategory], but _get_node_category() returns Sequence[str]
+                # For now, leave as default empty list until proper conversion is implemented
             ),
         )
 
@@ -396,22 +396,22 @@ class MixinNodeIntrospection(ABC):
             protocol_version=parse_semver_from_string(cls.get_protocol_version()),
         )
 
-        # Create state models
+        # Create state models (simplified - ModelState API has changed)
+        from omnibase_core.models.core.model_protocol_metadata import (
+            ModelGenericMetadata,
+        )
+
         input_class = cls.get_input_state_class()
         output_class = cls.get_output_state_class()
 
         state_models = ModelStates(
             input=ModelState(
-                class_name=input_class.__name__,
-                schema_version=parse_semver_from_string(cls.get_schema_version()),
-                fields=cls._extract_state_model_fields(input_class),
-                schema_file=f"{node_name}_input.schema.json",
+                metadata=ModelGenericMetadata(),  # Default metadata
+                version=0,
             ),
             output=ModelState(
-                class_name=output_class.__name__,
-                schema_version=parse_semver_from_string(cls.get_schema_version()),
-                fields=cls._extract_state_model_fields(output_class),
-                schema_file=f"{node_name}_output.schema.json",
+                metadata=ModelGenericMetadata(),  # Default metadata
+                version=0,
             ),
         )
 

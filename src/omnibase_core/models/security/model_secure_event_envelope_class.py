@@ -14,13 +14,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_valid
 from omnibase_core.enums.enum_security_event_status import EnumSecurityEventStatus
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-
-# Import base envelope and security models
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_route_spec import ModelRouteSpec
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+# Import base envelope and security models
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.security.model_policy_context import ModelPolicyContext
 from omnibase_core.models.security.model_security_context import ModelSecurityContext
 from omnibase_core.models.security.model_security_event import ModelSecurityEvent
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     )
 
 
-class ModelSecureEventEnvelope(ModelEventEnvelope):
+class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
     """
     Cryptographically signed event envelope with enterprise security features.
 
@@ -51,8 +51,26 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
     multi-hop routing in enterprise environments.
     """
 
-    # Enhanced security context
-    security_context: ModelSecurityContext | None = Field(
+    # Routing specification
+    route_spec: ModelRouteSpec = Field(
+        default=...,
+        description="Routing specification for the envelope",
+    )
+
+    # Source node tracking
+    source_node_id: UUID = Field(
+        default=...,
+        description="Source node UUID for the envelope",
+    )
+
+    # Routing hops tracking
+    route_hops: list[Any] = Field(
+        default_factory=list,
+        description="List of routing hops for audit trail",
+    )
+
+    # Enhanced security context (override parent's dict type)
+    security_context: ModelSecurityContext | None = Field(  # type: ignore[assignment]
         default=None,
         description="Enhanced security context with JWT and RBAC",
     )
@@ -198,6 +216,20 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             )
         return v
 
+    @property
+    def current_hop_count(self) -> int:
+        """Get the current hop count based on route_hops."""
+        return len(self.route_hops)
+
+    def add_source_hop(self, hop_identifier: str) -> None:
+        """
+        Add a source hop to the routing trail.
+
+        Args:
+            hop_identifier: String identifier for the hop (typically a node ID)
+        """
+        self.route_hops.append(hop_identifier)
+
     def _update_content_hash(self) -> None:
         """Update content hash for tamper detection."""
         import hashlib
@@ -212,7 +244,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope):
             ),
             "route_spec": self.route_spec.model_dump(),
             "source_node_id": self.source_node_id,
-            "created_at": self.created_at.isoformat(),
+            "created_at": self.envelope_timestamp.isoformat(),
             "security_context": (
                 self.security_context.model_dump() if self.security_context else None
             ),

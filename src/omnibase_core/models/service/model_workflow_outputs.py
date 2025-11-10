@@ -99,7 +99,7 @@ class ModelWorkflowOutputs(BaseModel):
         """
         if self.custom_outputs is None:
             return default
-        return self.custom_outputs.fields.get(key, default)
+        return self.custom_outputs.field_values.get(key, default)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for current standards."""

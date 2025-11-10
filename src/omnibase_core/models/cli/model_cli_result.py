@@ -20,6 +20,9 @@ from uuid import uuid4
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
+from omnibase_core.models.cli.model_cli_performance_metrics import (
+    ModelPerformanceMetrics,
+)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_duration import ModelDuration
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
@@ -28,7 +31,6 @@ from .model_cli_debug_info import ModelCliDebugInfo
 from .model_cli_execution import ModelCliExecution
 from .model_cli_output_data import ModelCliOutputData
 from .model_cli_result_metadata import ModelCliResultMetadata
-from omnibase_core.models.discovery.model_discovery_performance_metrics import ModelPerformanceMetrics
 from .model_result_summary import ModelResultSummary
 from .model_trace_data import ModelTraceData
 

@@ -5,25 +5,28 @@ Finds all duplicate filenames and compares their content.
 """
 
 import hashlib
-from pathlib import Path
 from collections import defaultdict
 from difflib import unified_diff
+from pathlib import Path
+
 
 def get_file_hash(filepath: Path) -> str:
     """Get SHA256 hash of file content."""
     return hashlib.sha256(filepath.read_bytes()).hexdigest()
+
 
 def find_duplicates(base_dir: Path) -> dict[str, list[Path]]:
     """Find all duplicate filenames under base_dir."""
     files_by_name: dict[str, list[Path]] = defaultdict(list)
 
     for pyfile in base_dir.rglob("*.py"):
-        if "__pycache__" in str(pyfile) or "__init__.py" == pyfile.name:
+        if "__pycache__" in str(pyfile) or pyfile.name == "__init__.py":
             continue
         files_by_name[pyfile.name].append(pyfile)
 
     # Only keep duplicates
     return {name: paths for name, paths in files_by_name.items() if len(paths) > 1}
+
 
 def compare_files(paths: list[Path]) -> dict:
     """Compare file contents and return analysis."""
@@ -44,12 +47,15 @@ def compare_files(paths: list[Path]) -> dict:
         "sizes": sizes,
     }
 
+
 def analyze_all_duplicates(base_dir: Path):
     """Main analysis function."""
     duplicates = find_duplicates(base_dir)
 
     # Sort by count (most duplicates first)
-    sorted_duplicates = sorted(duplicates.items(), key=lambda x: len(x[1]), reverse=True)
+    sorted_duplicates = sorted(
+        duplicates.items(), key=lambda x: len(x[1]), reverse=True
+    )
 
     print(f"Found {len(sorted_duplicates)} duplicate filename sets\n")
 
@@ -104,7 +110,7 @@ def analyze_all_duplicates(base_dir: Path):
         print(f"\n{filename} ({len(paths)} copies):")
         for path in paths:
             rel_path = path.relative_to(base_dir.parent)
-            size = analysis['sizes'][path]
+            size = analysis["sizes"][path]
             print(f"  - {rel_path} ({size} bytes)")
 
     # Print different files
@@ -115,9 +121,11 @@ def analyze_all_duplicates(base_dir: Path):
         print(f"\n{filename} ({len(paths)} copies):")
         for path in paths:
             rel_path = path.relative_to(base_dir.parent)
-            size = analysis['sizes'][path]
+            size = analysis["sizes"][path]
             print(f"  - {rel_path} ({size} bytes)")
 
+
 if __name__ == "__main__":
-    base_dir = Path("/home/user/omnibase_core/src/omnibase_core/models")
+    # Use dynamic path relative to script location
+    base_dir = Path(__file__).parent / "src" / "omnibase_core" / "models"
     analyze_all_duplicates(base_dir)

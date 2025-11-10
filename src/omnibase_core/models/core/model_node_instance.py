@@ -14,8 +14,8 @@ from omnibase_core.models.configuration.model_load_metrics import ModelLoadMetri
 from omnibase_core.models.core.model_capability import ModelCapability
 from omnibase_core.models.core.model_instance_metadata import ModelInstanceMetadata
 from omnibase_core.models.core.model_node_reference import ModelNodeReference
-from omnibase_core.models.nodes.model_node_type import ModelNodeType
 from omnibase_core.models.health.model_health_metrics import ModelHealthMetrics
+from omnibase_core.models.nodes.model_node_type import ModelNodeType
 
 
 class ModelNodeInstance(BaseModel):
@@ -38,10 +38,11 @@ class ModelNodeInstance(BaseModel):
         default_factory=lambda: ModelLoadMetrics(), description="Load metrics"
     )
     last_heartbeat: datetime = Field(
-        default_factory=datetime.utcnow, description="Last heartbeat timestamp"
+        default_factory=lambda: datetime.now(UTC),
+        description="Last heartbeat timestamp",
     )
     registration_time: datetime = Field(
-        default_factory=datetime.utcnow, description="Registration timestamp"
+        default_factory=lambda: datetime.now(UTC), description="Registration timestamp"
     )
     capabilities_verified: list[ModelCapability] = Field(
         default_factory=list, description="Verified capabilities"

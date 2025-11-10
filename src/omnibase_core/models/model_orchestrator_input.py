@@ -11,7 +11,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_orchestrator_types import EnumExecutionMode
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 
 
 class ModelOrchestratorInput(BaseModel):

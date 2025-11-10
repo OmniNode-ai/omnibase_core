@@ -30,12 +30,11 @@ from typing import Any, Self
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.config.model_example import ModelExample
+from omnibase_core.models.config.model_example_metadata import ModelExampleMetadata
 
 # Safe runtime import - error_codes only imports from types.core_types
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-from omnibase_core.models.config.model_example import ModelExample
-from omnibase_core.models.config.model_example_metadata import ModelExampleMetadata
 
 
 class ModelExamplesCollection(BaseModel):
@@ -160,32 +159,74 @@ class ModelExamplesCollection(BaseModel):
     @classmethod
     def _create_example_from_data(cls, data: dict[str, Any] | Any) -> ModelExample:
         """Create ModelExample from various data formats."""
+        from omnibase_core.models.config.model_example_context_data import (
+            ModelExampleContextData,
+        )
+        from omnibase_core.models.config.model_example_data import (
+            ModelExampleInputData,
+            ModelExampleOutputData,
+        )
+
         if isinstance(data, dict):
             # Check if it has required ModelExample fields
             if all(k in data for k in ["input_data", "output_data"]):
+                # Convert dicts to proper types
+                input_data = None
+                if "input_data" in data and data["input_data"] is not None:
+                    input_data = (
+                        ModelExampleInputData(**data["input_data"])
+                        if isinstance(data["input_data"], dict)
+                        else data["input_data"]
+                    )
+
+                output_data = None
+                if "output_data" in data and data["output_data"] is not None:
+                    output_data = (
+                        ModelExampleOutputData(**data["output_data"])
+                        if isinstance(data["output_data"], dict)
+                        else data["output_data"]
+                    )
+
+                context = None
+                if "context" in data and data["context"] is not None:
+                    context = (
+                        ModelExampleContextData(**data["context"])
+                        if isinstance(data["context"], dict)
+                        else data["context"]
+                    )
+
                 return ModelExample(
-                    name=data.get("name"),
-                    description=data.get("description"),
-                    input_data=data["input_data"],
-                    output_data=data["output_data"],
-                    context=data.get("context"),
+                    name=data.get("name") or "Example",  # Provide default
+                    description=data.get("description") or "",
+                    input_data=input_data,
+                    output_data=output_data,
+                    context=context,
                     tags=data.get("tags", []),
                     is_valid=data.get("is_valid", True),
-                    validation_notes=data.get("validation_notes"),
-                    created_at=data.get("created_at"),
-                    updated_at=data.get("updated_at"),
+                    validation_notes=data.get("validation_notes") or "",
                 )
             else:
                 # Treat as input_data
+                input_data = (
+                    ModelExampleInputData(**data)
+                    if isinstance(data, dict)
+                    else ModelExampleInputData()
+                )
                 return ModelExample(
-                    input_data=data,
-                    name=data.get("name"),
-                    description=data.get("description"),
+                    name=(
+                        data.get("name", "Example")
+                        if isinstance(data, dict)
+                        else "Example"
+                    ),
+                    description=(
+                        data.get("description", "") if isinstance(data, dict) else ""
+                    ),
+                    input_data=input_data,
                 )
         else:
             # Treat as raw input data
             return ModelExample(
-                input_data={"value": data},
+                input_data=ModelExampleInputData(),
                 name="Auto-generated example",
                 description="Automatically generated from raw data",
             )

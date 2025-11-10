@@ -1,18 +1,18 @@
 import contextlib
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
+from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 from omnibase_core.models.service.model_retry_strategy import ModelRetryStrategy
 
 
@@ -136,7 +136,7 @@ class ModelEventBusInputState(BaseModel):
         metadata = {
             "version": str(self.version),
             "priority": self.priority or "normal",
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         if self.correlation_id:
             metadata["correlation_id"] = str(self.correlation_id)
@@ -263,10 +263,10 @@ class ModelEventBusInputState(BaseModel):
                 config_data["timeout_seconds"] = int(timeout)
             except ValueError as e:
                 raise ModelOnexError(
-                    error_code="INVALID_INPUT",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid timeout value '{timeout}' in {env_prefix}TIMEOUT_SECONDS: {e}",
                     details={"timeout": timeout, "env_prefix": env_prefix},
-                    timestamp=datetime.now(),
+                    timestamp=datetime.now(UTC),
                     node_name="ModelEventBusInputState",
                 ) from e
         if retry_count := os.getenv(f"{env_prefix}RETRY_COUNT"):
@@ -274,16 +274,24 @@ class ModelEventBusInputState(BaseModel):
                 config_data["retry_count"] = int(retry_count)
             except ValueError as e:
                 raise ModelOnexError(
-                    error_code="INVALID_INPUT",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Invalid retry count value '{retry_count}' in {env_prefix}RETRY_COUNT: {e}",
                     details={"retry_count": retry_count, "env_prefix": env_prefix},
-                    timestamp=datetime.now(),
+                    timestamp=datetime.now(UTC),
                     node_name="ModelEventBusInputState",
                 ) from e
         version_raw = config_data["version"]
         input_field_raw = config_data["input_field"]
-        assert isinstance(version_raw, ModelSemVer), "version must be ModelSemVer"
-        assert isinstance(input_field_raw, str), "input_field must be str"
+        if not isinstance(version_raw, ModelSemVer):
+            msg = "version must be ModelSemVer"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+            )
+        if not isinstance(input_field_raw, str):
+            msg = "input_field must be str"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+            )
         version_value: ModelSemVer = version_raw
         input_field: str = input_field_raw
         correlation_id_raw = config_data.get("correlation_id")

@@ -9,7 +9,7 @@ IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports:
-- omnibase_core.models.core.model_environment_properties (no circular risk)
+- omnibase_core.models.config.model_environment_properties (no circular risk)
 - omnibase_core.models.core.model_feature_flags (no circular risk)
 - omnibase_core.errors.error_codes (imports only from types.core_types and enums)
 - pydantic, typing, datetime (standard library)
@@ -197,12 +197,31 @@ class ModelEnvironment(BaseModel):
             msg = "Custom property key must be a non-empty string"
             raise ModelOnexError(msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
+        # Import ModelPropertyValue for factory methods
+        from omnibase_core.models.config.model_property_value import ModelPropertyValue
+
         # Use the type-safe method from ModelEnvironmentProperties
-        if isinstance(value, str | int | bool | float | list | datetime):
-            self.custom_properties.set_property(key, value)
+        # Convert value to ModelPropertyValue using factory methods
+        if isinstance(value, str):
+            prop_value = ModelPropertyValue.from_string(value)
+        elif isinstance(
+            value, bool
+        ):  # Must check bool before int (bool is subclass of int)
+            prop_value = ModelPropertyValue.from_bool(value)
+        elif isinstance(value, int):
+            prop_value = ModelPropertyValue.from_int(value)
+        elif isinstance(value, float):
+            prop_value = ModelPropertyValue.from_float(value)
+        elif isinstance(value, datetime):
+            prop_value = ModelPropertyValue.from_datetime(value)
+        elif isinstance(value, list):
+            # Assume string list for now
+            prop_value = ModelPropertyValue.from_string_list([str(v) for v in value])
         else:
             # Convert to string for unsupported types
-            self.custom_properties.set_property(key, str(value))
+            prop_value = ModelPropertyValue.from_string(str(value))
+
+        self.custom_properties.set_property(key, prop_value)
 
     def get_environment_variable(
         self,

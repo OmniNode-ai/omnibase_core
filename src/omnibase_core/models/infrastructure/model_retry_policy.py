@@ -14,7 +14,6 @@ excessive string fields in a single large model.
 """
 
 
-import random
 from datetime import datetime
 from typing import Any
 
@@ -23,10 +22,10 @@ from pydantic import BaseModel
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.core.model_retry_config import ModelRetryConfig
 
 from .model_retry_advanced import ModelRetryAdvanced
 from .model_retry_conditions import ModelRetryConditions
-from omnibase_core.models.core.model_retry_config import ModelRetryConfig
 from .model_retry_execution import ModelRetryExecution
 
 
@@ -67,7 +66,7 @@ class ModelRetryPolicy(BaseModel):
     @property
     def max_retries(self) -> int:
         """Get max retries from config."""
-        return self.config.max_retries
+        return self.config.max_attempts
 
     @property
     def current_attempt(self) -> int:
@@ -77,18 +76,23 @@ class ModelRetryPolicy(BaseModel):
     @property
     def backoff_strategy(self) -> EnumRetryBackoffStrategy:
         """Get backoff strategy from config."""
-        return self.config.backoff_strategy
+        # Map new bool-based API to legacy enum for backwards compatibility
+        return (
+            EnumRetryBackoffStrategy.EXPONENTIAL
+            if self.config.exponential_backoff
+            else EnumRetryBackoffStrategy.LINEAR
+        )
 
     # Delegate properties to appropriate sub-models
     @property
     def can_attempt_retry(self) -> bool:
         """Check if retries are still available."""
-        return self.execution.can_retry(self.config.max_retries)
+        return self.execution.can_retry(self.config.max_attempts)
 
     @property
     def is_exhausted(self) -> bool:
         """Check if all retries have been exhausted."""
-        return self.execution.is_exhausted(self.config.max_retries)
+        return self.execution.is_exhausted(self.config.max_attempts)
 
     @property
     def retry_attempts_made(self) -> int:
@@ -108,52 +112,15 @@ class ModelRetryPolicy(BaseModel):
     def calculate_next_delay(self) -> float:
         """Calculate delay for next retry attempt."""
         if self.current_attempt == 0:
-            return self.config.base_delay_seconds
+            return self.config.backoff_seconds
 
-        delay = self.config.base_delay_seconds
-
-        # Apply backoff strategy
-        if self.config.backoff_strategy == EnumRetryBackoffStrategy.FIXED:
-            delay = self.config.base_delay_seconds
-        elif self.config.backoff_strategy == EnumRetryBackoffStrategy.LINEAR:
-            delay = self.config.base_delay_seconds * (
-                self.current_attempt * self.config.backoff_multiplier
-            )
-        elif self.config.backoff_strategy == EnumRetryBackoffStrategy.EXPONENTIAL:
-            delay = self.config.base_delay_seconds * (
-                self.config.backoff_multiplier**self.current_attempt
-            )
-        elif self.config.backoff_strategy == EnumRetryBackoffStrategy.FIBONACCI:
-            delay = self._calculate_fibonacci_delay()
-        elif self.config.backoff_strategy == EnumRetryBackoffStrategy.RANDOM:
-            delay = random.uniform(
-                self.config.base_delay_seconds,
-                self.config.max_delay_seconds,
-            )
-
-        # Cap at maximum delay
-        delay = min(delay, self.config.max_delay_seconds)
-
-        # Add jitter if enabled
-        if self.config.jitter_enabled:
-            jitter = random.uniform(
-                -self.config.jitter_max_seconds,
-                self.config.jitter_max_seconds,
-            )
-            delay = max(0.1, delay + jitter)
-
-        return delay
-
-    def _calculate_fibonacci_delay(self) -> float:
-        """Calculate Fibonacci sequence delay."""
-
-        def fibonacci(n: int) -> int:
-            if n <= 1:
-                return 1
-            return fibonacci(n - 1) + fibonacci(n - 2)
-
-        fib_multiplier = fibonacci(self.current_attempt)
-        return self.config.base_delay_seconds * fib_multiplier
+        # Delegate to config's built-in delay calculation
+        # Note: config.calculate_delay() expects 1-based attempt numbers
+        # and already includes jitter by default
+        return self.config.calculate_delay(
+            attempt_number=self.current_attempt,
+            include_jitter=True,
+        )
 
     def should_retry(
         self,
@@ -241,7 +208,7 @@ class ModelRetryPolicy(BaseModel):
     @classmethod
     def create_simple(cls, max_retries: int = 3) -> ModelRetryPolicy:
         """Create simple retry policy with default settings."""
-        config = ModelRetryConfig(max_retries=max_retries)
+        config = ModelRetryConfig(max_attempts=max_retries)
         return cls(config=config)
 
     @classmethod
@@ -252,13 +219,16 @@ class ModelRetryPolicy(BaseModel):
         max_delay: float = 60.0,
         multiplier: float = 2.0,
     ) -> ModelRetryPolicy:
-        """Create exponential backoff retry policy."""
+        """Create exponential backoff retry policy.
+
+        Note: max_delay and multiplier parameters are accepted for backwards
+        compatibility but are not used in the new API. The multiplier is
+        hardcoded to 2 in the new implementation.
+        """
         config = ModelRetryConfig(
-            max_retries=max_retries,
-            base_delay_seconds=base_delay,
-            max_delay_seconds=max_delay,
-            backoff_strategy=EnumRetryBackoffStrategy.EXPONENTIAL,
-            backoff_multiplier=multiplier,
+            max_attempts=max_retries,
+            backoff_seconds=base_delay,
+            exponential_backoff=True,
         )
         return cls(config=config)
 
@@ -268,12 +238,16 @@ class ModelRetryPolicy(BaseModel):
         max_retries: int = 3,
         delay: float = 2.0,
     ) -> ModelRetryPolicy:
-        """Create fixed delay retry policy."""
+        """Create fixed delay retry policy.
+
+        Note: Uses linear backoff with max_attempts=1 to simulate fixed delay.
+        For true fixed delay, consider using exponential_backoff=False with
+        backoff_seconds set to your desired delay.
+        """
         config = ModelRetryConfig(
-            max_retries=max_retries,
-            base_delay_seconds=delay,
-            max_delay_seconds=delay,
-            backoff_strategy=EnumRetryBackoffStrategy.FIXED,
+            max_attempts=max_retries,
+            backoff_seconds=delay,
+            exponential_backoff=False,
         )
         return cls(config=config)
 
@@ -284,12 +258,15 @@ class ModelRetryPolicy(BaseModel):
         base_delay: float = 1.0,
         status_codes: list[int] | None = None,
     ) -> ModelRetryPolicy:
-        """Create retry policy optimized for HTTP requests."""
+        """Create retry policy optimized for HTTP requests.
+
+        Note: Jitter is always enabled in the new API via the calculate_delay()
+        method's include_jitter parameter.
+        """
         config = ModelRetryConfig(
-            max_retries=max_retries,
-            base_delay_seconds=base_delay,
-            backoff_strategy=EnumRetryBackoffStrategy.EXPONENTIAL,
-            jitter_enabled=True,
+            max_attempts=max_retries,
+            backoff_seconds=base_delay,
+            exponential_backoff=True,
         )
         conditions = ModelRetryConditions.create_http_only()
         if status_codes:
@@ -302,12 +279,15 @@ class ModelRetryPolicy(BaseModel):
         max_retries: int = 3,
         base_delay: float = 0.5,
     ) -> ModelRetryPolicy:
-        """Create retry policy optimized for database operations."""
+        """Create retry policy optimized for database operations.
+
+        Note: Uses linear backoff (exponential_backoff=False). Jitter is
+        always enabled in the new API.
+        """
         config = ModelRetryConfig(
-            max_retries=max_retries,
-            base_delay_seconds=base_delay,
-            backoff_strategy=EnumRetryBackoffStrategy.LINEAR,
-            jitter_enabled=True,
+            max_attempts=max_retries,
+            backoff_seconds=base_delay,
+            exponential_backoff=False,
         )
         conditions = ModelRetryConditions.create_database_only()
         return cls(config=config, conditions=conditions)
@@ -320,7 +300,7 @@ class ModelRetryPolicy(BaseModel):
         reset_timeout: float = 60.0,
     ) -> ModelRetryPolicy:
         """Create retry policy with circuit breaker."""
-        config = ModelRetryConfig(max_retries=max_retries)
+        config = ModelRetryConfig(max_attempts=max_retries)
         advanced = ModelRetryAdvanced.create_with_circuit_breaker(
             circuit_threshold,
             reset_timeout,

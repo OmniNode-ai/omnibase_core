@@ -26,7 +26,7 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
-from omnibase_core.models.infrastructure.model_protocol_action import ModelAction
+from omnibase_core.models.orchestrator.model_action import ModelAction
 
 
 class ModelWorkflowStepExecution(BaseModel):

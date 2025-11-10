@@ -27,6 +27,9 @@ if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.common.model_validation_metadata import (
+    ModelValidationMetadata,
+)
 
 from .validation_utils import ModelValidationResult
 
@@ -163,7 +166,7 @@ def validate_no_manual_yaml(directory: Path) -> list[str]:
     return errors
 
 
-def validate_contracts_directory(directory: Path) -> ModelValidationResult:
+def validate_contracts_directory(directory: Path) -> ModelValidationResult[None]:
     """Validate all contract files in a directory."""
     yaml_files: list[Path] = []
 
@@ -192,19 +195,19 @@ def validate_contracts_directory(directory: Path) -> ModelValidationResult:
     manual_yaml_errors = validate_no_manual_yaml(directory)
     all_errors.extend(manual_yaml_errors)
 
-    success = len(all_errors) == 0
+    is_valid = len(all_errors) == 0
 
     return ModelValidationResult(
-        success=success,
+        is_valid=is_valid,
         errors=all_errors,
-        files_checked=len(yaml_files),
-        violations_found=len(all_errors),
-        files_with_violations=len(files_with_errors),
-        metadata={
-            "validation_type": "contracts",
-            "yaml_files_found": len(yaml_files),
-            "manual_yaml_violations": len(manual_yaml_errors),
-        },
+        metadata=ModelValidationMetadata(
+            validation_type="contracts",
+            files_processed=len(yaml_files),
+            yaml_files_found=len(yaml_files),
+            manual_yaml_violations=len(manual_yaml_errors),
+            violations_found=len(all_errors),
+            files_with_violations=len(files_with_errors),
+        ),
     )
 
 
@@ -239,7 +242,11 @@ def validate_contracts_cli() -> int:
         print("🔍 YAML Contract Validation")
         print("=" * 40)
 
-        overall_result = ModelValidationResult(success=True, errors=[], files_checked=0)
+        overall_result: ModelValidationResult[None] = ModelValidationResult(
+            is_valid=True,
+            errors=[],
+            metadata=ModelValidationMetadata(files_processed=0),
+        )
 
         for directory in args.directories:
             dir_path = Path(directory)
@@ -251,9 +258,12 @@ def validate_contracts_cli() -> int:
             result = validate_contracts_directory(dir_path)
 
             # Merge results
-            overall_result.success = overall_result.success and result.success
+            overall_result.is_valid = overall_result.is_valid and result.is_valid
             overall_result.errors.extend(result.errors)
-            overall_result.files_checked += result.files_checked
+            if overall_result.metadata and result.metadata:
+                overall_result.metadata.files_processed = (
+                    overall_result.metadata.files_processed or 0
+                ) + (result.metadata.files_processed or 0)
 
             if result.errors:
                 print(f"\n❌ Issues found in {directory}:")
@@ -261,10 +271,13 @@ def validate_contracts_cli() -> int:
                     print(f"   {error}")
 
         print("\n📊 Contract Validation Summary:")
-        print(f"   • Files checked: {overall_result.files_checked}")
+        files_processed = (
+            overall_result.metadata.files_processed if overall_result.metadata else 0
+        )
+        print(f"   • Files checked: {files_processed}")
         print(f"   • Issues found: {len(overall_result.errors)}")
 
-        if overall_result.success:
+        if overall_result.is_valid:
             print("✅ Contract validation PASSED")
             return 0
         print("❌ Contract validation FAILED")

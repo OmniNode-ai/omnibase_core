@@ -134,7 +134,7 @@ class ModelLogFormatting(BaseModel):
 
         # Merge all data sources
         final_data = {**base_data, **kwargs}
-        if self.custom_fields and self.custom_fields.fields:
+        if self.custom_fields and self.custom_fields.field_values:
             final_data.update(self.custom_fields.model_dump())
 
         return json.dumps(final_data, indent=self.effective_json_indent)
@@ -190,7 +190,7 @@ class ModelLogFormatting(BaseModel):
                 "truncation_enabled": self.truncate_long_messages,
                 "max_length": self.max_message_length,
                 "has_custom_fields": bool(
-                    self.custom_fields and self.custom_fields.fields
+                    self.custom_fields and self.custom_fields.field_values
                 ),
             },
         }

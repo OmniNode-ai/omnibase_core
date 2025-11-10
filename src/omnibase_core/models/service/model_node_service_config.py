@@ -15,14 +15,16 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_service_mode import EnumServiceMode
-from omnibase_core.models.configuration.model_event_bus_config import ModelEventBusConfig
-from omnibase_core.models.health.model_health_check_config import (
-    ModelHealthCheckConfig,
-)
-from omnibase_core.models.configuration.model_monitoring_config import ModelMonitoringConfig
-from omnibase_core.models.service.model_network_config import ModelNetworkConfig
-from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
 from omnibase_core.models.config.model_security_config import ModelSecurityConfig
+from omnibase_core.models.configuration.model_event_bus_config import (
+    ModelEventBusConfig,
+)
+from omnibase_core.models.configuration.model_monitoring_config import (
+    ModelMonitoringConfig,
+)
+from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
+from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
+from omnibase_core.models.service.model_network_config import ModelNetworkConfig
 
 
 class ModelNodeServiceConfig(BaseModel):
@@ -107,7 +109,7 @@ class ModelNodeServiceConfig(BaseModel):
     def validate_port_conflicts(self) -> "ModelNodeServiceConfig":
         """Validate that network port and metrics port don't conflict."""
         network_port = self.network.port if self.network else None
-        metrics_port = self.monitoring.metrics_port if self.monitoring else None
+        metrics_port = self.monitoring.prometheus_port if self.monitoring else None
         if network_port and metrics_port and (network_port == metrics_port):
             msg = "Network port and metrics port cannot be the same"
             raise ModelOnexError(
@@ -134,23 +136,14 @@ class ModelNodeServiceConfig(BaseModel):
             "NODE_ID": self.get_effective_node_id(),
             "LOG_LEVEL": self.log_level.value,
             "DEBUG_MODE": str(self.debug_mode).lower(),
-            "EVENT_BUS_URL": self.event_bus.url,
+            "EVENT_BUS_BOOTSTRAP_SERVERS": ",".join(self.event_bus.bootstrap_servers),
             "SERVICE_MODE": self.service_mode.value,
             "SERVICE_PORT": str(self.network.port),
             "SERVICE_HOST": self.network.host,
             "HEALTH_CHECK_ENABLED": str(self.health_check.enabled).lower(),
-            "METRICS_ENABLED": str(self.monitoring.metrics_enabled).lower(),
-            "METRICS_PORT": str(self.monitoring.metrics_port),
-            "STRUCTURED_LOGGING": str(self.monitoring.log_structured).lower(),
+            "METRICS_ENABLED": str(self.monitoring.prometheus_enabled).lower(),
+            "METRICS_PORT": str(self.monitoring.prometheus_port),
         }
-        if self.security.enable_tls:
-            env["TLS_ENABLED"] = "true"
-            if self.security.cert_file:
-                env["TLS_CERT_FILE"] = str(self.security.cert_file)
-            if self.security.key_file:
-                env["TLS_KEY_FILE"] = str(self.security.key_file)
-            if self.security.ca_file:
-                env["TLS_CA_FILE"] = str(self.security.ca_file)
         for key, value in self.environment_variables.items():
             env[key] = str(value)
         return env
@@ -175,7 +168,7 @@ class ModelNodeServiceConfig(BaseModel):
 
     def get_health_check_command(self) -> list[str]:
         """Get health check command for container deployment."""
-        url = f"http://localhost:{self.network.port}{self.health_check.endpoint}"
+        url = f"http://localhost:{self.network.port}{self.health_check.check_path}"
         return ["curl", "-f", url]
 
     def supports_scaling(self) -> bool:
@@ -207,9 +200,16 @@ class ModelNodeServiceConfig(BaseModel):
             "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true",
         }
         event_bus_config: dict[str, Any] = {
-            "url": os.getenv("EVENT_BUS_URL", "http://localhost:8083"),
-            "timeout_ms": int(os.getenv("EVENT_BUS_TIMEOUT_MS", "30000")),
-            "retry_attempts": int(os.getenv("EVENT_BUS_RETRY_ATTEMPTS", "3")),
+            "bootstrap_servers": [
+                server.strip()
+                for server in os.getenv(
+                    "EVENT_BUS_BOOTSTRAP_SERVERS", "localhost:9092"
+                ).split(",")
+            ],
+            "topics": [
+                topic.strip()
+                for topic in os.getenv("EVENT_BUS_TOPICS", "onex-default").split(",")
+            ],
         }
         network_config: dict[str, Any] = {
             "port": int(os.getenv("SERVICE_PORT", "8080")),
@@ -220,35 +220,15 @@ class ModelNodeServiceConfig(BaseModel):
         }
         health_config: dict[str, Any] = {
             "enabled": os.getenv("HEALTH_CHECK_ENABLED", "true").lower() == "true",
-            "interval_seconds": int(os.getenv("HEALTH_CHECK_INTERVAL", "30")),
+            "check_interval_seconds": int(os.getenv("HEALTH_CHECK_INTERVAL", "30")),
             "timeout_seconds": int(os.getenv("HEALTH_CHECK_TIMEOUT", "10")),
         }
         monitoring_config: dict[str, Any] = {
-            "metrics_enabled": os.getenv("METRICS_ENABLED", "true").lower() == "true",
-            "metrics_port": int(os.getenv("METRICS_PORT", "9090")),
-            "log_structured": os.getenv("STRUCTURED_LOGGING", "true").lower() == "true",
+            "prometheus_enabled": os.getenv("METRICS_ENABLED", "true").lower()
+            == "true",
+            "prometheus_port": int(os.getenv("METRICS_PORT", "9090")),
         }
-        security_config: dict[str, Any] = {
-            "enable_tls": os.getenv("TLS_ENABLED", "false").lower() == "true"
-        }
-        if security_config["enable_tls"]:
-            security_config.update(
-                {
-                    "cert_file": (
-                        Path(cert_file)
-                        if (cert_file := os.getenv("TLS_CERT_FILE"))
-                        else None
-                    ),
-                    "key_file": (
-                        Path(key_file)
-                        if (key_file := os.getenv("TLS_KEY_FILE"))
-                        else None
-                    ),
-                    "ca_file": (
-                        Path(ca_file) if (ca_file := os.getenv("TLS_CA_FILE")) else None
-                    ),
-                }
-            )
+        security_config: dict[str, Any] = {}
         config = {
             **env_config,
             "event_bus": ModelEventBusConfig(**event_bus_config),
@@ -275,7 +255,7 @@ class ModelNodeServiceConfig(BaseModel):
             "node_name": "node_registry",
             "docker_image": "onex/node-registry",
             "network": ModelNetworkConfig(port=8081),
-            "monitoring": ModelMonitoringConfig(metrics_port=9091),
+            "monitoring": ModelMonitoringConfig(prometheus_port=9091),
             "depends_on": ["event-bus"],
         }
         config = {**node_registry_defaults, **overrides}

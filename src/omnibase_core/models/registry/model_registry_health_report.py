@@ -434,67 +434,92 @@ class ModelRegistryHealthReport(BaseModel):
         self.get_average_service_response_time()
 
         # Build custom metrics
-        now = datetime.now(UTC)
         custom_metrics = {
             "registry_status": ModelMetricValue(
-                value=self.status.value, unit="status", timestamp=now
+                name="registry_status",
+                value=self.status.value,
+                metric_type="string",
             ),
             "is_healthy": ModelMetricValue(
-                value=self.is_healthy(), unit="boolean", timestamp=now
+                name="is_healthy",
+                value=self.is_healthy(),
+                metric_type="boolean",
             ),
             "is_critical": ModelMetricValue(
-                value=self.is_critical(), unit="boolean", timestamp=now
+                name="is_critical",
+                value=self.is_critical(),
+                metric_type="boolean",
             ),
             "is_operational": ModelMetricValue(
-                value=self.is_operational(), unit="boolean", timestamp=now
+                name="is_operational",
+                value=self.is_operational(),
+                metric_type="boolean",
             ),
             "requires_attention": ModelMetricValue(
-                value=self.requires_immediate_attention(), unit="boolean", timestamp=now
+                name="requires_attention",
+                value=self.requires_immediate_attention(),
+                metric_type="boolean",
             ),
             "tools_total": ModelMetricValue(
-                value=len(self.tools_health), unit="count", timestamp=now
+                name="tools_total",
+                value=len(self.tools_health),
+                metric_type="counter",
             ),
             "tools_healthy": ModelMetricValue(
-                value=self.get_healthy_tools_count(), unit="count", timestamp=now
+                name="tools_healthy",
+                value=self.get_healthy_tools_count(),
+                metric_type="counter",
             ),
             "tools_unhealthy": ModelMetricValue(
-                value=self.get_unhealthy_tools_count(), unit="count", timestamp=now
+                name="tools_unhealthy",
+                value=self.get_unhealthy_tools_count(),
+                metric_type="counter",
             ),
             "tools_degraded": ModelMetricValue(
-                value=self.get_degraded_tools_count(), unit="count", timestamp=now
+                name="tools_degraded",
+                value=self.get_degraded_tools_count(),
+                metric_type="counter",
             ),
             "tools_health_percentage": ModelMetricValue(
+                name="tools_health_percentage",
                 value=self.get_tools_health_percentage(),
-                unit="percentage",
-                timestamp=now,
+                metric_type="gauge",
             ),
             "services_total": ModelMetricValue(
-                value=len(self.services_health), unit="count", timestamp=now
+                name="services_total",
+                value=len(self.services_health),
+                metric_type="counter",
             ),
             "services_healthy": ModelMetricValue(
-                value=self.get_healthy_services_count(), unit="count", timestamp=now
+                name="services_healthy",
+                value=self.get_healthy_services_count(),
+                metric_type="counter",
             ),
             "services_unhealthy": ModelMetricValue(
-                value=self.get_unhealthy_services_count(), unit="count", timestamp=now
+                name="services_unhealthy",
+                value=self.get_unhealthy_services_count(),
+                metric_type="counter",
             ),
             "services_health_percentage": ModelMetricValue(
+                name="services_health_percentage",
                 value=self.get_services_health_percentage(),
-                unit="percentage",
-                timestamp=now,
+                metric_type="gauge",
             ),
             "reliability_score": ModelMetricValue(
+                name="reliability_score",
                 value=self.calculate_overall_reliability_score(),
-                unit="score",
-                timestamp=now,
+                metric_type="gauge",
             ),
             "reliability_category": ModelMetricValue(
-                value=self.get_reliability_category(), unit="category", timestamp=now
+                name="reliability_category",
+                value=self.get_reliability_category(),
+                metric_type="string",
             ),
             "critical_components": ModelMetricValue(
+                name="critical_components",
                 value=len(self.get_critical_tools())
                 + len(self.get_critical_services()),
-                unit="count",
-                timestamp=now,
+                metric_type="counter",
             ),
         }
 

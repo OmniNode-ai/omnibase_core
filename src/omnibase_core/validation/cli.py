@@ -27,6 +27,9 @@ from pathlib import Path
 from typing import Any
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.common.model_validation_metadata import (
+    ModelValidationMetadata,
+)
 from omnibase_core.types.typed_dict_validator_info import TypedDictValidatorInfo
 
 from .architecture import validate_architecture_directory
@@ -68,7 +71,7 @@ class ModelValidationSuite:
         validation_type: str,
         directory: Path,
         **kwargs: object,
-    ) -> ModelValidationResult:
+    ) -> ModelValidationResult[None]:
         """Run a specific validation on a directory."""
         if validation_type not in self.validators:
             raise ModelOnexError(
@@ -90,7 +93,7 @@ class ModelValidationSuite:
         self,
         directory: Path,
         **kwargs: object,
-    ) -> dict[str, ModelValidationResult]:
+    ) -> dict[str, ModelValidationResult[None]]:
         """Run all validations on a directory."""
         results = {}
 
@@ -101,10 +104,12 @@ class ModelValidationSuite:
             except Exception as e:
                 # Create error result
                 results[validation_type] = ModelValidationResult(
-                    success=False,
+                    is_valid=False,
                     errors=[f"Validation failed: {e}"],
-                    files_checked=0,
-                    metadata={"validation_type": validation_type, "error": str(e)},
+                    metadata=ModelValidationMetadata(
+                        validation_type=validation_type,
+                        files_processed=0,
+                    ),
                 )
 
         return results
@@ -208,23 +213,24 @@ Examples:
 
 def format_result(
     validation_type: str,
-    result: ModelValidationResult,
+    result: ModelValidationResult[None],
     verbose: bool = False,
 ) -> None:
     """Format and print validation results."""
-    status = "✅ PASSED" if result.success else "❌ FAILED"
+    status = "✅ PASSED" if result.is_valid else "❌ FAILED"
     print(f"\n{validation_type.upper()}: {status}")
 
-    if verbose or not result.success:
-        print(f"  📁 Files checked: {result.files_checked}")
+    if verbose or not result.is_valid:
+        files_checked = result.metadata.files_processed if result.metadata else 0
+        print(f"  📁 Files checked: {files_checked}")
         print(f"  ⚠️  Issues found: {len(result.errors)}")
 
         if result.metadata:
             metadata = result.metadata
-            if "total_unions" in metadata:
-                print(f"  🔗 Total unions: {metadata['total_unions']}")
-            if "violations_found" in metadata:
-                print(f"  🚨 Violations: {metadata['violations_found']}")
+            if hasattr(metadata, "total_unions") and metadata.total_unions is not None:
+                print(f"  🔗 Total unions: {metadata.total_unions}")
+            if metadata.violations_found is not None:
+                print(f"  🚨 Violations: {metadata.violations_found}")
 
         if result.errors and (verbose or len(result.errors) <= 10):
             print("  📋 Issues:")
@@ -283,7 +289,7 @@ def run_validation_cli() -> int:
             results = suite.run_all_validations(directory, **validation_kwargs)
 
             for validation_type, result in results.items():
-                overall_success = overall_success and result.success
+                overall_success = overall_success and result.is_valid
                 if not args.quiet:
                     format_result(validation_type, result, args.verbose)
 
@@ -294,7 +300,7 @@ def run_validation_cli() -> int:
                 directory,
                 **validation_kwargs,
             )
-            overall_success = overall_success and result.success
+            overall_success = overall_success and result.is_valid
 
             if not args.quiet:
                 format_result(args.validation_type, result, args.verbose)

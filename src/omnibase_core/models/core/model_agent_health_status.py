@@ -2,10 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.health.model_health_check import (
-    EnumHealthStatusType,
-    ModelHealthCheck,
-)
+from omnibase_core.enums.enum_health_status_type import EnumHealthStatusType
+from omnibase_core.models.core.model_health_check_result import ModelHealthCheckResult
 from omnibase_core.models.core.model_system_metrics import ModelSystemMetrics
 
 
@@ -15,7 +13,7 @@ class ModelAgentHealthStatus(BaseModel):
     overall_status: EnumHealthStatusType = Field(
         description="Overall system health status"
     )
-    health_checks: list[ModelHealthCheck] = Field(
+    health_checks: list[ModelHealthCheckResult] = Field(
         description="Individual health check results",
     )
     system_metrics: ModelSystemMetrics = Field(description="System-level metrics")
@@ -33,11 +31,14 @@ class ModelAgentHealthStatus(BaseModel):
             return 0.0
 
         scores = {
-            EnumHealthStatusType.HEALTHY: 1.0,
-            EnumHealthStatusType.DEGRADED: 0.5,
-            EnumHealthStatusType.UNHEALTHY: 0.0,
-            EnumHealthStatusType.UNKNOWN: 0.0,
+            "healthy": 1.0,
+            "degraded": 0.5,
+            "unhealthy": 0.0,
+            "unknown": 0.0,
         }
 
-        total_score = sum(scores[check.status] for check in self.health_checks)
+        # ModelHealthCheckResult.status is a string, so we use lowercase comparison
+        total_score = sum(
+            scores.get(check.status.lower(), 0.0) for check in self.health_checks
+        )
         return total_score / len(self.health_checks)

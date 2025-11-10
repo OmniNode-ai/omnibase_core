@@ -2,6 +2,7 @@ from typing import Any, Generic
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
+from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_database_connection_config import (
     ModelDatabaseConnectionConfig,
 )
@@ -35,7 +36,7 @@ class ModelExternalServiceConfig(BaseModel):
     """
 
     service_name: str = Field(
-        default=...,
+        default="unnamed_service",
         description="Name of the external service (e.g., 'database', 'api', 'cache')",
         pattern=r"^[a-zA-Z0-9_\-]+$",
         max_length=100,
@@ -92,8 +93,11 @@ class ModelExternalServiceConfig(BaseModel):
                 return values
 
             # Convert dict[str, Any]to appropriate typed model based on service_type - use duck typing
-            if hasattr(connection_config, "get") and callable(
-                connection_config.get,
+            # Only convert if connection_config has data (not empty dict)
+            if (
+                hasattr(connection_config, "get")
+                and callable(connection_config.get)
+                and connection_config  # Check if not empty
             ):
                 if service_type in ["database", "db", "postgresql", "mysql"]:
                     try:
@@ -101,9 +105,6 @@ class ModelExternalServiceConfig(BaseModel):
                             **connection_config,
                         )
                     except (ValueError, ValidationError) as e:
-                        from omnibase_core.errors import ModelOnexError
-                        from omnibase_core.errors.error_codes import EnumCoreErrorCode
-
                         msg = f"Invalid database connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
