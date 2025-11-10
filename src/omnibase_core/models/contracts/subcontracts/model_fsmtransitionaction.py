@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from omnibase_core.models.core.model_action_config_value import (
-        ModelActionConfigValue,
-    )
+from .model_action_config_parameter import ModelActionConfigParameter
 
 
 class ModelFSMTransitionAction(BaseModel):
@@ -30,8 +25,8 @@ class ModelFSMTransitionAction(BaseModel):
         min_length=1,
     )
 
-    action_config: dict[str, ModelActionConfigValue] = Field(
-        default_factory=dict,
+    action_config: list[ModelActionConfigParameter] = Field(
+        default_factory=list,
         description="Strongly-typed configuration parameters for the action",
     )
 

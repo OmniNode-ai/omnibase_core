@@ -32,6 +32,8 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
+from .model_log_level_override import ModelLogLevelOverride
+
 
 class ModelLoggingSubcontract(BaseModel):
     """
@@ -224,9 +226,9 @@ class ModelLoggingSubcontract(BaseModel):
         le=1.0,
     )
 
-    log_level_overrides: dict[str, str] = Field(
-        default_factory=dict,
-        description="Per-module or per-logger log level overrides",
+    log_level_overrides: list[ModelLogLevelOverride] = Field(
+        default_factory=list,
+        description="Strongly-typed per-module or per-logger log level overrides",
     )
 
     # Integration and enrichment
