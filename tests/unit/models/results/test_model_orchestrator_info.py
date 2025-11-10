@@ -83,16 +83,20 @@ class TestModelOrchestratorInfoFieldValidation:
                 orchestrator_version=version,
             )
 
-    def test_orchestrator_version_must_be_semver(self):
-        """Test that orchestrator_version must be ModelSemVer."""
+    def test_orchestrator_version_accepts_valid_string(self):
+        """Test that orchestrator_version accepts and converts valid semver strings."""
         orchestrator_id = uuid4()
 
-        with pytest.raises(ValidationError):
-            ModelOrchestratorInfo(
-                orchestrator_id=orchestrator_id,
-                orchestrator_type="kubernetes",
-                orchestrator_version="1.0.0",  # String instead of ModelSemVer
-            )
+        info = ModelOrchestratorInfo(
+            orchestrator_id=orchestrator_id,
+            orchestrator_type="kubernetes",
+            orchestrator_version="1.0.0",  # Valid string should be accepted
+        )
+
+        # Verify conversion worked
+        assert info.orchestrator_version.major == 1
+        assert info.orchestrator_version.minor == 0
+        assert info.orchestrator_version.patch == 0
 
 
 class TestModelOrchestratorInfoClusterFields:

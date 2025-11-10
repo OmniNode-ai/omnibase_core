@@ -12,7 +12,7 @@ class TestModelConfigModule:
 
     def test_module_imports(self):
         """Test that the module can be imported successfully."""
-        from omnibase_core.models.events.model_config import BaseModel
+        from omnibase_core.models.events.model_event_config import BaseModel
 
         # Verify BaseModel is imported
         assert BaseModel is not None
@@ -21,7 +21,7 @@ class TestModelConfigModule:
 
     def test_module_structure(self):
         """Test that the module has expected structure."""
-        import omnibase_core.models.events.model_config as module
+        import omnibase_core.models.events.model_event_config as module
 
         # Module should exist and be importable
         assert module is not None
@@ -36,7 +36,7 @@ class TestModelConfigModule:
 
     def test_base_model_functionality(self):
         """Test that BaseModel from the module works correctly."""
-        from omnibase_core.models.events.model_config import BaseModel
+        from omnibase_core.models.events.model_event_config import BaseModel
 
         # Create a simple model using the imported BaseModel
         class TestModel(BaseModel):
