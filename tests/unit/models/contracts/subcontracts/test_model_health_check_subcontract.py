@@ -16,9 +16,11 @@ from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract 
     ModelComponentHealth,
     ModelComponentHealthCollection,
     ModelDependencyHealth,
-    ModelHealthCheckResult,
     ModelHealthCheckSubcontract,
     ModelNodeHealthStatus,
+)
+from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract_result import (
+    ModelHealthCheckSubcontractResult,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -266,8 +268,8 @@ class TestModelDependencyHealth:
             )
 
 
-class TestModelHealthCheckResult:
-    """Test suite for ModelHealthCheckResult."""
+class TestModelHealthCheckSubcontractResult:
+    """Test suite for ModelHealthCheckSubcontractResult."""
 
     def test_valid_health_check_result_creation(self):
         """Test creating a valid health check result."""
@@ -281,18 +283,14 @@ class TestModelHealthCheckResult:
             node_type="ORCHESTRATOR",
         )
 
-        component_health = ModelComponentHealthCollection(
-            components=[
-                ModelComponentHealth(
-                    component_name="worker",
-                    status=EnumNodeHealthStatus.HEALTHY,
-                    message="Worker healthy",
-                    last_check=now,
-                )
-            ],
-            healthy_count=1,
-            total_components=1,
-        )
+        component_health = [
+            ModelComponentHealth(
+                component_name="worker",
+                status=EnumNodeHealthStatus.HEALTHY,
+                message="Worker healthy",
+                last_check=now,
+            )
+        ]
 
         dependency_health = [
             ModelDependencyHealth(
@@ -303,7 +301,7 @@ class TestModelHealthCheckResult:
             )
         ]
 
-        result = ModelHealthCheckResult(
+        result = ModelHealthCheckSubcontractResult(
             node_health=node_health,
             component_health=component_health,
             dependency_health=dependency_health,
@@ -312,7 +310,7 @@ class TestModelHealthCheckResult:
         )
 
         assert result.node_health.status == EnumNodeHealthStatus.HEALTHY
-        assert len(result.component_health.components) == 1
+        assert len(result.component_health) == 1
         assert len(result.dependency_health) == 1
         assert result.health_score == 0.95
         assert len(result.recommendations) == 1
@@ -329,11 +327,8 @@ class TestModelHealthCheckResult:
             node_type="COMPUTE",
         )
 
-        component_health = ModelComponentHealthCollection()
-
-        result = ModelHealthCheckResult(
+        result = ModelHealthCheckSubcontractResult(
             node_health=node_health,
-            component_health=component_health,
             health_score=0.75,
         )
 
@@ -353,29 +348,24 @@ class TestModelHealthCheckResult:
             node_type="EFFECT",
         )
 
-        component_health = ModelComponentHealthCollection()
-
         # Valid scores
         for score in [0.0, 0.5, 1.0]:
-            result = ModelHealthCheckResult(
+            result = ModelHealthCheckSubcontractResult(
                 node_health=node_health,
-                component_health=component_health,
                 health_score=score,
             )
             assert result.health_score == score
 
         # Invalid scores
         with pytest.raises(ValidationError):
-            ModelHealthCheckResult(
+            ModelHealthCheckSubcontractResult(
                 node_health=node_health,
-                component_health=component_health,
                 health_score=-0.1,  # Too low
             )
 
         with pytest.raises(ValidationError):
-            ModelHealthCheckResult(
+            ModelHealthCheckSubcontractResult(
                 node_health=node_health,
-                component_health=component_health,
                 health_score=1.1,  # Too high
             )
 
