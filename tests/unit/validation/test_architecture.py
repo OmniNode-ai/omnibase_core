@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from omnibase_core.errors.exceptions import ConfigurationError, InputValidationError
 from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.models.validation.model_duplication_report import (
@@ -19,7 +20,6 @@ from omnibase_core.validation.architecture import (
     validate_one_model_per_file,
 )
 from omnibase_core.validation.auditor_protocol import ModelProtocolAuditor
-from omnibase_core.errors.exceptions import ConfigurationError, InputValidationError
 
 
 class TestModelCounter:

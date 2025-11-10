@@ -10,8 +10,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_generated_file import ModelGeneratedFile
 from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
+from omnibase_core.models.core.model_generated_file import ModelGeneratedFile
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 

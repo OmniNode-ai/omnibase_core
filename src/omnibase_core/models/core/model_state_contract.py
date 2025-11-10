@@ -45,6 +45,7 @@ from pydantic import BaseModel
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_examples import ModelExample
+from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from omnibase_core.models.metadata.model_metadata_constants import (
     CONTRACT_SCHEMA_VERSION_KEY,
     CONTRACT_VERSION_KEY,
@@ -53,7 +54,6 @@ from omnibase_core.models.metadata.model_metadata_constants import (
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_error_state import ModelErrorState
-from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from .model_state_schema import ModelStateSchema
 
 # Compatibility aliases

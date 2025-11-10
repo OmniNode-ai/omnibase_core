@@ -24,6 +24,9 @@ from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.discovery.model_current_tool_availability import (
     ModelCurrentToolAvailability,
 )
+from omnibase_core.models.discovery.model_discovery_performance_metrics import (
+    ModelPerformanceMetrics,
+)
 from omnibase_core.models.discovery.model_introspection_additional_info import (
     ModelIntrospectionAdditionalInfo,
 )
@@ -35,9 +38,6 @@ from omnibase_core.models.discovery.model_introspection_response_event import (
 )
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
-)
-from omnibase_core.models.discovery.model_discovery_performance_metrics import (
-    ModelPerformanceMetrics,
 )
 from omnibase_core.models.discovery.model_request_introspection_event import (
     ModelRequestIntrospectionEvent,

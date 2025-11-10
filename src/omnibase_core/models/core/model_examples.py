@@ -7,10 +7,11 @@ and compliance with one-model-per-file naming conventions.
 
 from typing import Any
 
-from .model_custom_settings import ModelCustomSettings
 from omnibase_core.models.config.model_example import ModelExample
 from omnibase_core.models.config.model_example_metadata import ModelExampleMetadata
 from omnibase_core.models.nodes.model_node_information import ModelNodeInformation
+
+from .model_custom_settings import ModelCustomSettings
 
 # Compatibility aliases
 ExampleMetadata = ModelExampleMetadata
