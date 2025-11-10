@@ -805,9 +805,9 @@ class ServiceHandler:
         result = validate_patterns_directory(tmp_path)
 
         # Should check all files
-        assert result.files_checked >= 3
+        assert result.metadata.files_processed >= 3
         # Should detect issues in all files
-        if not result.success:
+        if not result.is_valid:
             assert len(result.errors) >= 3
 
     def test_validate_patterns_directory_ignores_pycache(
@@ -823,7 +823,7 @@ class ServiceHandler:
         result = validate_patterns_directory(tmp_path)
 
         # Should not check __pycache__
-        assert result.files_checked == 0
+        assert result.metadata.files_processed == 0
 
     def test_validate_patterns_directory_strict_mode(self, tmp_path: Path) -> None:
         """Test validation in strict mode."""
@@ -840,7 +840,7 @@ class ModelUser(BaseModel):
         result = validate_patterns_directory(tmp_path, strict=True)
 
         # Strict mode should be more stringent
-        assert result.files_checked >= 1
+        assert result.metadata.files_processed >= 1
 
     def test_validate_patterns_directory_mixed_files(self, tmp_path: Path) -> None:
         """Test validation with mix of good and bad files."""
@@ -870,9 +870,9 @@ class DataHelper:
 
         result = validate_patterns_directory(tmp_path)
 
-        assert result.files_checked >= 2
+        assert result.metadata.files_processed >= 2
         # Should detect issues in bad file
-        if not result.success:
+        if not result.is_valid:
             assert len(result.errors) >= 2
 
     def test_validate_patterns_directory_non_python_files(
@@ -887,7 +887,7 @@ class DataHelper:
         result = validate_patterns_directory(tmp_path)
 
         # Should only check Python files
-        assert result.files_checked <= 1
+        assert result.metadata.files_processed <= 1
 
     def test_validate_patterns_directory_populates_metadata(
         self,
@@ -907,7 +907,9 @@ class ModelTest(BaseModel):
         result = validate_patterns_directory(tmp_path)
 
         assert result.metadata is not None
-        assert isinstance(result.metadata, dict)
+        # metadata is a ModelValidationMetadata instance, not a dict
+        assert hasattr(result.metadata, "files_processed")
+        assert result.metadata.files_processed >= 1
 
 
 class TestValidatePatternsCLI:

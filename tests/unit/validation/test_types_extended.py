@@ -509,8 +509,8 @@ class TestValidateUnionUsageDirectory:
         # Create empty directory
         result = validate_union_usage_directory(tmp_path)
 
-        assert result.success is True
-        assert result.files_checked == 0
+        assert result.is_valid is True
+        assert result.metadata.files_processed == 0
         assert result.metadata is not None
         assert result.metadata.get("message") == "No Python files to validate"
 
@@ -539,8 +539,8 @@ def func(x: str) -> None:
         result = validate_union_usage_directory(tmp_path)
 
         # Should only check the regular file, not __pycache__
-        assert result.files_checked == 1
-        assert result.success is True
+        assert result.metadata.files_processed == 1
+        assert result.is_valid is True
 
     def test_directory_respects_max_unions_limit(self, tmp_path: Path) -> None:
         """Test that max_unions parameter is respected."""
@@ -558,10 +558,10 @@ def func(x: Union[str, int]) -> None:
         result = validate_union_usage_directory(tmp_path, max_unions=3, strict=False)
 
         # Should fail because 5 unions > max 3
-        assert result.success is False
+        assert result.is_valid is False
         assert result.metadata is not None
         assert result.metadata.get("total_unions", 0) == 5
-        assert result.files_checked == 5
+        assert result.metadata.files_processed == 5
 
     def test_directory_strict_mode_fails_on_issues(self, tmp_path: Path) -> None:
         """Test that strict mode fails when issues are found."""
@@ -577,7 +577,7 @@ def func(x: Union[str, int, bool, float]) -> None:
         result = validate_union_usage_directory(tmp_path, strict=True)
 
         # Should fail in strict mode due to complex union
-        assert result.success is False
+        assert result.is_valid is False
         assert len(result.errors) >= 1
 
     def test_directory_non_strict_mode_succeeds_with_issues(
@@ -596,7 +596,7 @@ def func(x: Union[str, int, bool, float]) -> None:
         result = validate_union_usage_directory(tmp_path, max_unions=100, strict=False)
 
         # Should succeed in non-strict mode despite issues
-        assert result.success is True
+        assert result.is_valid is True
         assert len(result.errors) >= 1  # Issues are still reported
 
     def test_directory_populates_metadata_correctly(self, tmp_path: Path) -> None:
@@ -621,11 +621,11 @@ def func(x: Union[str, int]) -> None:
         result = validate_union_usage_directory(tmp_path)
 
         assert result.metadata is not None
-        assert result.metadata["validation_type"] == "union_usage"
-        assert result.metadata["total_unions"] >= 2
-        assert result.metadata["max_unions"] == 100
-        assert "complex_patterns" in result.metadata
-        assert "strict_mode" in result.metadata
+        assert result.metadata.validation_type == "union_usage"
+        assert result.metadata.total_unions >= 2
+        assert result.metadata.max_unions == 100
+        assert result.metadata.complex_patterns is not None
+        assert result.metadata.strict_mode is not None
 
     def test_directory_handles_mixed_file_types(self, tmp_path: Path) -> None:
         """Test directory with Python and non-Python files."""
@@ -646,5 +646,5 @@ def func(x: Union[str, int]) -> None:
         result = validate_union_usage_directory(tmp_path)
 
         # Should only process Python file
-        assert result.files_checked == 1
-        assert result.success is True
+        assert result.metadata.files_processed == 1
+        assert result.is_valid is True

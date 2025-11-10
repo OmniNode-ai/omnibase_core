@@ -316,8 +316,8 @@ class TestValidateArchitectureDirectory:
         """Test validation of empty directory."""
         result = validate_architecture_directory(tmp_path)
 
-        assert result.success is True
-        assert result.files_checked == 0
+        assert result.is_valid is True
+        assert result.metadata.files_processed == 0
         assert len(result.errors) == 0
 
     def test_directory_with_valid_files(self, tmp_path: Path):
@@ -343,8 +343,8 @@ class EnumStatus(Enum):
 
         result = validate_architecture_directory(tmp_path)
 
-        assert result.success is True
-        assert result.files_checked == 2
+        assert result.is_valid is True
+        assert result.metadata.files_processed == 2
         assert len(result.errors) == 0
 
     def test_directory_with_violations(self, tmp_path: Path):
@@ -364,10 +364,10 @@ class ModelPost(BaseModel):
 
         result = validate_architecture_directory(tmp_path, max_violations=0)
 
-        assert result.success is False
-        assert result.files_checked == 1
+        assert result.is_valid is False
+        assert result.metadata.files_processed == 1
         assert len(result.errors) > 0
-        assert result.violations_found > 0
+        assert result.metadata.violations_found > 0
 
     def test_directory_with_allowed_violations(self, tmp_path: Path):
         """Test directory with violations within threshold."""
@@ -386,10 +386,10 @@ class ModelPost(BaseModel):
 
         result = validate_architecture_directory(tmp_path, max_violations=10)
 
-        assert result.success is True
-        assert result.files_checked == 1
+        assert result.is_valid is True
+        assert result.metadata.files_processed == 1
         assert len(result.errors) > 0
-        assert result.violations_found > 0
+        assert result.metadata.violations_found > 0
 
     def test_skips_init_files(self, tmp_path: Path):
         """Test that __init__.py files are skipped."""
@@ -403,8 +403,8 @@ from .model_post import ModelPost
 
         result = validate_architecture_directory(tmp_path)
 
-        assert result.success is True
-        assert result.files_checked == 0
+        assert result.is_valid is True
+        assert result.metadata.files_processed == 0
 
     def test_skips_pycache(self, tmp_path: Path):
         """Test that __pycache__ is skipped."""
@@ -414,8 +414,8 @@ from .model_post import ModelPost
 
         result = validate_architecture_directory(tmp_path)
 
-        assert result.success is True
-        assert result.files_checked == 0
+        assert result.is_valid is True
+        assert result.metadata.files_processed == 0
 
     def test_metadata_populated(self, tmp_path: Path):
         """Test that metadata is properly populated."""
@@ -433,10 +433,10 @@ class ModelPost(BaseModel):
 
         result = validate_architecture_directory(tmp_path)
 
-        assert "validation_type" in result.metadata
-        assert result.metadata["validation_type"] == "architecture"
-        assert "max_violations" in result.metadata
-        assert "files_with_violations" in result.metadata
+        assert result.metadata is not None
+        assert result.metadata.validation_type == "architecture"
+        assert result.metadata.max_violations is not None
+        assert result.metadata.files_with_violations is not None
 
     def test_generic_exception_handling(self, tmp_path: Path, monkeypatch):
         """Test handling of generic exceptions during file processing."""
@@ -1393,7 +1393,7 @@ class ModelB(BaseModel):
         result = validate_architecture_directory(tmp_path)
 
         # Should find both files recursively
-        assert result.files_checked >= 2
+        assert result.metadata.files_processed >= 2
 
     def test_validate_architecture_directory_skips_archived(self, tmp_path: Path):
         """Test that archived directories are skipped."""
@@ -1415,8 +1415,8 @@ class ModelOld2(BaseModel):
         result = validate_architecture_directory(tmp_path)
 
         # Should skip archived directory
-        assert result.files_checked == 0
-        assert result.success is True
+        assert result.metadata.files_processed == 0
+        assert result.is_valid is True
 
     def test_validate_architecture_directory_skips_test_fixtures(self, tmp_path: Path):
         """Test that test fixtures are skipped."""
@@ -1438,5 +1438,5 @@ class ModelFixture2(BaseModel):
         result = validate_architecture_directory(tmp_path)
 
         # Should skip fixtures directory
-        assert result.files_checked == 0
-        assert result.success is True
+        assert result.metadata.files_processed == 0
+        assert result.is_valid is True

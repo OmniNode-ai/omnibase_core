@@ -227,8 +227,8 @@ class TestValidateContractsDirectory:
         """Test validation of empty directory."""
         result = validate_contracts_directory(tmp_path)
 
-        assert result.success is True
-        assert result.files_checked == 0
+        assert result.is_valid is True
+        assert result.metadata.files_processed == 0
         assert len(result.errors) == 0
 
     def test_directory_with_valid_yaml(self, tmp_path: Path):
@@ -239,7 +239,7 @@ class TestValidateContractsDirectory:
 
         result = validate_contracts_directory(tmp_path)
 
-        assert result.files_checked == 1
+        assert result.metadata.files_processed == 1
         assert isinstance(result.errors, list)
 
     def test_directory_with_multiple_yaml_extensions(self, tmp_path: Path):
@@ -249,7 +249,7 @@ class TestValidateContractsDirectory:
 
         result = validate_contracts_directory(tmp_path)
 
-        assert result.files_checked == 2
+        assert result.metadata.files_processed == 2
 
     def test_excludes_pycache(self, tmp_path: Path):
         """Test that __pycache__ is excluded."""
@@ -260,7 +260,7 @@ class TestValidateContractsDirectory:
         result = validate_contracts_directory(tmp_path)
 
         # Should not include __pycache__ files
-        assert result.files_checked == 0
+        assert result.metadata.files_processed == 0
 
     def test_excludes_git(self, tmp_path: Path):
         """Test that .git is excluded."""
@@ -271,7 +271,7 @@ class TestValidateContractsDirectory:
         result = validate_contracts_directory(tmp_path)
 
         # Should not include .git files
-        assert result.files_checked == 0
+        assert result.metadata.files_processed == 0
 
     def test_excludes_node_modules(self, tmp_path: Path):
         """Test that node_modules is excluded."""
@@ -282,7 +282,7 @@ class TestValidateContractsDirectory:
         result = validate_contracts_directory(tmp_path)
 
         # Should not include node_modules files
-        assert result.files_checked == 0
+        assert result.metadata.files_processed == 0
 
     def test_metadata_populated(self, tmp_path: Path):
         """Test that metadata is properly populated."""
@@ -290,10 +290,10 @@ class TestValidateContractsDirectory:
 
         result = validate_contracts_directory(tmp_path)
 
-        assert "validation_type" in result.metadata
-        assert result.metadata["validation_type"] == "contracts"
-        assert "yaml_files_found" in result.metadata
-        assert "manual_yaml_violations" in result.metadata
+        assert result.metadata.validation_type is not None
+        assert result.metadata.validation_type == "contracts"
+        assert result.metadata.yaml_files_found is not None
+        assert result.metadata.manual_yaml_violations is not None
 
     def test_detects_manual_yaml_violations(self, tmp_path: Path):
         """Test detection of manual YAML in restricted areas."""
@@ -303,9 +303,9 @@ class TestValidateContractsDirectory:
 
         result = validate_contracts_directory(tmp_path)
 
-        assert result.success is False
+        assert result.is_valid is False
         assert len(result.errors) > 0
-        assert result.metadata["manual_yaml_violations"] > 0
+        assert result.metadata.manual_yaml_violations > 0
 
     def test_invalid_yaml_tracked_in_violations(self, tmp_path: Path):
         """Test that invalid YAML is tracked properly."""
@@ -314,6 +314,6 @@ class TestValidateContractsDirectory:
 
         result = validate_contracts_directory(tmp_path)
 
-        assert result.files_checked == 1
+        assert result.metadata.files_processed == 1
         # May have validation errors
         assert isinstance(result.errors, list)
