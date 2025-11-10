@@ -48,7 +48,8 @@ class TestValidateArchitectureWrapper:
             result = validate_architecture()
 
             assert isinstance(result, ModelValidationResult)
-            assert result.files_checked >= 0
+            assert result.metadata is not None
+            assert result.metadata.files_processed >= 0
         finally:
             os.chdir(original_cwd)
 
@@ -62,7 +63,8 @@ class TestValidateArchitectureWrapper:
         result = validate_architecture(str(test_dir))
 
         assert isinstance(result, ModelValidationResult)
-        assert result.files_checked >= 0
+        assert result.metadata is not None
+        assert result.metadata.files_processed >= 0
 
     def test_validate_architecture_with_max_violations(self, tmp_path: Path) -> None:
         """Test validate_architecture with max_violations parameter."""
@@ -124,7 +126,8 @@ class TestValidateUnionUsageWrapper:
             result = validate_union_usage()
 
             assert isinstance(result, ModelValidationResult)
-            assert result.files_checked >= 0
+            assert result.metadata is not None
+            assert result.metadata.files_processed >= 0
         finally:
             os.chdir(original_cwd)
 
@@ -145,7 +148,8 @@ def func(x: Union[str, int]) -> None:
         result = validate_union_usage(str(test_dir))
 
         assert isinstance(result, ModelValidationResult)
-        assert result.files_checked >= 0
+        assert result.metadata is not None
+        assert result.metadata.files_processed >= 0
 
     def test_validate_union_usage_with_max_unions(self, tmp_path: Path) -> None:
         """Test validate_union_usage with max_unions parameter."""
@@ -254,7 +258,7 @@ operations:
         result = validate_contracts(str(test_dir))
 
         assert isinstance(result, ModelValidationResult)
-        assert result.success  # Empty directory is valid
+        assert result.is_valid  # Empty directory is valid
 
 
 class TestValidatePatternsWrapper:
@@ -427,7 +431,8 @@ def func(x: Union[str, int]) -> None:
         # All results should be valid
         for validation_type, result in results.items():
             assert isinstance(result, ModelValidationResult)
-            assert result.files_checked >= 0
+            assert result.metadata is not None
+            assert result.metadata.files_processed >= 0
 
     def test_validate_all_empty_directory(self, tmp_path: Path) -> None:
         """Test validate_all with empty directory."""

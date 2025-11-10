@@ -330,6 +330,29 @@ class MixinHealthCheck:
         for check_name, task in check_tasks:
             try:
                 result = await task
+
+                # Validate result type (handle invalid return types)
+                if not isinstance(result, ModelHealthStatus):
+                    emit_log_event(  # type: ignore[unreachable]
+                        LogLevel.ERROR,
+                        f"Async health check returned invalid type: {check_name}",
+                        {"check_name": check_name, "type": str(type(result))},
+                    )
+                    # Create fallback result for invalid return type
+                    from omnibase_core.models.health.model_health_issue import (
+                        ModelHealthIssue,
+                    )
+
+                    result = ModelHealthStatus.create_unhealthy(
+                        score=0.0,
+                        issues=[
+                            ModelHealthIssue.create_connectivity_issue(
+                                message=f"Invalid return type from {check_name}: {type(result)}",
+                                severity="critical",
+                            )
+                        ],
+                    )
+
                 check_results.append(result)
 
                 # Update overall status
@@ -354,6 +377,22 @@ class MixinHealthCheck:
                 )
                 overall_status = EnumNodeHealthStatus.UNHEALTHY
                 messages.append(f"{check_name}: ERROR - {e!s}")
+
+                # Create error result for failed check
+                from omnibase_core.models.health.model_health_issue import (
+                    ModelHealthIssue,
+                )
+
+                error_result = ModelHealthStatus.create_unhealthy(
+                    score=0.0,
+                    issues=[
+                        ModelHealthIssue.create_connectivity_issue(
+                            message=f"Check failed with error: {e!s}",
+                            severity="critical",
+                        )
+                    ],
+                )
+                check_results.append(error_result)
 
         # Build final health status
         # Calculate health score based on overall status

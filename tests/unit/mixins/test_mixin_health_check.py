@@ -12,6 +12,7 @@ import pytest
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
+from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 from omnibase_core.models.health.model_health_status import ModelHealthStatus
 
 
@@ -46,42 +47,35 @@ class TestMixinHealthCheck:
         result = node.health_check()
 
         assert isinstance(result, ModelHealthStatus)
-        assert result.status == EnumNodeHealthStatus.HEALTHY
-        assert "TestNode" in result.message
-        assert "operational" in result.message
+        assert result.status == "healthy"
+        assert result.health_score == 1.0
 
     def test_health_check_with_custom_check_healthy(self):
         """Test health check with custom check returning healthy."""
 
         def custom_check():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.HEALTHY,
-                message="Custom check passed",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
-            )
+            return ModelHealthStatus.create_healthy(score=1.0)
 
         node = TestNode()
         node.custom_checks = [custom_check]
 
         result = node.health_check()
 
-        assert result.status == EnumNodeHealthStatus.HEALTHY
-        assert "Custom check passed" in result.message
+        assert result.status == "healthy"
+        assert result.health_score == 1.0
 
     def test_health_check_with_custom_check_unhealthy(self):
         """Test health check with custom check returning unhealthy."""
 
         def custom_check():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.UNHEALTHY,
-                message="Custom check failed",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
+            return ModelHealthStatus.create_unhealthy(
+                score=0.2,
+                issues=[
+                    ModelHealthIssue.create_connectivity_issue(
+                        message="Custom check failed",
+                        severity="high",
+                    )
+                ],
             )
 
         node = TestNode()
@@ -89,20 +83,22 @@ class TestMixinHealthCheck:
 
         result = node.health_check()
 
-        assert result.status == EnumNodeHealthStatus.UNHEALTHY
-        assert "Custom check failed" in result.message
+        assert result.status == "unhealthy"
+        assert len(result.issues) > 0
+        assert any("Custom check failed" in issue.message for issue in result.issues)
 
     def test_health_check_with_custom_check_degraded(self):
         """Test health check with custom check returning degraded."""
 
         def custom_check():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.DEGRADED,
-                message="Custom check degraded",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
+            return ModelHealthStatus.create_degraded(
+                score=0.6,
+                issues=[
+                    ModelHealthIssue.create_performance_issue(
+                        message="Custom check degraded",
+                        severity="medium",
+                    )
+                ],
             )
 
         node = TestNode()
@@ -110,62 +106,42 @@ class TestMixinHealthCheck:
 
         result = node.health_check()
 
-        assert result.status == EnumNodeHealthStatus.DEGRADED
-        assert "Custom check degraded" in result.message
+        assert result.status == "degraded"
+        assert len(result.issues) > 0
+        assert any("Custom check degraded" in issue.message for issue in result.issues)
 
     def test_health_check_with_multiple_checks_all_healthy(self):
         """Test health check with multiple checks, all healthy."""
 
         def check1():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.HEALTHY,
-                message="Check 1 passed",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
-            )
+            return ModelHealthStatus.create_healthy(score=1.0)
 
         def check2():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.HEALTHY,
-                message="Check 2 passed",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
-            )
+            return ModelHealthStatus.create_healthy(score=1.0)
 
         node = TestNode()
         node.custom_checks = [check1, check2]
 
         result = node.health_check()
 
-        assert result.status == EnumNodeHealthStatus.HEALTHY
-        assert "Check 1 passed" in result.message
-        assert "Check 2 passed" in result.message
+        assert result.status == "healthy"
+        assert result.health_score == 1.0
 
     def test_health_check_with_multiple_checks_one_fails(self):
         """Test health check with multiple checks, one fails."""
 
         def check1():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.HEALTHY,
-                message="Check 1 passed",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
-            )
+            return ModelHealthStatus.create_healthy(score=1.0)
 
         def check2():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.UNHEALTHY,
-                message="Check 2 failed",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
+            return ModelHealthStatus.create_unhealthy(
+                score=0.2,
+                issues=[
+                    ModelHealthIssue.create_connectivity_issue(
+                        message="Check 2 failed",
+                        severity="high",
+                    )
+                ],
             )
 
         node = TestNode()
@@ -173,7 +149,7 @@ class TestMixinHealthCheck:
 
         result = node.health_check()
 
-        assert result.status == EnumNodeHealthStatus.UNHEALTHY
+        assert result.status == "unhealthy"
 
     def test_health_check_with_exception_in_check(self):
         """Test health check when custom check raises exception."""
@@ -186,30 +162,32 @@ class TestMixinHealthCheck:
 
         result = node.health_check()
 
-        assert result.status == EnumNodeHealthStatus.UNHEALTHY
-        assert "ERROR" in result.message
+        assert result.status == "unhealthy"
+        assert len(result.issues) > 0
 
     def test_health_check_priority_unhealthy_over_degraded(self):
         """Test that UNHEALTHY status takes priority over DEGRADED."""
 
         def check1():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.DEGRADED,
-                message="Check 1 degraded",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
+            return ModelHealthStatus.create_degraded(
+                score=0.6,
+                issues=[
+                    ModelHealthIssue.create_performance_issue(
+                        message="Check 1 degraded",
+                        severity="medium",
+                    )
+                ],
             )
 
         def check2():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.UNHEALTHY,
-                message="Check 2 unhealthy",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
+            return ModelHealthStatus.create_unhealthy(
+                score=0.2,
+                issues=[
+                    ModelHealthIssue.create_connectivity_issue(
+                        message="Check 2 unhealthy",
+                        severity="high",
+                    )
+                ],
             )
 
         node = TestNode()
@@ -217,7 +195,7 @@ class TestMixinHealthCheck:
 
         result = node.health_check()
 
-        assert result.status == EnumNodeHealthStatus.UNHEALTHY
+        assert result.status == "unhealthy"
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
@@ -228,7 +206,8 @@ class TestMixinHealthCheck:
         result = await node.health_check_async()
 
         assert isinstance(result, ModelHealthStatus)
-        assert result.status == EnumNodeHealthStatus.HEALTHY
+        assert result.status == "healthy"
+        assert result.health_score == 1.0
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
@@ -236,22 +215,15 @@ class TestMixinHealthCheck:
         """Test async health check with synchronous custom check."""
 
         def sync_check():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.HEALTHY,
-                message="Sync check passed",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
-            )
+            return ModelHealthStatus.create_healthy(score=1.0)
 
         node = TestNode()
         node.custom_checks = [sync_check]
 
         result = await node.health_check_async()
 
-        assert result.status == EnumNodeHealthStatus.HEALTHY
-        assert "Sync check passed" in result.message
+        assert result.status == "healthy"
+        assert result.health_score == 1.0
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
@@ -260,22 +232,15 @@ class TestMixinHealthCheck:
 
         async def async_check():
             await asyncio.sleep(0.01)  # Simulate async work
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.HEALTHY,
-                message="Async check passed",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
-            )
+            return ModelHealthStatus.create_healthy(score=1.0)
 
         node = TestNode()
         node.custom_checks = [async_check]
 
         result = await node.health_check_async()
 
-        assert result.status == EnumNodeHealthStatus.HEALTHY
-        assert "Async check passed" in result.message
+        assert result.status == "healthy"
+        assert result.health_score == 1.0
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
@@ -283,34 +248,19 @@ class TestMixinHealthCheck:
         """Test async health check with both sync and async checks."""
 
         def sync_check():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.HEALTHY,
-                message="Sync check passed",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
-            )
+            return ModelHealthStatus.create_healthy(score=1.0)
 
         async def async_check():
             await asyncio.sleep(0.01)
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.HEALTHY,
-                message="Async check passed",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
-            )
+            return ModelHealthStatus.create_healthy(score=1.0)
 
         node = TestNode()
         node.custom_checks = [sync_check, async_check]
 
         result = await node.health_check_async()
 
-        assert result.status == EnumNodeHealthStatus.HEALTHY
-        assert "Sync check passed" in result.message
-        assert "Async check passed" in result.message
+        assert result.status == "healthy"
+        assert result.health_score == 1.0
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
@@ -325,7 +275,7 @@ class TestMixinHealthCheck:
 
         result = await node.health_check_async()
 
-        assert result.status == EnumNodeHealthStatus.UNHEALTHY
+        assert result.status == "unhealthy"
 
     def test_check_dependency_health_available(self):
         """Test check_dependency_health with available dependency."""
@@ -337,9 +287,8 @@ class TestMixinHealthCheck:
         result = node.check_dependency_health("test_dependency", check_func)
 
         assert isinstance(result, ModelHealthStatus)
-        assert result.status == EnumNodeHealthStatus.HEALTHY
-        assert "test_dependency" in result.message
-        assert "available" in result.message
+        assert result.status == "healthy"
+        assert result.health_score == 1.0
 
     def test_check_dependency_health_unavailable(self):
         """Test check_dependency_health with unavailable dependency."""
@@ -351,9 +300,10 @@ class TestMixinHealthCheck:
         result = node.check_dependency_health("test_dependency", check_func)
 
         assert isinstance(result, ModelHealthStatus)
-        assert result.status == EnumNodeHealthStatus.UNHEALTHY
-        assert "test_dependency" in result.message
-        assert "unavailable" in result.message
+        assert result.status == "unhealthy"
+        assert len(result.issues) > 0
+        assert any("test_dependency" in issue.message for issue in result.issues)
+        assert any("unavailable" in issue.message for issue in result.issues)
 
     def test_check_dependency_health_with_exception(self):
         """Test check_dependency_health when check function raises exception."""
@@ -365,9 +315,10 @@ class TestMixinHealthCheck:
         result = node.check_dependency_health("test_dependency", check_func)
 
         assert isinstance(result, ModelHealthStatus)
-        assert result.status == EnumNodeHealthStatus.UNHEALTHY
-        assert "test_dependency" in result.message
-        assert "failed" in result.message.lower()
+        assert result.status == "unhealthy"
+        assert len(result.issues) > 0
+        assert any("test_dependency" in issue.message for issue in result.issues)
+        assert any("failed" in issue.message.lower() for issue in result.issues)
 
     def test_health_check_with_invalid_return_type(self):
         """Test health check when custom check returns invalid type."""
@@ -381,20 +332,13 @@ class TestMixinHealthCheck:
         result = node.health_check()
 
         # Should handle gracefully and return unhealthy
-        assert result.status == EnumNodeHealthStatus.UNHEALTHY
+        assert result.status == "unhealthy"
 
     def test_health_check_with_async_check_in_sync_context(self):
         """Test health check when async check is called in sync context."""
 
         async def async_check():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.HEALTHY,
-                message="Async check in sync context",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
-            )
+            return ModelHealthStatus.create_healthy(score=1.0)
 
         node = TestNode()
         node.custom_checks = [async_check]
@@ -414,13 +358,14 @@ class TestMixinHealthCheck:
             raise RuntimeError("Check 2 failed")
 
         def check3():
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.UNHEALTHY,
-                message="Check 3 unhealthy",
-                timestamp="2024-01-01T00:00:00Z",
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
+            return ModelHealthStatus.create_unhealthy(
+                score=0.2,
+                issues=[
+                    ModelHealthIssue.create_connectivity_issue(
+                        message="Check 3 unhealthy",
+                        severity="high",
+                    )
+                ],
             )
 
         node = TestNode()
@@ -428,8 +373,8 @@ class TestMixinHealthCheck:
 
         result = node.health_check()
 
-        assert result.status == EnumNodeHealthStatus.UNHEALTHY
-        assert "ERROR" in result.message or "unhealthy" in result.message.lower()
+        assert result.status == "unhealthy"
+        assert len(result.issues) > 0
 
     def test_get_health_checks_default(self):
         """Test get_health_checks default implementation."""
@@ -453,7 +398,7 @@ class TestMixinHealthCheck:
 
         result = await node.health_check_async()
 
-        assert result.status == EnumNodeHealthStatus.UNHEALTHY
+        assert result.status == "unhealthy"
 
     def test_check_dependency_health_with_none_check_result(self):
         """Test check_dependency_health when check returns None."""
@@ -465,17 +410,17 @@ class TestMixinHealthCheck:
         result = node.check_dependency_health("test_dependency", check_func)
 
         # Should treat None as falsy/unhealthy
-        assert result.status == EnumNodeHealthStatus.UNHEALTHY
+        assert result.status == "unhealthy"
 
     def test_check_dependency_health_with_truthy_values(self):
         """Test check_dependency_health with various truthy values."""
         node = TestNode()
 
         test_cases = [
-            (True, EnumNodeHealthStatus.HEALTHY),
-            (1, EnumNodeHealthStatus.HEALTHY),
-            ("yes", EnumNodeHealthStatus.HEALTHY),
-            ([1, 2], EnumNodeHealthStatus.HEALTHY),
+            (True, "healthy"),
+            (1, "healthy"),
+            ("yes", "healthy"),
+            ([1, 2], "healthy"),
         ]
 
         for value, expected_status in test_cases:
@@ -498,4 +443,4 @@ class TestMixinHealthCheck:
                 return _value
 
             result = node.check_dependency_health("test_dependency", check_func)
-            assert result.status == EnumNodeHealthStatus.UNHEALTHY
+            assert result.status == "unhealthy"
