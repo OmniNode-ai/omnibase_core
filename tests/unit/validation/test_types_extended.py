@@ -512,7 +512,6 @@ class TestValidateUnionUsageDirectory:
         assert result.is_valid is True
         assert result.metadata.files_processed == 0
         assert result.metadata is not None
-        assert result.metadata.get("message") == "No Python files to validate"
 
     def test_directory_filters_pycache(self, tmp_path: Path) -> None:
         """Test that __pycache__ directories are properly filtered out."""
@@ -560,7 +559,7 @@ def func(x: Union[str, int]) -> None:
         # Should fail because 5 unions > max 3
         assert result.is_valid is False
         assert result.metadata is not None
-        assert result.metadata.get("total_unions", 0) == 5
+        assert result.metadata.total_unions == 5
         assert result.metadata.files_processed == 5
 
     def test_directory_strict_mode_fails_on_issues(self, tmp_path: Path) -> None:

@@ -74,6 +74,18 @@ class ModelOrchestratorOutput(BaseModel):
         description="Performance metrics",
     )
 
+    # Parallel execution tracking
+    parallel_executions: int = Field(
+        default=0,
+        description="Number of parallel execution batches completed",
+    )
+
+    # Actions tracking
+    actions_emitted: list[Any] = Field(
+        default_factory=list,
+        description="List of actions emitted during workflow execution",
+    )
+
     # Custom outputs for extensibility
     custom_outputs: ModelCustomFields | None = Field(
         default=None,

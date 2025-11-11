@@ -54,4 +54,7 @@ class ModelOrchestratorInput(BaseModel):
         default_factory=datetime.now, description="Workflow creation timestamp"
     )
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        use_enum_values=False,
+    )

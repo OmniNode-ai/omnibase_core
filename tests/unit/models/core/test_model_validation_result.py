@@ -130,14 +130,20 @@ class TestModelValidationResult:
         assert hasattr(result.model_config, "get")
 
     def test_validation_result_creation_with_data(self):
-        """Test ModelValidationResult creation with data."""
-        # Even with data, should work (empty model)
+        """Test ModelValidationResult creation with default fields."""
+        # Should create with default values, ignoring extra fields
         result = ModelValidationResult.model_validate({"some_field": "some_value"})
         assert result is not None
 
-        # Should ignore extra fields for empty model
+        # Should have the expected default fields
+        assert result.is_valid is False
+        assert result.validated_value is None
+        assert result.summary == "Validation completed"
+        assert len(result.issues) == 0
+
+        # Extra field should be ignored
         data = result.model_dump()
-        assert data == {}
+        assert "some_field" not in data
 
     def test_validation_result_copy(self):
         """Test ModelValidationResult copying."""

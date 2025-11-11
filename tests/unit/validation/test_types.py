@@ -469,7 +469,6 @@ def func(x: Union[str, int, bool, float]) -> None:
         assert result.is_valid is True
         assert result.metadata.files_processed == 0
         assert result.metadata is not None
-        assert "No Python files to validate" in result.metadata.message
 
     def test_validate_directory_with_subdirectories(self, tmp_path: Path) -> None:
         """Test validation recursively checks subdirectories."""

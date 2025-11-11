@@ -669,7 +669,7 @@ class NodeOrchestrator(NodeCoreBase):
         if dependency_graph:
             execution_order = self._get_topological_order(dependency_graph)
             ordered_steps = [
-                next(s for s in workflow_steps if s.step_id == step_id)
+                next(s for s in workflow_steps if s.step_id == UUID(step_id))
                 for step_id in execution_order
             ]
         else:
@@ -749,6 +749,7 @@ class NodeOrchestrator(NodeCoreBase):
             completed_steps=completed_step_ids,
             failed_steps=failed_step_ids,
             final_result=all_results if all_results else None,
+            actions_emitted=all_actions,
         )
 
     async def _execute_parallel_workflow(
@@ -772,34 +773,96 @@ class NodeOrchestrator(NodeCoreBase):
         if dependency_graph:
             # Execute in waves based on dependencies
             while True:
+                # Get ready steps - convert UUID to string for comparison
+                ready_step_ids_set = set(dependency_graph.get_ready_steps())
                 ready_steps = [
                     step
                     for step in workflow_steps
-                    if step.step_id in dependency_graph.get_ready_steps()
+                    if str(step.step_id) in ready_step_ids_set
                 ]
 
                 if not ready_steps:
                     break
 
-                # Execute ready steps in parallel
+                # Execute ready steps in parallel, processing in batches
+                max_parallel = input_data.max_parallel_steps or len(ready_steps)
+
+                # Process ready steps in batches
+                for batch_start in range(0, len(ready_steps), max_parallel):
+                    parallel_executions += 1
+                    batch_end = min(batch_start + max_parallel, len(ready_steps))
+                    batch_steps = ready_steps[batch_start:batch_end]
+
+                    tasks = []
+                    for step in batch_steps:
+                        task = asyncio.create_task(
+                            self._execute_single_step(step, input_data.workflow_id),
+                        )
+                        tasks.append((step, task))
+
+                    # Wait for all tasks in batch to complete
+                    for step, task in tasks:
+                        try:
+                            step_result = await task
+                            step.state = EnumWorkflowState.COMPLETED
+                            completed_step_ids.append(str(step.step_id))
+                            all_results.extend(step_result)
+                            dependency_graph.mark_completed(step.step_id)
+
+                            # Collect actions
+                            for action in step.thunks:
+                                if self.action_emission_enabled:
+                                    emitted_action = await self.emit_action(
+                                        action.action_type,
+                                        action.target_node_type,
+                                        {
+                                            **action.payload,
+                                            "workflow_id": input_data.workflow_id,
+                                        },
+                                        action.dependencies,
+                                        action.priority,
+                                        action.timeout_ms,
+                                        action.lease_id,
+                                        action.epoch,
+                                    )
+                                    all_actions.append(emitted_action)
+
+                        except Exception as e:
+                            step.state = EnumWorkflowState.FAILED
+                            step.error = e
+                            failed_step_ids.append(str(step.step_id))
+
+                            if input_data.failure_strategy == "fail_fast":
+                                # Cancel remaining tasks
+                                for _, remaining_task in tasks:
+                                    if not remaining_task.done():
+                                        remaining_task.cancel()
+                                raise
+        else:
+            # Execute all steps in parallel, processing in batches
+            max_parallel = input_data.max_parallel_steps or len(workflow_steps)
+
+            # Process all steps in batches
+            for batch_start in range(0, len(workflow_steps), max_parallel):
                 parallel_executions += 1
+                batch_end = min(batch_start + max_parallel, len(workflow_steps))
+                batch_steps = workflow_steps[batch_start:batch_end]
+
                 tasks = []
-                for step in ready_steps[: input_data.max_parallel_steps]:
+                for step in batch_steps:
                     task = asyncio.create_task(
                         self._execute_single_step(step, input_data.workflow_id),
                     )
                     tasks.append((step, task))
 
-                # Wait for all tasks to complete
                 for step, task in tasks:
                     try:
                         step_result = await task
                         step.state = EnumWorkflowState.COMPLETED
                         completed_step_ids.append(str(step.step_id))
                         all_results.extend(step_result)
-                        dependency_graph.mark_completed(step.step_id)
 
-                        # Collect actions
+                        # Collect actions from step thunks
                         for action in step.thunks:
                             if self.action_emission_enabled:
                                 emitted_action = await self.emit_action(
@@ -816,38 +879,10 @@ class NodeOrchestrator(NodeCoreBase):
                                     action.epoch,
                                 )
                                 all_actions.append(emitted_action)
-
                     except Exception as e:
                         step.state = EnumWorkflowState.FAILED
                         step.error = e
                         failed_step_ids.append(str(step.step_id))
-
-                        if input_data.failure_strategy == "fail_fast":
-                            # Cancel remaining tasks
-                            for _, remaining_task in tasks:
-                                if not remaining_task.done():
-                                    remaining_task.cancel()
-                            raise
-        else:
-            # Execute all steps in parallel
-            parallel_executions = 1
-            tasks = []
-            for step in workflow_steps[: input_data.max_parallel_steps]:
-                task = asyncio.create_task(
-                    self._execute_single_step(step, input_data.workflow_id),
-                )
-                tasks.append((step, task))
-
-            for step, task in tasks:
-                try:
-                    step_result = await task
-                    step.state = EnumWorkflowState.COMPLETED
-                    completed_step_ids.append(str(step.step_id))
-                    all_results.extend(step_result)
-                except Exception as e:
-                    step.state = EnumWorkflowState.FAILED
-                    step.error = e
-                    failed_step_ids.append(str(step.step_id))
 
         end_time = datetime.now()
         execution_time_ms = int((end_time - start_time).total_seconds() * 1000)
@@ -860,6 +895,8 @@ class NodeOrchestrator(NodeCoreBase):
             completed_steps=completed_step_ids,
             failed_steps=failed_step_ids,
             final_result=all_results if all_results else None,
+            actions_emitted=all_actions,
+            parallel_executions=parallel_executions,
         )
 
     async def _execute_batch_workflow(
