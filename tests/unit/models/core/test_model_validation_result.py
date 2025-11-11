@@ -31,11 +31,15 @@ class TestModelValidationResult:
 
         data = result.model_dump()
         assert isinstance(data, dict)
-        assert data == {}
+        # After model reorganization, ModelValidationResult has default field values
+        assert "is_valid" in data
+        assert data["is_valid"] is False
+        assert "summary" in data
+        assert data["summary"] == "Validation completed"
 
     def test_validation_result_deserialization(self):
         """Test ModelValidationResult deserialization."""
-        data = {}
+        data: dict[str, str] = {}
         result = ModelValidationResult.model_validate(data)
         assert isinstance(result, ModelValidationResult)
 
@@ -45,7 +49,10 @@ class TestModelValidationResult:
 
         json_data = result.model_dump_json()
         assert isinstance(json_data, str)
-        assert json_data == "{}"
+        # After model reorganization, ModelValidationResult has default field values
+        assert "is_valid" in json_data
+        assert "summary" in json_data
+        assert "Validation completed" in json_data
 
     def test_validation_result_roundtrip(self):
         """Test serialization and deserialization roundtrip."""
@@ -170,7 +177,7 @@ class TestModelValidationResult:
         """Test ModelValidationResult docstring."""
         assert ModelValidationResult.__doc__ is not None
         assert (
-            "Generic validationresult model for common use"
+            "Unified validation result model for all ONEX components"
             in ModelValidationResult.__doc__
         )
 
@@ -182,5 +189,5 @@ class TestModelValidationResult:
         """Test ModelValidationResult module."""
         assert (
             ModelValidationResult.__module__
-            == "omnibase_core.models.core.model_validation_result"
+            == "omnibase_core.models.common.model_validation_result"
         )

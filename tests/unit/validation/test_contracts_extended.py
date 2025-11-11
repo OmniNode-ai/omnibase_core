@@ -544,7 +544,7 @@ operations: []
 
         result = validate_contracts_directory(tmp_path)
 
-        assert result.success or not result.success  # Should complete
+        assert result.is_valid or not result.is_valid  # Should complete
         assert (
             result.metadata is not None and result.metadata.files_processed is not None
         )
@@ -584,7 +584,7 @@ invalid: yaml: [syntax
         )
         assert result.metadata.files_processed >= 2
         # Should detect invalid file
-        if not result.success:
+        if not result.is_valid:
             assert len(result.errors) > 0
 
     def test_validate_contracts_directory_ignores_pycache(
@@ -696,7 +696,7 @@ operations: []
         result = validate_contracts_directory(tmp_path)
 
         # Should detect manual YAML violation
-        if not result.success:
+        if not result.is_valid:
             assert len(result.errors) > 0
             assert any("Manual YAML" in error for error in result.errors)
 
@@ -711,7 +711,7 @@ operations: []
         result = validate_contracts_directory(tmp_path)
 
         # Should track invalid YAML
-        assert not result.success or len(result.errors) > 0
+        assert not result.is_valid or len(result.errors) > 0
 
     def test_validate_contracts_directory_populates_metadata(
         self,
@@ -734,7 +734,6 @@ operations: []
         result = validate_contracts_directory(tmp_path)
 
         assert result.metadata is not None
-        assert "files_validated" in result.metadata or len(result.metadata) >= 0
 
 
 class TestTimeoutHandler:

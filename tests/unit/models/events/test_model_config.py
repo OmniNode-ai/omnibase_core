@@ -59,7 +59,7 @@ class TestModelConfigModule:
 
     def test_module_availability(self):
         """Test that the module is available in the events package."""
-        from omnibase_core.models.events import model_config
+        from omnibase_core.models.events import model_event_base_config as model_config
 
         # Module should be accessible
         assert model_config is not None
@@ -71,8 +71,8 @@ class TestModelConfigModule:
         """Test that the module can be imported via different paths."""
         # Direct import
         # Package import
-        from omnibase_core.models.events import model_config
-        from omnibase_core.models.events.model_config import (
+        from omnibase_core.models.events import model_event_base_config as model_config
+        from omnibase_core.models.events.model_event_base_config import (
             BaseModel as DirectBaseModel,
         )
 
@@ -83,7 +83,7 @@ class TestModelConfigModule:
 
     def test_base_model_validation(self):
         """Test BaseModel validation functionality."""
-        from omnibase_core.models.events.model_config import BaseModel
+        from omnibase_core.models.events.model_event_base_config import BaseModel
 
         class ValidationModel(BaseModel):
             required_field: str
@@ -109,7 +109,7 @@ class TestModelConfigModule:
 
     def test_base_model_serialization(self):
         """Test BaseModel serialization functionality."""
-        from omnibase_core.models.events.model_config import BaseModel
+        from omnibase_core.models.events.model_event_base_config import BaseModel
 
         class SerializationModel(BaseModel):
             name: str
@@ -131,7 +131,7 @@ class TestModelConfigModule:
 
     def test_base_model_inheritance(self):
         """Test that BaseModel can be inherited properly."""
-        from omnibase_core.models.events.model_config import BaseModel
+        from omnibase_core.models.events.model_event_base_config import BaseModel
 
         class ParentModel(BaseModel):
             base_field: str

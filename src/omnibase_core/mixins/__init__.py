@@ -39,7 +39,13 @@ from omnibase_core.mixins.mixin_event_handler import MixinEventHandler
 from omnibase_core.mixins.mixin_event_listener import MixinEventListener
 from omnibase_core.mixins.mixin_fail_fast import MixinFailFast
 from omnibase_core.mixins.mixin_hash_computation import MixinHashComputation
-from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
+from omnibase_core.mixins.mixin_health_check import (
+    MixinHealthCheck,
+    check_http_service_health,
+    check_kafka_health,
+    check_postgresql_health,
+    check_redis_health,
+)
 from omnibase_core.mixins.mixin_hybrid_execution import MixinHybridExecution
 from omnibase_core.mixins.mixin_intent_publisher import MixinIntentPublisher
 from omnibase_core.mixins.mixin_introspect_from_contract import (
@@ -102,4 +108,9 @@ __all__ = [
     "SerializableMixin",
     "MixinYAMLSerialization",
     "MixinIntentPublisher",
+    # Health check utility functions
+    "check_postgresql_health",
+    "check_kafka_health",
+    "check_redis_health",
+    "check_http_service_health",
 ]

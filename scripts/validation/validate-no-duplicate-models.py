@@ -12,8 +12,8 @@ Exit codes:
 """
 
 import sys
-from pathlib import Path
 from collections import defaultdict
+from pathlib import Path
 
 
 def find_duplicate_filenames(src_dir: Path) -> dict[str, list[Path]]:
