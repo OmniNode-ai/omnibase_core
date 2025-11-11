@@ -524,7 +524,6 @@ done
 ## Related Documentation
 
 - [COVERAGE.md](COVERAGE.md) - Coverage testing overview and usage
-- [TEST-SUITE-EVENT-LOOP-FIX-SUMMARY.md](TEST-SUITE-EVENT-LOOP-FIX-SUMMARY.md) - Event loop fixes in tests
 - `.github/workflows/test.yml` - CI test configuration
 - `scripts/run-coverage-parallel.sh` - Parallel coverage script
 

@@ -441,10 +441,10 @@ grep "Event loop" <ci-log-file>
 ```python
 
 **Resolution**:
-- See [docs/testing/TEST-SUITE-EVENT-LOOP-FIX-SUMMARY.md](../testing/TEST-SUITE-EVENT-LOOP-FIX-SUMMARY.md)
 - Ensure `pytest-asyncio` mode: `asyncio_mode = auto`
 - Add explicit cleanup in fixtures
 - Use `@pytest.mark.asyncio` decorators
+- Review event loop cleanup in async fixtures
 
 ### Issue 5: Memory Exhaustion
 
@@ -737,7 +737,6 @@ gh run watch
 - **[CLAUDE.md](../../CLAUDE.md#ci-performance-benchmarks)** - CI Performance Benchmarks section
 - **[CI_TEST_STRATEGY.md](../testing/CI_TEST_STRATEGY.md)** - Overall CI test strategy
 - **[PARALLEL_TESTING.md](../testing/PARALLEL_TESTING.md)** - Parallel testing configuration
-- **[TEST-SUITE-EVENT-LOOP-FIX-SUMMARY.md](../testing/TEST-SUITE-EVENT-LOOP-FIX-SUMMARY.md)** - Event loop issues
 - **GitHub Actions Workflow**: [`.github/workflows/test.yml`](../../.github/workflows/test.yml)
 - **GitHub CLI Docs**: https://cli.github.com/manual/
 
