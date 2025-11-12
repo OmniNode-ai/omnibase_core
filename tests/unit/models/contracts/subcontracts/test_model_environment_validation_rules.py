@@ -362,16 +362,20 @@ class TestModelEnvironmentValidationRulesEdgeCases:
                     config_key="key2",
                     validation_rule="rule2",
                     rule_type=EnumEnvironmentValidationRuleType.FORMAT,
+                    format_pattern="[a-z]+",
                 ),
                 ModelEnvironmentValidationRule(
                     config_key="key3",
                     validation_rule="rule3",
                     rule_type=EnumEnvironmentValidationRuleType.RANGE,
+                    min_value=0.0,
+                    max_value=100.0,
                 ),
                 ModelEnvironmentValidationRule(
                     config_key="key4",
                     validation_rule="rule4",
                     rule_type=EnumEnvironmentValidationRuleType.ALLOWED_VALUES,
+                    allowed_values=["value1", "value2", "value3"],
                 ),
             ],
         )
