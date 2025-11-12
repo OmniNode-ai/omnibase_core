@@ -1,4 +1,4 @@
-from .error_fail_fast import FailFastError
+from .exception_fail_fast import FailFastError
 
 
 class DependencyFailedError(FailFastError):
