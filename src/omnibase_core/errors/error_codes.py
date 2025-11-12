@@ -50,9 +50,6 @@ from pydantic import BaseModel, ConfigDict, Field
 # Safe runtime imports - no circular dependency risk
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
-# Removed unused import that caused circular dependency:
-# from omnibase_core.types.core_types import TypedDictBasicErrorContext
-
 # Type-only imports - protected by TYPE_CHECKING to prevent circular imports
 if TYPE_CHECKING:
     from omnibase_core.models.common.model_error_context import ModelErrorContext

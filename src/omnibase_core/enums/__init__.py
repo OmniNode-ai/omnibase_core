@@ -202,10 +202,6 @@ from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 # These need to be created or their references need to be updated.
 
 
-# Event and logging enums
-# from .events import EnumLogLevel  # Conflicts with enum_log_level.EnumLogLevel
-
-
 __all__ = [
     # Artifact domain
     "EnumArtifactType",
