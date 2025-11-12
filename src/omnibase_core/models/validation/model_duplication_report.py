@@ -12,7 +12,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-from omnibase_core.validation.exceptions import ConfigurationError, InputValidationError
+from omnibase_core.errors.exceptions import ConfigurationError, InputValidationError
 from omnibase_core.validation.validation_utils import (
     ModelDuplicationInfo,
     ModelProtocolInfo,

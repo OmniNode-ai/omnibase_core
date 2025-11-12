@@ -6,7 +6,7 @@ States model for node introspection.
 
 from pydantic import BaseModel
 
-from omnibase_core.models.core.model_state import ModelState
+from omnibase_core.models.infrastructure.model_state import ModelState
 
 
 class ModelStates(BaseModel):

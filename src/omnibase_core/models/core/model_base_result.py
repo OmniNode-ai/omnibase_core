@@ -26,7 +26,7 @@ from typing import Any, Generic
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.results.model_generic_metadata import ModelGenericMetadata
+from omnibase_core.models.results.model_simple_metadata import ModelGenericMetadata
 
 from .model_base_error import ModelBaseError
 

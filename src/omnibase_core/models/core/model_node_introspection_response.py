@@ -17,9 +17,9 @@ from omnibase_core.models.core.model_event_channels import ModelEventChannels
 from omnibase_core.models.core.model_node_introspection_response_config import (
     ModelNodeIntrospectionResponseConfig,
 )
-from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.models.core.model_state_models import ModelStates
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.nodes.model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 

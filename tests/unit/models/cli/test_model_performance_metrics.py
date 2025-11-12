@@ -9,7 +9,9 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.cli.model_performance_metrics import ModelPerformanceMetrics
+from omnibase_core.models.cli.model_cli_performance_metrics import (
+    ModelPerformanceMetrics,
+)
 
 
 class TestModelPerformanceMetricsBasics:

@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.errors import ModelOnexError
+from omnibase_core.models.core.model_trust_level import ModelTrustLevel
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.security.model_certificate_validation_level import (
     ModelCertificateValidationLevel,
@@ -27,7 +28,6 @@ from omnibase_core.models.security.model_rule_condition_value import (
 from omnibase_core.models.security.model_signature_requirements import (
     ModelSignatureRequirements,
 )
-from omnibase_core.models.security.model_trust_level import ModelTrustLevel
 
 
 class ModelTrustPolicy(BaseModel):
@@ -260,12 +260,29 @@ class ModelTrustPolicy(BaseModel):
         applicable_rules = self.get_applicable_rules(context)
 
         # Start with global defaults
+        # Map string trust level to ModelTrustLevel instance
+        trust_level_map = {
+            "untrusted": ModelTrustLevel.untrusted(),
+            "compromised": ModelTrustLevel.untrusted(),
+            "partial_trust": ModelTrustLevel(
+                trust_score=0.3,
+                trust_category="low",
+                display_name="Partial Trust",
+            ),
+            "standard": ModelTrustLevel.validated(),
+            "trusted": ModelTrustLevel.trusted(),
+            "high_trust": ModelTrustLevel.trusted(),
+        }
+        trust_level = trust_level_map.get(
+            self.default_trust_level, ModelTrustLevel.validated()
+        )
+
         requirements = ModelSignatureRequirements(
             minimum_signatures=self.global_minimum_signatures,
             required_algorithms=[],
             trusted_nodes=self.globally_trusted_nodes.copy(),
             compliance_tags=[],
-            trust_level=ModelTrustLevel(level=self.default_trust_level),
+            trust_level=trust_level,
             encryption_required=self.encryption_requirement != "none",
             certificate_validation=ModelCertificateValidationLevel(
                 level=self.certificate_validation

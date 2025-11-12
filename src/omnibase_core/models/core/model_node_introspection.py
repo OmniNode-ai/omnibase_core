@@ -53,14 +53,14 @@ from omnibase_core.models.core.model_error_codes import ModelErrorCodes
 
 # Import all separated models
 from omnibase_core.models.core.model_event_channels import ModelEventChannels
-from omnibase_core.models.core.model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.models.core.model_performance_profile_info import (
     ModelPerformanceProfileInfo,
 )
-from omnibase_core.models.core.model_state import ModelState
 from omnibase_core.models.core.model_state_field import ModelStateField
 from omnibase_core.models.core.model_state_models import ModelStates
 from omnibase_core.models.core.model_version_status import ModelVersionStatus
+from omnibase_core.models.infrastructure.model_state import ModelState
+from omnibase_core.models.nodes.model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,

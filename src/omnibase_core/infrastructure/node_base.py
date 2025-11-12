@@ -49,7 +49,7 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 if TYPE_CHECKING:
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-from omnibase_core.models.infrastructure.model_action import ModelAction
+from omnibase_core.models.infrastructure.model_protocol_action import ModelAction
 from omnibase_core.models.infrastructure.model_node_state import ModelNodeState
 from omnibase_core.models.infrastructure.model_node_workflow_result import (
     ModelNodeWorkflowResult,

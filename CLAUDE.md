@@ -215,8 +215,7 @@ omnibase_core/
 │   ├── primitives/             # Primitive types
 │   ├── types/                  # Type definitions
 │   ├── utils/                  # Utility functions
-│   ├── validation/             # Validation framework
-│   └── validators/             # Specific validators
+│   └── validation/             # Validation framework
 ├── tests/                      # Test suite
 │   ├── unit/                   # Unit tests (12,000+ tests)
 │   │   ├── enums/              # Enum tests

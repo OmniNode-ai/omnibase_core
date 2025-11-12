@@ -4,6 +4,8 @@ Node Management Models
 Models for node definitions, capabilities, configurations, and information.
 """
 
+from omnibase_core.models.core.model_node_info import ModelNodeInfo
+from omnibase_core.models.nodes.model_node_metadata_info import ModelNodeMetadataInfo
 from omnibase_core.types.typed_dict_deprecation_summary import (
     TypedDictDeprecationSummary,
 )
@@ -27,10 +29,8 @@ from .model_node_core_info_summary import ModelNodeCoreInfoSummary
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_execution_settings import ModelNodeExecutionSettings
 from .model_node_feature_flags import ModelNodeFeatureFlags
-from .model_node_info import ModelNodeInfo
 from .model_node_information import ModelNodeInformation
 from .model_node_information_summary import ModelNodeInformationSummary
-from .model_node_metadata_info import ModelNodeMetadataInfo
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
 from .model_node_resource_limits import ModelNodeResourceLimits
 from .model_node_type import ModelNodeType

@@ -17,7 +17,7 @@ class TypedDictValidatorInfo(TypedDict):
     Contains validator metadata including function, description, and arguments.
     """
 
-    func: Callable[..., "ModelValidationResult"]
+    func: Callable[..., "ModelValidationResult[None]"]
     description: str
     args: list[str]
 

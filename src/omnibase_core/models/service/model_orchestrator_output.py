@@ -11,7 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.models.core.model_custom_fields import ModelCustomFields
+from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 
 
 class ModelOrchestratorOutput(BaseModel):
@@ -72,6 +72,18 @@ class ModelOrchestratorOutput(BaseModel):
     metrics: dict[str, float] = Field(
         default_factory=dict,
         description="Performance metrics",
+    )
+
+    # Parallel execution tracking
+    parallel_executions: int = Field(
+        default=0,
+        description="Number of parallel execution batches completed",
+    )
+
+    # Actions tracking
+    actions_emitted: list[Any] = Field(
+        default_factory=list,
+        description="List of actions emitted during workflow execution",
     )
 
     # Custom outputs for extensibility

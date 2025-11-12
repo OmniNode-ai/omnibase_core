@@ -10,8 +10,8 @@ Type-safe health check metadata that replaces Dict[str, Any] usage.
 
 from pydantic import BaseModel
 
-from omnibase_core.models.core.model_custom_fields import ModelCustomFields
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 
 
 class ModelHealthCheckMetadata(BaseModel):

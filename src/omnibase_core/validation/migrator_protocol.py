@@ -13,6 +13,9 @@ from pathlib import Path
 from typing import cast
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.models.common.model_validation_metadata import (
+    ModelValidationMetadata,
+)
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )
@@ -412,7 +415,9 @@ class ProtocolMigrator:
 
         return references
 
-    def rollback_migration(self, result: ModelMigrationResult) -> ModelValidationResult:
+    def rollback_migration(
+        self, result: ModelMigrationResult
+    ) -> ModelValidationResult[None]:
         """
         Rollback a migration if needed.
 
@@ -424,7 +429,7 @@ class ProtocolMigrator:
         """
         if not result.rollback_available:
             return ModelValidationResult(
-                success=False,
+                is_valid=False,
                 errors=[
                     "Rollback not available - migration was not executed or was a dry run",
                 ],
@@ -463,6 +468,6 @@ class ProtocolMigrator:
             )
 
         return ModelValidationResult(
-            success=True,
+            is_valid=True,
             errors=[],
         )

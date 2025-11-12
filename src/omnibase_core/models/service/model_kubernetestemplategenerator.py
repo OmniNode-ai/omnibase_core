@@ -1,7 +1,7 @@
 import json
 from typing import Any
 
-from omnibase_core.models.configuration.model_node_service_config import (
+from omnibase_core.models.service.model_node_service_config import (
     ModelNodeServiceConfig,
 )
 from omnibase_core.utils.safe_yaml_loader import serialize_data_to_yaml
@@ -78,13 +78,13 @@ class ModelKubernetesTemplateGenerator:
         if self.config.health_check.enabled:
             health_probe = {
                 "httpGet": {
-                    "path": self.config.health_check.endpoint,
+                    "path": self.config.health_check.check_path,
                     "port": self.config.network.port,
                 },
-                "initialDelaySeconds": self.config.health_check.start_period_seconds,
-                "periodSeconds": self.config.health_check.interval_seconds,
+                "initialDelaySeconds": 30,  # Default startup delay
+                "periodSeconds": self.config.health_check.check_interval_seconds,
                 "timeoutSeconds": self.config.health_check.timeout_seconds,
-                "failureThreshold": self.config.health_check.retries,
+                "failureThreshold": self.config.health_check.unhealthy_threshold,
             }
             container = deployment["spec"]["template"]["spec"]["containers"][0]
             container["livenessProbe"] = health_probe
@@ -116,12 +116,12 @@ class ModelKubernetesTemplateGenerator:
             },
         ]
 
-        if self.config.monitoring.metrics_enabled:
+        if self.config.monitoring.prometheus_enabled:
             ports.append(
                 {
                     "name": "metrics",
-                    "port": self.config.monitoring.metrics_port,
-                    "targetPort": self.config.monitoring.metrics_port,
+                    "port": self.config.monitoring.prometheus_port,
+                    "targetPort": self.config.monitoring.prometheus_port,
                     "protocol": "TCP",
                 },
             )

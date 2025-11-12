@@ -51,10 +51,10 @@ if TYPE_CHECKING:
 
 
 def get_validation_tools() -> tuple[
-    Callable[[str, int], "ModelValidationResult"],
-    Callable[[str, int, bool], "ModelValidationResult"],
-    Callable[[str], "ModelValidationResult"],
-    Callable[[str, bool], "ModelValidationResult"],
+    Callable[[str, int], "ModelValidationResult[None]"],
+    Callable[[str, int, bool], "ModelValidationResult[None]"],
+    Callable[[str], "ModelValidationResult[None]"],
+    Callable[[str, bool], "ModelValidationResult[None]"],
 ]:
     """
     Lazy load validation tools to avoid import-time penalty.
@@ -78,9 +78,9 @@ def get_validation_tools() -> tuple[
 
 
 def get_validation_suite() -> tuple[
-    type["ModelValidationResult"],
+    type["ModelValidationResult[None]"],
     type,
-    Callable[[str], dict[str, "ModelValidationResult"]],
+    Callable[[str], dict[str, "ModelValidationResult[None]"]],
 ]:
     """
     Lazy load complete validation suite.

@@ -82,18 +82,16 @@ USER onex
             f"\n# Expose service port\nEXPOSE {self.config.network.port}\n"
         )
 
-        if self.config.monitoring.metrics_enabled:
-            dockerfile_content += f"EXPOSE {self.config.monitoring.metrics_port}\n"
+        if self.config.monitoring.prometheus_enabled:
+            dockerfile_content += f"EXPOSE {self.config.monitoring.prometheus_port}\n"
 
         # Add health check
         if self.config.health_check.enabled:
             health_cmd = " ".join(self.config.get_health_check_command())
             dockerfile_content += f"""
 # Health check
-HEALTHCHECK --interval={self.config.health_check.interval_seconds}s \\
+HEALTHCHECK --interval={self.config.health_check.check_interval_seconds}s \\
             --timeout={self.config.health_check.timeout_seconds}s \\
-            --start-period={self.config.health_check.start_period_seconds}s \\
-            --retries={self.config.health_check.retries} \\
             CMD {health_cmd}
 """
 
@@ -124,9 +122,9 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
 
         # Add port mappings
         ports = [f"{self.config.network.port}:{self.config.network.port}"]
-        if self.config.monitoring.metrics_enabled:
+        if self.config.monitoring.prometheus_enabled:
             ports.append(
-                f"{self.config.monitoring.metrics_port}:{self.config.monitoring.metrics_port}"
+                f"{self.config.monitoring.prometheus_port}:{self.config.monitoring.prometheus_port}"
             )
         service_def["ports"] = ports
 
@@ -135,10 +133,8 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
             health_cmd = " ".join(self.config.get_health_check_command())
             service_def["healthcheck"] = {
                 "test": health_cmd,
-                "interval": f"{self.config.health_check.interval_seconds}s",
+                "interval": f"{self.config.health_check.check_interval_seconds}s",
                 "timeout": f"{self.config.health_check.timeout_seconds}s",
-                "retries": self.config.health_check.retries,
-                "start_period": f"{self.config.health_check.start_period_seconds}s",
             }
 
         # Add resource limits
@@ -160,20 +156,6 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
         # Add network configuration
         if self.config.network.network_name:
             service_def["networks"] = [self.config.network.network_name]
-
-        # Add volume mounts for TLS certificates
-        if self.config.security.enable_tls:
-            volumes = []
-            if self.config.security.cert_file:
-                volumes.append(
-                    f"{self.config.security.cert_file}:/app/certs/cert.pem:ro"
-                )
-            if self.config.security.key_file:
-                volumes.append(f"{self.config.security.key_file}:/app/certs/key.pem:ro")
-            if self.config.security.ca_file:
-                volumes.append(f"{self.config.security.ca_file}:/app/certs/ca.pem:ro")
-            if volumes:
-                service_def["volumes"] = volumes
 
         return {service_name: service_def}
 
@@ -255,7 +237,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
         }
 
         # Monitoring stack (if monitoring is enabled)
-        if self.config.monitoring.metrics_enabled:
+        if self.config.monitoring.prometheus_enabled:
             dependencies["prometheus"] = {
                 "image": "prom/prometheus:latest",
                 "ports": ["9090:9090"],
@@ -283,17 +265,15 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
 
     def _needs_volumes(self) -> bool:
         """Check if the service needs volume definitions."""
-        return (
-            self.config.monitoring.metrics_enabled
-            or self.config.security.enable_tls
-            or any("redis" in dep for dep in self.config.depends_on)
+        return self.config.monitoring.prometheus_enabled or any(
+            "redis" in dep for dep in self.config.depends_on
         )
 
     def _get_volume_definitions(self) -> dict[str, Any]:
         """Get volume definitions for the compose file."""
         volumes: dict[str, Any] = {}
 
-        if self.config.monitoring.metrics_enabled:
+        if self.config.monitoring.prometheus_enabled:
             volumes.update({"prometheus-data": {}, "grafana-data": {}})
 
         if any("redis" in dep for dep in self.config.depends_on):

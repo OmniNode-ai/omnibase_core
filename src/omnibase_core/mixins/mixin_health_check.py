@@ -36,8 +36,8 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-from omnibase_core.models.core.model_health_status import ModelHealthStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.health.model_health_status import ModelHealthStatus
 
 
 class MixinHealthCheck:
@@ -103,14 +103,7 @@ class MixinHealthCheck:
         )
 
         # Basic health - node is running
-        base_health = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            message=f"{self.__class__.__name__} is operational",
-            timestamp=datetime.now(UTC).isoformat(),
-            uptime_seconds=0,
-            memory_usage_mb=0,
-            cpu_usage_percent=0.0,
-        )
+        base_health = ModelHealthStatus.create_healthy(score=1.0)
 
         # Get custom health checks
         health_checks = self.get_health_checks()
@@ -119,7 +112,7 @@ class MixinHealthCheck:
             emit_log_event(
                 LogLevel.DEBUG,
                 "✅ HEALTH_CHECK: No custom checks, returning base health",
-                {"status": base_health.status.value},
+                {"status": base_health.status},
             )
             return base_health
 
@@ -161,33 +154,39 @@ class MixinHealthCheck:
                         {"check_name": check_func.__name__, "type": str(type(result))},
                     )
                     # Create fallback result for invalid return type
-                    result = ModelHealthStatus(
-                        status=EnumNodeHealthStatus.UNHEALTHY,
-                        message=f"Invalid return type from {check_func.__name__}: {type(result)}",
-                        timestamp=datetime.now(UTC).isoformat(),
-                        uptime_seconds=0,
-                        memory_usage_mb=0,
-                        cpu_usage_percent=0.0,
+                    from omnibase_core.models.health.model_health_issue import (
+                        ModelHealthIssue,
+                    )
+
+                    result = ModelHealthStatus.create_unhealthy(
+                        score=0.0,
+                        issues=[
+                            ModelHealthIssue.create_connectivity_issue(
+                                message=f"Invalid return type from {check_func.__name__}: {type(result)}",
+                                severity="critical",
+                            )
+                        ],
                     )
                 check_results.append(result)
 
                 # Update overall status (degraded if any check fails)
-                if result.status == EnumNodeHealthStatus.UNHEALTHY:
+                if result.status == "unhealthy":
                     overall_status = EnumNodeHealthStatus.UNHEALTHY
                 elif (
-                    result.status == EnumNodeHealthStatus.DEGRADED
+                    result.status == "degraded"
                     and overall_status != EnumNodeHealthStatus.UNHEALTHY
                 ):
                     overall_status = EnumNodeHealthStatus.DEGRADED
 
-                # Collect messages
-                if result.message:
-                    messages.append(f"{check_func.__name__}: {result.message}")
+                # Collect messages - use issues instead
+                if result.issues:
+                    for issue in result.issues:
+                        messages.append(f"{check_func.__name__}: {issue.message}")
 
                 emit_log_event(
                     LogLevel.DEBUG,
                     f"✅ Health check completed: {check_func.__name__}",
-                    {"check_name": check_func.__name__, "status": result.status.value},
+                    {"check_name": check_func.__name__, "status": result.status},
                 )
 
             except Exception as e:
@@ -202,28 +201,38 @@ class MixinHealthCheck:
                 messages.append(f"{check_func.__name__}: ERROR - {e!s}")
 
                 # Create error result
-                error_result = ModelHealthStatus(
-                    status=EnumNodeHealthStatus.UNHEALTHY,
-                    message=f"Check failed with error: {e!s}",
-                    timestamp=datetime.now(UTC).isoformat(),
-                    uptime_seconds=0,
-                    memory_usage_mb=0,
-                    cpu_usage_percent=0.0,
+                from omnibase_core.models.health.model_health_issue import (
+                    ModelHealthIssue,
+                )
+
+                error_result = ModelHealthStatus.create_unhealthy(
+                    score=0.0,
+                    issues=[
+                        ModelHealthIssue.create_connectivity_issue(
+                            message=f"Check failed with error: {e!s}",
+                            severity="critical",
+                        )
+                    ],
                 )
                 check_results.append(error_result)
 
         # Build final health status
-        final_message = base_health.message
-        if messages:
-            final_message = f"{base_health.message}. Checks: {'; '.join(messages)}"
+        # Calculate health score based on overall status
+        health_score = 1.0
+        if overall_status == EnumNodeHealthStatus.DEGRADED:
+            health_score = 0.6
+        elif overall_status == EnumNodeHealthStatus.UNHEALTHY:
+            health_score = 0.2
+
+        # Collect all issues from check results
+        all_issues = []
+        for check_result in check_results:
+            all_issues.extend(check_result.issues)
 
         final_health = ModelHealthStatus(
-            status=overall_status,
-            message=final_message,
-            timestamp=datetime.now(UTC).isoformat(),
-            uptime_seconds=0,
-            memory_usage_mb=0,
-            cpu_usage_percent=0.0,
+            status=overall_status.value,
+            health_score=health_score,
+            issues=all_issues,
         )
 
         emit_log_event(
@@ -252,14 +261,7 @@ class MixinHealthCheck:
         )
 
         # Basic health - node is running
-        base_health = ModelHealthStatus(
-            status=EnumNodeHealthStatus.HEALTHY,
-            message=f"{self.__class__.__name__} is operational",
-            timestamp=datetime.now(UTC).isoformat(),
-            uptime_seconds=0,
-            memory_usage_mb=0,
-            cpu_usage_percent=0.0,
-        )
+        base_health = ModelHealthStatus.create_healthy(score=1.0)
 
         # Get custom health checks
         health_checks = self.get_health_checks()
@@ -288,13 +290,18 @@ class MixinHealthCheck:
                                 "type": str(type(result)),
                             },
                         )
-                        sync_result = ModelHealthStatus(
-                            status=EnumNodeHealthStatus.UNHEALTHY,
-                            message=f"Invalid return type from {check_func.__name__}: {type(result)}",
-                            timestamp=datetime.now(UTC).isoformat(),
-                            uptime_seconds=0,
-                            memory_usage_mb=0,
-                            cpu_usage_percent=0.0,
+                        from omnibase_core.models.health.model_health_issue import (
+                            ModelHealthIssue,
+                        )
+
+                        sync_result = ModelHealthStatus.create_unhealthy(
+                            score=0.0,
+                            issues=[
+                                ModelHealthIssue.create_connectivity_issue(
+                                    message=f"Invalid return type from {check_func.__name__}: {type(result)}",
+                                    severity="critical",
+                                )
+                            ],
                         )
 
                     async def wrap_sync(
@@ -323,19 +330,44 @@ class MixinHealthCheck:
         for check_name, task in check_tasks:
             try:
                 result = await task
+
+                # Validate result type (handle invalid return types)
+                if not isinstance(result, ModelHealthStatus):
+                    emit_log_event(  # type: ignore[unreachable]
+                        LogLevel.ERROR,
+                        f"Async health check returned invalid type: {check_name}",
+                        {"check_name": check_name, "type": str(type(result))},
+                    )
+                    # Create fallback result for invalid return type
+                    from omnibase_core.models.health.model_health_issue import (
+                        ModelHealthIssue,
+                    )
+
+                    result = ModelHealthStatus.create_unhealthy(
+                        score=0.0,
+                        issues=[
+                            ModelHealthIssue.create_connectivity_issue(
+                                message=f"Invalid return type from {check_name}: {type(result)}",
+                                severity="critical",
+                            )
+                        ],
+                    )
+
                 check_results.append(result)
 
                 # Update overall status
-                if result.status == EnumNodeHealthStatus.UNHEALTHY:
+                if result.status == "unhealthy":
                     overall_status = EnumNodeHealthStatus.UNHEALTHY
                 elif (
-                    result.status == EnumNodeHealthStatus.DEGRADED
+                    result.status == "degraded"
                     and overall_status != EnumNodeHealthStatus.UNHEALTHY
                 ):
                     overall_status = EnumNodeHealthStatus.DEGRADED
 
-                if result.message:
-                    messages.append(f"{check_name}: {result.message}")
+                # Collect messages from issues
+                if result.issues:
+                    for issue in result.issues:
+                        messages.append(f"{check_name}: {issue.message}")
 
             except Exception as e:
                 emit_log_event(
@@ -346,18 +378,39 @@ class MixinHealthCheck:
                 overall_status = EnumNodeHealthStatus.UNHEALTHY
                 messages.append(f"{check_name}: ERROR - {e!s}")
 
+                # Create error result for failed check
+                from omnibase_core.models.health.model_health_issue import (
+                    ModelHealthIssue,
+                )
+
+                error_result = ModelHealthStatus.create_unhealthy(
+                    score=0.0,
+                    issues=[
+                        ModelHealthIssue.create_connectivity_issue(
+                            message=f"Check failed with error: {e!s}",
+                            severity="critical",
+                        )
+                    ],
+                )
+                check_results.append(error_result)
+
         # Build final health status
-        final_message = base_health.message
-        if messages:
-            final_message = f"{base_health.message}. Checks: {'; '.join(messages)}"
+        # Calculate health score based on overall status
+        health_score = 1.0
+        if overall_status == EnumNodeHealthStatus.DEGRADED:
+            health_score = 0.6
+        elif overall_status == EnumNodeHealthStatus.UNHEALTHY:
+            health_score = 0.2
+
+        # Collect all issues from check results
+        all_issues = []
+        for check_result in check_results:
+            all_issues.extend(check_result.issues)
 
         return ModelHealthStatus(
-            status=overall_status,
-            message=final_message,
-            timestamp=datetime.now(UTC).isoformat(),
-            uptime_seconds=0,
-            memory_usage_mb=0,
-            cpu_usage_percent=0.0,
+            status=overall_status.value,
+            health_score=health_score,
+            issues=all_issues,
         )
 
     def get_health_status(self) -> dict[str, Any]:
@@ -378,10 +431,10 @@ class MixinHealthCheck:
         # Convert to dictionary format expected by tests
         return {
             "node_id": getattr(self, "node_id", "unknown"),
-            "is_healthy": health.status == EnumNodeHealthStatus.HEALTHY,
-            "status": health.status.value,
-            "message": health.message,
-            "timestamp": health.timestamp,
+            "is_healthy": health.status == "healthy",
+            "status": health.status,
+            "health_score": health.health_score,
+            "issues": [issue.message for issue in health.issues],
         }
 
     def check_dependency_health(
@@ -402,27 +455,417 @@ class MixinHealthCheck:
         try:
             is_healthy = check_func()
 
-            return ModelHealthStatus(
-                status=(
-                    EnumNodeHealthStatus.HEALTHY
-                    if is_healthy
-                    else EnumNodeHealthStatus.UNHEALTHY
-                ),
-                message=f"{dependency_name} is {'available' if is_healthy else 'unavailable'}",
-                timestamp=datetime.now(UTC).isoformat(),
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
-            )
+            if is_healthy:
+                return ModelHealthStatus.create_healthy(score=1.0)
+            else:
+                from omnibase_core.models.health.model_health_issue import (
+                    ModelHealthIssue,
+                )
+
+                return ModelHealthStatus.create_unhealthy(
+                    score=0.0,
+                    issues=[
+                        ModelHealthIssue.create_connectivity_issue(
+                            message=f"{dependency_name} is unavailable",
+                            severity="high",
+                        )
+                    ],
+                )
 
         except (
             Exception
         ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
-            return ModelHealthStatus(
-                status=EnumNodeHealthStatus.UNHEALTHY,
-                message=f"{dependency_name} check failed: {e!s}",
-                timestamp=datetime.now(UTC).isoformat(),
-                uptime_seconds=0,
-                memory_usage_mb=0,
-                cpu_usage_percent=0.0,
+            from omnibase_core.models.health.model_health_issue import ModelHealthIssue
+
+            return ModelHealthStatus.create_unhealthy(
+                score=0.0,
+                issues=[
+                    ModelHealthIssue.create_connectivity_issue(
+                        message=f"{dependency_name} check failed: {e!s}",
+                        severity="critical",
+                    )
+                ],
             )
+
+
+# Service-specific health check utility functions
+
+
+async def check_postgresql_health(
+    connection_pool: Any,
+    timeout_seconds: float = 3.0,
+) -> ModelHealthStatus:
+    """
+    Check PostgreSQL database health.
+
+    Tests database connectivity by executing a simple query.
+    Compatible with asyncpg, psycopg3, and SQLAlchemy async engines.
+
+    Args:
+        connection_pool: Database connection pool or engine
+        timeout_seconds: Timeout for the health check query
+
+    Returns:
+        ModelHealthStatus with connectivity details
+
+    Example:
+        async def _check_database(self) -> ModelHealthStatus:
+            return await check_postgresql_health(
+                self.db_pool,
+                timeout_seconds=2.0
+            )
+    """
+    from omnibase_core.models.health.model_health_issue import ModelHealthIssue
+
+    try:
+        start_time = datetime.now(UTC)
+
+        # Try asyncpg-style connection pool
+        if hasattr(connection_pool, "execute"):
+            # asyncpg pool
+            await asyncio.wait_for(
+                connection_pool.execute("SELECT 1"),
+                timeout=timeout_seconds,
+            )
+        elif hasattr(connection_pool, "connection"):
+            # SQLAlchemy async engine
+            async with connection_pool.connection() as conn:
+                await asyncio.wait_for(
+                    conn.execute("SELECT 1"),
+                    timeout=timeout_seconds,
+                )
+        else:
+            # Fallback: assume healthy if pool exists
+            emit_log_event(
+                LogLevel.WARNING,
+                "PostgreSQL health check: Unknown connection pool type",
+                {"pool_type": type(connection_pool).__name__},
+            )
+
+        duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
+
+        return ModelHealthStatus.create_healthy(score=1.0)
+
+    except TimeoutError:
+        return ModelHealthStatus.create_unhealthy(
+            score=0.0,
+            issues=[
+                ModelHealthIssue.create_connectivity_issue(
+                    message=f"PostgreSQL query timed out after {timeout_seconds}s",
+                    severity="critical",
+                )
+            ],
+        )
+
+    except (
+        Exception
+    ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+        emit_log_event(
+            LogLevel.ERROR,
+            "PostgreSQL health check failed",
+            {"error": str(e), "error_type": type(e).__name__},
+        )
+
+        return ModelHealthStatus.create_unhealthy(
+            score=0.0,
+            issues=[
+                ModelHealthIssue.create_connectivity_issue(
+                    message=f"PostgreSQL connection failed: {e!s}",
+                    severity="critical",
+                )
+            ],
+        )
+
+
+async def check_kafka_health(
+    kafka_producer: Any,
+    timeout_seconds: float = 3.0,
+) -> ModelHealthStatus:
+    """
+    Check Kafka/Redpanda broker health.
+
+    Tests Kafka connectivity by checking broker connection status.
+    Compatible with aiokafka and confluent-kafka async producers.
+
+    Args:
+        kafka_producer: Kafka producer instance (aiokafka or confluent-kafka)
+        timeout_seconds: Timeout for the health check
+
+    Returns:
+        ModelHealthStatus with connectivity details
+
+    Example:
+        async def _check_kafka(self) -> ModelHealthStatus:
+            return await check_kafka_health(
+                self.kafka_producer,
+                timeout_seconds=2.0
+            )
+    """
+    from omnibase_core.models.health.model_health_issue import ModelHealthIssue
+
+    try:
+        # Check aiokafka-style producer
+        if hasattr(kafka_producer, "bootstrap_connected"):
+            is_connected = await asyncio.wait_for(
+                kafka_producer.bootstrap_connected(),
+                timeout=timeout_seconds,
+            )
+
+            if not is_connected:
+                return ModelHealthStatus.create_unhealthy(
+                    score=0.0,
+                    issues=[
+                        ModelHealthIssue.create_connectivity_issue(
+                            message="Kafka broker not connected",
+                            severity="critical",
+                        )
+                    ],
+                )
+
+            return ModelHealthStatus.create_healthy(score=1.0)
+
+        # Check confluent-kafka-style producer
+        elif hasattr(kafka_producer, "list_topics"):
+            # Attempt to list topics (lightweight operation)
+            await asyncio.wait_for(
+                asyncio.to_thread(kafka_producer.list_topics, timeout=timeout_seconds),
+                timeout=timeout_seconds,
+            )
+
+            return ModelHealthStatus.create_healthy(score=1.0)
+
+        else:
+            # Unknown producer type - assume healthy if exists
+            emit_log_event(
+                LogLevel.WARNING,
+                "Kafka health check: Unknown producer type",
+                {"producer_type": type(kafka_producer).__name__},
+            )
+
+            return ModelHealthStatus.create_degraded(
+                score=0.6,
+                issues=[
+                    ModelHealthIssue.create_connectivity_issue(
+                        message="Kafka producer type not recognized, cannot verify connection",
+                        severity="medium",
+                    )
+                ],
+            )
+
+    except TimeoutError:
+        return ModelHealthStatus.create_degraded(
+            score=0.4,
+            issues=[
+                ModelHealthIssue.create_connectivity_issue(
+                    message=f"Kafka health check timed out after {timeout_seconds}s",
+                    severity="high",
+                )
+            ],
+        )
+
+    except (
+        Exception
+    ) as e:  # fallback-ok: health check should return DEGRADED status, not crash
+        emit_log_event(
+            LogLevel.ERROR,
+            "Kafka health check failed",
+            {"error": str(e), "error_type": type(e).__name__},
+        )
+
+        return ModelHealthStatus.create_degraded(
+            score=0.3,
+            issues=[
+                ModelHealthIssue.create_connectivity_issue(
+                    message=f"Kafka connection check failed: {e!s}",
+                    severity="high",
+                )
+            ],
+        )
+
+
+async def check_redis_health(
+    redis_client: Any,
+    timeout_seconds: float = 3.0,
+) -> ModelHealthStatus:
+    """
+    Check Redis connection health.
+
+    Tests Redis connectivity by executing a PING command.
+    Compatible with aioredis and redis-py async clients.
+
+    Args:
+        redis_client: Redis client instance (aioredis or redis-py)
+        timeout_seconds: Timeout for the health check
+
+    Returns:
+        ModelHealthStatus with connectivity details
+
+    Example:
+        async def _check_redis(self) -> ModelHealthStatus:
+            return await check_redis_health(
+                self.redis_client,
+                timeout_seconds=2.0
+            )
+    """
+    from omnibase_core.models.health.model_health_issue import ModelHealthIssue
+
+    try:
+        start_time = datetime.now(UTC)
+
+        # Execute PING command
+        if hasattr(redis_client, "ping"):
+            result = await asyncio.wait_for(
+                redis_client.ping(),
+                timeout=timeout_seconds,
+            )
+
+            if result is not True:
+                return ModelHealthStatus.create_unhealthy(
+                    score=0.0,
+                    issues=[
+                        ModelHealthIssue.create_connectivity_issue(
+                            message=f"Redis PING returned unexpected result: {result}",
+                            severity="critical",
+                        )
+                    ],
+                )
+
+            duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
+
+            return ModelHealthStatus.create_healthy(score=1.0)
+
+        else:
+            emit_log_event(
+                LogLevel.WARNING,
+                "Redis health check: Unknown client type",
+                {"client_type": type(redis_client).__name__},
+            )
+
+            return ModelHealthStatus.create_degraded(
+                score=0.6,
+                issues=[
+                    ModelHealthIssue.create_connectivity_issue(
+                        message="Redis client type not recognized, cannot verify connection",
+                        severity="medium",
+                    )
+                ],
+            )
+
+    except TimeoutError:
+        return ModelHealthStatus.create_unhealthy(
+            score=0.0,
+            issues=[
+                ModelHealthIssue.create_connectivity_issue(
+                    message=f"Redis PING timed out after {timeout_seconds}s",
+                    severity="critical",
+                )
+            ],
+        )
+
+    except (
+        Exception
+    ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+        emit_log_event(
+            LogLevel.ERROR,
+            "Redis health check failed",
+            {"error": str(e), "error_type": type(e).__name__},
+        )
+
+        return ModelHealthStatus.create_unhealthy(
+            score=0.0,
+            issues=[
+                ModelHealthIssue.create_connectivity_issue(
+                    message=f"Redis connection failed: {e!s}",
+                    severity="critical",
+                )
+            ],
+        )
+
+
+async def check_http_service_health(
+    service_url: str,
+    timeout_seconds: float = 3.0,
+    expected_status: int = 200,
+) -> ModelHealthStatus:
+    """
+    Check HTTP service health via health endpoint.
+
+    Makes an HTTP GET request to the service's health endpoint.
+    Automatically appends '/health' to the URL if not present.
+
+    Args:
+        service_url: Base URL of the service or full health endpoint URL
+        timeout_seconds: Request timeout
+        expected_status: Expected HTTP status code (default: 200)
+
+    Returns:
+        ModelHealthStatus with connectivity details
+
+    Example:
+        async def _check_metadata_service(self) -> ModelHealthStatus:
+            return await check_http_service_health(
+                "http://metadata-stamping:8057",
+                timeout_seconds=2.0
+            )
+    """
+    from omnibase_core.models.health.model_health_issue import ModelHealthIssue
+
+    try:
+        import aiohttp
+
+        # Append /health if not already present
+        health_url = (
+            service_url if service_url.endswith("/health") else f"{service_url}/health"
+        )
+
+        start_time = datetime.now(UTC)
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                health_url,
+                timeout=aiohttp.ClientTimeout(total=timeout_seconds),
+            ) as response:
+                duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
+
+                if response.status == expected_status:
+                    return ModelHealthStatus.create_healthy(score=1.0)
+                else:
+                    return ModelHealthStatus.create_degraded(
+                        score=0.5,
+                        issues=[
+                            ModelHealthIssue.create_connectivity_issue(
+                                message=f"HTTP service returned {response.status}, expected {expected_status}",
+                                severity="medium",
+                            )
+                        ],
+                    )
+
+    except TimeoutError:
+        return ModelHealthStatus.create_degraded(
+            score=0.3,
+            issues=[
+                ModelHealthIssue.create_connectivity_issue(
+                    message=f"HTTP service timed out after {timeout_seconds}s",
+                    severity="high",
+                )
+            ],
+        )
+
+    except (
+        Exception
+    ) as e:  # fallback-ok: health check should return UNHEALTHY status, not crash
+        emit_log_event(
+            LogLevel.ERROR,
+            "HTTP service health check failed",
+            {"url": service_url, "error": str(e), "error_type": type(e).__name__},
+        )
+
+        return ModelHealthStatus.create_unhealthy(
+            score=0.0,
+            issues=[
+                ModelHealthIssue.create_connectivity_issue(
+                    message=f"HTTP service check failed: {e!s}",
+                    severity="critical",
+                )
+            ],
+        )

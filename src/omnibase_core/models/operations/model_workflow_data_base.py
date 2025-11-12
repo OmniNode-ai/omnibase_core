@@ -3,8 +3,10 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_workflow_type import EnumWorkflowType
+from omnibase_core.models.configuration.model_workflow_configuration import (
+    ModelWorkflowConfiguration,
+)
 
-from .model_workflow_configuration import ModelWorkflowConfiguration
 from .model_workflow_input_parameters import ModelWorkflowInputParameters
 
 

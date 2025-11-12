@@ -570,7 +570,7 @@ class TestCircuitBreakerServiceMode:
 
         # Manually open circuit breaker
         cb = service_effect._get_circuit_breaker(effect_input.effect_type.value)
-        cb.state = EnumCircuitBreakerState.OPEN
+        cb.force_open()  # Properly sets state and last_state_change
 
         # Attempt execution should fail due to open circuit
         with pytest.raises(Exception) as exc_info:
@@ -603,7 +603,7 @@ class TestCircuitBreakerServiceMode:
 
             # Verify circuit breaker recorded success
             cb = service_effect._get_circuit_breaker(effect_input.effect_type.value)
-            assert cb.state == EnumCircuitBreakerState.CLOSED
+            assert cb.state == EnumCircuitBreakerState.CLOSED.value
 
         finally:
             temp_path.unlink(missing_ok=True)

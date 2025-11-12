@@ -11,7 +11,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_generic_metadata import ModelGenericMetadata
+from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 
 
 class ModelState(BaseModel):

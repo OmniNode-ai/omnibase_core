@@ -311,9 +311,6 @@ pip install git+https://github.com/OmniNode-ai/omnibase_core.git@v0.1.1
 ## Documentation
 
 ### New Documentation
-- [In-Memory Event Bus Research](../research/IN_MEMORY_EVENT_BUS_RESEARCH_REPORT.md)
-- [Union Type Quick Reference](../research/UNION_QUICK_REFERENCE.md)
-- [Union Type Remediation Plan](../research/UNION_REMEDIATION_PLAN.md)
 - [Ecosystem Directory Structure](../architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md)
 
 ### Updated Documentation

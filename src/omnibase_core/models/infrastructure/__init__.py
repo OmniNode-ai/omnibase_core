@@ -4,10 +4,9 @@ Infrastructure & System Models
 Models for system infrastructure, execution, and operational concerns.
 """
 
+from omnibase_core.models.core.model_action_payload import ModelActionPayload
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
 
-from .model_action import ModelAction
-from .model_action_payload import ModelActionPayload
 from .model_cli_result_data import ModelCliResultData
 from .model_duration import ModelDuration
 from .model_environment_variables import ModelEnvironmentVariables
@@ -15,6 +14,7 @@ from .model_execution_summary import ModelExecutionSummary
 from .model_metric import ModelMetric
 from .model_metrics_data import ModelMetricsData
 from .model_progress import ModelProgress
+from .model_protocol_action import ModelAction
 from .model_result import ModelResult, collect_results, err, ok, try_result
 from .model_result_dict import ModelResultData, ModelResultDict
 from .model_retry_policy import ModelRetryPolicy

@@ -37,7 +37,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from omnibase_core.models.core.model_onex_message import ModelOnexMessage
+from omnibase_core.models.results.model_onex_message import ModelOnexMessage
 
 
 class ModelTreeSyncResult(BaseModel):

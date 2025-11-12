@@ -11,7 +11,10 @@ within the ONEX architecture.
 
 from pydantic import BaseModel
 
-from .model_workflow_parameters import ModelWorkflowParameters
+from omnibase_core.models.operations.model_workflow_parameters import (
+    ModelWorkflowParameters,
+)
+
 from .model_workflow_stop_args import ModelWorkflowStopArgs
 
 

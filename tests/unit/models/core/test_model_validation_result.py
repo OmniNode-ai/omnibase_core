@@ -6,7 +6,7 @@ This module tests the generic validation result model for common use.
 
 import pytest
 
-from omnibase_core.models.core.model_validation_result import ModelValidationResult
+from omnibase_core.models.common.model_validation_result import ModelValidationResult
 
 
 class TestModelValidationResult:
@@ -31,11 +31,15 @@ class TestModelValidationResult:
 
         data = result.model_dump()
         assert isinstance(data, dict)
-        assert data == {}
+        # After model reorganization, ModelValidationResult has default field values
+        assert "is_valid" in data
+        assert data["is_valid"] is False
+        assert "summary" in data
+        assert data["summary"] == "Validation completed"
 
     def test_validation_result_deserialization(self):
         """Test ModelValidationResult deserialization."""
-        data = {}
+        data: dict[str, str] = {}
         result = ModelValidationResult.model_validate(data)
         assert isinstance(result, ModelValidationResult)
 
@@ -45,7 +49,10 @@ class TestModelValidationResult:
 
         json_data = result.model_dump_json()
         assert isinstance(json_data, str)
-        assert json_data == "{}"
+        # After model reorganization, ModelValidationResult has default field values
+        assert "is_valid" in json_data
+        assert "summary" in json_data
+        assert "Validation completed" in json_data
 
     def test_validation_result_roundtrip(self):
         """Test serialization and deserialization roundtrip."""
@@ -130,14 +137,20 @@ class TestModelValidationResult:
         assert hasattr(result.model_config, "get")
 
     def test_validation_result_creation_with_data(self):
-        """Test ModelValidationResult creation with data."""
-        # Even with data, should work (empty model)
+        """Test ModelValidationResult creation with default fields."""
+        # Should create with default values, ignoring extra fields
         result = ModelValidationResult.model_validate({"some_field": "some_value"})
         assert result is not None
 
-        # Should ignore extra fields for empty model
+        # Should have the expected default fields
+        assert result.is_valid is False
+        assert result.validated_value is None
+        assert result.summary == "Validation completed"
+        assert len(result.issues) == 0
+
+        # Extra field should be ignored
         data = result.model_dump()
-        assert data == {}
+        assert "some_field" not in data
 
     def test_validation_result_copy(self):
         """Test ModelValidationResult copying."""
@@ -164,7 +177,7 @@ class TestModelValidationResult:
         """Test ModelValidationResult docstring."""
         assert ModelValidationResult.__doc__ is not None
         assert (
-            "Generic validationresult model for common use"
+            "Unified validation result model for all ONEX components"
             in ModelValidationResult.__doc__
         )
 
@@ -176,5 +189,5 @@ class TestModelValidationResult:
         """Test ModelValidationResult module."""
         assert (
             ModelValidationResult.__module__
-            == "omnibase_core.models.core.model_validation_result"
+            == "omnibase_core.models.common.model_validation_result"
         )
