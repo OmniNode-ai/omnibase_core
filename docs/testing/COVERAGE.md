@@ -313,7 +313,6 @@ While this script is designed for local development, it can be integrated into C
 ## Related Documentation
 
 - **[PARALLEL_TESTING.md](PARALLEL_TESTING.md)** - Detailed parallel testing architecture, resource management, and troubleshooting
-- [TEST-SUITE-EVENT-LOOP-FIX-SUMMARY.md](TEST-SUITE-EVENT-LOOP-FIX-SUMMARY.md) - Event loop fixes in test suite
 - Project root `CLAUDE.md` - Poetry usage requirements
 - `.github/workflows/test.yml` - CI test configuration and matrix strategy
 - `scripts/run-coverage-parallel.sh` - Parallel coverage script implementation

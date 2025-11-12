@@ -11,7 +11,7 @@ Author: OmniNode Team
 # Import models from extracted files
 # NOTE: ModelRegistryConfig import removed to break circular dependency
 # Import it directly from omnibase_core.models.registry.model_registry_config instead
-from omnibase_core.models.core.model_fallback_strategy import (
+from omnibase_core.models.config.model_fallback_strategy import (
     EnumFallbackStrategyType,
     ModelFallbackStrategy,
 )

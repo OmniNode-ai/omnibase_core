@@ -12,10 +12,11 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
-from omnibase_core.models.contracts.subcontracts.model_workflow_metrics import (
-    ModelWorkflowMetrics,
+from omnibase_core.enums.enum_workflow_coordination import (
+    EnumWorkflowStatus as EnumWorkflowStatusCoordination,
 )
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
+from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
 from omnibase_core.models.workflows.model_workflow_execution_result import (
     ModelWorkflowExecutionResult,
 )
@@ -28,17 +29,14 @@ class TestBasicCreationAndValidation:
         """Test creating workflow execution result with all required fields."""
         workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=1000,
-            coordination_overhead_ms=50,
-            node_utilization_percent=85.5,
-            parallelism_achieved=2.5,
-            synchronization_delays_ms=20,
-            resource_efficiency_score=0.92,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=1.0,
         )
 
         result = ModelWorkflowExecutionResult(
             workflow_id=workflow_id,
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=1000,
             result_data={"output": "success", "count": 42},
             error_message=None,
@@ -46,7 +44,7 @@ class TestBasicCreationAndValidation:
         )
 
         assert result.workflow_id == workflow_id
-        assert result.status == EnumWorkflowStatus.COMPLETED
+        assert result.status == EnumWorkflowStatusCoordination.COMPLETED
         assert result.execution_time_ms == 1000
         assert result.result_data == {"output": "success", "count": 42}
         assert result.error_message is None
@@ -54,23 +52,21 @@ class TestBasicCreationAndValidation:
 
     def test_creation_with_minimal_fields(self) -> None:
         """Test creating result with minimal required fields using defaults."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=500,
-            coordination_overhead_ms=25,
-            node_utilization_percent=75.0,
-            parallelism_achieved=1.5,
-            synchronization_delays_ms=10,
-            resource_efficiency_score=0.85,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.RUNNING,
+            duration_seconds=0.5,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.RUNNING,
+            status=EnumWorkflowStatusCoordination.RUNNING,
             execution_time_ms=500,
             coordination_metrics=metrics,
         )
 
         assert isinstance(result.workflow_id, UUID)
-        assert result.status == EnumWorkflowStatus.RUNNING
+        assert result.status == EnumWorkflowStatusCoordination.RUNNING
         assert result.execution_time_ms == 500
         assert result.result_data == {}
         assert result.error_message is None
@@ -79,17 +75,14 @@ class TestBasicCreationAndValidation:
         """Test creating result with custom workflow ID."""
         custom_id = UUID("12345678-1234-5678-9abc-123456789abc")
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=100,
-            coordination_overhead_ms=5,
-            node_utilization_percent=90.0,
-            parallelism_achieved=3.0,
-            synchronization_delays_ms=2,
-            resource_efficiency_score=0.95,
+            workflow_id=custom_id,
+            status=EnumWorkflowStatus.PENDING,
+            duration_seconds=0.1,
         )
 
         result = ModelWorkflowExecutionResult(
             workflow_id=custom_id,
-            status=EnumWorkflowStatus.CREATED,
+            status=EnumWorkflowStatusCoordination.CREATED,
             execution_time_ms=100,
             coordination_metrics=metrics,
         )
@@ -98,18 +91,16 @@ class TestBasicCreationAndValidation:
 
     def test_negative_execution_time_validation(self) -> None:
         """Test that negative execution time is rejected."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=100,
-            coordination_overhead_ms=5,
-            node_utilization_percent=90.0,
-            parallelism_achieved=1.0,
-            synchronization_delays_ms=2,
-            resource_efficiency_score=0.95,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.RUNNING,
+            duration_seconds=0.1,
         )
 
         with pytest.raises(ValidationError, match="greater than or equal to 0"):
             ModelWorkflowExecutionResult(
-                status=EnumWorkflowStatus.RUNNING,
+                status=EnumWorkflowStatusCoordination.RUNNING,
                 execution_time_ms=-100,
                 coordination_metrics=metrics,
             )
@@ -128,18 +119,17 @@ class TestWorkflowStatusEnumHandling:
 
     def test_all_workflow_status_values(self) -> None:
         """Test that all workflow status enum values can be used."""
-        metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=100,
-            coordination_overhead_ms=5,
-            node_utilization_percent=80.0,
-            parallelism_achieved=2.0,
-            synchronization_delays_ms=3,
-            resource_efficiency_score=0.88,
-        )
+        workflow_id = uuid4()
 
-        for status in EnumWorkflowStatus:
+        # Test with coordination enum values
+        for status in EnumWorkflowStatusCoordination:
+            metrics = ModelWorkflowMetrics(
+                workflow_id=workflow_id,
+                status=EnumWorkflowStatus.RUNNING,  # Use metrics enum
+                duration_seconds=0.1,
+            )
             result = ModelWorkflowExecutionResult(
-                status=status,
+                status=status,  # Use coordination enum
                 execution_time_ms=100,
                 coordination_metrics=metrics,
             )
@@ -147,56 +137,52 @@ class TestWorkflowStatusEnumHandling:
 
     def test_created_status(self) -> None:
         """Test workflow with CREATED status."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=0,
-            coordination_overhead_ms=0,
-            node_utilization_percent=0.0,
-            parallelism_achieved=0.0,
-            synchronization_delays_ms=0,
-            resource_efficiency_score=1.0,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.PENDING,
+            duration_seconds=0.0,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.CREATED,
+            status=EnumWorkflowStatusCoordination.CREATED,
             execution_time_ms=0,
             coordination_metrics=metrics,
         )
 
-        assert result.status == EnumWorkflowStatus.CREATED
+        assert result.status == EnumWorkflowStatusCoordination.CREATED
         assert result.error_message is None
 
     def test_running_status(self) -> None:
         """Test workflow with RUNNING status."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=500,
-            coordination_overhead_ms=25,
-            node_utilization_percent=75.0,
-            parallelism_achieved=1.8,
-            synchronization_delays_ms=10,
-            resource_efficiency_score=0.85,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.RUNNING,
+            duration_seconds=0.5,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.RUNNING,
+            status=EnumWorkflowStatusCoordination.RUNNING,
             execution_time_ms=500,
             coordination_metrics=metrics,
         )
 
-        assert result.status == EnumWorkflowStatus.RUNNING
+        assert result.status == EnumWorkflowStatusCoordination.RUNNING
 
     def test_completed_status_with_result_data(self) -> None:
         """Test workflow with COMPLETED status and result data."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=1000,
-            coordination_overhead_ms=50,
-            node_utilization_percent=90.0,
-            parallelism_achieved=2.5,
-            synchronization_delays_ms=20,
-            resource_efficiency_score=0.92,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=1.0,
+            steps_total=5,
+            steps_completed=5,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=1000,
             result_data={
                 "processed_items": 100,
@@ -206,52 +192,50 @@ class TestWorkflowStatusEnumHandling:
             coordination_metrics=metrics,
         )
 
-        assert result.status == EnumWorkflowStatus.COMPLETED
+        assert result.status == EnumWorkflowStatusCoordination.COMPLETED
         assert result.result_data["processed_items"] == 100
         assert result.result_data["success_rate"] == 98.5
         assert result.error_message is None
 
     def test_failed_status_with_error_message(self) -> None:
         """Test workflow with FAILED status and error message."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=250,
-            coordination_overhead_ms=15,
-            node_utilization_percent=30.0,
-            parallelism_achieved=0.5,
-            synchronization_delays_ms=5,
-            resource_efficiency_score=0.40,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.FAILED,
+            duration_seconds=0.25,
+            error_message="Node timeout: COMPUTE node failed to respond within 30s",
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.FAILED,
+            status=EnumWorkflowStatusCoordination.FAILED,
             execution_time_ms=250,
             error_message="Node timeout: COMPUTE node failed to respond within 30s",
             coordination_metrics=metrics,
         )
 
-        assert result.status == EnumWorkflowStatus.FAILED
+        assert result.status == EnumWorkflowStatusCoordination.FAILED
         assert result.error_message is not None
         assert "Node timeout" in result.error_message
 
     def test_cancelled_status(self) -> None:
         """Test workflow with CANCELLED status."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=150,
-            coordination_overhead_ms=10,
-            node_utilization_percent=20.0,
-            parallelism_achieved=0.3,
-            synchronization_delays_ms=5,
-            resource_efficiency_score=0.30,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.CANCELLED,
+            duration_seconds=0.15,
+            error_message="User requested cancellation",
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.CANCELLED,
+            status=EnumWorkflowStatusCoordination.CANCELLED,
             execution_time_ms=150,
             error_message="User requested cancellation",
             coordination_metrics=metrics,
         )
 
-        assert result.status == EnumWorkflowStatus.CANCELLED
+        assert result.status == EnumWorkflowStatusCoordination.CANCELLED
         assert result.error_message == "User requested cancellation"
 
 
@@ -260,123 +244,97 @@ class TestCoordinationMetricsIntegration:
 
     def test_metrics_basic_structure(self) -> None:
         """Test that metrics are properly integrated."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=1000,
-            coordination_overhead_ms=50,
-            node_utilization_percent=85.5,
-            parallelism_achieved=2.5,
-            synchronization_delays_ms=20,
-            resource_efficiency_score=0.92,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=1.0,
+            steps_total=5,
+            steps_completed=5,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=1000,
             coordination_metrics=metrics,
         )
 
-        assert result.coordination_metrics.total_execution_time_ms == 1000
-        assert result.coordination_metrics.coordination_overhead_ms == 50
-        assert result.coordination_metrics.node_utilization_percent == 85.5
-        assert result.coordination_metrics.parallelism_achieved == 2.5
-        assert result.coordination_metrics.synchronization_delays_ms == 20
-        assert result.coordination_metrics.resource_efficiency_score == 0.92
+        assert result.coordination_metrics.workflow_id == workflow_id
+        assert result.coordination_metrics.status == EnumWorkflowStatus.COMPLETED
+        assert result.coordination_metrics.duration_seconds == 1.0
+        assert result.coordination_metrics.steps_total == 5
+        assert result.coordination_metrics.steps_completed == 5
 
     def test_metrics_validation_constraints(self) -> None:
-        """Test that metrics validation constraints are enforced."""
-        # Test negative total_execution_time_ms
-        with pytest.raises(ValidationError, match="greater than or equal to 0"):
-            ModelWorkflowMetrics(
-                total_execution_time_ms=-100,
-                coordination_overhead_ms=50,
-                node_utilization_percent=85.5,
-                parallelism_achieved=2.5,
-                synchronization_delays_ms=20,
-                resource_efficiency_score=0.92,
-            )
+        """Test that metrics can be created with various values."""
+        workflow_id = uuid4()
 
-        # Test node_utilization_percent > 100
-        with pytest.raises(ValidationError, match="less than or equal to 100"):
-            ModelWorkflowMetrics(
-                total_execution_time_ms=1000,
-                coordination_overhead_ms=50,
-                node_utilization_percent=150.0,
-                parallelism_achieved=2.5,
-                synchronization_delays_ms=20,
-                resource_efficiency_score=0.92,
-            )
-
-        # Test resource_efficiency_score > 1.0
-        with pytest.raises(ValidationError, match="less than or equal to 1"):
-            ModelWorkflowMetrics(
-                total_execution_time_ms=1000,
-                coordination_overhead_ms=50,
-                node_utilization_percent=85.5,
-                parallelism_achieved=2.5,
-                synchronization_delays_ms=20,
-                resource_efficiency_score=1.5,
-            )
+        # Metrics can be created with any duration value (no validation constraint)
+        metrics = ModelWorkflowMetrics(
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.RUNNING,
+            duration_seconds=-1.0,  # Allowed - no constraint
+        )
+        assert metrics.duration_seconds == -1.0
 
     def test_high_coordination_overhead(self) -> None:
-        """Test metrics with high coordination overhead."""
+        """Test metrics with long duration (representing high overhead)."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=1000,
-            coordination_overhead_ms=500,  # 50% overhead
-            node_utilization_percent=60.0,
-            parallelism_achieved=1.2,
-            synchronization_delays_ms=200,
-            resource_efficiency_score=0.65,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=1.0,
+            steps_total=10,
+            steps_completed=10,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=1000,
             coordination_metrics=metrics,
         )
 
-        assert result.coordination_metrics.coordination_overhead_ms == 500
-        assert result.coordination_metrics.resource_efficiency_score < 0.7
+        assert result.coordination_metrics.duration_seconds == 1.0
 
     def test_optimal_parallel_execution_metrics(self) -> None:
         """Test metrics for optimal parallel execution."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=500,
-            coordination_overhead_ms=25,  # 5% overhead
-            node_utilization_percent=95.0,
-            parallelism_achieved=3.8,
-            synchronization_delays_ms=5,
-            resource_efficiency_score=0.97,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=0.5,
+            steps_total=10,
+            steps_completed=10,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=500,
             coordination_metrics=metrics,
         )
 
-        assert result.coordination_metrics.parallelism_achieved > 3.0
-        assert result.coordination_metrics.node_utilization_percent > 90.0
-        assert result.coordination_metrics.resource_efficiency_score > 0.95
+        assert result.coordination_metrics.steps_completed == 10
+        assert result.coordination_metrics.steps_total == 10
 
     def test_sequential_execution_metrics(self) -> None:
         """Test metrics for sequential execution (no parallelism)."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=2000,
-            coordination_overhead_ms=10,
-            node_utilization_percent=25.0,
-            parallelism_achieved=1.0,
-            synchronization_delays_ms=0,
-            resource_efficiency_score=0.75,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=2.0,
+            steps_total=5,
+            steps_completed=5,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=2000,
             coordination_metrics=metrics,
         )
 
-        assert result.coordination_metrics.parallelism_achieved == 1.0
-        assert result.coordination_metrics.synchronization_delays_ms == 0
+        assert result.coordination_metrics.steps_total == 5
+        assert result.coordination_metrics.steps_completed == 5
 
 
 class TestExecutionTimingAndResultData:
@@ -384,17 +342,15 @@ class TestExecutionTimingAndResultData:
 
     def test_zero_execution_time(self) -> None:
         """Test workflow with zero execution time (immediate completion)."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=0,
-            coordination_overhead_ms=0,
-            node_utilization_percent=0.0,
-            parallelism_achieved=0.0,
-            synchronization_delays_ms=0,
-            resource_efficiency_score=1.0,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.PENDING,
+            duration_seconds=0.0,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.CREATED,
+            status=EnumWorkflowStatusCoordination.CREATED,
             execution_time_ms=0,
             coordination_metrics=metrics,
         )
@@ -403,17 +359,15 @@ class TestExecutionTimingAndResultData:
 
     def test_long_execution_time(self) -> None:
         """Test workflow with long execution time."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=3600000,  # 1 hour
-            coordination_overhead_ms=1800,  # 1.8s overhead
-            node_utilization_percent=85.0,
-            parallelism_achieved=2.8,
-            synchronization_delays_ms=500,
-            resource_efficiency_score=0.90,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=3600.0,  # 1 hour
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=3600000,
             coordination_metrics=metrics,
         )
@@ -422,17 +376,15 @@ class TestExecutionTimingAndResultData:
 
     def test_empty_result_data(self) -> None:
         """Test workflow with empty result data."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=100,
-            coordination_overhead_ms=5,
-            node_utilization_percent=50.0,
-            parallelism_achieved=1.0,
-            synchronization_delays_ms=2,
-            resource_efficiency_score=0.80,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=0.1,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=100,
             coordination_metrics=metrics,
         )
@@ -441,17 +393,15 @@ class TestExecutionTimingAndResultData:
 
     def test_structured_result_data_with_primitives(self) -> None:
         """Test result data with various primitive types."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=500,
-            coordination_overhead_ms=25,
-            node_utilization_percent=80.0,
-            parallelism_achieved=2.0,
-            synchronization_delays_ms=10,
-            resource_efficiency_score=0.85,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=0.5,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=500,
             result_data={
                 "string_value": "test_output",
@@ -471,18 +421,16 @@ class TestExecutionTimingAndResultData:
 
     def test_result_data_with_nested_structures(self) -> None:
         """Test result data can handle nested dictionaries and lists."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=800,
-            coordination_overhead_ms=40,
-            node_utilization_percent=85.0,
-            parallelism_achieved=2.3,
-            synchronization_delays_ms=15,
-            resource_efficiency_score=0.88,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=0.8,
         )
 
         # Note: PrimitiveValueType allows nested structures
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=800,
             result_data={
                 "summary": {
@@ -504,25 +452,24 @@ class TestExecutionTimingAndResultData:
 
     def test_execution_time_consistency_with_metrics(self) -> None:
         """Test that execution_time_ms is consistent with metrics."""
+        workflow_id = uuid4()
         execution_time = 1000
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=execution_time,
-            coordination_overhead_ms=50,
-            node_utilization_percent=85.0,
-            parallelism_achieved=2.5,
-            synchronization_delays_ms=20,
-            resource_efficiency_score=0.92,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=1.0,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=execution_time,
             coordination_metrics=metrics,
         )
 
+        # Convert execution_time_ms to seconds for comparison
         assert (
-            result.execution_time_ms
-            == result.coordination_metrics.total_execution_time_ms
+            result.execution_time_ms / 1000
+            == result.coordination_metrics.duration_seconds
         )
 
 
@@ -531,39 +478,36 @@ class TestErrorHandlingScenarios:
 
     def test_error_message_with_failed_status(self) -> None:
         """Test that error message is properly stored with FAILED status."""
+        workflow_id = uuid4()
+        error_msg = "COMPUTE node failed: Division by zero in calculation"
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=200,
-            coordination_overhead_ms=10,
-            node_utilization_percent=30.0,
-            parallelism_achieved=0.5,
-            synchronization_delays_ms=5,
-            resource_efficiency_score=0.40,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.FAILED,
+            duration_seconds=0.2,
+            error_message=error_msg,
         )
 
-        error_msg = "COMPUTE node failed: Division by zero in calculation"
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.FAILED,
+            status=EnumWorkflowStatusCoordination.FAILED,
             execution_time_ms=200,
             error_message=error_msg,
             coordination_metrics=metrics,
         )
 
-        assert result.status == EnumWorkflowStatus.FAILED
+        assert result.status == EnumWorkflowStatusCoordination.FAILED
         assert result.error_message == error_msg
 
     def test_no_error_message_with_success_status(self) -> None:
         """Test that successful workflows have no error message."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=1000,
-            coordination_overhead_ms=50,
-            node_utilization_percent=90.0,
-            parallelism_achieved=2.8,
-            synchronization_delays_ms=20,
-            resource_efficiency_score=0.93,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=1.0,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=1000,
             coordination_metrics=metrics,
         )
@@ -572,15 +516,7 @@ class TestErrorHandlingScenarios:
 
     def test_multiple_failure_scenarios(self) -> None:
         """Test various failure scenarios with appropriate error messages."""
-        metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=150,
-            coordination_overhead_ms=10,
-            node_utilization_percent=25.0,
-            parallelism_achieved=0.3,
-            synchronization_delays_ms=5,
-            resource_efficiency_score=0.35,
-        )
-
+        workflow_id = uuid4()
         failure_scenarios = [
             "Timeout: Node exceeded 30s execution limit",
             "Resource exhausted: Out of memory during processing",
@@ -589,40 +525,49 @@ class TestErrorHandlingScenarios:
         ]
 
         for error_msg in failure_scenarios:
-            result = ModelWorkflowExecutionResult(
+            metrics = ModelWorkflowMetrics(
+                workflow_id=workflow_id,
                 status=EnumWorkflowStatus.FAILED,
+                duration_seconds=0.15,
+                error_message=error_msg,
+            )
+            result = ModelWorkflowExecutionResult(
+                status=EnumWorkflowStatusCoordination.FAILED,
                 execution_time_ms=150,
                 error_message=error_msg,
                 coordination_metrics=metrics,
             )
 
-            assert result.status == EnumWorkflowStatus.FAILED
+            assert result.status == EnumWorkflowStatusCoordination.FAILED
             assert result.error_message == error_msg
 
     def test_partial_result_data_on_failure(self) -> None:
         """Test that partial result data can be captured on failure."""
+        workflow_id = uuid4()
+        error_msg = "Processing failed at item 46: Invalid format"
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=300,
-            coordination_overhead_ms=15,
-            node_utilization_percent=40.0,
-            parallelism_achieved=0.8,
-            synchronization_delays_ms=8,
-            resource_efficiency_score=0.50,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.FAILED,
+            duration_seconds=0.3,
+            steps_total=100,
+            steps_completed=45,
+            steps_failed=1,
+            error_message=error_msg,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.FAILED,
+            status=EnumWorkflowStatusCoordination.FAILED,
             execution_time_ms=300,
             result_data={
                 "processed_count": 45,
                 "failed_at_item": 46,
                 "partial_output": "/path/to/partial.json",
             },
-            error_message="Processing failed at item 46: Invalid format",
+            error_message=error_msg,
             coordination_metrics=metrics,
         )
 
-        assert result.status == EnumWorkflowStatus.FAILED
+        assert result.status == EnumWorkflowStatusCoordination.FAILED
         assert result.result_data["processed_count"] == 45
         assert result.error_message is not None
 
@@ -632,17 +577,17 @@ class TestWorkflowSpecificFeatures:
 
     def test_workflow_with_metadata_only(self) -> None:
         """Test workflow result that captures only metadata without output data."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=50,
-            coordination_overhead_ms=5,
-            node_utilization_percent=70.0,
-            parallelism_achieved=1.5,
-            synchronization_delays_ms=2,
-            resource_efficiency_score=0.88,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=0.05,
+            steps_total=4,
+            steps_completed=4,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=50,
             result_data={
                 "nodes_executed": 4,
@@ -661,96 +606,88 @@ class TestWorkflowSpecificFeatures:
 
         # Stage 1: Created
         metrics_created = ModelWorkflowMetrics(
-            total_execution_time_ms=0,
-            coordination_overhead_ms=0,
-            node_utilization_percent=0.0,
-            parallelism_achieved=0.0,
-            synchronization_delays_ms=0,
-            resource_efficiency_score=1.0,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.PENDING,
+            duration_seconds=0.0,
         )
         result_created = ModelWorkflowExecutionResult(
             workflow_id=workflow_id,
-            status=EnumWorkflowStatus.CREATED,
+            status=EnumWorkflowStatusCoordination.CREATED,
             execution_time_ms=0,
             coordination_metrics=metrics_created,
         )
-        assert result_created.status == EnumWorkflowStatus.CREATED
+        assert result_created.status == EnumWorkflowStatusCoordination.CREATED
 
         # Stage 2: Running
         metrics_running = ModelWorkflowMetrics(
-            total_execution_time_ms=500,
-            coordination_overhead_ms=25,
-            node_utilization_percent=75.0,
-            parallelism_achieved=2.0,
-            synchronization_delays_ms=10,
-            resource_efficiency_score=0.85,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.RUNNING,
+            duration_seconds=0.5,
+            steps_total=5,
+            steps_completed=3,
         )
         result_running = ModelWorkflowExecutionResult(
             workflow_id=workflow_id,
-            status=EnumWorkflowStatus.RUNNING,
+            status=EnumWorkflowStatusCoordination.RUNNING,
             execution_time_ms=500,
             coordination_metrics=metrics_running,
         )
-        assert result_running.status == EnumWorkflowStatus.RUNNING
+        assert result_running.status == EnumWorkflowStatusCoordination.RUNNING
 
         # Stage 3: Completed
         metrics_completed = ModelWorkflowMetrics(
-            total_execution_time_ms=1000,
-            coordination_overhead_ms=50,
-            node_utilization_percent=90.0,
-            parallelism_achieved=2.5,
-            synchronization_delays_ms=20,
-            resource_efficiency_score=0.92,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=1.0,
+            steps_total=5,
+            steps_completed=5,
         )
         result_completed = ModelWorkflowExecutionResult(
             workflow_id=workflow_id,
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=1000,
             result_data={"final_output": "success"},
             coordination_metrics=metrics_completed,
         )
-        assert result_completed.status == EnumWorkflowStatus.COMPLETED
+        assert result_completed.status == EnumWorkflowStatusCoordination.COMPLETED
         assert result_completed.workflow_id == workflow_id
 
     def test_coordination_efficiency_analysis(self) -> None:
         """Test analyzing coordination efficiency from metrics."""
-        # Efficient workflow
+        workflow_id = uuid4()
+
+        # Efficient workflow - short duration
         efficient_metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=1000,
-            coordination_overhead_ms=30,  # 3% overhead
-            node_utilization_percent=95.0,
-            parallelism_achieved=3.5,
-            synchronization_delays_ms=10,
-            resource_efficiency_score=0.96,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=0.5,
+            steps_total=10,
+            steps_completed=10,
         )
         efficient_result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
-            execution_time_ms=1000,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
+            execution_time_ms=500,
             coordination_metrics=efficient_metrics,
         )
 
-        # Inefficient workflow
+        # Inefficient workflow - longer duration
         inefficient_metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=1000,
-            coordination_overhead_ms=400,  # 40% overhead
-            node_utilization_percent=45.0,
-            parallelism_achieved=1.1,
-            synchronization_delays_ms=200,
-            resource_efficiency_score=0.55,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=2.0,
+            steps_total=10,
+            steps_completed=10,
         )
         inefficient_result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
-            execution_time_ms=1000,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
+            execution_time_ms=2000,
             coordination_metrics=inefficient_metrics,
         )
 
+        # Efficient workflow should have shorter duration
         assert (
-            efficient_result.coordination_metrics.resource_efficiency_score
-            > inefficient_result.coordination_metrics.resource_efficiency_score
-        )
-        assert (
-            efficient_result.coordination_metrics.coordination_overhead_ms
-            < inefficient_result.coordination_metrics.coordination_overhead_ms
+            efficient_result.coordination_metrics.duration_seconds
+            < inefficient_result.coordination_metrics.duration_seconds
         )
 
 
@@ -759,39 +696,35 @@ class TestModelConfiguration:
 
     def test_extra_fields_ignored(self) -> None:
         """Test that extra fields are ignored per model config."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=100,
-            coordination_overhead_ms=5,
-            node_utilization_percent=80.0,
-            parallelism_achieved=2.0,
-            synchronization_delays_ms=3,
-            resource_efficiency_score=0.88,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=0.1,
         )
 
         # Extra field should be ignored
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=100,
             coordination_metrics=metrics,
             extra_field="should_be_ignored",  # type: ignore[call-arg]
         )
 
-        assert result.status == EnumWorkflowStatus.COMPLETED
+        assert result.status == EnumWorkflowStatusCoordination.COMPLETED
         assert not hasattr(result, "extra_field")
 
     def test_validate_assignment(self) -> None:
         """Test that assignment validation is enabled."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=100,
-            coordination_overhead_ms=5,
-            node_utilization_percent=80.0,
-            parallelism_achieved=2.0,
-            synchronization_delays_ms=3,
-            resource_efficiency_score=0.88,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.RUNNING,
+            duration_seconds=0.1,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.RUNNING,
+            status=EnumWorkflowStatusCoordination.RUNNING,
             execution_time_ms=100,
             coordination_metrics=metrics,
         )
@@ -802,24 +735,22 @@ class TestModelConfiguration:
 
     def test_enum_values_not_converted(self) -> None:
         """Test that enum values are not converted to their string values."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=100,
-            coordination_overhead_ms=5,
-            node_utilization_percent=80.0,
-            parallelism_achieved=2.0,
-            synchronization_delays_ms=3,
-            resource_efficiency_score=0.88,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=0.1,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=100,
             coordination_metrics=metrics,
         )
 
         # Enum should remain as enum instance, not string
-        assert isinstance(result.status, EnumWorkflowStatus)
-        assert result.status == EnumWorkflowStatus.COMPLETED
+        assert isinstance(result.status, EnumWorkflowStatusCoordination)
+        assert result.status == EnumWorkflowStatusCoordination.COMPLETED
 
 
 class TestZeroToleranceCompliance:
@@ -827,17 +758,15 @@ class TestZeroToleranceCompliance:
 
     def test_all_fields_strongly_typed(self) -> None:
         """Test that all fields have concrete types, no Any."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=100,
-            coordination_overhead_ms=5,
-            node_utilization_percent=80.0,
-            parallelism_achieved=2.0,
-            synchronization_delays_ms=3,
-            resource_efficiency_score=0.88,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=0.1,
         )
 
         result = ModelWorkflowExecutionResult(
-            status=EnumWorkflowStatus.COMPLETED,
+            status=EnumWorkflowStatusCoordination.COMPLETED,
             execution_time_ms=100,
             result_data={"key": "value"},
             coordination_metrics=metrics,
@@ -845,20 +774,18 @@ class TestZeroToleranceCompliance:
 
         # Verify types are concrete
         assert isinstance(result.workflow_id, UUID)
-        assert isinstance(result.status, EnumWorkflowStatus)
+        assert isinstance(result.status, EnumWorkflowStatusCoordination)
         assert isinstance(result.execution_time_ms, int)
         assert isinstance(result.result_data, dict)
         assert isinstance(result.coordination_metrics, ModelWorkflowMetrics)
 
     def test_type_checking_enforcement(self) -> None:
         """Test that type checking is enforced at runtime."""
+        workflow_id = uuid4()
         metrics = ModelWorkflowMetrics(
-            total_execution_time_ms=100,
-            coordination_overhead_ms=5,
-            node_utilization_percent=80.0,
-            parallelism_achieved=2.0,
-            synchronization_delays_ms=3,
-            resource_efficiency_score=0.88,
+            workflow_id=workflow_id,
+            status=EnumWorkflowStatus.COMPLETED,
+            duration_seconds=0.1,
         )
 
         # Invalid status type
@@ -872,7 +799,7 @@ class TestZeroToleranceCompliance:
         # Invalid execution_time_ms type
         with pytest.raises(ValidationError, match="Input should be a valid integer"):
             ModelWorkflowExecutionResult(
-                status=EnumWorkflowStatus.COMPLETED,
+                status=EnumWorkflowStatusCoordination.COMPLETED,
                 execution_time_ms="not_an_int",  # type: ignore[arg-type]
                 coordination_metrics=metrics,
             )

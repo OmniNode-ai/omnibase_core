@@ -18,8 +18,8 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.models.results.model_generic_metadata import ModelGenericMetadata
 from omnibase_core.models.results.model_onex_message import ModelOnexMessage
 from omnibase_core.models.results.model_onex_result import ModelOnexResult
 from omnibase_core.models.results.model_unified_summary import ModelUnifiedSummary

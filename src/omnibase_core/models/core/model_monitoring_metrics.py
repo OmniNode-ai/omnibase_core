@@ -9,7 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
-from omnibase_core.models.core.model_metric_value import ModelMetricValue
+from omnibase_core.models.discovery.model_metric_value import ModelMetricValue
 
 # Compatibility alias
 MetricValue = ModelMetricValue

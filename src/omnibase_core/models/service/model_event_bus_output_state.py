@@ -276,10 +276,10 @@ class ModelEventBusOutputState(BaseModel):
 
     def get_monitoring_metrics(self) -> ModelMonitoringMetrics:
         """Get metrics suitable for monitoring systems."""
-        from omnibase_core.models.core.model_metric_value import ModelMetricValue
         from omnibase_core.models.core.model_monitoring_metrics import (
             ModelMonitoringMetrics,
         )
+        from omnibase_core.models.discovery.model_metric_value import ModelMetricValue
 
         success_rate = 100.0 if self.is_successful() else 0.0
         error_rate = 100.0 if self.is_failed() else 0.0
@@ -296,22 +296,24 @@ class ModelEventBusOutputState(BaseModel):
             ),
             custom_metrics={
                 "status": ModelMetricValue(
-                    value=self.status.value, unit="enum", timestamp=datetime.now(UTC)
+                    name="status",
+                    value=self.status.value,
+                    metric_type="string",
                 ),
                 "severity": ModelMetricValue(
+                    name="severity",
                     value=self.get_severity_level(),
-                    unit="category",
-                    timestamp=datetime.now(UTC),
+                    metric_type="string",
                 ),
                 "retry_attempt": ModelMetricValue(
+                    name="retry_attempt",
                     value=self.retry_attempt or 0,
-                    unit="count",
-                    timestamp=datetime.now(UTC),
+                    metric_type="counter",
                 ),
                 "warnings": ModelMetricValue(
+                    name="warnings",
                     value=len(self.warnings) if self.warnings else 0,
-                    unit="count",
-                    timestamp=datetime.now(UTC),
+                    metric_type="counter",
                 ),
             },
             throughput_rps=None,

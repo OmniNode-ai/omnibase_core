@@ -8,7 +8,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 "\nOrchestrator plan model.\n"
 from pydantic import BaseModel
 
-from omnibase_core.models.core.model_custom_fields import ModelCustomFields
+from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 
 from .model_orchestrator_step import ModelOrchestratorStep
 

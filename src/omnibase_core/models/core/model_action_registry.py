@@ -9,11 +9,10 @@ enabling third-party nodes to register their own actions dynamically.
 
 from pathlib import Path
 
+from omnibase_core.models.cli.model_cli_action import ModelCliAction
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 from omnibase_core.utils.singleton_holders import _ActionRegistryHolder
-
-from .model_cli_action import ModelCliAction
 
 
 class ModelActionRegistry:
@@ -26,10 +25,10 @@ class ModelActionRegistry:
 
     def register_action(self, action: ModelCliAction) -> None:
         """Register a CLI action from a node contract."""
-        self._actions[action.action_name] = action
-        if action.node_name not in self._node_actions:
-            self._node_actions[action.node_name] = set()
-        self._node_actions[action.node_name].add(action.action_name)
+        self._actions[action.action_display_name] = action
+        if action.node_display_name not in self._node_actions:
+            self._node_actions[action.node_display_name] = set()
+        self._node_actions[action.node_display_name].add(action.action_display_name)
 
         # Also register by qualified name for uniqueness
         qualified_name = action.get_qualified_name()
@@ -124,6 +123,15 @@ class ModelActionRegistry:
             cli_interface = contract.get("cli_interface", {})
             commands = cli_interface.get("commands", [])
 
+            # Generate deterministic node_id from node_name
+            import hashlib
+            from uuid import UUID
+
+            node_hash = hashlib.sha256(node_name.encode()).hexdigest()
+            node_id = UUID(
+                f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}"
+            )
+
             for command in commands:
                 action_name = command.get("action")
                 if not action_name:
@@ -132,12 +140,13 @@ class ModelActionRegistry:
                 # Create ModelCliAction from contract data
                 action = ModelCliAction.from_contract_action(
                     action_name=action_name,
+                    node_id=node_id,
                     node_name=node_name,
                     description=command.get(
                         "description",
                         f"{action_name} action for {node_name}",
                     ),
-                    category=command.get("category", "cli"),
+                    category=command.get("category", "execution"),
                 )
 
                 # Register the action
@@ -155,9 +164,10 @@ class ModelActionRegistry:
                     # Create action if not already registered from CLI interface
                     action = ModelCliAction.from_contract_action(
                         action_name=action_name,
+                        node_id=node_id,
                         node_name=node_name,
                         description=f"{action_name} action for {node_name}",
-                        category="contract",
+                        category="execution",
                     )
                     self.register_action(action)
                     actions_discovered += 1
@@ -175,23 +185,43 @@ class ModelActionRegistry:
 
     def bootstrap_core_actions(self) -> None:
         """Bootstrap core ONEX CLI actions for current standards."""
+        import hashlib
+        from uuid import UUID
+
         core_actions = [
-            ("get_active_nodes", "node_cli", "List all available ONEX nodes"),
-            ("system_status", "node_cli", "Get system status and health"),
-            ("node_info", "node_cli", "Get information about a specific node"),
-            ("execute_node", "node_cli", "Execute a node with arguments"),
-            ("generate_node", "node_manager", "Generate a new ONEX node"),
-            ("validate_node", "node_manager", "Validate node structure"),
-            ("fix_node", "node_manager", "Fix node validation issues"),
+            (
+                "get_active_nodes",
+                "node_cli",
+                "List all available ONEX nodes",
+                "registry",
+            ),
+            ("system_status", "node_cli", "Get system status and health", "system"),
+            (
+                "node_info",
+                "node_cli",
+                "Get information about a specific node",
+                "introspection",
+            ),
+            ("execute_node", "node_cli", "Execute a node with arguments", "execution"),
+            ("generate_node", "node_manager", "Generate a new ONEX node", "lifecycle"),
+            ("validate_node", "node_manager", "Validate node structure", "validation"),
+            ("fix_node", "node_manager", "Fix node validation issues", "lifecycle"),
         ]
 
-        for action_name, node_name, description in core_actions:
+        for action_name, node_name, description, category in core_actions:
             if not self.is_valid_action(action_name):
+                # Generate deterministic node_id from node_name
+                node_hash = hashlib.sha256(node_name.encode()).hexdigest()
+                node_id = UUID(
+                    f"{node_hash[:8]}-{node_hash[8:12]}-{node_hash[12:16]}-{node_hash[16:20]}-{node_hash[20:32]}"
+                )
+
                 action = ModelCliAction(
                     action_name=action_name,
+                    node_id=node_id,
                     node_name=node_name,
                     description=description,
-                    category="core",
+                    category=category,
                 )
                 self.register_action(action)
 

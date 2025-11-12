@@ -17,10 +17,11 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.validation.model_validation_result import (
-    ModelValidationResult,
+from omnibase_core.models.common.model_validation_metadata import (
+    ModelValidationMetadata,
 )
+from omnibase_core.models.common.model_validation_result import ModelValidationResult
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.cli import (
     ModelValidationSuite,
     create_parser,
@@ -239,9 +240,9 @@ class TestFormatResult:
     def test_format_result_success(self, capsys: CaptureFixture[str]) -> None:
         """Test formatting successful validation result."""
         result = ModelValidationResult(
-            success=True,
+            is_valid=True,
             errors=[],
-            files_checked=10,
+            metadata=ModelValidationMetadata(files_processed=10),
         )
 
         format_result("architecture", result, verbose=False)
@@ -253,9 +254,9 @@ class TestFormatResult:
     def test_format_result_failure(self, capsys: CaptureFixture[str]) -> None:
         """Test formatting failed validation result."""
         result = ModelValidationResult(
-            success=False,
+            is_valid=False,
             errors=["Error 1", "Error 2"],
-            files_checked=5,
+            metadata=ModelValidationMetadata(files_processed=5),
         )
 
         format_result("patterns", result, verbose=False)
@@ -269,10 +270,9 @@ class TestFormatResult:
     def test_format_result_verbose(self, capsys: CaptureFixture[str]) -> None:
         """Test verbose formatting includes extra details."""
         result = ModelValidationResult(
-            success=True,
+            is_valid=True,
             errors=[],
-            files_checked=15,
-            metadata={"total_unions": 42},
+            metadata=ModelValidationMetadata(files_processed=15, total_unions=42),
         )
 
         format_result("union-usage", result, verbose=True)
@@ -287,10 +287,9 @@ class TestFormatResult:
     ) -> None:
         """Test formatting with violations metadata."""
         result = ModelValidationResult(
-            success=False,
+            is_valid=False,
             errors=["Violation 1"],
-            files_checked=5,
-            metadata={"violations_found": 3},
+            metadata=ModelValidationMetadata(files_processed=5, violations_found=3),
         )
 
         format_result("architecture", result, verbose=True)
@@ -305,9 +304,9 @@ class TestFormatResult:
         """Test formatting with many errors requires verbose mode."""
         errors = [f"Error {i}" for i in range(15)]
         result = ModelValidationResult(
-            success=False,
+            is_valid=False,
             errors=errors,
-            files_checked=10,
+            metadata=ModelValidationMetadata(files_processed=10),
         )
 
         format_result("contracts", result, verbose=False)
@@ -324,9 +323,9 @@ class TestFormatResult:
         """Test verbose mode shows truncated error list."""
         errors = [f"Error {i}" for i in range(15)]
         result = ModelValidationResult(
-            success=False,
+            is_valid=False,
             errors=errors,
-            files_checked=10,
+            metadata=ModelValidationMetadata(files_processed=10),
         )
 
         format_result("contracts", result, verbose=True)
@@ -356,7 +355,7 @@ class ModelTest:
         result = suite.run_validation("architecture", tmp_path)
 
         assert isinstance(result, ModelValidationResult)
-        assert result.files_checked > 0
+        assert result.metadata.files_processed > 0
 
     def test_validation_workflow_union_usage(self, tmp_path: Path) -> None:
         """Test complete validation workflow for union-usage."""
@@ -381,7 +380,7 @@ def func(x: Union[str, int]) -> None:
         )
 
         assert isinstance(result, ModelValidationResult)
-        assert result.files_checked > 0
+        assert result.metadata.files_processed > 0
 
     def test_validation_workflow_contracts(self, tmp_path: Path) -> None:
         """Test complete validation workflow for contracts."""
@@ -411,7 +410,7 @@ def example_function():
         result = suite.run_validation("patterns", tmp_path, strict=False)
 
         assert isinstance(result, ModelValidationResult)
-        assert result.files_checked > 0
+        assert result.metadata.files_processed > 0
 
     def test_empty_directory_handling(self, tmp_path: Path) -> None:
         """Test handling of empty directories."""
@@ -420,7 +419,7 @@ def example_function():
         result = suite.run_validation("architecture", tmp_path)
 
         assert isinstance(result, ModelValidationResult)
-        assert result.success is True  # Empty directory should pass
+        assert result.is_valid is True  # Empty directory should pass
 
     def test_kwargs_filtering_architecture(self, tmp_path: Path) -> None:
         """Test architecture validation only receives relevant kwargs."""
@@ -505,7 +504,7 @@ def func(x: Union[str, int, bool, float]) -> None:  # Complex union
 
         assert len(results) > 0
         # At least one result should have errors
-        has_errors = any(not r.success for r in results.values())
+        has_errors = any(not r.is_valid for r in results.values())
         assert True  # May pass if validation is permissive
 
     def test_suite_validators_immutability(self) -> None:

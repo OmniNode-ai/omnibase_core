@@ -3,7 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from .model_custom_fields import ModelCustomFields
+from omnibase_core.models.service.model_custom_fields import ModelCustomFields
+
 from .model_environment import ModelEnvironment
 from .model_feature_flags import ModelFeatureFlags
 

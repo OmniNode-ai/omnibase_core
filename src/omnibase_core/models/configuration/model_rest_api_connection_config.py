@@ -6,14 +6,12 @@ from urllib.parse import urljoin, urlparse
 from pydantic import BaseModel, Field, SecretStr, field_validator
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.configuration.model_health_check_config import (
-    ModelHealthCheckConfig,
-)
 from omnibase_core.models.configuration.model_request_config import ModelRequestConfig
 from omnibase_core.models.configuration.model_request_retry_config import (
     ModelRequestRetryConfig,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
 
 
 class ModelRestApiConnectionConfig(BaseModel):
@@ -367,10 +365,12 @@ class ModelRestApiConnectionConfig(BaseModel):
     def get_health_check_config(self) -> ModelHealthCheckConfig:
         """Get configuration for health check requests."""
         return ModelHealthCheckConfig(
-            endpoint="/health",
+            check_path="/health",
             timeout_seconds=self.get_health_check_timeout(),
-            headers=self.get_request_headers(),
-            max_retries=min(self.max_retries, 2),  # Fewer retries for health checks
+            check_headers=self.get_request_headers(),
+            unhealthy_threshold=min(
+                self.max_retries, 2
+            ),  # Fewer failures needed for unhealthy
         )
 
     # === Environment Override Support ===

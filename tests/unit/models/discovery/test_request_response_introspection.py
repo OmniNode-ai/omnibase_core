@@ -17,6 +17,9 @@ from omnibase_core.mixins.mixin_request_response_introspection import (
 from omnibase_core.models.discovery.model_current_tool_availability import (
     ModelCurrentToolAvailability,
 )
+from omnibase_core.models.discovery.model_discovery_performance_metrics import (
+    ModelPerformanceMetrics,
+)
 from omnibase_core.models.discovery.model_introspection_filters import (
     ModelIntrospectionFilters,
 )
@@ -25,9 +28,6 @@ from omnibase_core.models.discovery.model_introspection_response_event import (
 )
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
-)
-from omnibase_core.models.discovery.model_performance_metrics import (
-    ModelPerformanceMetrics,
 )
 from omnibase_core.models.discovery.model_request_introspection_event import (
     ModelRequestIntrospectionEvent,

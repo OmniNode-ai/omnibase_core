@@ -544,8 +544,11 @@ operations: []
 
         result = validate_contracts_directory(tmp_path)
 
-        assert result.success or not result.success  # Should complete
-        assert result.files_checked >= 3
+        assert result.is_valid or not result.is_valid  # Should complete
+        assert (
+            result.metadata is not None and result.metadata.files_processed is not None
+        )
+        assert result.metadata.files_processed >= 3
 
     def test_validate_contracts_directory_mixed_valid_invalid(
         self,
@@ -576,9 +579,12 @@ invalid: yaml: [syntax
 
         result = validate_contracts_directory(tmp_path)
 
-        assert result.files_checked >= 2
+        assert (
+            result.metadata is not None and result.metadata.files_processed is not None
+        )
+        assert result.metadata.files_processed >= 2
         # Should detect invalid file
-        if not result.success:
+        if not result.is_valid:
             assert len(result.errors) > 0
 
     def test_validate_contracts_directory_ignores_pycache(
@@ -594,7 +600,9 @@ invalid: yaml: [syntax
         result = validate_contracts_directory(tmp_path)
 
         # Should not check files in __pycache__
-        assert result.files_checked == 0 or result.success
+        assert (
+            result.metadata is None or result.metadata.files_processed == 0
+        ) or result.success
 
     def test_validate_contracts_directory_ignores_git(self, tmp_path: Path) -> None:
         """Test validation ignores .git directories."""
@@ -605,7 +613,9 @@ invalid: yaml: [syntax
 
         result = validate_contracts_directory(tmp_path)
 
-        assert result.files_checked == 0 or result.success
+        assert (
+            result.metadata is None or result.metadata.files_processed == 0
+        ) or result.success
 
     def test_validate_contracts_directory_ignores_node_modules(
         self,
@@ -619,7 +629,9 @@ invalid: yaml: [syntax
 
         result = validate_contracts_directory(tmp_path)
 
-        assert result.files_checked == 0 or result.success
+        assert (
+            result.metadata is None or result.metadata.files_processed == 0
+        ) or result.success
 
     def test_validate_contracts_directory_both_yaml_and_yml(
         self,
@@ -654,7 +666,10 @@ operations: []
 
         result = validate_contracts_directory(tmp_path)
 
-        assert result.files_checked >= 2
+        assert (
+            result.metadata is not None and result.metadata.files_processed is not None
+        )
+        assert result.metadata.files_processed >= 2
 
     def test_validate_contracts_directory_detects_manual_yaml(
         self,
@@ -681,7 +696,7 @@ operations: []
         result = validate_contracts_directory(tmp_path)
 
         # Should detect manual YAML violation
-        if not result.success:
+        if not result.is_valid:
             assert len(result.errors) > 0
             assert any("Manual YAML" in error for error in result.errors)
 
@@ -696,7 +711,7 @@ operations: []
         result = validate_contracts_directory(tmp_path)
 
         # Should track invalid YAML
-        assert not result.success or len(result.errors) > 0
+        assert not result.is_valid or len(result.errors) > 0
 
     def test_validate_contracts_directory_populates_metadata(
         self,
@@ -719,7 +734,6 @@ operations: []
         result = validate_contracts_directory(tmp_path)
 
         assert result.metadata is not None
-        assert "files_validated" in result.metadata or len(result.metadata) >= 0
 
 
 class TestTimeoutHandler:

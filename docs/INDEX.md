@@ -134,17 +134,9 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [Circuit Breaker Pattern](patterns/patterns/CIRCUIT_BREAKER_PATTERN.md) | Circuit breaker implementation | ✅ Available |
-| [Configuration Management](patterns/patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns | ✅ Available |
+| [Circuit Breaker Pattern](patterns/CIRCUIT_BREAKER_PATTERN.md) | Circuit breaker implementation | ✅ Available |
+| [Configuration Management](patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns | ✅ Available |
 | [Performance Benchmarks](guides/PERFORMANCE_BENCHMARKS.md) | Performance testing | ✅ Available |
-
-### Research Documentation
-
-| Document | Description | Status |
-|----------|-------------|--------|
-| [In-Memory Event Bus Research](research/IN_MEMORY_EVENT_BUS_RESEARCH_REPORT.md) | Event handling patterns and implementation analysis | ✅ Available |
-| [Union Type Quick Reference](research/UNION_QUICK_REFERENCE.md) | Union type best practices and migration guide | ✅ Available |
-| [Union Type Remediation Plan](research/UNION_REMEDIATION_PLAN.md) | Comprehensive strategy for eliminating Union types | ✅ Available |
 
 ### Release Notes
 
@@ -194,7 +186,6 @@ omnibase_core/docs/
 |----------|-------------|--------|
 | [**Subcontract Architecture**](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design | ✅ Excellent |
 | [Approved Union Patterns](patterns/APPROVED_UNION_PATTERNS.md) | Type union patterns | ✅ Available |
-| [Validation Enhancement Plan](planning/VALIDATION_ENHANCEMENT_PLAN.md) | Validation patterns | ✅ Available |
 
 ### Project Documentation
 

@@ -1,4 +1,5 @@
-from .model_action import ModelAction
+from omnibase_core.models.infrastructure.model_protocol_action import ModelAction
+
 from .model_state import ModelState as ImportedModelState
 
 # Compatibility aliases

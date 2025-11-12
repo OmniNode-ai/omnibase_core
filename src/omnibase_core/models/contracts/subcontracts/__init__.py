@@ -17,6 +17,10 @@ providing clean separation between node logic and subcontract functionality.
 ONEX Compliance: Strong typing with zero tolerance for Any types.
 """
 
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.core.model_health_check_result import ModelHealthCheckResult
+from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
+
 # Subcontract model imports (alphabetical order)
 from .model_aggregation_function import ModelAggregationFunction
 from .model_aggregation_performance import ModelAggregationPerformance
@@ -26,7 +30,6 @@ from .model_cache_invalidation import ModelCacheInvalidation
 from .model_cache_key_strategy import ModelCacheKeyStrategy
 from .model_cache_performance import ModelCachePerformance
 from .model_caching_subcontract import ModelCachingSubcontract
-from .model_circuit_breaker import ModelCircuitBreaker
 from .model_circuit_breaker_subcontract import ModelCircuitBreakerSubcontract
 from .model_component_health import ModelComponentHealth
 from .model_component_health_collection import ModelComponentHealthCollection
@@ -50,7 +53,6 @@ from .model_fsm_state_transition import ModelFSMStateTransition
 from .model_fsm_subcontract import ModelFSMSubcontract
 from .model_fsm_transition_action import ModelFSMTransitionAction
 from .model_fsm_transition_condition import ModelFSMTransitionCondition
-from .model_health_check_result import ModelHealthCheckResult
 from .model_health_check_subcontract import ModelHealthCheckSubcontract
 from .model_load_balancing import ModelLoadBalancing
 from .model_logging_subcontract import ModelLoggingSubcontract
@@ -81,7 +83,6 @@ from .model_workflow_coordination_subcontract import (
 from .model_workflow_definition import ModelWorkflowDefinition
 from .model_workflow_definition_metadata import ModelWorkflowDefinitionMetadata
 from .model_workflow_instance import ModelWorkflowInstance
-from .model_workflow_metrics import ModelWorkflowMetrics
 from .model_workflow_node import ModelWorkflowNode
 
 __all__ = [

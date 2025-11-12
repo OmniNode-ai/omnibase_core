@@ -13,7 +13,6 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
-from omnibase_core.models.contracts.model_condition_value import ModelConditionValue
 from omnibase_core.models.contracts.model_workflow_condition import (
     EnumConditionOperator,
     EnumConditionType,
@@ -24,6 +23,7 @@ from omnibase_core.models.contracts.model_workflow_dependency import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.security.model_condition_value import ModelConditionValue
 
 
 class TestModelWorkflowDependencyPerformance:
@@ -47,7 +47,7 @@ class TestModelWorkflowDependencyPerformance:
                 condition_type=EnumConditionType.WORKFLOW_STATE,
                 field_name="status",
                 operator=EnumConditionOperator.EQUALS,
-                expected_value=ModelConditionValue[str](value="completed"),
+                expected_value=ModelConditionValue(value="completed"),
             )
 
         version = None

@@ -19,10 +19,10 @@ from pydantic import BaseModel, ConfigDict
 from omnibase_core.enums.enum_condition_operator import EnumConditionOperator
 from omnibase_core.enums.enum_condition_type import EnumConditionType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.contracts.model_condition_value import ModelConditionValue
 from omnibase_core.models.contracts.model_condition_value_list import (
     ModelConditionValueList,
 )
+from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from omnibase_core.types.constraints import (
     ComplexContextValueType,
     ContextValueType,
@@ -61,7 +61,7 @@ class ModelWorkflowCondition(BaseModel):
         description="Operator to use for condition evaluation",
     )
 
-    expected_value: ModelConditionValue[Any] | ModelConditionValueList = Field(
+    expected_value: ModelConditionValue | ModelConditionValueList = Field(
         default=...,
         description="Expected value for comparison (strongly typed container)",
     )
@@ -170,7 +170,7 @@ class ModelWorkflowCondition(BaseModel):
 
     def _extract_container_value(
         self,
-        container: ModelConditionValue[Any] | ModelConditionValueList,
+        container: ModelConditionValue | ModelConditionValueList,
     ) -> ConditionValueType:
         """Extract the actual value from the type-safe container."""
         if isinstance(container, ModelConditionValueList):

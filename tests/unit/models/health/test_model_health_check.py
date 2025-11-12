@@ -343,7 +343,7 @@ class TestModelHealthCheckConfiguration:
 
     def test_metadata_configuration(self):
         """Test metadata configuration."""
-        from omnibase_core.models.core.model_generic_metadata import (
+        from omnibase_core.models.core.model_protocol_metadata import (
             ModelGenericMetadata,
         )
 

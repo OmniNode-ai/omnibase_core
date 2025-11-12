@@ -10,12 +10,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.container.model_service_registration import (
+    ModelServiceRegistration,
+)
 from omnibase_core.models.core.model_container_instance_config import ModelConfig
 from omnibase_core.models.core.model_protocol_registration import (
     ModelProtocolRegistration,
-)
-from omnibase_core.models.core.model_service_registration import (
-    ModelServiceRegistration,
 )
 
 

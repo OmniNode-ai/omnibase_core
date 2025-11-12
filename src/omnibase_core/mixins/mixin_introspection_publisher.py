@@ -1,5 +1,5 @@
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import Field
 
@@ -347,7 +347,7 @@ class MixinIntrospectionPublisher:
         if not event_bus:
             return
         node_id = getattr(self, "_node_id", "unknown")
-        from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         source_node_id_str: str
         if isinstance(node_id, str):
@@ -356,9 +356,15 @@ class MixinIntrospectionPublisher:
             source_node_id_str = str(node_id)
         else:
             source_node_id_str = "unknown"
+        # Ensure source_node_id is UUID
+        if isinstance(node_id, UUID):
+            source_uuid = node_id
+        else:
+            source_uuid = uuid4()
+
         envelope = ModelEventEnvelope.create_broadcast(
             payload=event,
-            source_node_id=source_node_id_str,
+            source_node_id=source_uuid,
             correlation_id=event.correlation_id,
         )
         for attempt in range(max_retries):

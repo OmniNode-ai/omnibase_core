@@ -16,14 +16,16 @@ from omnibase_core.enums.enum_tool_health_status import EnumToolHealthStatus
 from omnibase_core.enums.enum_tool_type import EnumToolType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_error_summary import ModelErrorSummary
-from omnibase_core.models.core.model_metric_value import ModelMetricValue
-from omnibase_core.models.core.model_monitoring_metrics import ModelMonitoringMetrics
+from omnibase_core.models.discovery.model_metric_value import ModelMetricValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_generic_properties import (
         ModelGenericProperties,
+    )
+    from omnibase_core.models.core.model_monitoring_metrics import (
+        ModelMonitoringMetrics,
     )
 
 
@@ -424,6 +426,11 @@ class ModelToolHealth(BaseModel):
 
     def get_monitoring_metrics(self) -> "ModelMonitoringMetrics":
         """Get metrics suitable for monitoring systems."""
+        # Import at runtime to avoid circular import
+        from omnibase_core.models.core.model_monitoring_metrics import (
+            ModelMonitoringMetrics,
+        )
+
         health_score = (
             100.0 if self.is_healthy() else 50.0 if self.is_degraded() else 0.0
         )
@@ -455,25 +462,29 @@ class ModelToolHealth(BaseModel):
             end_time=None,
             custom_metrics={
                 "tool_name": ModelMetricValue(
-                    value=self.tool_name, unit="string", timestamp=datetime.now(UTC)
+                    name="tool_name",
+                    value=self.tool_name,
+                    metric_type="string",
                 ),
                 "tool_type": ModelMetricValue(
+                    name="tool_type",
                     value=self.tool_type.value,
-                    unit="string",
-                    timestamp=datetime.now(UTC),
+                    metric_type="string",
                 ),
                 "is_callable": ModelMetricValue(
-                    value=self.is_callable, unit="boolean", timestamp=datetime.now(UTC)
+                    name="is_callable",
+                    value=self.is_callable,
+                    metric_type="boolean",
                 ),
                 "severity": ModelMetricValue(
+                    name="severity",
                     value=self.get_severity_level(),
-                    unit="string",
-                    timestamp=datetime.now(UTC),
+                    metric_type="string",
                 ),
                 "consecutive_failures": ModelMetricValue(
+                    name="consecutive_failures",
                     value=self.consecutive_failures or 0,
-                    unit="count",
-                    timestamp=datetime.now(UTC),
+                    metric_type="counter",
                 ),
             },
         )

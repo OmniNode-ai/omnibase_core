@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from omnibase_core.models.core.model_metadata import ModelMetadata
+from omnibase_core.models.core.model_core_metadata import ModelMetadata
 from omnibase_core.models.core.model_regeneration_target import ModelRegenerationTarget
 from omnibase_core.models.core.model_rendered_template import ModelRenderedTemplate
 from omnibase_core.models.primitives.model_semver import ModelSemVer

@@ -1,17 +1,20 @@
-from typing import Any, Optional
-
-from pydantic import Field
-
 """
 SchemaProperty model.
 """
 
-from typing import TYPE_CHECKING
+from __future__ import annotations
 
-from pydantic import BaseModel
+from typing import TYPE_CHECKING, Any, Optional
+
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from .model_schema import ModelRequiredFieldsModel, ModelSchemaPropertiesModel
+    from omnibase_core.models.validation.model_required_fields_model import (
+        ModelRequiredFieldsModel,
+    )
+    from omnibase_core.models.validation.model_schema_properties_model import (
+        ModelSchemaPropertiesModel,
+    )
 
 
 class ModelSchemaProperty(BaseModel):
@@ -26,9 +29,9 @@ class ModelSchemaProperty(BaseModel):
     default: str | int | float | bool | list[Any] | dict[str, Any] | None = None
     enum: list[str | int | float | bool] | None = None
     format: str | None = None
-    items: Optional["ModelSchemaProperty"] = None
-    properties: Optional["ModelSchemaPropertiesModel"] = None
-    required: Optional["ModelRequiredFieldsModel"] = None
+    items: Optional[ModelSchemaProperty] = None
+    properties: Optional[ModelSchemaPropertiesModel] = None
+    required: Optional[ModelRequiredFieldsModel] = None
     model_config = {"arbitrary_types_allowed": True, "extra": "allow"}
 
 

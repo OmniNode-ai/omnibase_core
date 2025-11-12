@@ -38,18 +38,19 @@ class TestValidationPackageExports:
 
     def test_general_validation_result_export(self) -> None:
         """Test that ModelValidationResult is exported (for general validation)."""
-        import dataclasses
+        from pydantic import BaseModel
 
         from omnibase_core.validation import ModelValidationResult
 
         assert ModelValidationResult is not None
-        # Verify it's a dataclass
-        assert dataclasses.is_dataclass(ModelValidationResult)
+        # Verify it's a Pydantic BaseModel
+        assert issubclass(ModelValidationResult, BaseModel)
         # Verify it has expected fields for general validation
-        field_names = [f.name for f in dataclasses.fields(ModelValidationResult)]
-        assert "files_checked" in field_names
-        assert "success" in field_names
+        assert hasattr(ModelValidationResult, "model_fields")
+        field_names = list(ModelValidationResult.model_fields.keys())
+        assert "is_valid" in field_names
         assert "errors" in field_names
+        assert "summary" in field_names
 
     def test_model_module_import_result_export(self) -> None:
         """Test that ModelModuleImportResult is exported."""

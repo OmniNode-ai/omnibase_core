@@ -599,7 +599,7 @@ class TestRollback:
 
         rollback_result = migrator.rollback_migration(result)
 
-        assert rollback_result.success is False
+        assert rollback_result.is_valid is False
         assert "not available" in rollback_result.errors[0].lower()
 
     def test_rollback_successful(self, tmp_path: Path) -> None:
@@ -625,7 +625,7 @@ class TestRollback:
 
         rollback_result = migrator.rollback_migration(result)
 
-        assert rollback_result.success is True
+        assert rollback_result.is_valid is True
         assert not created_file.exists()  # Should be deleted
 
 

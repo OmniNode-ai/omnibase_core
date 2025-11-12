@@ -11,7 +11,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_orchestrator_types import EnumExecutionMode
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 
 
 class ModelOrchestratorInput(BaseModel):
@@ -54,4 +54,7 @@ class ModelOrchestratorInput(BaseModel):
         default_factory=datetime.now, description="Workflow creation timestamp"
     )
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        use_enum_values=False,
+    )

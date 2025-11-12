@@ -23,7 +23,7 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 logger = logging.getLogger(__name__)
 
-from omnibase_core.models.core.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.mixins.model_service_registry_entry import (
     ModelServiceRegistryEntry,
 )
@@ -178,17 +178,24 @@ class MixinServiceRegistry:
                 },
             )
 
+            # Ensure source_node_id is UUID
+            source_id = getattr(self, "node_id", uuid4())
+            if not isinstance(source_id, UUID):
+                source_id = uuid4()
+
             # Create event envelope
-            envelope = ModelEventEnvelope.create_direct(
-                payload=discovery_event,
-                destination="broadcast://all",
-                source_node_id=getattr(self, "node_id", f"registry_{uuid4().hex[:8]}"),
-                correlation_id=correlation_id,
-                metadata={
-                    "request_type": "tool_discovery",
-                    "domain_filter": getattr(self, "domain_filter", None),
-                },
+            envelope: ModelEventEnvelope[ModelOnexEvent] = (
+                ModelEventEnvelope.create_broadcast(
+                    payload=discovery_event,
+                    source_node_id=source_id,
+                    correlation_id=correlation_id,
+                )
             )
+            # Set metadata after creation
+            envelope.metadata = {
+                "request_type": "tool_discovery",
+                "domain_filter": getattr(self, "domain_filter", None),
+            }
 
             logger.info(f"🔍 Sending discovery request envelope: {envelope}")
             self.event_bus.publish(envelope)
@@ -204,7 +211,7 @@ class MixinServiceRegistry:
 
             traceback.print_exc()
 
-    def _handle_node_start(self, envelope: "ModelEventEnvelope") -> None:
+    def _handle_node_start(self, envelope: "ModelEventEnvelope[Any]") -> None:
         """Handle node start events - new tools coming online."""
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
@@ -269,7 +276,7 @@ class MixinServiceRegistry:
         except Exception as e:
             logger.exception(f"❌ Error handling node start event: {e}")
 
-    def _handle_node_stop(self, envelope: "ModelEventEnvelope") -> None:
+    def _handle_node_stop(self, envelope: "ModelEventEnvelope[Any]") -> None:
         """Handle node stop events - tools going offline."""
         try:
             # Always use payload.node_id as the actual node identifier
@@ -299,7 +306,7 @@ class MixinServiceRegistry:
         except Exception as e:
             logger.exception(f"❌ Error handling node stop event: {e}")
 
-    def _handle_node_failure(self, envelope: "ModelEventEnvelope") -> None:
+    def _handle_node_failure(self, envelope: "ModelEventEnvelope[Any]") -> None:
         """Handle node failure events - tools failing."""
         # Same logic as stop for now
         self._handle_node_stop(envelope)
@@ -323,14 +330,28 @@ class MixinServiceRegistry:
                 },
             )
 
+            # Ensure source_node_id is UUID
+            source_id = getattr(self, "node_id", uuid4())
+            if not isinstance(source_id, UUID):
+                source_id = uuid4()
+
+            # Ensure target_node_id is UUID
+            target_id = node_id if isinstance(node_id, UUID) else UUID(node_id)
+
             # Create event envelope
-            envelope = ModelEventEnvelope.create_direct(
-                payload=introspection_event,
-                destination=f"node://{node_id}",
-                source_node_id=getattr(self, "node_id", f"registry_{uuid4().hex[:8]}"),
-                correlation_id=correlation_id,
-                metadata={"target_node_id": node_id, "request_type": "introspection"},
+            envelope: ModelEventEnvelope[ModelOnexEvent] = (
+                ModelEventEnvelope.create_directed(
+                    payload=introspection_event,
+                    source_node_id=source_id,
+                    target_node_id=target_id,
+                    correlation_id=correlation_id,
+                )
             )
+            # Set metadata after creation
+            envelope.metadata = {
+                "target_node_id": str(node_id),
+                "request_type": "introspection",
+            }
 
             self.event_bus.publish(envelope)
 
@@ -345,7 +366,9 @@ class MixinServiceRegistry:
                 f"❌ Failed to send introspection request to {node_id}: {e}",
             )
 
-    def _handle_introspection_response(self, envelope: "ModelEventEnvelope") -> None:
+    def _handle_introspection_response(
+        self, envelope: "ModelEventEnvelope[Any]"
+    ) -> None:
         """Handle introspection responses from tools."""
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
@@ -384,7 +407,7 @@ class MixinServiceRegistry:
         except Exception as e:
             logger.exception(f"❌ Error handling introspection response: {e}")
 
-    def _handle_discovery_request(self, envelope: "ModelEventEnvelope") -> None:
+    def _handle_discovery_request(self, envelope: "ModelEventEnvelope[Any]") -> None:
         """Handle discovery requests from other hubs/services."""
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
@@ -442,15 +465,20 @@ class MixinServiceRegistry:
                         data=response_data,
                     )
 
-                    envelope = ModelEventEnvelope.create_broadcast(
-                        payload=response_event,
-                        source_node_id=getattr(
-                            self, "node_id", f"registry_{uuid4().hex[:8]}"
-                        ),
-                        correlation_id=correlation_id,
+                    # Ensure source_node_id is UUID
+                    source_id = getattr(self, "node_id", uuid4())
+                    if not isinstance(source_id, UUID):
+                        source_id = uuid4()
+
+                    response_envelope: ModelEventEnvelope[ModelOnexEvent] = (
+                        ModelEventEnvelope.create_broadcast(
+                            payload=response_event,
+                            source_node_id=source_id,
+                            correlation_id=correlation_id,
+                        )
                     )
 
-                    self.event_bus.publish(envelope)
+                    self.event_bus.publish(response_envelope)
                     logger.info(
                         f"📤 Sent discovery response with {len(self.service_registry)} tools",
                     )

@@ -19,6 +19,10 @@ import sys
 from pathlib import Path
 from typing import Protocol
 
+from omnibase_core.models.common.model_validation_metadata import (
+    ModelValidationMetadata,
+)
+
 from .checker_generic_pattern import GenericPatternChecker
 from .checker_naming_convention import NamingConventionChecker
 from .checker_pydantic_pattern import PydanticPatternChecker
@@ -65,7 +69,7 @@ def validate_patterns_file(file_path: Path) -> list[str]:
 def validate_patterns_directory(
     directory: Path,
     strict: bool = False,
-) -> ModelValidationResult:
+) -> ModelValidationResult[None]:
     """Validate patterns in a directory."""
     python_files = []
 
@@ -93,18 +97,18 @@ def validate_patterns_directory(
             files_with_errors.append(str(py_file))
             all_errors.extend([f"{py_file}: {issue}" for issue in issues])
 
-    success = len(all_errors) == 0 or not strict
+    is_valid = len(all_errors) == 0 or not strict
 
     return ModelValidationResult(
-        success=success,
+        is_valid=is_valid,
         errors=all_errors,
-        files_checked=len(python_files),
-        violations_found=len(all_errors),
-        files_with_violations=len(files_with_errors),
-        metadata={
-            "validation_type": "patterns",
-            "strict_mode": strict,
-        },
+        metadata=ModelValidationMetadata(
+            validation_type="patterns",
+            files_processed=len(python_files),
+            violations_found=len(all_errors),
+            files_with_violations=len(files_with_errors),
+            strict_mode=strict,
+        ),
     )
 
 
@@ -130,7 +134,11 @@ def validate_patterns_cli() -> int:
     print("🔍 ONEX Pattern Validation")
     print("=" * 40)
 
-    overall_result = ModelValidationResult(success=True, errors=[], files_checked=0)
+    overall_result: ModelValidationResult[None] = ModelValidationResult(
+        is_valid=True,
+        errors=[],
+        metadata=ModelValidationMetadata(files_processed=0),
+    )
 
     for directory in args.directories:
         dir_path = Path(directory)
@@ -142,9 +150,12 @@ def validate_patterns_cli() -> int:
         result = validate_patterns_directory(dir_path, args.strict)
 
         # Merge results
-        overall_result.success = overall_result.success and result.success
+        overall_result.is_valid = overall_result.is_valid and result.is_valid
         overall_result.errors.extend(result.errors)
-        overall_result.files_checked += result.files_checked
+        if overall_result.metadata and result.metadata:
+            overall_result.metadata.files_processed = (
+                overall_result.metadata.files_processed or 0
+            ) + (result.metadata.files_processed or 0)
 
         if result.errors:
             print(f"\n❌ Pattern issues found in {directory}:")
@@ -152,10 +163,13 @@ def validate_patterns_cli() -> int:
                 print(f"   {error}")
 
     print("\n📊 Pattern Validation Summary:")
-    print(f"   • Files checked: {overall_result.files_checked}")
+    files_processed = (
+        overall_result.metadata.files_processed if overall_result.metadata else 0
+    )
+    print(f"   • Files checked: {files_processed}")
     print(f"   • Issues found: {len(overall_result.errors)}")
 
-    if overall_result.success:
+    if overall_result.is_valid:
         print("✅ Pattern validation PASSED")
         return 0
     print("❌ Pattern validation FAILED")
