@@ -57,7 +57,7 @@ class ModelResourceUsageMetric(BaseModel):
 
     is_percentage: bool = Field(
         default=True,
-        description="Whether the usage_value is a percentage (0-100)",
+        description="Whether usage_value should be treated as a percentage (enforced max 150 for burst scenarios)",
     )
 
     @model_validator(mode="after")
