@@ -9,6 +9,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_mapping_type import EnumMappingType
+
 
 class ModelEventMappingRule(BaseModel):
     """
@@ -30,8 +32,8 @@ class ModelEventMappingRule(BaseModel):
         min_length=1,
     )
 
-    mapping_type: str = Field(
-        default="direct",
+    mapping_type: EnumMappingType = Field(
+        default=EnumMappingType.DIRECT,
         description="Type of mapping (direct, transform, conditional, composite)",
     )
 

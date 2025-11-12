@@ -21,7 +21,9 @@ class EnumParameterType(str, Enum):
     type safety and IDE support for parameter validation operations.
     """
 
+    AUTO = "auto"
     STRING = "string"
+    NUMBER = "number"
     INTEGER = "integer"
     FLOAT = "float"
     BOOLEAN = "boolean"
@@ -56,6 +58,7 @@ class EnumParameterType(str, Enum):
     def is_numeric(cls, param_type: EnumParameterType) -> bool:
         """Check if the parameter type represents numeric data."""
         return param_type in {
+            cls.NUMBER,
             cls.INTEGER,
             cls.FLOAT,
         }
@@ -82,7 +85,9 @@ class EnumParameterType(str, Enum):
     def get_python_type(cls, param_type: EnumParameterType) -> str:
         """Get the corresponding Python type string."""
         type_map = {
+            cls.AUTO: "Any",  # Auto-detect type
             cls.STRING: "str",
+            cls.NUMBER: "float",  # Generic numeric type
             cls.INTEGER: "int",
             cls.FLOAT: "float",
             cls.BOOLEAN: "bool",

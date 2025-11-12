@@ -9,6 +9,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_health_detail_type import EnumHealthDetailType
+
 
 class ModelComponentHealthDetail(BaseModel):
     """
@@ -29,8 +31,8 @@ class ModelComponentHealthDetail(BaseModel):
         description="Value of the health detail",
     )
 
-    detail_type: str = Field(
-        default="info",
+    detail_type: EnumHealthDetailType = Field(
+        default=EnumHealthDetailType.INFO,
         description="Type of detail (info, metric, warning, error, diagnostic)",
     )
 

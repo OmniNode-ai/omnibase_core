@@ -9,6 +9,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_parameter_type import EnumParameterType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
@@ -31,8 +32,8 @@ class ModelAggregationParameter(BaseModel):
         description="Strongly-typed parameter value with schema validation",
     )
 
-    parameter_type: str = Field(
-        default="auto",
+    parameter_type: EnumParameterType = Field(
+        default=EnumParameterType.AUTO,
         description="Expected type of parameter (auto, string, number, boolean)",
     )
 

@@ -9,14 +9,9 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from omnibase_core.models.core.model_action_config_value import (
-        ModelActionConfigValue,
-    )
+from omnibase_core.models.core.model_action_config_value import ModelActionConfigValue
 
 
 class ModelActionConfigParameter(BaseModel):

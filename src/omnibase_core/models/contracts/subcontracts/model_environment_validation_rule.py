@@ -9,6 +9,10 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_environment_validation_rule_type import (
+    EnumEnvironmentValidationRuleType,
+)
+
 
 class ModelEnvironmentValidationRule(BaseModel):
     """
@@ -30,8 +34,8 @@ class ModelEnvironmentValidationRule(BaseModel):
         min_length=1,
     )
 
-    rule_type: str = Field(
-        default="value_check",
+    rule_type: EnumEnvironmentValidationRuleType = Field(
+        default=EnumEnvironmentValidationRuleType.VALUE_CHECK,
         description="Type of validation (value_check, format, range, allowed_values)",
     )
 

@@ -13,7 +13,9 @@ class TestEnumParameterType:
     def test_enum_values(self):
         """Test all enum values are present."""
         expected_values = {
+            "auto",
             "string",
+            "number",
             "integer",
             "float",
             "boolean",
@@ -59,6 +61,7 @@ class TestEnumParameterType:
     def test_is_numeric(self):
         """Test numeric type classification."""
         numeric_types = {
+            EnumParameterType.NUMBER,
             EnumParameterType.INTEGER,
             EnumParameterType.FLOAT,
         }
@@ -97,7 +100,9 @@ class TestEnumParameterType:
     def test_get_python_type(self):
         """Test Python type mapping."""
         python_type_map = {
+            EnumParameterType.AUTO: "Any",
             EnumParameterType.STRING: "str",
+            EnumParameterType.NUMBER: "float",
             EnumParameterType.INTEGER: "int",
             EnumParameterType.FLOAT: "float",
             EnumParameterType.BOOLEAN: "bool",

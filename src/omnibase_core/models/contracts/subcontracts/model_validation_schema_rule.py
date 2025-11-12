@@ -9,6 +9,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_validation_rule_type import EnumValidationRuleType
+
 
 class ModelValidationSchemaRule(BaseModel):
     """
@@ -30,8 +32,8 @@ class ModelValidationSchemaRule(BaseModel):
         min_length=1,
     )
 
-    rule_type: str = Field(
-        default="regex",
+    rule_type: EnumValidationRuleType = Field(
+        default=EnumValidationRuleType.REGEX,
         description="Type of validation rule (regex, json_schema, range, enum)",
     )
 

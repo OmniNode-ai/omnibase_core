@@ -7,7 +7,9 @@ Replaces dict[str, float] with proper type safety and validation.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.enums.enum_resource_unit import EnumResourceUnit
 
 
 class ModelResourceUsageMetric(BaseModel):
@@ -30,8 +32,8 @@ class ModelResourceUsageMetric(BaseModel):
         ge=0.0,
     )
 
-    usage_unit: str = Field(
-        default="percentage",
+    usage_unit: EnumResourceUnit = Field(
+        default=EnumResourceUnit.PERCENTAGE,
         description="Unit of measurement (percentage, bytes, mbps, iops, etc.)",
     )
 
@@ -58,16 +60,15 @@ class ModelResourceUsageMetric(BaseModel):
         description="Whether the usage_value is a percentage (0-100)",
     )
 
-    @field_validator("usage_value")
-    @classmethod
-    def validate_percentage_range(cls, v: float, info: object) -> float:
-        """Validate percentage values are in valid range."""
-        # Note: info.data may not have 'is_percentage' yet during validation
-        # This is a safety check for common percentage cases
-        if v > 100.0 and v < 200.0:  # Likely percentage but over 100
-            # Allow values slightly over 100% for burst scenarios
-            pass
-        return v
+    @model_validator(mode="after")
+    def validate_percentage_range(self) -> "ModelResourceUsageMetric":
+        """Validate percentage values are within reasonable range."""
+        if self.is_percentage and self.usage_value > 150.0:
+            raise ValueError(  # error-ok: Pydantic validators require ValueError
+                f"Percentage usage_value {self.usage_value} exceeds maximum (150%). "
+                "Use is_percentage=False for non-percentage metrics."
+            )
+        return self
 
     model_config = {
         "extra": "ignore",

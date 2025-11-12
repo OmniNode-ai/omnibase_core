@@ -46,6 +46,9 @@ from .enum_effect_types import (
     EnumTransactionState,
 )
 
+# Validation-related enums
+from .enum_environment_validation_rule_type import EnumEnvironmentValidationRuleType
+
 # Execution-related enums
 from .enum_execution_mode import EnumExecutionMode
 from .enum_execution_trigger import EnumExecutionTrigger
@@ -62,6 +65,7 @@ from .enum_group_status import EnumGroupStatus
 
 # Health and status enums
 from .enum_health_check_type import EnumHealthCheckType
+from .enum_health_detail_type import EnumHealthDetailType
 from .enum_health_status_type import EnumHealthStatusType
 
 # Hub and coordination enums
@@ -81,6 +85,7 @@ from .enum_log_format import EnumLogFormat
 from .enum_log_level import EnumLogLevel
 
 # Communication enums
+from .enum_mapping_type import EnumMappingType
 from .enum_message_type import EnumMessageType
 
 # Metadata-related enums
@@ -131,6 +136,9 @@ from .enum_reducer_types import (
 # Registry-related enums
 from .enum_registry_health_status import EnumRegistryHealthStatus
 from .enum_registry_type import EnumRegistryType
+
+# Resource-related enums
+from .enum_resource_unit import EnumResourceUnit
 from .enum_return_type import EnumReturnType
 
 # Security-related enums
@@ -162,9 +170,8 @@ from .enum_tree_sync_status import EnumTreeSyncStatus
 
 # URI-related enums
 from .enum_uri_type import EnumUriType
-
-# Validation-related enums
 from .enum_validation import EnumErrorSeverity, EnumValidationLevel, EnumValidationMode
+from .enum_validation_rule_type import EnumValidationRuleType
 from .enum_value_type import EnumValueType
 
 # Version and contract enums
@@ -201,7 +208,9 @@ __all__ = [
     "EnumAuthenticationMethod",
     "EnumSecurityRiskLevel",
     # Validation domain
+    "EnumEnvironmentValidationRuleType",
     "EnumErrorSeverity",
+    "EnumValidationRuleType",
     # Effect domain (from nodes)
     "EnumCircuitBreakerState",
     "EnumEffectType",
@@ -213,6 +222,7 @@ __all__ = [
     "EnumLogLevel",
     # Health and status domain
     "EnumHealthCheckType",
+    "EnumHealthDetailType",
     "EnumHealthStatusType",
     "EnumNodeHealthStatus",
     "EnumNodeStatus",
@@ -250,6 +260,8 @@ __all__ = [
     "EnumMetadataToolType",
     # Namespace domain
     "EnumNamespaceStrategy",
+    # Resource domain
+    "EnumResourceUnit",
     # URI domain
     "EnumUriType",
     # Workflow domain
@@ -264,6 +276,7 @@ __all__ = [
     "EnumArchitecture",
     "EnumLogFormat",
     # Communication domain
+    "EnumMappingType",
     "EnumMessageType",
     # Group and organization domain
     "EnumGroupStatus",

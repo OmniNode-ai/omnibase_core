@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from .model_action_config_parameter import ModelActionConfigParameter
 
@@ -51,6 +51,21 @@ class ModelFSMTransitionAction(BaseModel):
         description="Timeout for action execution",
         ge=1,
     )
+
+    @model_validator(mode="after")
+    def validate_unique_action_config(self) -> ModelFSMTransitionAction:
+        """Ensure action_config parameter names are unique."""
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for param in self.action_config:
+            if param.parameter_name in seen:
+                duplicates.add(param.parameter_name)
+            seen.add(param.parameter_name)
+        if duplicates:
+            raise ValueError(  # error-ok: Pydantic validators require ValueError
+                f"Duplicate parameter names in action_config: {sorted(duplicates)}"
+            )
+        return self
 
     model_config = {
         "extra": "ignore",
