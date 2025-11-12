@@ -288,10 +288,22 @@ class ModelConfigurationSubcontract(BaseModel):
         base_keys = self.validation_rules.required_keys.copy()
 
         # Add environment-specific required keys
-        env_specific = self.validation_rules.environment_specific.get(env, {})
-        env_required = [
-            k for k, constraint in env_specific.items() if constraint == "required"
-        ]
+        env_rules = next(
+            (
+                rules
+                for rules in self.validation_rules.environment_specific
+                if rules.environment == env
+            ),
+            None,
+        )
+
+        env_required = []
+        if env_rules:
+            env_required = [
+                rule.config_key
+                for rule in env_rules.validation_rules
+                if rule.validation_rule == "required"
+            ]
 
         return list(set(base_keys + env_required))
 

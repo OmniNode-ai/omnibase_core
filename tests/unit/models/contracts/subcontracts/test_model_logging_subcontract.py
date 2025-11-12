@@ -6,6 +6,10 @@ Comprehensive tests for logging subcontract configuration and validation.
 
 import pytest
 
+from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.models.contracts.subcontracts.model_log_level_override import (
+    ModelLogLevelOverride,
+)
 from omnibase_core.models.contracts.subcontracts.model_logging_subcontract import (
     ModelLoggingSubcontract,
 )
@@ -283,7 +287,7 @@ class TestModelLoggingSubcontractDefaultValues:
         subcontract = ModelLoggingSubcontract()
         assert subcontract.enable_log_sampling is False
         assert subcontract.sampling_rate == 1.0
-        assert subcontract.log_level_overrides == {}
+        assert subcontract.log_level_overrides == []
 
     def test_integration_defaults(self):
         """Test integration default values."""
@@ -350,9 +354,20 @@ class TestModelLoggingSubcontractEdgeCases:
 
     def test_log_level_overrides(self):
         """Test creating subcontract with log level overrides."""
-        overrides = {"module.submodule": "DEBUG", "other.module": "ERROR"}
+        overrides = [
+            ModelLogLevelOverride(
+                logger_name="module.submodule", log_level=EnumLogLevel.DEBUG
+            ),
+            ModelLogLevelOverride(
+                logger_name="other.module", log_level=EnumLogLevel.ERROR
+            ),
+        ]
         subcontract = ModelLoggingSubcontract(log_level_overrides=overrides)
-        assert subcontract.log_level_overrides == overrides
+        assert len(subcontract.log_level_overrides) == 2
+        assert subcontract.log_level_overrides[0].logger_name == "module.submodule"
+        assert subcontract.log_level_overrides[0].log_level == EnumLogLevel.DEBUG
+        assert subcontract.log_level_overrides[1].logger_name == "other.module"
+        assert subcontract.log_level_overrides[1].log_level == EnumLogLevel.ERROR
 
     def test_file_logging_with_path(self):
         """Test enabling file logging with path."""

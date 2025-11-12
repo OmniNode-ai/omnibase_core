@@ -60,7 +60,7 @@ class ModelResourceUsageMetric(BaseModel):
 
     @field_validator("usage_value")
     @classmethod
-    def validate_percentage_range(cls, v: float, info) -> float:
+    def validate_percentage_range(cls, v: float, info: object) -> float:
         """Validate percentage values are in valid range."""
         # Note: info.data may not have 'is_percentage' yet during validation
         # This is a safety check for common percentage cases
