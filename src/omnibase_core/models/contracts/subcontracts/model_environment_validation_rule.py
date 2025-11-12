@@ -7,7 +7,7 @@ Replaces dict[str, str] nested structures with proper type safety.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_environment_validation_rule_type import (
     EnumEnvironmentValidationRuleType,
@@ -44,12 +44,12 @@ class ModelEnvironmentValidationRule(BaseModel):
         description="List of allowed values for this key in this environment",
     )
 
-    min_value: str | None = Field(
+    min_value: float | None = Field(
         default=None,
         description="Minimum value constraint (for numeric/comparable types)",
     )
 
-    max_value: str | None = Field(
+    max_value: float | None = Field(
         default=None,
         description="Maximum value constraint (for numeric/comparable types)",
     )
@@ -64,3 +64,32 @@ class ModelEnvironmentValidationRule(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
+
+    @model_validator(mode="after")
+    def validate_rule_specific_fields(self) -> "ModelEnvironmentValidationRule":
+        """
+        Validate that field combinations are consistent with rule_type.
+
+        Ensures that:
+        - RANGE rules have at least min_value or max_value set
+        - ALLOWED_VALUES rules have non-empty allowed_values list
+        - FORMAT rules have format_pattern set
+
+        Raises:
+            ValueError: If required fields are missing for the rule type
+        """
+        if self.rule_type == EnumEnvironmentValidationRuleType.RANGE:
+            if self.min_value is None and self.max_value is None:
+                raise ValueError(
+                    "RANGE rule requires at least min_value or max_value to be set"
+                )
+        elif self.rule_type == EnumEnvironmentValidationRuleType.ALLOWED_VALUES:
+            if not self.allowed_values:
+                raise ValueError(
+                    "ALLOWED_VALUES rule requires non-empty allowed_values list"
+                )
+        elif self.rule_type == EnumEnvironmentValidationRuleType.FORMAT:
+            if not self.format_pattern:
+                raise ValueError("FORMAT rule requires format_pattern to be set")
+
+        return self

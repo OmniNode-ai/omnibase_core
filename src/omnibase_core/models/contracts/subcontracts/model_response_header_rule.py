@@ -7,15 +7,28 @@ Replaces dict[str, str] with proper type safety.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from omnibase_core.enums.enum_response_header_transformation_type import (
+    EnumResponseHeaderTransformationType,
+)
+from omnibase_core.models.contracts.subcontracts.model_base_header_transformation import (
+    ModelBaseHeaderTransformation,
+)
 
 
-class ModelResponseHeaderRule(BaseModel):
+class ModelResponseHeaderRule(ModelBaseHeaderTransformation):
     """
     Strongly-typed response header transformation rule.
 
     Defines transformations for HTTP response headers with proper
     validation and type safety.
+
+    Inherits common transformation fields from ModelBaseHeaderTransformation:
+    - transformation_rule
+    - apply_condition
+    - case_sensitive
+    - priority
     """
 
     header_name: str = Field(
@@ -24,25 +37,9 @@ class ModelResponseHeaderRule(BaseModel):
         min_length=1,
     )
 
-    transformation_rule: str = Field(
-        ...,
-        description="Transformation rule or template for the header value",
-        min_length=1,
-    )
-
-    transformation_type: str = Field(
-        default="set",
+    transformation_type: EnumResponseHeaderTransformationType = Field(
+        default=EnumResponseHeaderTransformationType.SET,
         description="Type of transformation (set, append, prefix, suffix, remove, filter)",
-    )
-
-    apply_condition: str | None = Field(
-        default=None,
-        description="Condition for applying this transformation",
-    )
-
-    case_sensitive: bool = Field(
-        default=True,
-        description="Whether header name matching is case-sensitive",
     )
 
     expose_to_client: bool = Field(
@@ -54,16 +51,3 @@ class ModelResponseHeaderRule(BaseModel):
         default=False,
         description="Whether to consider cache-control headers when applying transformation",
     )
-
-    priority: int = Field(
-        default=100,
-        description="Priority of this transformation (higher values take precedence)",
-        ge=0,
-        le=1000,
-    )
-
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }

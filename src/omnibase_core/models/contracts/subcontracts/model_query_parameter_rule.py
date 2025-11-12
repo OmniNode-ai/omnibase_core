@@ -7,15 +7,28 @@ Replaces dict[str, str] with proper type safety.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from omnibase_core.enums.enum_query_parameter_transformation_type import (
+    EnumQueryParameterTransformationType,
+)
+from omnibase_core.models.contracts.subcontracts.model_base_header_transformation import (
+    ModelBaseHeaderTransformation,
+)
 
 
-class ModelQueryParameterRule(BaseModel):
+class ModelQueryParameterRule(ModelBaseHeaderTransformation):
     """
     Strongly-typed query parameter transformation rule.
 
     Defines transformations for URL query parameters with proper
     validation and type safety.
+
+    Inherits common transformation fields from ModelBaseHeaderTransformation:
+    - transformation_rule
+    - apply_condition
+    - case_sensitive
+    - priority
     """
 
     parameter_name: str = Field(
@@ -24,41 +37,12 @@ class ModelQueryParameterRule(BaseModel):
         min_length=1,
     )
 
-    transformation_rule: str = Field(
-        ...,
-        description="Transformation rule or template for the parameter value",
-        min_length=1,
-    )
-
-    transformation_type: str = Field(
-        default="set",
+    transformation_type: EnumQueryParameterTransformationType = Field(
+        default=EnumQueryParameterTransformationType.SET,
         description="Type of transformation (set, append, prefix, suffix, remove, encode)",
-    )
-
-    apply_condition: str | None = Field(
-        default=None,
-        description="Condition for applying this transformation",
-    )
-
-    case_sensitive: bool = Field(
-        default=True,
-        description="Whether parameter name matching is case-sensitive",
     )
 
     url_encode: bool = Field(
         default=True,
         description="Whether to URL-encode the transformed value",
     )
-
-    priority: int = Field(
-        default=100,
-        description="Priority of this transformation (higher values take precedence)",
-        ge=0,
-        le=1000,
-    )
-
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }

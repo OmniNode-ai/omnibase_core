@@ -63,6 +63,9 @@ from .enum_github_runner_os import EnumGithubRunnerOs
 # Group and organization enums
 from .enum_group_status import EnumGroupStatus
 
+# Header and query parameter transformation enums
+from .enum_header_transformation_type import EnumHeaderTransformationType
+
 # Health and status enums
 from .enum_health_check_type import EnumHealthCheckType
 from .enum_health_detail_type import EnumHealthDetailType
@@ -125,6 +128,9 @@ from .enum_orchestrator_types import (
 
 # Parameter and return type enums
 from .enum_parameter_type import EnumParameterType
+from .enum_query_parameter_transformation_type import (
+    EnumQueryParameterTransformationType,
+)
 
 # Reducer-related enums (from nodes)
 from .enum_reducer_types import (
@@ -139,6 +145,9 @@ from .enum_registry_type import EnumRegistryType
 
 # Resource-related enums
 from .enum_resource_unit import EnumResourceUnit
+from .enum_response_header_transformation_type import (
+    EnumResponseHeaderTransformationType,
+)
 from .enum_return_type import EnumReturnType
 
 # Security-related enums
@@ -320,6 +329,10 @@ __all__ = [
     # GitHub Actions domain
     "EnumGithubActionEvent",
     "EnumGithubRunnerOs",
+    # Header and query parameter transformation domain
+    "EnumHeaderTransformationType",
+    "EnumQueryParameterTransformationType",
+    "EnumResponseHeaderTransformationType",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

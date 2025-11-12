@@ -42,9 +42,12 @@ class ModelEventMappingRule(BaseModel):
         description="Expression or template for field transformation",
     )
 
-    default_value: str | None = Field(
+    default_value: str | int | float | bool | None = Field(
         default=None,
-        description="Default value if source field is missing",
+        description=(
+            "Default value if source field is missing. "
+            "Supports str, int, float, bool, or None types."
+        ),
     )
 
     is_required: bool = Field(

@@ -22,8 +22,14 @@ class ModelLogLevelOverride(BaseModel):
 
     logger_name: str = Field(
         ...,
-        description="Name of the logger or module to override",
+        description=(
+            "Name of the logger or module to override. "
+            "Must follow Python logger naming conventions using dotted notation "
+            "(e.g., 'myapp', 'myapp.module', 'myapp.module.submodule'). "
+            "Valid characters: lowercase letters, numbers, underscores, and dots."
+        ),
         min_length=1,
+        pattern=r"^[a-z_][a-z0-9_]*(\.[a-z_][a-z0-9_]*)*$",
     )
 
     log_level: EnumLogLevel = Field(
