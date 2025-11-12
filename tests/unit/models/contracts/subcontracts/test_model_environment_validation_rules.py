@@ -553,7 +553,7 @@ class TestModelEnvironmentValidationRulesInheritanceModes:
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            rules = ModelEnvironmentValidationRules(
+            ModelEnvironmentValidationRules(
                 environment=EnumEnvironment.PRODUCTION,
                 inherit_from_default=True,
                 override_default=True,
@@ -568,7 +568,7 @@ class TestModelEnvironmentValidationRulesInheritanceModes:
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            rules = ModelEnvironmentValidationRules(
+            ModelEnvironmentValidationRules(
                 environment=EnumEnvironment.STAGING,
                 inherit_from_default=True,
                 override_default=True,
