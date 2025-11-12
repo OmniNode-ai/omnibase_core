@@ -9,9 +9,9 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_registry_health_status import EnumRegistryHealthStatus
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_examples import ModelNodeInformation
 from omnibase_core.models.core.model_generic_properties import ModelGenericProperties
 from omnibase_core.models.core.model_monitoring_metrics import ModelMonitoringMetrics

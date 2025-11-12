@@ -13,7 +13,7 @@ Tests all aspects of the function documentation model including:
 
 import pytest
 
-from omnibase_core.models.nodes.model_function_documentation import (
+from omnibase_core.models.node_metadata.model_function_documentation import (
     ModelFunctionDocumentation,
 )
 

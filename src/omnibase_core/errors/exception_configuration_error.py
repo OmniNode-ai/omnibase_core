@@ -1,5 +1,5 @@
 """
-ConfigurationError Exception
+ExceptionConfigurationError Exception
 
 Raised for invalid configuration, such as incorrect paths or missing dependencies.
 
@@ -15,10 +15,10 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.validation.exceptions (hierarchy parent)
 """
 
-from .exception_validation_framework_error import ValidationFrameworkError
+from .exception_validation_framework_error import ExceptionValidationFrameworkError
 
 
-class ConfigurationError(ValidationFrameworkError):
+class ExceptionConfigurationError(ExceptionValidationFrameworkError):
     """
     Raised for invalid configuration, such as incorrect paths or missing dependencies.
 

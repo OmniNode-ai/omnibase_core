@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 import pytest
 import yaml
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.contracts import (
     MAX_FILE_SIZE,
@@ -1190,7 +1190,7 @@ operations: []
         import sys
         from unittest.mock import patch
 
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         (tmp_path / "test.yaml").write_text(
@@ -1234,7 +1234,7 @@ operations: []
         import sys
         from unittest.mock import patch
 
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         (tmp_path / "test.yaml").write_text(

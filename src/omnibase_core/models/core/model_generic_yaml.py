@@ -13,7 +13,7 @@ from typing import Any, TypeVar
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 # Import extracted YAML model classes
 from omnibase_core.models.core.model_yaml_configuration import ModelYamlConfiguration

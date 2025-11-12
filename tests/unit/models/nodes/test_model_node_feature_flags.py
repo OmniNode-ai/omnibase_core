@@ -13,9 +13,11 @@ Tests all aspects of the node feature flags model including:
 
 import pytest
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.nodes.model_node_feature_flags import ModelNodeFeatureFlags
+from omnibase_core.models.node_metadata.model_node_feature_flags import (
+    ModelNodeFeatureFlags,
+)
 
 
 class TestModelNodeFeatureFlags:

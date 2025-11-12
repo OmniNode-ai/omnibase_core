@@ -16,9 +16,9 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.services.service_logging import ServiceLogging
+from omnibase_core.services.service_minimal_logging import ServiceMinimalLogging
 from omnibase_core.utils import util_bootstrap
-from omnibase_core.utils.util_service_logging import ServiceLogging
-from omnibase_core.utils.service_minimal_logging import ServiceMinimalLogging
 
 
 # Test Protocol Types

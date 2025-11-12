@@ -58,11 +58,11 @@ class PatternChecker(Protocol):
 
 ---
 
-#### 1.2 SerializableMixin
+#### 1.2 MixinSerializable
 **Location**: `src/omnibase_core/mixins/mixin_serializable.py:30`
 
 ```python
-class SerializableMixin(Protocol):
+class MixinSerializable(Protocol):
     """
     Protocol for models that support recursive, protocol-driven serialization
     for ONEX/OmniNode file/block I/O.
@@ -443,7 +443,7 @@ else:
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ Internal Protocols                                  │   │
 │  │  ├── validation/patterns.py::PatternChecker       │   │
-│  │  ├── mixins/mixin_serializable.py::SerializableMixin│  │
+│  │  ├── mixins/mixin_serializable.py::MixinSerializable│  │
 │  │  └── models/core/model_status_protocol.py::EnumStatusProtocol │
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
@@ -669,8 +669,8 @@ class ProtocolTwoWaySerializer(Protocol[T]):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> T: ...
 
-# Use in SerializableMixin
-class SerializableMixin(ProtocolTwoWaySerializer[T]):
+# Use in MixinSerializable
+class MixinSerializable(ProtocolTwoWaySerializer[T]):
     def to_dict(self) -> dict[str, Any]:
         return self.to_serializable_dict()
 
@@ -705,8 +705,8 @@ def test_pattern_checker_protocol_compliance():
     assert callable(checker.visit)
 
 def test_serializable_mixin_protocol():
-    """Test SerializableMixin protocol compliance."""
-    from omnibase_core.mixins.mixin_serializable import SerializableMixin
+    """Test MixinSerializable protocol compliance."""
+    from omnibase_core.mixins.mixin_serializable import MixinSerializable
     from omnibase_core.models.core.model_node_metadata_block import ModelNodeMetadataBlock
 
     # Check type hints
@@ -728,7 +728,7 @@ def test_serializable_mixin_protocol():
 
 **Current Convention** (GOOD):
 - SPI protocols: `Protocol<Name>` (e.g., `ProtocolSerializable`)
-- Internal protocols: Descriptive names (e.g., `PatternChecker`, `SerializableMixin`)
+- Internal protocols: Descriptive names (e.g., `PatternChecker`, `MixinSerializable`)
 - Aliases: Short names (e.g., `Serializable`, `Configurable`)
 
 **Keep this pattern** - it's clear and consistent.
@@ -794,7 +794,7 @@ class PatternChecker(Protocol):
 ```text
 ProtocolSerializable (SPI)
   ↓
-SerializableMixin (omnibase_core)
+MixinSerializable (omnibase_core)
   ↓ (implicit implementations)
 ModelNodeMetadataBlock
 ModelProjectMetadataBlock
@@ -969,7 +969,7 @@ grep -r "def model_dump\|def serialize\|def get_name" src/omnibase_core --includ
 
 ### omnibase_core Internal Protocols (3)
 1. **PatternChecker** - AST validation contract
-2. **SerializableMixin** - Recursive serialization
+2. **MixinSerializable** - Recursive serialization
 3. **EnumStatusProtocol** - Status migration
 
 ### omnibase_spi Protocol Categories (100+)

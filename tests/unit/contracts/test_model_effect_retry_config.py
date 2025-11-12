@@ -8,8 +8,8 @@ circuit breaker patterns, and field validators.
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_effect_retry_config import (
     ModelEffectRetryConfig,
 )

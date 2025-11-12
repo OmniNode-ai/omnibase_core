@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )

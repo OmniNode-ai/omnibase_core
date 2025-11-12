@@ -30,9 +30,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
 # Removed: EnumCoreErrorCode doesn't exist in enums module
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 
 # Deferred import to avoid circular dependency

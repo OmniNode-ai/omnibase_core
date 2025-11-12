@@ -8,8 +8,8 @@ Node introspection response model for ONEX nodes.
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_contract import ModelContract
 from omnibase_core.models.core.model_dependencies import ModelDependencies
 from omnibase_core.models.core.model_error_codes import ModelErrorCodes
@@ -19,7 +19,9 @@ from omnibase_core.models.core.model_node_introspection_response_config import (
 )
 from omnibase_core.models.core.model_state_models import ModelStates
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.nodes.model_node_metadata_info import ModelNodeMetadataInfo
+from omnibase_core.models.node_metadata.model_node_metadata_info import (
+    ModelNodeMetadataInfo,
+)
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 

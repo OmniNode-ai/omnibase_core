@@ -25,7 +25,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 
 class ModelCliExecutionContext(BaseModel):

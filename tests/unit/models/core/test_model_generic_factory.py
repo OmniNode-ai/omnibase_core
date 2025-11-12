@@ -118,7 +118,7 @@ class TestModelGenericFactory:
 
     def test_create_instance_unknown_factory(self):
         """Test error handling for unknown factory."""
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
         factory = ModelGenericFactory(ModelSampleResult)
 
@@ -155,7 +155,7 @@ class TestModelGenericFactory:
 
     def test_build_instance_unknown_builder(self):
         """Test error handling for unknown builder."""
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
         factory = ModelGenericFactory(ModelSampleConfig)
 

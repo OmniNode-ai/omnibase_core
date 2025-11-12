@@ -16,8 +16,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # ONEX validation values - use discriminated union pattern instead of broad unions
 # ValidationValueType replaced with EnumValidationValueType + structured fields

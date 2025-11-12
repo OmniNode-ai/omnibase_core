@@ -15,7 +15,7 @@ from omnibase_core.models.core.model_capability import ModelCapability
 from omnibase_core.models.core.model_instance_metadata import ModelInstanceMetadata
 from omnibase_core.models.core.model_node_reference import ModelNodeReference
 from omnibase_core.models.health.model_health_metrics import ModelHealthMetrics
-from omnibase_core.models.nodes.model_node_type import ModelNodeType
+from omnibase_core.models.node_metadata.model_node_type import ModelNodeType
 
 
 class ModelNodeInstance(BaseModel):

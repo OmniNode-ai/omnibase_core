@@ -4,9 +4,9 @@ Utility functions for error code and exit code mapping.
 """
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.enums.enum_registry_error_code import EnumOnexErrorCode
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Global mapping from EnumOnexStatus to CLI exit codes

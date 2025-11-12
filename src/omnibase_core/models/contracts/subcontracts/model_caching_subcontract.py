@@ -25,7 +25,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

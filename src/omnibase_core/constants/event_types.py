@@ -27,10 +27,16 @@ NODE_HEALTH_EVENT = "node_health_event"
 NODE_SHUTDOWN_EVENT = "node_shutdown_event"
 SERVICE_DISCOVERY = "service_discovery"
 
+
 # Node lifecycle events
 NODE_START = "node_start"
 NODE_SUCCESS = "node_success"
 NODE_FAILURE = "node_failure"
+
+# Logging and audit events
+LOGGING_APPLICATION_EVENT = "omninode.logging.application.v1"
+LOGGING_AUDIT_EVENT = "omninode.logging.audit.v1"
+LOGGING_SECURITY_EVENT = "omninode.logging.security.v1"
 
 
 def normalize_legacy_event_type(event_type: str | dict[str, Any] | object) -> str:

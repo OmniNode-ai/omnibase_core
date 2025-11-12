@@ -14,8 +14,8 @@ import json
 import sys
 from pathlib import Path
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -200,7 +200,9 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
 
         if path.suffix in [".yaml", ".yml"]:
             from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
-            from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+            from omnibase_core.utils.util_safe_yaml_loader import (
+                load_yaml_content_as_model,
+            )
 
             # Load and validate YAML using Pydantic model
 

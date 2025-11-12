@@ -20,7 +20,7 @@ from omnibase_core.decorators.error_handling import (
     standard_error_handling,
     validation_error_handling,
 )
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 

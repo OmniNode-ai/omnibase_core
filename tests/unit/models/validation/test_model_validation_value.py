@@ -9,8 +9,8 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_validation_value import ModelValidationValue
 

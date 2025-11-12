@@ -7,14 +7,14 @@ Tests the custom exception hierarchy and error handling behavior.
 import pytest
 
 from omnibase_core.errors.exceptions import (
-    AuditError,
-    ConfigurationError,
-    FileProcessingError,
-    InputValidationError,
-    MigrationError,
-    PathTraversalError,
-    ProtocolParsingError,
-    ValidationFrameworkError,
+    ExceptionAuditError,
+    ExceptionConfigurationError,
+    ExceptionFileProcessingError,
+    ExceptionInputValidationError,
+    ExceptionMigrationError,
+    ExceptionPathTraversalError,
+    ExceptionProtocolParsingError,
+    ExceptionValidationFrameworkError,
 )
 
 
@@ -22,80 +22,82 @@ class TestExceptionHierarchy:
     """Test the exception inheritance hierarchy."""
 
     def test_base_exception(self):
-        """Test ValidationFrameworkError is the base exception."""
-        exc = ValidationFrameworkError("Base error")
+        """Test ExceptionValidationFrameworkError is the base exception."""
+        exc = ExceptionValidationFrameworkError("Base error")
         assert str(exc) == "Base error"
         assert isinstance(exc, Exception)
 
     def test_configuration_error_inheritance(self):
-        """Test ConfigurationError inherits from ValidationFrameworkError."""
-        exc = ConfigurationError("Config error")
-        assert isinstance(exc, ValidationFrameworkError)
+        """Test ExceptionConfigurationError inherits from ExceptionValidationFrameworkError."""
+        exc = ExceptionConfigurationError("Config error")
+        assert isinstance(exc, ExceptionValidationFrameworkError)
         assert isinstance(exc, Exception)
         assert str(exc) == "Config error"
 
     def test_file_processing_error_inheritance(self):
-        """Test FileProcessingError inherits from ValidationFrameworkError."""
-        exc = FileProcessingError("File error", "/path/to/file.py")
-        assert isinstance(exc, ValidationFrameworkError)
+        """Test ExceptionFileProcessingError inherits from ExceptionValidationFrameworkError."""
+        exc = ExceptionFileProcessingError("File error", "/path/to/file.py")
+        assert isinstance(exc, ExceptionValidationFrameworkError)
         assert isinstance(exc, Exception)
 
     def test_protocol_parsing_error_inheritance(self):
-        """Test ProtocolParsingError inherits from FileProcessingError."""
-        exc = ProtocolParsingError("Parse error", "/path/to/file.py")
-        assert isinstance(exc, FileProcessingError)
-        assert isinstance(exc, ValidationFrameworkError)
+        """Test ExceptionProtocolParsingError inherits from ExceptionFileProcessingError."""
+        exc = ExceptionProtocolParsingError("Parse error", "/path/to/file.py")
+        assert isinstance(exc, ExceptionFileProcessingError)
+        assert isinstance(exc, ExceptionValidationFrameworkError)
         assert isinstance(exc, Exception)
 
     def test_input_validation_error_inheritance(self):
-        """Test InputValidationError inherits from ValidationFrameworkError."""
-        exc = InputValidationError("Invalid input")
-        assert isinstance(exc, ValidationFrameworkError)
+        """Test ExceptionInputValidationError inherits from ExceptionValidationFrameworkError."""
+        exc = ExceptionInputValidationError("Invalid input")
+        assert isinstance(exc, ExceptionValidationFrameworkError)
         assert isinstance(exc, Exception)
 
     def test_path_traversal_error_inheritance(self):
-        """Test PathTraversalError inherits from InputValidationError."""
-        exc = PathTraversalError("Path traversal attempt")
-        assert isinstance(exc, InputValidationError)
-        assert isinstance(exc, ValidationFrameworkError)
+        """Test ExceptionPathTraversalError inherits from ExceptionInputValidationError."""
+        exc = ExceptionPathTraversalError("Path traversal attempt")
+        assert isinstance(exc, ExceptionInputValidationError)
+        assert isinstance(exc, ExceptionValidationFrameworkError)
         assert isinstance(exc, Exception)
 
     def test_audit_error_inheritance(self):
-        """Test AuditError inherits from ValidationFrameworkError."""
-        exc = AuditError("Audit failed")
-        assert isinstance(exc, ValidationFrameworkError)
+        """Test ExceptionAuditError inherits from ExceptionValidationFrameworkError."""
+        exc = ExceptionAuditError("Audit failed")
+        assert isinstance(exc, ExceptionValidationFrameworkError)
         assert isinstance(exc, Exception)
 
     def test_migration_error_inheritance(self):
-        """Test MigrationError inherits from ValidationFrameworkError."""
-        exc = MigrationError("Migration failed")
-        assert isinstance(exc, ValidationFrameworkError)
+        """Test ExceptionMigrationError inherits from ExceptionValidationFrameworkError."""
+        exc = ExceptionMigrationError("Migration failed")
+        assert isinstance(exc, ExceptionValidationFrameworkError)
         assert isinstance(exc, Exception)
 
 
-class TestFileProcessingError:
-    """Test FileProcessingError specific functionality."""
+class TestExceptionFileProcessingError:
+    """Test ExceptionFileProcessingError specific functionality."""
 
     def test_file_processing_error_basic(self):
-        """Test basic FileProcessingError creation."""
-        exc = FileProcessingError("Could not read file", "/path/to/file.py")
+        """Test basic ExceptionFileProcessingError creation."""
+        exc = ExceptionFileProcessingError("Could not read file", "/path/to/file.py")
 
         assert exc.file_path == "/path/to/file.py"
         assert exc.original_exception is None
         assert str(exc) == "Could not read file [File: /path/to/file.py]"
 
     def test_file_processing_error_with_original_exception(self):
-        """Test FileProcessingError with original exception."""
+        """Test ExceptionFileProcessingError with original exception."""
         original = OSError("Permission denied")
-        exc = FileProcessingError("Could not read file", "/path/to/file.py", original)
+        exc = ExceptionFileProcessingError(
+            "Could not read file", "/path/to/file.py", original
+        )
 
         assert exc.file_path == "/path/to/file.py"
         assert exc.original_exception is original
         assert str(exc) == "Could not read file [File: /path/to/file.py]"
 
     def test_file_processing_error_attributes(self):
-        """Test FileProcessingError attributes are accessible."""
-        exc = FileProcessingError("Error message", "/test/path.py")
+        """Test ExceptionFileProcessingError attributes are accessible."""
+        exc = ExceptionFileProcessingError("Error message", "/test/path.py")
 
         # Should have file_path attribute
         assert hasattr(exc, "file_path")
@@ -106,25 +108,29 @@ class TestFileProcessingError:
         assert exc.original_exception is None
 
 
-class TestProtocolParsingError:
-    """Test ProtocolParsingError specific functionality."""
+class TestExceptionProtocolParsingError:
+    """Test ExceptionProtocolParsingError specific functionality."""
 
     def test_protocol_parsing_error_creation(self):
-        """Test ProtocolParsingError creation and inheritance."""
-        exc = ProtocolParsingError("Syntax error in protocol", "/path/to/protocol.py")
+        """Test ExceptionProtocolParsingError creation and inheritance."""
+        exc = ExceptionProtocolParsingError(
+            "Syntax error in protocol", "/path/to/protocol.py"
+        )
 
-        # Should inherit FileProcessingError behavior
+        # Should inherit ExceptionFileProcessingError behavior
         assert exc.file_path == "/path/to/protocol.py"
         assert str(exc) == "Syntax error in protocol [File: /path/to/protocol.py]"
 
         # Should be identifiable as specific parsing error
-        assert isinstance(exc, ProtocolParsingError)
-        assert isinstance(exc, FileProcessingError)
+        assert isinstance(exc, ExceptionProtocolParsingError)
+        assert isinstance(exc, ExceptionFileProcessingError)
 
     def test_protocol_parsing_error_with_original(self):
-        """Test ProtocolParsingError with original SyntaxError."""
+        """Test ExceptionProtocolParsingError with original SyntaxError."""
         syntax_error = SyntaxError("invalid syntax")
-        exc = ProtocolParsingError("Could not parse protocol", "/test.py", syntax_error)
+        exc = ExceptionProtocolParsingError(
+            "Could not parse protocol", "/test.py", syntax_error
+        )
 
         assert exc.original_exception is syntax_error
         assert exc.file_path == "/test.py"
@@ -136,40 +142,40 @@ class TestExceptionCatching:
     def test_catch_base_exception(self):
         """Test catching all validation exceptions with base class."""
         exceptions_to_test = [
-            ConfigurationError("config"),
-            FileProcessingError("file", "/path"),
-            ProtocolParsingError("parse", "/path"),
-            InputValidationError("input"),
-            PathTraversalError("traversal"),
-            AuditError("audit"),
-            MigrationError("migration"),
+            ExceptionConfigurationError("config"),
+            ExceptionFileProcessingError("file", "/path"),
+            ExceptionProtocolParsingError("parse", "/path"),
+            ExceptionInputValidationError("input"),
+            ExceptionPathTraversalError("traversal"),
+            ExceptionAuditError("audit"),
+            ExceptionMigrationError("migration"),
         ]
 
         for exc in exceptions_to_test:
             try:
                 raise exc
-            except ValidationFrameworkError as caught:
+            except ExceptionValidationFrameworkError as caught:
                 assert caught is exc
-                assert isinstance(caught, ValidationFrameworkError)
+                assert isinstance(caught, ExceptionValidationFrameworkError)
             else:
                 pytest.fail(
-                    f"Failed to catch {type(exc).__name__} with ValidationFrameworkError",
+                    f"Failed to catch {type(exc).__name__} with ExceptionValidationFrameworkError",
                 )
 
     def test_catch_specific_exceptions(self):
         """Test catching specific exception types."""
-        # Test FileProcessingError catching
+        # Test ExceptionFileProcessingError catching
         try:
-            raise ProtocolParsingError("parse error", "/path")
-        except FileProcessingError as exc:
-            assert isinstance(exc, ProtocolParsingError)
+            raise ExceptionProtocolParsingError("parse error", "/path")
+        except ExceptionFileProcessingError as exc:
+            assert isinstance(exc, ExceptionProtocolParsingError)
             assert exc.file_path == "/path"
 
-        # Test InputValidationError catching
+        # Test ExceptionInputValidationError catching
         try:
-            raise PathTraversalError("traversal error")
-        except InputValidationError as exc:
-            assert isinstance(exc, PathTraversalError)
+            raise ExceptionPathTraversalError("traversal error")
+        except ExceptionInputValidationError as exc:
+            assert isinstance(exc, ExceptionPathTraversalError)
 
     def test_exception_context_preservation(self):
         """Test that exception context is preserved."""
@@ -179,8 +185,8 @@ class TestExceptionCatching:
             try:
                 raise original_error
             except ValueError:
-                raise ConfigurationError("Configuration failed")
-        except ConfigurationError as exc:
+                raise ExceptionConfigurationError("Configuration failed")
+        except ExceptionConfigurationError as exc:
             # Should be able to access the original exception through __cause__
             assert exc.__cause__ is None  # Not using raise ... from
             # But we can still check the chain
@@ -193,14 +199,14 @@ class TestExceptionDocumentation:
     def test_all_exceptions_have_docstrings(self):
         """Test that all exception classes have docstrings."""
         exceptions = [
-            ValidationFrameworkError,
-            ConfigurationError,
-            FileProcessingError,
-            ProtocolParsingError,
-            InputValidationError,
-            PathTraversalError,
-            AuditError,
-            MigrationError,
+            ExceptionValidationFrameworkError,
+            ExceptionConfigurationError,
+            ExceptionFileProcessingError,
+            ExceptionProtocolParsingError,
+            ExceptionInputValidationError,
+            ExceptionPathTraversalError,
+            ExceptionAuditError,
+            ExceptionMigrationError,
         ]
 
         for exc_class in exceptions:
@@ -211,50 +217,50 @@ class TestExceptionDocumentation:
 
     def test_exception_docstrings_describe_purpose(self):
         """Test that exception docstrings describe their purpose."""
-        # ConfigurationError should mention configuration
-        assert "configuration" in ConfigurationError.__doc__.lower()
+        # ExceptionConfigurationError should mention configuration
+        assert "configuration" in ExceptionConfigurationError.__doc__.lower()
 
-        # FileProcessingError should mention file processing
-        assert "file" in FileProcessingError.__doc__.lower()
+        # ExceptionFileProcessingError should mention file processing
+        assert "file" in ExceptionFileProcessingError.__doc__.lower()
 
-        # ProtocolParsingError should mention parsing
-        assert "parsing" in ProtocolParsingError.__doc__.lower()
+        # ExceptionProtocolParsingError should mention parsing
+        assert "parsing" in ExceptionProtocolParsingError.__doc__.lower()
 
-        # InputValidationError should mention validation
-        assert "validation" in InputValidationError.__doc__.lower()
+        # ExceptionInputValidationError should mention validation
+        assert "validation" in ExceptionInputValidationError.__doc__.lower()
 
-        # PathTraversalError should mention security/traversal
-        doc = PathTraversalError.__doc__.lower()
+        # ExceptionPathTraversalError should mention security/traversal
+        doc = ExceptionPathTraversalError.__doc__.lower()
         assert "traversal" in doc or "security" in doc
 
-        # AuditError should mention audit
-        assert "audit" in AuditError.__doc__.lower()
+        # ExceptionAuditError should mention audit
+        assert "audit" in ExceptionAuditError.__doc__.lower()
 
-        # MigrationError should mention migration
-        assert "migration" in MigrationError.__doc__.lower()
+        # ExceptionMigrationError should mention migration
+        assert "migration" in ExceptionMigrationError.__doc__.lower()
 
 
 class TestExceptionUsagePatterns:
     """Test common exception usage patterns."""
 
     def test_configuration_error_fail_fast(self):
-        """Test ConfigurationError enables fail-fast behavior."""
+        """Test ExceptionConfigurationError enables fail-fast behavior."""
 
         # This pattern should be used in ProtocolAuditor.__init__
         def validate_config(path):
             if not path:
-                raise ConfigurationError("Path cannot be empty")
+                raise ExceptionConfigurationError("Path cannot be empty")
             return True
 
-        with pytest.raises(ConfigurationError, match="Path cannot be empty"):
+        with pytest.raises(ExceptionConfigurationError, match="Path cannot be empty"):
             validate_config("")
 
     def test_file_processing_error_with_context(self):
-        """Test FileProcessingError provides useful context."""
+        """Test ExceptionFileProcessingError provides useful context."""
         file_path = "/important/protocol.py"
         error_msg = "Could not parse AST"
 
-        exc = FileProcessingError(error_msg, file_path)
+        exc = ExceptionFileProcessingError(error_msg, file_path)
 
         # Error message should include both the message and file path
         full_msg = str(exc)
@@ -263,22 +269,24 @@ class TestExceptionUsagePatterns:
         assert "[File:" in full_msg
 
     def test_input_validation_error_security(self):
-        """Test InputValidationError for security validation."""
+        """Test ExceptionInputValidationError for security validation."""
 
         def validate_path(path):
             if ".." in path:
-                raise PathTraversalError(f"Path traversal detected: {path}")
+                raise ExceptionPathTraversalError(f"Path traversal detected: {path}")
             if not path.startswith("/allowed/"):
-                raise InputValidationError(f"Path not in allowed directory: {path}")
+                raise ExceptionInputValidationError(
+                    f"Path not in allowed directory: {path}"
+                )
 
-        with pytest.raises(PathTraversalError):
+        with pytest.raises(ExceptionPathTraversalError):
             validate_path("../../etc/passwd")
 
-        with pytest.raises(InputValidationError):
+        with pytest.raises(ExceptionInputValidationError):
             validate_path("/forbidden/path")
 
         # Valid path should not raise
         try:
             validate_path("/allowed/valid/path")
-        except (InputValidationError, PathTraversalError):
+        except (ExceptionInputValidationError, ExceptionPathTraversalError):
             pytest.fail("Valid path should not raise validation error")

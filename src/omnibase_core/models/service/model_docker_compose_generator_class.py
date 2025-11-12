@@ -36,8 +36,8 @@ if TYPE_CHECKING:
         ModelServiceDependency,
     )
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Import with fallback handling
 yaml_module: ModuleType | None

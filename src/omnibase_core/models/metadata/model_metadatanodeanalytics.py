@@ -37,9 +37,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_collection_purpose import EnumCollectionPurpose
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Safe runtime imports
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

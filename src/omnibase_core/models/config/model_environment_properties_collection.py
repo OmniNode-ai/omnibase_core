@@ -16,7 +16,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
 
 from .model_property_value import ModelPropertyValue

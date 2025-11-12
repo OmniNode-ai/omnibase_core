@@ -16,9 +16,9 @@ from typing import Any, Self
 
 from pydantic import BaseModel
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 
 class ModelProgressCore(BaseModel):

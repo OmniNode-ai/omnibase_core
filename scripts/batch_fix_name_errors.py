@@ -24,7 +24,7 @@ STDLIB_IMPORTS = {
 # Internal model imports
 INTERNAL_IMPORTS = {
     "ModelOnexError": "from omnibase_core.errors.model_onex_error import ModelOnexError",
-    "EnumCoreErrorCode": "from omnibase_core.errors.error_codes import EnumCoreErrorCode",
+    "EnumCoreErrorCode": "from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode",
     "ModelErrorContext": "from omnibase_core.models.common.model_error_context import ModelErrorContext",
     "ModelSchemaValue": "from omnibase_core.models.common.model_schema_value import ModelSchemaValue",
     "EnumAuditAction": "from omnibase_core.enums.enum_audit_action import EnumAuditAction",

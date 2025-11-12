@@ -31,9 +31,9 @@ Usage Examples:
 # Import models and enums
 from omnibase_core.enums.enum_import_status import EnumImportStatus
 from omnibase_core.errors.exceptions import (
-    ConfigurationError,
-    InputValidationError,
-    ValidationFrameworkError,
+    ExceptionConfigurationError,
+    ExceptionInputValidationError,
+    ExceptionValidationFrameworkError,
 )
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 
@@ -113,16 +113,16 @@ __all__ = [
     # Core classes and types
     "CircularImportValidator",
     "CircularImportValidationResult",
-    "ConfigurationError",
+    "ExceptionConfigurationError",
     "EnumImportStatus",
     "ModelContractValidationResult",
     "ModelModuleImportResult",
     "ModelValidationResult",
     "ProtocolContractValidator",
-    "InputValidationError",
+    "ExceptionInputValidationError",
     "ModelProtocolAuditor",
     "ModelProtocolInfo",
-    "ValidationFrameworkError",
+    "ExceptionValidationFrameworkError",
     "ModelValidationSuite",
     "validate_all",
     # Main validation functions (recommended)

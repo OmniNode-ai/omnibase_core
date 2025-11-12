@@ -20,7 +20,7 @@ This replaces manual YAML field validation with proper Pydantic validation.
 from pydantic import BaseModel
 
 from omnibase_core.enums import EnumNodeType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 
 class ModelYamlContract(BaseModel):

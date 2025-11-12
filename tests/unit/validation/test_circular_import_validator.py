@@ -11,8 +11,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_import_status import EnumImportStatus
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_import_validation_result import ModelValidationResult
 from omnibase_core.models.model_module_import_result import ModelModuleImportResult

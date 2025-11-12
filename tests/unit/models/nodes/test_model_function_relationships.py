@@ -15,7 +15,7 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.enums.enum_category import EnumCategory
-from omnibase_core.models.nodes.model_function_relationships import (
+from omnibase_core.models.node_metadata.model_function_relationships import (
     ModelFunctionRelationships,
 )
 

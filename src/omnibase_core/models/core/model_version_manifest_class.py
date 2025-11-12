@@ -11,8 +11,8 @@ from enum import Enum
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_contract_compliance import EnumContractCompliance
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_version_status import EnumVersionStatus
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_version_contract import ModelVersionContract
 from omnibase_core.models.core.model_version_deployment import ModelVersionDeployment
 from omnibase_core.models.core.model_version_documentation import (

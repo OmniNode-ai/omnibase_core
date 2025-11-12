@@ -12,9 +12,9 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_tool_health_status import EnumToolHealthStatus
 from omnibase_core.enums.enum_tool_type import EnumToolType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_error_summary import ModelErrorSummary
 from omnibase_core.models.discovery.model_metric_value import ModelMetricValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

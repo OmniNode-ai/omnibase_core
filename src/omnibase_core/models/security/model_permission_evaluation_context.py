@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nModelPermissionEvaluationContext: Context for permission evaluation.\n\nThis model provides structured context for permission evaluation without using Any types.\n"

@@ -23,8 +23,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from omnibase_core.enums.enum_onex_error_code import EnumOnexErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-from omnibase_core.errors.error_codes import EnumOnexErrorCode
 
 
 class _ModelOnexErrorData(BaseModel):

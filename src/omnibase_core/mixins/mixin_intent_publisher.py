@@ -42,7 +42,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.events.model_intent_events import (
     TOPIC_EVENT_PUBLISH_INTENT,

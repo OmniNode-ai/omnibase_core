@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from omnibase_core.enums import EnumNodeMetadataField
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.mixins.mixin_canonical_serialization import (
     MixinCanonicalYAMLSerializer,
     _strip_comment_prefix,

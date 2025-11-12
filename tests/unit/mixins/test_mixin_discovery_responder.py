@@ -20,7 +20,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.mixins.mixin_discovery_responder import MixinDiscoveryResponder
 from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,

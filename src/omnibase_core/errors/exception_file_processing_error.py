@@ -1,5 +1,5 @@
 """
-FileProcessingError Exception
+ExceptionFileProcessingError Exception
 
 Raised when a file cannot be read or parsed.
 
@@ -15,10 +15,10 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.validation.exceptions (hierarchy parent)
 """
 
-from .exception_validation_framework_error import ValidationFrameworkError
+from .exception_validation_framework_error import ExceptionValidationFrameworkError
 
 
-class FileProcessingError(ValidationFrameworkError):
+class ExceptionFileProcessingError(ExceptionValidationFrameworkError):
     """
     Raised when a file cannot be read or parsed.
 

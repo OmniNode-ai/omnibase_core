@@ -7,7 +7,10 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from omnibase_core.errors.exceptions import ConfigurationError, InputValidationError
+from omnibase_core.errors.exceptions import (
+    ExceptionConfigurationError,
+    ExceptionInputValidationError,
+)
 from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.models.validation.model_duplication_report import (
@@ -722,8 +725,8 @@ class TestModelProtocolAuditor:
         assert auditor.repository_name is not None
 
     def test_init_with_invalid_path(self):
-        """Test initialization with invalid path raises ConfigurationError."""
-        with pytest.raises(ConfigurationError):
+        """Test initialization with invalid path raises ExceptionConfigurationError."""
+        with pytest.raises(ExceptionConfigurationError):
             ModelProtocolAuditor("/nonexistent/path/that/does/not/exist")
 
     def test_init_with_current_directory(self):
@@ -961,7 +964,7 @@ class ProtocolDuplicate(Protocol):
         """Test check_against_spi with invalid SPI path."""
         auditor = ModelProtocolAuditor(str(tmp_path))
 
-        with pytest.raises(ConfigurationError):
+        with pytest.raises(ExceptionConfigurationError):
             auditor.check_against_spi("/nonexistent/spi/path")
 
     def test_check_against_spi_no_protocols_dir(self, tmp_path: Path):

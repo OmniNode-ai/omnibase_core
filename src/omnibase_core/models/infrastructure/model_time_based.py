@@ -20,9 +20,9 @@ from typing import Any
 
 from pydantic import BaseModel, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 T = TypeVar("T", int, float)
 

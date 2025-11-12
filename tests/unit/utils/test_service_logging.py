@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.utils.util_service_logging import ServiceLogging
+from omnibase_core.services.service_logging import ServiceLogging
 
 
 class TestServiceLoggingInitialization:

@@ -5,7 +5,7 @@ from urllib.parse import urljoin, urlparse
 
 from pydantic import BaseModel, Field, SecretStr, field_validator
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_request_config import ModelRequestConfig
 from omnibase_core.models.configuration.model_request_retry_config import (
     ModelRequestRetryConfig,

@@ -13,10 +13,10 @@ from uuid import UUID
 from pydantic import RootModel, computed_field, model_validator
 
 from omnibase_core.enums.enum_audit_action import EnumAuditAction
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metadata_tool_complexity import EnumMetadataToolComplexity
 from omnibase_core.enums.enum_metadata_tool_status import EnumMetadataToolStatus
 from omnibase_core.enums.enum_metadata_tool_type import EnumMetadataToolType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_audit_entry import ModelAuditEntry
 from omnibase_core.models.core.model_function_tool import ModelFunctionTool
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

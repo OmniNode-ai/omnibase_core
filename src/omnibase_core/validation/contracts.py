@@ -26,7 +26,7 @@ import yaml
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )

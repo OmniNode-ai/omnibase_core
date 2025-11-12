@@ -30,7 +30,7 @@ from omnibase_spi.protocols.validation.protocol_validation import (
 from pydantic import BaseModel, Field, ValidationError
 
 from omnibase_core.enums import EnumNodeType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect

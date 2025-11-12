@@ -2,7 +2,7 @@ from typing import Any, Generic
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_database_connection_config import (
     ModelDatabaseConnectionConfig,
 )

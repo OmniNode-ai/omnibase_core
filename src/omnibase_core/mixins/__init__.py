@@ -65,7 +65,7 @@ from omnibase_core.mixins.mixin_redaction import MixinSensitiveFieldRedaction
 from omnibase_core.mixins.mixin_request_response_introspection import (
     MixinRequestResponseIntrospection,
 )
-from omnibase_core.mixins.mixin_serializable import SerializableMixin
+from omnibase_core.mixins.mixin_serializable import MixinSerializable
 from omnibase_core.mixins.mixin_service_registry import MixinServiceRegistry
 from omnibase_core.mixins.mixin_tool_execution import MixinToolExecution
 from omnibase_core.mixins.mixin_workflow_support import MixinDagSupport
@@ -105,7 +105,7 @@ __all__ = [
     "ProtocolRegistryWithBus",  # DEPRECATED: Use ProtocolEventBusRegistry instead
     "MixinNodeIntrospection",
     "MixinSensitiveFieldRedaction",
-    "SerializableMixin",
+    "MixinSerializable",
     "MixinYAMLSerialization",
     "MixinIntentPublisher",
     # Health check utility functions

@@ -11,8 +11,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_reply_status import EnumOnexReplyStatus
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error_details import ModelOnexErrorDetails
 from omnibase_core.models.core.model_onex_performance_metrics import (
     ModelOnexPerformanceMetrics,

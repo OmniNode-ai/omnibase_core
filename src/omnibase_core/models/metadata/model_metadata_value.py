@@ -16,7 +16,7 @@ with structured validation and proper type handling for metadata fields.
 from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 

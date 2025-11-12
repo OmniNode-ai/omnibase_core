@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.core.model_core_performance_metrics import (

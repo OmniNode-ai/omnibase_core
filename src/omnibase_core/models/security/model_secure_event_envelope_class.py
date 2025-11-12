@@ -11,9 +11,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_security_event_status import EnumSecurityEventStatus
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_route_spec import ModelRouteSpec
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel

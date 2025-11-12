@@ -25,8 +25,8 @@ from typing import Any, ClassVar, Literal, cast
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_dependency import ModelDependency
 from omnibase_core.models.contracts.model_lifecycle_config import ModelLifecycleConfig
 from omnibase_core.models.contracts.model_performance_requirements import (

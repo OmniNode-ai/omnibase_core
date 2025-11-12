@@ -21,8 +21,8 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from omnibase_core.constants.event_types import TOOL_INVOCATION
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_event_driven_node import MixinEventDrivenNode
 from omnibase_core.models.core.model_log_context import ModelLogContext

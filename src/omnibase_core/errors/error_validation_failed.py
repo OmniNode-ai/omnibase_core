@@ -3,7 +3,7 @@ from typing import Any
 from omnibase_core.errors.exception_fail_fast import FailFastError
 
 
-class ValidationFailedError(FailFastError):
+class ExceptionValidationFailedError(FailFastError):
     """Raised when validation fails."""
 
     def __init__(

@@ -19,7 +19,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.types.typed_dict_analytics_summary_data import (
     TypedDictAnalyticsSummaryData,
 )

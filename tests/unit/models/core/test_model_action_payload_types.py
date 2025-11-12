@@ -9,7 +9,7 @@ Tests the create_specific_action_payload factory function covering:
 
 import pytest
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_action_payload_types import (
     create_specific_action_payload,
