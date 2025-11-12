@@ -24,7 +24,7 @@ from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplex
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.utils.uuid_utilities import uuid_from_string
+from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
 class ModelFunctionNodeSummary(BaseModel):

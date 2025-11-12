@@ -8,7 +8,7 @@ from pydantic import Field, field_validator
 
 from omnibase_core.constants.event_types import NODE_SHUTDOWN_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.utils.uuid_utilities import uuid_from_string
+from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
 class ModelNodeShutdownEvent(ModelOnexEvent):

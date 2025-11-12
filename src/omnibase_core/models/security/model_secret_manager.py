@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.singleton_holders import _SecretManagerHolder
+from omnibase_core.utils.util_singleton_holders import _SecretManagerHolder
 
 from .model_configuration_summary import ModelConfigurationSummary
 from .model_credentials_analysis import ModelCredentialsAnalysis, ModelManagerAssessment

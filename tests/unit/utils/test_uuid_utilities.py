@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.utils.uuid_utilities import uuid_from_string
+from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
 class TestUuidUtilities:

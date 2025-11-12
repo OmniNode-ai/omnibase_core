@@ -22,7 +22,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_performance_impact import EnumPerformanceImpact
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.utils.uuid_utilities import uuid_from_string
+from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 from .model_node_configuration_value import ModelNodeConfigurationValue
 from .model_node_configuration_value import from_int as config_from_int

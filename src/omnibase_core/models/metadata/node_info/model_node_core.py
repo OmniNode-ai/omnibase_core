@@ -22,7 +22,7 @@ from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplex
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.utils.uuid_utilities import uuid_from_string
+from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
 class ModelNodeCore(BaseModel):

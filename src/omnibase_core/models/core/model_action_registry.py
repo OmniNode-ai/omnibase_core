@@ -12,7 +12,7 @@ from pathlib import Path
 from omnibase_core.models.cli.model_cli_action import ModelCliAction
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
-from omnibase_core.utils.singleton_holders import _ActionRegistryHolder
+from omnibase_core.utils.util_singleton_holders import _ActionRegistryHolder
 
 
 class ModelActionRegistry:

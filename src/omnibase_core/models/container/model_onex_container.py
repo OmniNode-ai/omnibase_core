@@ -38,7 +38,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
-from omnibase_core.utils.singleton_holders import _ContainerHolder
+from omnibase_core.utils.util_singleton_holders import _ContainerHolder
 
 # Optional performance enhancements
 try:
