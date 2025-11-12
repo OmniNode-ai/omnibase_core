@@ -13,7 +13,7 @@ from pydantic import BaseModel, ValidationError
 
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.safe_yaml_loader import (
+from omnibase_core.utils.util_safe_yaml_loader import (
     _dump_yaml_content,
     load_yaml_content_as_model,
     serialize_data_to_yaml,
@@ -33,7 +33,7 @@ class TestLoadAndValidateYamlModelExceptionBranches:
 
     def test_load_yaml_file_not_found(self):
         """Test FileNotFoundError handling."""
-        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+        from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
         # Non-existent path
         temp_path = Path("/tmp/nonexistent_yaml_file_xyz.yaml")  # noqa: S108
@@ -46,7 +46,7 @@ class TestLoadAndValidateYamlModelExceptionBranches:
 
     def test_load_yaml_validation_error(self):
         """Test ValidationError from Pydantic."""
-        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+        from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
         # Valid YAML but invalid model
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
@@ -244,7 +244,7 @@ class TestGenericExceptionHandlers:
 
     def test_load_and_validate_yaml_model_generic_exception(self):
         """Test generic Exception handler in load_and_validate_yaml_model (lines 110-111)."""
-        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+        from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             f.write("name: test\nvalue: 42\n")

@@ -336,7 +336,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         filtered_dict = {k: v for k, v in filtered_dict.items() if v is not None}
 
         # Use centralized YAML dumping for security and consistency
-        from omnibase_core.utils.safe_yaml_loader import _dump_yaml_content
+        from omnibase_core.utils.util_safe_yaml_loader import _dump_yaml_content
 
         yaml_str = _dump_yaml_content(
             filtered_dict,

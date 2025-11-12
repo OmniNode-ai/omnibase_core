@@ -224,7 +224,7 @@ class ModelUnifiedHubContract(BaseModel):
         Returns:
             ModelUnifiedHubContract instance
         """
-        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+        from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
         try:
             # Use centralized YAML loading with full Pydantic validation

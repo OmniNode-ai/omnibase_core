@@ -92,7 +92,7 @@ class MixinNodeIdFromContract:
 
     def _load_node_id(self, contract_path: Path | None = None) -> str:
         # Lazy import to avoid circular dependency
-        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+        from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
         # Use explicit contract_path if provided
         contract_path = contract_path or getattr(self, "_explicit_contract_path", None)

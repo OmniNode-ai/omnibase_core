@@ -509,7 +509,7 @@ class ModelContractCompute(ModelContractBase):
         Returns:
             str: YAML representation of the contract
         """
-        from omnibase_core.utils.safe_yaml_loader import (
+        from omnibase_core.utils.util_safe_yaml_loader import (
             serialize_pydantic_model_to_yaml,
         )
 

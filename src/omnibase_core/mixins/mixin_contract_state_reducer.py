@@ -22,7 +22,7 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.core.model_generic_contract import ModelGenericContract
 from omnibase_core.models.core.model_state_transition import ModelStateTransition
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
 
 class MixinContractStateReducer:

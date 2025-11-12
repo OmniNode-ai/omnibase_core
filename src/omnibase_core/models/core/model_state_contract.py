@@ -293,7 +293,7 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
     """
     from pathlib import Path
 
-    from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+    from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
     try:
         path = Path(file_path)

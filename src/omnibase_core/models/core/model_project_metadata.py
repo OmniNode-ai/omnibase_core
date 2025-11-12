@@ -83,7 +83,7 @@ def get_canonical_versions() -> ModelOnexVersionInfo:
     Raises FileNotFoundError or KeyError if missing.
     """
     # Import here to avoid circular dependency
-    from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+    from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
     # Load and validate YAML using Pydantic model
     yaml_model = load_and_validate_yaml_model(PROJECT_ONEX_YAML_PATH, ModelGenericYaml)
@@ -102,7 +102,7 @@ def get_canonical_namespace_prefix() -> str:
     Raises FileNotFoundError or KeyError if missing.
     """
     # Import here to avoid circular dependency
-    from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+    from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
     # Load and validate YAML using Pydantic model
     yaml_model = load_and_validate_yaml_model(PROJECT_ONEX_YAML_PATH, ModelGenericYaml)

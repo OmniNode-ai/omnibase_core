@@ -126,7 +126,7 @@ class MixinContractMetadata:
     def _load_node_metadata(self, path: Path) -> None:
         """Load node.onex.yaml metadata."""
         # Import here to avoid circular dependency
-        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+        from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
         try:
             with open(path) as f:
@@ -161,7 +161,7 @@ class MixinContractMetadata:
     def _load_contract(self, path: Path) -> None:
         """Load tool contract YAML."""
         # Import here to avoid circular dependency
-        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+        from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
         try:
             with open(path) as f:
