@@ -64,7 +64,7 @@ class ModelResourceUsageMetric(BaseModel):
     def validate_percentage_range(self) -> "ModelResourceUsageMetric":
         """Validate percentage values are within reasonable range."""
         if self.is_percentage and self.usage_value > 150.0:
-            raise ValueError(  # error-ok: Pydantic validators require ValueError
+            raise ValueError(
                 f"Percentage usage_value {self.usage_value} exceeds maximum (150%). "
                 "Use is_percentage=False for non-percentage metrics."
             )

@@ -235,6 +235,165 @@ def validate(value):
         exceptions = {v["exception"] for v in detector.violations}
         assert exceptions == {"ValueError", "TypeError"}
 
+    def test_allows_value_error_in_model_validator(self):
+        """Test that ValueError in @model_validator is allowed."""
+        code = """
+from pydantic import model_validator
+
+class MyModel:
+    @model_validator(mode="after")
+    def validate_something(self):
+        if self.value < 0:
+            raise ValueError("Value must be positive")
+        return self
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+        detector = ErrorRaisingDetector("test.py", source_lines)
+        detector.visit(tree)
+
+        # Should NOT flag ValueError in Pydantic validator
+        assert len(detector.violations) == 0
+
+    def test_allows_value_error_in_field_validator(self):
+        """Test that ValueError in @field_validator is allowed."""
+        code = """
+from pydantic import field_validator
+
+class MyModel:
+    @field_validator("email")
+    def validate_email(cls, v):
+        if "@" not in v:
+            raise ValueError("Invalid email format")
+        return v
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+        detector = ErrorRaisingDetector("test.py", source_lines)
+        detector.visit(tree)
+
+        assert len(detector.violations) == 0
+
+    def test_allows_assertion_error_in_pydantic_validator(self):
+        """Test that AssertionError in Pydantic validator is allowed."""
+        code = """
+from pydantic import model_validator
+
+class MyModel:
+    @model_validator(mode="after")
+    def validate_something(self):
+        if not self.valid:
+            raise AssertionError("Validation failed")
+        return self
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+        detector = ErrorRaisingDetector("test.py", source_lines)
+        detector.visit(tree)
+
+        assert len(detector.violations) == 0
+
+    def test_allows_pydantic_v1_validator_decorator(self):
+        """Test that ValueError in @validator (Pydantic v1) is allowed."""
+        code = """
+from pydantic import validator
+
+class MyModel:
+    @validator("age")
+    def validate_age(cls, v):
+        if v < 0:
+            raise ValueError("Age must be positive")
+        return v
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+        detector = ErrorRaisingDetector("test.py", source_lines)
+        detector.visit(tree)
+
+        assert len(detector.violations) == 0
+
+    def test_allows_pydantic_v1_root_validator(self):
+        """Test that ValueError in @root_validator (Pydantic v1) is allowed."""
+        code = """
+from pydantic import root_validator
+
+class MyModel:
+    @root_validator
+    def validate_model(cls, values):
+        if values["start"] > values["end"]:
+            raise ValueError("Start must be before end")
+        return values
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+        detector = ErrorRaisingDetector("test.py", source_lines)
+        detector.visit(tree)
+
+        assert len(detector.violations) == 0
+
+    def test_still_detects_value_error_in_regular_function(self):
+        """Test that ValueError in regular functions is still detected."""
+        code = """
+def regular_function(value):
+    if value < 0:
+        raise ValueError("Value must be positive")
+    return value
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+        detector = ErrorRaisingDetector("test.py", source_lines)
+        detector.visit(tree)
+
+        # Should STILL flag ValueError in regular function
+        assert len(detector.violations) == 1
+        assert detector.violations[0]["exception"] == "ValueError"
+
+    def test_detects_other_exceptions_in_pydantic_validators(self):
+        """Test that non-allowed exceptions in Pydantic validators are still flagged."""
+        code = """
+from pydantic import model_validator
+
+class MyModel:
+    @model_validator(mode="after")
+    def validate_something(self):
+        if self.value < 0:
+            raise RuntimeError("Value must be positive")
+        return self
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+        detector = ErrorRaisingDetector("test.py", source_lines)
+        detector.visit(tree)
+
+        # RuntimeError should STILL be flagged even in validator
+        assert len(detector.violations) == 1
+        assert detector.violations[0]["exception"] == "RuntimeError"
+
+    def test_pydantic_validator_with_nested_functions(self):
+        """Test that ValueError in nested functions inside validators is handled."""
+        code = """
+from pydantic import model_validator
+
+class MyModel:
+    @model_validator(mode="after")
+    def validate_something(self):
+        def nested_check():
+            # This should still be allowed as it's inside validator context
+            raise ValueError("Nested validation error")
+
+        nested_check()
+        return self
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+        detector = ErrorRaisingDetector("test.py", source_lines)
+        detector.visit(tree)
+
+        # Note: This will NOT be allowed because nested_check() doesn't have
+        # the decorator. This is intentional - only the decorated function
+        # gets the exception, not nested helpers.
+        assert len(detector.violations) == 1
+
 
 class TestCheckFile:
     """Test suite for check_file function."""

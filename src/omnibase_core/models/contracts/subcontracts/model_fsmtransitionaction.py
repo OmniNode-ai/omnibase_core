@@ -62,7 +62,7 @@ class ModelFSMTransitionAction(BaseModel):
                 duplicates.add(param.parameter_name)
             seen.add(param.parameter_name)
         if duplicates:
-            raise ValueError(  # error-ok: Pydantic validators require ValueError
+            raise ValueError(
                 f"Duplicate parameter names in action_config: {sorted(duplicates)}"
             )
         return self
