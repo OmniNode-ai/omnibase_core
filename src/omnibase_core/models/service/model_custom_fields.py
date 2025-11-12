@@ -17,7 +17,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
-from omnibase_core.utils.decorators import allow_any_type, allow_dict_str_any
+from omnibase_core.utils.util_decorators import allow_any_type, allow_dict_str_any
 
 # Import separated models
 from .model_custom_field_definition import ModelCustomFieldDefinition
