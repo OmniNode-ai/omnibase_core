@@ -29,7 +29,7 @@ from typing import Any
 from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.utils.field_converter import FieldConverter
+from omnibase_core.utils.util_field_converter import FieldConverter
 
 
 class ModelFieldConverterRegistry:

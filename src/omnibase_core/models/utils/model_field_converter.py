@@ -16,7 +16,7 @@ Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
-from omnibase_core.utils.field_converter import FieldConverter
+from omnibase_core.utils.util_field_converter import FieldConverter
 
 from .model_field_converter_registry import ModelFieldConverterRegistry
 
