@@ -6,11 +6,12 @@ and compliance with one-model-per-file naming conventions.
 """
 
 # Import separated models
-from .model_graph import ModelGraph
+from omnibase_core.models.graph import ModelGraph
+from omnibase_core.models.service.model_plan import ModelPlan
+
 from .model_orchestrator_graph import ModelOrchestratorGraph
 from .model_orchestrator_plan import ModelOrchestratorPlan
 from .model_orchestrator_result import ModelOrchestratorResult
-from .model_plan import ModelPlan
 
 # Compatibility aliases
 GraphModel = ModelGraph

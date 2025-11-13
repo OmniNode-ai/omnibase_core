@@ -16,9 +16,8 @@ from omnibase_core.models.primitives.model_semver import (
     parse_semver_from_string,
 )
 from omnibase_core.models.service.model_custom_fields import ModelErrorDetails
-from omnibase_core.models.service.model_event_bus_output_field import (
-    ModelEventBusOutputField,
-)
+
+from .model_event_bus_output_field import ModelEventBusOutputField
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_business_impact import ModelBusinessImpact

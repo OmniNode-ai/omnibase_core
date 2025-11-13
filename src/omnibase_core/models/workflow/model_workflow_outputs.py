@@ -1,7 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Workflow Outputs Model
 
@@ -11,7 +7,7 @@ for workflow execution results.
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 

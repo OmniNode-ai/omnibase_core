@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from omnibase_core.models.service.model_docker_resource_limits import (
+    from omnibase_core.models.docker.model_docker_resource_limits import (
         ModelDockerResourceLimits,
     )
-    from omnibase_core.models.service.model_docker_resource_reservations import (
+    from omnibase_core.models.docker.model_docker_resource_reservations import (
         ModelDockerResourceReservations,
     )
 

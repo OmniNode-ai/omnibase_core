@@ -1,4 +1,6 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from pydantic import Field
@@ -6,8 +8,8 @@ from pydantic import Field
 "\nOrchestrator graph model.\n"
 from pydantic import BaseModel
 
-from .model_graph_edge import ModelGraphEdge
-from .model_graph_node import ModelGraphNode
+if TYPE_CHECKING:
+    from omnibase_core.models.graph import ModelGraphEdge, ModelGraphNode
 
 
 class ModelOrchestratorGraph(BaseModel):

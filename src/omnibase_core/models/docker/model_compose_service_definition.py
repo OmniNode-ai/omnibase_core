@@ -7,13 +7,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from omnibase_core.models.service.model_docker_build_config import (
+    from omnibase_core.models.docker.model_docker_build_config import (
         ModelDockerBuildConfig,
     )
-    from omnibase_core.models.service.model_docker_deploy_config import (
+    from omnibase_core.models.docker.model_docker_deploy_config import (
         ModelDockerDeployConfig,
     )
-    from omnibase_core.models.service.model_docker_healthcheck_config import (
+    from omnibase_core.models.docker.model_docker_healthcheck_config import (
         ModelDockerHealthcheckConfig,
     )
 

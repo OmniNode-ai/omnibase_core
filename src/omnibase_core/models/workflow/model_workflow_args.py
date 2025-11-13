@@ -1,7 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Pydantic models for workflow operation arguments.
 
@@ -9,7 +5,7 @@ Defines the argument models for workflow execution and management operations
 within the ONEX architecture.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.operations.model_workflow_parameters import (
     ModelWorkflowParameters,

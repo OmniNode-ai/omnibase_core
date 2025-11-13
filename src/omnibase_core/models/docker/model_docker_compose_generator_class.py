@@ -8,25 +8,25 @@ from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from omnibase_core.models.service.model_compose_service_definition import (
+    from omnibase_core.models.docker.model_compose_service_definition import (
         ModelComposeServiceDefinition,
     )
-    from omnibase_core.models.service.model_docker_build_config import (
+    from omnibase_core.models.docker.model_docker_build_config import (
         ModelDockerBuildConfig,
     )
-    from omnibase_core.models.service.model_docker_compose_config import (
+    from omnibase_core.models.docker.model_docker_compose_config import (
         ModelDockerComposeConfig,
     )
-    from omnibase_core.models.service.model_docker_deploy_config import (
+    from omnibase_core.models.docker.model_docker_deploy_config import (
         ModelDockerDeployConfig,
     )
-    from omnibase_core.models.service.model_docker_healthcheck_config import (
+    from omnibase_core.models.docker.model_docker_healthcheck_config import (
         ModelDockerHealthcheckConfig,
     )
-    from omnibase_core.models.service.model_docker_network_config import (
+    from omnibase_core.models.docker.model_docker_network_config import (
         ModelDockerNetworkConfig,
     )
-    from omnibase_core.models.service.model_docker_volume_config import (
+    from omnibase_core.models.docker.model_docker_volume_config import (
         ModelDockerVolumeConfig,
     )
     from omnibase_core.models.service.model_node_service_config import (

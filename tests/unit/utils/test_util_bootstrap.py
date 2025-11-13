@@ -16,8 +16,6 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.services.service_logging import ServiceLogging
-from omnibase_core.services.service_minimal_logging import ServiceMinimalLogging
 from omnibase_core.utils import util_bootstrap
 
 
@@ -165,8 +163,9 @@ class TestGetLoggingService:
         ):
             result = util_bootstrap.get_logging_service()
 
-        # Assert
-        assert isinstance(result, ServiceLogging)
+        # Assert - verify interface compliance instead of concrete class
+        assert result is not None
+        assert result == mock_protocol  # Should return protocol directly
         mock_registry.get_protocol.assert_called_once_with("logger")
 
     def test_get_logging_service_registry_no_protocol(self):
@@ -181,8 +180,12 @@ class TestGetLoggingService:
         ):
             result = util_bootstrap.get_logging_service()
 
-        # Assert
-        assert isinstance(result, ServiceMinimalLogging)
+        # Assert - verify interface compliance instead of concrete class
+        assert result is not None
+        assert hasattr(result, "emit_log_event")
+        assert hasattr(result, "emit_log_event_sync")
+        assert hasattr(result, "emit_log_event_async")
+        assert callable(result.emit_log_event)
 
     def test_get_logging_service_no_registry(self):
         """Test fallback to minimal logging when registry unavailable."""
@@ -190,8 +193,12 @@ class TestGetLoggingService:
         with patch.object(util_bootstrap, "_get_registry_node", return_value=None):
             result = util_bootstrap.get_logging_service()
 
-        # Assert
-        assert isinstance(result, ServiceMinimalLogging)
+        # Assert - verify interface compliance instead of concrete class
+        assert result is not None
+        assert hasattr(result, "emit_log_event")
+        assert hasattr(result, "emit_log_event_sync")
+        assert hasattr(result, "emit_log_event_async")
+        assert callable(result.emit_log_event)
 
     def test_get_logging_service_registry_exception(self):
         """Test fallback when registry raises exception."""
@@ -203,8 +210,12 @@ class TestGetLoggingService:
         ):
             result = util_bootstrap.get_logging_service()
 
-        # Assert
-        assert isinstance(result, ServiceMinimalLogging)
+        # Assert - verify interface compliance instead of concrete class
+        assert result is not None
+        assert hasattr(result, "emit_log_event")
+        assert hasattr(result, "emit_log_event_sync")
+        assert hasattr(result, "emit_log_event_async")
+        assert callable(result.emit_log_event)
 
     def test_get_logging_service_get_protocol_raises_exception(self):
         """Test fallback when get_protocol raises exception."""
@@ -218,8 +229,12 @@ class TestGetLoggingService:
         ):
             result = util_bootstrap.get_logging_service()
 
-        # Assert
-        assert isinstance(result, ServiceMinimalLogging)
+        # Assert - verify interface compliance instead of concrete class
+        assert result is not None
+        assert hasattr(result, "emit_log_event")
+        assert hasattr(result, "emit_log_event_sync")
+        assert hasattr(result, "emit_log_event_async")
+        assert callable(result.emit_log_event)
 
 
 # =============================================================================
@@ -535,8 +550,12 @@ class TestGetFallbackService:
         # Act
         result = util_bootstrap._get_fallback_service(MockLoggerProtocol)
 
-        # Assert
-        assert isinstance(result, ServiceMinimalLogging)
+        # Assert - verify interface compliance instead of concrete class
+        assert result is not None
+        assert hasattr(result, "emit_log_event")
+        assert hasattr(result, "emit_log_event_sync")
+        assert hasattr(result, "emit_log_event_async")
+        assert callable(result.emit_log_event)
 
     def test_get_fallback_service_logger_in_name(self):
         """Test fallback for any protocol with Logger in name."""
@@ -548,8 +567,12 @@ class TestGetFallbackService:
         # Act
         result = util_bootstrap._get_fallback_service(MockServiceLogger)
 
-        # Assert
-        assert isinstance(result, ServiceMinimalLogging)
+        # Assert - verify interface compliance instead of concrete class
+        assert result is not None
+        assert hasattr(result, "emit_log_event")
+        assert hasattr(result, "emit_log_event_sync")
+        assert hasattr(result, "emit_log_event_async")
+        assert callable(result.emit_log_event)
 
     def test_get_fallback_service_non_logger_protocol(self):
         """Test fallback returns None for non-logger protocols."""
@@ -602,8 +625,12 @@ class TestGetMinimalLoggingService:
         # Act
         result = util_bootstrap._get_minimal_logging_service()
 
-        # Assert
-        assert isinstance(result, ServiceMinimalLogging)
+        # Assert - verify interface compliance instead of concrete class
+        assert result is not None
+        assert hasattr(result, "emit_log_event")
+        assert hasattr(result, "emit_log_event_sync")
+        assert hasattr(result, "emit_log_event_async")
+        assert callable(result.emit_log_event)
 
     def test_get_minimal_logging_service_is_functional(self):
         """Test that returned minimal logging service is functional."""
@@ -620,10 +647,12 @@ class TestGetMinimalLoggingService:
         service1 = util_bootstrap._get_minimal_logging_service()
         service2 = util_bootstrap._get_minimal_logging_service()
 
-        # Assert
+        # Assert - verify interface compliance instead of concrete class
         assert service1 is not service2
-        assert isinstance(service1, ServiceMinimalLogging)
-        assert isinstance(service2, ServiceMinimalLogging)
+        assert hasattr(service1, "emit_log_event")
+        assert hasattr(service2, "emit_log_event")
+        assert callable(service1.emit_log_event)
+        assert callable(service2.emit_log_event)
 
 
 # =============================================================================
@@ -802,7 +831,9 @@ class TestBootstrapIntegration:
 
             # Get logging service
             logging_service = util_bootstrap.get_logging_service()
-            assert isinstance(logging_service, ServiceLogging)
+            # Should return protocol directly from registry
+            assert logging_service is not None
+            assert logging_service == mock_protocol
 
             # List services
             services = util_bootstrap.get_available_services()
@@ -822,7 +853,10 @@ class TestBootstrapIntegration:
 
             # Get logging service - should fallback to minimal
             logging_service = util_bootstrap.get_logging_service()
-            assert isinstance(logging_service, ServiceMinimalLogging)
+            assert logging_service is not None
+            assert hasattr(logging_service, "emit_log_event")
+            assert hasattr(logging_service, "emit_log_event_sync")
+            assert callable(logging_service.emit_log_event)
 
             # List services - should return minimal list
             services = util_bootstrap.get_available_services()
@@ -868,7 +902,10 @@ class TestBootstrapIntegration:
 
             # Logging should fallback to minimal
             logging_service = util_bootstrap.get_logging_service()
-            assert isinstance(logging_service, ServiceMinimalLogging)
+            assert logging_service is not None
+            assert hasattr(logging_service, "emit_log_event")
+            assert hasattr(logging_service, "emit_log_event_sync")
+            assert callable(logging_service.emit_log_event)
 
             # Services list should fallback
             services = util_bootstrap.get_available_services()
@@ -913,7 +950,7 @@ class TestBootstrapEdgeCases:
         assert all(r is not None for r in results)
 
     def test_service_logging_with_protocol_variations(self):
-        """Test ServiceLogging creation with different protocol configurations."""
+        """Test logging service creation with different protocol configurations."""
         # Arrange
         mock_protocol = Mock()
         mock_registry = Mock()
@@ -925,9 +962,9 @@ class TestBootstrapEdgeCases:
         ):
             service = util_bootstrap.get_logging_service()
 
-        # Assert
-        assert isinstance(service, ServiceLogging)
-        assert service._protocol == mock_protocol
+        # Assert - should return protocol directly from registry
+        assert service is not None
+        assert service == mock_protocol
 
     def test_fallback_service_case_sensitivity(self):
         """Test that fallback service check is case-sensitive for 'Logger'."""
@@ -946,8 +983,11 @@ class TestBootstrapEdgeCases:
         # Assert - only names containing "Logger" (capital L) should return service
         assert result_lower is None  # "logger" (lowercase) not matching
         assert result_upper is None  # "LOGGER" (all caps) not matching
-        assert isinstance(result_mixed, ServiceMinimalLogging)  # "Logger" matches
-        assert isinstance(result_capital, ServiceMinimalLogging)  # "Logger" matches
+        # "Logger" matches - verify interface compliance
+        assert result_mixed is not None
+        assert hasattr(result_mixed, "emit_log_event")
+        assert result_capital is not None
+        assert hasattr(result_capital, "emit_log_event")
 
     def test_emit_log_with_special_characters(self):
         """Test log emission with special characters in messages."""

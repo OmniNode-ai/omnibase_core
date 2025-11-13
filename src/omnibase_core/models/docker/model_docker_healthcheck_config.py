@@ -6,7 +6,7 @@ Model for Docker healthcheck configuration.
 
 from pydantic import BaseModel
 
-from omnibase_core.models.service.model_docker_healthcheck_test import (
+from omnibase_core.models.docker.model_docker_healthcheck_test import (
     ModelDockerHealthcheckTest,
 )
 

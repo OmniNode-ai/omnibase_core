@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from omnibase_core.models.service.model_docker_placement_constraints import (
+    from omnibase_core.models.docker.model_docker_placement_constraints import (
         ModelDockerPlacementConstraints,
     )
-    from omnibase_core.models.service.model_docker_resources import ModelDockerResources
-    from omnibase_core.models.service.model_docker_restart_policy import (
+    from omnibase_core.models.docker.model_docker_resources import ModelDockerResources
+    from omnibase_core.models.docker.model_docker_restart_policy import (
         ModelDockerRestartPolicy,
     )
 

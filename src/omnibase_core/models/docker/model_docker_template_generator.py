@@ -11,10 +11,13 @@ import json
 from pathlib import Path
 from typing import Any
 
+from omnibase_core.models.service.model_kubernetestemplategenerator import (
+    ModelKubernetesTemplateGenerator,
+)
+from omnibase_core.models.service.model_node_service_config import (
+    ModelNodeServiceConfig,
+)
 from omnibase_core.utils.util_safe_yaml_loader import serialize_data_to_yaml
-
-from .model_kubernetestemplategenerator import ModelKubernetesTemplateGenerator
-from .model_node_service_config import ModelNodeServiceConfig
 
 
 class ModelDockerTemplateGenerator:
