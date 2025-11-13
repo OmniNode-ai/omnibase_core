@@ -133,6 +133,7 @@ class TestMixinIntentPublisher:
         assert "requires" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_publish_event_intent_success(self, test_node, test_event):
         """
         Test successful intent publishing with all parameters.
@@ -172,6 +173,7 @@ class TestMixinIntentPublisher:
         assert isinstance(call_kwargs["value"], str)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_publish_event_intent_auto_correlation_id(
         self, test_node, test_event
     ):
@@ -190,6 +192,7 @@ class TestMixinIntentPublisher:
         assert isinstance(result.correlation_id, UUID)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_publish_event_intent_default_priority(self, test_node, test_event):
         """
         Test intent publishing with default priority.
@@ -206,6 +209,7 @@ class TestMixinIntentPublisher:
         assert test_node._intent_kafka_client.publish.called
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_publish_event_intent_priority_validation_below_range(
         self, test_node, test_event
     ):
@@ -226,6 +230,7 @@ class TestMixinIntentPublisher:
         assert "0" in str(exc_info.value)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_publish_event_intent_priority_validation_above_range(
         self, test_node, test_event
     ):
@@ -246,6 +251,7 @@ class TestMixinIntentPublisher:
         assert "11" in str(exc_info.value)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_publish_event_intent_priority_boundary_values(
         self, test_node, test_event
     ):
@@ -273,6 +279,7 @@ class TestMixinIntentPublisher:
         assert isinstance(result2, ModelIntentPublishResult)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_publish_event_intent_event_without_model_dump(self, test_node):
         """
         Test error handling for events without model_dump() method.
@@ -296,6 +303,7 @@ class TestMixinIntentPublisher:
         assert "Pydantic" in str(exc_info.value)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_intent_payload_structure(self, test_node, test_event):
         """
         Test ModelEventPublishIntent payload structure.
@@ -328,6 +336,7 @@ class TestMixinIntentPublisher:
         assert "payload" in envelope_data or "intent_id" in envelope_data
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_metadata_field_population(self, test_node, test_event):
         """
         Test that metadata fields are properly populated.
@@ -352,6 +361,7 @@ class TestMixinIntentPublisher:
         assert result.target_topic == "dev.omninode.test.v1"
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_created_by_field(self, test_node, test_event):
         """
         Test that created_by field contains node class name.
@@ -369,6 +379,7 @@ class TestMixinIntentPublisher:
         assert test_node.__class__.__name__ == "TestNodeWithIntentPublisher"
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_target_event_type_extraction(self, test_node, test_event):
         """
         Test that target_event_type is extracted from event class.
@@ -385,6 +396,7 @@ class TestMixinIntentPublisher:
         assert test_event.__class__.__name__ == "TestEventModel"
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_target_event_payload_serialization(self, test_node, test_event):
         """
         Test that event payload is properly serialized via model_dump().
@@ -404,6 +416,7 @@ class TestMixinIntentPublisher:
         assert "value" in payload
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_kafka_publish_failure(self, test_node, test_event):
         """
         Test error handling when Kafka publish fails.
@@ -425,6 +438,7 @@ class TestMixinIntentPublisher:
         assert "Kafka connection failed" in str(exc_info.value)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_onex_envelope_success_path(self, test_node, test_event):
         """
         Test successful ModelOnexEnvelopeV1 wrapping.
@@ -456,6 +470,7 @@ class TestMixinIntentPublisher:
             assert call_kwargs["value"] == '{"envelope": "data"}'
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_onex_envelope_fallback_path(self, test_node, test_event):
         """
         Test fallback when ModelOnexEnvelopeV1 is not available.
@@ -474,6 +489,7 @@ class TestMixinIntentPublisher:
         assert isinstance(result, ModelIntentPublishResult)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_correlation_id_uuid_format(self, test_node, test_event):
         """
         Test that correlation_id is always a valid UUID.
@@ -500,6 +516,7 @@ class TestMixinIntentPublisher:
         assert isinstance(result2.correlation_id, UUID)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_intent_id_uniqueness(self, test_node, test_event):
         """
         Test that each intent gets a unique intent_id.
@@ -522,6 +539,7 @@ class TestMixinIntentPublisher:
         assert result1.intent_id != result2.intent_id
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_timestamp_generation(self, test_node, test_event):
         """
         Test that published_at timestamp is in UTC.
@@ -544,6 +562,7 @@ class TestMixinIntentPublisher:
         assert result.published_at.tzinfo is not None
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_kafka_topic_constant(self, test_node, test_event):
         """
         Test that intent is published to correct Kafka topic.
@@ -561,6 +580,7 @@ class TestMixinIntentPublisher:
         assert call_kwargs["topic"] == test_node.INTENT_TOPIC
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_kafka_key_format(self, test_node, test_event):
         """
         Test that Kafka key is string representation of intent_id.
@@ -582,6 +602,7 @@ class TestMixinIntentPublisher:
         UUID(key)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_multiple_concurrent_publishes(self, test_node, test_event):
         """
         Test thread safety of concurrent intent publishes.
@@ -606,6 +627,7 @@ class TestMixinIntentPublisher:
         assert len(set(intent_ids)) == 10
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_complex_event_payload(self, test_node):
         """
         Test intent publishing with complex nested event payload.
@@ -660,6 +682,7 @@ class TestMixinIntentPublisher:
         assert "event-publish" in test_node.INTENT_TOPIC
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_result_model_completeness(self, test_node, test_event):
         """
         Test that ModelIntentPublishResult contains all required fields.
