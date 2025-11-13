@@ -12,6 +12,9 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.models.contracts.subcontracts.model_component_health_detail import (
+    ModelComponentHealthDetail,
+)
 from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract import (
     ModelComponentHealth,
     ModelComponentHealthCollection,
@@ -37,7 +40,12 @@ class TestModelComponentHealth:
             message="Database connection is healthy",
             last_check=now,
             check_duration_ms=150,
-            details={"connection_pool": "5/10", "latency_ms": "25"},
+            details=[
+                ModelComponentHealthDetail(
+                    detail_key="connection_pool", detail_value="5/10"
+                ),
+                ModelComponentHealthDetail(detail_key="latency_ms", detail_value="25"),
+            ],
         )
 
         assert component.component_name == "database_connection"
@@ -45,7 +53,9 @@ class TestModelComponentHealth:
         assert component.message == "Database connection is healthy"
         assert component.last_check == now
         assert component.check_duration_ms == 150
-        assert component.details["connection_pool"] == "5/10"
+        assert len(component.details) == 2
+        assert component.details[0].detail_key == "connection_pool"
+        assert component.details[0].detail_value == "5/10"
 
     def test_component_health_minimal_fields(self):
         """Test component health with minimal required fields."""
@@ -60,7 +70,7 @@ class TestModelComponentHealth:
         assert component.component_name == "cache"
         assert component.status == EnumNodeHealthStatus.DEGRADED
         assert component.check_duration_ms is None
-        assert component.details == {}
+        assert component.details == []
 
     def test_component_health_negative_duration_validation(self):
         """Test validation of negative check duration."""

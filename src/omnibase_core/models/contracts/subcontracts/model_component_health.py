@@ -14,6 +14,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 
+from .model_component_health_detail import ModelComponentHealthDetail
+
 
 class ModelComponentHealth(BaseModel):
     """Health status of an individual node component."""
@@ -38,8 +40,9 @@ class ModelComponentHealth(BaseModel):
         ge=0,
     )
 
-    details: dict[str, str] = Field(
-        default_factory=dict, description="Additional component-specific health details"
+    details: list[ModelComponentHealthDetail] = Field(
+        default_factory=list,
+        description="Strongly-typed component-specific health details",
     )
 
     model_config = ConfigDict(

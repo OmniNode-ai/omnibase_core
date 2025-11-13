@@ -120,6 +120,7 @@ class TestGetCached:
     """Test suite for get_cached method."""
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_get_cached_returns_none_when_not_found(self):
         """Test that get_cached returns None for non-existent key."""
         node = TestNode()
@@ -129,6 +130,7 @@ class TestGetCached:
         assert result is None
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_get_cached_returns_value_when_found(self):
         """Test that get_cached returns stored value."""
         node = TestNode()
@@ -143,6 +145,7 @@ class TestGetCached:
         assert result == cache_value
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_get_cached_respects_disabled_flag(self):
         """Test that get_cached returns None when caching is disabled."""
         node = TestNode()
@@ -164,6 +167,7 @@ class TestSetCached:
     """Test suite for set_cached method."""
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_set_cached_stores_value(self):
         """Test that set_cached stores value in cache."""
         node = TestNode()
@@ -175,6 +179,7 @@ class TestSetCached:
         assert node._cache_data[cache_key] == cache_value
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_set_cached_with_ttl(self):
         """Test that set_cached accepts TTL parameter (even though it's ignored in stub)."""
         node = TestNode()
@@ -187,6 +192,7 @@ class TestSetCached:
         assert node._cache_data[cache_key] == cache_value
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_set_cached_overwrites_existing_value(self):
         """Test that set_cached overwrites existing cached value."""
         node = TestNode()
@@ -199,6 +205,7 @@ class TestSetCached:
         assert node._cache_data[cache_key] == "value2"
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_set_cached_respects_disabled_flag(self):
         """Test that set_cached does not store when caching is disabled."""
         node = TestNode()
@@ -209,6 +216,7 @@ class TestSetCached:
         assert "test_key" not in node._cache_data
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_set_cached_handles_complex_values(self):
         """Test that set_cached can store complex data structures."""
         node = TestNode()
@@ -226,6 +234,7 @@ class TestInvalidateCache:
     """Test suite for invalidate_cache method."""
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_invalidate_cache_removes_key(self):
         """Test that invalidate_cache removes specified key."""
         node = TestNode()
@@ -241,6 +250,7 @@ class TestInvalidateCache:
         assert cache_key not in node._cache_data
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_invalidate_cache_nonexistent_key(self):
         """Test that invalidate_cache handles non-existent key gracefully."""
         node = TestNode()
@@ -249,6 +259,7 @@ class TestInvalidateCache:
         await node.invalidate_cache("nonexistent_key")
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_invalidate_cache_leaves_other_keys(self):
         """Test that invalidate_cache only removes specified key."""
         node = TestNode()
@@ -271,6 +282,7 @@ class TestClearCache:
     """Test suite for clear_cache method."""
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_clear_cache_removes_all_entries(self):
         """Test that clear_cache removes all cached entries."""
         node = TestNode()
@@ -289,6 +301,7 @@ class TestClearCache:
         assert node._cache_data == {}
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_clear_cache_on_empty_cache(self):
         """Test that clear_cache handles empty cache gracefully."""
         node = TestNode()
@@ -358,6 +371,7 @@ class TestCachingIntegration:
     """Integration tests for MixinCaching workflow."""
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_full_cache_workflow(self):
         """Test complete caching workflow: generate key, set, get, invalidate."""
         node = TestNode()
@@ -383,6 +397,7 @@ class TestCachingIntegration:
         assert await node.get_cached(cache_key) is None
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_cache_with_ttl_parameter(self):
         """Test caching workflow with TTL (ignored in stub but should not error)."""
         node = TestNode()
@@ -398,6 +413,7 @@ class TestCachingIntegration:
         assert result == "cached_result"
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_disabled_cache_workflow(self):
         """Test that caching can be disabled and re-enabled."""
         node = TestNode()

@@ -16,6 +16,8 @@ from pydantic import BaseModel
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_workflow_coordination import EnumAssignmentStatus
 
+from .model_resource_usage_metric import ModelResourceUsageMetric
+
 
 class ModelNodeAssignment(BaseModel):
     """Node assignment for workflow execution."""
@@ -38,9 +40,9 @@ class ModelNodeAssignment(BaseModel):
         ge=0,
     )
 
-    resource_usage: dict[str, float] = Field(
-        default_factory=dict,
-        description="Resource usage metrics for this node",
+    resource_usage: list[ModelResourceUsageMetric] = Field(
+        default_factory=list,
+        description="Strongly-typed resource usage metrics for this node",
     )
 
     model_config = {

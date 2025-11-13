@@ -10,7 +10,8 @@ Model for configuration validation rules and constraints in the ONEX configurati
 
 from pydantic import BaseModel
 
-from omnibase_core.enums.enum_environment import EnumEnvironment
+from .model_environment_validation_rules import ModelEnvironmentValidationRules
+from .model_validation_schema_rule import ModelValidationSchemaRule
 
 
 class ModelConfigurationValidation(BaseModel):
@@ -32,14 +33,14 @@ class ModelConfigurationValidation(BaseModel):
         description="Configuration keys that are optional",
     )
 
-    validation_schema: dict[str, str] | None = Field(
-        default=None,
-        description="JSON schema or validation rules for configuration values",
+    validation_schema: list[ModelValidationSchemaRule] = Field(
+        default_factory=list,
+        description="Strongly-typed validation rules for configuration values",
     )
 
-    environment_specific: dict[EnumEnvironment, dict[str, str]] = Field(
-        default_factory=dict,
-        description="Environment-specific validation rules",
+    environment_specific: list[ModelEnvironmentValidationRules] = Field(
+        default_factory=list,
+        description="Strongly-typed environment-specific validation rules",
     )
 
     sensitive_keys: list[str] = Field(

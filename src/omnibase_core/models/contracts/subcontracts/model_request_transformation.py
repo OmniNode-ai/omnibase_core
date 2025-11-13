@@ -13,6 +13,10 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel
 
+from .model_header_transformation import ModelHeaderTransformation
+from .model_query_parameter_rule import ModelQueryParameterRule
+from .model_response_header_rule import ModelResponseHeaderRule
+
 
 class ModelRequestTransformation(BaseModel):
     """
@@ -27,9 +31,9 @@ class ModelRequestTransformation(BaseModel):
         description="Enable request transformation",
     )
 
-    header_transformations: dict[str, str] = Field(
-        default_factory=dict,
-        description="Header transformation rules",
+    header_transformations: list[ModelHeaderTransformation] = Field(
+        default_factory=list,
+        description="Strongly-typed header transformation rules",
     )
 
     path_rewrite_rules: list[str] = Field(
@@ -37,9 +41,9 @@ class ModelRequestTransformation(BaseModel):
         description="Path rewrite patterns",
     )
 
-    query_parameter_rules: dict[str, str] = Field(
-        default_factory=dict,
-        description="Query parameter transformation",
+    query_parameter_rules: list[ModelQueryParameterRule] = Field(
+        default_factory=list,
+        description="Strongly-typed query parameter transformation rules",
     )
 
     payload_transformation: str | None = Field(
@@ -52,9 +56,9 @@ class ModelRequestTransformation(BaseModel):
         description="Enable response transformation",
     )
 
-    response_header_rules: dict[str, str] = Field(
-        default_factory=dict,
-        description="Response header transformation",
+    response_header_rules: list[ModelResponseHeaderRule] = Field(
+        default_factory=list,
+        description="Strongly-typed response header transformation rules",
     )
 
     model_config = {

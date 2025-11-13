@@ -17,6 +17,18 @@ Allowed Patterns:
 3. Re-raising as OnexError with 'from e'
 4. Explicit overrides with # error-ok: reason
 5. Test files (tests/ directory)
+6. ValueError/AssertionError in Pydantic validators (framework-mandated)
+
+Pydantic Validator Exception (Auto-Detected):
+Pydantic's validator framework requires raising ValueError or AssertionError for
+validation failures. These exceptions are automatically allowed when raised inside
+functions decorated with:
+  - @model_validator (Pydantic v2)
+  - @field_validator (Pydantic v2)
+  - @validator (Pydantic v1)
+  - @root_validator (Pydantic v1)
+
+This is a framework requirement, not an anti-pattern. No # error-ok comment needed.
 
 Usage:
     python scripts/validation/check_error_raising.py [files...]
@@ -76,11 +88,25 @@ class ErrorRaisingDetector(ast.NodeVisitor):
         "FileExistsError",
     }
 
+    # Pydantic validator decorators that require ValueError/AssertionError
+    # These are framework-mandated exception types for validation
+    PYDANTIC_DECORATORS = {
+        "model_validator",  # Pydantic v2
+        "field_validator",  # Pydantic v2
+        "validator",  # Pydantic v1
+        "root_validator",  # Pydantic v1
+    }
+
+    # Exceptions that are allowed in Pydantic validators
+    PYDANTIC_ALLOWED_EXCEPTIONS = {"ValueError", "AssertionError"}
+
     def __init__(self, filename: str, source_lines: list[str]):
         self.filename = filename
         self.source_lines = source_lines
         self.violations: list[dict[str, Any]] = []
         self.in_exception_handler = False
+        self.current_function_decorators: set[str] = set()
+        self.function_decorator_stack: list[set[str]] = []
 
     def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
         """Track when we're in an exception handler (catching is OK)."""
@@ -88,6 +114,59 @@ class ErrorRaisingDetector(ast.NodeVisitor):
         self.in_exception_handler = True
         self.generic_visit(node)
         self.in_exception_handler = prev_in_handler
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """Track function decorators as we enter functions."""
+        # Extract decorator names from this function
+        decorators = self._extract_decorator_names(node.decorator_list)
+
+        # Save current decorators and push new ones
+        self.function_decorator_stack.append(self.current_function_decorators)
+        self.current_function_decorators = decorators
+
+        # Visit function body
+        self.generic_visit(node)
+
+        # Restore previous decorators
+        self.current_function_decorators = self.function_decorator_stack.pop()
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """Track async function decorators as we enter functions."""
+        # Same logic as regular function
+        decorators = self._extract_decorator_names(node.decorator_list)
+        self.function_decorator_stack.append(self.current_function_decorators)
+        self.current_function_decorators = decorators
+        self.generic_visit(node)
+        self.current_function_decorators = self.function_decorator_stack.pop()
+
+    def _extract_decorator_names(self, decorator_list: list[ast.expr]) -> set[str]:
+        """Extract decorator names from a decorator list."""
+        decorators = set()
+        for decorator in decorator_list:
+            name = self._get_decorator_name(decorator)
+            if name:
+                decorators.add(name)
+        return decorators
+
+    def _get_decorator_name(self, node: ast.expr) -> str | None:
+        """Get the name of a decorator from an AST node."""
+        if isinstance(node, ast.Name):
+            # Simple decorator: @decorator_name
+            return node.id
+        elif isinstance(node, ast.Call):
+            # Decorator with arguments: @decorator_name(args)
+            if isinstance(node.func, ast.Name):
+                return node.func.id
+            elif isinstance(node.func, ast.Attribute):
+                return node.func.attr
+        elif isinstance(node, ast.Attribute):
+            # Attribute decorator: @module.decorator_name
+            return node.attr
+        return None
+
+    def _is_inside_pydantic_validator(self) -> bool:
+        """Check if we're currently inside a Pydantic validator function."""
+        return bool(self.current_function_decorators & self.PYDANTIC_DECORATORS)
 
     def visit_Raise(self, node: ast.Raise) -> None:
         """Check raise statements for OnexError compliance."""
@@ -139,6 +218,16 @@ class ErrorRaisingDetector(ast.NodeVisitor):
             self.generic_visit(node)
             return
 
+        # PYDANTIC VALIDATOR EXCEPTION:
+        # Allow ValueError and AssertionError in Pydantic validators
+        # These are framework-mandated exception types for validation
+        if (
+            self._is_inside_pydantic_validator()
+            and exception_name in self.PYDANTIC_ALLOWED_EXCEPTIONS
+        ):
+            self.generic_visit(node)
+            return
+
         # Report violation
         self.violations.append(
             {
@@ -156,8 +245,10 @@ class ErrorRaisingDetector(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _get_exception_name(self, node: ast.expr) -> str | None:
+    def _get_exception_name(self, node: ast.expr | None) -> str | None:
         """Extract exception name from AST node."""
+        if node is None:
+            return None
         if isinstance(node, ast.Name):
             return node.id
         elif isinstance(node, ast.Call):

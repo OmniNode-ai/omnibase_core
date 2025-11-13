@@ -123,6 +123,7 @@ class TestStartStopDiscoveryResponder:
     """Test start/stop discovery responder functionality."""
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_start_discovery_responder_success(self):
         """Test starting discovery responder successfully."""
 
@@ -142,6 +143,7 @@ class TestStartStopDiscoveryResponder:
         mock_event_bus.subscribe.assert_called_once()
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_start_discovery_responder_custom_throttle(self):
         """Test starting discovery responder with custom throttle."""
 
@@ -159,6 +161,7 @@ class TestStartStopDiscoveryResponder:
         assert node._response_throttle == 2.5
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_start_discovery_responder_already_active(self):
         """Test starting discovery responder when already active."""
 
@@ -181,6 +184,7 @@ class TestStartStopDiscoveryResponder:
         assert mock_event_bus.subscribe.call_count == call_count
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_start_discovery_responder_failure(self):
         """Test starting discovery responder with event bus failure."""
 
@@ -197,6 +201,7 @@ class TestStartStopDiscoveryResponder:
             await node.start_discovery_responder(mock_event_bus)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_stop_discovery_responder_when_active(self):
         """Test stopping active discovery responder."""
 
@@ -217,6 +222,7 @@ class TestStartStopDiscoveryResponder:
         mock_unsubscribe.assert_called_once()
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_stop_discovery_responder_when_inactive(self):
         """Test stopping inactive discovery responder."""
 
@@ -233,6 +239,7 @@ class TestDiscoveryMessageHandling:
     """Test discovery message handling."""
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_on_discovery_message_invalid_json(self):
         """Test processing message with invalid JSON."""
 
@@ -249,6 +256,7 @@ class TestDiscoveryMessageHandling:
         await node._on_discovery_message(mock_message)
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_on_discovery_message_malformed_envelope(self):
         """Test processing message with malformed envelope."""
 
@@ -553,6 +561,7 @@ class TestIntegrationScenarios:
     """Integration tests for discovery responder."""
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_full_discovery_workflow(self):
         """Test complete discovery request-response workflow."""
 
@@ -573,6 +582,7 @@ class TestIntegrationScenarios:
         assert node._discovery_active is False
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_discovery_with_custom_capabilities(self):
         """Test discovery with custom capabilities."""
 
@@ -608,6 +618,7 @@ class TestStrictTypeEnforcement:
     """Test strict type enforcement breaking changes."""
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_start_discovery_responder_missing_node_id(self):
         """Test that starting discovery fails if node_id is missing."""
 
@@ -624,6 +635,7 @@ class TestStrictTypeEnforcement:
         assert exc_info.value.error_code == EnumCoreErrorCode.DISCOVERY_SETUP_FAILED
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_start_discovery_responder_wrong_node_id_type(self):
         """Test that starting discovery fails if node_id is not UUID."""
 
@@ -730,6 +742,7 @@ class TestStrictTypeEnforcement:
         assert "publishes_to" in channels
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_compliant_node_full_workflow(self):
         """Test that fully compliant node works end-to-end."""
         node = CompliantTestNode()

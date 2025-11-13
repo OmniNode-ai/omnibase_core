@@ -10,6 +10,8 @@ Model for event transformation specifications in the ONEX event-driven architect
 
 from pydantic import BaseModel
 
+from .model_event_mapping_rule import ModelEventMappingRule
+
 
 class ModelEventTransformation(BaseModel):
     """
@@ -36,9 +38,9 @@ class ModelEventTransformation(BaseModel):
         description="Conditions for applying transformation",
     )
 
-    mapping_rules: dict[str, str] = Field(
-        default_factory=dict,
-        description="Field mapping rules for transformation",
+    mapping_rules: list[ModelEventMappingRule] = Field(
+        default_factory=list,
+        description="Strongly-typed field mapping rules for transformation",
     )
 
     enrichment_sources: list[str] = Field(

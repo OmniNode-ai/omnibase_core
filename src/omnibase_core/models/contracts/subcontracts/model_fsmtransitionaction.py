@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from pydantic import BaseModel, Field, model_validator
 
-from pydantic import BaseModel, Field
-
-if TYPE_CHECKING:
-    from omnibase_core.models.core.model_action_config_value import (
-        ModelActionConfigValue,
-    )
+from .model_action_config_parameter import ModelActionConfigParameter
 
 
 class ModelFSMTransitionAction(BaseModel):
@@ -30,8 +25,8 @@ class ModelFSMTransitionAction(BaseModel):
         min_length=1,
     )
 
-    action_config: dict[str, ModelActionConfigValue] = Field(
-        default_factory=dict,
+    action_config: list[ModelActionConfigParameter] = Field(
+        default_factory=list,
         description="Strongly-typed configuration parameters for the action",
     )
 
@@ -56,6 +51,21 @@ class ModelFSMTransitionAction(BaseModel):
         description="Timeout for action execution",
         ge=1,
     )
+
+    @model_validator(mode="after")
+    def validate_unique_action_config(self) -> ModelFSMTransitionAction:
+        """Ensure action_config parameter names are unique."""
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for param in self.action_config:
+            if param.parameter_name in seen:
+                duplicates.add(param.parameter_name)
+            seen.add(param.parameter_name)
+        if duplicates:
+            raise ValueError(
+                f"Duplicate parameter names in action_config: {sorted(duplicates)}"
+            )
+        return self
 
     model_config = {
         "extra": "ignore",
