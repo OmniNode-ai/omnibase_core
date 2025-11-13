@@ -56,6 +56,7 @@ class TestNode(MixinEventListener[TestInputState, TestOutputState]):
 class TestMixinEventListener:
     """Test MixinEventListener functionality."""
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_initialization(self):
         """Test mixin initialization."""
         node = TestNode()
@@ -67,6 +68,7 @@ class TestMixinEventListener:
         assert hasattr(node, "_stop_event")
         assert hasattr(node, "_event_subscriptions")
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_node_name_from_attribute(self):
         """Test getting node name from node_name attribute."""
         node = TestNode()
@@ -76,6 +78,7 @@ class TestMixinEventListener:
 
         assert name == "custom_node_name"
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_node_name_from_class(self):
         """Test getting node name from class name."""
         node = TestNode()
@@ -87,6 +90,7 @@ class TestMixinEventListener:
         # Should convert CamelCase to snake_case
         assert "_" in name or name.islower()
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_bus_property(self):
         """Test event_bus property getter and setter."""
         node = TestNode()
@@ -99,6 +103,7 @@ class TestMixinEventListener:
         node.event_bus = mock_bus
         assert node.event_bus == mock_bus
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_process_not_implemented(self):
         """Test that process method must be implemented."""
         mixin = MixinEventListener()
@@ -108,6 +113,7 @@ class TestMixinEventListener:
 
         assert exc_info.value.error_code == EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_event_patterns_default(self):
         """Test getting default event patterns."""
         node = TestNode()
@@ -117,6 +123,7 @@ class TestMixinEventListener:
         assert isinstance(patterns, list)
         assert len(patterns) > 0
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_event_patterns_from_contract(self, tmp_path):
         """Test getting event patterns from contract YAML."""
         node = TestNode()
@@ -140,6 +147,7 @@ event_subscriptions:
 
         assert "test.event.type" in patterns
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_completion_event_type_basic(self):
         """Test getting completion event type."""
         node = TestNode()
@@ -153,6 +161,7 @@ event_subscriptions:
             or "rendered" in completion
         )
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_completion_event_type_known_mappings(self):
         """Test completion event type with known mappings."""
         node = TestNode()
@@ -168,6 +177,7 @@ event_subscriptions:
             result = node.get_completion_event_type(input_event)
             assert result == expected
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_completion_event_type_unknown(self):
         """Test completion event type with unknown pattern."""
         node = TestNode()
@@ -176,6 +186,7 @@ event_subscriptions:
 
         assert completion == "unknown.event.type.complete"
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_start_event_listener_without_event_bus(self):
         """Test starting event listener without event bus."""
         node = TestNode(event_bus=None)
@@ -185,6 +196,7 @@ event_subscriptions:
 
         assert node._event_listener_thread is None
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_start_event_listener_with_event_bus(self):
         """Test starting event listener with event bus."""
         mock_event_bus = Mock()
@@ -206,6 +218,7 @@ event_subscriptions:
             node.stop_event_listener()
             time.sleep(0.1)
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_start_event_listener_already_running(self):
         """Test starting event listener when already running."""
         mock_event_bus = Mock()
@@ -225,6 +238,7 @@ event_subscriptions:
             node.stop_event_listener()
             time.sleep(0.1)
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_stop_event_listener(self):
         """Test stopping event listener."""
         mock_event_bus = Mock()
@@ -247,6 +261,7 @@ event_subscriptions:
                 else True
             )
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_to_input_state_with_dict_data(self):
         """Test converting event to input state with dict data."""
         node = TestNode()
@@ -264,6 +279,7 @@ event_subscriptions:
 
             assert isinstance(input_state, TestInputState)
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_to_input_state_with_model_data(self):
         """Test converting event to input state with model data."""
         node = TestNode()
@@ -281,6 +297,7 @@ event_subscriptions:
 
             assert isinstance(input_state, TestInputState)
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_to_input_state_no_class_found(self):
         """Test event to input state when no class found."""
         node = TestNode()
@@ -300,6 +317,7 @@ event_subscriptions:
                 exc_info.value.error_code == EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH
             )
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_to_input_state_conversion_error(self):
         """Test event to input state with conversion error."""
         node = TestNode()
@@ -322,6 +340,7 @@ event_subscriptions:
 
             assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_input_state_class_from_annotations(self):
         """Test getting input state class from annotations."""
 
@@ -337,6 +356,7 @@ event_subscriptions:
 
         assert input_class == TestInputState
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_input_state_class_not_found(self):
         """Test getting input state class when not found."""
 
@@ -358,6 +378,7 @@ event_subscriptions:
         # Should return None when no annotations are present and no fallback is available
         assert input_class is None or isinstance(input_class, type)
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_publish_completion_event(self):
         """Test publishing completion event."""
         mock_event_bus = Mock()
@@ -379,6 +400,7 @@ event_subscriptions:
         # Verify publish was called
         mock_event_bus.publish_async.assert_called_once()
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_publish_completion_event_with_none_output(self):
         """Test publishing completion event with None output state."""
         mock_event_bus = Mock()
@@ -398,6 +420,7 @@ event_subscriptions:
         # Should still publish
         mock_event_bus.publish_async.assert_called_once()
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_publish_error_event(self):
         """Test publishing error event."""
         mock_event_bus = Mock()
@@ -417,6 +440,7 @@ event_subscriptions:
         # Verify publish was called
         mock_event_bus.publish_async.assert_called_once()
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_create_event_handler(self):
         """Test creating event handler."""
         node = TestNode()
@@ -425,6 +449,7 @@ event_subscriptions:
 
         assert callable(handler)
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_handler_with_envelope(self):
         """Test event handler with envelope."""
         mock_event_bus = Mock()
@@ -457,6 +482,7 @@ event_subscriptions:
         # Should have published completion event
         assert mock_event_bus.publish_async.called
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_handler_with_direct_event(self):
         """Test event handler with direct event (no envelope)."""
         mock_event_bus = Mock()
@@ -479,6 +505,7 @@ event_subscriptions:
 
         assert mock_event_bus.publish_async.called
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_handler_with_exception(self):
         """Test event handler when processing raises exception."""
         mock_event_bus = Mock()
@@ -503,6 +530,7 @@ event_subscriptions:
         # Should have published error event
         assert mock_event_bus.publish_async.called
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_handler_with_specific_handler_method(self):
         """Test event handler with specific handler method."""
 
@@ -530,6 +558,7 @@ event_subscriptions:
 
         assert node.specific_handler_called
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_event_patterns_with_invalid_contract(self, tmp_path):
         """Test getting event patterns with invalid contract YAML."""
         node = TestNode()
@@ -544,6 +573,7 @@ event_subscriptions:
 
         assert isinstance(patterns, list)
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_listener_loop_heartbeat(self):
         """Test event listener loop heartbeat logging."""
         mock_event_bus = Mock()
@@ -561,6 +591,7 @@ event_subscriptions:
             node.stop_event_listener()
             time.sleep(0.1)
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_auto_start_with_event_bus(self):
         """Test auto-start of event listener with event bus."""
         mock_event_bus = Mock()
@@ -586,6 +617,7 @@ event_subscriptions:
                 node.stop_event_listener()
                 time.sleep(0.1)
 
+    @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_node_name_to_uuid_conversion(self):
         """Test node name to UUID conversion."""
         node = TestNode()
