@@ -1,5 +1,5 @@
 """
-ExceptionInputValidationError Exception
+ExceptionInputValidation Exception
 
 Raised when input parameters fail validation checks.
 
@@ -15,10 +15,10 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.validation.exceptions (hierarchy parent)
 """
 
-from .exception_validation_framework_error import ExceptionValidationFrameworkError
+from .exception_validation_framework_error import ExceptionValidationFramework
 
 
-class ExceptionInputValidationError(ExceptionValidationFrameworkError):
+class ExceptionInputValidation(ExceptionValidationFramework):
     """
     Raised when input parameters fail validation checks.
 

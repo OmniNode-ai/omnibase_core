@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 
-class FailFastError(Exception):
+class ExceptionFailFast(Exception):
     """Base exception for fail-fast scenarios."""
 
     def __init__(

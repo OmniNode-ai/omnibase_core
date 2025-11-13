@@ -1,5 +1,5 @@
 """
-ExceptionAuditError Exception
+ExceptionAudit Exception
 
 Raised for logical errors encountered during an audit.
 
@@ -15,10 +15,10 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.validation.exceptions (hierarchy parent)
 """
 
-from .exception_validation_framework_error import ExceptionValidationFrameworkError
+from .exception_validation_framework_error import ExceptionValidationFramework
 
 
-class ExceptionAuditError(ExceptionValidationFrameworkError):
+class ExceptionAudit(ExceptionValidationFramework):
     """
     Raised for logical errors encountered during an audit.
 

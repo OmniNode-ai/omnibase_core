@@ -291,7 +291,7 @@ class TestGenericExceptionHandlers:
 
         # Mock ModelYamlValue.from_schema_value to raise unexpected exception
         with patch(
-            "omnibase_core.utils.safe_yaml_loader.ModelYamlValue.from_schema_value",
+            "omnibase_core.utils.util_safe_yaml_loader.ModelYamlValue.from_schema_value",
             side_effect=RuntimeError("Unexpected error"),
         ):
             with pytest.raises(ModelOnexError) as exc_info:
@@ -306,7 +306,7 @@ class TestGenericExceptionHandlers:
 
         # Mock _dump_yaml_content to raise unexpected exception
         with patch(
-            "omnibase_core.utils.safe_yaml_loader._dump_yaml_content",
+            "omnibase_core.utils.util_safe_yaml_loader._dump_yaml_content",
             side_effect=RuntimeError("Unexpected error"),
         ):
             with pytest.raises(ModelOnexError) as exc_info:

@@ -1,9 +1,9 @@
 from typing import Any
 
-from omnibase_core.errors.exception_fail_fast import FailFastError
+from omnibase_core.errors.exception_fail_fast import ExceptionFailFast
 
 
-class ExceptionValidationFailedError(FailFastError):
+class ExceptionValidationFailedError(ExceptionFailFast):
     """Raised when validation fails."""
 
     def __init__(

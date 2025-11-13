@@ -10,7 +10,7 @@ import hashlib
 import logging
 from pathlib import Path
 
-from omnibase_core.errors.exceptions import ExceptionInputValidationError
+from omnibase_core.errors.exceptions import ExceptionInputValidation
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
@@ -203,14 +203,14 @@ def validate_directory_path(directory_path: Path, context: str = "directory") ->
         Resolved absolute path
 
     Raises:
-        ExceptionInputValidationError: If path is invalid
+        ExceptionInputValidation: If path is invalid
         PathTraversalError: If path attempts directory traversal
     """
     try:
         resolved_path = directory_path.resolve()
     except (OSError, ValueError) as e:
         msg = f"Invalid {context} path: {directory_path} ({e})"
-        raise ExceptionInputValidationError(msg)
+        raise ExceptionInputValidation(msg)
 
     # Check for potential directory traversal
     if ".." in str(directory_path):
@@ -221,13 +221,13 @@ def validate_directory_path(directory_path: Path, context: str = "directory") ->
 
     if not resolved_path.exists():
         msg = f"{context.capitalize()} path does not exist: {resolved_path}"
-        raise ExceptionInputValidationError(
+        raise ExceptionInputValidation(
             msg,
         )
 
     if not resolved_path.is_dir():
         msg = f"{context.capitalize()} path is not a directory: {resolved_path}"
-        raise ExceptionInputValidationError(
+        raise ExceptionInputValidation(
             msg,
         )
 
@@ -246,23 +246,23 @@ def validate_file_path(file_path: Path, context: str = "file") -> Path:
         Resolved absolute path
 
     Raises:
-        ExceptionInputValidationError: If path is invalid
+        ExceptionInputValidation: If path is invalid
     """
     try:
         resolved_path = file_path.resolve()
     except (OSError, ValueError) as e:
         msg = f"Invalid {context} path: {file_path} ({e})"
-        raise ExceptionInputValidationError(msg)
+        raise ExceptionInputValidation(msg)
 
     if not resolved_path.exists():
         msg = f"{context.capitalize()} does not exist: {resolved_path}"
-        raise ExceptionInputValidationError(
+        raise ExceptionInputValidation(
             msg,
         )
 
     if not resolved_path.is_file():
         msg = f"{context.capitalize()} is not a file: {resolved_path}"
-        raise ExceptionInputValidationError(
+        raise ExceptionInputValidation(
             msg,
         )
 

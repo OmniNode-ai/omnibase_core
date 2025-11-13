@@ -1,7 +1,7 @@
-from .exception_fail_fast import FailFastError
+from .exception_fail_fast import ExceptionFailFast
 
 
-class ContractViolationError(FailFastError):
+class ExceptionContractViolation(ExceptionFailFast):
     """Raised when contract requirements are violated."""
 
     def __init__(self, message: str, contract_field: str):

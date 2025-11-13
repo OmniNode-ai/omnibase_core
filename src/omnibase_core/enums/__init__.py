@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Shared enums for ONEX ecosystem.
 

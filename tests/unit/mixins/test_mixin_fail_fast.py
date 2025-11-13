@@ -196,7 +196,7 @@ class TestMixinFailFast:
 
         # Mock _handle_critical_error to avoid sys.exit
         with patch.object(mixin, "_handle_critical_error") as mock_handle:
-            with pytest.raises(Exception):  # Should be converted to FailFastError
+            with pytest.raises(Exception):  # Should be converted to ExceptionFailFast
                 test_func()
             mock_handle.assert_called_once()
 

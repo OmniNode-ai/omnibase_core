@@ -1,5 +1,5 @@
 """
-ExceptionMigrationError Exception
+ExceptionMigration Exception
 
 Raised for errors during protocol migration operations.
 
@@ -15,10 +15,10 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.validation.exceptions (hierarchy parent)
 """
 
-from .exception_validation_framework_error import ExceptionValidationFrameworkError
+from .exception_validation_framework_error import ExceptionValidationFramework
 
 
-class ExceptionMigrationError(ExceptionValidationFrameworkError):
+class ExceptionMigration(ExceptionValidationFramework):
     """
     Raised for errors during protocol migration operations.
 

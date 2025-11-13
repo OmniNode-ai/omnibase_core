@@ -6,23 +6,23 @@ in protocol validation, auditing, and migration operations.
 """
 
 # Import all exception classes from their individual files
-from .exception_audit_error import ExceptionAuditError
-from .exception_configuration_error import ExceptionConfigurationError
-from .exception_file_processing_error import ExceptionFileProcessingError
-from .exception_input_validation_error import ExceptionInputValidationError
-from .exception_migration_error import ExceptionMigrationError
-from .exception_path_traversal_error import ExceptionPathTraversalError
-from .exception_protocol_parsing_error import ExceptionProtocolParsingError
-from .exception_validation_framework_error import ExceptionValidationFrameworkError
+from .exception_audit_error import ExceptionAudit
+from .exception_configuration_error import ExceptionConfiguration
+from .exception_file_processing_error import ExceptionFileProcessing
+from .exception_input_validation_error import ExceptionInputValidation
+from .exception_migration_error import ExceptionMigration
+from .exception_path_traversal_error import ExceptionPathTraversal
+from .exception_protocol_parsing_error import ExceptionProtocolParsing
+from .exception_validation_framework_error import ExceptionValidationFramework
 
 # Export all exceptions for convenient importing
 __all__ = [
-    "ExceptionValidationFrameworkError",
-    "ExceptionConfigurationError",
-    "ExceptionFileProcessingError",
-    "ExceptionProtocolParsingError",
-    "ExceptionAuditError",
-    "ExceptionMigrationError",
-    "ExceptionInputValidationError",
-    "ExceptionPathTraversalError",
+    "ExceptionValidationFramework",
+    "ExceptionConfiguration",
+    "ExceptionFileProcessing",
+    "ExceptionProtocolParsing",
+    "ExceptionAudit",
+    "ExceptionMigration",
+    "ExceptionInputValidation",
+    "ExceptionPathTraversal",
 ]

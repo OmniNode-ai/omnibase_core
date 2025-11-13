@@ -1,5 +1,5 @@
 """
-ExceptionPathTraversalError Exception
+ExceptionPathTraversal Exception
 
 Raised when a path would result in directory traversal outside allowed directories.
 
@@ -14,10 +14,10 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.validation.exceptions (hierarchy parent)
 """
 
-from .exception_input_validation_error import ExceptionInputValidationError
+from .exception_input_validation_error import ExceptionInputValidation
 
 
-class ExceptionPathTraversalError(ExceptionInputValidationError):
+class ExceptionPathTraversal(ExceptionInputValidation):
     """
     Raised when a path would result in directory traversal outside allowed directories.
 

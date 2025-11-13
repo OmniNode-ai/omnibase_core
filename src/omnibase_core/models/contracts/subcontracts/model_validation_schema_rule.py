@@ -13,8 +13,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_rule_type import EnumValidationRuleType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
