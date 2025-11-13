@@ -15,7 +15,7 @@ Comprehensive test coverage including:
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.contracts.subcontracts.model_action_config_parameter import (
     ModelActionConfigParameter,

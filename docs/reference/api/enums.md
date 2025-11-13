@@ -17,7 +17,7 @@ This document provides comprehensive API reference for all enumeration types in 
 **Purpose**: Standard error codes for ONEX framework.
 
 ```python
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 # Usage in error handling
 error = ModelOnexError(
@@ -400,7 +400,7 @@ class EnumCustomStatus(str, Enum):
 
 ```python
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 def convert_status_to_error_code(status: EnumOperationStatus) -> EnumCoreErrorCode:
     """Convert operation status to error code."""

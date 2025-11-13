@@ -510,7 +510,7 @@ pre-commit run mypy --all-files
 
 ```python
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 # Raise structured error
 raise ModelOnexError(
