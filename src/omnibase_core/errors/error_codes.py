@@ -12,6 +12,27 @@ Import them from their new locations:
   - from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
   - from omnibase_core.enums.enum_registry_error_code import EnumRegistryErrorCode
 
+IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
+===============================================
+This module is early in the import chain and must remain free of circular dependencies.
+
+Safe Runtime Imports:
+- typing (standard library)
+- omnibase_core.enums.* (simple enum classes with no dependencies)
+
+Import Chain Position:
+1. types.core_types (no external deps)
+2. THIS MODULE → enums.* (safe runtime imports)
+3. models.common.model_schema_value → THIS MODULE
+4. types.constraints → TYPE_CHECKING import of THIS MODULE
+5. models.* → types.constraints, THIS MODULE
+
+Critical Rules:
+- NEVER import from models.* at module level (creates circular dependencies)
+- NEVER import from types.constraints at module level (creates circular dependencies)
+- Only import from enums.* which are leaf nodes in the dependency graph
+- All enum imports are safe because enums have no dependencies on other omnibase_core modules
+
 Exit Code Conventions:
 - 0: Success (EnumOnexStatus.SUCCESS)
 - 1: General error (EnumOnexStatus.ERROR, EnumOnexStatus.UNKNOWN)
