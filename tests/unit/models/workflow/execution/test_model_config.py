@@ -34,7 +34,10 @@ class TestModelConfigModule:
         from omnibase_core.models.workflow.execution import model_config
 
         # Module should have some form of documentation or structure
-        assert model_config.__name__ == "omnibase_core.models.workflow.execution.model_config"
+        assert (
+            model_config.__name__
+            == "omnibase_core.models.workflow.execution.model_config"
+        )
 
 
 class TestBaseModelAvailability:

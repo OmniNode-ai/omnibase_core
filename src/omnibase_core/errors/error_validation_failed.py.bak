@@ -1,0 +1,21 @@
+from typing import Any
+
+from omnibase_core.errors.exception_fail_fast import ExceptionFailFast
+
+
+class ExceptionValidationFailedError(ExceptionFailFast):
+    """Raised when validation fails."""
+
+    def __init__(
+        self,
+        message: str,
+        field: str | None = None,
+        value: Any = None,
+    ) -> None:
+        details = {}
+        if field:
+            details["field"] = field
+        if value is not None:
+            details["value"] = str(value)
+
+        super().__init__(message, "VALIDATION_FAILED", details)

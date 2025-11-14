@@ -1,0 +1,28 @@
+from pydantic import Field
+
+"""
+Model for tool specification representation in ONEX NodeBase implementation.
+
+This model supports the PATTERN-005 NodeBase functionality for
+tool resolution from contract specifications.
+
+Author: ONEX Framework Team
+"""
+
+from pydantic import BaseModel, ConfigDict
+
+
+class ModelToolSpecification(BaseModel):
+    """Model representing tool specification for NodeBase tool resolution."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    main_tool_class: str = Field(
+        default=...,
+        description="Main tool class name for instantiation",
+    )
+    # TODO: Re-enable when enum is available
+    # business_logic_pattern: ModelEnumBusinessLogicPattern = Field(
+    #     default=ModelEnumBusinessLogicPattern.COMPUTE,
+    #     description="Business logic pattern type",
+    # )

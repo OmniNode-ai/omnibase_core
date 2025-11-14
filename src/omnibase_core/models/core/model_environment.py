@@ -30,13 +30,13 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.examples.model_environment_properties import (
-    ModelEnvironmentProperties,
-)
 from omnibase_core.models.core.model_feature_flags import ModelFeatureFlags
 
 # Safe runtime import - error_codes only imports from types.core_types
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.examples.model_environment_properties import (
+    ModelEnvironmentProperties,
+)
 
 if TYPE_CHECKING:
     from omnibase_core.models.configuration.model_resource_limits import (
@@ -198,7 +198,9 @@ class ModelEnvironment(BaseModel):
             raise ModelOnexError(msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
         # Import ModelPropertyValue for factory methods
-        from omnibase_core.models.examples.model_property_value import ModelPropertyValue
+        from omnibase_core.models.examples.model_property_value import (
+            ModelPropertyValue,
+        )
 
         # Use the type-safe method from ModelEnvironmentProperties
         # Convert value to ModelPropertyValue using factory methods
