@@ -1,9 +1,9 @@
 """
-ProtocolParsingError Exception
+ExceptionProtocolParsing Exception
 
 Raised when Python AST parsing fails on a protocol file.
 
-This is a specific subtype of FileProcessingError for syntax
+This is a specific subtype of ExceptionFileProcessing for syntax
 errors or malformed Python code in protocol files.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
@@ -15,10 +15,10 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.validation.exceptions (hierarchy parent)
 """
 
-from .exception_file_processing_error import FileProcessingError
+from .exception_file_processing_error import ExceptionFileProcessing
 
 
-class ProtocolParsingError(FileProcessingError):
+class ExceptionProtocolParsing(ExceptionFileProcessing):
     """
     Raised when Python AST parsing fails on a protocol file.
 

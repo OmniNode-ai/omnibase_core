@@ -6,13 +6,13 @@ if TYPE_CHECKING:
     from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from omnibase_core.enums.enum_base_status import EnumBaseStatus
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
 from omnibase_core.enums.enum_function_lifecycle_status import (
     EnumFunctionLifecycleStatus,
 )
 from omnibase_core.enums.enum_general_status import EnumGeneralStatus
 from omnibase_core.enums.enum_scenario_status_v2 import EnumScenarioStatusV2
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 """
 Status Enum Migration Utilities.
@@ -96,7 +96,7 @@ LEGACY_METADATA_NODE_STATUS_VALUES = {
 
 def _get_core_error_code() -> type[EnumCoreErrorCode]:
     """Get EnumCoreErrorCode class at runtime to avoid circular import."""
-    from omnibase_core.errors.error_codes import EnumCoreErrorCode
+    from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
     return EnumCoreErrorCode
 

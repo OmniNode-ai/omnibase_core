@@ -57,7 +57,7 @@ class ModelFastContractFactory:
     ) -> type["ModelContractBase"]:
         """Import a contract class on-demand with caching."""
         # Function-level imports to maintain zero-import-time loading
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
         from omnibase_core.models.common.model_error_context import ModelErrorContext
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 

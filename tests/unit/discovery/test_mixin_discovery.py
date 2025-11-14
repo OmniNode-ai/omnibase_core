@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.discovery.mixin_discovery import MixinDiscovery
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 from omnibase_core.models.discovery.model_mixin_info import ModelMixinInfo
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -273,7 +273,7 @@ class TestMixinDiscovery:
 
     def test_metadata_file_too_large(self, tmp_path: Path) -> None:
         """Test error handling when metadata file exceeds size limit."""
-        from omnibase_core.discovery.mixin_discovery import MAX_METADATA_FILE_SIZE_BYTES
+        from omnibase_core.mixins.mixin_discovery import MAX_METADATA_FILE_SIZE_BYTES
 
         # Create a large metadata file
         metadata_file = tmp_path / "mixin_metadata.yaml"

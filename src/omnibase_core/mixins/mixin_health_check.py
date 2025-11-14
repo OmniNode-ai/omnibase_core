@@ -32,9 +32,9 @@ from collections.abc import Callable as CallableABC
 from datetime import UTC, datetime
 from typing import Any, Union
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.health.model_health_status import ModelHealthStatus

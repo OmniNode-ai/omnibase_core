@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
-from omnibase_core.utils.uuid_utilities import uuid_from_string
+from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
 class ModelStructuredDescription(BaseModel):

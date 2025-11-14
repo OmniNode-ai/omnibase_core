@@ -8,7 +8,7 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_tool_discovery_request import (
     ModelDiscoveryFilters,
 )
-from omnibase_core.utils.uuid_utilities import uuid_from_string
+from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
 class ModelToolDiscoveryRequest(ModelOnexEvent):

@@ -1221,7 +1221,6 @@ class MetricsComputeNode(NodeCompute, MetricsMixin):
 
 ```python
 from omnibase_core.utils.retry import retry_with_backoff, RetryConfig
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 class RetryableNode(NodeCompute):
     """Node with retry functionality."""

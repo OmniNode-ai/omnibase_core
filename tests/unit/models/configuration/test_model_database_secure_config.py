@@ -17,7 +17,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import SecretStr
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_database_secure_config import (
     ModelDatabaseSecureConfig,
 )

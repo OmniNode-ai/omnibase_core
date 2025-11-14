@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_connection_parse_result import (
     LatencyProfile,
     ParsedConnectionInfo,

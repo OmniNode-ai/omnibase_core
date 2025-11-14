@@ -14,8 +14,8 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metadata import EnumLifecycle, EnumMetaType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_entrypoint import EntrypointBlock
 from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
 from omnibase_core.models.core.model_project_metadata_block import (

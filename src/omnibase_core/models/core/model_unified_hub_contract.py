@@ -13,8 +13,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_coordination_mode import EnumCoordinationMode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_hub_capability import EnumHubCapability
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_hub_configuration import ModelHubConfiguration
 from omnibase_core.models.core.model_hub_service_configuration import (
     ModelHubServiceConfiguration,
@@ -224,7 +224,9 @@ class ModelUnifiedHubContract(BaseModel):
         Returns:
             ModelUnifiedHubContract instance
         """
-        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+        from omnibase_core.utils.util_safe_yaml_loader import (
+            load_and_validate_yaml_model,
+        )
 
         try:
             # Use centralized YAML loading with full Pydantic validation

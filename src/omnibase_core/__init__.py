@@ -54,7 +54,7 @@ __version__ = "0.3.0"
 def __getattr__(name: str) -> object:
     # Import error classes lazily to break circular dependency
     if name == "EnumCoreErrorCode":
-        from omnibase_core.errors.error_codes import EnumCoreErrorCode
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
         return EnumCoreErrorCode
     if name == "ModelOnexError":
@@ -100,7 +100,7 @@ def __getattr__(name: str) -> object:
         return locals()[name]
 
     # Import here to avoid circular dependency
-    from omnibase_core.errors.error_codes import EnumCoreErrorCode
+    from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
     from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
     msg = f"module '{__name__}' has no attribute '{name}'"

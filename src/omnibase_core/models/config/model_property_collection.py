@@ -20,8 +20,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Use already imported ModelPropertyValue for type safety
 # No need for primitive soup fallback - ModelPropertyValue provides proper discriminated union

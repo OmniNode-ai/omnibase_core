@@ -22,9 +22,9 @@ from pydantic import BaseModel
 # through runtime validation in ModelValue.from_any().
 CliConvertibleValue = object
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.infrastructure.model_value import ModelValue
 
 from .model_output_format_options import ModelOutputFormatOptions

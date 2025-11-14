@@ -16,7 +16,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.utils.singleton_holders import _LoggerCache
+from omnibase_core.utils.util_singleton_holders import _LoggerCache
 
 # Thread-local correlation ID context
 _context = threading.local()

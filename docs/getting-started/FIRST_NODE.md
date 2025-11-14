@@ -220,7 +220,7 @@ from typing import Dict, Any
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 from ..models.temperature_input import TemperatureInput
 from ..models.temperature_output import TemperatureOutput

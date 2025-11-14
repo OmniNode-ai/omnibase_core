@@ -14,7 +14,7 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
-from omnibase_core.utils.uuid_utilities import uuid_from_string
+from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 from .model_current_tool_availability import ModelCurrentToolAvailability
 from .model_discovery_performance_metrics import ModelPerformanceMetrics

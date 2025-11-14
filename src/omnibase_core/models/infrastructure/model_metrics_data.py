@@ -19,9 +19,9 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metric_data_type import EnumMetricDataType
 from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Import from common layer instead of metadata layer to avoid circular dependency
 from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue

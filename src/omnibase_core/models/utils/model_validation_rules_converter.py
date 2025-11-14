@@ -7,10 +7,10 @@ all contract models, eliminating code duplication and ensuring consistency.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_rules_input_type import (
     EnumValidationRulesInputType,
 )
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules

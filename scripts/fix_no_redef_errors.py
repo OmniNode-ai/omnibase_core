@@ -24,6 +24,7 @@ def fix_duplicate_imports(file_path: Path) -> bool:
             r"from omnibase_core\.errors\.error_codes import \(\s*"
             r"([^)]*?)\s*ModelOnexError,?\s*([^)]*?)\s*\)",
             lambda m: (
+                # Bug fix: Added opening parenthesis after 'import'
                 f"from omnibase_core.errors.error_codes import (\n{m.group(1).strip()}{m.group(2).strip()}\n)"
                 if m.group(1).strip() or m.group(2).strip()
                 else ""
@@ -35,6 +36,7 @@ def fix_duplicate_imports(file_path: Path) -> bool:
         # Also handle single-line imports
         content = re.sub(
             r"from omnibase_core\.errors\.error_codes import ([^,\n]*,\s*)?ModelOnexError(,\s*[^\n]*)?",
+            # Bug fix: Added parentheses to .strip() method call
             lambda m: f'from omnibase_core.errors.error_codes import {m.group(1) or ""}{m.group(2) or ""}'.strip()
             .rstrip("import ")
             .rstrip(","),

@@ -43,7 +43,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_examples import ModelExample
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from omnibase_core.models.metadata.model_metadata_constants import (
@@ -293,7 +293,7 @@ def load_state_contract_from_file(file_path: str) -> ModelStateContract:
     """
     from pathlib import Path
 
-    from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+    from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
     try:
         path = Path(file_path)

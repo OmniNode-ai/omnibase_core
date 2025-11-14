@@ -75,8 +75,9 @@ class NamingConventionValidator:
         r".*Test$",  # Test classes
         r".*TestCase$",  # Test case classes
         r"^Test.*",  # Test classes
-        r".*Error$",  # Exception classes
-        r".*Exception$",  # Exception classes
+        r"^Exception[A-Z].*",  # Exception classes (omnibase pattern - start with Exception)
+        r".*Error$",  # Exception classes (end with Error)
+        r".*Exception$",  # Exception classes (end with Exception)
     ]
 
     # Architectural exemptions - intentional design decisions where naming deviates from standard conventions

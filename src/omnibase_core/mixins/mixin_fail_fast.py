@@ -13,16 +13,15 @@ from datetime import UTC, datetime
 from functools import wraps
 from typing import Any, TypeVar
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-from .error_contract_violation import ContractViolationError
-from .error_dependency_failed import DependencyFailedError
+from omnibase_core.errors.exception_contract_violation import ExceptionContractViolation
+from omnibase_core.errors.exception_dependency_failed import ExceptionDependencyFailed
 
 # Import extracted error classes
-from .error_fail_fast import FailFastError
+from omnibase_core.errors.exception_fail_fast import ExceptionFailFast
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type variable for return types
 T = TypeVar("T")
@@ -81,7 +80,7 @@ class MixinFailFast:
         def wrapper(*args: Any, **kwargs: Any) -> T:
             try:
                 return func(*args, **kwargs)
-            except FailFastError:
+            except ExceptionFailFast:
                 # Re-raise our own fail fast errors
                 raise
             except Exception as e:
@@ -93,7 +92,9 @@ class MixinFailFast:
                     traceback=traceback.format_exc(),
                 )
                 # _handle_critical_error calls sys.exit(), but MyPy doesn't know that
-                raise FailFastError(f"Critical error in {func.__name__}: {e!s}") from e
+                raise ExceptionFailFast(
+                    f"Critical error in {func.__name__}: {e!s}"
+                ) from e
 
         return wrapper
 
@@ -261,7 +262,7 @@ class MixinFailFast:
             check_func: Function that returns True if dependency is available
 
         Raises:
-            DependencyFailedError if dependency check fails
+            ExceptionDependencyFailed if dependency check fails
         """
         try:
             if not check_func():
@@ -292,7 +293,7 @@ class MixinFailFast:
             contract_field: Contract field being enforced
 
         Raises:
-            ContractViolationError if condition is False
+            ExceptionContractViolation if condition is False
         """
         if not condition:
             raise ModelOnexError(

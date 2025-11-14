@@ -2,7 +2,7 @@ import importlib
 from pathlib import Path
 from typing import Any, Generic
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -40,7 +40,9 @@ class MixinIntrospectFromContract:
 
     def introspect(self, contract_path: Path | None = None) -> dict[str, Any]:
         # Lazy import to avoid circular dependency
-        from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
+        from omnibase_core.utils.util_safe_yaml_loader import (
+            load_and_validate_yaml_model,
+        )
 
         node_dir = self._get_node_dir()
         if contract_path is None:

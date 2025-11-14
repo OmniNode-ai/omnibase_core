@@ -5,12 +5,12 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_backend_type import EnumBackendType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_latency_level import EnumLatencyLevel
 from omnibase_core.enums.enum_overhead_type import EnumOverheadType
 from omnibase_core.enums.enum_scalability_level import EnumScalabilityLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 from omnibase_core.enums.enum_throughput_level import EnumThroughputLevel
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_backend_capabilities import ModelBackendCapabilities

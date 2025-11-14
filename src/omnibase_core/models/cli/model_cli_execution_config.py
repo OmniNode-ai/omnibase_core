@@ -17,8 +17,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_cli_execution_input_data import ModelCliExecutionInputData
 

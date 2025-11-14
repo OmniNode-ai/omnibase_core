@@ -18,8 +18,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,

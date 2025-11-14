@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import Field, model_validator
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nModelNodeWeights - Node weight configuration for load balancing\n\nNode weights model for configuring relative traffic distribution weights\nacross multiple nodes in a load balancing system.\n"

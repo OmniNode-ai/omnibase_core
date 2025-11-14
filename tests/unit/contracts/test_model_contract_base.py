@@ -18,8 +18,8 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_dependency import ModelDependency
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

@@ -24,10 +24,10 @@
 
 from typing import Any, Protocol, TypeVar
 
-T = TypeVar("T", bound="SerializableMixin")
+T = TypeVar("T", bound="MixinSerializable")
 
 
-class SerializableMixin(Protocol):
+class MixinSerializable(Protocol):
     """
     Protocol for models that support recursive, protocol-driven serialization for ONEX/OmniNode file/block I/O.
     Implementations must provide:

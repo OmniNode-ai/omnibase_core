@@ -14,11 +14,11 @@ Tests all aspects of the node type model including:
 import pytest
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.nodes.model_node_type import ModelNodeType
+from omnibase_core.models.node_metadata.model_node_type import ModelNodeType
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_discovery_request_response import (

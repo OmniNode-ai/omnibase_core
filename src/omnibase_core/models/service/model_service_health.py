@@ -13,9 +13,9 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_service_health_status import EnumServiceHealthStatus
 from omnibase_core.enums.enum_service_type import EnumServiceType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

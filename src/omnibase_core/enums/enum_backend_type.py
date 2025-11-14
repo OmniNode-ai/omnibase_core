@@ -8,7 +8,7 @@ This enum defines the supported secret backend types in the system.
 
 from enum import Enum
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 
 class EnumBackendType(Enum):

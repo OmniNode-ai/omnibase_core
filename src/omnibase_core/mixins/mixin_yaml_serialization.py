@@ -51,7 +51,7 @@ class MixinYAMLSerialization:
             YAML string with each line prefixed by comment_prefix.
         """
         # Lazy import to avoid circular dependency
-        from omnibase_core.utils.safe_yaml_loader import (
+        from omnibase_core.utils.util_safe_yaml_loader import (
             serialize_pydantic_model_to_yaml,
         )
 

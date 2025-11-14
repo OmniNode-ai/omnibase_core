@@ -4,7 +4,7 @@ import uuid
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 

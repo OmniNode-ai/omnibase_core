@@ -14,7 +14,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 from .model_error_value import ModelErrorValue
 from .model_value import ModelValue

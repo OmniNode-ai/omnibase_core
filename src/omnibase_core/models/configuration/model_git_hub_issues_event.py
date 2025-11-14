@@ -13,7 +13,7 @@ from typing import Any
 from pydantic import BaseModel, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 from .model_git_hub_issue import ModelGitHubIssue
 from .model_git_hub_label import ModelGitHubLabel

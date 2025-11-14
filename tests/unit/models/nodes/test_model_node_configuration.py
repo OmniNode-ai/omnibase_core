@@ -13,15 +13,19 @@ Tests all aspects of the node configuration model including:
 import pytest
 
 from omnibase_core.enums.enum_protocol_type import EnumProtocolType
-from omnibase_core.models.nodes.model_node_configuration import ModelNodeConfiguration
-from omnibase_core.models.nodes.model_node_connection_settings import (
+from omnibase_core.models.node_metadata.model_node_configuration import (
+    ModelNodeConfiguration,
+)
+from omnibase_core.models.node_metadata.model_node_connection_settings import (
     ModelNodeConnectionSettings,
 )
-from omnibase_core.models.nodes.model_node_execution_settings import (
+from omnibase_core.models.node_metadata.model_node_execution_settings import (
     ModelNodeExecutionSettings,
 )
-from omnibase_core.models.nodes.model_node_feature_flags import ModelNodeFeatureFlags
-from omnibase_core.models.nodes.model_node_resource_limits import (
+from omnibase_core.models.node_metadata.model_node_feature_flags import (
+    ModelNodeFeatureFlags,
+)
+from omnibase_core.models.node_metadata.model_node_resource_limits import (
     ModelNodeResourceLimits,
 )
 

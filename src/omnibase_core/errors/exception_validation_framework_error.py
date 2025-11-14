@@ -1,5 +1,5 @@
 """
-ValidationFrameworkError Exception
+ExceptionValidationFramework Exception
 
 Base exception for all validation framework errors.
 
@@ -15,5 +15,5 @@ Safe Runtime Imports (OK to import at module level):
 """
 
 
-class ValidationFrameworkError(Exception):
+class ExceptionValidationFramework(Exception):
     """Base exception for all validation framework errors."""

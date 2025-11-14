@@ -3,7 +3,7 @@
 import pytest
 from pydantic import BaseModel
 
-from omnibase_core.utils.decorators import allow_any_type, allow_dict_str_any
+from omnibase_core.utils.util_decorators import allow_any_type, allow_dict_str_any
 
 
 class TestDecorators:

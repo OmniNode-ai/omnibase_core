@@ -9,8 +9,8 @@ Author: ONEX Framework Team
 from collections.abc import Callable
 from typing import Any
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_reducer_types import EnumConflictResolution
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 

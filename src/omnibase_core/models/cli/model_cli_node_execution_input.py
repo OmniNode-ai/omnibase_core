@@ -21,8 +21,8 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_category_filter import EnumCategoryFilter
 from omnibase_core.enums.enum_cli_action import EnumCliAction
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 from .model_cli_advanced_params import ModelCliAdvancedParams
 

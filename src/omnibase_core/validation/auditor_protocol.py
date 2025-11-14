@@ -16,7 +16,10 @@ from omnibase_spi.protocols.validation.protocol_quality_validator import (
     ProtocolQualityValidator,
 )
 
-from omnibase_core.errors.exceptions import ConfigurationError, InputValidationError
+from omnibase_core.errors.exceptions import (
+    ExceptionConfiguration,
+    ExceptionInputValidation,
+)
 from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
@@ -69,9 +72,9 @@ class ModelProtocolAuditor:
             self.repository_path = validate_directory_path(
                 Path(repository_path), "repository"
             )
-        except InputValidationError as e:
+        except ExceptionInputValidation as e:
             msg = f"Invalid repository configuration: {e}"
-            raise ConfigurationError(msg)
+            raise ExceptionConfiguration(msg)
 
         self.repository_name = determine_repository_name(self.repository_path)
 
@@ -162,9 +165,9 @@ class ModelProtocolAuditor:
         # Validate SPI path
         try:
             validated_spi_path = validate_directory_path(Path(spi_path), "SPI")
-        except InputValidationError as e:
+        except ExceptionInputValidation as e:
             msg = f"Invalid SPI path configuration: {e}"
-            raise ConfigurationError(msg)
+            raise ExceptionConfiguration(msg)
 
         src_path = self.repository_path / "src"
         spi_protocols_path = validated_spi_path / "src" / "omnibase_spi" / "protocols"

@@ -18,12 +18,16 @@ import pytest
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
-from omnibase_core.models.nodes.model_node_capabilities_info import (
+from omnibase_core.models.node_metadata.model_node_capabilities_info import (
     ModelNodeCapabilitiesInfo,
 )
-from omnibase_core.models.nodes.model_node_configuration import ModelNodeConfiguration
-from omnibase_core.models.nodes.model_node_core_info import ModelNodeCoreInfo
-from omnibase_core.models.nodes.model_node_information import ModelNodeInformation
+from omnibase_core.models.node_metadata.model_node_configuration import (
+    ModelNodeConfiguration,
+)
+from omnibase_core.models.node_metadata.model_node_core_info import ModelNodeCoreInfo
+from omnibase_core.models.node_metadata.model_node_information import (
+    ModelNodeInformation,
+)
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 

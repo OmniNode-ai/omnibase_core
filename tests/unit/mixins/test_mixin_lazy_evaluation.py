@@ -18,7 +18,7 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import BaseModel
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation, lazy_cached
 from omnibase_core.mixins.mixin_lazy_value import MixinLazyValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

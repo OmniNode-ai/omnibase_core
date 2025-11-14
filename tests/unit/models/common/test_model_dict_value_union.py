@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_dict_value_union import ModelDictValueUnion
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 

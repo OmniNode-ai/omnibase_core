@@ -26,7 +26,7 @@ poetry install
 ## Quick Start
 
 ```python
-from omnibase_core.discovery.mixin_discovery import MixinDiscovery
+from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 # Initialize discovery system
 discovery = MixinDiscovery()
@@ -157,7 +157,7 @@ categories = discovery.get_categories()
 ### Example 1: List All Mixins
 
 ```python
-from omnibase_core.discovery.mixin_discovery import MixinDiscovery
+from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 discovery = MixinDiscovery()
 all_mixins = discovery.get_all_mixins()
@@ -172,7 +172,7 @@ for mixin in all_mixins:
 ### Example 2: Build Intelligent Composition
 
 ```python
-from omnibase_core.discovery.mixin_discovery import MixinDiscovery
+from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 discovery = MixinDiscovery()
 
@@ -204,7 +204,7 @@ if is_valid:
 ### Example 3: Code Generation Context
 
 ```python
-from omnibase_core.discovery.mixin_discovery import MixinDiscovery
+from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 discovery = MixinDiscovery()
 
@@ -290,7 +290,7 @@ The API uses `OnexError` for consistent error handling:
 
 ```python
 from omnibase_core.errors.error_codes import OnexError
-from omnibase_core.discovery.mixin_discovery import MixinDiscovery
+from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 discovery = MixinDiscovery()
 
@@ -337,7 +337,7 @@ Test coverage:
 ### With Autonomous Code Generation
 
 ```python
-from omnibase_core.discovery.mixin_discovery import MixinDiscovery
+from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 def generate_node_class(node_name: str, requirements: list[str]) -> str:
     discovery = MixinDiscovery()
@@ -369,7 +369,7 @@ def generate_node_class(node_name: str, requirements: list[str]) -> str:
 ### With Template Systems
 
 ```python
-from omnibase_core.discovery.mixin_discovery import MixinDiscovery
+from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 from jinja2 import Template
 
 discovery = MixinDiscovery()

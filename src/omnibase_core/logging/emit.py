@@ -444,7 +444,9 @@ import re
 # Global cache for protocol services to reduce lookup overhead
 import time
 
-from omnibase_core.utils.singleton_holders import _ProtocolCacheHolder as _ProtocolCache
+from omnibase_core.utils.util_singleton_holders import (
+    _ProtocolCacheHolder as _ProtocolCache,
+)
 
 _SENSITIVE_PATTERNS = [
     (re.compile(r"\b[A-Za-z0-9+/]{20,}={0,2}\b"), "[REDACTED_TOKEN]"),  # Base64 tokens

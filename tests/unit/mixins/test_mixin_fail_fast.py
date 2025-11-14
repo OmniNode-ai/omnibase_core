@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.mixins.mixin_fail_fast import MixinFailFast
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -196,7 +196,7 @@ class TestMixinFailFast:
 
         # Mock _handle_critical_error to avoid sys.exit
         with patch.object(mixin, "_handle_critical_error") as mock_handle:
-            with pytest.raises(Exception):  # Should be converted to FailFastError
+            with pytest.raises(Exception):  # Should be converted to ExceptionFailFast
                 test_func()
             mock_handle.assert_called_once()
 

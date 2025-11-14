@@ -20,7 +20,7 @@ from typing import Any, cast
 
 from pydantic import BaseModel, field_serializer
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 # Type variables for Result pattern
 T = TypeVar("T")  # Success type

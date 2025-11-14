@@ -3,7 +3,7 @@
 import pytest
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.field_converter import FieldConverter
+from omnibase_core.utils.util_field_converter import FieldConverter
 
 
 class TestFieldConverter:

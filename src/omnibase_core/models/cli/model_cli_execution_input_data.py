@@ -22,8 +22,8 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_cli_input_value_type import EnumCliInputValueType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 # Input data values use discriminated union pattern with runtime validation
 

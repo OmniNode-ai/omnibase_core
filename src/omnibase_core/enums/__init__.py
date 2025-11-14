@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Shared enums for ONEX ecosystem.
 
@@ -25,10 +23,19 @@ from .enum_business_logic_pattern import EnumBusinessLogicPattern
 # Category filter enums
 from .enum_category_filter import EnumCategoryFilter
 
+# Error code enums
+from .enum_cli_exit_code import EnumCLIExitCode
+
 # Computation and processing enums
 from .enum_computation_type import EnumComputationType
 from .enum_contract_compliance import EnumContractCompliance
 from .enum_coordination_mode import EnumCoordinationMode
+from .enum_core_error_code import (
+    CORE_ERROR_CODE_TO_EXIT_CODE,
+    EnumCoreErrorCode,
+    get_core_error_description,
+    get_exit_code_for_core_error,
+)
 
 # Security-related enums
 from .enum_data_classification import EnumDataClassification
@@ -114,6 +121,7 @@ from .enum_node_status import EnumNodeStatus
 from .enum_node_type import EnumNodeType
 from .enum_notification_method import EnumNotificationMethod
 from .enum_numeric_value_type import EnumNumericValueType
+from .enum_onex_error_code import EnumOnexErrorCode
 
 # Response and reply enums
 from .enum_onex_reply_status import EnumOnexReplyStatus
@@ -138,6 +146,7 @@ from .enum_reducer_types import (
     EnumReductionType,
     EnumStreamingMode,
 )
+from .enum_registry_error_code import EnumRegistryErrorCode
 
 # Registry-related enums
 from .enum_registry_health_status import EnumRegistryHealthStatus
@@ -202,11 +211,15 @@ from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 # These need to be created or their references need to be updated.
 
 
-# Event and logging enums
-# from .events import EnumLogLevel  # Conflicts with enum_log_level.EnumLogLevel
-
-
 __all__ = [
+    # Error code domain
+    "EnumCLIExitCode",
+    "EnumOnexErrorCode",
+    "EnumCoreErrorCode",
+    "EnumRegistryErrorCode",
+    "CORE_ERROR_CODE_TO_EXIT_CODE",
+    "get_core_error_description",
+    "get_exit_code_for_core_error",
     # Artifact domain
     "EnumArtifactType",
     # Category filter domain

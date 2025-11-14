@@ -21,11 +21,11 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_config_type import EnumConfigType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.infrastructure.model_value import ModelValue
 
 from .model_nested_configuration import ModelNestedConfiguration

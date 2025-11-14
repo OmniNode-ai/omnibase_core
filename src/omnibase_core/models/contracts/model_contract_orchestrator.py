@@ -24,8 +24,8 @@ from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_action_emission_config import (
     ModelActionEmissionConfig,
 )

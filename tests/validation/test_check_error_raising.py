@@ -90,7 +90,7 @@ def get_value(data, key):
         """Test that OnexError raises are allowed."""
         code = """
 from omnibase_core.errors.error_codes import OnexError
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 def validate_input(value):
     if value < 0:
@@ -140,7 +140,7 @@ def process_data(data):
         """Test that re-raising as OnexError is allowed."""
         code = """
 from omnibase_core.errors.error_codes import OnexError
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 def process_data(data):
     try:
@@ -423,7 +423,7 @@ def process():
             f.write(
                 """
 from omnibase_core.errors.error_codes import OnexError
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 def process():
     raise OnexError(error_code=EnumCoreErrorCode.VALIDATION_ERROR, message="Test")

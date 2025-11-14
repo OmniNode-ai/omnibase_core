@@ -15,7 +15,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from omnibase_core.utils.uuid_service import UtilUUID
+from omnibase_core.utils.util_uuid_service import UtilUUID
 
 
 class ModelOnexInternalProcessingContext(BaseModel):

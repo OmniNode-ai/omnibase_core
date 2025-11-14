@@ -21,7 +21,7 @@ from uuid import UUID
 from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_cli_option_value_type import EnumCliOptionValueType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 
 class ModelCliCommandOption(BaseModel):

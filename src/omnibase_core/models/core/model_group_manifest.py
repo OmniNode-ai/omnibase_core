@@ -10,10 +10,11 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
 # Import extracted classes
 from omnibase_core.enums.enum_group_status import EnumGroupStatus
 from omnibase_core.enums.enum_security_profile import EnumSecurityProfile
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.models.core.model_group_dependency import ModelGroupDependency
 from omnibase_core.models.core.model_group_manifest_config import ModelConfig
 from omnibase_core.models.core.model_group_service_configuration import (

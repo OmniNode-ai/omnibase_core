@@ -195,7 +195,7 @@ await node.emit_event(event)
 
 ```python
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 try:
     result = await process_data(input_data)

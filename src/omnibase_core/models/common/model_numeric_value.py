@@ -17,8 +17,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 
 if TYPE_CHECKING:
     from omnibase_core.models.errors.model_onex_error import ModelOnexError

@@ -57,7 +57,7 @@ except ImportError:
 # Node models - migrated from archived
 try:
     from omnibase_core.models.core.model_node_info import ModelNodeInfo
-    from omnibase_core.models.nodes.model_node_metadata_info import (
+    from omnibase_core.models.node_metadata.model_node_metadata_info import (
         ModelNodeMetadataInfo,
     )
 

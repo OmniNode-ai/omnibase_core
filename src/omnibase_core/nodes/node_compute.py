@@ -31,8 +31,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
 from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event

@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 from pydantic import Field
 
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 """
 ONEX Error Base Class
@@ -44,15 +44,13 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict
 
+# Import required enums from the same package
+from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
+from omnibase_core.enums.enum_onex_error_code import EnumOnexErrorCode
+
 # Safe runtime imports - no circular dependency risk
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-
-# Import required enums from the same package
-from omnibase_core.errors.error_codes import (
-    EnumCLIExitCode,
-    EnumOnexErrorCode,
-    get_exit_code_for_status,
-)
+from omnibase_core.errors.error_codes import get_exit_code_for_status
 
 # Import basic types (no circular dependency risk)
 from omnibase_core.types.core_types import TypedDictBasicErrorContext

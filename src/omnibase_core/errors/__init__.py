@@ -3,13 +3,15 @@ from typing import Any
 """Core error handling for ONEX framework."""
 
 # Core error system - comprehensive implementation
-from omnibase_core.errors.error_codes import (
-    EnumCLIExitCode,
+from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
+from omnibase_core.enums.enum_core_error_code import (
     EnumCoreErrorCode,
-    EnumRegistryErrorCode,
     get_core_error_description,
-    get_error_codes_for_component,
     get_exit_code_for_core_error,
+)
+from omnibase_core.enums.enum_registry_error_code import EnumRegistryErrorCode
+from omnibase_core.errors.error_codes import (
+    get_error_codes_for_component,
     get_exit_code_for_status,
     list_registered_components,
     register_error_codes,

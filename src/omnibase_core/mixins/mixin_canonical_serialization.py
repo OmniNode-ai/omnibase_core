@@ -29,7 +29,7 @@ from omnibase_spi.protocols.types.protocol_core_types import ContextValue
 from pydantic import Field
 
 from omnibase_core.enums import EnumNodeMetadataField
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -336,7 +336,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         filtered_dict = {k: v for k, v in filtered_dict.items() if v is not None}
 
         # Use centralized YAML dumping for security and consistency
-        from omnibase_core.utils.safe_yaml_loader import _dump_yaml_content
+        from omnibase_core.utils.util_safe_yaml_loader import _dump_yaml_content
 
         yaml_str = _dump_yaml_content(
             filtered_dict,

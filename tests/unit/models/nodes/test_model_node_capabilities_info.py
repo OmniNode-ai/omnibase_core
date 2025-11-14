@@ -14,7 +14,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.models.nodes.model_node_capabilities_info import (
+from omnibase_core.models.node_metadata.model_node_capabilities_info import (
     ModelNodeCapabilitiesInfo,
 )
 

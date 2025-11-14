@@ -14,12 +14,55 @@ registry-centric architecture pattern.
 from typing import Any, cast
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.utils.service_logging import ServiceLogging
-from omnibase_core.utils.service_minimal_logging import ServiceMinimalLogging
-from omnibase_core.utils.tool_logger_code_block import ToolLoggerCodeBlock
+from omnibase_core.utils.util_tool_logger_code_block import ToolLoggerCodeBlock
 
 # Type variable for protocol types
 T = TypeVar("T")
+
+
+class _BootstrapMinimalLogger:
+    """Minimal no-op logger for bootstrap phase only."""
+
+    @staticmethod
+    def emit_log_event(  # stub-ok: Intentional no-op for minimal bootstrap logger
+        level: LogLevel,
+        event_type: str,
+        message: str,
+        **kwargs: Any,
+    ) -> None:
+        """No-op emit_log_event for bootstrap fallback."""
+
+    @staticmethod
+    def emit_log_event_sync(  # stub-ok: Intentional no-op for minimal bootstrap logger
+        level: LogLevel,
+        message: str,
+        event_type: str = "generic",
+        **kwargs: Any,
+    ) -> None:
+        """No-op emit_log_event_sync for bootstrap fallback."""
+
+    @staticmethod
+    async def emit_log_event_async(  # stub-ok: Intentional no-op for minimal bootstrap logger
+        level: LogLevel,
+        message: str,
+        event_type: str = "generic",
+        **kwargs: Any,
+    ) -> None:
+        """No-op emit_log_event_async for bootstrap fallback."""
+
+    @staticmethod
+    def trace_function_lifecycle(func: Any) -> Any:
+        """No-op decorator for bootstrap."""
+        return func
+
+    @staticmethod
+    def tool_logger_performance_metrics(_threshold_ms: int = 1000) -> Any:
+        """Minimal tool logger performance metrics decorator."""
+
+        def decorator(func: Any) -> Any:
+            return func
+
+        return decorator
 
 
 def get_service(protocol_type: type[T]) -> T | None:
@@ -58,23 +101,20 @@ def get_logging_service() -> Any:
     Get the logging service with special bootstrap handling.
 
     Returns:
-        Logging service implementation
+        Logging service implementation (protocol or minimal fallback)
     """
     try:
-        # Use registry-based logging access instead of direct imports
         registry = _get_registry_node()
         if registry:
             logger_protocol = registry.get_protocol("logger")
             if logger_protocol:
-                # Return service with protocol-based access
-                return ServiceLogging(logger_protocol)
-
-        # Fallback to minimal logging if registry unavailable
-        return _get_minimal_logging_service()
-
+                # Return protocol directly (no wrapper needed)
+                return logger_protocol
     except Exception:  # fallback-ok: minimal logging service unavailable
-        # Fallback to minimal logging
-        return _get_minimal_logging_service()
+        pass
+
+    # Return inline minimal logger for bootstrap
+    return _BootstrapMinimalLogger()
 
 
 def emit_log_event(
@@ -182,8 +222,7 @@ def _get_minimal_logging_service() -> Any:
     Returns:
         Minimal logging service implementation
     """
-
-    return ServiceMinimalLogging()
+    return _BootstrapMinimalLogger()
 
 
 def is_service_available(protocol_type: type[T]) -> bool:

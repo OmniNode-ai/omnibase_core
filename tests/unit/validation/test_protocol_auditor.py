@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from omnibase_core.validation import ConfigurationError, ModelProtocolAuditor
+from omnibase_core.validation import ExceptionConfiguration, ModelProtocolAuditor
 from omnibase_core.validation.auditor_protocol import ModelAuditResult
 
 
@@ -42,7 +42,7 @@ class TestProtocolAuditorInitialization:
         nonexistent_path = "/nonexistent/repository"
 
         with pytest.raises(
-            ConfigurationError,
+            ExceptionConfiguration,
             match="Invalid repository configuration",
         ):
             ModelProtocolAuditor(nonexistent_path)
@@ -53,7 +53,7 @@ class TestProtocolAuditorInitialization:
             temp_path = temp_file.name
 
             with pytest.raises(
-                ConfigurationError,
+                ExceptionConfiguration,
                 match="Invalid repository configuration",
             ):
                 ModelProtocolAuditor(temp_path)
@@ -86,7 +86,7 @@ class TestProtocolAuditorValidation:
             invalid_spi_path = "/nonexistent/spi/path"
 
             with pytest.raises(
-                ConfigurationError,
+                ExceptionConfiguration,
                 match="Invalid SPI path configuration",
             ):
                 auditor.check_against_spi(invalid_spi_path)
@@ -323,7 +323,7 @@ class TestConfigurationErrorHandling:
 
     def test_configuration_error_chaining(self):
         """Test that configuration errors properly chain underlying exceptions."""
-        with pytest.raises(ConfigurationError) as exc_info:
+        with pytest.raises(ExceptionConfiguration) as exc_info:
             ModelProtocolAuditor("/definitely/nonexistent/path")
 
         # Should contain information about the underlying validation error
@@ -334,7 +334,7 @@ class TestConfigurationErrorHandling:
         with tempfile.TemporaryDirectory() as temp_dir:
             auditor = ModelProtocolAuditor(temp_dir)
 
-            with pytest.raises(ConfigurationError) as exc_info:
+            with pytest.raises(ExceptionConfiguration) as exc_info:
                 auditor.check_against_spi("/definitely/nonexistent/spi/path")
 
             assert "Invalid SPI path configuration" in str(exc_info.value)

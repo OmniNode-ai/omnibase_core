@@ -17,9 +17,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_union_type import EnumNodeUnionType
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
-from omnibase_core.models.nodes.model_function_node import ModelFunctionNode
+from omnibase_core.models.node_metadata.model_function_node import ModelFunctionNode
 
 from .model_function_node_data import ModelFunctionNodeData
 

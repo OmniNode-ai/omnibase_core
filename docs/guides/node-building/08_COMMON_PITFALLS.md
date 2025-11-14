@@ -150,7 +150,7 @@ class BadNode(NodeCompute):
 
 ```python
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 class GoodNode(NodeCompute):
     """GOOD: Proper error handling."""
@@ -221,7 +221,7 @@ class BadNode(NodeCompute):
 
 ```python
 import asyncio
-from omnibase_core.errors.error_codes import EnumCoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 class GoodNode(NodeCompute):
     """GOOD: Proper async exception handling."""
