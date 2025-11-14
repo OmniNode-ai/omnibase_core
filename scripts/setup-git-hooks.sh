@@ -90,6 +90,12 @@ EOF
 # Make hook executable
 chmod +x "$HOOKS_DIR/pre-push"
 
+# Ensure validation script is executable
+VALIDATION_SCRIPT="$PROJECT_ROOT/scripts/validate-clean-root.sh"
+if [ -f "$VALIDATION_SCRIPT" ]; then
+    chmod +x "$VALIDATION_SCRIPT"
+fi
+
 echo -e "${GREEN}✅ Git hooks installed successfully${NC}"
 echo ""
 echo "Installed hooks:"
