@@ -1,5 +1,5 @@
 """
-Branch coverage tests for ModelOnexUri in config module.
+Branch coverage tests for ModelOnexUri in examples module.
 
 Tests focus on conditional logic in protocol implementations,
 particularly the configure() method's hasattr conditional.

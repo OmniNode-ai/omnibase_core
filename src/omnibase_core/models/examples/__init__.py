@@ -4,15 +4,13 @@ Configuration Models
 Models for system configuration, artifacts, and declarative settings.
 """
 
+from omnibase_core.models.core.model_examples_collection import ModelExamplesCollection
 from omnibase_core.models.examples.model_data_handling_declaration import (
     ModelDataHandlingDeclaration,
 )
 from omnibase_core.models.examples.model_example import ModelExample
 from omnibase_core.models.examples.model_example_metadata import ModelExampleMetadata
 from omnibase_core.models.examples.model_fallback_strategy import ModelFallbackStrategy
-from omnibase_core.models.core.model_examples_collection import (
-    ModelExample as ModelExamplesCollection,
-)
 
 from .model_artifact_type_config import ModelArtifactTypeConfig
 from .model_environment_properties import ModelEnvironmentProperties

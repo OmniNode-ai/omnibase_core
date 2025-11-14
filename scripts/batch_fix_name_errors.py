@@ -29,7 +29,7 @@ INTERNAL_IMPORTS = {
     "ModelSchemaValue": "from omnibase_core.models.common.model_schema_value import ModelSchemaValue",
     "EnumAuditAction": "from omnibase_core.enums.enum_audit_action import EnumAuditAction",
     "EnumSecurityLevel": "from omnibase_core.enums.enum_security_level import EnumSecurityLevel",
-    "ModelRetryPolicy": "from omnibase_core.models.examplesuration.model_retry_policy import ModelRetryPolicy",
+    "ModelRetryPolicy": "from omnibase_core.models.infrastructure.model_retry_policy import ModelRetryPolicy",
     "ModelSemVer": "from omnibase_core.models.metadata.model_semver import ModelSemVer",
     "EnumStatusMigrationValidator": "from omnibase_core.enums.enum_status_migration import EnumStatusMigrationValidator",
 }
