@@ -247,19 +247,23 @@ event_subscriptions:
 
         node = TestNode(event_bus=mock_event_bus)
 
-        with patch.object(node, "get_event_patterns", return_value=["test.pattern"]):
-            node.start_event_listener()
-            time.sleep(0.1)
+        # Mock emit_log_event to prevent JSON encoding issues with Mock objects
+        with patch("omnibase_core.mixins.mixin_event_listener.emit_log_event"):
+            with patch.object(
+                node, "get_event_patterns", return_value=["test.pattern"]
+            ):
+                node.start_event_listener()
+                time.sleep(0.1)
 
-            node.stop_event_listener()
-            time.sleep(0.2)
+                node.stop_event_listener()
+                time.sleep(0.2)
 
-            # Thread should be stopped
-            assert (
-                not node._event_listener_thread.is_alive()
-                if node._event_listener_thread
-                else True
-            )
+                # Thread should be stopped
+                assert (
+                    not node._event_listener_thread.is_alive()
+                    if node._event_listener_thread
+                    else True
+                )
 
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_to_input_state_with_dict_data(self):
