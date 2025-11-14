@@ -11,10 +11,10 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from omnibase_core.models.configuration.model_priority_metadata import (
+from omnibase_core.models.examplesuration.model_priority_metadata import (
     ModelPriorityMetadata,
 )
-from omnibase_core.models.configuration.model_resource_allocation import (
+from omnibase_core.models.examplesuration.model_resource_allocation import (
     ModelResourceAllocation,
 )
 

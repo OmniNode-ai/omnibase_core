@@ -9,10 +9,10 @@ from typing import Any, Self
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.configuration.model_monitoring_thresholds import (
+from omnibase_core.models.examplesuration.model_monitoring_thresholds import (
     ModelMonitoringThresholds,
 )
-from omnibase_core.models.configuration.model_notification_settings import (
+from omnibase_core.models.examplesuration.model_notification_settings import (
     ModelNotificationSettings,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

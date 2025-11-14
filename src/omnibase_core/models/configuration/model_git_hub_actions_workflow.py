@@ -9,7 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.models.configuration.model_workflow_configuration import (
+from omnibase_core.models.examplesuration.model_workflow_configuration import (
     WorkflowPermissions,
 )
 

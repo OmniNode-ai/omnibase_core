@@ -41,7 +41,7 @@ DEFAULT_METADATA_VERSION = str(_DEFAULT_METADATA_SEMVER)
 DEFAULT_PROTOCOL_VERSION = str(_DEFAULT_PROTOCOL_SEMVER)
 DEFAULT_SCHEMA_VERSION = str(_DEFAULT_SCHEMA_SEMVER)
 
-from omnibase_core.models.config.model_data_handling_declaration import (
+from omnibase_core.models.examples.model_data_handling_declaration import (
     ModelDataHandlingDeclaration,
 )
 

@@ -17,13 +17,13 @@ class TestModelConfigModule:
     def test_module_imports_successfully(self) -> None:
         """Test that the model_config module can be imported."""
         # This test ensures the module is importable and has no syntax errors
-        from omnibase_core.models.workflows import model_config
+        from omnibase_core.models.workflow.execution import model_config
 
         assert model_config is not None
 
     def test_basemodel_available_in_module(self) -> None:
         """Test that BaseModel is imported and available in the module."""
-        from omnibase_core.models.workflows import model_config
+        from omnibase_core.models.workflow.execution import model_config
 
         # Verify BaseModel is imported in the module
         assert hasattr(model_config, "BaseModel")
@@ -31,10 +31,10 @@ class TestModelConfigModule:
 
     def test_module_docstring_present(self) -> None:
         """Test that the module has appropriate documentation."""
-        from omnibase_core.models.workflows import model_config
+        from omnibase_core.models.workflow.execution import model_config
 
         # Module should have some form of documentation or structure
-        assert model_config.__name__ == "omnibase_core.models.workflows.model_config"
+        assert model_config.__name__ == "omnibase_core.models.workflow.execution.model_config"
 
 
 class TestBaseModelAvailability:
@@ -42,7 +42,7 @@ class TestBaseModelAvailability:
 
     def test_can_create_model_from_imported_basemodel(self) -> None:
         """Test that BaseModel from model_config can be used to create models."""
-        from omnibase_core.models.workflows.model_config import BaseModel
+        from omnibase_core.models.workflow.execution.model_config import BaseModel
 
         # Create a simple test model to verify BaseModel works
         class TestWorkflowConfig(BaseModel):
@@ -60,7 +60,7 @@ class TestBaseModelAvailability:
         """Test that imported BaseModel has correct type."""
         from pydantic import BaseModel as PydanticBaseModel
 
-        from omnibase_core.models.workflows.model_config import BaseModel
+        from omnibase_core.models.workflow.execution.model_config import BaseModel
 
         # Verify it's the actual Pydantic BaseModel
         assert BaseModel is PydanticBaseModel

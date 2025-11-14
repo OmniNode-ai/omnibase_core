@@ -8,7 +8,7 @@ particularly the configure() method's hasattr conditional.
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.config.model_uri import ModelOnexUri
+from omnibase_core.models.examples.model_uri import ModelOnexUri
 
 
 class TestModelOnexUriBranchCoverage:

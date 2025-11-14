@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import SecretStr
 
-from omnibase_core.models.configuration.model_event_bus_config import (
+from omnibase_core.models.examplesuration.model_event_bus_config import (
     ModelEventBusConfig,
 )
 
@@ -336,7 +336,7 @@ class TestModelEventBusConfigAttributes:
         """Test event bus config module."""
         assert (
             ModelEventBusConfig.__module__
-            == "omnibase_core.models.configuration.model_event_bus_config"
+            == "omnibase_core.models.examplesuration.model_event_bus_config"
         )
 
     def test_event_bus_config_copy(self):

@@ -2,8 +2,8 @@
 
 import pytest
 
-from omnibase_core.models.configuration.model_log_filter import ModelLogFilter
-from omnibase_core.models.configuration.model_log_filter_config import (
+from omnibase_core.models.examplesuration.model_log_filter import ModelLogFilter
+from omnibase_core.models.examplesuration.model_log_filter_config import (
     ModelLogFilterConfig,
 )
 
@@ -81,7 +81,7 @@ class TestModelLogFilterMatching:
         # Mock random.random() to return deterministic value for should_sample()
         # Must patch in the module where random is actually imported and used
         monkeypatch.setattr(
-            "omnibase_core.models.configuration.model_log_filter_config.random.random",
+            "omnibase_core.models.examplesuration.model_log_filter_config.random.random",
             lambda: 0.5,
         )
 
@@ -105,7 +105,7 @@ class TestModelLogFilterMatching:
         # Mock random.random() to return deterministic value for should_sample()
         # Must patch in the module where random is actually imported and used
         monkeypatch.setattr(
-            "omnibase_core.models.configuration.model_log_filter_config.random.random",
+            "omnibase_core.models.examplesuration.model_log_filter_config.random.random",
             lambda: 0.5,
         )
 

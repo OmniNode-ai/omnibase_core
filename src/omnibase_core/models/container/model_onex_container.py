@@ -35,7 +35,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.configuration.model_compute_cache_config import (
+from omnibase_core.models.examplesuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
 from omnibase_core.utils.util_singleton_holders import _ContainerHolder

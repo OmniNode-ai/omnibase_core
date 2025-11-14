@@ -30,8 +30,8 @@ from typing import Any, Self
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.config.model_example import ModelExample
-from omnibase_core.models.config.model_example_metadata import ModelExampleMetadata
+from omnibase_core.models.examples.model_example import ModelExample
+from omnibase_core.models.examples.model_example_metadata import ModelExampleMetadata
 
 # Safe runtime import - error_codes only imports from types.core_types
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -159,10 +159,10 @@ class ModelExamplesCollection(BaseModel):
     @classmethod
     def _create_example_from_data(cls, data: dict[str, Any] | Any) -> ModelExample:
         """Create ModelExample from various data formats."""
-        from omnibase_core.models.config.model_example_context_data import (
+        from omnibase_core.models.examples.model_example_context_data import (
             ModelExampleContextData,
         )
-        from omnibase_core.models.config.model_example_data import (
+        from omnibase_core.models.examples.model_example_data import (
             ModelExampleInputData,
             ModelExampleOutputData,
         )

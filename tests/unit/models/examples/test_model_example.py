@@ -10,7 +10,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.config.model_example import ModelExample
+from omnibase_core.models.examples.model_example import ModelExample
 
 
 class TestModelExample:

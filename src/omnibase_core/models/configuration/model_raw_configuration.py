@@ -10,10 +10,10 @@ Strongly typed model for unvalidated configuration data loaded from YAML files.
 
 from pydantic import BaseModel
 
-from omnibase_core.models.configuration.model_raw_registry_mode import (
+from omnibase_core.models.examplesuration.model_raw_registry_mode import (
     ModelRawRegistryMode,
 )
-from omnibase_core.models.configuration.model_raw_service import ModelRawService
+from omnibase_core.models.examplesuration.model_raw_service import ModelRawService
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 

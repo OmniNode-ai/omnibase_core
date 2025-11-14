@@ -15,7 +15,7 @@ from .model_secret_config import ModelSecretConfig
 from .model_secure_credentials import ModelSecureCredentials
 
 if TYPE_CHECKING:
-    from omnibase_core.models.configuration.model_database_secure_config import (
+    from omnibase_core.models.examplesuration.model_database_secure_config import (
         ModelDatabaseSecureConfig,
     )
     from omnibase_core.models.core.model_health_check_result import (
@@ -108,7 +108,7 @@ class ModelSecretManager(BaseModel):
         env_prefix: str = "ONEX_DB_",
     ) -> "ModelDatabaseSecureConfig":
         """Get secure database configuration with validation."""
-        from omnibase_core.models.configuration.model_database_secure_config import (
+        from omnibase_core.models.examplesuration.model_database_secure_config import (
             ModelDatabaseSecureConfig,
         )
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from omnibase_core.models.configuration.model_burst_config import ModelBurstConfig
+from omnibase_core.models.examplesuration.model_burst_config import ModelBurstConfig
 
 
 class TestModelBurstConfigBasics:

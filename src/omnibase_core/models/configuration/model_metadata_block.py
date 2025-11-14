@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from omnibase_core.enums import EnumMetaType, EnumProtocolVersion, EnumRuntimeLanguage
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metadata import EnumLifecycle
-from omnibase_core.models.configuration.model_metadata_config import ModelMetadataConfig
+from omnibase_core.models.examplesuration.model_metadata_config import ModelMetadataConfig
 from omnibase_core.models.core.model_node_metadata import Namespace
 from omnibase_core.models.core.model_tool_collection import ToolCollection
 

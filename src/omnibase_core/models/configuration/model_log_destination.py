@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.configuration.model_log_destination_config import (
+from omnibase_core.models.examplesuration.model_log_destination_config import (
     ModelLogDestinationConfig,
 )
 

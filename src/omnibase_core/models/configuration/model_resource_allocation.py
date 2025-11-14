@@ -8,7 +8,7 @@ Resource allocation configuration for execution priorities.
 
 from pydantic import BaseModel
 
-from omnibase_core.models.configuration.model_custom_resource_limits import (
+from omnibase_core.models.examplesuration.model_custom_resource_limits import (
     ModelCustomResourceLimits,
 )
 

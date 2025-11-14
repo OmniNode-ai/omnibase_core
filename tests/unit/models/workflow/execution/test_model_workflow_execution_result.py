@@ -17,7 +17,7 @@ from omnibase_core.enums.enum_workflow_coordination import (
 )
 from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
-from omnibase_core.models.workflows.model_workflow_execution_result import (
+from omnibase_core.models.workflow.execution.model_workflow_execution_result import (
     ModelWorkflowExecutionResult,
 )
 

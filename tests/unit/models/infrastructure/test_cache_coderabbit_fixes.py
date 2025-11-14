@@ -14,7 +14,7 @@ from datetime import timedelta
 import pytest
 
 from omnibase_core.enums.enum_cache_eviction_policy import EnumCacheEvictionPolicy
-from omnibase_core.models.configuration.model_compute_cache_config import (
+from omnibase_core.models.examplesuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache

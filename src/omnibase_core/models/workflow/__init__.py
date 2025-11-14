@@ -1,22 +1,37 @@
 """
-Workflow models for ONEX workflow execution and management.
+Workflow Models
 
-This package contains models for workflow operations including:
-- Workflow execution arguments
-- Workflow outputs and results
-- Workflow status and control
+Consolidated workflow models for ONEX framework.
+Organized into API (external interface) and Execution (internal orchestration).
 """
 
-from .model_workflow_args import ModelWorkflowExecutionArgs
-from .model_workflow_list_result import ModelWorkflowListResult
-from .model_workflow_outputs import ModelWorkflowOutputs
-from .model_workflow_status_result import ModelWorkflowStatusResult
-from .model_workflow_stop_args import ModelWorkflowStopArgs
+# API Models - External interface for workflow operations
+from .api import (
+    ModelWorkflowExecutionArgs,
+    ModelWorkflowListResult,
+    ModelWorkflowOutputs,
+    ModelWorkflowStatusResult,
+    ModelWorkflowStopArgs,
+)
+
+# Execution Models - Internal workflow execution and orchestration
+from .execution import (
+    ModelDependencyGraph,
+    ModelWorkflowExecutionResult,
+    ModelWorkflowInputState,
+    ModelWorkflowStepExecution,
+)
 
 __all__ = [
+    # API Models
     "ModelWorkflowExecutionArgs",
     "ModelWorkflowListResult",
     "ModelWorkflowOutputs",
     "ModelWorkflowStatusResult",
     "ModelWorkflowStopArgs",
+    # Execution Models
+    "ModelDependencyGraph",
+    "ModelWorkflowExecutionResult",
+    "ModelWorkflowInputState",
+    "ModelWorkflowStepExecution",
 ]

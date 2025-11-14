@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.configuration.model_log_filter_config import (
+from omnibase_core.models.examplesuration.model_log_filter_config import (
     ModelLogFilterConfig,
 )
 

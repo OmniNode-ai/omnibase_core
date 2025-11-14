@@ -47,7 +47,7 @@ from omnibase_core.enums.enum_metadata import (
     EnumLifecycle,
     EnumMetaType,
 )
-from omnibase_core.models.config.model_data_handling_declaration import (
+from omnibase_core.models.examples.model_data_handling_declaration import (
     ModelDataHandlingDeclaration,
 )
 from omnibase_core.models.core.model_dependency_block import ModelDependencyBlock

@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.examplesuration.model_circuit_breaker import ModelCircuitBreaker
 
 
 class TestModelCircuitBreakerInitialization:
@@ -193,7 +193,7 @@ class TestModelCircuitBreakerStateManagement:
             last_state_change=datetime.now(UTC),  # Recent state change
         )
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             assert cb.should_allow_request() is False
@@ -206,7 +206,7 @@ class TestModelCircuitBreakerStateManagement:
             half_open_requests=0,
         )
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             assert cb.should_allow_request() is True
@@ -221,7 +221,7 @@ class TestModelCircuitBreakerFailureTracking:
         """Test recording successful requests."""
         cb = ModelCircuitBreaker(state="half_open", success_count=0)
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.record_success()
@@ -231,7 +231,7 @@ class TestModelCircuitBreakerFailureTracking:
         """Test recording failed requests."""
         cb = ModelCircuitBreaker(failure_count=0)
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.record_failure()
@@ -246,7 +246,7 @@ class TestModelCircuitBreakerFailureTracking:
             failure_count=0,
         )
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.record_slow_call(1500)
@@ -283,7 +283,7 @@ class TestModelCircuitBreakerStateTransitions:
             minimum_request_threshold=5,
         )
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             # Record enough failures to trigger open
@@ -300,7 +300,7 @@ class TestModelCircuitBreakerStateTransitions:
             last_state_change=past_time,
         )
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             state = cb.get_current_state()
@@ -314,7 +314,7 @@ class TestModelCircuitBreakerStateTransitions:
             success_count=0,
         )
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             for _ in range(3):
@@ -325,7 +325,7 @@ class TestModelCircuitBreakerStateTransitions:
         """Test transition back to open on failure in half-open state."""
         cb = ModelCircuitBreaker(state="half_open")
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.record_failure()
@@ -339,7 +339,7 @@ class TestModelCircuitBreakerManualControl:
         """Test forcing circuit breaker to open state."""
         cb = ModelCircuitBreaker(state="closed")
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.force_open()
@@ -349,7 +349,7 @@ class TestModelCircuitBreakerManualControl:
         """Test forcing circuit breaker to closed state."""
         cb = ModelCircuitBreaker(state="open")
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.force_close()
@@ -364,7 +364,7 @@ class TestModelCircuitBreakerManualControl:
             total_requests=15,
         )
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.reset_state()
@@ -414,7 +414,7 @@ class TestModelCircuitBreakerEdgeCases:
             last_failure_time=past_time,
         )
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.record_success()
@@ -470,7 +470,7 @@ class TestModelCircuitBreakerEdgeCases:
             failure_count=0,
         )
         with patch(
-            "omnibase_core.models.configuration.model_circuit_breaker.datetime"
+            "omnibase_core.models.examplesuration.model_circuit_breaker.datetime"
         ) as mock_dt:
             mock_dt.now.return_value = datetime.now(UTC)
             cb.record_slow_call(2000)
@@ -501,7 +501,7 @@ class TestModelCircuitBreakerAttributes:
         """Test circuit breaker module."""
         assert (
             ModelCircuitBreaker.__module__
-            == "omnibase_core.models.configuration.model_circuit_breaker"
+            == "omnibase_core.models.examplesuration.model_circuit_breaker"
         )
 
     def test_circuit_breaker_copy(self):

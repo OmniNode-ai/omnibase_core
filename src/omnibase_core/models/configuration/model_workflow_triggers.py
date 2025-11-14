@@ -6,12 +6,12 @@ Workflow triggers model.
 
 from pydantic import BaseModel
 
-from omnibase_core.models.configuration.model_github_events import (
+from omnibase_core.models.examplesuration.model_github_events import (
     ModelGitHubIssueCommentEvent,
     ModelGitHubIssuesEvent,
     ModelGitHubReleaseEvent,
 )
-from omnibase_core.models.configuration.model_workflow_configuration import (
+from omnibase_core.models.examplesuration.model_workflow_configuration import (
     WorkflowDispatch,
 )
 

@@ -37,7 +37,7 @@ Total Memory (MB) = (max_size × avg_entry_size_kb) / 1024
 ### Example Configurations
 
 ```python
-from omnibase_core.models.configuration.model_compute_cache_config import ModelComputeCacheConfig
+from omnibase_core.models.examplesuration.model_compute_cache_config import ModelComputeCacheConfig
 from omnibase_core.models.container.model_onex_container import create_model_onex_container
 
 # Small workload (development/testing)

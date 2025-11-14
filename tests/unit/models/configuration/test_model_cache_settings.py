@@ -6,7 +6,7 @@ Comprehensive tests for cache configuration and settings.
 
 import pytest
 
-from omnibase_core.models.configuration.model_cache_settings import ModelCacheSettings
+from omnibase_core.models.examplesuration.model_cache_settings import ModelCacheSettings
 
 
 class TestModelCacheSettingsInitialization:
@@ -226,7 +226,7 @@ class TestModelCacheSettingsAttributes:
         """Test cache settings module."""
         assert (
             ModelCacheSettings.__module__
-            == "omnibase_core.models.configuration.model_cache_settings"
+            == "omnibase_core.models.examplesuration.model_cache_settings"
         )
 
     def test_cache_settings_copy(self):

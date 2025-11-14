@@ -2,7 +2,7 @@
 
 import pytest
 
-from omnibase_core.models.configuration.model_log_formatting import ModelLogFormatting
+from omnibase_core.models.examplesuration.model_log_formatting import ModelLogFormatting
 
 
 class TestModelLogFormattingBasics:
