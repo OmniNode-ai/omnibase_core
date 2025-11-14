@@ -80,7 +80,10 @@ def update_imports_in_file(file_path: Path) -> bool:
             for imp in imports:
                 found = False
                 for enum_name, new_module in IMPORT_MAPPINGS.items():
-                    if enum_name in imp:
+                    # Bug fix: Extract symbol before alias for exact matching
+                    # Prevents "EnumCoreErrorCodeMapping" from matching "EnumCoreErrorCode"
+                    symbol = imp.split(" as ")[0].strip()
+                    if symbol == enum_name:
                         if new_module not in new_imports_by_module:
                             new_imports_by_module[new_module] = []
                         new_imports_by_module[new_module].append(imp)
@@ -91,25 +94,33 @@ def update_imports_in_file(file_path: Path) -> bool:
                     # Keep imports that aren't being moved
                     remaining_imports.append(imp)
 
-            # Build new import statements
+            # Bug fix: Preserve indentation from original import
+            # Find the start of the line containing the import to capture indentation
+            line_start = content.rfind("\n", 0, match.start()) + 1
+            original_line = content[line_start : match.start()]
+            indent = original_line if original_line.strip() == "" else ""
+
+            # Build new import statements with preserved indentation
             new_imports = []
             for module, imports_list in sorted(new_imports_by_module.items()):
                 if len(imports_list) == 1:
-                    new_imports.append(f"from {module} import {imports_list[0]}")
+                    new_imports.append(
+                        f"{indent}from {module} import {imports_list[0]}"
+                    )
                 else:
                     imports_joined = ", ".join(imports_list)
-                    new_imports.append(f"from {module} import {imports_joined}")
+                    new_imports.append(f"{indent}from {module} import {imports_joined}")
 
             # Add remaining imports back to error_codes if any
             if remaining_imports:
                 if len(remaining_imports) == 1:
                     new_imports.append(
-                        f"from omnibase_core.errors.error_codes import {remaining_imports[0]}"
+                        f"{indent}from omnibase_core.errors.error_codes import {remaining_imports[0]}"
                     )
                 else:
                     imports_joined = ", ".join(remaining_imports)
                     new_imports.append(
-                        f"from omnibase_core.errors.error_codes import {imports_joined}"
+                        f"{indent}from omnibase_core.errors.error_codes import {imports_joined}"
                     )
 
             replacement = "\n".join(new_imports)

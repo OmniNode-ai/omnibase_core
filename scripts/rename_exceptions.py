@@ -5,6 +5,7 @@ Changes *Error suffix classes to Exception* prefix without Error suffix.
 """
 import re
 import subprocess
+import tempfile
 from pathlib import Path
 
 # Mapping of old names to new names
@@ -54,7 +55,16 @@ def rename_in_file(file_path: Path) -> int:
                 content = new_content
 
         if content != original:
-            file_path.write_text(content)
+            # Bug fix: Use atomic write to prevent data corruption on interrupt
+            # Write to temp file first, then atomically replace original
+            with tempfile.NamedTemporaryFile(
+                mode="w", delete=False, dir=file_path.parent, suffix=".tmp"
+            ) as tmp:
+                tmp.write(content)
+                tmp_path = tmp.name
+
+            # Atomic replace (POSIX compliant)
+            Path(tmp_path).replace(file_path)
             return changes
 
         return 0
