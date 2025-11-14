@@ -55,12 +55,29 @@ poetry install
 poetry shell
 ```
 
-### 3. Set Up Pre-commit Hooks
+### 3. Set Up Git Hooks
 
 ```bash
-# Install pre-commit hooks
+# Install pre-commit hooks (formatting, linting, type checking)
 pre-commit install
+
+# Install pre-push hooks (validates clean project root)
+./scripts/setup-git-hooks.sh
 ```
+
+**What do these hooks do?**
+
+- **Pre-commit**: Runs before every commit
+  - Code formatting (black, isort)
+  - Linting (ruff)
+  - Type checking (mypy)
+  - Fast feedback on code quality
+
+- **Pre-push**: Runs before every push
+  - Validates project root is clean
+  - Prevents committing temporary/build artifacts
+  - Checks for: `.coverage`, `htmlcov/`, `.pytest_cache`, audit reports, etc.
+  - Can bypass with `git push --no-verify` (not recommended)
 
 ### 4. Verify Setup
 
