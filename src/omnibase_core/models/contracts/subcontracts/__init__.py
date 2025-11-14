@@ -17,7 +17,7 @@ providing clean separation between node logic and subcontract functionality.
 ONEX Compliance: Strong typing with zero tolerance for Any types.
 """
 
-from omnibase_core.models.examplesuration.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.core.model_health_check_result import ModelHealthCheckResult
 from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
 

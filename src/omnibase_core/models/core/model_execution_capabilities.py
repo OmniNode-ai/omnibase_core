@@ -12,7 +12,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_delivery_mode import EnumDeliveryMode
-from omnibase_core.models.examplesuration.model_performance_constraints import (
+from omnibase_core.models.configuration.model_performance_constraints import (
     ModelPerformanceConstraints,
 )
 from omnibase_core.models.infrastructure.model_duration import ModelDuration

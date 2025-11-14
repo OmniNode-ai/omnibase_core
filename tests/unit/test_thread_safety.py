@@ -26,7 +26,7 @@ from omnibase_core.enums.enum_effect_types import (
     EnumCircuitBreakerState,
     EnumEffectType,
 )
-from omnibase_core.models.examplesuration.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
 from omnibase_core.models.model_compute_input import ModelComputeInput

@@ -19,7 +19,7 @@ from pydantic import BaseModel, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
 from omnibase_core.enums.enum_json_value_type import EnumJsonValueType
-from omnibase_core.models.examplesuration.model_json_field import ModelJsonField
+from omnibase_core.models.configuration.model_json_field import ModelJsonField
 
 
 class ModelJsonData(BaseModel):

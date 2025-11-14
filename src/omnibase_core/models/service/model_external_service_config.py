@@ -3,15 +3,15 @@ from typing import Any, Generic
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.examplesuration.model_database_connection_config import (
+from omnibase_core.models.configuration.model_database_connection_config import (
     ModelDatabaseConnectionConfig,
 )
-from omnibase_core.models.examplesuration.model_generic_connection_config import (
+from omnibase_core.models.configuration.model_generic_connection_config import (
     ModelGenericConnectionConfig,
 )
 
 # Import our newly extracted models
-from omnibase_core.models.examplesuration.model_rest_api_connection_config import (
+from omnibase_core.models.configuration.model_rest_api_connection_config import (
     ModelRestApiConnectionConfig,
 )
 from omnibase_core.models.core.model_retry_config import ModelRetryConfig

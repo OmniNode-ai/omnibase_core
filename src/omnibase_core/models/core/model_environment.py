@@ -39,7 +39,7 @@ from omnibase_core.models.core.model_feature_flags import ModelFeatureFlags
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.models.examplesuration.model_resource_limits import (
+    from omnibase_core.models.configuration.model_resource_limits import (
         ModelResourceLimits,
     )
     from omnibase_core.models.security.model_security_level import ModelSecurityLevel
@@ -299,7 +299,7 @@ class ModelEnvironment(BaseModel):
         is_production = name in ["production", "prod"]
 
         # Set appropriate resource limits based on environment
-        from omnibase_core.models.examplesuration.model_resource_limits import (
+        from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
         )
 
@@ -367,7 +367,7 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_development(cls) -> "ModelEnvironment":
         """Create a development environment."""
-        from omnibase_core.models.examplesuration.model_resource_limits import (
+        from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
         )
 
@@ -394,7 +394,7 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_staging(cls) -> "ModelEnvironment":
         """Create a staging environment."""
-        from omnibase_core.models.examplesuration.model_resource_limits import (
+        from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
         )
 
@@ -420,7 +420,7 @@ class ModelEnvironment(BaseModel):
     @classmethod
     def create_production(cls) -> "ModelEnvironment":
         """Create a production environment."""
-        from omnibase_core.models.examplesuration.model_resource_limits import (
+        from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
         )
         from omnibase_core.models.security.model_security_level import (

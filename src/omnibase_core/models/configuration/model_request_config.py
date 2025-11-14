@@ -10,8 +10,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.models.examplesuration.model_request_auth import ModelRequestAuth
-from omnibase_core.models.examplesuration.model_request_retry_config import (
+from omnibase_core.models.configuration.model_request_auth import ModelRequestAuth
+from omnibase_core.models.configuration.model_request_retry_config import (
     ModelRequestRetryConfig,
 )
 

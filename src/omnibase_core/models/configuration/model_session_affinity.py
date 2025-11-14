@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.examplesuration.model_session_affinity_metadata import (
+from omnibase_core.models.configuration.model_session_affinity_metadata import (
     ModelSessionAffinityMetadata,
 )
 

@@ -20,7 +20,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.enums import EnumProtocolVersion
-    from omnibase_core.models.examplesuration.model_metadata_config import (
+    from omnibase_core.models.configuration.model_metadata_config import (
         ModelMetadataConfig,
     )
     from omnibase_core.models.core.model_tool_collection import ToolCollection

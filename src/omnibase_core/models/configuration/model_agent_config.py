@@ -10,13 +10,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.examplesuration.model_agent_onex_settings import (
+from omnibase_core.models.configuration.model_agent_onex_settings import (
     ModelAgentOnexSettings,
 )
-from omnibase_core.models.examplesuration.model_agent_permissions import (
+from omnibase_core.models.configuration.model_agent_permissions import (
     ModelAgentPermissions,
 )
-from omnibase_core.models.examplesuration.model_agent_safety import ModelAgentSafety
+from omnibase_core.models.configuration.model_agent_safety import ModelAgentSafety
 
 
 class ModelAgentConfig(BaseModel):

@@ -2,7 +2,7 @@
 
 import pytest
 
-from omnibase_core.models.examplesuration.model_rate_limit_window import (
+from omnibase_core.models.configuration.model_rate_limit_window import (
     ModelRateLimitWindow,
 )
 

@@ -16,13 +16,13 @@ from pydantic import BaseModel
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_service_mode import EnumServiceMode
 from omnibase_core.models.examples.model_security_config import ModelSecurityConfig
-from omnibase_core.models.examplesuration.model_event_bus_config import (
+from omnibase_core.models.configuration.model_event_bus_config import (
     ModelEventBusConfig,
 )
-from omnibase_core.models.examplesuration.model_monitoring_config import (
+from omnibase_core.models.configuration.model_monitoring_config import (
     ModelMonitoringConfig,
 )
-from omnibase_core.models.examplesuration.model_resource_limits import ModelResourceLimits
+from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
 from omnibase_core.models.service.model_network_config import ModelNetworkConfig
 

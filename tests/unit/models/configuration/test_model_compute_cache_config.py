@@ -8,7 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_cache_eviction_policy import EnumCacheEvictionPolicy
-from omnibase_core.models.examplesuration.model_compute_cache_config import (
+from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
 
@@ -310,7 +310,7 @@ class TestModelComputeCacheConfigAttributes:
         """Test config module."""
         assert (
             ModelComputeCacheConfig.__module__
-            == "omnibase_core.models.examplesuration.model_compute_cache_config"
+            == "omnibase_core.models.configuration.model_compute_cache_config"
         )
 
     def test_config_copy(self):

@@ -7,7 +7,7 @@ Tests the workflow input model for individual workflow input definitions.
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from omnibase_core.models.examplesuration.model_workflow_input import ModelWorkflowInput
+from omnibase_core.models.configuration.model_workflow_input import ModelWorkflowInput
 
 
 class TestModelWorkflowInput:

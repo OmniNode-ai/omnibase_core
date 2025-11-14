@@ -18,7 +18,7 @@ import pytest
 from pydantic import SecretStr
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.examplesuration.model_database_secure_config import (
+from omnibase_core.models.configuration.model_database_secure_config import (
     ModelDatabaseSecureConfig,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

@@ -18,7 +18,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.models.examplesuration.model_compute_cache_config import (
+from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer

@@ -9,7 +9,7 @@ performance hints, and routing preferences.
 
 from pydantic import Field
 
-from omnibase_core.models.examplesuration.model_performance_hints import (
+from omnibase_core.models.configuration.model_performance_hints import (
     ModelPerformanceHints,
 )
 from omnibase_core.models.core.model_capability import ModelCapability

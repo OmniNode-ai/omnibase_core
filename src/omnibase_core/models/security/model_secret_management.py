@@ -80,7 +80,7 @@ def validate_secret_configuration(config_type: str, **kwargs: Any) -> dict[str, 
     """
     if config_type == "database":
         try:
-            from omnibase_core.models.examplesuration.model_database_secure_config import (
+            from omnibase_core.models.configuration.model_database_secure_config import (
                 ModelDatabaseSecureConfig,
             )
 
@@ -121,7 +121,7 @@ def get_security_recommendations(
     """
     try:
         if config_type == "database":
-            from omnibase_core.models.examplesuration.model_database_secure_config import (
+            from omnibase_core.models.configuration.model_database_secure_config import (
                 ModelDatabaseSecureConfig,
             )
 

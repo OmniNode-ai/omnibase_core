@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.models.examplesuration.model_rate_limit_policy import (
+from omnibase_core.models.configuration.model_rate_limit_policy import (
     ModelRateLimitPolicy,
 )
 

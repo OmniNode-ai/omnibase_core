@@ -11,7 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.models.examplesuration.model_load_balancing_parameters import (
+from omnibase_core.models.configuration.model_load_balancing_parameters import (
     ModelLoadBalancingParameters,
 )
 

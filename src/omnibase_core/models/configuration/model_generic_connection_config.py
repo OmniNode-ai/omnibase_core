@@ -13,7 +13,7 @@ providing a flexible but still typed structure.
 
 from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.models.examplesuration.model_generic_connection_config_config import (
+from omnibase_core.models.configuration.model_generic_connection_config_config import (
     ModelConfig,
 )
 

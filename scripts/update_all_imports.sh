@@ -176,9 +176,9 @@ find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
   's|from omnibase_core\.models\.core\.model_state import|from omnibase_core.models.infrastructure.model_state import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
-  's|from omnibase_core\.models\.infrastructure\.model_circuit_breaker import|from omnibase_core.models.examplesuration.model_circuit_breaker import|g' {} \;
+  's|from omnibase_core\.models\.infrastructure\.model_circuit_breaker import|from omnibase_core.models.configuration.model_circuit_breaker import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
-  's|from omnibase_core\.models\.contracts\.subcontracts\.model_circuit_breaker import|from omnibase_core.models.examplesuration.model_circuit_breaker import|g' {} \;
+  's|from omnibase_core\.models\.contracts\.subcontracts\.model_circuit_breaker import|from omnibase_core.models.configuration.model_circuit_breaker import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
   's|from omnibase_core\.models\.infrastructure\.model_retry_config import|from omnibase_core.models.core.model_retry_config import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
@@ -206,7 +206,7 @@ find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
 # Workflows
 echo "  - Workflow models"
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
-  's|from omnibase_core\.models\.operations\.model_workflow_configuration import|from omnibase_core.models.examplesuration.model_workflow_configuration import|g' {} \;
+  's|from omnibase_core\.models\.operations\.model_workflow_configuration import|from omnibase_core.models.configuration.model_workflow_configuration import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
   's|from omnibase_core\.models\.service\.model_workflow_execution_result import|from omnibase_core.models.workflow.execution.model_workflow_execution_result import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
@@ -223,18 +223,18 @@ echo "  - Event/Config models"
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
   's|from omnibase_core\.models\.core\.model_event_envelope import|from omnibase_core.models.events.model_event_envelope import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
-  's|from omnibase_core\.models\.service\.model_event_bus_config import|from omnibase_core.models.examplesuration.model_event_bus_config import|g' {} \;
+  's|from omnibase_core\.models\.service\.model_event_bus_config import|from omnibase_core.models.configuration.model_event_bus_config import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
   's|from omnibase_core\.models\.contracts\.model_event_descriptor import|from omnibase_core.models.discovery.model_event_descriptor import|g' {} \;
 
 # Monitoring/Resources
 echo "  - Monitoring/Resource models"
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
-  's|from omnibase_core\.models\.service\.model_monitoring_config import|from omnibase_core.models.examplesuration.model_monitoring_config import|g' {} \;
+  's|from omnibase_core\.models\.service\.model_monitoring_config import|from omnibase_core.models.configuration.model_monitoring_config import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
-  's|from omnibase_core\.models\.core\.model_resource_allocation import|from omnibase_core.models.examplesuration.model_resource_allocation import|g' {} \;
+  's|from omnibase_core\.models\.core\.model_resource_allocation import|from omnibase_core.models.configuration.model_resource_allocation import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
-  's|from omnibase_core\.models\.service\.model_resource_limits import|from omnibase_core.models.examplesuration.model_resource_limits import|g' {} \;
+  's|from omnibase_core\.models\.service\.model_resource_limits import|from omnibase_core.models.configuration.model_resource_limits import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
   's|from omnibase_core\.models\.core\.model_metric_value import|from omnibase_core.models.discovery.model_metric_value import|g' {} \;
 
@@ -273,7 +273,7 @@ echo "Phase 4: Updating imports for domain-specific renames..."
 # Metadata renames
 echo "  - Metadata renames"
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
-  's|from omnibase_core\.models\.configuration\.model_metadata import|from omnibase_core.models.examplesuration.model_configuration_metadata import|g' {} \;
+  's|from omnibase_core\.models\.configuration\.model_metadata import|from omnibase_core.models.configuration.model_configuration_metadata import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
   's|from omnibase_core\.models\.core\.model_metadata import|from omnibase_core.models.core.model_core_metadata import|g' {} \;
 find "$BASE_DIR" -name "*.py" -type f -exec sed -i \
