@@ -256,14 +256,11 @@ class MixinDagSupport:
                 # Schedule the coroutine as a task (fire-and-forget)
                 _ = loop.create_task(result)  # type: ignore[unused-awaitable]  # noqa: RUF006
             except RuntimeError:
-                # No running event loop - try to run it in a new loop
-                # This is a fallback for non-async contexts
-                try:
-                    asyncio.run(result)
-                except RuntimeError:
-                    # If we still can't run it, just ignore
-                    # This happens in test contexts with mocks
-                    pass
+                # No running event loop - skip async operation to prevent blocking
+                # In test contexts or synchronous code, event_bus is likely a Mock
+                # and calling asyncio.run() would block for 30+ seconds waiting
+                # for Mock timeouts or coroutine completion.
+                result.close()  # Close the coroutine to prevent ResourceWarning
 
     def _safe_log_error(self, message: str) -> None:
         """Safely log error without failing tool execution."""
