@@ -180,6 +180,12 @@ omnibase_core/docs/
 | [Parallel Testing](testing/PARALLEL_TESTING.md) | Parallel test execution configuration | ✅ Complete |
 | [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
 
+### Troubleshooting & Debugging
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [**Async Hang Debugging**](troubleshooting/ASYNC_HANG_DEBUGGING.md) | Diagnose and fix async/event loop hangs in tests | ✅ Complete |
+
 ### Architecture Patterns
 
 | Document | Description | Status |
@@ -213,7 +219,7 @@ omnibase_core/docs/
 | **Understand the architecture** | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
 | **Test my node** | [Testing Guide](guides/TESTING_GUIDE.md) |
 | **Monitor CI performance** | [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) |
-| **Debug an issue** | Debugging Guide 🚧 Coming Soon |
+| **Debug async hangs** | [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md) |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
 
 ---
@@ -306,6 +312,7 @@ omnibase_core/docs/
 
 **Debugging**:
 - Errors: [Error Handling](conventions/ERROR_HANDLING_BEST_PRACTICES.md)
+- Async Hangs: [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md)
 - Performance: [Production Cache Tuning](guides/PRODUCTION_CACHE_TUNING.md)
 - Threading: [Threading Guide](guides/THREADING.md)
 

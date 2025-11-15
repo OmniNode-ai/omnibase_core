@@ -259,7 +259,7 @@ class ProtocolTester:
             "omnibase_core.models.nodes.model_node_metadata_info",
             "omnibase_core.models.nodes.model_node_core_metadata",
             "omnibase_core.models.nodes.model_node_configuration",
-            # Config models
+            # Example models
             "omnibase_core.models.examples.model_typed_property",
             "omnibase_core.models.examples.model_property_collection",
             "omnibase_core.models.examples.model_artifact_type_config",

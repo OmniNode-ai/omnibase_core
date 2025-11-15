@@ -12,12 +12,12 @@ Project metadata block model.
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_metadata import EnumLifecycle, EnumMetaType
-from omnibase_core.models.examples.model_tree_generator_config import (
-    ModelTreeGeneratorConfig,
-)
 from omnibase_core.models.core.model_entrypoint import EntrypointBlock
 from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
 from omnibase_core.models.core.model_tool_collection import ModelToolCollection
+from omnibase_core.models.examples.model_tree_generator_config import (
+    ModelTreeGeneratorConfig,
+)
 from omnibase_core.models.metadata.model_metadata_constants import (
     COPYRIGHT_KEY,
     ENTRYPOINT_KEY,

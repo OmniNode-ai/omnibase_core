@@ -32,6 +32,9 @@ and compliance with one-model-per-file naming conventions.
 
 from pathlib import Path
 
+from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
+
 # Import separated models
 from omnibase_core.models.examples.model_artifact_type_config import (
     ModelArtifactTypeConfig,
@@ -43,8 +46,6 @@ from omnibase_core.models.examples.model_namespace_config import ModelNamespaceC
 from omnibase_core.models.examples.model_tree_generator_config import (
     ModelTreeGeneratorConfig,
 )
-from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
-from omnibase_core.models.core.model_onex_version import ModelOnexVersionInfo
 from omnibase_core.models.metadata.model_metadata_constants import (
     METADATA_VERSION_KEY,
     NAMESPACE_KEY,

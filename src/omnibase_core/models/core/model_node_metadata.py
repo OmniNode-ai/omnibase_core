@@ -47,14 +47,14 @@ from omnibase_core.enums.enum_metadata import (
     EnumLifecycle,
     EnumMetaType,
 )
-from omnibase_core.models.examples.model_data_handling_declaration import (
-    ModelDataHandlingDeclaration,
-)
 from omnibase_core.models.core.model_dependency_block import ModelDependencyBlock
 from omnibase_core.models.core.model_io_block import ModelIOBlock
 from omnibase_core.models.core.model_io_contract import ModelIOContract
 from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.models.core.model_trust_score_stub import ModelTrustScoreStub
+from omnibase_core.models.examples.model_data_handling_declaration import (
+    ModelDataHandlingDeclaration,
+)
 
 from .model_extension_value import ModelExtensionValue
 from .model_logging_config import EnumLogFormat, ModelLogFormat, ModelLoggingConfig
