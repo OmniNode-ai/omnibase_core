@@ -5,12 +5,14 @@ Tests cover:
 - Pydantic model serialization
 - UUID serialization
 - ProtocolLogContext serialization (to_dict method)
+- Mock object serialization (deadlock prevention)
 - Fallback to default encoder
 - Edge cases (None, nested models, special types)
 - JSON encoding round-trip
 """
 
 import json
+from unittest.mock import MagicMock, Mock
 from uuid import UUID, uuid4
 
 import pytest
@@ -397,6 +399,78 @@ class TestEdgeCases:
         assert recreated.name == model.name
         assert recreated.value == model.value
         assert recreated.uuid == model.uuid
+
+
+class TestMockObjectSerialization:
+    """Test unittest.mock.Mock and MagicMock serialization (deadlock prevention)."""
+
+    def test_serialize_mock_object(self):
+        """Test that Mock objects serialize without triggering call tracking."""
+        mock_obj = Mock()
+
+        # Should not deadlock or raise exception
+        result = json.dumps({"test": mock_obj}, cls=PydanticJSONEncoder)
+
+        parsed = json.loads(result)
+        # Mock should be serialized as its repr string
+        assert "<Mock" in parsed["test"]
+
+    def test_serialize_named_mock(self):
+        """Test that named Mock objects serialize with their name."""
+        named_mock = Mock(name="test_mock")
+
+        result = json.dumps({"test": named_mock}, cls=PydanticJSONEncoder)
+
+        parsed = json.loads(result)
+        assert "test_mock" in parsed["test"]
+
+    def test_serialize_magic_mock(self):
+        """Test that MagicMock objects serialize safely."""
+        magic_mock = MagicMock()
+
+        result = json.dumps({"test": magic_mock}, cls=PydanticJSONEncoder)
+
+        parsed = json.loads(result)
+        assert "<MagicMock" in parsed["test"]
+
+    def test_serialize_nested_mock_in_dict(self):
+        """Test that nested Mock objects in dictionaries serialize safely."""
+        data = {"outer": {"inner": Mock(name="nested_mock")}}
+
+        result = json.dumps(data, cls=PydanticJSONEncoder)
+
+        parsed = json.loads(result)
+        assert "nested_mock" in parsed["outer"]["inner"]
+
+    def test_serialize_list_of_mocks(self):
+        """Test that lists containing Mock objects serialize safely."""
+        mock_list = [Mock(name=f"mock_{i}") for i in range(3)]
+
+        result = json.dumps({"mocks": mock_list}, cls=PydanticJSONEncoder)
+
+        parsed = json.loads(result)
+        assert len(parsed["mocks"]) == 3
+        # Each mock should be serialized as string
+        for i, mock_str in enumerate(parsed["mocks"]):
+            assert f"mock_{i}" in mock_str
+
+    def test_serialize_mock_does_not_call_to_dict(self):
+        """Test that serializing Mock does NOT call to_dict (prevents deadlock)."""
+        mock_obj = Mock()
+
+        # Add to_dict method to the mock
+        mock_obj.to_dict = Mock(return_value={"should": "not be called"})
+
+        # Serialize
+        result = json.dumps({"test": mock_obj}, cls=PydanticJSONEncoder)
+
+        # to_dict should NOT have been called
+        mock_obj.to_dict.assert_not_called()
+
+        # Should serialize as repr, not as the to_dict return value
+        parsed = json.loads(result)
+        assert "<Mock" in parsed["test"]
+        assert "should" not in parsed["test"]
 
 
 class TestEncoderExportAndUsage:

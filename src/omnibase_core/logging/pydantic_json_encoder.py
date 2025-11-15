@@ -12,6 +12,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 import json
 from typing import Any
+from unittest.mock import MagicMock, Mock
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -25,7 +26,11 @@ class PydanticJSONEncoder(json.JSONEncoder):
             return obj.model_dump()
         if isinstance(obj, UUID):
             return str(obj)
-        # Handle ProtocolLogContext - use try/except to avoid hasattr() deadlock with Mock
+        # Safety check: Don't call methods on Mock objects during serialization
+        # Prevents deadlock in Mock._increment_mock_call() during gc
+        if isinstance(obj, (Mock, MagicMock)):
+            return repr(obj)
+        # Handle ProtocolLogContext - use try/except to avoid other edge cases
         try:
             return obj.to_dict()
         except AttributeError:
