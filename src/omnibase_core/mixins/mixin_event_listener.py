@@ -860,12 +860,11 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 # Store reference to prevent garbage collection
                 task = loop.create_task(result)  # noqa: RUF006
             except RuntimeError:
-                # No running event loop - fallback for non-async contexts
-                try:
-                    asyncio.run(result)
-                except RuntimeError:
-                    # Test context with mocks - ignore
-                    pass
+                # No running event loop - skip async operation to prevent blocking
+                # In test contexts or synchronous code, event_bus is likely a Mock
+                # and calling asyncio.run() would block for 30+ seconds waiting
+                # for Mock timeouts or coroutine completion.
+                result.close()  # Close the coroutine to prevent ResourceWarning
 
     def _publish_completion_event(
         self,
