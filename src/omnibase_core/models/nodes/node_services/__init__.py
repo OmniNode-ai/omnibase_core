@@ -60,7 +60,7 @@ Available Mixins for Custom Composition:
     - MixinValidation: Input validation
     - MixinSerialization: YAML/JSON serialization
 
-See: src/omnibase_core/data/config/mixin_metadata.yaml for detailed mixin capabilities
+See: src/omnibase_core/mixins/mixin_metadata.yaml for detailed mixin capabilities
 """
 
 from omnibase_core.models.nodes.node_services.model_service_compute import (

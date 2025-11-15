@@ -25,8 +25,11 @@ class PydanticJSONEncoder(json.JSONEncoder):
             return obj.model_dump()
         if isinstance(obj, UUID):
             return str(obj)
-        if hasattr(obj, "to_dict"):  # Handle ProtocolLogContext
+        # Handle ProtocolLogContext - use try/except to avoid hasattr() deadlock with Mock
+        try:
             return obj.to_dict()
+        except AttributeError:
+            pass
         return super().default(obj)
 
 

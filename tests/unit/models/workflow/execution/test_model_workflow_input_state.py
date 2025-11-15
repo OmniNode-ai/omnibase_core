@@ -15,7 +15,7 @@ from pydantic import ValidationError
 from omnibase_core.models.operations.model_workflow_parameters import (
     ModelWorkflowParameters,
 )
-from omnibase_core.models.workflows.model_workflow_input_state import (
+from omnibase_core.models.workflow.execution.model_workflow_input_state import (
     ModelWorkflowInputState,
 )
 

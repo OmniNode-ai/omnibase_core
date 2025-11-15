@@ -7,8 +7,8 @@ and compliance with one-model-per-file naming conventions.
 
 from typing import Any
 
-from omnibase_core.models.config.model_example import ModelExample
-from omnibase_core.models.config.model_example_metadata import ModelExampleMetadata
+from omnibase_core.models.examples.model_example import ModelExample
+from omnibase_core.models.examples.model_example_metadata import ModelExampleMetadata
 from omnibase_core.models.node_metadata.model_node_information import (
     ModelNodeInformation,
 )

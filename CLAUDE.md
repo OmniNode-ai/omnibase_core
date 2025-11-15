@@ -209,8 +209,50 @@ omnibase_core/
 │   ├── events/                 # Event system
 │   ├── infrastructure/         # Base node classes
 │   ├── logging/                # Logging utilities
-│   ├── mixins/                 # Reusable behavior mixins
+│   ├── mixins/                 # Reusable behavior mixins (with mixin_metadata.yaml)
 │   ├── models/                 # Pydantic models
+│   │   ├── base/               # Base model classes
+│   │   ├── cli/                # CLI-related models
+│   │   ├── common/             # Common/shared models
+│   │   ├── configuration/      # System runtime configuration
+│   │   ├── connections/        # Connection models
+│   │   ├── container/          # DI container models
+│   │   ├── contracts/          # Contract models
+│   │   ├── core/               # Core domain models
+│   │   ├── dedup/              # Deduplication models
+│   │   ├── detection/          # Detection models
+│   │   ├── discovery/          # Discovery models
+│   │   ├── docker/             # Docker-related models
+│   │   ├── endpoints/          # Endpoint models
+│   │   ├── errors/             # Error models
+│   │   ├── event_bus/          # Event bus models
+│   │   ├── events/             # Event models
+│   │   ├── examples/           # Example/artifact configurations
+│   │   ├── fsm/                # Finite state machine models
+│   │   ├── graph/              # Graph models
+│   │   ├── health/             # Health check models
+│   │   ├── infrastructure/     # Infrastructure models
+│   │   ├── logging/            # Logging models
+│   │   ├── metadata/           # Metadata models
+│   │   ├── mixins/             # Mixin models
+│   │   ├── node_metadata/      # Node metadata models
+│   │   ├── nodes/              # Node models
+│   │   ├── operations/         # Operation models
+│   │   ├── orchestrator/       # Orchestrator models
+│   │   ├── primitives/         # Primitive type models
+│   │   ├── projection/         # Projection models
+│   │   ├── registry/           # Registry models
+│   │   ├── results/            # Result models
+│   │   ├── security/           # Security models
+│   │   ├── service/            # Service models
+│   │   ├── state/              # State models
+│   │   ├── tools/              # Tool models
+│   │   ├── types/              # Type models
+│   │   ├── utils/              # Utility models
+│   │   ├── validation/         # Validation models
+│   │   └── workflow/           # Workflow models
+│   │       ├── api/            # Workflow API interface
+│   │       └── execution/      # Workflow execution internals
 │   ├── nodes/                  # Node implementations
 │   ├── primitives/             # Primitive types
 │   ├── types/                  # Type definitions

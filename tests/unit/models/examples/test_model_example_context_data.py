@@ -9,7 +9,7 @@ from uuid import uuid4
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_trigger import EnumExecutionTrigger
-from omnibase_core.models.config.model_example_context_data import (
+from omnibase_core.models.examples.model_example_context_data import (
     ModelExampleContextData,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer

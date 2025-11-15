@@ -40,7 +40,7 @@ def fix_import_patterns(file_path: Path) -> int:
             (r"from \.\.connections\.", "from omnibase_core.models.connections."),
             (r"from \.\.nodes\.", "from omnibase_core.models.nodes."),
             (r"from \.\.cli\.", "from omnibase_core.models.cli."),
-            (r"from \.\.config\.", "from omnibase_core.models.config."),
+            (r"from \.\.config\.", "from omnibase_core.models.examples."),
             (r"from \.\.contracts\.", "from omnibase_core.models.contracts."),
             (r"from \.\.validation\.", "from omnibase_core.models.validation."),
             (r"from \.\.utils\.", "from omnibase_core.models.utils."),

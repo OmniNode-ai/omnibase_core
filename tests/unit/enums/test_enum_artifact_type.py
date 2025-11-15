@@ -206,7 +206,7 @@ class TestEnumArtifactType:
 
     def test_artifact_type_model_integration(self):
         """Test integration with ModelArtifactTypeConfig."""
-        from omnibase_core.models.config.model_artifact_type_config import (
+        from omnibase_core.models.examples.model_artifact_type_config import (
             ModelArtifactTypeConfig,
         )
 
