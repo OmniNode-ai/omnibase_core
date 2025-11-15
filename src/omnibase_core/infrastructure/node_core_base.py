@@ -168,8 +168,11 @@ class NodeCoreBase(ABC):
         try:
             start_time = time.time()
 
-            # Validate container
-            if not hasattr(self.container, "get_service"):
+            # Validate container - use try/except to avoid hasattr() deadlock with Mock
+            try:
+                # Try to access get_service method - will raise AttributeError if missing
+                _ = self.container.get_service
+            except AttributeError:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
                     message="Container does not implement get_service method",
@@ -367,74 +370,77 @@ class NodeCoreBase(ABC):
                 # Contract service not available - that's OK
                 contract_service = None
 
-            if contract_service is not None and hasattr(
-                contract_service, "get_node_contract"
-            ):
-                # Load contract for this node type
-                contract_data_raw = contract_service.get_node_contract(
-                    self.__class__.__name__,
-                )
-                if contract_data_raw:
-                    # Store raw contract data (specialized nodes override with their own validation)
-                    self.contract_data = contract_data_raw
+            # Check contract service - use try/except to avoid hasattr() deadlock with Mock
+            if contract_service is not None:
+                try:
+                    # Load contract for this node type
+                    contract_data_raw = contract_service.get_node_contract(
+                        self.__class__.__name__,
+                    )
+                    if contract_data_raw:
+                        # Store raw contract data (specialized nodes override with their own validation)
+                        self.contract_data = contract_data_raw
 
-                    # Extract version if present
-                    if (
-                        isinstance(contract_data_raw, dict)
-                        and "version" in contract_data_raw
-                    ):
-                        version_value = contract_data_raw["version"]
-                        if isinstance(version_value, str):
-                            # Parse version string manually (no ModelSemVer.parse())
-                            try:
-                                parts = version_value.split(".")
-                                if len(parts) >= 2:
-                                    major = int(parts[0])
-                                    minor = int(parts[1])
-                                    patch = int(parts[2]) if len(parts) > 2 else 0
-                                    object.__setattr__(
-                                        self,
-                                        "version",
-                                        ModelSemVer(
-                                            major=major, minor=minor, patch=patch
-                                        ),
-                                    )
-                                else:
-                                    # Invalid version format, keep default
+                        # Extract version if present
+                        if (
+                            isinstance(contract_data_raw, dict)
+                            and "version" in contract_data_raw
+                        ):
+                            version_value = contract_data_raw["version"]
+                            if isinstance(version_value, str):
+                                # Parse version string manually (no ModelSemVer.parse())
+                                try:
+                                    parts = version_value.split(".")
+                                    if len(parts) >= 2:
+                                        major = int(parts[0])
+                                        minor = int(parts[1])
+                                        patch = int(parts[2]) if len(parts) > 2 else 0
+                                        object.__setattr__(
+                                            self,
+                                            "version",
+                                            ModelSemVer(
+                                                major=major, minor=minor, patch=patch
+                                            ),
+                                        )
+                                    else:
+                                        # Invalid version format, keep default
+                                        emit_log_event(
+                                            LogLevel.WARNING,
+                                            f"Invalid version format: {version_value}",
+                                            {"node_id": self.node_id},
+                                        )
+                                except (ValueError, IndexError) as e:
+                                    # Parsing failed, keep default
                                     emit_log_event(
                                         LogLevel.WARNING,
-                                        f"Invalid version format: {version_value}",
+                                        f"Failed to parse version: {version_value}: {e}",
                                         {"node_id": self.node_id},
                                     )
-                            except (ValueError, IndexError) as e:
-                                # Parsing failed, keep default
+                            elif isinstance(version_value, ModelSemVer):
+                                object.__setattr__(self, "version", version_value)
+                            else:
+                                # Invalid version type, keep default
                                 emit_log_event(
                                     LogLevel.WARNING,
-                                    f"Failed to parse version: {version_value}: {e}",
+                                    f"Invalid version type: {type(version_value)}",
                                     {"node_id": self.node_id},
                                 )
-                        elif isinstance(version_value, ModelSemVer):
-                            object.__setattr__(self, "version", version_value)
-                        else:
-                            # Invalid version type, keep default
-                            emit_log_event(
-                                LogLevel.WARNING,
-                                f"Invalid version type: {type(version_value)}",
-                                {"node_id": self.node_id},
-                            )
 
-                    emit_log_event(
-                        LogLevel.INFO,
-                        f"Contract loaded for {self.__class__.__name__}",
-                        {
-                            "node_id": self.node_id,
-                            "contract_keys": (
-                                list(contract_data_raw.keys())
-                                if isinstance(contract_data_raw, dict)
-                                else []
-                            ),
-                        },
-                    )
+                        emit_log_event(
+                            LogLevel.INFO,
+                            f"Contract loaded for {self.__class__.__name__}",
+                            {
+                                "node_id": self.node_id,
+                                "contract_keys": (
+                                    list(contract_data_raw.keys())
+                                    if isinstance(contract_data_raw, dict)
+                                    else []
+                                ),
+                            },
+                        )
+                except AttributeError:
+                    # Contract service doesn't have get_node_contract method - that's OK
+                    pass
 
         except Exception as e:
             # Contract loading failure is not fatal
@@ -481,22 +487,27 @@ class NodeCoreBase(ABC):
                 # Event bus not available - that's OK
                 event_bus = None
 
-            if event_bus is not None and hasattr(event_bus, "emit_event"):
-                # node_id is already a UUID, use it directly
-                correlation_id = self.node_id
-                event_data = {
-                    "node_id": self.node_id,
-                    "node_type": self.__class__.__name__,
-                    "event_type": event_type,
-                    "timestamp": datetime.now().isoformat(),
-                    **metadata,
-                }
+            # Check event bus - use try/except to avoid hasattr() deadlock with Mock
+            if event_bus is not None:
+                try:
+                    # node_id is already a UUID, use it directly
+                    correlation_id = self.node_id
+                    event_data = {
+                        "node_id": self.node_id,
+                        "node_type": self.__class__.__name__,
+                        "event_type": event_type,
+                        "timestamp": datetime.now().isoformat(),
+                        **metadata,
+                    }
 
-                await event_bus.emit_event(
-                    event_type=f"node.{event_type}",
-                    payload=event_data,
-                    correlation_id=correlation_id,
-                )
+                    await event_bus.emit_event(
+                        event_type=f"node.{event_type}",
+                        payload=event_data,
+                        correlation_id=correlation_id,
+                    )
+                except AttributeError:
+                    # Event bus doesn't have emit_event method - that's OK
+                    pass
 
         except Exception as e:
             # Event emission failure is not fatal

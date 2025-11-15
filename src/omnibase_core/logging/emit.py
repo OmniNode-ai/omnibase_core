@@ -605,7 +605,8 @@ def _detect_node_id_from_context() -> LogNodeIdentifier:
 
             if frame and "self" in frame.f_locals:
                 obj = frame.f_locals["self"]
-                if hasattr(obj, "node_id"):
+                # Check for node_id attribute - use try/except to avoid hasattr() deadlock with Mock
+                try:
                     node_id = obj.node_id
                     # Type narrowing: ensure UUID | str return
                     return (
@@ -613,12 +614,15 @@ def _detect_node_id_from_context() -> LogNodeIdentifier:
                         if not isinstance(node_id, (UUID, str))
                         else node_id
                     )
-                if (
-                    hasattr(obj, "__class__")
-                    and "node" in obj.__class__.__name__.lower()
-                ):
-                    class_name: str = obj.__class__.__name__
-                    return class_name
+                except AttributeError:
+                    pass
+                # Check for node class - use try/except to avoid hasattr() deadlock with Mock
+                try:
+                    if "node" in obj.__class__.__name__.lower():
+                        class_name: str = obj.__class__.__name__
+                        return class_name
+                except AttributeError:
+                    pass
 
         # Fallback to module name
         caller_frame = inspect.currentframe()
