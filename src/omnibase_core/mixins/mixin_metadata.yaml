@@ -2460,3 +2460,310 @@ mixin_serialization:
       date: "2025-10-14"
       changes:
         - "Initial metadata definition"
+
+# =============================================================================
+# MixinFSMExecution - Declarative FSM Execution
+# =============================================================================
+mixin_fsm_execution:
+  name: "MixinFSMExecution"
+  description: "Declarative FSM execution from YAML contracts - enables state machines without custom code"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "declarative_execution"
+
+  # Dependencies
+  requires:
+    - "omnibase_core.models.contracts.subcontracts.model_fsm_subcontract"
+    - "omnibase_core.utils.fsm_executor"
+    - "omnibase_core.models.model_intent"
+    - "pydantic"
+
+  # Compatibility
+  compatible_with:
+    - "MixinEventBus" # Can emit FSM events
+    - "MixinLogging" # Can log state transitions
+    - "MixinMetrics" # Can track FSM metrics
+    - "MixinHealthCheck" # Can report FSM health
+    - "MixinValidation" # Can validate FSM contracts
+    - "MixinSerialization" # Can serialize FSM state
+
+  incompatible_with: []
+
+  # Configuration schema
+  config_schema:
+    auto_validate:
+      type: "boolean"
+      default: true
+      description: "Automatically validate FSM contract on initialization"
+
+    strict_mode:
+      type: "boolean"
+      default: true
+      description: "Fail on validation errors (vs. warnings)"
+
+    enable_state_persistence:
+      type: "boolean"
+      default: true
+      description: "Enable state persistence intents"
+
+    enable_metrics:
+      type: "boolean"
+      default: true
+      description: "Enable FSM metrics intents"
+
+    enable_history_tracking:
+      type: "boolean"
+      default: true
+      description: "Track state transition history"
+
+  # Usage examples
+  usage_examples:
+    - "Reducer nodes with FSM-driven state management"
+    - "Orchestrator nodes with workflow state machines"
+    - "Data processing pipelines with state-based coordination"
+    - "Event-driven systems with complex state logic"
+    - "Business process automation with declarative workflows"
+
+  # Preset configurations
+  presets:
+    simple:
+      description: "Simple FSM with minimal tracking"
+      config:
+        auto_validate: true
+        strict_mode: true
+        enable_state_persistence: false
+        enable_metrics: false
+        enable_history_tracking: false
+
+    production:
+      description: "Full FSM with all features enabled"
+      config:
+        auto_validate: true
+        strict_mode: true
+        enable_state_persistence: true
+        enable_metrics: true
+        enable_history_tracking: true
+
+    debug:
+      description: "FSM with extensive tracking for debugging"
+      config:
+        auto_validate: true
+        strict_mode: false
+        enable_state_persistence: true
+        enable_metrics: true
+        enable_history_tracking: true
+
+  # Generated code patterns
+  code_patterns:
+    basic_usage: |
+      class NodeMyReducer(NodeReducerDeclarative, MixinFSMExecution):
+          async def process(self, input_data):
+              # FSM-driven processing
+              result = await self.execute_fsm_transition(
+                  self.contract.state_transitions,
+                  trigger=input_data.trigger,
+                  context={"data": input_data.data}
+              )
+
+              return ModelReducerOutput(
+                  result=result.new_state,
+                  intents=result.intents
+              )
+
+    with_validation: |
+      class NodeMyReducer(NodeReducerDeclarative, MixinFSMExecution):
+          def __init__(self, container, contract):
+              super().__init__(container)
+              self.contract = contract
+
+              # Validate FSM contract
+              errors = await self.validate_fsm_contract(
+                  self.contract.state_transitions
+              )
+              if errors:
+                  raise ValidationError(f"FSM invalid: {errors}")
+
+    with_terminal_check: |
+      class NodeMyReducer(NodeReducerDeclarative, MixinFSMExecution):
+          async def process(self, input_data):
+              # Execute transition
+              result = await self.execute_fsm_transition(
+                  self.contract.state_transitions,
+                  trigger=input_data.trigger,
+                  context={"data": input_data.data}
+              )
+
+              # Check if reached terminal state
+              if self.is_terminal_state(self.contract.state_transitions):
+                  # Emit completion intent
+                  result.intents.append(
+                      ModelIntent(
+                          intent_type="fsm_completed",
+                          target="completion_handler",
+                          payload={"final_state": result.new_state}
+                      )
+                  )
+
+              return ModelReducerOutput(
+                  result=result.new_state,
+                  intents=result.intents
+              )
+
+  # Integration patterns
+  integration_patterns:
+    reducer_node:
+      description: "FSM-driven reducer node"
+      pattern: |
+        # contracts/reducer_metrics.yaml
+        node_type: REDUCER
+        state_transitions:
+          state_machine_name: metrics_aggregation
+          states:
+            - state_name: idle
+              entry_actions: [log_ready]
+            - state_name: collecting
+              entry_actions: [start_collection]
+              exit_actions: [stop_collection]
+            - state_name: aggregating
+              entry_actions: [initialize_aggregation]
+            - state_name: completed
+              is_terminal: true
+          transitions:
+            - from_state: idle
+              to_state: collecting
+              trigger: collect_metrics
+            - from_state: collecting
+              to_state: aggregating
+              trigger: data_ready
+            - from_state: aggregating
+              to_state: completed
+              trigger: aggregation_done
+
+    orchestrator_node:
+      description: "FSM for workflow state tracking"
+      pattern: |
+        # Track overall workflow state
+        async def execute_workflow(self, input_data):
+            # Transition to running
+            await self.execute_fsm_transition(
+                self.contract.state_transitions,
+                trigger="workflow_start",
+                context={"workflow_id": input_data.workflow_id}
+            )
+
+            # Execute workflow steps...
+
+            # Transition to completed
+            result = await self.execute_fsm_transition(
+                self.contract.state_transitions,
+                trigger="workflow_complete",
+                context={"results": final_results}
+            )
+
+  # Examples
+  examples:
+    - title: "Metrics Aggregation FSM"
+      description: "State machine for metrics aggregation lifecycle"
+      code: |
+        # No custom Python code needed!
+        # FSM defined entirely in YAML contract
+
+        # contracts/reducer_metrics.yaml
+        state_transitions:
+          state_machine_name: metrics_aggregation
+          states:
+            - state_name: idle
+              state_type: operational
+              entry_actions: [log_fsm_ready]
+
+            - state_name: collecting
+              state_type: operational
+              entry_actions: [start_collection_timer]
+              exit_actions: [stop_collection_timer]
+              validation_rules: [validate_data_sources]
+
+            - state_name: aggregating
+              state_type: operational
+              entry_actions: [initialize_aggregation]
+
+            - state_name: completed
+              state_type: terminal
+              is_terminal: true
+              entry_actions: [emit_completion_event]
+
+          transitions:
+            - from_state: idle
+              to_state: collecting
+              trigger: collect_metrics
+              conditions:
+                - condition_name: has_data_sources
+                  condition_type: field_check
+                  expression: "data_sources min_length 1"
+                  required: true
+
+            - from_state: collecting
+              to_state: aggregating
+              trigger: data_ready
+
+            - from_state: aggregating
+              to_state: completed
+              trigger: aggregation_done
+
+          persistence_enabled: true
+          recovery_enabled: true
+
+    - title: "Data Pipeline State Machine"
+      description: "FSM for data processing pipeline stages"
+      code: |
+        # contracts/pipeline_fsm.yaml
+        state_transitions:
+          state_machine_name: data_pipeline
+          states:
+            - state_name: pending
+            - state_name: fetching
+            - state_name: validating
+            - state_name: transforming
+            - state_name: persisting
+            - state_name: success
+              is_terminal: true
+            - state_name: failed
+              is_terminal: true
+              state_type: error
+
+          transitions:
+            - from_state: pending
+              to_state: fetching
+              trigger: start_pipeline
+
+            - from_state: fetching
+              to_state: validating
+              trigger: data_fetched
+
+            - from_state: validating
+              to_state: transforming
+              trigger: validation_passed
+
+            - from_state: validating
+              to_state: failed
+              trigger: validation_failed
+
+            - from_state: transforming
+              to_state: persisting
+              trigger: transformation_complete
+
+            - from_state: persisting
+              to_state: success
+              trigger: persistence_complete
+
+            - from_state: "*"
+              to_state: failed
+              trigger: error_occurred
+
+  # Version history
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-11-16"
+      changes:
+        - "Initial implementation for Phase 1"
+        - "FSM execution from YAML contracts"
+        - "Intent-based side effect emission"
+        - "Pure FSM pattern support"
