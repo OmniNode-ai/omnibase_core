@@ -4,6 +4,136 @@
 **Difficulty**: Intermediate
 **Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md), [EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md)
 
+---
+
+## 🚀 Declarative FSM Architecture (Recommended Path)
+
+> **IMPORTANT UPDATE (2025-11-16)**: omnibase_core provides **comprehensive FSM subcontract infrastructure** for building reducer state machines **without custom Python code**. See [Declarative Workflow Findings](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for full details.
+
+### ✅ Available Today: FSM Subcontract Infrastructure
+
+The omnibase_core codebase includes complete Pydantic models for declarative FSMs:
+
+- **`ModelFSMSubcontract`** - Complete state machine definitions
+- **`ModelFSMStateDefinition`** - State definitions with entry/exit actions
+- **`ModelFSMStateTransition`** - Transition specifications with conditions
+- **`ModelFSMOperation`** - Operation definitions with rollback support
+
+**Example YAML Contract** (Infrastructure exists, runtime in development):
+
+```yaml
+# contracts/reducer_metrics_aggregator.yaml
+node_type: REDUCER
+node_name: metrics_aggregator
+
+state_transitions:
+  state_machine_name: "metrics_aggregation_fsm"
+  state_machine_version: "1.0.0"
+  description: "FSM for aggregating metrics with conflict resolution"
+
+  # State definitions
+  states:
+    - state_name: idle
+      state_type: operational
+      is_terminal: false
+      entry_actions: ["log_ready"]
+
+    - state_name: collecting
+      state_type: operational
+      entry_actions: ["start_collection_timer"]
+      exit_actions: ["stop_collection_timer"]
+      validation_rules: ["validate_data_sources"]
+
+    - state_name: aggregating
+      state_type: operational
+      entry_actions: ["initialize_aggregation"]
+      validation_rules: ["validate_aggregation_strategy"]
+
+    - state_name: completed
+      state_type: terminal
+      is_terminal: true
+      entry_actions: ["emit_completion_event"]
+
+    - state_name: error
+      state_type: error
+      is_terminal: true
+
+  # Transitions
+  transitions:
+    - transition_name: start_collection
+      from_state: idle
+      to_state: collecting
+      trigger: collect_metrics
+      is_atomic: true
+      retry_enabled: true
+
+    - transition_name: begin_aggregation
+      from_state: collecting
+      to_state: aggregating
+      trigger: data_ready
+      conditions:
+        - condition_type: field_check
+          field: "data_sources"
+          operator: min_length
+          value: 1
+
+    - transition_name: complete_aggregation
+      from_state: aggregating
+      to_state: completed
+      trigger: aggregation_done
+
+    - transition_name: handle_error
+      from_state: "*"  # Wildcard: from any state
+      to_state: error
+      trigger: error_occurred
+
+  # FSM Configuration
+  persistence_enabled: true
+  recovery_enabled: true
+  rollback_enabled: true
+  checkpoint_interval_ms: 30000
+  conflict_resolution_strategy: priority_based
+  strict_validation_enabled: true
+```
+
+### 🎯 Vision: Minimal Customization Required
+
+**Goal**: Most reducer state machines should require **ZERO custom Python code**:
+
+1. **Define FSM in YAML** - States, transitions, actions
+2. **Validation automatic** - Pydantic models validate structure
+3. **Execution automatic** - Runtime FSM executor handles transitions
+
+**When Custom Code IS Needed**:
+- Custom aggregation algorithms beyond built-in strategies
+- Complex validation rules not expressible in YAML
+- Advanced conflict resolution logic
+
+### 📊 Current Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| FSM Subcontract Models | ✅ Complete | Full state machine support |
+| Pydantic Validation | ✅ Complete | Comprehensive validation |
+| Subcontract Composition | ✅ Complete | ModelContractReducer |
+| FSM Runtime Executor | 🚧 In Development | ServiceFSMExecutor planned |
+| Declarative Base Classes | 🚧 Planned | NodeReducerDeclarative |
+| Documentation | 🚧 This Tutorial | Shows current implementation |
+
+**See**: [DECLARATIVE_WORKFLOW_FINDINGS.md](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for implementation roadmap.
+
+---
+
+### Tutorial Approach
+
+This tutorial shows the **current implementation pattern** using custom Python code with **pure FSM principles** (Intent emission). This is a **temporary pattern** until declarative FSM runtime services are complete.
+
+**Learning Path**:
+1. ✅ Learn pure FSM pattern with Intents (this tutorial)
+2. 🚧 Migrate to declarative FSM YAML contracts (future updates)
+
+---
+
 ## What You'll Build
 
 In this tutorial, you'll build a production-ready **Metrics Aggregation Node** as a **pure FSM** that:

@@ -4,6 +4,95 @@
 **Difficulty**: Advanced
 **Prerequisites**: All other node tutorials (COMPUTE, EFFECT, REDUCER)
 
+---
+
+## 🚀 Declarative Workflow Architecture (Recommended Path)
+
+> **IMPORTANT UPDATE (2025-11-16)**: omnibase_core provides **comprehensive YAML contract infrastructure** for building orchestrator workflows **without custom Python code**. See [Declarative Workflow Findings](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for full details.
+
+### ✅ Available Today: YAML Contract Infrastructure
+
+The omnibase_core codebase includes complete Pydantic models for declarative workflows:
+
+- **`ModelWorkflowCoordinationSubcontract`** - Complete workflow definitions
+- **`ModelWorkflowDefinition`** - Execution graphs and coordination rules
+- **`ModelExecutionGraph`** - DAG of workflow steps with dependencies
+- **`ModelWorkflowStep`** - Individual step configurations
+
+**Example YAML Contract** (Infrastructure exists, runtime in development):
+
+```yaml
+# contracts/orchestrator_data_pipeline.yaml
+node_type: ORCHESTRATOR
+node_name: data_pipeline_orchestrator
+
+workflow_coordination:
+  execution_mode: sequential  # or parallel, mixed
+  max_parallel_branches: 4
+  checkpoint_enabled: true
+  rollback_enabled: true
+
+  workflow_definition:
+    execution_graph:
+      steps:
+        - step_id: fetch_data
+          step_name: "Fetch Data from Sources"
+          action_type: EFFECT
+          target_node_type: NodeDataFetcher
+          timeout_ms: 10000
+
+        - step_id: validate_data
+          step_name: "Validate Data Quality"
+          action_type: COMPUTE
+          target_node_type: NodeDataValidator
+          dependencies: [fetch_data]
+          timeout_ms: 5000
+
+        - step_id: aggregate_metrics
+          step_name: "Aggregate Metrics"
+          action_type: REDUCE
+          target_node_type: NodeMetricsAggregator
+          dependencies: [validate_data]
+          timeout_ms: 8000
+```
+
+### 🎯 Vision: Minimal Customization Required
+
+**Goal**: Most orchestrator workflows should require **ZERO custom Python code**:
+
+1. **Define workflow in YAML** - Steps, dependencies, execution mode
+2. **Validation automatic** - Pydantic models validate structure
+3. **Execution automatic** - Runtime services execute declaratively
+
+**When Custom Code IS Needed**:
+- Custom conditional branching logic
+- Advanced error recovery strategies
+- Complex coordination patterns not supported by YAML
+
+### 📊 Current Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| YAML Contract Models | ✅ Complete | Full Pydantic validation |
+| Subcontract Composition | ✅ Complete | ModelContractOrchestrator |
+| Runtime Executor Services | 🚧 In Development | ServiceWorkflowExecutor planned |
+| Declarative Base Classes | 🚧 Planned | NodeOrchestratorDeclarative |
+| Documentation | 🚧 This Tutorial | Shows current implementation |
+
+**See**: [DECLARATIVE_WORKFLOW_FINDINGS.md](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for implementation roadmap.
+
+---
+
+### Tutorial Approach
+
+This tutorial shows the **current implementation pattern** using custom Python code. This is a **temporary pattern** until declarative runtime services are complete.
+
+**Learning Path**:
+1. ✅ Learn current orchestrator implementation (this tutorial)
+2. 🚧 Migrate to declarative YAML contracts (future updates)
+
+---
+
 ## What You'll Build
 
 In this tutorial, you'll build a production-ready **Data Processing Pipeline Orchestrator** that:
