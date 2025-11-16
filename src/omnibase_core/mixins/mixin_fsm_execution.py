@@ -28,7 +28,8 @@ class MixinFSMExecution:
     custom code. State transitions are driven entirely by FSM subcontract.
 
     Usage:
-        class NodeMyReducer(NodeReducerDeclarative, MixinFSMExecution):
+        # Note: Use NodeCoreBase for now. NodeReducerDeclarative coming in Phase 3.
+        class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
             # No custom FSM code needed - driven by YAML contract
             pass
 
@@ -103,10 +104,9 @@ class MixinFSMExecution:
         # Update internal state if successful
         if result.success:
             # Create new FSMState with updated current state and history
-            history = (
-                (self._fsm_state.history if self._fsm_state else [])
-                + [result.old_state]
-            )
+            history = (self._fsm_state.history if self._fsm_state else []) + [
+                result.old_state
+            ]
             self._fsm_state = FSMState(
                 current_state=result.new_state,
                 context=context,

@@ -392,6 +392,10 @@ class ModelPipelineOrchestratorInput(BaseModel):
 
 ## Step 2: Implement the ORCHESTRATOR Node
 
+### Quick Start: Using the Convenience Wrapper ✅ Recommended
+
+For most use cases, use the pre-configured `NodeOrchestrator` class that includes built-in ORCHESTRATOR functionality:
+
 **File**: `src/your_project/nodes/node_pipeline_orchestrator.py`
 
 ```python
@@ -406,7 +410,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from typing import Any
 
-from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_orchestrator_types import (
     EnumExecutionMode,
@@ -425,7 +429,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from .model_pipeline_orchestrator_input import ModelPipelineOrchestratorInput
 
 
-class NodePipelineOrchestrator(NodeCoreBase):
+class NodePipelineOrchestrator(NodeOrchestrator):
     """
     Data Processing Pipeline Orchestrator.
 
@@ -437,6 +441,14 @@ class NodePipelineOrchestrator(NodeCoreBase):
     5. Storage (EFFECT node)
 
     Supports SEQUENTIAL, PARALLEL, and BATCH execution modes.
+
+    Inherits from NodeOrchestrator which provides:
+    - Workflow step execution
+    - Action emission and coordination
+    - Dependency resolution
+    - Execution mode management (SEQUENTIAL, PARALLEL, BATCH)
+    - Lease management for single-writer semantics
+    - Error handling and recovery
     """
 
     def __init__(self, container: ModelONEXContainer) -> None:
@@ -765,6 +777,17 @@ class NodePipelineOrchestrator(NodeCoreBase):
         )
 ```python
 
+**What `NodeOrchestrator` Provides**:
+- ✅ **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
+- ✅ **Workflow Execution**: Built-in execution for SEQUENTIAL, PARALLEL, and BATCH modes
+- ✅ **Action Management**: Action emission, tracking, and coordination
+- ✅ **Dependency Resolution**: Automatic dependency graph construction and execution ordering
+- ✅ **Lease Management**: Single-writer semantics with lease_id tracking
+- ✅ **Epoch Control**: Optimistic concurrency control for distributed scenarios
+- ✅ **Error Recovery**: Built-in error handling and compensation logic
+- ✅ **Performance Tracking**: Metrics for workflow execution time, step completion
+- ✅ **Configuration Support**: Automatic config loading from `NodeConfigProvider`
+
 **Key Implementation Points**:
 
 1. **Action Creation**: Each workflow step contains actions representing operations
@@ -774,6 +797,53 @@ class NodePipelineOrchestrator(NodeCoreBase):
 5. **Execution Mode Support**: The orchestrator supports SEQUENTIAL, PARALLEL, BATCH modes
 6. **Delegation Pattern**: Complex orchestration logic is delegated to `NodeOrchestrator` base class
 7. **Type Safety**: All actions use `EnumActionType` for type specification
+
+### Advanced: Custom Base Class (When You Need Full Control)
+
+If you need custom mixin composition or want to build from scratch:
+
+```python
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+class NodePipelineOrchestrator(NodeCoreBase):
+    """
+    Custom ORCHESTRATOR node built from NodeCoreBase.
+
+    Use this approach when:
+    - You need custom mixin combinations
+    - You want fine-grained control over workflow execution
+    - You're implementing non-standard orchestration patterns
+    """
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+
+        # Manually initialize orchestrator-specific features
+        # (NodeOrchestrator does this automatically)
+        self.active_workflows = {}
+        self.emitted_actions = {}
+        self.workflow_states = {}
+        self.dependency_graph = {}
+        # ... rest of manual setup
+
+    async def process(self, input_data):
+        # Custom workflow execution logic
+        # (NodeOrchestrator provides this automatically)
+        pass
+
+    # ... rest of implementation
+```
+
+**When to use custom base**:
+- Custom workflow execution strategies beyond built-in modes
+- Non-standard action coordination patterns
+- Special dependency resolution logic
+
+**When to use NodeOrchestrator** (recommended):
+- Standard ORCHESTRATOR operations (multi-step workflows)
+- Need built-in execution modes (SEQUENTIAL, PARALLEL, BATCH)
+- Want dependency resolution and lease management
+- Following ONEX best practices
 
 ---
 

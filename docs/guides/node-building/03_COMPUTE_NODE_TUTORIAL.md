@@ -216,6 +216,10 @@ class ModelPriceCalculatorOutput(BaseModel):
 
 Now build the actual node.
 
+### Quick Start: Using the Convenience Wrapper ✅ Recommended
+
+For most use cases, use the pre-configured `NodeCompute` class that includes built-in COMPUTE functionality:
+
 **File**: `src/your_project/nodes/node_price_calculator_compute.py`
 
 ```python
@@ -223,7 +227,7 @@ Now build the actual node.
 
 import time
 from typing import Dict
-from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -232,7 +236,7 @@ from .model_price_calculator_input import ModelPriceCalculatorInput
 from .model_price_calculator_output import ModelPriceCalculatorOutput
 
 
-class NodePriceCalculatorCompute(NodeCoreBase):
+class NodePriceCalculatorCompute(NodeCompute):
     """
     COMPUTE node for price calculations.
 
@@ -470,13 +474,61 @@ class NodePriceCalculatorCompute(NodeCoreBase):
         }
 ```python
 
-**Key points**:
-- ✅ Inherits from `NodeCoreBase`
+**What `NodeCompute` Provides**:
+- ✅ **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
+- ✅ **Computation Cache**: Built-in `ModelComputeCache` with TTL and eviction policies
+- ✅ **Thread Pool**: `ThreadPoolExecutor` for parallel computation support
+- ✅ **Computation Registry**: Register and manage computation functions
+- ✅ **Performance Tracking**: Built-in metrics for cache hits, processing time
+- ✅ **Configuration Support**: Automatic config loading from `NodeConfigProvider`
+
+**Key Implementation Points**:
+- ✅ Inherits from `NodeCompute` convenience wrapper
 - ✅ Typed `process()` method
-- ✅ Caching for performance
+- ✅ Caching already available via base class
 - ✅ Comprehensive error handling
-- ✅ Performance tracking
+- ✅ Performance tracking built-in
 - ✅ Clear separation of concerns
+
+### Advanced: Custom Base Class (When You Need Full Control)
+
+If you need custom mixin composition or want to build from scratch:
+
+```python
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+class NodePriceCalculatorCompute(NodeCoreBase):
+    """
+    Custom COMPUTE node built from NodeCoreBase.
+
+    Use this approach when:
+    - You need custom mixin combinations
+    - You want fine-grained control over initialization
+    - You're implementing non-standard patterns
+    """
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+
+        # Manually initialize computation-specific features
+        # (NodeCompute does this automatically)
+        self._cache = {}
+        self.computation_count = 0
+        self.cache_hits = 0
+
+    # ... rest of implementation
+```
+
+**When to use custom base**:
+- Custom mixin requirements beyond NodeCompute
+- Non-standard caching strategies
+- Special initialization needs
+
+**When to use NodeCompute** (recommended):
+- Standard COMPUTE operations
+- Need built-in caching and thread pooling
+- Want configuration auto-loading
+- Following ONEX best practices
 
 ## Step 4: Write Tests
 

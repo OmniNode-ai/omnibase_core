@@ -10,18 +10,25 @@
 
 > **IMPORTANT UPDATE (2025-11-16)**: omnibase_core provides **comprehensive FSM subcontract infrastructure** for building reducer state machines **without custom Python code**. See [Declarative Workflow Findings](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for full details.
 
-### ✅ Available Today: FSM Execution Infrastructure (v0.2.0+)
+### ✅ Available Today: FSM Execution Infrastructure (v0.3.2+)
 
-**Status**: ✅ **FULLY IMPLEMENTED** as of omnibase_core v0.2.0 (2025-11-16)
+> **Status**: ✅ **IMPLEMENTED** as of omnibase_core v0.3.2 (2025-11-16)
 
-The omnibase_core codebase now includes:
-- **Pydantic Models**: Complete FSM subcontract infrastructure
-- **Runtime Execution**: `utils/fsm_executor.py` with pure functions for FSM transition execution
-- **Mixin Integration**: `MixinFSMExecution` for seamless node integration
-- **Declarative Nodes**: `NodeReducerDeclarative` base class for zero-code FSM reducers
-- **Production Ready**: 18 unit tests, 610+ test lines, 100% type safety
+The omnibase_core codebase now includes complete FSM execution capabilities:
 
-**Example YAML Contract** (fully functional, production-ready):
+**Infrastructure** (Models & Contracts):
+- **`ModelFSMSubcontract`** - Complete state machine definitions
+- **`ModelFSMStateDefinition`** - State definitions with entry/exit actions
+- **`ModelFSMStateTransition`** - Transition specifications with conditions
+- **`ModelFSMOperation`** - Operation definitions with rollback support
+
+**Runtime Execution** (NEW in v0.3.2):
+- **`utils/fsm_executor.py`** - Pure function FSM execution (548 lines)
+- **`MixinFSMExecution`** - Mixin for node integration (237 lines)
+- **Comprehensive Tests** - 18 unit tests, 610+ test lines
+- **100% Type Safety** - Zero `Any` types, full mypy strict compliance
+
+**Example YAML Contract** (fully functional):
 
 ```yaml
 # contracts/reducer_metrics_aggregator.yaml
@@ -784,6 +791,65 @@ class NodeMetricsAggregatorReducer(NodeReducer):
             },
         )
 ```python
+
+**What `NodeReducer` Provides**:
+- ✅ **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
+- ✅ **Reduction Functions**: Registry for different reduction types (fold, aggregate, merge)
+- ✅ **Streaming Support**: Batch, incremental, and windowed processing modes
+- ✅ **Conflict Resolution**: Built-in strategies (sum, average, max, min, latest, merge)
+- ✅ **Streaming Windows**: Window management for time-based aggregation
+- ✅ **Performance Tracking**: Built-in metrics for reduction operations
+- ✅ **Configuration Support**: Automatic config loading from `NodeConfigProvider`
+- ✅ **Pure FSM Pattern**: Designed for stateless operation with Intent emission
+
+**Key Implementation Points**:
+- ✅ Inherits from `NodeReducer` convenience wrapper
+- ✅ Pure FSM pattern - no mutable state
+- ✅ Intent emission for side effects
+- ✅ Streaming support already available
+- ✅ Conflict resolution built-in
+
+### Advanced: Custom Base Class (When You Need Full Control)
+
+If you need custom mixin composition or want to build from scratch:
+
+```python
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from collections import defaultdict
+
+class NodeMetricsAggregatorReducer(NodeCoreBase):
+    """
+    Custom REDUCER node built from NodeCoreBase.
+
+    Use this approach when:
+    - You need custom mixin combinations
+    - You want fine-grained control over reduction logic
+    - You're implementing non-standard aggregation patterns
+    """
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+
+        # Manually initialize reducer-specific features
+        # (NodeReducer does this automatically)
+        self.reduction_functions = {}
+        self.reduction_metrics = defaultdict(lambda: {"count": 0})
+        self.active_windows = {}
+        # ... rest of manual setup
+
+    # ... rest of implementation
+```
+
+**When to use custom base**:
+- Custom reduction algorithms beyond built-in strategies
+- Non-standard streaming or windowing logic
+- Special conflict resolution needs
+
+**When to use NodeReducer** (recommended):
+- Standard REDUCER operations (aggregation, folding, merging)
+- Need built-in streaming support
+- Want conflict resolution strategies
+- Following ONEX pure FSM pattern
 
 ---
 

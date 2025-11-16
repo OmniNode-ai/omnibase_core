@@ -30,13 +30,35 @@ This document provides a complete implementation plan for closing the gap betwee
 
 ---
 
+## 🎯 Current Implementation Status (2025-11-16)
+
+| Phase | Status | Completion | PR | Description |
+|-------|--------|-----------|-----|-------------|
+| **Phase 1: FSM Execution** | ✅ **Complete** | 100% | #83 | FSM execution infrastructure (utils, mixins, tests) |
+| **Phase 2: Workflow Execution** | 🚧 Planned | 0% | TBD | Workflow execution infrastructure |
+| **Phase 3: Examples & Patterns** | ⏳ Planned | 0% | TBD | Example contracts and usage patterns |
+| **Phase 4: Migration & Examples** | ⏳ Planned | 0% | TBD | Examples, docs, migration guides |
+
+**✅ What's Available Now** (Phase 1):
+- `src/omnibase_core/utils/fsm_executor.py` - FSM execution utilities (548 lines)
+- `src/omnibase_core/mixins/mixin_fsm_execution.py` - FSM execution mixin (237 lines)
+- Comprehensive test coverage (18 test cases, 610+ test lines)
+- Mixin metadata documentation (589 lines)
+
+**🚧 What's Coming Next**:
+- Phase 2: Workflow execution utilities and mixins
+- Phase 3: Example YAML contracts showing mixin composition patterns
+- Phase 4: Migration guides and best practices documentation
+
+---
+
 ## Table of Contents
 
 1. [Architecture Alignment](#architecture-alignment)
 2. [Implementation Components](#implementation-components)
 3. [Phase 1: FSM Execution Infrastructure](#phase-1-fsm-execution-infrastructure)
 4. [Phase 2: Workflow Execution Infrastructure](#phase-2-workflow-execution-infrastructure)
-5. [Phase 3: Declarative Node Implementations](#phase-3-declarative-node-implementations)
+5. [Phase 3: Example Contracts & Usage Patterns](#phase-3-example-contracts--usage-patterns)
 6. [Phase 4: Migration & Examples](#phase-4-migration--examples)
 7. [Testing Strategy](#testing-strategy)
 8. [Success Metrics](#success-metrics)
@@ -108,20 +130,20 @@ async def execute_transition(
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              Execution Mixins (🚧 To Build)                 │
+│          Execution Mixins (Phase 1 ✅, Phase 2 🚧)          │
 │      MixinFSMExecution, MixinWorkflowExecution              │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│             Utility Modules (🚧 To Build)                   │
+│         Utility Modules (Phase 1 ✅, Phase 2 🚧)            │
 │   utils/fsm_executor.py, utils/workflow_executor.py         │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│         Declarative Base Classes (🚧 To Build)              │
-│   NodeReducerDeclarative, NodeOrchestratorDeclarative       │
+│        Node Composition via Mixins (No special base!)       │
+│   class MyNode(NodeCoreBase, MixinFSMExecution): ...        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -556,7 +578,7 @@ class MixinFSMExecution:
     custom code. State transitions are driven entirely by FSM subcontract.
 
     Usage:
-        class NodeMyReducer(NodeReducerDeclarative, MixinFSMExecution):
+        class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
             # No custom FSM code needed - driven by YAML contract
             pass
     """
@@ -693,7 +715,7 @@ mixins:
     integration_patterns:
       reducer_node:
         pattern: |
-          class NodeMetricsReducer(NodeReducerDeclarative, MixinFSMExecution):
+          class NodeMetricsReducer(NodeCoreBase, MixinFSMExecution):
               async def process(self, input_data):
                   # FSM-driven processing
                   result = await self.execute_fsm_transition(
@@ -731,6 +753,11 @@ mixins:
 ---
 
 ## Phase 2: Workflow Execution Infrastructure
+
+> ⚠️ **NOT YET IMPLEMENTED**
+> **Status**: 🚧 Planned for Sprint 2
+> **Estimated**: TBD
+> The components described below are **not yet available**. This section documents the planned implementation.
 
 **Timeline**: Sprint 2 (Week 3-4)
 **Goal**: Enable YAML-driven workflow execution for orchestrator nodes
@@ -1006,7 +1033,7 @@ class MixinWorkflowExecution:
     custom code. Workflow coordination is driven entirely by contract.
 
     Usage:
-        class NodeMyOrchestrator(NodeOrchestratorDeclarative, MixinWorkflowExecution):
+        class NodeMyOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             # No custom workflow code needed - driven by YAML contract
             pass
     """
@@ -1051,232 +1078,275 @@ class MixinWorkflowExecution:
 
 ---
 
-## Phase 3: Declarative Node Implementations
+## Phase 3: Example Contracts & Usage Patterns
+
+> ⚠️ **NOT YET IMPLEMENTED**
+> **Status**: ⏳ Planned for Sprint 3
+> **Estimated**: TBD
+> The components described below are **not yet available**. This section documents the planned implementation.
 
 **Timeline**: Sprint 3 (Week 5-6)
-**Goal**: Create declarative base classes that use mixins
+**Goal**: Comprehensive examples showing mixin composition patterns
 
-### 3.1 Declarative Reducer Base
+### Key Insight: No Special Base Classes Needed!
 
-**File**: `src/omnibase_core/nodes/node_reducer_declarative.py`
+**Important**: After implementing Phase 1 and Phase 2, we discovered that **mixins already provide all needed functionality**. You don't need `NodeReducerDeclarative` or `NodeOrchestratorDeclarative` - just compose mixins directly!
 
 ```python
-"""
-Declarative reducer node - FSM-driven from YAML contracts.
+# ✅ CORRECT - Compose mixins directly
+class NodeMetricsReducer(NodeCoreBase, MixinFSMExecution, MixinEventBus):
+    """Reducer with FSM and event bus - no special base needed!"""
 
-Requires NO custom code for standard FSM patterns.
-"""
-
-from typing import Any
-
-from omnibase_core.infrastructure.node_core_base import NodeCoreBase
-from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
-from omnibase_core.models.model_reducer_input import ModelReducerInput
-from omnibase_core.models.model_reducer_output import ModelReducerOutput
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-
-class NodeReducerDeclarative(NodeCoreBase, MixinFSMExecution):
-    """
-    Declarative reducer node driven entirely by YAML FSM contracts.
-
-    NO CUSTOM CODE NEEDED for standard FSM patterns!
-
-    Usage:
-        # 1. Define FSM in YAML contract
-        # 2. Instantiate this class with the contract
-        # 3. Done! FSM executes declaratively
-
-    Example YAML:
-        node_type: REDUCER
-        state_transitions:
-          state_machine_name: metrics_aggregation
-          states: [...]
-          transitions: [...]
-    """
-
-    def __init__(
-        self,
-        container: ModelONEXContainer,
-        contract: ModelContractReducer,
-    ) -> None:
-        """
-        Initialize declarative reducer with FSM contract.
-
-        Args:
-            container: ONEX container for DI
-            contract: Reducer contract with FSM subcontract
-        """
-        super().__init__(container)
-        self.contract = contract
-
-        # Validate FSM contract on initialization
-        if contract.state_transitions:
-            errors = await self.validate_fsm_contract(contract.state_transitions)
-            if errors:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Invalid FSM contract",
-                    context={"errors": errors},
-                )
-
-    async def process(
-        self, input_data: ModelReducerInput[Any]
-    ) -> ModelReducerOutput[Any]:
-        """
-        Process input using declarative FSM from contract.
-
-        NO CUSTOM CODE - execution driven by YAML contract!
-        """
-        if not self.contract.state_transitions:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
-                message="No FSM contract defined for declarative reducer",
-                context={"node_id": str(self.node_id)},
-            )
-
-        # Extract trigger from input
-        trigger = input_data.metadata.get("trigger", "process")
-
+    async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
         # Execute FSM transition declaratively
-        fsm_result = await self.execute_fsm_transition(
+        result = await self.execute_fsm_transition(
             self.contract.state_transitions,
-            trigger=trigger,
-            context={"input": input_data.data, "metadata": input_data.metadata},
+            trigger=input_data.metadata.get("trigger"),
+            context={"data": input_data.data}
         )
 
-        # Return result with intents
+        # Publish event using MixinEventBus
+        await self.publish_event(StateChangedEvent(
+            old_state=result.old_state,
+            new_state=result.new_state
+        ))
+
+        return ModelReducerOutput(...)
+
+# ❌ WRONG - No need for declarative base classes
+class NodeMetricsReducer(NodeReducerDeclarative):  # Don't do this!
+    pass
+```
+
+### 3.1 Example YAML Contracts
+
+Create comprehensive example contracts demonstrating common patterns:
+
+#### Pattern 1: FSM-Driven Reducer with Events
+
+**File**: `examples/contracts/reducer_with_fsm_and_events.yaml`
+
+```yaml
+node_type: REDUCER
+node_name: metrics_aggregator_with_events
+node_version: 1.0.0
+description: Metrics reducer with FSM and event publishing
+
+# FSM subcontract drives state transitions
+state_transitions:
+  state_machine_name: metrics_fsm
+  initial_state: idle
+  states:
+    - state_name: idle
+      entry_actions: [log_ready]
+    - state_name: collecting
+      entry_actions: [start_timer]
+      exit_actions: [stop_timer]
+    - state_name: completed
+      is_terminal: true
+  transitions:
+    - from_state: idle
+      to_state: collecting
+      trigger: start_collection
+    - from_state: collecting
+      to_state: completed
+      trigger: data_ready
+
+# Event bus configuration for publishing state changes
+event_coordination:
+  event_types:
+    - StateChanged
+    - CollectionCompleted
+```
+
+**Usage**:
+```python
+class NodeMetricsReducer(NodeCoreBase, MixinFSMExecution, MixinEventBus):
+    # No custom FSM code - driven by YAML!
+    # MixinFSMExecution provides execute_fsm_transition()
+    # MixinEventBus provides publish_event()
+    pass
+```
+
+#### Pattern 2: Workflow Orchestrator with Parallel Execution
+
+**File**: `examples/contracts/orchestrator_parallel_workflow.yaml`
+
+```yaml
+node_type: ORCHESTRATOR
+node_name: parallel_data_pipeline
+node_version: 1.0.0
+
+workflow_coordination:
+  execution_mode: parallel
+  max_parallel_branches: 4
+
+  workflow_definition:
+    execution_graph:
+      steps:
+        - step_id: fetch_data
+          step_type: effect
+          actions:
+            - action_type: EFFECT
+              target_node_type: NodeDataFetcher
+
+        - step_id: validate_data
+          dependencies: [fetch_data]
+          actions:
+            - action_type: COMPUTE
+              target_node_type: NodeValidator
+```
+
+**Usage**:
+```python
+class NodePipelineOrchestrator(NodeCoreBase, MixinWorkflowExecution):
+    # No custom workflow code - driven by YAML!
+    # MixinWorkflowExecution provides execute_workflow_from_contract()
+    pass
+```
+
+#### Pattern 3: Complex Multi-State Workflow with Error Handling
+
+**File**: `examples/contracts/orchestrator_with_error_recovery.yaml`
+
+```yaml
+node_type: ORCHESTRATOR
+workflow_coordination:
+  execution_mode: sequential
+  recovery_enabled: true
+  rollback_enabled: true
+
+  coordination_rules:
+    failure_strategy: retry_with_backoff
+    max_retries: 3
+    retry_delay_ms: 1000
+```
+
+### 3.2 Usage Pattern Documentation
+
+**File**: `docs/guides/DECLARATIVE_PATTERNS.md`
+
+#### Pattern: Reducer with FSM
+
+**When to use**: State-driven aggregation, lifecycle management
+
+```python
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
+from omnibase_core.mixins.mixin_event_bus import MixinEventBus
+
+class NodeMyReducer(NodeCoreBase, MixinFSMExecution, MixinEventBus):
+    """
+    Reducer with FSM-driven state transitions and event publishing.
+
+    Mixins provide:
+    - MixinFSMExecution: execute_fsm_transition(), validate_fsm_contract()
+    - MixinEventBus: publish_event(), subscribe_to_event()
+    """
+
+    async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
+        # 1. Execute FSM transition from YAML contract
+        fsm_result = await self.execute_fsm_transition(
+            fsm_contract=self.contract.state_transitions,
+            trigger=input_data.metadata.get("trigger", "process"),
+            context={"input": input_data.data}
+        )
+
+        # 2. Publish state change event
+        await self.publish_event(StateChangedEvent(
+            old_state=fsm_result.old_state,
+            new_state=fsm_result.new_state,
+            timestamp=datetime.now()
+        ))
+
+        # 3. Return result with intents
         return ModelReducerOutput(
             result=fsm_result.new_state,
-            operation_id=input_data.operation_id,
-            reduction_type=input_data.reduction_type,
-            processing_time_ms=0,  # TODO: Track timing
-            items_processed=1,
-            conflicts_resolved=0,
-            streaming_mode=input_data.streaming_mode,
-            batches_processed=1,
             intents=fsm_result.intents,
-            metadata={
-                "fsm_state": fsm_result.new_state,
-                "transition": fsm_result.transition_name,
-                "success": fsm_result.success,
-            },
+            metadata={"fsm_state": fsm_result.new_state}
         )
 ```
 
-### 3.2 Declarative Orchestrator Base
+#### Pattern: Orchestrator with Workflow Execution
 
-**File**: `src/omnibase_core/nodes/node_orchestrator_declarative.py`
+**When to use**: Multi-step workflows, parallel coordination
 
 ```python
-"""
-Declarative orchestrator node - workflow-driven from YAML contracts.
-
-Requires NO custom code for standard workflow patterns.
-"""
-
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.contracts.model_contract_orchestrator import (
-    ModelContractOrchestrator,
-)
-from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
-from omnibase_core.models.orchestrator.model_orchestrator_output import (
-    ModelOrchestratorOutput,
-)
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-
-class NodeOrchestratorDeclarative(NodeCoreBase, MixinWorkflowExecution):
+class NodeMyOrchestrator(NodeCoreBase, MixinWorkflowExecution):
     """
-    Declarative orchestrator node driven entirely by YAML workflow contracts.
+    Orchestrator with workflow execution from YAML contract.
 
-    NO CUSTOM CODE NEEDED for standard workflow patterns!
-
-    Usage:
-        # 1. Define workflow in YAML contract
-        # 2. Instantiate this class with the contract
-        # 3. Done! Workflow executes declaratively
-
-    Example YAML:
-        node_type: ORCHESTRATOR
-        workflow_coordination:
-          execution_mode: sequential
-          workflow_definition:
-            execution_graph:
-              steps: [...]
+    Mixins provide:
+    - MixinWorkflowExecution: execute_workflow_from_contract()
     """
 
-    def __init__(
-        self,
-        container: ModelONEXContainer,
-        contract: ModelContractOrchestrator,
-    ) -> None:
-        """
-        Initialize declarative orchestrator with workflow contract.
-
-        Args:
-            container: ONEX container for DI
-            contract: Orchestrator contract with workflow coordination
-        """
-        super().__init__(container)
-        self.contract = contract
-
-        # Validate workflow contract on initialization
-        if contract.workflow_coordination:
-            errors = await self.validate_workflow_contract(
-                contract.workflow_coordination.workflow_definition
-            )
-            if errors:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Invalid workflow contract",
-                    context={"errors": errors},
-                )
-
-    async def process(
-        self, input_data: ModelOrchestratorInput
-    ) -> ModelOrchestratorOutput:
-        """
-        Process input using declarative workflow from contract.
-
-        NO CUSTOM CODE - execution driven by YAML contract!
-        """
-        if not self.contract.workflow_coordination:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
-                message="No workflow contract defined for declarative orchestrator",
-                context={"node_id": str(self.node_id)},
-            )
-
-        # Execute workflow declaratively
-        workflow_result = await self.execute_workflow_from_contract(
-            self.contract.workflow_coordination.workflow_definition,
+    async def process(self, input_data: ModelOrchestratorInput) -> ModelOrchestratorOutput:
+        # Execute workflow declaratively from YAML
+        result = await self.execute_workflow_from_contract(
+            workflow_contract=self.contract.workflow_coordination.workflow_definition,
             workflow_id=input_data.workflow_id,
-            context=input_data.metadata or {},
+            context=input_data.metadata or {}
         )
 
-        # Convert to orchestrator output
         return ModelOrchestratorOutput(
-            execution_status=workflow_result.execution_status.value,
-            execution_time_ms=workflow_result.execution_time_ms,
-            start_time=workflow_result.timestamp,
-            end_time=workflow_result.timestamp,
-            completed_steps=workflow_result.completed_steps,
-            failed_steps=workflow_result.failed_steps,
-            final_result=None,
-            actions_emitted=workflow_result.actions_emitted,
+            execution_status=result.execution_status,
+            completed_steps=result.completed_steps,
+            actions_emitted=result.actions_emitted
         )
+```
+
+### 3.3 Best Practices Documentation
+
+**File**: `docs/best-practices/MIXIN_COMPOSITION.md`
+
+#### Composing Multiple Mixins
+
+```python
+# ✅ GOOD - Clear, declarative composition
+class NodeAdvancedReducer(
+    NodeCoreBase,           # Always first
+    MixinFSMExecution,      # FSM capabilities
+    MixinEventBus,          # Event publishing
+    MixinCaching,           # Result caching
+    MixinHealthCheck        # Health monitoring
+):
+    """
+    Advanced reducer with multiple cross-cutting concerns.
+
+    Each mixin provides specific capabilities:
+    - FSM execution from YAML
+    - Event publishing/subscription
+    - Result caching with TTL
+    - Health check endpoints
+    """
+    pass
+```
+
+#### Avoiding Common Pitfalls
+
+```python
+# ❌ BAD - Don't create unnecessary base classes
+class NodeReducerDeclarative(NodeCoreBase, MixinFSMExecution):
+    """This is redundant - just use mixins directly!"""
+    pass
+
+# ✅ GOOD - Compose mixins directly on your node
+class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
+    """Clear, direct composition."""
+    pass
 ```
 
 ---
 
 ## Phase 4: Migration & Examples
+
+> ⚠️ **NOT YET IMPLEMENTED**
+> **Status**: ⏳ Planned for Sprint 4
+> **Estimated**: TBD
+> The components described below are **not yet available**. This section documents the planned implementation.
 
 **Timeline**: Sprint 4 (Week 7-8)
 **Goal**: Examples, documentation, migration guides
@@ -1556,7 +1626,7 @@ class NodeMyReducer(NodeReducer):
         # ... 50+ lines of FSM code ...
 ```
 
-## After: Declarative Pattern
+## After: Declarative Pattern with Mixins
 
 ```python
 # 1. Create YAML contract (one time)
@@ -1567,15 +1637,29 @@ state_transitions:
   states: [idle, processing, completed]
   transitions: [...]
 
-# 2. Use declarative base class (no custom code!)
-from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
+# 2. Use NodeCoreBase + MixinFSMExecution (no custom FSM code!)
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
-# Load contract from YAML
-contract = ModelContractReducer.from_yaml("contracts/my_reducer.yaml")
+class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
+    """Reducer driven by FSM contract - no custom state machine code!"""
+
+    async def process(self, input_data):
+        # Execute FSM transition declaratively
+        result = await self.execute_fsm_transition(
+            self.contract.state_transitions,
+            trigger=input_data.metadata.get("trigger"),
+            context={"data": input_data.data}
+        )
+        return ModelReducerOutput(
+            result=result.new_state,
+            intents=result.intents
+        )
 
 # Instantiate - DONE!
-node = NodeReducerDeclarative(container, contract)
+contract = ModelContractReducer.from_yaml("contracts/my_reducer.yaml")
+node = NodeMyReducer(container, contract)
 ```
 
 ## Migration Steps
@@ -1583,9 +1667,10 @@ node = NodeReducerDeclarative(container, contract)
 1. **Analyze current FSM** - Map states, transitions, actions
 2. **Create YAML contract** - Define FSM declaratively
 3. **Validate contract** - Use validation utilities
-4. **Switch to declarative base** - Replace imperative class
-5. **Test** - Verify behavior matches
-6. **Remove custom code** - Delete old FSM implementation
+4. **Add mixin to node class** - Inherit from MixinFSMExecution
+5. **Use mixin methods** - Call execute_fsm_transition() in process()
+6. **Test** - Verify behavior matches
+7. **Remove custom FSM code** - Delete old state machine implementation
 ```
 
 ---
@@ -1637,25 +1722,41 @@ async def test_fsm_transition_success():
 
 ### Integration Tests
 
-**File**: `tests/integration/test_declarative_reducer.py`
+**File**: `tests/integration/test_fsm_mixin_integration.py`
 
 ```python
-"""Integration tests for declarative reducer nodes."""
+"""Integration tests for FSM execution mixin."""
 
 import pytest
-from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
+class TestReducerWithFSM(NodeCoreBase, MixinFSMExecution):
+    """Test reducer using FSM mixin."""
+
+    async def process(self, input_data):
+        result = await self.execute_fsm_transition(
+            self.contract.state_transitions,
+            trigger=input_data.metadata.get("trigger"),
+            context={"data": input_data.data}
+        )
+        return ModelReducerOutput(
+            result=result.new_state,
+            intents=result.intents,
+            metadata={"fsm_state": result.new_state}
+        )
+
 @pytest.mark.asyncio
-async def test_declarative_reducer_with_yaml_contract(container):
-    """Test reducer driven entirely by YAML contract."""
+async def test_reducer_with_fsm_mixin(container):
+    """Test reducer driven by FSM mixin and YAML contract."""
     # Load contract from YAML
     contract = ModelContractReducer.from_yaml(
         "examples/contracts/reducer_metrics_aggregator.yaml"
     )
 
-    # Create declarative node
-    node = NodeReducerDeclarative(container, contract)
+    # Create node with FSM mixin
+    node = TestReducerWithFSM(container, contract)
 
     # Process input
     input_data = ModelReducerInput(
@@ -1666,7 +1767,7 @@ async def test_declarative_reducer_with_yaml_contract(container):
 
     result = await node.process(input_data)
 
-    # Verify FSM executed
+    # Verify FSM executed via mixin
     assert result.metadata["fsm_state"] == "collecting"
     assert len(result.intents) > 0  # Should emit intents
 ```
@@ -1693,11 +1794,11 @@ async def test_declarative_reducer_with_yaml_contract(container):
 
 ### Phase 3 Success Criteria
 
-- [ ] NodeReducerDeclarative functional
-- [ ] NodeOrchestratorDeclarative functional
-- [ ] Declarative nodes pass all existing node tests
-- [ ] No custom code needed for example contracts
-- [ ] Performance comparable to imperative implementations
+- [ ] 5+ example YAML contracts covering common patterns
+- [ ] Example contracts validate successfully
+- [ ] Usage pattern documentation complete with before/after examples
+- [ ] Best practices guide for mixin composition
+- [ ] All examples demonstrate mixin-based composition (no declarative base classes)
 
 ### Phase 4 Success Criteria
 
@@ -1715,8 +1816,8 @@ async def test_declarative_reducer_with_yaml_contract(container):
 |-------|----------|-------------|------|
 | Phase 1 | Week 1-2 | FSM execution infrastructure | Core Team |
 | Phase 2 | Week 3-4 | Workflow execution infrastructure | Core Team |
-| Phase 3 | Week 5-6 | Declarative node base classes | Core Team |
-| Phase 4 | Week 7-8 | Examples, docs, migration | Core + DevRel |
+| Phase 3 | Week 5-6 | Example contracts and usage patterns | Core Team |
+| Phase 4 | Week 7-8 | Migration guides and best practices | Core + DevRel |
 
 **Total**: 8 weeks to complete declarative architecture
 
@@ -1744,30 +1845,33 @@ async def test_declarative_reducer_with_yaml_contract(container):
 Implementation Components:
 ├── src/omnibase_core/
 │   ├── utils/
-│   │   ├── fsm_executor.py           # FSM execution logic
-│   │   └── workflow_executor.py      # Workflow execution logic
-│   ├── mixins/
-│   │   ├── mixin_fsm_execution.py    # FSM execution mixin
-│   │   └── mixin_workflow_execution.py # Workflow execution mixin
-│   └── nodes/
-│       ├── node_reducer_declarative.py      # Declarative reducer
-│       └── node_orchestrator_declarative.py # Declarative orchestrator
+│   │   ├── fsm_executor.py           # FSM execution logic (Phase 1 ✅)
+│   │   └── workflow_executor.py      # Workflow execution logic (Phase 2 🚧)
+│   └── mixins/
+│       ├── mixin_fsm_execution.py    # FSM execution mixin (Phase 1 ✅)
+│       └── mixin_workflow_execution.py # Workflow execution mixin (Phase 2 🚧)
 
-Example Contracts:
+Example Contracts (Phase 3):
 ├── examples/contracts/
-│   ├── reducer_metrics_aggregator.yaml     # FSM example
-│   └── orchestrator_data_pipeline.yaml     # Workflow example
+│   ├── reducer_with_fsm_and_events.yaml     # FSM + Events example
+│   ├── orchestrator_parallel_workflow.yaml  # Parallel workflow example
+│   └── orchestrator_with_error_recovery.yaml # Error handling example
 
 Tests:
 ├── tests/
 │   ├── unit/utils/
-│   │   ├── test_fsm_executor.py
-│   │   └── test_workflow_executor.py
+│   │   ├── test_fsm_executor.py       # FSM utility tests (Phase 1 ✅)
+│   │   └── test_workflow_executor.py  # Workflow utility tests (Phase 2 🚧)
 │   └── integration/
-│       ├── test_declarative_reducer.py
-│       └── test_declarative_orchestrator.py
+│       ├── test_fsm_mixin_integration.py
+│       └── test_workflow_mixin_integration.py
 
-Documentation:
-└── docs/guides/
-    └── MIGRATING_TO_DECLARATIVE_NODES.md
+Documentation (Phase 3 & 4):
+├── docs/guides/
+│   ├── DECLARATIVE_PATTERNS.md              # Usage patterns
+│   └── MIGRATING_TO_DECLARATIVE_NODES.md    # Migration guide
+└── docs/best-practices/
+    └── MIXIN_COMPOSITION.md                 # Composition best practices
 ```
+
+**Key Insight**: No special node base classes needed! Just compose `NodeCoreBase` + mixins directly.

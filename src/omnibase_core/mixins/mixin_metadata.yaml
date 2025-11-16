@@ -2555,7 +2555,8 @@ mixin_fsm_execution:
   # Generated code patterns
   code_patterns:
     basic_usage: |
-      class NodeMyReducer(NodeReducerDeclarative, MixinFSMExecution):
+      # Note: Use NodeCoreBase for now. NodeReducerDeclarative coming in Phase 3.
+      class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
           async def process(self, input_data):
               # FSM-driven processing
               result = await self.execute_fsm_transition(
@@ -2570,7 +2571,8 @@ mixin_fsm_execution:
               )
 
     with_validation: |
-      class NodeMyReducer(NodeReducerDeclarative, MixinFSMExecution):
+      # Note: Use NodeCoreBase for now. NodeReducerDeclarative coming in Phase 3.
+      class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
           def __init__(self, container, contract):
               super().__init__(container)
               self.contract = contract
@@ -2583,7 +2585,8 @@ mixin_fsm_execution:
                   raise ValidationError(f"FSM invalid: {errors}")
 
     with_terminal_check: |
-      class NodeMyReducer(NodeReducerDeclarative, MixinFSMExecution):
+      # Note: Use NodeCoreBase for now. NodeReducerDeclarative coming in Phase 3.
+      class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
           async def process(self, input_data):
               # Execute transition
               result = await self.execute_fsm_transition(
