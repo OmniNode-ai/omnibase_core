@@ -1,0 +1,255 @@
+# Example: Declarative Reducer Node - Metrics Aggregation FSM
+#
+# This example demonstrates a reducer node that aggregates metrics using
+# a finite state machine defined entirely in YAML.
+#
+# Node Implementation (NO custom code needed):
+#   class NodeMetricsAggregator(NodeReducerDeclarative):
+#       pass  # All logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - FSM state definitions with entry/exit actions
+# - Conditional transitions with expression evaluation
+# - Intent emission for side effects (persistence, logging, metrics)
+# - Terminal state detection
+# - Error handling with wildcard transitions
+# - State persistence for recovery
+
+# FSM Subcontract: Defines state machine for metrics aggregation
+state_transitions:
+  state_machine_name: metrics_aggregation_fsm
+  description: "Aggregates metrics from multiple data sources with validation"
+
+  # Initial state when FSM is created
+  initial_state: idle
+
+  # State definitions with entry/exit actions
+  states:
+    # Idle: Waiting for data collection trigger
+    - state_name: idle
+      description: "Initial state - waiting for collection trigger"
+      entry_actions: []
+      exit_actions: []
+      is_terminal: false
+      metadata:
+        ui_color: "#gray"
+        icon: "pause"
+
+    # Collecting: Gathering metrics from data sources
+    - state_name: collecting
+      description: "Collecting metrics from configured data sources"
+      entry_actions:
+        - "start_collection_timer"
+        - "initialize_metric_buffers"
+      exit_actions:
+        - "stop_collection_timer"
+        - "flush_metric_buffers"
+      is_terminal: false
+      metadata:
+        ui_color: "#blue"
+        icon: "download"
+
+    # Validating: Ensuring collected data meets quality requirements
+    - state_name: validating
+      description: "Validating collected metrics for completeness"
+      entry_actions:
+        - "start_validation"
+      exit_actions:
+        - "log_validation_results"
+      is_terminal: false
+      metadata:
+        ui_color: "#yellow"
+        icon: "check-circle"
+
+    # Aggregating: Computing aggregate statistics
+    - state_name: aggregating
+      description: "Computing aggregate statistics from validated metrics"
+      entry_actions:
+        - "begin_aggregation"
+        - "allocate_aggregation_buffers"
+      exit_actions:
+        - "finalize_aggregation"
+        - "release_aggregation_buffers"
+      is_terminal: false
+      metadata:
+        ui_color: "#purple"
+        icon: "calculator"
+
+    # Completed: Terminal state - aggregation successful
+    - state_name: completed
+      description: "Metrics aggregation completed successfully"
+      entry_actions:
+        - "emit_completion_event"
+        - "cleanup_resources"
+      exit_actions: []
+      is_terminal: true
+      metadata:
+        ui_color: "#green"
+        icon: "check"
+
+    # Failed: Terminal state - aggregation failed
+    - state_name: failed
+      description: "Metrics aggregation failed"
+      entry_actions:
+        - "emit_failure_event"
+        - "rollback_partial_aggregation"
+        - "cleanup_resources"
+      exit_actions: []
+      is_terminal: true
+      metadata:
+        ui_color: "#red"
+        icon: "x-circle"
+
+  # State transitions with triggers and conditions
+  transitions:
+    # Idle → Collecting: Start metrics collection
+    - transition_name: start_collection
+      from_state: idle
+      to_state: collecting
+      trigger: collect_metrics
+      description: "Begin collecting metrics from data sources"
+      conditions:
+        - condition_name: "has_data_sources"
+          expression: "data_sources min_length 1"
+          required: true
+          description: "At least one data source must be configured"
+      actions:
+        - action_name: "emit_collection_started"
+          action_type: "event"
+          is_critical: false
+          timeout_ms: 1000
+
+    # Collecting → Validating: Collection complete
+    - transition_name: complete_collection
+      from_state: collecting
+      to_state: validating
+      trigger: collection_complete
+      description: "All metrics collected, begin validation"
+      conditions:
+        - condition_name: "minimum_data_collected"
+          expression: "collected_metrics min_length 10"
+          required: true
+          description: "At least 10 metrics must be collected"
+      actions:
+        - action_name: "snapshot_collected_metrics"
+          action_type: "data_capture"
+          is_critical: true
+          timeout_ms: 2000
+
+    # Validating → Aggregating: Validation passed
+    - transition_name: validation_passed
+      from_state: validating
+      to_state: aggregating
+      trigger: validation_success
+      description: "Metrics validated, begin aggregation"
+      conditions: []
+      actions:
+        - action_name: "mark_metrics_validated"
+          action_type: "status_update"
+          is_critical: false
+          timeout_ms: 500
+
+    # Validating → Collecting: Validation failed, retry collection
+    - transition_name: validation_failed_retry
+      from_state: validating
+      to_state: collecting
+      trigger: validation_failed
+      description: "Validation failed, retry collection"
+      conditions:
+        - condition_name: "retries_remaining"
+          expression: "retry_count less_than 3"
+          required: true
+          description: "Maximum 3 retries allowed"
+      actions:
+        - action_name: "increment_retry_counter"
+          action_type: "counter_update"
+          is_critical: true
+          timeout_ms: 100
+
+    # Aggregating → Completed: Aggregation successful
+    - transition_name: aggregation_complete
+      from_state: aggregating
+      to_state: completed
+      trigger: aggregation_success
+      description: "Aggregation completed successfully"
+      conditions: []
+      actions:
+        - action_name: "persist_final_results"
+          action_type: "persistence"
+          is_critical: true
+          timeout_ms: 5000
+        - action_name: "emit_metrics_to_monitoring"
+          action_type: "telemetry"
+          is_critical: false
+          timeout_ms: 2000
+
+    # Wildcard error transition: Any state → Failed on error
+    - transition_name: handle_error
+      from_state: "*"
+      to_state: failed
+      trigger: error_occurred
+      description: "Handle errors from any state"
+      conditions: []
+      actions:
+        - action_name: "log_error_details"
+          action_type: "logging"
+          is_critical: true
+          timeout_ms: 1000
+        - action_name: "emit_error_alert"
+          action_type: "alert"
+          is_critical: false
+          timeout_ms: 2000
+
+    # Wildcard timeout transition: Any non-terminal state → Failed on timeout
+    - transition_name: handle_timeout
+      from_state: "*"
+      to_state: failed
+      trigger: timeout
+      description: "Handle timeouts from any non-terminal state"
+      conditions: []
+      actions:
+        - action_name: "log_timeout_event"
+          action_type: "logging"
+          is_critical: true
+          timeout_ms: 1000
+
+  # Terminal states (FSM ends when reaching these)
+  terminal_states:
+    - completed
+    - failed
+
+  # Error states for recovery
+  error_states:
+    - failed
+
+  # Enable state persistence for crash recovery
+  persistence_enabled: true
+
+  # Enable rollback on failure
+  recovery_enabled: true
+
+  # FSM operations (for advanced use cases)
+  operations:
+    - operation_name: "reset_aggregation"
+      description: "Reset FSM to idle state for new aggregation cycle"
+      trigger: "reset"
+      target_state: "idle"
+      requires_permission: true
+      is_destructive: true
+      rollback_transitions:
+        - transition_name: "rollback_reset"
+          from_state: "idle"
+          to_state: "collecting"
+          trigger: "undo_reset"
+
+# Metadata
+metadata:
+  version: "1.0.0"
+  author: "ONEX Framework Team"
+  description: "Declarative metrics aggregation reducer using FSM pattern"
+  tags:
+    - reducer
+    - fsm
+    - declarative
+    - metrics
+  documentation_url: "https://docs.onex.ai/reducers/metrics-aggregator"
