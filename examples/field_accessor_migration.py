@@ -13,9 +13,6 @@ from typing import Any
 
 from pydantic import Field
 
-# Import discriminated union models for proper type safety
-from omnibase_core.models.examples.model_property_value import ModelPropertyValue
-
 # Import the new field accessor patterns
 from omnibase_core.models.core import (
     ModelCustomFieldsAccessor,
@@ -23,6 +20,9 @@ from omnibase_core.models.core import (
     ModelFieldAccessor,
     ModelResultAccessor,
 )
+
+# Import discriminated union models for proper type safety
+from omnibase_core.models.examples.model_property_value import ModelPropertyValue
 
 
 # ========== BEFORE: Original ModelCliOutputData (with generic unions) ==========

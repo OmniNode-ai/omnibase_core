@@ -15,10 +15,10 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.validation.exceptions (hierarchy parent)
 """
 
-from .exception_file_processing_error import ExceptionFileProcessing
+from .exception_file_processing_error import ExceptionFileProcessingError
 
 
-class ExceptionProtocolParsing(ExceptionFileProcessing):
+class ExceptionProtocolParsingError(ExceptionFileProcessingError):
     """
     Raised when Python AST parsing fails on a protocol file.
 

@@ -14,10 +14,10 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.validation.exceptions (hierarchy parent)
 """
 
-from .exception_input_validation_error import ExceptionInputValidation
+from .exception_input_validation_error import ExceptionInputValidationError
 
 
-class ExceptionPathTraversal(ExceptionInputValidation):
+class ExceptionPathTraversalError(ExceptionInputValidationError):
     """
     Raised when a path would result in directory traversal outside allowed directories.
 

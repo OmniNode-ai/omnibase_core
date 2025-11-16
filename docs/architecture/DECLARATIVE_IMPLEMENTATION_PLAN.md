@@ -59,7 +59,7 @@ This document provides a complete implementation plan for closing the gap betwee
 3. [Phase 1: FSM Execution Infrastructure](#phase-1-fsm-execution-infrastructure)
 4. [Phase 2: Workflow Execution Infrastructure](#phase-2-workflow-execution-infrastructure)
 5. [Phase 3: Example Contracts & Usage Patterns](#phase-3-example-contracts--usage-patterns)
-6. [Phase 4: Migration & Examples](#phase-4-migration--examples)
+6. [Phase 4: Migration & Examples](#phase-4-migration-examples)
 7. [Testing Strategy](#testing-strategy)
 8. [Success Metrics](#success-metrics)
 
@@ -778,21 +778,26 @@ from typing import Any
 from uuid import UUID, uuid4
 from datetime import datetime
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_workflow_execution import (
+    EnumActionType,
+    EnumExecutionMode,
+    EnumWorkflowState,
+)
+from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
-from omnibase_core.models.orchestrator.model_action import ModelAction
-from omnibase_core.enums.enum_workflow_execution import (
-    EnumExecutionMode,
-    EnumActionType,
-    EnumWorkflowState,
-)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.orchestrator.model_action import ModelAction
 
 
 class WorkflowExecutionResult:
-    """Result of workflow execution."""
+    """
+    Result of workflow execution.
+
+    Pure data structure containing workflow outcome and emitted actions.
+    """
 
     def __init__(
         self,
@@ -804,6 +809,18 @@ class WorkflowExecutionResult:
         execution_time_ms: int,
         metadata: dict[str, Any] | None = None,
     ):
+        """
+        Initialize workflow execution result.
+
+        Args:
+            workflow_id: Unique workflow execution ID
+            execution_status: Final workflow status
+            completed_steps: List of completed step IDs
+            failed_steps: List of failed step IDs
+            actions_emitted: List of actions emitted during execution
+            execution_time_ms: Execution time in milliseconds
+            metadata: Optional execution metadata
+        """
         self.workflow_id = workflow_id
         self.execution_status = execution_status
         self.completed_steps = completed_steps
@@ -814,82 +831,172 @@ class WorkflowExecutionResult:
         self.timestamp = datetime.now().isoformat()
 
 
+class WorkflowStepExecutionContext:
+    """Context for a single step execution."""
+
+    def __init__(
+        self,
+        step: ModelWorkflowStep,
+        workflow_id: UUID,
+        completed_steps: set[UUID],
+    ):
+        """
+        Initialize step execution context.
+
+        Args:
+            step: Step to execute
+            workflow_id: Parent workflow ID
+            completed_steps: Set of completed step IDs
+        """
+        self.step = step
+        self.workflow_id = workflow_id
+        self.completed_steps = completed_steps
+        self.started_at = datetime.now()
+        self.completed_at: datetime | None = None
+        self.error: str | None = None
+
+
 async def execute_workflow(
-    workflow: ModelWorkflowDefinition,
+    workflow_definition: ModelWorkflowDefinition,
+    workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
-    initial_context: dict[str, Any],
+    execution_mode: EnumExecutionMode | None = None,
 ) -> WorkflowExecutionResult:
     """
     Execute workflow declaratively from YAML contract.
 
-    Pure function: (workflow_def, context) → (result, actions)
+    Pure function: (workflow_def, steps) → (result, actions)
 
     Args:
-        workflow: Workflow definition from YAML contract
+        workflow_definition: Workflow definition from YAML contract
+        workflow_steps: List of workflow steps to execute
         workflow_id: Unique workflow execution ID
-        initial_context: Initial execution context
+        execution_mode: Optional execution mode override
 
     Returns:
         WorkflowExecutionResult with emitted actions
+
+    Raises:
+        ModelOnexError: If workflow execution fails
     """
     start_time = datetime.now()
 
-    # Get execution mode from workflow metadata
-    execution_mode = _get_execution_mode(workflow)
+    # Validate workflow
+    validation_errors = await validate_workflow_definition(
+        workflow_definition, workflow_steps
+    )
+    if validation_errors:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Workflow validation failed: {', '.join(validation_errors)}",
+            context={"workflow_id": str(workflow_id), "errors": validation_errors},
+        )
+
+    # Determine execution mode
+    mode = execution_mode or _get_execution_mode(workflow_definition)
 
     # Execute based on mode
-    if execution_mode == EnumExecutionMode.SEQUENTIAL:
-        result = await _execute_sequential(workflow, workflow_id, initial_context)
-    elif execution_mode == EnumExecutionMode.PARALLEL:
-        result = await _execute_parallel(workflow, workflow_id, initial_context)
-    elif execution_mode == EnumExecutionMode.BATCH:
-        result = await _execute_batch(workflow, workflow_id, initial_context)
+    if mode == EnumExecutionMode.SEQUENTIAL:
+        result = await _execute_sequential(
+            workflow_definition, workflow_steps, workflow_id
+        )
+    elif mode == EnumExecutionMode.PARALLEL:
+        result = await _execute_parallel(
+            workflow_definition, workflow_steps, workflow_id
+        )
+    elif mode == EnumExecutionMode.BATCH:
+        result = await _execute_batch(workflow_definition, workflow_steps, workflow_id)
     else:
-        result = await _execute_sequential(workflow, workflow_id, initial_context)
+        # Default to sequential
+        result = await _execute_sequential(
+            workflow_definition, workflow_steps, workflow_id
+        )
 
     # Calculate execution time
     end_time = datetime.now()
     execution_time_ms = int((end_time - start_time).total_seconds() * 1000)
-
     result.execution_time_ms = execution_time_ms
+
     return result
 
 
 async def validate_workflow_definition(
-    workflow: ModelWorkflowDefinition,
+    workflow_definition: ModelWorkflowDefinition,
+    workflow_steps: list[ModelWorkflowStep],
 ) -> list[str]:
     """
-    Validate workflow definition for correctness.
+    Validate workflow definition and steps for correctness.
+
+    Pure validation function - no side effects.
+
+    Args:
+        workflow_definition: Workflow definition to validate
+        workflow_steps: Workflow steps to validate
 
     Returns:
         List of validation errors (empty if valid)
     """
     errors: list[str] = []
 
-    # Check execution graph has steps
-    if not workflow.execution_graph.steps:
+    # Check workflow has steps
+    if not workflow_steps:
         errors.append("Workflow has no steps defined")
+        return errors
 
     # Check for dependency cycles
-    if _has_dependency_cycles(workflow):
+    if _has_dependency_cycles(workflow_steps):
         errors.append("Workflow contains dependency cycles")
 
     # Validate each step
-    for step in workflow.execution_graph.steps:
+    step_ids = {step.step_id for step in workflow_steps}
+    for step in workflow_steps:
+        # Check step name
         if not step.step_name:
             errors.append(f"Step {step.step_id} missing name")
 
-        if not step.actions:
-            errors.append(f"Step {step.step_name} has no actions")
+        # Check dependencies reference valid steps
+        for dep_id in step.depends_on:
+            if dep_id not in step_ids:
+                errors.append(
+                    f"Step '{step.step_name}' depends on non-existent step: {dep_id}"
+                )
 
     return errors
 
 
+def get_execution_order(
+    workflow_steps: list[ModelWorkflowStep],
+) -> list[UUID]:
+    """
+    Get topological execution order for workflow steps.
+
+    Args:
+        workflow_steps: Workflow steps to order
+
+    Returns:
+        List of step IDs in execution order
+
+    Raises:
+        ModelOnexError: If workflow contains cycles
+    """
+    if _has_dependency_cycles(workflow_steps):
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message="Cannot compute execution order: workflow contains cycles",
+            context={},
+        )
+
+    return _get_topological_order(workflow_steps)
+
+
 # Private helper functions
 
-def _get_execution_mode(workflow: ModelWorkflowDefinition) -> EnumExecutionMode:
+
+def _get_execution_mode(
+    workflow_definition: ModelWorkflowDefinition,
+) -> EnumExecutionMode:
     """Extract execution mode from workflow metadata."""
-    mode_str = workflow.workflow_metadata.execution_mode
+    mode_str = workflow_definition.workflow_metadata.execution_mode
     if mode_str == "sequential":
         return EnumExecutionMode.SEQUENTIAL
     elif mode_str == "parallel":
@@ -900,50 +1007,62 @@ def _get_execution_mode(workflow: ModelWorkflowDefinition) -> EnumExecutionMode:
 
 
 async def _execute_sequential(
-    workflow: ModelWorkflowDefinition,
+    workflow_definition: ModelWorkflowDefinition,
+    workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
-    context: dict[str, Any],
 ) -> WorkflowExecutionResult:
     """Execute workflow steps sequentially."""
     completed_steps: list[str] = []
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
+    completed_step_ids: set[UUID] = set()
 
     # Get topological order for dependency-aware execution
-    execution_order = _get_topological_order(workflow)
+    execution_order = _get_topological_order(workflow_steps)
+
+    # Create step lookup
+    steps_by_id = {step.step_id: step for step in workflow_steps}
 
     for step_id in execution_order:
-        step = _get_step_by_id(workflow, step_id)
+        step = steps_by_id.get(step_id)
         if not step:
             continue
 
-        try:
-            # Emit actions for this step
-            for action_config in step.actions:
-                action = ModelAction(
-                    action_id=uuid4(),
-                    action_type=EnumActionType(action_config.action_type),
-                    target_node_type=action_config.target_node_type,
-                    payload={**action_config.payload, "workflow_id": str(workflow_id)},
-                    dependencies=action_config.dependencies or [],
-                    priority=action_config.priority or 1,
-                    timeout_ms=step.timeout_ms or 30000,
-                    lease_id=uuid4(),
-                    epoch=0,
-                    retry_count=0,
-                    metadata={"step_name": step.step_name},
-                    created_at=datetime.now(),
-                )
-                all_actions.append(action)
+        # Check if step should be skipped
+        if not step.enabled:
+            continue
 
+        # Check dependencies are met
+        if not _dependencies_met(step, completed_step_ids):
+            failed_steps.append(str(step.step_id))
+            continue
+
+        try:
+            # Create context
+            context = WorkflowStepExecutionContext(
+                step, workflow_id, completed_step_ids
+            )
+
+            # Emit action for this step
+            action = _create_action_for_step(step, workflow_id)
+            all_actions.append(action)
+
+            # Mark step as completed
+            context.completed_at = datetime.now()
             completed_steps.append(str(step.step_id))
+            completed_step_ids.add(step.step_id)
 
         except Exception as e:
             failed_steps.append(str(step.step_id))
-            # Handle failure based on coordination rules
-            if workflow.coordination_rules.failure_strategy == "fail_fast":
-                break
 
+            # Handle based on error action
+            if step.error_action == "stop":
+                break
+            elif step.error_action == "continue":
+                continue
+            # For other error actions, continue for now
+
+    # Determine final status
     status = (
         EnumWorkflowState.COMPLETED
         if not failed_steps
@@ -957,47 +1076,244 @@ async def _execute_sequential(
         failed_steps=failed_steps,
         actions_emitted=all_actions,
         execution_time_ms=0,  # Will be set by caller
+        metadata={"execution_mode": "sequential"},
     )
 
 
 async def _execute_parallel(
-    workflow: ModelWorkflowDefinition,
+    workflow_definition: ModelWorkflowDefinition,
+    workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
-    context: dict[str, Any],
 ) -> WorkflowExecutionResult:
     """Execute workflow steps in parallel (respecting dependencies)."""
-    # Similar to sequential but groups independent steps
-    # For now, delegate to sequential
-    return await _execute_sequential(workflow, workflow_id, context)
+    completed_steps: list[str] = []
+    failed_steps: list[str] = []
+    all_actions: list[ModelAction] = []
+    completed_step_ids: set[UUID] = set()
+
+    # For parallel execution, we execute in waves based on dependencies
+    remaining_steps = list(workflow_steps)
+
+    while remaining_steps:
+        # Find steps with met dependencies
+        ready_steps = [
+            step
+            for step in remaining_steps
+            if step.enabled and _dependencies_met(step, completed_step_ids)
+        ]
+
+        if not ready_steps:
+            # No progress can be made - remaining steps have unmet dependencies
+            for step in remaining_steps:
+                failed_steps.append(str(step.step_id))
+            break
+
+        # Execute ready steps (in parallel conceptually, but we emit actions)
+        for step in ready_steps:
+            try:
+                # Emit action for this step
+                action = _create_action_for_step(step, workflow_id)
+                all_actions.append(action)
+
+                # Mark as completed
+                completed_steps.append(str(step.step_id))
+                completed_step_ids.add(step.step_id)
+
+            except Exception as e:
+                failed_steps.append(str(step.step_id))
+
+                if step.error_action == "stop":
+                    # Stop entire workflow
+                    remaining_steps = []
+                    break
+
+        # Remove processed steps
+        remaining_steps = [s for s in remaining_steps if s not in ready_steps]
+
+    status = (
+        EnumWorkflowState.COMPLETED
+        if not failed_steps
+        else EnumWorkflowState.FAILED
+    )
+
+    return WorkflowExecutionResult(
+        workflow_id=workflow_id,
+        execution_status=status,
+        completed_steps=completed_steps,
+        failed_steps=failed_steps,
+        actions_emitted=all_actions,
+        execution_time_ms=0,
+        metadata={"execution_mode": "parallel"},
+    )
 
 
 async def _execute_batch(
-    workflow: ModelWorkflowDefinition,
+    workflow_definition: ModelWorkflowDefinition,
+    workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
-    context: dict[str, Any],
 ) -> WorkflowExecutionResult:
-    """Execute workflow with batching and load balancing."""
-    # Similar to sequential but adds batching metadata
-    return await _execute_sequential(workflow, workflow_id, context)
+    """Execute workflow with batching."""
+    # For batch mode, use sequential execution with batching metadata
+    result = await _execute_sequential(workflow_definition, workflow_steps, workflow_id)
+    result.metadata["execution_mode"] = "batch"
+    result.metadata["batch_size"] = len(workflow_steps)
+    return result
 
 
-def _get_topological_order(workflow: ModelWorkflowDefinition) -> list[str]:
-    """Get topological execution order for workflow steps."""
-    # Simple implementation - can be enhanced
-    return [str(step.step_id) for step in workflow.execution_graph.steps]
+def _create_action_for_step(
+    step: ModelWorkflowStep,
+    workflow_id: UUID,
+) -> ModelAction:
+    """
+    Create action for workflow step.
+
+    Args:
+        step: Workflow step to create action for
+        workflow_id: Parent workflow ID
+
+    Returns:
+        ModelAction for step execution
+    """
+    # Map step type to action type
+    action_type_map = {
+        "compute": EnumActionType.COMPUTE,
+        "effect": EnumActionType.EFFECT,
+        "reducer": EnumActionType.REDUCE,
+        "orchestrator": EnumActionType.ORCHESTRATE,
+        "custom": EnumActionType.CUSTOM,
+    }
+
+    action_type = action_type_map.get(step.step_type, EnumActionType.CUSTOM)
+
+    # Determine target node type from step type
+    target_node_type_map = {
+        "compute": "NodeCompute",
+        "effect": "NodeEffect",
+        "reducer": "NodeReducer",
+        "orchestrator": "NodeOrchestrator",
+        "custom": "NodeCustom",
+    }
+    target_node_type = target_node_type_map.get(step.step_type, "NodeCustom")
+
+    return ModelAction(
+        action_id=uuid4(),
+        action_type=action_type,
+        target_node_type=target_node_type,
+        payload={
+            "workflow_id": str(workflow_id),
+            "step_id": str(step.step_id),
+            "step_name": step.step_name,
+        },
+        dependencies=step.depends_on,
+        priority=step.priority,
+        timeout_ms=step.timeout_ms,
+        lease_id=uuid4(),
+        epoch=0,
+        retry_count=step.retry_count,
+        metadata={
+            "step_name": step.step_name,
+            "correlation_id": str(step.correlation_id),
+        },
+        created_at=datetime.now(),
+    )
 
 
-def _get_step_by_id(workflow: ModelWorkflowDefinition, step_id: str):
-    """Find step by ID."""
-    for step in workflow.execution_graph.steps:
-        if str(step.step_id) == step_id:
-            return step
-    return None
+def _dependencies_met(
+    step: ModelWorkflowStep,
+    completed_step_ids: set[UUID],
+) -> bool:
+    """Check if all step dependencies are met."""
+    return all(dep_id in completed_step_ids for dep_id in step.depends_on)
 
 
-def _has_dependency_cycles(workflow: ModelWorkflowDefinition) -> bool:
-    """Check for dependency cycles in workflow."""
-    # TODO: Implement cycle detection
+def _get_topological_order(
+    workflow_steps: list[ModelWorkflowStep],
+) -> list[UUID]:
+    """
+    Get topological ordering of steps based on dependencies.
+
+    Uses Kahn's algorithm for topological sorting.
+
+    Args:
+        workflow_steps: Workflow steps to order
+
+    Returns:
+        List of step IDs in topological order
+    """
+    # Build adjacency list and in-degree map
+    step_ids = {step.step_id for step in workflow_steps}
+    edges: dict[UUID, list[UUID]] = {step_id: [] for step_id in step_ids}
+    in_degree: dict[UUID, int] = {step_id: 0 for step_id in step_ids}
+
+    for step in workflow_steps:
+        for dep_id in step.depends_on:
+            if dep_id in step_ids:
+                edges[dep_id].append(step.step_id)
+                in_degree[step.step_id] += 1
+
+    # Kahn's algorithm
+    queue = [step_id for step_id, degree in in_degree.items() if degree == 0]
+    result: list[UUID] = []
+
+    while queue:
+        node = queue.pop(0)
+        result.append(node)
+
+        for neighbor in edges.get(node, []):
+            in_degree[neighbor] -= 1
+            if in_degree[neighbor] == 0:
+                queue.append(neighbor)
+
+    return result
+
+
+def _has_dependency_cycles(
+    workflow_steps: list[ModelWorkflowStep],
+) -> bool:
+    """
+    Check if workflow contains dependency cycles.
+
+    Uses DFS-based cycle detection.
+
+    Args:
+        workflow_steps: Workflow steps to check
+
+    Returns:
+        True if cycles detected, False otherwise
+    """
+    # Build adjacency list
+    step_ids = {step.step_id for step in workflow_steps}
+    edges: dict[UUID, list[UUID]] = {step_id: [] for step_id in step_ids}
+
+    for step in workflow_steps:
+        for dep_id in step.depends_on:
+            if dep_id in step_ids:
+                # Note: dependency is reversed - we go FROM dependent TO dependency
+                edges[step.step_id].append(dep_id)
+
+    # DFS-based cycle detection
+    visited: set[UUID] = set()
+    rec_stack: set[UUID] = set()
+
+    def has_cycle_dfs(node: UUID) -> bool:
+        visited.add(node)
+        rec_stack.add(node)
+
+        for neighbor in edges.get(node, []):
+            if neighbor not in visited:
+                if has_cycle_dfs(neighbor):
+                    return True
+            elif neighbor in rec_stack:
+                return True
+
+        rec_stack.remove(node)
+        return False
+
+    for step_id in step_ids:
+        if step_id not in visited:
+            if has_cycle_dfs(step_id):
+                return True
+
     return False
 ```
 
@@ -1015,12 +1331,15 @@ Enables orchestrator nodes to execute workflows declaratively.
 from typing import Any
 from uuid import UUID
 
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
+from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
 from omnibase_core.utils.workflow_executor import (
     WorkflowExecutionResult,
     execute_workflow,
+    get_execution_order,
     validate_workflow_definition,
 )
 
@@ -1044,36 +1363,61 @@ class MixinWorkflowExecution:
 
     async def execute_workflow_from_contract(
         self,
-        workflow_contract: ModelWorkflowDefinition,
+        workflow_definition: ModelWorkflowDefinition,
+        workflow_steps: list[ModelWorkflowStep],
         workflow_id: UUID,
-        context: dict[str, Any],
+        execution_mode: EnumExecutionMode | None = None,
     ) -> WorkflowExecutionResult:
         """
         Execute workflow from YAML contract.
 
         Args:
-            workflow_contract: Workflow definition from node contract
+            workflow_definition: Workflow definition from node contract
+            workflow_steps: List of workflow steps to execute
             workflow_id: Unique workflow execution ID
-            context: Initial execution context
+            execution_mode: Optional execution mode override
 
         Returns:
             WorkflowExecutionResult with emitted actions
         """
-        return await execute_workflow(workflow_contract, workflow_id, context)
+        return await execute_workflow(
+            workflow_definition, workflow_steps, workflow_id, execution_mode
+        )
 
     async def validate_workflow_contract(
-        self, workflow_contract: ModelWorkflowDefinition
+        self,
+        workflow_definition: ModelWorkflowDefinition,
+        workflow_steps: list[ModelWorkflowStep],
     ) -> list[str]:
         """
         Validate workflow contract for correctness.
 
         Args:
-            workflow_contract: Workflow definition to validate
+            workflow_definition: Workflow definition to validate
+            workflow_steps: Workflow steps to validate
 
         Returns:
             List of validation errors (empty if valid)
         """
-        return await validate_workflow_definition(workflow_contract)
+        return await validate_workflow_definition(workflow_definition, workflow_steps)
+
+    def get_workflow_execution_order(
+        self,
+        workflow_steps: list[ModelWorkflowStep],
+    ) -> list[UUID]:
+        """
+        Get topological execution order for workflow steps.
+
+        Args:
+            workflow_steps: Workflow steps to order
+
+        Returns:
+            List of step IDs in execution order
+
+        Raises:
+            ModelOnexError: If workflow contains cycles
+        """
+        return get_execution_order(workflow_steps)
 ```
 
 ---

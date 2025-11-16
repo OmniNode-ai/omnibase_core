@@ -7,6 +7,7 @@ No side effects - returns results and intents.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -67,6 +68,7 @@ class FSMTransitionResult:
         self.timestamp = datetime.now().isoformat()
 
 
+@dataclass(frozen=True)
 class FSMState:
     """
     Current FSM state snapshot.
@@ -74,23 +76,9 @@ class FSMState:
     Immutable state representation for pure FSM pattern.
     """
 
-    def __init__(
-        self,
-        current_state: str,
-        context: dict[str, Any],
-        history: list[str] | None = None,
-    ):
-        """
-        Initialize FSM state.
-
-        Args:
-            current_state: Current state name
-            context: Execution context data
-            history: Optional state transition history
-        """
-        self.current_state = current_state
-        self.context = context
-        self.history = history or []
+    current_state: str
+    context: dict[str, Any]
+    history: list[str] = field(default_factory=list)
 
 
 async def execute_transition(
@@ -290,13 +278,13 @@ async def validate_fsm_contract(fsm: ModelFSMSubcontract) -> list[str]:
     if unreachable:
         errors.append(f"Unreachable states: {', '.join(sorted(unreachable))}")
 
-    # Check terminal states have no outgoing transitions (except wildcard error handlers)
+    # Check terminal states have no outgoing transitions to non-error states
     terminal_states_set = {
         state.state_name for state in fsm.states if state.is_terminal
     }
     for transition in fsm.transitions:
         if transition.from_state in terminal_states_set:
-            # Allow wildcard error transitions from terminal states
+            # Allow transitions to error states from terminal states
             if transition.to_state not in fsm.error_states:
                 errors.append(
                     f"Terminal state '{transition.from_state}' has non-error outgoing transition: {transition.transition_name}"
@@ -392,6 +380,14 @@ async def _evaluate_single_condition(
 
     Returns:
         True if condition met, False otherwise
+
+    Note:
+        Type Coercion Behavior:
+        - The 'equals' and 'not_equals' operators perform STRING comparison
+        - Both values are cast to str before comparison
+        - This means: 10 == "10" will evaluate to True
+        - This is intentional for FSM string-based condition expressions
+        - For strict type comparison, use numeric operators (greater_than, less_than)
     """
     # Simple expression-based evaluation
     # Format: "field operator value"
@@ -410,8 +406,12 @@ async def _evaluate_single_condition(
 
     # Evaluate based on operator
     if operator == "equals":
+        # TYPE COERCION: Both values cast to str for comparison
+        # Example: 10 == "10" → True (both become "10")
         return str(field_value) == str(expected_value)
     elif operator == "not_equals":
+        # TYPE COERCION: Both values cast to str for comparison
+        # Example: 10 != "10" → False (both become "10")
         return str(field_value) != str(expected_value)
     elif operator == "min_length":
         if not field_value:

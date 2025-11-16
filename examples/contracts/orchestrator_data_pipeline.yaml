@@ -15,6 +15,10 @@
 # - Action emission for deferred execution
 # - Sequential/parallel/batch execution modes
 
+# Contract Metadata
+node_type: ORCHESTRATOR
+contract_version: {major: 1, minor: 0, patch: 0}
+
 # Workflow Coordination Subcontract
 workflow_coordination:
   # Workflow Definition: Complete workflow specification
@@ -22,9 +26,9 @@ workflow_coordination:
     # Workflow Metadata
     workflow_metadata:
       workflow_name: data_processing_pipeline
-      workflow_version: "1.0.0"
+      workflow_version: {major: 1, minor: 0, patch: 0}
       description: "Multi-stage data processing with validation and enrichment"
-      execution_mode: parallel  # Can be: sequential, parallel, batch
+      execution_mode: parallel # Can be: sequential, parallel, batch
       author: "ONEX Framework Team"
       tags:
         - data-processing
@@ -161,7 +165,7 @@ workflow_coordination:
       max_parallel_steps: 4
 
       # Failure recovery strategy
-      failure_recovery_strategy: retry  # Options: retry, rollback, continue, fail_fast
+      failure_recovery_strategy: retry # Options: retry, rollback, continue, fail_fast
 
       # Retry configuration
       max_retries: 3
@@ -169,8 +173,8 @@ workflow_coordination:
       retry_backoff_multiplier: 2.0
 
       # Timeout configuration
-      timeout_ms: 300000  # 5 minutes total workflow timeout
-      step_timeout_ms: 60000  # 1 minute per step default
+      timeout_ms: 300000 # 5 minutes total workflow timeout
+      step_timeout_ms: 60000 # 1 minute per step default
 
       # Dependency resolution
       dependency_resolution_enabled: true
@@ -183,7 +187,7 @@ workflow_coordination:
 
       # Load balancing (for batch mode)
       enable_load_balancing: true
-      load_balance_strategy: "round_robin"  # Options: round_robin, least_loaded, weighted
+      load_balance_strategy: "round_robin" # Options: round_robin, least_loaded, weighted
 
       # Resource management
       resource_constraints:
@@ -269,7 +273,7 @@ workflow_coordination:
 
 # Metadata
 metadata:
-  version: "1.0.0"
+  version: {major: 1, minor: 0, patch: 0}
   author: "ONEX Framework Team"
   description: "Declarative data processing pipeline orchestrator using workflow pattern"
   tags:

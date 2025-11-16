@@ -4,8 +4,9 @@ Unit tests for FSM execution utilities.
 Tests the pure functions in utils/fsm_executor.py for FSM transition execution.
 """
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
     ModelFSMStateDefinition,
@@ -230,9 +231,7 @@ class TestFSMTransitionSuccess:
         self, fsm_with_actions: ModelFSMSubcontract
     ):
         """Test that transition actions are emitted."""
-        result = await execute_transition(
-            fsm_with_actions, "idle", "activate", {}
-        )
+        result = await execute_transition(fsm_with_actions, "idle", "activate", {})
 
         assert result.success
 
@@ -254,9 +253,7 @@ class TestFSMConditions:
         """Test transition when condition is met."""
         context = {"data_count": [1, 2, 3]}  # Has data
 
-        result = await execute_transition(
-            fsm_with_conditions, "idle", "start", context
-        )
+        result = await execute_transition(fsm_with_conditions, "idle", "start", context)
 
         assert result.success
         assert result.new_state == "processing"
@@ -266,9 +263,7 @@ class TestFSMConditions:
         """Test transition when condition is not met."""
         context = {"data_count": []}  # Empty list
 
-        result = await execute_transition(
-            fsm_with_conditions, "idle", "start", context
-        )
+        result = await execute_transition(fsm_with_conditions, "idle", "start", context)
 
         assert not result.success
         assert result.new_state == "idle"  # Stays in current state
@@ -286,9 +281,7 @@ class TestFSMConditions:
         """Test transition when condition field is missing."""
         context = {}  # No data_count field
 
-        result = await execute_transition(
-            fsm_with_conditions, "idle", "start", context
-        )
+        result = await execute_transition(fsm_with_conditions, "idle", "start", context)
 
         assert not result.success
         assert result.new_state == "idle"
@@ -363,7 +356,9 @@ class TestFSMValidation:
 
         errors = await validate_fsm_contract(fsm)
         assert len(errors) > 0
-        assert any("Invalid target state" in error or "to_state" in error for error in errors)
+        assert any(
+            "Invalid target state" in error or "to_state" in error for error in errors
+        )
 
     @pytest.mark.asyncio
     async def test_unreachable_states(self):
@@ -409,7 +404,9 @@ class TestFSMValidation:
 
         errors = await validate_fsm_contract(fsm)
         assert len(errors) > 0
-        assert any("Unreachable states" in error and "orphan" in error for error in errors)
+        assert any(
+            "Unreachable states" in error and "orphan" in error for error in errors
+        )
 
 
 class TestFSMErrors:
@@ -567,7 +564,9 @@ class TestPersistenceIntents:
 
         result = await execute_transition(simple_fsm, "idle", "start_event", {})
 
-        persist_intents = [i for i in result.intents if i.intent_type == "persist_state"]
+        persist_intents = [
+            i for i in result.intents if i.intent_type == "persist_state"
+        ]
         assert len(persist_intents) == 1
 
         persist_intent = persist_intents[0]
@@ -587,7 +586,9 @@ class TestPersistenceIntents:
             fsm_with_conditions, "idle", "start", {"data_count": [1, 2, 3]}
         )
 
-        persist_intents = [i for i in result.intents if i.intent_type == "persist_state"]
+        persist_intents = [
+            i for i in result.intents if i.intent_type == "persist_state"
+        ]
         assert len(persist_intents) == 0
 
 

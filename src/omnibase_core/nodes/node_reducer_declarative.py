@@ -9,16 +9,21 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 Author: ONEX Framework Team
 """
 
-from typing import Any
+from typing import Any, cast
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_reducer_input import ModelReducerInput, T_Input
 from omnibase_core.models.model_reducer_output import ModelReducerOutput, T_Output
+
+# Error messages
+_ERR_FSM_CONTRACT_NOT_LOADED = "FSM contract not loaded"
 
 
 class NodeReducerDeclarative(NodeCoreBase, MixinFSMExecution):
@@ -158,8 +163,9 @@ class NodeReducerDeclarative(NodeCoreBase, MixinFSMExecution):
             ```
         """
         if not self.fsm_contract:
-            raise ValueError(
-                "FSM contract not loaded. Ensure node contract has state_transitions field."
+            raise ModelOnexError(
+                message=_ERR_FSM_CONTRACT_NOT_LOADED,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Extract trigger from metadata (default to generic 'process' trigger)
@@ -182,11 +188,15 @@ class NodeReducerDeclarative(NodeCoreBase, MixinFSMExecution):
 
         # Create reducer output with FSM result
         output: ModelReducerOutput[T_Output] = ModelReducerOutput(
-            result=input_data.data,  # Result is the processed data (type: T_Output)
+            result=cast(
+                T_Output, input_data.data
+            ),  # Cast to T_Output for declarative passthrough
             operation_id=input_data.operation_id,
             reduction_type=input_data.reduction_type,
             processing_time_ms=0,  # Computed by caller if needed
-            items_processed=len(input_data.data) if hasattr(input_data.data, "__len__") else 0,
+            items_processed=(
+                len(input_data.data) if hasattr(input_data.data, "__len__") else 0
+            ),
             conflicts_resolved=0,
             streaming_mode=input_data.streaming_mode,
             batches_processed=1,
@@ -194,7 +204,7 @@ class NodeReducerDeclarative(NodeCoreBase, MixinFSMExecution):
             metadata={
                 "fsm_state": fsm_result.new_state,
                 "fsm_transition": fsm_result.transition_name or "none",
-                "fsm_success": fsm_result.success,
+                "fsm_success": str(fsm_result.success),
                 **input_data.metadata,
             },
         )

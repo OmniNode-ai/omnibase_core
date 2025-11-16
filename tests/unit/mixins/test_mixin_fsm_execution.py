@@ -4,8 +4,9 @@ Unit tests for MixinFSMExecution.
 Tests the FSM execution mixin for declarative state machines.
 """
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (

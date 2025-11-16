@@ -15,6 +15,10 @@
 # - Error handling with wildcard transitions
 # - State persistence for recovery
 
+# Contract Metadata
+node_type: REDUCER
+contract_version: {major: 1, minor: 0, patch: 0}
+
 # FSM Subcontract: Defines state machine for metrics aggregation
 state_transitions:
   state_machine_name: metrics_aggregation_fsm
@@ -244,7 +248,7 @@ state_transitions:
 
 # Metadata
 metadata:
-  version: "1.0.0"
+  version: {major: 1, minor: 0, patch: 0}
   author: "ONEX Framework Team"
   description: "Declarative metrics aggregation reducer using FSM pattern"
   tags:

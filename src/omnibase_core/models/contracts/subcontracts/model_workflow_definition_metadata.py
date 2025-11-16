@@ -15,14 +15,19 @@ from pydantic import BaseModel
 class ModelWorkflowDefinitionMetadata(BaseModel):
     """Metadata for a workflow definition."""
 
-    name: str = Field(default=..., description="Name of the workflow")
+    workflow_name: str = Field(default=..., description="Name of the workflow")
 
-    version: ModelSemVer = Field(
+    workflow_version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Version of the workflow",
     )
 
     description: str = Field(default=..., description="Description of the workflow")
+
+    execution_mode: str = Field(
+        default="sequential",
+        description="Execution mode: sequential, parallel, batch, conditional, or streaming",
+    )
 
     timeout_ms: int = Field(
         default=600000,

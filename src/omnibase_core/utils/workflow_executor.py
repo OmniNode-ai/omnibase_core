@@ -154,7 +154,7 @@ async def execute_workflow(
 
 
 async def validate_workflow_definition(
-    workflow_definition: ModelWorkflowDefinition,
+    _workflow_definition: ModelWorkflowDefinition,
     workflow_steps: list[ModelWorkflowStep],
 ) -> list[str]:
     """
@@ -163,7 +163,7 @@ async def validate_workflow_definition(
     Pure validation function - no side effects.
 
     Args:
-        workflow_definition: Workflow definition to validate
+        _workflow_definition: Workflow definition (unused, reserved for future validation)
         workflow_steps: Workflow steps to validate
 
     Returns:
@@ -230,17 +230,16 @@ def _get_execution_mode(
 ) -> EnumExecutionMode:
     """Extract execution mode from workflow metadata."""
     mode_str = workflow_definition.workflow_metadata.execution_mode
-    if mode_str == "sequential":
-        return EnumExecutionMode.SEQUENTIAL
-    elif mode_str == "parallel":
-        return EnumExecutionMode.PARALLEL
-    elif mode_str == "batch":
-        return EnumExecutionMode.BATCH
-    return EnumExecutionMode.SEQUENTIAL
+    mode_map = {
+        "sequential": EnumExecutionMode.SEQUENTIAL,
+        "parallel": EnumExecutionMode.PARALLEL,
+        "batch": EnumExecutionMode.BATCH,
+    }
+    return mode_map.get(mode_str, EnumExecutionMode.SEQUENTIAL)
 
 
 async def _execute_sequential(
-    workflow_definition: ModelWorkflowDefinition,
+    _workflow_definition: ModelWorkflowDefinition,
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
 ) -> WorkflowExecutionResult:
@@ -285,21 +284,19 @@ async def _execute_sequential(
             completed_steps.append(str(step.step_id))
             completed_step_ids.add(step.step_id)
 
-        except Exception as e:
+        except Exception:
             failed_steps.append(str(step.step_id))
 
             # Handle based on error action
             if step.error_action == "stop":
                 break
-            elif step.error_action == "continue":
+            if step.error_action == "continue":
                 continue
             # For other error actions, continue for now
 
     # Determine final status
     status = (
-        EnumWorkflowState.COMPLETED
-        if not failed_steps
-        else EnumWorkflowState.FAILED
+        EnumWorkflowState.COMPLETED if not failed_steps else EnumWorkflowState.FAILED
     )
 
     return WorkflowExecutionResult(
@@ -314,7 +311,7 @@ async def _execute_sequential(
 
 
 async def _execute_parallel(
-    workflow_definition: ModelWorkflowDefinition,
+    _workflow_definition: ModelWorkflowDefinition,
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
 ) -> WorkflowExecutionResult:
@@ -352,7 +349,7 @@ async def _execute_parallel(
                 completed_steps.append(str(step.step_id))
                 completed_step_ids.add(step.step_id)
 
-            except Exception as e:
+            except Exception:
                 failed_steps.append(str(step.step_id))
 
                 if step.error_action == "stop":
@@ -364,9 +361,7 @@ async def _execute_parallel(
         remaining_steps = [s for s in remaining_steps if s not in ready_steps]
 
     status = (
-        EnumWorkflowState.COMPLETED
-        if not failed_steps
-        else EnumWorkflowState.FAILED
+        EnumWorkflowState.COMPLETED if not failed_steps else EnumWorkflowState.FAILED
     )
 
     return WorkflowExecutionResult(

@@ -4,8 +4,9 @@ Unit tests for workflow execution utilities.
 Tests the pure functions in utils/workflow_executor.py for workflow execution.
 """
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
 from omnibase_core.enums.enum_workflow_execution import (
@@ -36,10 +37,13 @@ from omnibase_core.utils.workflow_executor import (
 @pytest.fixture
 def simple_workflow_definition() -> ModelWorkflowDefinition:
     """Create simple workflow definition."""
+    from omnibase_core.models.primitives.model_semver import ModelSemVer
+
     return ModelWorkflowDefinition(
         workflow_metadata=ModelWorkflowDefinitionMetadata(
             workflow_name="test_workflow",
-            workflow_version="1.0.0",
+            workflow_version=ModelSemVer(major=1, minor=0, patch=0),
+            description="Test workflow for unit tests",
             execution_mode="sequential",
         ),
         execution_graph=ModelExecutionGraph(nodes=[]),
@@ -393,9 +397,7 @@ class TestDisabledSteps:
             ),
         ]
 
-        result = await execute_workflow(
-            simple_workflow_definition, steps, uuid4()
-        )
+        result = await execute_workflow(simple_workflow_definition, steps, uuid4())
 
         # Step 1 should complete
         # Step 2 should be skipped (disabled)
@@ -448,9 +450,7 @@ class TestActionTypes:
             ModelWorkflowStep(step_name="Reducer Step", step_type="reducer"),
         ]
 
-        result = await execute_workflow(
-            simple_workflow_definition, steps, uuid4()
-        )
+        result = await execute_workflow(simple_workflow_definition, steps, uuid4())
 
         # Check action types
         action_types = [action.action_type for action in result.actions_emitted]

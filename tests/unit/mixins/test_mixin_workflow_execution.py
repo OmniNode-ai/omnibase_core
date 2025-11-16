@@ -4,8 +4,9 @@ Unit tests for MixinWorkflowExecution.
 Tests the workflow execution mixin for declarative orchestration.
 """
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
 from omnibase_core.enums.enum_workflow_execution import (
@@ -27,6 +28,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
     ModelWorkflowDefinitionMetadata,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 # Test node using the mixin
@@ -44,7 +46,8 @@ def workflow_definition() -> ModelWorkflowDefinition:
     return ModelWorkflowDefinition(
         workflow_metadata=ModelWorkflowDefinitionMetadata(
             workflow_name="test_workflow",
-            workflow_version="1.0.0",
+            workflow_version=ModelSemVer(major=1, minor=0, patch=0),
+            description="Test workflow for workflow execution mixin",
             execution_mode="sequential",
         ),
         execution_graph=ModelExecutionGraph(nodes=[]),
@@ -242,7 +245,9 @@ class TestMixinWorkflowValidation:
         """Test validation passes for valid workflow."""
         node = TestNodeWithWorkflowMixin()
 
-        errors = await node.validate_workflow_contract(workflow_definition, simple_steps)
+        errors = await node.validate_workflow_contract(
+            workflow_definition, simple_steps
+        )
 
         assert len(errors) == 0
 
@@ -470,8 +475,6 @@ class TestMixinIntegration:
 
         # Empty steps should trigger validation error
         with pytest.raises(ModelOnexError) as exc_info:
-            await node.execute_workflow_from_contract(
-                workflow_definition, [], uuid4()
-            )
+            await node.execute_workflow_from_contract(workflow_definition, [], uuid4())
 
         assert "validation failed" in str(exc_info.value).lower()

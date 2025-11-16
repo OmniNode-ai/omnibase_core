@@ -4,8 +4,9 @@ Unit tests for declarative node base classes.
 Tests NodeReducerDeclarative and NodeOrchestratorDeclarative for YAML-driven execution.
 """
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
@@ -38,7 +39,10 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
 )
 from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.models.model_reducer_input import ModelReducerInput
-from omnibase_core.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.nodes.node_orchestrator_declarative import (
+    NodeOrchestratorDeclarative,
+)
 from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
 
 
@@ -103,7 +107,8 @@ def simple_workflow_definition() -> ModelWorkflowDefinition:
     return ModelWorkflowDefinition(
         workflow_metadata=ModelWorkflowDefinitionMetadata(
             workflow_name="test_workflow",
-            workflow_version="1.0.0",
+            workflow_version=ModelSemVer(major=1, minor=0, patch=0),
+            description="Test workflow for declarative nodes",
             execution_mode="sequential",
         ),
         execution_graph=ModelExecutionGraph(nodes=[]),
@@ -131,13 +136,14 @@ class TestNodeReducerDeclarative:
         simple_fsm: ModelFSMSubcontract,
     ):
         """Test node initialization with FSM contract."""
+
         # Create a mock contract object
         class MockContract:
             def __init__(self):
                 self.state_transitions = simple_fsm
 
         node = NodeReducerDeclarative(test_container)
-        node.contract = MockContract()  # type: ignore
+        node.contract = MockContract()  # type: ignore[assignment]
         node.__init__(test_container)  # Reinitialize with contract
 
         assert node.fsm_contract is not None
@@ -301,11 +307,13 @@ class TestNodeOrchestratorDeclarative:
                 self.workflow_coordination = MockWorkflowCoordination()
 
         node = NodeOrchestratorDeclarative(test_container)
-        node.contract = MockContract()  # type: ignore
+        node.contract = MockContract()  # type: ignore[assignment]
         node.__init__(test_container)  # Reinitialize with contract
 
         assert node.workflow_definition is not None
-        assert node.workflow_definition.workflow_metadata.workflow_name == "test_workflow"
+        assert (
+            node.workflow_definition.workflow_metadata.workflow_name == "test_workflow"
+        )
 
     @pytest.mark.asyncio
     async def test_process_with_workflow(

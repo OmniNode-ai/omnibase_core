@@ -11,6 +11,7 @@ Author: ONEX Framework Team
 
 from uuid import UUID
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -18,9 +19,13 @@ from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.models.orchestrator import ModelOrchestratorOutput
 from omnibase_core.utils.workflow_executor import WorkflowExecutionResult
+
+# Error messages
+_ERR_WORKFLOW_DEFINITION_NOT_LOADED = "Workflow definition not loaded"
 
 
 class NodeOrchestratorDeclarative(NodeCoreBase, MixinWorkflowExecution):
@@ -129,7 +134,9 @@ class NodeOrchestratorDeclarative(NodeCoreBase, MixinWorkflowExecution):
         self.workflow_definition: ModelWorkflowDefinition | None = None
 
         # Try to load workflow definition if available in node contract
-        if hasattr(self, "contract") and hasattr(self.contract, "workflow_coordination"):
+        if hasattr(self, "contract") and hasattr(
+            self.contract, "workflow_coordination"
+        ):
             if hasattr(self.contract.workflow_coordination, "workflow_definition"):
                 self.workflow_definition = (
                     self.contract.workflow_coordination.workflow_definition
@@ -185,8 +192,9 @@ class NodeOrchestratorDeclarative(NodeCoreBase, MixinWorkflowExecution):
             ```
         """
         if not self.workflow_definition:
-            raise ValueError(
-                "Workflow definition not loaded. Ensure node contract has workflow_coordination field."
+            raise ModelOnexError(
+                message=_ERR_WORKFLOW_DEFINITION_NOT_LOADED,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         # Convert dict steps to ModelWorkflowStep instances
@@ -305,8 +313,6 @@ class NodeOrchestratorDeclarative(NodeCoreBase, MixinWorkflowExecution):
             final_result=None,  # No aggregate result for declarative workflows
             actions_emitted=workflow_result.actions_emitted,
             metrics={
-                "workflow_id": str(workflow_result.workflow_id),
-                "execution_mode": workflow_result.metadata.get("execution_mode", "unknown"),
                 "actions_count": float(len(workflow_result.actions_emitted)),
                 "completed_count": float(len(workflow_result.completed_steps)),
                 "failed_count": float(len(workflow_result.failed_steps)),
