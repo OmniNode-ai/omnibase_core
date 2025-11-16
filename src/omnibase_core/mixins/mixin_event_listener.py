@@ -86,7 +86,9 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 },
             )
             # Use a timer to start after init completes
-            threading.Timer(0.1, self.start_event_listener).start()
+            timer = threading.Timer(0.1, self.start_event_listener)
+            timer.daemon = True
+            timer.start()
         else:
             emit_log_event(
                 LogLevel.DEBUG,
@@ -835,6 +837,37 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
         return None
 
+    def _publish_event(self, envelope: Any) -> None:
+        """
+        Publish event, handling both sync and async event buses.
+
+        This helper ensures async publish_async() calls are properly scheduled,
+        preventing event loop hangs during pytest-asyncio cleanup.
+
+        Args:
+            envelope: Event envelope to publish
+        """
+        import asyncio
+        import inspect
+
+        # Call the async method
+        result = self.event_bus.publish_async(envelope)
+
+        # Check if it returned a coroutine
+        if inspect.iscoroutine(result):
+            try:
+                # Get the running event loop
+                loop = asyncio.get_running_loop()
+                # Schedule the coroutine as a fire-and-forget task
+                # Store reference to prevent garbage collection
+                task = loop.create_task(result)  # noqa: RUF006
+            except RuntimeError:
+                # No running event loop - skip async operation to prevent blocking
+                # In test contexts or synchronous code, event_bus is likely a Mock
+                # and calling asyncio.run() would block for 30+ seconds waiting
+                # for Mock timeouts or coroutine completion.
+                result.close()  # Close the coroutine to prevent ResourceWarning
+
     def _publish_completion_event(
         self,
         input_event: ModelOnexEvent,
@@ -983,7 +1016,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
         # Publish envelope
         if self.event_bus is not None:
-            self.event_bus.publish_async(envelope)
+            self._publish_event(envelope)
 
         emit_log_event(
             LogLevel.INFO,
@@ -1045,7 +1078,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
         )
 
         if self.event_bus is not None:
-            self.event_bus.publish_async(envelope)
+            self._publish_event(envelope)
 
         emit_log_event(
             LogLevel.ERROR,

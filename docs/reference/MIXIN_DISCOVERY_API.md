@@ -240,7 +240,7 @@ print(f"Total dependencies: {len(context['dependencies'])}")
 
 ## Metadata File Format
 
-Mixins are defined in `/src/omnibase_core/data/config/mixin_metadata.yaml`:
+Mixins are defined in `/src/omnibase_core/mixins/mixin_metadata.yaml`:
 
 ```yaml
 mixin_retry:
@@ -415,7 +415,7 @@ code = template.render(node_name="NodeApiClientEffect", mixin=mixin)
 
 To add new mixin metadata:
 
-1. Edit `/src/omnibase_core/data/config/mixin_metadata.yaml`
+1. Edit `/src/omnibase_core/mixins/mixin_metadata.yaml`
 2. Follow the existing format and naming conventions
 3. Include all required fields (name, description, version, category)
 4. List dependencies, compatibility, and incompatibilities

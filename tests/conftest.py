@@ -16,6 +16,7 @@ See pyproject.toml filterwarnings configuration for details.
 import asyncio
 import gc
 import logging
+import threading
 from collections.abc import Generator
 from unittest.mock import MagicMock
 
@@ -48,10 +49,23 @@ def aggressive_gc_cleanup() -> Generator[None, None, None]:
 
     This fixture runs after every test to immediately free memory,
     preventing accumulation across thousands of tests.
+
+    CRITICAL: Stops all event listener threads BEFORE gc.collect() to prevent
+    deadlock when Mock objects in background threads are accessed during
+    garbage collection.
     """
     yield  # Let test run
 
-    # Force garbage collection after test completes
+    # Stop all event listener threads before garbage collection
+    # Background threads with Mock objects can deadlock during gc.collect()
+    for thread in threading.enumerate():
+        if thread.name and "test_node_event_listener" in thread.name:
+            # Thread should have stopped naturally, but ensure cleanup
+            if thread.is_alive():
+                # Give thread up to 2 seconds to finish
+                thread.join(timeout=2.0)
+
+    # Now safe to collect garbage - no background threads with Mock objects
     gc.collect()
 
 

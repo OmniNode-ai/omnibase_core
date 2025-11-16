@@ -49,8 +49,10 @@ from omnibase_core.models.model_load_balancer import ModelLoadBalancer
 from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.models.orchestrator import ModelOrchestratorOutput
 from omnibase_core.models.orchestrator.model_action import ModelAction
-from omnibase_core.models.workflows.model_dependency_graph import ModelDependencyGraph
-from omnibase_core.models.workflows.model_workflow_step_execution import (
+from omnibase_core.models.workflow.execution.model_dependency_graph import (
+    ModelDependencyGraph,
+)
+from omnibase_core.models.workflow.execution.model_workflow_step_execution import (
     ModelWorkflowStepExecution,
 )
 

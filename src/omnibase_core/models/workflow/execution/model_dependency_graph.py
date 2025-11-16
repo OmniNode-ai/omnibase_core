@@ -118,7 +118,7 @@ class ModelDependencyGraph(BaseModel):
 
 
 # Import here to avoid circular dependency
-from omnibase_core.models.workflows.model_workflow_step_execution import (
+from omnibase_core.models.workflow.execution.model_workflow_step_execution import (
     ModelWorkflowStepExecution,
 )
 

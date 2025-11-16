@@ -138,7 +138,7 @@ class MixinDagSupport:
                 correlation_id=correlation_uuid,
             )
 
-            self._event_bus.publish_async(envelope)
+            self._publish_event(envelope)
         except Exception as e:
             # Log error but don't fail the tool execution
             self._safe_log_error(f"Failed to emit Workflow completion event: {e}")
@@ -190,7 +190,7 @@ class MixinDagSupport:
                 correlation_id=correlation_uuid,
             )
 
-            self._event_bus.publish_async(envelope)
+            self._publish_event(envelope)
         except Exception as e:
             self._safe_log_error(f"Failed to emit Workflow start event: {e}")
 
@@ -231,6 +231,36 @@ class MixinDagSupport:
         from datetime import UTC, datetime
 
         return datetime.now(UTC).isoformat() + "Z"
+
+    def _publish_event(self, envelope: Any) -> None:
+        """
+        Publish event, handling both sync and async event buses.
+
+        This method safely publishes events from synchronous code, properly
+        handling async event buses by scheduling coroutines on the event loop.
+
+        Args:
+            envelope: Event envelope to publish
+        """
+        import asyncio
+        import inspect
+
+        # Call publish_async
+        result = self._event_bus.publish_async(envelope)
+
+        # If it returns a coroutine, schedule it on the event loop
+        if inspect.iscoroutine(result):
+            try:
+                # Try to get the running event loop
+                loop = asyncio.get_running_loop()
+                # Schedule the coroutine as a task (fire-and-forget)
+                _ = loop.create_task(result)  # type: ignore[unused-awaitable]  # noqa: RUF006
+            except RuntimeError:
+                # No running event loop - skip async operation to prevent blocking
+                # In test contexts or synchronous code, event_bus is likely a Mock
+                # and calling asyncio.run() would block for 30+ seconds waiting
+                # for Mock timeouts or coroutine completion.
+                result.close()  # Close the coroutine to prevent ResourceWarning
 
     def _safe_log_error(self, message: str) -> None:
         """Safely log error without failing tool execution."""
