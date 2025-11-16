@@ -236,8 +236,8 @@ async def execute_transition(
         transition_name=transition.transition_name,
         intents=intents,
         metadata={
-            "conditions_evaluated": len(transition.conditions),
-            "actions_executed": len(transition.actions),
+            "conditions_evaluated": len(transition.conditions or []),
+            "actions_executed": len(transition.actions or []),
         },
     )
 
@@ -291,7 +291,9 @@ async def validate_fsm_contract(fsm: ModelFSMSubcontract) -> list[str]:
         errors.append(f"Unreachable states: {', '.join(sorted(unreachable))}")
 
     # Check terminal states have no outgoing transitions (except wildcard error handlers)
-    terminal_states_set = {state.state_name for state in fsm.states if state.is_terminal}
+    terminal_states_set = {
+        state.state_name for state in fsm.states if state.is_terminal
+    }
     for transition in fsm.transitions:
         if transition.from_state in terminal_states_set:
             # Allow wildcard error transitions from terminal states
@@ -427,12 +429,12 @@ async def _evaluate_single_condition(
             return False
     elif operator == "greater_than":
         try:
-            return float(field_value) > float(expected_value or "0")
+            return float(field_value or 0) > float(expected_value or "0")
         except (TypeError, ValueError):
             return False
     elif operator == "less_than":
         try:
-            return float(field_value) < float(expected_value or "0")
+            return float(field_value or 0) < float(expected_value or "0")
         except (TypeError, ValueError):
             return False
     elif operator == "exists":

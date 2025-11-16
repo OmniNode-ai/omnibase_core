@@ -39,5 +39,5 @@ class ModelReducerInput(BaseModel, Generic[T_Input]):
     streaming_mode: EnumStreamingMode = EnumStreamingMode.BATCH
     batch_size: int = 1000
     window_size_ms: int = 5000
-    metadata: dict[str, Any] | None = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)

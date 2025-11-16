@@ -2577,12 +2577,19 @@ mixin_fsm_execution:
               super().__init__(container)
               self.contract = contract
 
-              # Validate FSM contract
-              errors = await self.validate_fsm_contract(
-                  self.contract.state_transitions
+          @classmethod
+          async def create(cls, container, contract):
+              """Factory method for async initialization with validation."""
+              instance = cls(container, contract)
+
+              # Validate FSM contract (async operation)
+              errors = await instance.validate_fsm_contract(
+                  contract.state_transitions
               )
               if errors:
                   raise ValidationError(f"FSM invalid: {errors}")
+
+              return instance
 
     with_terminal_check: |
       # Note: Use NodeCoreBase for now. NodeReducerDeclarative coming in Phase 3.
