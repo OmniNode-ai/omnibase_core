@@ -154,7 +154,9 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
 
         # Auto-start listener if event bus is available after full initialization
         if self._has_event_bus():
-            threading.Timer(0.1, self._auto_start_listener).start()
+            timer = threading.Timer(0.1, self._auto_start_listener)
+            timer.daemon = True
+            timer.start()
 
     # --- Node Interface Methods (to be overridden by subclasses) ------------
 

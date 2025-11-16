@@ -86,7 +86,9 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 },
             )
             # Use a timer to start after init completes
-            threading.Timer(0.1, self.start_event_listener).start()
+            timer = threading.Timer(0.1, self.start_event_listener)
+            timer.daemon = True
+            timer.start()
         else:
             emit_log_event(
                 LogLevel.DEBUG,
