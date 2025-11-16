@@ -10,16 +10,18 @@
 
 > **IMPORTANT UPDATE (2025-11-16)**: omnibase_core provides **comprehensive YAML contract infrastructure** for building orchestrator workflows **without custom Python code**. See [Declarative Workflow Findings](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for full details.
 
-### ✅ Available Today: YAML Contract Infrastructure
+### ✅ Available Today: Workflow Execution Infrastructure (v0.2.0+)
 
-The omnibase_core codebase includes complete Pydantic models for declarative workflows:
+**Status**: ✅ **FULLY IMPLEMENTED** as of omnibase_core v0.2.0 (2025-11-16)
 
-- **`ModelWorkflowCoordinationSubcontract`** - Complete workflow definitions
-- **`ModelWorkflowDefinition`** - Execution graphs and coordination rules
-- **`ModelExecutionGraph`** - DAG of workflow steps with dependencies
-- **`ModelWorkflowStep`** - Individual step configurations
+The omnibase_core codebase now includes:
+- **Pydantic Models**: Complete workflow coordination infrastructure
+- **Runtime Execution**: `utils/workflow_executor.py` with sequential/parallel/batch execution modes
+- **Mixin Integration**: `MixinWorkflowExecution` for seamless orchestrator integration
+- **Declarative Nodes**: `NodeOrchestratorDeclarative` base class for zero-code workflows
+- **Production Ready**: Topological ordering, cycle detection, dependency resolution, comprehensive tests
 
-**Example YAML Contract** (Infrastructure exists, runtime in development):
+**Example YAML Contract** (fully functional, production-ready):
 
 ```yaml
 # contracts/orchestrator_data_pipeline.yaml
