@@ -2767,3 +2767,285 @@ mixin_fsm_execution:
         - "FSM execution from YAML contracts"
         - "Intent-based side effect emission"
         - "Pure FSM pattern support"
+
+# =============================================================================
+# MixinWorkflowExecution - Declarative Workflow Execution
+# =============================================================================
+mixin_workflow_execution:
+  name: "MixinWorkflowExecution"
+  description: "Declarative workflow execution from YAML contracts - enables workflows without custom code"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "declarative_execution"
+
+  # Dependencies
+  requires:
+    - "omnibase_core.models.contracts.subcontracts.model_workflow_definition"
+    - "omnibase_core.models.contracts.model_workflow_step"
+    - "omnibase_core.utils.workflow_executor"
+    - "omnibase_core.models.orchestrator.model_action"
+    - "pydantic"
+
+  # Compatibility
+  compatible_with:
+    - "MixinEventBus" # Can emit workflow events
+    - "MixinLogging" # Can log workflow execution
+    - "MixinMetrics" # Can track workflow metrics
+    - "MixinHealthCheck" # Can report workflow health
+    - "MixinValidation" # Can validate workflow contracts
+    - "MixinFSMExecution" # Can combine FSM with workflow
+
+  incompatible_with: []
+
+  # Configuration schema
+  config_schema:
+    auto_validate:
+      type: "boolean"
+      default: true
+      description: "Automatically validate workflow contract on initialization"
+
+    strict_mode:
+      type: "boolean"
+      default: true
+      description: "Fail on validation errors (vs. warnings)"
+
+    enable_action_emission:
+      type: "boolean"
+      default: true
+      description: "Enable action emission for workflow steps"
+
+    enable_metrics:
+      type: "boolean"
+      default: true
+      description: "Enable workflow metrics tracking"
+
+    default_execution_mode:
+      type: "string"
+      enum: ["sequential", "parallel", "batch"]
+      default: "sequential"
+      description: "Default workflow execution mode"
+
+  # Usage examples
+  usage_examples:
+    - "Orchestrator nodes with multi-step workflows"
+    - "Data pipelines with dependency management"
+    - "ETL workflows with declarative coordination"
+    - "Multi-service orchestration"
+    - "Complex business process automation"
+
+  # Preset configurations
+  presets:
+    simple:
+      description: "Simple sequential workflow"
+      config:
+        auto_validate: true
+        strict_mode: true
+        enable_action_emission: true
+        enable_metrics: false
+        default_execution_mode: "sequential"
+
+    production:
+      description: "Full workflow with all features enabled"
+      config:
+        auto_validate: true
+        strict_mode: true
+        enable_action_emission: true
+        enable_metrics: true
+        default_execution_mode: "sequential"
+
+    parallel:
+      description: "Parallel workflow execution"
+      config:
+        auto_validate: true
+        strict_mode: true
+        enable_action_emission: true
+        enable_metrics: true
+        default_execution_mode: "parallel"
+
+  # Generated code patterns
+  code_patterns:
+    basic_usage: |
+      class NodeMyOrchestrator(NodeOrchestratorDeclarative, MixinWorkflowExecution):
+          async def process(self, input_data):
+              # Workflow-driven orchestration
+              result = await self.execute_workflow_from_contract(
+                  self.contract.workflow_coordination.workflow_definition,
+                  workflow_steps=input_data.steps,
+                  workflow_id=input_data.workflow_id
+              )
+
+              return ModelOrchestratorOutput(
+                  execution_status=result.execution_status.value,
+                  actions_emitted=result.actions_emitted,
+                  execution_time_ms=result.execution_time_ms
+              )
+
+    with_validation: |
+      class NodeMyOrchestrator(NodeOrchestratorDeclarative, MixinWorkflowExecution):
+          def __init__(self, container, contract):
+              super().__init__(container)
+              self.contract = contract
+
+              # Validate workflow contract
+              errors = await self.validate_workflow_contract(
+                  self.contract.workflow_coordination.workflow_definition,
+                  workflow_steps=[]  # Validate structure only
+              )
+              if errors:
+                  raise ValidationError(f"Workflow invalid: {errors}")
+
+    with_execution_order: |
+      class NodeMyOrchestrator(NodeOrchestratorDeclarative, MixinWorkflowExecution):
+          async def process(self, input_data):
+              # Get execution order
+              order = self.get_workflow_execution_order(input_data.steps)
+              print(f"Execution order: {order}")
+
+              # Execute workflow
+              result = await self.execute_workflow_from_contract(
+                  self.contract.workflow_coordination.workflow_definition,
+                  workflow_steps=input_data.steps,
+                  workflow_id=input_data.workflow_id
+              )
+
+              return ModelOrchestratorOutput(
+                  execution_status=result.execution_status.value,
+                  actions_emitted=result.actions_emitted
+              )
+
+  # Integration patterns
+  integration_patterns:
+    orchestrator_node:
+      description: "Workflow-driven orchestrator node"
+      pattern: |
+        # contracts/orchestrator_data_pipeline.yaml
+        node_type: ORCHESTRATOR
+        workflow_coordination:
+          execution_mode: sequential
+          workflow_definition:
+            workflow_metadata:
+              workflow_name: data_processing_pipeline
+              workflow_version: 1.0.0
+              execution_mode: sequential
+
+            execution_graph:
+              nodes: []  # Workflow nodes defined here
+
+            coordination_rules:
+              parallel_execution_allowed: false
+              failure_recovery_strategy: retry
+
+    data_pipeline:
+      description: "ETL data pipeline orchestration"
+      pattern: |
+        # Execute ETL pipeline
+        steps = [
+            ModelWorkflowStep(
+                step_name="Extract Data",
+                step_type="effect",
+                timeout_ms=10000
+            ),
+            ModelWorkflowStep(
+                step_name="Transform Data",
+                step_type="compute",
+                depends_on=[extract_step_id],
+                timeout_ms=30000
+            ),
+            ModelWorkflowStep(
+                step_name="Load Data",
+                step_type="effect",
+                depends_on=[transform_step_id],
+                timeout_ms=15000
+            ),
+        ]
+
+        result = await self.execute_workflow_from_contract(
+            workflow_definition,
+            workflow_steps=steps,
+            workflow_id=uuid4()
+        )
+
+  # Examples
+  examples:
+    - title: "Data Processing Pipeline"
+      description: "Sequential workflow for data processing"
+      code: |
+        # No custom Python code needed!
+        # Workflow defined entirely in YAML contract
+
+        # contracts/orchestrator_data_pipeline.yaml
+        workflow_coordination:
+          execution_mode: sequential
+
+          workflow_definition:
+            workflow_metadata:
+              workflow_name: data_processing_pipeline
+              execution_mode: sequential
+
+        # Python: just execute from contract
+        result = await self.execute_workflow_from_contract(
+            self.contract.workflow_coordination.workflow_definition,
+            workflow_steps=[
+                ModelWorkflowStep(
+                    step_name="Fetch Data",
+                    step_type="effect"
+                ),
+                ModelWorkflowStep(
+                    step_name="Validate Data",
+                    step_type="compute"
+                ),
+                ModelWorkflowStep(
+                    step_name="Aggregate Metrics",
+                    step_type="reducer"
+                ),
+            ],
+            workflow_id=workflow_id
+        )
+
+    - title: "Parallel Workflow Execution"
+      description: "Parallel workflow with dependency management"
+      code: |
+        # Parallel execution with dependencies
+        steps = [
+            ModelWorkflowStep(
+                step_id=fetch_id,
+                step_name="Fetch Data",
+                step_type="effect"
+            ),
+            # These can run in parallel after fetch
+            ModelWorkflowStep(
+                step_id=validate_id,
+                step_name="Validate Schema",
+                step_type="compute",
+                depends_on=[fetch_id]
+            ),
+            ModelWorkflowStep(
+                step_id=enrich_id,
+                step_name="Enrich Data",
+                step_type="compute",
+                depends_on=[fetch_id]
+            ),
+            # This runs after both validate and enrich
+            ModelWorkflowStep(
+                step_name="Persist Results",
+                step_type="effect",
+                depends_on=[validate_id, enrich_id]
+            ),
+        ]
+
+        result = await self.execute_workflow_from_contract(
+            workflow_definition,
+            workflow_steps=steps,
+            workflow_id=uuid4(),
+            execution_mode=EnumExecutionMode.PARALLEL
+        )
+
+  # Version history
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-11-16"
+      changes:
+        - "Initial implementation for Phase 2"
+        - "Workflow execution from YAML contracts"
+        - "Action emission for workflow steps"
+        - "Dependency-aware execution"
+        - "Sequential, parallel, and batch modes"
