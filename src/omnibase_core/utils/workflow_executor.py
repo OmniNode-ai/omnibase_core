@@ -7,6 +7,7 @@ No side effects - returns results and actions.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
+import logging
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -23,70 +24,12 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition impor
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.orchestrator.model_action import ModelAction
-
-
-class WorkflowExecutionResult:
-    """
-    Result of workflow execution.
-
-    Pure data structure containing workflow outcome and emitted actions.
-    """
-
-    def __init__(
-        self,
-        workflow_id: UUID,
-        execution_status: EnumWorkflowState,
-        completed_steps: list[str],
-        failed_steps: list[str],
-        actions_emitted: list[ModelAction],
-        execution_time_ms: int,
-        metadata: dict[str, Any] | None = None,
-    ):
-        """
-        Initialize workflow execution result.
-
-        Args:
-            workflow_id: Unique workflow execution ID
-            execution_status: Final workflow status
-            completed_steps: List of completed step IDs
-            failed_steps: List of failed step IDs
-            actions_emitted: List of actions emitted during execution
-            execution_time_ms: Execution time in milliseconds
-            metadata: Optional execution metadata
-        """
-        self.workflow_id = workflow_id
-        self.execution_status = execution_status
-        self.completed_steps = completed_steps
-        self.failed_steps = failed_steps
-        self.actions_emitted = actions_emitted
-        self.execution_time_ms = execution_time_ms
-        self.metadata = metadata or {}
-        self.timestamp = datetime.now().isoformat()
-
-
-class WorkflowStepExecutionContext:
-    """Context for a single step execution."""
-
-    def __init__(
-        self,
-        step: ModelWorkflowStep,
-        workflow_id: UUID,
-        completed_steps: set[UUID],
-    ):
-        """
-        Initialize step execution context.
-
-        Args:
-            step: Step to execute
-            workflow_id: Parent workflow ID
-            completed_steps: Set of completed step IDs
-        """
-        self.step = step
-        self.workflow_id = workflow_id
-        self.completed_steps = completed_steps
-        self.started_at = datetime.now()
-        self.completed_at: datetime | None = None
-        self.error: str | None = None
+from omnibase_core.models.workflow.execution.model_declarative_workflow_result import (
+    ModelDeclarativeWorkflowResult as WorkflowExecutionResult,
+)
+from omnibase_core.models.workflow.execution.model_declarative_workflow_step_context import (
+    ModelDeclarativeWorkflowStepContext as WorkflowStepExecutionContext,
+)
 
 
 async def execute_workflow(
@@ -284,8 +227,14 @@ async def _execute_sequential(
             completed_steps.append(str(step.step_id))
             completed_step_ids.add(step.step_id)
 
-        except Exception:
+        except Exception as e:
             failed_steps.append(str(step.step_id))
+
+            # Log error for debugging (addresses BLE001 violation)
+            logging.warning(
+                f"Workflow step '{step.step_name}' ({step.step_id}) failed: {e}",
+                exc_info=True,
+            )
 
             # Handle based on error action
             if step.error_action == "stop":
@@ -322,14 +271,15 @@ async def _execute_parallel(
     completed_step_ids: set[UUID] = set()
 
     # For parallel execution, we execute in waves based on dependencies
-    remaining_steps = list(workflow_steps)
+    # Filter out disabled steps entirely - they are skipped, not failed
+    remaining_steps = [step for step in workflow_steps if step.enabled]
 
     while remaining_steps:
         # Find steps with met dependencies
         ready_steps = [
             step
             for step in remaining_steps
-            if step.enabled and _dependencies_met(step, completed_step_ids)
+            if _dependencies_met(step, completed_step_ids)
         ]
 
         if not ready_steps:
@@ -349,8 +299,14 @@ async def _execute_parallel(
                 completed_steps.append(str(step.step_id))
                 completed_step_ids.add(step.step_id)
 
-            except Exception:
+            except Exception as e:
                 failed_steps.append(str(step.step_id))
+
+                # Log error for debugging (addresses BLE001 violation)
+                logging.warning(
+                    f"Workflow step '{step.step_name}' ({step.step_id}) failed: {e}",
+                    exc_info=True,
+                )
 
                 if step.error_action == "stop":
                     # Stop entire workflow

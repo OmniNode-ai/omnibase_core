@@ -7,7 +7,6 @@ No side effects - returns results and intents.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -26,59 +25,13 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_transition_condition 
     ModelFSMTransitionCondition,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.fsm.model_fsm_state_snapshot import (
+    ModelFSMStateSnapshot as FSMState,
+)
+from omnibase_core.models.fsm.model_fsm_transition_result import (
+    ModelFSMTransitionResult as FSMTransitionResult,
+)
 from omnibase_core.models.model_intent import ModelIntent
-
-
-class FSMTransitionResult:
-    """
-    Result of FSM transition execution.
-
-    Pure data structure containing transition outcome and intents for side effects.
-    """
-
-    def __init__(
-        self,
-        success: bool,
-        new_state: str,
-        old_state: str,
-        transition_name: str | None,
-        intents: list[ModelIntent],
-        metadata: dict[str, Any] | None = None,
-        error: str | None = None,
-    ):
-        """
-        Initialize FSM transition result.
-
-        Args:
-            success: Whether transition succeeded
-            new_state: Resulting state name
-            old_state: Previous state name
-            transition_name: Name of transition executed (or None if failed)
-            intents: List of intents for side effects
-            metadata: Optional metadata about execution
-            error: Optional error message if failed
-        """
-        self.success = success
-        self.new_state = new_state
-        self.old_state = old_state
-        self.transition_name = transition_name
-        self.intents = intents
-        self.metadata = metadata or {}
-        self.error = error
-        self.timestamp = datetime.now().isoformat()
-
-
-@dataclass(frozen=True)
-class FSMState:
-    """
-    Current FSM state snapshot.
-
-    Immutable state representation for pure FSM pattern.
-    """
-
-    current_state: str
-    context: dict[str, Any]
-    history: list[str] = field(default_factory=list)
 
 
 async def execute_transition(
@@ -468,6 +421,10 @@ async def _execute_state_actions(
 
     actions = state.entry_actions if action_type == "entry" else state.exit_actions
 
+    # Guard against None actions
+    if not actions:
+        return []
+
     for action_name in actions:
         # Create intent for each action
         intents.append(
@@ -503,6 +460,10 @@ async def _execute_transition_actions(
         List of intents for executing actions
     """
     intents: list[ModelIntent] = []
+
+    # Guard against None actions
+    if not transition.actions:
+        return []
 
     for action in transition.actions:
         intents.append(
