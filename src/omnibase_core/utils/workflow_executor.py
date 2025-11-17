@@ -8,6 +8,7 @@ Typing: Strongly typed with strategic Any usage where runtime flexibility requir
 """
 
 import logging
+import time
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -55,7 +56,7 @@ async def execute_workflow(
     Raises:
         ModelOnexError: If workflow execution fails
     """
-    start_time = datetime.now()
+    start_time = time.perf_counter()
 
     # Validate workflow
     validation_errors = await validate_workflow_definition(
@@ -88,9 +89,10 @@ async def execute_workflow(
             workflow_definition, workflow_steps, workflow_id
         )
 
-    # Calculate execution time
-    end_time = datetime.now()
-    execution_time_ms = int((end_time - start_time).total_seconds() * 1000)
+    # Calculate execution time with high precision
+    # Ensure minimum 1ms to avoid zero values for very fast executions
+    end_time = time.perf_counter()
+    execution_time_ms = max(1, int((end_time - start_time) * 1000))
     result.execution_time_ms = execution_time_ms
 
     return result

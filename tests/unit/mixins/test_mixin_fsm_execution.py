@@ -34,16 +34,19 @@ def test_fsm() -> ModelFSMSubcontract:
                 state_type="operational",
                 is_terminal=False,
                 entry_actions=["log_idle"],
+                description="Initial idle state",
             ),
             ModelFSMStateDefinition(
                 state_name="running",
                 state_type="operational",
                 is_terminal=False,
+                description="Running state",
             ),
             ModelFSMStateDefinition(
                 state_name="completed",
                 state_type="terminal",
                 is_terminal=True,
+                description="Terminal completion state",
             ),
         ],
         initial_state="idle",
@@ -219,8 +222,9 @@ class TestMixinFSMExecution:
         """Test validating invalid FSM contract."""
         node = TestNode()
 
-        # Create invalid FSM (initial state doesn't exist)
-        invalid_fsm = ModelFSMSubcontract(
+        # Create invalid FSM using model_construct to bypass validators
+        # (initial state doesn't exist in states list)
+        invalid_fsm = ModelFSMSubcontract.model_construct(
             state_machine_name="invalid",
             state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
             description="Invalid FSM",
@@ -229,12 +233,22 @@ class TestMixinFSMExecution:
                     state_name="running",
                     state_type="operational",
                     is_terminal=False,
+                    description="Running state",
                 ),
             ],
             initial_state="idle",  # Doesn't exist!
             terminal_states=[],
             error_states=[],
-            transitions=[],
+            transitions=[
+                # Add dummy transition to satisfy validation
+                ModelFSMStateTransition(
+                    transition_name="dummy",
+                    from_state="running",
+                    to_state="running",
+                    trigger="dummy",
+                    priority=1,
+                ),
+            ],
             operations=[],
             persistence_enabled=False,
             recovery_enabled=False,
@@ -249,18 +263,21 @@ class TestMixinFSMExecution:
         self, test_fsm: ModelFSMSubcontract
     ):
         """Test that failed transitions don't update mixin state."""
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
         node = TestNode()
         node.initialize_fsm_state(test_fsm)
 
-        # Try invalid transition
-        result = await node.execute_fsm_transition(
-            test_fsm,
-            trigger="invalid_trigger",
-            context={},
-        )
+        # Try invalid transition - should raise ModelOnexError
+        with pytest.raises(ModelOnexError) as exc_info:
+            await node.execute_fsm_transition(
+                test_fsm,
+                trigger="invalid_trigger",
+                context={},
+            )
 
-        # Result should indicate failure
-        assert not result.success or result.error
+        # Verify the error message
+        assert "invalid_trigger" in str(exc_info.value)
 
-        # State should remain idle (or raise exception)
-        # The current implementation raises ModelOnexError for invalid transitions
+        # State should remain idle
+        assert node.get_current_fsm_state() == "idle"
