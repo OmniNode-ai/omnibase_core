@@ -1172,20 +1172,22 @@ class NodeOrchestrator(NodeCoreBase):
     def _register_builtin_conditions(self) -> None:
         """Register built-in condition functions."""
 
-        def always_true(step: ModelWorkflowStep, previous_results: list[Any]) -> bool:
+        def always_true(_step: ModelWorkflowStep, _previous_results: list[Any]) -> bool:
             return True
 
-        def always_false(step: ModelWorkflowStep, previous_results: list[Any]) -> bool:
+        def always_false(
+            _step: ModelWorkflowStep, _previous_results: list[Any]
+        ) -> bool:
             return False
 
         def has_previous_results(
-            step: ModelWorkflowStep,
+            _step: ModelWorkflowStep,
             previous_results: list[Any],
         ) -> bool:
             return len(previous_results) > 0
 
         def previous_step_success(
-            step: ModelWorkflowStep,
+            _step: ModelWorkflowStep,
             previous_results: list[Any],
         ) -> bool:
             if not previous_results:

@@ -433,7 +433,7 @@ def extract_metadata_block_and_body(
     content: str,
     open_delim: str,
     close_delim: str,
-    event_bus: Any = None,
+    _event_bus: Any = None,
 ) -> tuple[str | None, str]:
     """
     Canonical utility: Extract the metadata block (if present) and the rest of the file content.

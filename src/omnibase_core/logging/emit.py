@@ -109,11 +109,11 @@ def emit_log_event(
         level=level,
         event_type=event_type,
         message=sanitized_message,
-        node_id=_validate_node_id(node_id),
+        _node_id=_validate_node_id(node_id),
         correlation_id=correlation_id,
         context=context,
         data=sanitized_data,
-        event_bus=event_bus,
+        _event_bus=event_bus,
     )
 
 
@@ -707,11 +707,11 @@ def _route_to_logger_node(
     level: LogLevel,
     event_type: str,
     message: str,
-    node_id: UUID | None,
+    _node_id: UUID | None,
     correlation_id: UUID,
     context: ModelLogContext,
     data: dict[str, LogDataValue | None],
-    event_bus: Any | None,
+    _event_bus: Any | None,
 ) -> None:
     """
     Route log event to logger node for processing using protocol-based discovery.

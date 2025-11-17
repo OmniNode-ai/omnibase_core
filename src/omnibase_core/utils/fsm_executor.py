@@ -57,6 +57,34 @@ async def execute_transition(
 
     Raises:
         ModelOnexError: If transition is invalid or execution fails
+
+    Example:
+        Execute a transition in a data pipeline FSM::
+
+            # Load FSM contract from YAML
+            fsm = ModelFSMSubcontract(
+                state_machine_name="data_pipeline",
+                initial_state="idle",
+                states=[...],
+                transitions=[...],
+            )
+
+            # Execute transition from "idle" to "processing"
+            result = await execute_transition(
+                fsm=fsm,
+                current_state="idle",
+                trigger="start_processing",
+                context={"data_sources": ["api", "db"], "batch_size": 100},
+            )
+
+            # Check result
+            if result.success:
+                print(f"Transitioned to: {result.new_state}")
+                # Process intents for side effects
+                for intent in result.intents:
+                    await handle_intent(intent)
+            else:
+                print(f"Transition failed: {result.error}")
     """
     intents: list[ModelIntent] = []
 
@@ -195,6 +223,38 @@ async def validate_fsm_contract(fsm: ModelFSMSubcontract) -> list[str]:
 
     Returns:
         List of validation errors (empty if valid)
+
+    Example:
+        Validate FSM contract before execution::
+
+            # Load FSM contract
+            fsm = ModelFSMSubcontract(
+                state_machine_name="order_processing",
+                initial_state="pending",
+                states=[
+                    ModelFSMStateDefinition(state_name="pending", is_initial=True),
+                    ModelFSMStateDefinition(state_name="completed", is_terminal=True),
+                ],
+                transitions=[
+                    ModelFSMStateTransition(
+                        transition_name="complete_order",
+                        from_state="pending",
+                        to_state="completed",
+                        trigger="complete",
+                    )
+                ],
+                terminal_states=["completed"],
+            )
+
+            # Validate before execution
+            errors = await validate_fsm_contract(fsm)
+            if errors:
+                print("FSM validation failed:")
+                for error in errors:
+                    print(f"  - {error}")
+            else:
+                print("FSM contract is valid")
+                # Safe to execute transitions
     """
     errors: list[str] = []
 
@@ -256,6 +316,30 @@ def get_initial_state(fsm: ModelFSMSubcontract) -> FSMState:
 
     Returns:
         FSMState initialized to initial state with empty context
+
+    Example:
+        Initialize FSM state for a new execution::
+
+            # Load FSM contract
+            fsm = ModelFSMSubcontract(
+                state_machine_name="workflow",
+                initial_state="start",
+                states=[...],
+            )
+
+            # Get initial state
+            state = get_initial_state(fsm)
+            print(f"Starting in state: {state.current_state}")  # "start"
+            print(f"Context: {state.context}")                  # {}
+            print(f"History: {state.history}")                  # []
+
+            # Use state for first transition
+            result = await execute_transition(
+                fsm=fsm,
+                current_state=state.current_state,
+                trigger="begin",
+                context=state.context,
+            )
     """
     return FSMState(current_state=fsm.initial_state, context={}, history=[])
 

@@ -142,7 +142,7 @@ poetry install
 
 # Run existing orchestrator tests
 poetry run pytest tests/unit/nodes/test_node_orchestrator.py -v --maxfail=1
-```python
+```
 
 ✅ **If tests pass**, you're ready to begin!
 
@@ -183,7 +183,7 @@ effect_action = ModelAction(
     lease_id=uuid4(),  # Orchestrator ownership proof
     epoch=1,  # Optimistic concurrency control
 )
-```python
+```
 
 **Key Points**:
 - Actions represent "units of work" issued by the Orchestrator
@@ -242,7 +242,7 @@ action_update = ModelAction(
 #     lease_id=uuid4(),  # Different lease_id - REJECTED!
 #     epoch=2,
 # )
-```python
+```
 
 **Benefits**:
 - **Safety**: Prevents concurrent modification by multiple Orchestrators

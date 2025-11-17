@@ -42,7 +42,7 @@ def _generate_service_uuid(service_name: str) -> UUID:
 
 
 def create_get_service_method(
-    container: ModelONEXContainer,
+    _container: ModelONEXContainer,
 ) -> Callable[..., ModelService]:
     """
     Create get_service method for container instance.

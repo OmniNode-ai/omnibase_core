@@ -55,6 +55,56 @@ async def execute_workflow(
 
     Raises:
         ModelOnexError: If workflow execution fails
+
+    Example:
+        Execute a data processing workflow::
+
+            from uuid import uuid4
+            from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
+            from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
+                ModelWorkflowDefinition,
+            )
+
+            # Define workflow
+            workflow_def = ModelWorkflowDefinition(
+                workflow_metadata=ModelWorkflowMetadata(
+                    workflow_name="data_pipeline",
+                    execution_mode="sequential",
+                    timeout_ms=60000,
+                )
+            )
+
+            # Define steps
+            step1_id = uuid4()
+            step2_id = uuid4()
+            steps = [
+                ModelWorkflowStep(
+                    step_id=step1_id,
+                    step_name="fetch_data",
+                    step_type="effect",
+                    enabled=True,
+                ),
+                ModelWorkflowStep(
+                    step_id=step2_id,
+                    step_name="process_data",
+                    step_type="compute",
+                    depends_on=[step1_id],
+                    enabled=True,
+                ),
+            ]
+
+            # Execute workflow
+            result = await execute_workflow(
+                workflow_definition=workflow_def,
+                workflow_steps=steps,
+                workflow_id=uuid4(),
+            )
+
+            # Check result
+            print(f"Status: {result.execution_status}")
+            print(f"Completed: {len(result.completed_steps)} steps")
+            print(f"Actions emitted: {len(result.actions_emitted)}")
+            print(f"Execution time: {result.execution_time_ms}ms")
     """
     start_time = time.perf_counter()
 
@@ -113,6 +163,43 @@ async def validate_workflow_definition(
 
     Returns:
         List of validation errors (empty if valid)
+
+    Example:
+        Validate workflow before execution::
+
+            from uuid import uuid4
+
+            # Define workflow
+            workflow_def = ModelWorkflowDefinition(
+                workflow_metadata=ModelWorkflowMetadata(
+                    workflow_name="etl_pipeline",
+                    execution_mode="sequential",
+                    timeout_ms=30000,
+                )
+            )
+
+            # Define steps with potential issues
+            step1_id = uuid4()
+            steps = [
+                ModelWorkflowStep(
+                    step_id=step1_id,
+                    step_name="extract",
+                    step_type="effect",
+                    depends_on=[uuid4()],  # Invalid dependency!
+                    enabled=True,
+                ),
+            ]
+
+            # Validate
+            errors = await validate_workflow_definition(workflow_def, steps)
+            if errors:
+                print("Workflow validation failed:")
+                for error in errors:
+                    print(f"  - {error}")
+                # Output: "Step 'extract' depends on non-existent step: ..."
+            else:
+                print("Workflow is valid")
+                # Safe to execute
     """
     errors: list[str] = []
 
@@ -174,6 +261,59 @@ def get_execution_order(
 
     Raises:
         ModelOnexError: If workflow contains cycles
+
+    Example:
+        Determine execution order for workflow with dependencies::
+
+            from uuid import uuid4
+
+            # Define steps with dependencies
+            step_a = uuid4()  # No dependencies
+            step_b = uuid4()  # Depends on A
+            step_c = uuid4()  # Depends on B
+            step_d = uuid4()  # Depends on A (parallel with B)
+
+            steps = [
+                ModelWorkflowStep(
+                    step_id=step_c,
+                    step_name="step_c",
+                    depends_on=[step_b],
+                    step_type="compute",
+                    enabled=True,
+                ),
+                ModelWorkflowStep(
+                    step_id=step_a,
+                    step_name="step_a",
+                    depends_on=[],
+                    step_type="effect",
+                    enabled=True,
+                ),
+                ModelWorkflowStep(
+                    step_id=step_b,
+                    step_name="step_b",
+                    depends_on=[step_a],
+                    step_type="compute",
+                    enabled=True,
+                ),
+                ModelWorkflowStep(
+                    step_id=step_d,
+                    step_name="step_d",
+                    depends_on=[step_a],
+                    step_type="reducer",
+                    enabled=True,
+                ),
+            ]
+
+            # Get execution order
+            order = get_execution_order(steps)
+            # Result: [step_a, step_b, step_d, step_c]
+            # or:     [step_a, step_d, step_b, step_c]
+            # (B and D can run in parallel after A)
+
+            print("Execution order:")
+            for step_id in order:
+                step = next(s for s in steps if s.step_id == step_id)
+                print(f"  {step.step_name}")
     """
     if _has_dependency_cycles(workflow_steps):
         raise ModelOnexError(

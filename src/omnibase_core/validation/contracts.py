@@ -38,7 +38,7 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks
 VALIDATION_TIMEOUT = 300  # 5 minutes
 
 
-def timeout_handler(signum: int, frame: object) -> None:
+def timeout_handler(_signum: int, _frame: object) -> None:
     """Handle timeout signal."""
     raise ModelOnexError(
         error_code=EnumCoreErrorCode.TIMEOUT_ERROR,
