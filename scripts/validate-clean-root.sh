@@ -85,9 +85,13 @@ FORBIDDEN_PATTERNS=(
 
 # Whitelist: Allowed patterns that match forbidden patterns
 WHITELIST=(
-    ".vscode"  # VS Code directory is allowed
-    ".idea"    # IntelliJ directory is allowed
-    ".github"  # GitHub workflows are allowed
+    ".vscode"       # VS Code directory is allowed
+    ".idea"         # IntelliJ directory is allowed
+    ".github"       # GitHub workflows are allowed
+    ".pytest_cache" # Pytest cache directory is allowed (already in .gitignore)
+    ".mypy_cache"   # Mypy cache directory is allowed (already in .gitignore)
+    ".ruff_cache"   # Ruff cache directory is allowed (already in .gitignore)
+    ".DS_Store"     # macOS directory metadata is allowed (already in .gitignore)
 )
 
 echo -e "${BLUE}🔍 Validating project root cleanliness...${NC}"
