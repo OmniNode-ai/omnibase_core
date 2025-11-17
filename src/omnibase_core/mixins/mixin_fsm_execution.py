@@ -3,7 +3,7 @@ Mixin for FSM execution from YAML contracts.
 
 Enables nodes to execute state machines declaratively from ModelFSMSubcontract.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Typing: Strongly typed with strategic Any usage for mixin kwargs and runtime context.
 """
 
 from typing import Any

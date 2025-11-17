@@ -44,6 +44,7 @@ def simple_fsm() -> ModelFSMSubcontract:
             ModelFSMStateDefinition(
                 state_name="idle",
                 state_type="operational",
+                description="Idle state - waiting for work",
                 is_terminal=False,
                 entry_actions=["log_idle_entry"],
                 exit_actions=["log_idle_exit"],
@@ -51,6 +52,7 @@ def simple_fsm() -> ModelFSMSubcontract:
             ModelFSMStateDefinition(
                 state_name="running",
                 state_type="operational",
+                description="Running state - actively processing",
                 is_terminal=False,
                 entry_actions=["log_running_entry"],
                 exit_actions=[],
@@ -58,6 +60,7 @@ def simple_fsm() -> ModelFSMSubcontract:
             ModelFSMStateDefinition(
                 state_name="completed",
                 state_type="terminal",
+                description="Completed state - processing finished",
                 is_terminal=True,
                 entry_actions=["log_completion"],
                 exit_actions=[],
@@ -99,11 +102,13 @@ def fsm_with_conditions() -> ModelFSMSubcontract:
             ModelFSMStateDefinition(
                 state_name="idle",
                 state_type="operational",
+                description="Idle state with conditional transitions",
                 is_terminal=False,
             ),
             ModelFSMStateDefinition(
                 state_name="processing",
                 state_type="operational",
+                description="Processing state with conditions",
                 is_terminal=False,
             ),
         ],
@@ -144,11 +149,13 @@ def fsm_with_actions() -> ModelFSMSubcontract:
             ModelFSMStateDefinition(
                 state_name="idle",
                 state_type="operational",
+                description="Idle state with transition actions",
                 is_terminal=False,
             ),
             ModelFSMStateDefinition(
                 state_name="active",
                 state_type="operational",
+                description="Active state with resources initialized",
                 is_terminal=False,
             ),
         ],
@@ -299,65 +306,81 @@ class TestFSMValidation:
     @pytest.mark.asyncio
     async def test_invalid_initial_state(self):
         """Test validation with invalid initial state."""
-        fsm = ModelFSMSubcontract(
-            state_machine_name="invalid_fsm",
-            state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
-            description="Invalid FSM",
-            states=[
-                ModelFSMStateDefinition(
-                    state_name="running",
-                    state_type="operational",
-                    is_terminal=False,
-                ),
-            ],
-            initial_state="idle",  # Doesn't exist!
-            terminal_states=[],
-            error_states=[],
-            transitions=[],
-            operations=[],
-            persistence_enabled=False,
-            recovery_enabled=False,
-        )
+        # ModelFSMSubcontract now validates at construction time
+        with pytest.raises(ModelOnexError) as exc_info:
+            fsm = ModelFSMSubcontract(
+                state_machine_name="invalid_fsm",
+                state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Invalid FSM",
+                states=[
+                    ModelFSMStateDefinition(
+                        state_name="running",
+                        state_type="operational",
+                        description="Running state",
+                        is_terminal=False,
+                    ),
+                    ModelFSMStateDefinition(
+                        state_name="completed",
+                        state_type="terminal",
+                        description="Completed state",
+                        is_terminal=True,
+                    ),
+                ],
+                initial_state="idle",  # Doesn't exist!
+                terminal_states=["completed"],
+                error_states=[],
+                transitions=[
+                    ModelFSMStateTransition(
+                        transition_name="complete",
+                        from_state="running",
+                        to_state="completed",
+                        trigger="complete",
+                        priority=1,
+                    ),
+                ],
+                operations=[],
+                persistence_enabled=False,
+                recovery_enabled=False,
+            )
 
-        errors = await validate_fsm_contract(fsm)
-        assert len(errors) > 0
-        assert any("Initial state not defined" in error for error in errors)
+        assert "Initial state" in str(exc_info.value) and "idle" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_invalid_transition_states(self):
         """Test validation with transitions referencing non-existent states."""
-        fsm = ModelFSMSubcontract(
-            state_machine_name="invalid_transitions",
-            state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
-            description="FSM with invalid transitions",
-            states=[
-                ModelFSMStateDefinition(
-                    state_name="idle",
-                    state_type="operational",
-                    is_terminal=False,
-                ),
-            ],
-            initial_state="idle",
-            terminal_states=[],
-            error_states=[],
-            transitions=[
-                ModelFSMStateTransition(
-                    transition_name="invalid",
-                    from_state="idle",
-                    to_state="non_existent",  # Doesn't exist!
-                    trigger="go",
-                    priority=1,
-                ),
-            ],
-            operations=[],
-            persistence_enabled=False,
-            recovery_enabled=False,
-        )
+        # ModelFSMSubcontract now validates at construction time
+        with pytest.raises(ModelOnexError) as exc_info:
+            fsm = ModelFSMSubcontract(
+                state_machine_name="invalid_transitions",
+                state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+                description="FSM with invalid transitions",
+                states=[
+                    ModelFSMStateDefinition(
+                        state_name="idle",
+                        state_type="operational",
+                        description="Idle state",
+                        is_terminal=False,
+                    ),
+                ],
+                initial_state="idle",
+                terminal_states=[],
+                error_states=[],
+                transitions=[
+                    ModelFSMStateTransition(
+                        transition_name="invalid",
+                        from_state="idle",
+                        to_state="non_existent",  # Doesn't exist!
+                        trigger="go",
+                        priority=1,
+                    ),
+                ],
+                operations=[],
+                persistence_enabled=False,
+                recovery_enabled=False,
+            )
 
-        errors = await validate_fsm_contract(fsm)
-        assert len(errors) > 0
-        assert any(
-            "Invalid target state" in error or "to_state" in error for error in errors
+        assert "to_state" in str(exc_info.value) or "non_existent" in str(
+            exc_info.value
         )
 
     @pytest.mark.asyncio
@@ -371,16 +394,19 @@ class TestFSMValidation:
                 ModelFSMStateDefinition(
                     state_name="idle",
                     state_type="operational",
+                    description="Idle state",
                     is_terminal=False,
                 ),
                 ModelFSMStateDefinition(
                     state_name="running",
                     state_type="operational",
+                    description="Running state",
                     is_terminal=False,
                 ),
                 ModelFSMStateDefinition(
                     state_name="orphan",  # Unreachable!
                     state_type="operational",
+                    description="Orphan state - unreachable",
                     is_terminal=False,
                 ),
             ],
@@ -408,6 +434,131 @@ class TestFSMValidation:
             "Unreachable states" in error and "orphan" in error for error in errors
         )
 
+    @pytest.mark.asyncio
+    async def test_terminal_state_explicit_transitions_blocked(self):
+        """Test that terminal states cannot have explicit outgoing transitions.
+
+        Terminal states should not have ANY explicit outgoing transitions,
+        even to error states. Wildcard transitions (from_state="*") are
+        naturally exempt as they don't originate from a specific terminal state.
+        """
+        fsm = ModelFSMSubcontract(
+            state_machine_name="terminal_with_transition",
+            state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+            description="FSM with terminal state having explicit outgoing transition",
+            states=[
+                ModelFSMStateDefinition(
+                    state_name="idle",
+                    state_type="operational",
+                    description="Idle state",
+                    is_terminal=False,
+                ),
+                ModelFSMStateDefinition(
+                    state_name="completed",
+                    state_type="terminal",
+                    description="Completed state - should be terminal",
+                    is_terminal=True,
+                ),
+                ModelFSMStateDefinition(
+                    state_name="error",
+                    state_type="error",
+                    description="Error state",
+                    is_terminal=True,
+                ),
+            ],
+            initial_state="idle",
+            terminal_states=["completed"],
+            error_states=["error"],
+            transitions=[
+                ModelFSMStateTransition(
+                    transition_name="complete",
+                    from_state="idle",
+                    to_state="completed",
+                    trigger="complete",
+                    priority=1,
+                ),
+                ModelFSMStateTransition(
+                    transition_name="error_from_terminal",
+                    from_state="completed",  # Explicit transition from terminal state
+                    to_state="error",
+                    trigger="error",
+                    priority=1,
+                ),
+            ],
+            operations=[],
+            persistence_enabled=False,
+            recovery_enabled=False,
+        )
+
+        errors = await validate_fsm_contract(fsm)
+        assert len(errors) > 0
+        assert any(
+            "Terminal state" in error
+            and "completed" in error
+            and "explicit outgoing transition" in error
+            for error in errors
+        )
+
+    @pytest.mark.asyncio
+    async def test_wildcard_transitions_allowed_from_terminal(self):
+        """Test that wildcard transitions are allowed even when terminal states exist.
+
+        Wildcard transitions (from_state="*") should work from any state including
+        terminal states, as they don't represent explicit outgoing transitions from
+        terminal states.
+        """
+        fsm = ModelFSMSubcontract(
+            state_machine_name="wildcard_with_terminal",
+            state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+            description="FSM with wildcard transition and terminal state",
+            states=[
+                ModelFSMStateDefinition(
+                    state_name="idle",
+                    state_type="operational",
+                    description="Idle state",
+                    is_terminal=False,
+                ),
+                ModelFSMStateDefinition(
+                    state_name="completed",
+                    state_type="terminal",
+                    description="Completed state - terminal",
+                    is_terminal=True,
+                ),
+                ModelFSMStateDefinition(
+                    state_name="error",
+                    state_type="error",
+                    description="Error state",
+                    is_terminal=True,
+                ),
+            ],
+            initial_state="idle",
+            terminal_states=["completed"],
+            error_states=["error"],
+            transitions=[
+                ModelFSMStateTransition(
+                    transition_name="complete",
+                    from_state="idle",
+                    to_state="completed",
+                    trigger="complete",
+                    priority=1,
+                ),
+                ModelFSMStateTransition(
+                    transition_name="wildcard_error_handler",
+                    from_state="*",  # Wildcard - applies to all states
+                    to_state="error",
+                    trigger="error",
+                    priority=1,
+                ),
+            ],
+            operations=[],
+            persistence_enabled=False,
+            recovery_enabled=False,
+        )
+
+        # Should have no validation errors - wildcard transitions are allowed
+        errors = await validate_fsm_contract(fsm)
+        assert len(errors) == 0
+
 
 class TestFSMErrors:
     """Test FSM error handling."""
@@ -431,38 +582,40 @@ class TestFSMErrors:
     @pytest.mark.asyncio
     async def test_invalid_target_state(self):
         """Test transition with invalid target state in definition."""
-        fsm = ModelFSMSubcontract(
-            state_machine_name="broken_fsm",
-            state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
-            description="Broken FSM",
-            states=[
-                ModelFSMStateDefinition(
-                    state_name="idle",
-                    state_type="operational",
-                    is_terminal=False,
-                ),
-            ],
-            initial_state="idle",
-            terminal_states=[],
-            error_states=[],
-            transitions=[
-                ModelFSMStateTransition(
-                    transition_name="broken",
-                    from_state="idle",
-                    to_state="non_existent",  # Target doesn't exist
-                    trigger="go",
-                    priority=1,
-                ),
-            ],
-            operations=[],
-            persistence_enabled=False,
-            recovery_enabled=False,
-        )
-
+        # ModelFSMSubcontract now validates at construction time
         with pytest.raises(ModelOnexError) as exc_info:
-            await execute_transition(fsm, "idle", "go", {})
+            fsm = ModelFSMSubcontract(
+                state_machine_name="broken_fsm",
+                state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Broken FSM",
+                states=[
+                    ModelFSMStateDefinition(
+                        state_name="idle",
+                        state_type="operational",
+                        description="Idle state",
+                        is_terminal=False,
+                    ),
+                ],
+                initial_state="idle",
+                terminal_states=[],
+                error_states=[],
+                transitions=[
+                    ModelFSMStateTransition(
+                        transition_name="broken",
+                        from_state="idle",
+                        to_state="non_existent",  # Target doesn't exist
+                        trigger="go",
+                        priority=1,
+                    ),
+                ],
+                operations=[],
+                persistence_enabled=False,
+                recovery_enabled=False,
+            )
 
-        assert "Invalid target state" in str(exc_info.value)
+        assert "to_state" in str(exc_info.value) or "non_existent" in str(
+            exc_info.value
+        )
 
 
 class TestFSMState:
@@ -504,16 +657,19 @@ class TestWildcardTransitions:
                 ModelFSMStateDefinition(
                     state_name="idle",
                     state_type="operational",
+                    description="Idle state",
                     is_terminal=False,
                 ),
                 ModelFSMStateDefinition(
                     state_name="running",
                     state_type="operational",
+                    description="Running state",
                     is_terminal=False,
                 ),
                 ModelFSMStateDefinition(
                     state_name="error",
                     state_type="error",
+                    description="Error state - terminal",
                     is_terminal=True,
                 ),
             ],

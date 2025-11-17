@@ -9,7 +9,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 Author: ONEX Framework Team
 """
 
-from typing import Any, cast
+from typing import Any, Generic, cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -26,9 +26,19 @@ from omnibase_core.models.model_reducer_output import ModelReducerOutput, T_Outp
 _ERR_FSM_CONTRACT_NOT_LOADED = "FSM contract not loaded"
 
 
-class NodeReducerDeclarative(NodeCoreBase, MixinFSMExecution):
+class NodeReducerDeclarative(
+    NodeCoreBase, MixinFSMExecution, Generic[T_Input, T_Output]
+):
     """
     Declarative reducer node for FSM-driven state management.
+
+    Generic type parameters:
+        T_Input: Type of input data items (flows from ModelReducerInput[T_Input])
+        T_Output: Type of output result (flows to ModelReducerOutput[T_Output])
+
+    Type flow:
+        Input data (list[T_Input]) → FSM processing → Output result (T_Output)
+        In declarative mode, T_Output is typically the same as list[T_Input] or a transformation thereof.
 
     Enables creating reducer nodes entirely from YAML contracts without custom Python code.
     State transitions, conditions, and actions are all defined in FSM subcontracts.

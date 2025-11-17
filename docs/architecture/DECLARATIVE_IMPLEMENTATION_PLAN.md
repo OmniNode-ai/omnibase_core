@@ -14,7 +14,7 @@
 | **Phase 1: FSM Execution** | ✅ **COMPLETE** | 100% | `7bbb4a8` | fsm_executor.py, mixin_fsm_execution.py, tests |
 | **Phase 2: Workflow Execution** | ✅ **COMPLETE** | 100% | `58a3972` | workflow_executor.py, mixin_workflow_execution.py, tests |
 | **Phase 3: Declarative Nodes** | ✅ **COMPLETE** | 100% | `588529f` | node_reducer_declarative.py, node_orchestrator_declarative.py, tests |
-| **Phase 4: Migration & Examples** | ✅ **COMPLETE** | 100% | `5cac29c` | Example YAMLs, migration guide |
+| **Phase 4: Migration and Examples** | ✅ **COMPLETE** | 100% | `5cac29c` | Example YAMLs, migration guide |
 
 **Total Implementation**: 5,000+ lines of production code, 2,300+ lines of tests, 900+ lines of documentation.
 
@@ -37,7 +37,7 @@ This document provides a complete implementation plan for closing the gap betwee
 | **Phase 1: FSM Execution** | ✅ **Complete** | 100% | #83 | FSM execution infrastructure (utils, mixins, tests) |
 | **Phase 2: Workflow Execution** | 🚧 Planned | 0% | TBD | Workflow execution infrastructure |
 | **Phase 3: Examples & Patterns** | ⏳ Planned | 0% | TBD | Example contracts and usage patterns |
-| **Phase 4: Migration & Examples** | ⏳ Planned | 0% | TBD | Examples, docs, migration guides |
+| **Phase 4: Migration and Examples** | ⏳ Planned | 0% | TBD | Examples, docs, migration guides |
 
 **✅ What's Available Now** (Phase 1):
 - `src/omnibase_core/utils/fsm_executor.py` - FSM execution utilities (548 lines)
@@ -59,7 +59,7 @@ This document provides a complete implementation plan for closing the gap betwee
 3. [Phase 1: FSM Execution Infrastructure](#phase-1-fsm-execution-infrastructure)
 4. [Phase 2: Workflow Execution Infrastructure](#phase-2-workflow-execution-infrastructure)
 5. [Phase 3: Example Contracts & Usage Patterns](#phase-3-example-contracts--usage-patterns)
-6. [Phase 4: Migration & Examples](#phase-4-migration-examples)
+6. [Phase 4: Migration and Examples](#phase-4-migration-and-examples)
 7. [Testing Strategy](#testing-strategy)
 8. [Success Metrics](#success-metrics)
 
@@ -443,7 +443,13 @@ async def _evaluate_conditions(
     transition: ModelFSMStateTransition,
     context: dict[str, Any],
 ) -> bool:
-    """Evaluate all transition conditions."""
+    """Evaluate all transition conditions.
+
+    NOTE: Actual implementation in fsm_executor.py uses STRING-BASED comparison
+    for 'equals' and 'not_equals' operators (both values cast to str).
+    See fsm_executor.py:_evaluate_single_condition() for complete documentation
+    on type coercion behavior.
+    """
     if not transition.conditions:
         return True
 
@@ -453,9 +459,13 @@ async def _evaluate_conditions(
             field_value = context.get(condition.field)
 
             if condition.operator == "equals":
+                # ACTUAL IMPLEMENTATION: str(field_value) == str(condition.value)
+                # This pseudocode simplified for planning purposes
                 if field_value != condition.value:
                     return False
             elif condition.operator == "not_equals":
+                # ACTUAL IMPLEMENTATION: str(field_value) != str(condition.value)
+                # This pseudocode simplified for planning purposes
                 if field_value == condition.value:
                     return False
             elif condition.operator == "min_length":
@@ -1685,7 +1695,7 @@ class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
 
 ---
 
-## Phase 4: Migration & Examples
+## Phase 4: Migration and Examples
 
 > ⚠️ **NOT YET IMPLEMENTED**
 > **Status**: ⏳ Planned for Sprint 4
@@ -1947,10 +1957,7 @@ workflow_coordination:
 
 **File**: `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`
 
-```markdown
-# Migrating to Declarative Nodes
-
-## Before: Imperative Pattern
+#### Before: Imperative Pattern
 
 ```python
 class NodeMyReducer(NodeReducer):
@@ -1970,7 +1977,7 @@ class NodeMyReducer(NodeReducer):
         # ... 50+ lines of FSM code ...
 ```
 
-## After: Declarative Pattern with Mixins
+#### After: Declarative Pattern with Mixins
 
 ```python
 # 1. Create YAML contract (one time)
@@ -2006,7 +2013,7 @@ contract = ModelContractReducer.from_yaml("contracts/my_reducer.yaml")
 node = NodeMyReducer(container, contract)
 ```
 
-## Migration Steps
+#### Migration Steps
 
 1. **Analyze current FSM** - Map states, transitions, actions
 2. **Create YAML contract** - Define FSM declaratively
@@ -2015,7 +2022,6 @@ node = NodeMyReducer(container, contract)
 5. **Use mixin methods** - Call execute_fsm_transition() in process()
 6. **Test** - Verify behavior matches
 7. **Remove custom FSM code** - Delete old state machine implementation
-```
 
 ---
 

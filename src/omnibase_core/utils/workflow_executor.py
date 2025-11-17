@@ -4,7 +4,7 @@ Workflow execution utilities for declarative orchestration.
 Pure functions for executing workflows from ModelWorkflowDefinition.
 No side effects - returns results and actions.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Typing: Strongly typed with strategic Any usage where runtime flexibility required.
 """
 
 import logging
@@ -97,7 +97,7 @@ async def execute_workflow(
 
 
 async def validate_workflow_definition(
-    _workflow_definition: ModelWorkflowDefinition,
+    workflow_definition: ModelWorkflowDefinition,
     workflow_steps: list[ModelWorkflowStep],
 ) -> list[str]:
     """
@@ -106,13 +106,31 @@ async def validate_workflow_definition(
     Pure validation function - no side effects.
 
     Args:
-        _workflow_definition: Workflow definition (unused, reserved for future validation)
+        workflow_definition: Workflow definition to validate
         workflow_steps: Workflow steps to validate
 
     Returns:
         List of validation errors (empty if valid)
     """
     errors: list[str] = []
+
+    # Validate workflow definition metadata
+    if not workflow_definition.workflow_metadata.workflow_name:
+        errors.append("Workflow name is required")
+
+    if workflow_definition.workflow_metadata.execution_mode not in {
+        "sequential",
+        "parallel",
+        "batch",
+    }:
+        errors.append(
+            f"Invalid execution mode: {workflow_definition.workflow_metadata.execution_mode}"
+        )
+
+    if workflow_definition.workflow_metadata.timeout_ms <= 0:
+        errors.append(
+            f"Workflow timeout must be positive, got: {workflow_definition.workflow_metadata.timeout_ms}"
+        )
 
     # Check workflow has steps
     if not workflow_steps:
@@ -182,7 +200,7 @@ def _get_execution_mode(
 
 
 async def _execute_sequential(
-    _workflow_definition: ModelWorkflowDefinition,
+    workflow_definition: ModelWorkflowDefinition,
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
 ) -> WorkflowExecutionResult:
@@ -191,6 +209,11 @@ async def _execute_sequential(
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
     completed_step_ids: set[UUID] = set()
+
+    # Log workflow execution start
+    logging.info(
+        f"Starting sequential execution of workflow '{workflow_definition.workflow_metadata.workflow_name}' ({workflow_id})"
+    )
 
     # Get topological order for dependency-aware execution
     execution_order = _get_topological_order(workflow_steps)
@@ -227,13 +250,39 @@ async def _execute_sequential(
             completed_steps.append(str(step.step_id))
             completed_step_ids.add(step.step_id)
 
-        except Exception as e:
+        except ModelOnexError as e:
+            # Handle expected ONEX errors
             failed_steps.append(str(step.step_id))
-
-            # Log error for debugging (addresses BLE001 violation)
+            # Extract error code value safely
+            error_code_value: str | None = None
+            if e.error_code is not None:
+                error_code_value = (
+                    e.error_code.value
+                    if hasattr(e.error_code, "value")
+                    else str(e.error_code)
+                )
             logging.warning(
-                f"Workflow step '{step.step_name}' ({step.step_id}) failed: {e}",
+                f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed: {e.message}",
+                extra={"error_code": error_code_value, "context": e.context},
                 exc_info=True,
+            )
+
+            # Handle based on error action
+            if step.error_action == "stop":
+                break
+            if step.error_action == "continue":
+                continue
+            # For other error actions, continue for now
+
+        except Exception as e:
+            # Broad exception catch justified for workflow orchestration:
+            # - Workflow steps execute external code with unknown exception types
+            # - Production workflows require resilient error handling
+            # - All failures logged with full traceback for debugging
+            # - Failed steps tracked; execution continues per error_action config
+            failed_steps.append(str(step.step_id))
+            logging.exception(
+                f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed with unexpected error: {e}"
             )
 
             # Handle based on error action
@@ -255,12 +304,15 @@ async def _execute_sequential(
         failed_steps=failed_steps,
         actions_emitted=all_actions,
         execution_time_ms=0,  # Will be set by caller
-        metadata={"execution_mode": "sequential"},
+        metadata={
+            "execution_mode": "sequential",
+            "workflow_name": workflow_definition.workflow_metadata.workflow_name,
+        },
     )
 
 
 async def _execute_parallel(
-    _workflow_definition: ModelWorkflowDefinition,
+    workflow_definition: ModelWorkflowDefinition,
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
 ) -> WorkflowExecutionResult:
@@ -269,6 +321,11 @@ async def _execute_parallel(
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
     completed_step_ids: set[UUID] = set()
+
+    # Log workflow execution start
+    logging.info(
+        f"Starting parallel execution of workflow '{workflow_definition.workflow_metadata.workflow_name}' ({workflow_id})"
+    )
 
     # For parallel execution, we execute in waves based on dependencies
     # Filter out disabled steps entirely - they are skipped, not failed
@@ -299,13 +356,37 @@ async def _execute_parallel(
                 completed_steps.append(str(step.step_id))
                 completed_step_ids.add(step.step_id)
 
-            except Exception as e:
+            except ModelOnexError as e:
+                # Handle expected ONEX errors
                 failed_steps.append(str(step.step_id))
-
-                # Log error for debugging (addresses BLE001 violation)
+                # Extract error code value safely
+                error_code_value: str | None = None
+                if e.error_code is not None:
+                    error_code_value = (
+                        e.error_code.value
+                        if hasattr(e.error_code, "value")
+                        else str(e.error_code)
+                    )
                 logging.warning(
-                    f"Workflow step '{step.step_name}' ({step.step_id}) failed: {e}",
+                    f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed: {e.message}",
+                    extra={"error_code": error_code_value, "context": e.context},
                     exc_info=True,
+                )
+
+                if step.error_action == "stop":
+                    # Stop entire workflow
+                    remaining_steps = []
+                    break
+
+            except Exception as e:
+                # Broad exception catch justified for workflow orchestration:
+                # - Workflow steps execute external code with unknown exception types
+                # - Production workflows require resilient error handling
+                # - All failures logged with full traceback for debugging
+                # - Failed steps tracked; execution continues per error_action config
+                failed_steps.append(str(step.step_id))
+                logging.exception(
+                    f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed with unexpected error: {e}"
                 )
 
                 if step.error_action == "stop":
@@ -327,7 +408,10 @@ async def _execute_parallel(
         failed_steps=failed_steps,
         actions_emitted=all_actions,
         execution_time_ms=0,
-        metadata={"execution_mode": "parallel"},
+        metadata={
+            "execution_mode": "parallel",
+            "workflow_name": workflow_definition.workflow_metadata.workflow_name,
+        },
     )
 
 
@@ -379,6 +463,10 @@ def _create_action_for_step(
     }
     target_node_type = target_node_type_map.get(step.step_type, "NodeCustom")
 
+    # Cap priority to ModelAction's max value of 10
+    # ModelWorkflowStep allows 1-1000, but ModelAction only allows 1-10
+    action_priority = min(step.priority, 10) if step.priority else 1
+
     return ModelAction(
         action_id=uuid4(),
         action_type=action_type,
@@ -389,7 +477,7 @@ def _create_action_for_step(
             "step_name": step.step_name,
         },
         dependencies=step.depends_on,
-        priority=step.priority,
+        priority=action_priority,
         timeout_ms=step.timeout_ms,
         lease_id=uuid4(),
         epoch=0,

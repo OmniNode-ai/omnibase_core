@@ -1,7 +1,7 @@
 """
 FSM state snapshot model.
 
-Immutable state representation for pure FSM pattern.
+Frozen state representation for pure FSM pattern.
 Follows ONEX one-model-per-file architecture.
 """
 
@@ -14,7 +14,11 @@ class ModelFSMStateSnapshot:
     """
     Current FSM state snapshot.
 
-    Immutable state representation for pure FSM pattern.
+    Frozen dataclass preventing field reassignment (e.g., cannot do state.current_state = "x").
+
+    Warning: context (dict) and history (list) are mutable containers.
+    Avoid modifying these after creation to maintain FSM purity.
+    FSM executor creates new snapshots rather than mutating existing ones.
     """
 
     current_state: str

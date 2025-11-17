@@ -125,9 +125,9 @@ state_transitions:
 | FSM Subcontract Models | ✅ Complete | Full state machine support |
 | Pydantic Validation | ✅ Complete | Comprehensive validation |
 | Subcontract Composition | ✅ Complete | ModelContractReducer |
-| FSM Runtime Executor | 🚧 In Development | ServiceFSMExecutor planned |
-| Declarative Base Classes | 🚧 Planned | NodeReducerDeclarative |
-| Documentation | 🚧 This Tutorial | Shows current implementation |
+| FSM Runtime Executor | ✅ Complete | fsm_executor.py with MixinFSMExecution |
+| Declarative Base Classes | ✅ Complete | NodeReducerDeclarative (production-ready) |
+| Documentation | ✅ Complete | Full tutorial and migration guides available |
 
 **See**: [DECLARATIVE_WORKFLOW_FINDINGS.md](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for implementation roadmap.
 
@@ -135,11 +135,15 @@ state_transitions:
 
 ### Tutorial Approach
 
-This tutorial shows the **current implementation pattern** using custom Python code with **pure FSM principles** (Intent emission). This is a **temporary pattern** until declarative FSM runtime services are complete.
+This tutorial demonstrates **two implementation approaches**:
+1. **Manual FSM Implementation** (Current pattern): Custom Python code with pure FSM principles and Intent emission
+2. **Declarative FSM** (Recommended for new nodes): YAML-driven state machines using `NodeReducerDeclarative`
+
+**Both approaches are production-ready and fully supported.**
 
 **Learning Path**:
 1. ✅ Learn pure FSM pattern with Intents (this tutorial)
-2. 🚧 Migrate to declarative FSM YAML contracts (future updates)
+2. ✅ Migrate to declarative FSM YAML contracts (see [MIGRATING_TO_DECLARATIVE_NODES.md](../../guides/MIGRATING_TO_DECLARATIVE_NODES.md))
 
 ---
 
@@ -165,7 +169,7 @@ REDUCER nodes in ONEX are **pure finite state machines**:
 **Core Concept**:
 ```text
 δ(state, action) → (new_state, intents[])
-```python
+```
 
 **Tutorial Structure**:
 1. Understand pure FSM vs. stateful patterns
@@ -198,7 +202,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
         emit_log_event(LogLevel.INFO, "Aggregation complete")
 
         return result
-```python
+```
 
 ### ✅ New Pattern (Pure FSM, Intent Emission)
 ```python
@@ -361,7 +365,7 @@ class ModelMetricsAggregationInput(BaseModel):
         """Pydantic configuration."""
 
         frozen = True
-```python
+```
 
 ### Output Model with Intent Support
 
@@ -486,7 +490,7 @@ class ModelMetricsAggregationOutput(BaseModel):
         """Pydantic configuration."""
 
         frozen = True
-```python
+```
 
 ---
 
@@ -790,7 +794,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
                 **input_data.metadata,
             },
         )
-```python
+```
 
 **What `NodeReducer` Provides**:
 - ✅ **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
@@ -884,7 +888,7 @@ Intent Flow Example:
                intent.payload["context"],
            )
 """
-```python
+```
 
 ### Effect Node for Intent Execution
 
@@ -958,7 +962,7 @@ class NodeIntentExecutorEffect(NodeEffect):
 
         # In real implementation, write to database
         print(f"💾 Persisting aggregation: {payload['operation_id']}")
-```python
+```
 
 ---
 
@@ -1186,7 +1190,7 @@ async def test_intent_priority_ordering(aggregator_node):
 
     if persist_intents:
         assert persist_intents[0].priority == 1  # Highest priority
-```python
+```
 
 ---
 
@@ -1250,7 +1254,7 @@ async def aggregate_server_metrics():
 
 
 asyncio.run(aggregate_server_metrics())
-```python
+```
 
 ### Orchestrator Pattern for Full Workflow
 
@@ -1311,7 +1315,7 @@ async def main():
 
 
 asyncio.run(main())
-```python
+```
 
 ---
 
@@ -1337,7 +1341,7 @@ INTENT_TYPES = {
     "send_notification": "Notification Effect Node",
     "trigger_workflow": "Workflow Orchestrator Node",
 }
-```text
+```
 
 ### Conflict Resolution Strategies
 
@@ -1349,7 +1353,7 @@ EnumConflictResolution.TAKE_MAX     # Keep maximum value
 EnumConflictResolution.TAKE_MIN     # Keep minimum value
 EnumConflictResolution.TAKE_LATEST  # Use latest value
 EnumConflictResolution.MERGE        # Merge lists/objects
-```python
+```
 
 ---
 
@@ -1422,7 +1426,7 @@ async def aggregate_metrics(
         sources_processed=len(input_data.data_sources),
         items_processed=len(aggregated_data),
     )
-```yaml
+```
 
 **Step 3: Update Contract**
 
@@ -1434,7 +1438,7 @@ subcontracts:
 
 mixins:
   - "MixinIntentPublisher"
-```python
+```
 
 ### Testing with MixinIntentPublisher
 
@@ -1476,7 +1480,7 @@ async def test_reducer_publishes_aggregated_metrics():
     intent_payload = intent_envelope["payload"]
     assert intent_payload["target_topic"] == "dev.omninode-bridge.metrics.aggregated.v1"
     assert intent_payload["target_event_payload"]["aggregated_value"] == 150.0
-```python
+```
 
 ### Pattern Comparison
 
@@ -1502,7 +1506,7 @@ await self.publish_event_intent(
     event=my_event_model
 )
 return ModelMetricsAggregationOutput(result=data)
-```python
+```
 
 **Key Differences**:
 - ModelIntent: Returned in output, executed by orchestrator
@@ -1582,7 +1586,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
         """Pure aggregation logic (no I/O)."""
         # Implementation...
         pass
-```python
+```
 
 ### Further Reading
 
@@ -1640,7 +1644,7 @@ async def process(self, input_data):
         )
     ]
     return ModelOutput(result=result, intents=intents)
-```yaml
+```
 
 ---
 

@@ -2905,10 +2905,22 @@ mixin_workflow_execution:
 
     with_execution_order: |
       class NodeMyOrchestrator(NodeOrchestratorDeclarative, MixinWorkflowExecution):
+          def __init__(self, container, contract):
+              super().__init__(container)
+              self.contract = contract
+              self.logger = container.logger
+
           async def process(self, input_data):
               # Get execution order
               order = self.get_workflow_execution_order(input_data.steps)
-              print(f"Execution order: {order}")
+              self.logger.info(
+                  "Workflow execution order determined",
+                  extra={
+                      "execution_order": order,
+                      "workflow_id": input_data.workflow_id,
+                      "step_count": len(input_data.steps)
+                  }
+              )
 
               # Execute workflow
               result = await self.execute_workflow_from_contract(

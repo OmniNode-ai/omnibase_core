@@ -27,6 +27,23 @@ This guide shows how to migrate existing code-based reducer and orchestrator nod
 - **Testability**: YAML contracts are unit-testable
 - **Consistency**: Standardized patterns across all nodes
 
+### Implementation Status
+
+**✅ Production-Ready** (as of omnibase_core v0.3.2, 2025-11-16)
+
+All 4 phases of declarative node implementation are complete:
+
+| Component | Status | Details |
+|-----------|--------|---------|
+| **FSM Models** | ✅ Complete | ModelFSMSubcontract with full state machine support |
+| **Workflow Models** | ✅ Complete | ModelWorkflowDefinition with dependency resolution |
+| **FSM Runtime** | ✅ Complete | fsm_executor.py + MixinFSMExecution (548 lines, 18 tests) |
+| **Workflow Runtime** | ✅ Complete | workflow_executor.py + MixinWorkflowExecution |
+| **Declarative Base Classes** | ✅ Complete | NodeReducerDeclarative, NodeOrchestratorDeclarative |
+| **Documentation** | ✅ Complete | Full tutorials and migration guides |
+
+**Ready for production use.** All code examples in this guide are functional and tested.
+
 ### What Changes?
 
 | Aspect | Before (Code-Based) | After (Declarative) |

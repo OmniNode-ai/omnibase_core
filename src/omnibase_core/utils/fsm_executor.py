@@ -4,7 +4,8 @@ FSM execution utilities for declarative state machines.
 Pure functions for executing FSM transitions from ModelFSMSubcontract.
 No side effects - returns results and intents.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Typing: Strongly typed with strategic Any usage for runtime context flexibility.
+Context dictionaries use dict[str, Any] as they contain dynamic execution data.
 """
 
 from datetime import datetime
@@ -231,17 +232,17 @@ async def validate_fsm_contract(fsm: ModelFSMSubcontract) -> list[str]:
     if unreachable:
         errors.append(f"Unreachable states: {', '.join(sorted(unreachable))}")
 
-    # Check terminal states have no outgoing transitions to non-error states
+    # Check terminal states have no explicit outgoing transitions
+    # (wildcard transitions with from_state="*" are naturally exempt as they don't match specific terminal state names)
     terminal_states_set = {
         state.state_name for state in fsm.states if state.is_terminal
     }
     for transition in fsm.transitions:
         if transition.from_state in terminal_states_set:
-            # Allow transitions to error states from terminal states
-            if transition.to_state not in fsm.error_states:
-                errors.append(
-                    f"Terminal state '{transition.from_state}' has non-error outgoing transition: {transition.transition_name}"
-                )
+            # Terminal states should not have ANY explicit outgoing transitions
+            errors.append(
+                f"Terminal state '{transition.from_state}' has explicit outgoing transition: {transition.transition_name}"
+            )
 
     return errors
 
@@ -334,13 +335,36 @@ async def _evaluate_single_condition(
     Returns:
         True if condition met, False otherwise
 
-    Note:
-        Type Coercion Behavior:
-        - The 'equals' and 'not_equals' operators perform STRING comparison
-        - Both values are cast to str before comparison
-        - This means: 10 == "10" will evaluate to True
-        - This is intentional for FSM string-based condition expressions
-        - For strict type comparison, use numeric operators (greater_than, less_than)
+    Important - Type Coercion Behavior:
+        The 'equals' and 'not_equals' operators perform STRING-BASED comparison
+        by casting both sides to str before evaluation.
+
+        Why This Design?
+        - FSM conditions are typically defined in YAML/JSON where all values are strings
+        - String coercion ensures consistent behavior regardless of value source
+        - Avoids type mismatch errors when comparing config values to runtime values
+
+        Examples:
+            10 == "10"           → True  (both become "10")
+            10 != "10"           → False (both become "10")
+            True == "True"       → True  (both become "True")
+            None == "None"       → True  (both become "None")
+            [1,2] == "[1, 2]"    → True  (both become "[1, 2]")
+
+        Impact:
+            - Type information is LOST during comparison
+            - Integer 0 is treated same as string "0"
+            - Boolean True is treated same as string "True"
+
+        Workarounds:
+            - For numeric comparison: Use 'greater_than' or 'less_than' operators
+            - For type-aware checks: Preprocess context values before FSM execution
+            - For strict equality: Add custom condition evaluator
+
+        Other Operators:
+            - 'greater_than', 'less_than': Cast to float (preserves numeric comparison)
+            - 'min_length', 'max_length': Cast expected value to int
+            - 'exists', 'not_exists': No type coercion (presence check only)
     """
     # Simple expression-based evaluation
     # Format: "field operator value"
@@ -359,12 +383,18 @@ async def _evaluate_single_condition(
 
     # Evaluate based on operator
     if operator == "equals":
-        # TYPE COERCION: Both values cast to str for comparison
-        # Example: 10 == "10" → True (both become "10")
+        # STRING-BASED COMPARISON: Both values are cast to str before comparison
+        # This is INTENTIONAL to handle YAML/JSON config values consistently
+        # Examples: 10 == "10" → True, True == "True" → True, None == "None" → True
+        # WARNING: Type information is lost! Use greater_than/less_than for numeric checks
+        # See function docstring for complete type coercion behavior documentation
         return str(field_value) == str(expected_value)
     elif operator == "not_equals":
-        # TYPE COERCION: Both values cast to str for comparison
-        # Example: 10 != "10" → False (both become "10")
+        # STRING-BASED COMPARISON: Both values are cast to str before comparison
+        # This is INTENTIONAL to handle YAML/JSON config values consistently
+        # Examples: 10 != "10" → False, True != "True" → False
+        # WARNING: Type information is lost! Use greater_than/less_than for numeric checks
+        # See function docstring for complete type coercion behavior documentation
         return str(field_value) != str(expected_value)
     elif operator == "min_length":
         if not field_value:

@@ -459,7 +459,7 @@ class TestActionTypes:
         assert EnumActionType.REDUCE in action_types
 
 
-class TestExecutionTimeTrtracking:
+class TestExecutionTimeTracking:
     """Test execution time tracking."""
 
     @pytest.mark.asyncio
@@ -473,7 +473,8 @@ class TestExecutionTimeTrtracking:
             simple_workflow_definition, simple_workflow_steps, uuid4()
         )
 
-        assert result.execution_time_ms > 0
+        # Execution time should be non-negative (can be 0 for very fast executions)
+        assert result.execution_time_ms >= 0
         assert isinstance(result.execution_time_ms, int)
 
 

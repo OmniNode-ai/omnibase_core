@@ -77,9 +77,9 @@ workflow_coordination:
 |-----------|--------|-------|
 | YAML Contract Models | ✅ Complete | Full Pydantic validation |
 | Subcontract Composition | ✅ Complete | ModelContractOrchestrator |
-| Runtime Executor Services | 🚧 In Development | ServiceWorkflowExecutor planned |
-| Declarative Base Classes | 🚧 Planned | NodeOrchestratorDeclarative |
-| Documentation | 🚧 This Tutorial | Shows current implementation |
+| Runtime Executor Services | ✅ Complete | workflow_executor.py with MixinWorkflowExecution |
+| Declarative Base Classes | ✅ Complete | NodeOrchestratorDeclarative (production-ready) |
+| Documentation | ✅ Complete | Full tutorial and migration guides available |
 
 **See**: [DECLARATIVE_WORKFLOW_FINDINGS.md](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for implementation roadmap.
 
@@ -87,11 +87,15 @@ workflow_coordination:
 
 ### Tutorial Approach
 
-This tutorial shows the **current implementation pattern** using custom Python code. This is a **temporary pattern** until declarative runtime services are complete.
+This tutorial demonstrates **two implementation approaches**:
+1. **Manual Orchestrator Implementation** (Current pattern): Custom Python code with action emission and workflow coordination
+2. **Declarative Workflows** (Recommended for new workflows): YAML-driven workflows using `NodeOrchestratorDeclarative`
+
+**Both approaches are production-ready and fully supported.**
 
 **Learning Path**:
 1. ✅ Learn current orchestrator implementation (this tutorial)
-2. 🚧 Migrate to declarative YAML contracts (future updates)
+2. ✅ Migrate to declarative YAML contracts (see [MIGRATING_TO_DECLARATIVE_NODES.md](../../guides/MIGRATING_TO_DECLARATIVE_NODES.md))
 
 ---
 
@@ -260,7 +264,7 @@ step = ModelWorkflowStep(
     actions=[validation_action, processing_action],
     timeout_ms=30000,
 )
-```text
+```
 
 ### Execution Modes
 
@@ -282,7 +286,7 @@ Step 1 (Validate) ─┐
 Step 2 (Fetch) ────┘
 
 Step 3 (Aggregate) ───> Step 4 (Save)
-```python
+```
 
 Execution order: Steps 1&2 in parallel → Step 3 → Step 4
 
@@ -386,7 +390,7 @@ class ModelPipelineOrchestratorInput(BaseModel):
     class Config:
         """Pydantic configuration."""
         use_enum_values = True
-```python
+```
 
 ---
 
@@ -775,7 +779,7 @@ class NodePipelineOrchestrator(NodeOrchestrator):
             "NodePipelineOrchestrator resources cleaned up",
             {"node_id": str(self.node_id)},
         )
-```python
+```
 
 **What `NodeOrchestrator` Provides**:
 - ✅ **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
@@ -987,7 +991,7 @@ class NodeConditionalPipelineOrchestrator(NodePipelineOrchestrator):
                 return result["quality_score"] >= 0.9
 
         return False
-```yaml
+```
 
 **Conditional Execution Features**:
 
@@ -1023,7 +1027,7 @@ result = await orchestrator.process(input_data)
 
 # Execution order: Step 1 → Step 2 → Step 3 → Step 4 → Step 5
 # Total time: ~50ms (sum of all steps)
-```text
+```
 
 ### PARALLEL Mode
 
@@ -1054,7 +1058,7 @@ result = await orchestrator.process(input_data)
 # If steps were independent:
 #   All 5 steps run in parallel
 #   Total time: 15ms (max of all steps)
-```yaml
+```
 
 ### BATCH Mode
 
@@ -1077,7 +1081,7 @@ result = await orchestrator.process(input_data)
 #   - Similar operations are grouped
 #   - Resource utilization is optimized
 # Total time: ~50-60ms (overhead for load balancing)
-```python
+```
 
 **Mode Selection Guidelines**:
 
@@ -1212,7 +1216,7 @@ class NodeResilientPipelineOrchestrator(NodePipelineOrchestrator):
 
         # No recovery possible
         raise error
-```python
+```
 
 ---
 
@@ -1436,7 +1440,7 @@ async def test_action_emission(orchestrator):
         assert action.operation_data is not None
         assert action.lease_id is not None  # Verify lease management
         assert action.epoch >= 1  # Verify epoch control
-```yaml
+```
 
 **Test Coverage**:
 - ✅ Sequential execution mode
@@ -1478,7 +1482,7 @@ result = await orchestrator.process(input_data)
 print(f"ETL completed: {result.steps_completed} steps")
 print(f"Processing time: {result.processing_time_ms}ms")
 print(f"Actions emitted: {len(result.actions_emitted)}")
-```text
+```
 
 ### Example 2: Real-Time Data Processing
 
@@ -1507,7 +1511,7 @@ result = await orchestrator.process(input_data)
 
 print(f"Stream processing completed in {result.processing_time_ms}ms")
 print(f"Parallel executions: {result.parallel_executions}")
-```text
+```
 
 ### Example 3: Conditional Workflow
 
@@ -1535,7 +1539,7 @@ result = await orchestrator.process(input_data)
 # High-quality data → Fast track
 # Low-quality data → Full processing pipeline
 print(f"Workflow path taken: {result.metadata.get('path', 'standard')}")
-```python
+```
 
 ---
 
@@ -1587,7 +1591,7 @@ aggregate_action = ModelAction(
 )
 
 # Execute with PARALLEL mode for optimal performance
-```python
+```
 
 ### Pattern 2: Circuit Breaker
 
@@ -1655,7 +1659,7 @@ class NodeCircuitBreakerOrchestrator(NodePipelineOrchestrator):
         """Reset circuit breaker for service."""
         if service in self.circuit_breaker_state:
             self.circuit_breaker_state[service]["failures"] = 0
-```python
+```
 
 ### Pattern 3: Compensation Logic
 
@@ -1722,7 +1726,7 @@ class NodeSagaOrchestrator(NodePipelineOrchestrator):
 
         # Execute compensation logic
         # (Would call appropriate EFFECT node to undo the action)
-```python
+```
 
 ---
 
@@ -1747,7 +1751,7 @@ emit_log_event_sync(
     "Orchestrator execution trace",
     {"workflow_id": str(workflow_id)},
 )
-```text
+```
 
 ### Issue: Steps execute in wrong order
 
@@ -1765,7 +1769,7 @@ orchestrator_input = ModelOrchestratorInput(
     dependency_resolution_enabled=True,
     execution_mode=EnumExecutionMode.SEQUENTIAL,  # Force order
 )
-```text
+```
 
 ### Issue: Parallel mode slower than sequential
 
@@ -1783,7 +1787,7 @@ input_data = ModelPipelineOrchestratorInput(
     execution_mode=EnumExecutionMode.PARALLEL,
     max_parallel_steps=5,  # Adjust based on available resources
 )
-```python
+```
 
 ### Issue: Memory usage grows over time
 
@@ -1800,7 +1804,7 @@ async def _cleanup_node_resources(self):
     self.active_workflows.clear()
     self.emitted_actions.clear()
     self.workflow_states.clear()
-```python
+```
 
 ---
 
@@ -1853,7 +1857,7 @@ class NodeHybridOrchestrator(MixinHybridExecution, NodePipelineOrchestrator):
         if complexity > 0.8:
             return "workflow"  # Use LlamaIndex
         return "direct"  # Use action-based orchestration
-```python
+```
 
 **When to use LlamaIndex workflows**:
 - Complex, deeply nested orchestration logic

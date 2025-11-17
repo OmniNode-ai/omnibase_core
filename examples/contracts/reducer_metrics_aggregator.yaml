@@ -14,6 +14,81 @@
 # - Terminal state detection
 # - Error handling with wildcard transitions
 # - State persistence for recovery
+#
+# ============================================================================
+# DSL OPERATORS REFERENCE
+# ============================================================================
+#
+# Condition expressions use the format: "field_name operator expected_value"
+# These operators are evaluated in transition conditions to determine if a
+# transition should be taken.
+#
+# Available Operators:
+#
+# 1. equals
+#    Syntax: "field_name equals expected_value"
+#    Behavior: STRING-BASED comparison (both sides cast to str)
+#    Example: "status equals active"
+#    Type Coercion: 10 == "10" → True, True == "True" → True
+#    Warning: Type information is lost! Use greater_than/less_than for numeric checks.
+#
+# 2. not_equals
+#    Syntax: "field_name not_equals expected_value"
+#    Behavior: STRING-BASED comparison (both sides cast to str)
+#    Example: "error_code not_equals 0"
+#    Type Coercion: 10 != "10" → False (both become "10")
+#
+# 3. min_length
+#    Syntax: "field_name min_length minimum_count"
+#    Behavior: Checks if len(field_value) >= minimum_count
+#    Example: "data_sources min_length 1"  # At least 1 data source
+#    Cast: expected_value cast to int
+#
+# 4. max_length
+#    Syntax: "field_name max_length maximum_count"
+#    Behavior: Checks if len(field_value) <= maximum_count
+#    Example: "error_queue max_length 100"  # No more than 100 errors
+#    Cast: expected_value cast to int
+#
+# 5. greater_than
+#    Syntax: "field_name greater_than threshold"
+#    Behavior: Checks if field_value > threshold (numeric comparison)
+#    Example: "temperature greater_than 100"
+#    Cast: Both sides cast to float
+#
+# 6. less_than
+#    Syntax: "field_name less_than threshold"
+#    Behavior: Checks if field_value < threshold (numeric comparison)
+#    Example: "retry_count less_than 3"  # Allow up to 2 retries
+#    Cast: Both sides cast to float
+#
+# 7. exists
+#    Syntax: "field_name exists"
+#    Behavior: Checks if field_name is present in context (no value needed)
+#    Example: "user_id exists"
+#    Cast: None (presence check only)
+#
+# 8. not_exists
+#    Syntax: "field_name not_exists"
+#    Behavior: Checks if field_name is NOT present in context
+#    Example: "error_details not_exists"  # No error occurred
+#    Cast: None (presence check only)
+#
+# Implementation Reference:
+#   See: src/omnibase_core/utils/fsm_executor.py::_evaluate_single_condition()
+#   Lines 324-429 contain the complete operator implementation.
+#
+# Type Coercion Notes:
+#   - equals/not_equals: String-based (type info lost)
+#   - greater_than/less_than: Float-based (preserves numeric comparison)
+#   - min_length/max_length: Int cast on expected value
+#   - exists/not_exists: No coercion (presence check)
+#
+# Examples in this file:
+#   - Line 193: "data_sources min_length 1"
+#   - Line 210: "collected_metrics min_length 10"
+#   - Line 240: "retry_count less_than 3"
+# ============================================================================
 
 # Contract Metadata
 node_type: REDUCER
@@ -36,7 +111,7 @@ state_transitions:
       exit_actions: []
       is_terminal: false
       metadata:
-        ui_color: "#gray"
+        ui_color: "#9CA3AF"
         icon: "pause"
 
     # Collecting: Gathering metrics from data sources
@@ -50,7 +125,7 @@ state_transitions:
         - "flush_metric_buffers"
       is_terminal: false
       metadata:
-        ui_color: "#blue"
+        ui_color: "#3B82F6"
         icon: "download"
 
     # Validating: Ensuring collected data meets quality requirements
@@ -62,7 +137,7 @@ state_transitions:
         - "log_validation_results"
       is_terminal: false
       metadata:
-        ui_color: "#yellow"
+        ui_color: "#FBBF24"
         icon: "check-circle"
 
     # Aggregating: Computing aggregate statistics
@@ -76,7 +151,7 @@ state_transitions:
         - "release_aggregation_buffers"
       is_terminal: false
       metadata:
-        ui_color: "#purple"
+        ui_color: "#8B5CF6"
         icon: "calculator"
 
     # Completed: Terminal state - aggregation successful
@@ -88,7 +163,7 @@ state_transitions:
       exit_actions: []
       is_terminal: true
       metadata:
-        ui_color: "#green"
+        ui_color: "#10B981"
         icon: "check"
 
     # Failed: Terminal state - aggregation failed
@@ -101,7 +176,7 @@ state_transitions:
       exit_actions: []
       is_terminal: true
       metadata:
-        ui_color: "#red"
+        ui_color: "#EF4444"
         icon: "x-circle"
 
   # State transitions with triggers and conditions
