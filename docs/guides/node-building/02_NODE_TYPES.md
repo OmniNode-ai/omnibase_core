@@ -284,14 +284,6 @@ async def process(self, input_data):
 
 **Aggregate and consolidate data** - combining, merging, accumulating data from multiple sources.
 
-### Characteristics
-
-- **Aggregation operations**: Fold, reduce, accumulate
-- **State management**: Can maintain state across operations
-- **Streaming support**: Process large datasets incrementally
-- **Conflict resolution**: Handle data conflicts
-- **Memory efficient**: Optimized for large data volumes
-
 ### When to Use REDUCER
 
 Use a REDUCER node when you need to:
@@ -303,7 +295,23 @@ Use a REDUCER node when you need to:
 ✅ Build summary statistics
 ✅ Combine partial results
 
-### REDUCER and the Pure FSM Pattern 🔄
+### Design Principles
+
+**Key Principles**:
+- **Pure FSM Pattern** ⭐ **RECOMMENDED** - No mutable state, no direct side effects
+- **Intent Emission** - Emit intents for side effects instead of executing directly
+- **Aggregation Operations** - Fold, reduce, accumulate data
+- **State Management** - Can maintain state across operations (legacy pattern)
+- **Streaming Support** - Process large datasets incrementally
+- **Conflict Resolution** - Handle data conflicts during merging
+
+> **Note**: New implementations should use the Pure FSM pattern with intent emission (see below). Traditional aggregation patterns are still supported but considered legacy. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
+
+---
+
+### Modern Pure FSM Pattern ⭐ **RECOMMENDED**
+
+The recommended approach for REDUCER nodes is the **pure FSM pattern** with intent emission.
 
 **Modern REDUCER Pattern**: REDUCER nodes should follow the **Pure Finite State Machine (FSM)** pattern:
 
@@ -359,7 +367,13 @@ class NodeOrderProcessingReducer(NodeCoreBase):
 
 > **Learn More**: See [ONEX_FOUR_NODE_ARCHITECTURE.md](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md#modelintent-architecture) for complete Intent/Action patterns and FSM implementation details.
 
-### Real-World Examples
+---
+
+### Traditional Aggregation Patterns
+
+**Note**: The following patterns are still supported but new implementations should migrate to the pure FSM pattern with intent emission (see above). See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for step-by-step migration guidance.
+
+#### Real-World Examples
 
 ```python
 # Example 1: Aggregate user statistics
@@ -792,10 +806,10 @@ result = await orchestrator.process(input)
 - **Example**: Validation, price calculation
 
 ### REDUCER Node
-- **Purpose**: Data aggregation
-- **Use when**: Combining or summarizing data
-- **Key trait**: Fold, merge, accumulate
-- **Example**: Statistics, data merging
+- **Purpose**: Data aggregation & state management
+- **Use when**: Combining or summarizing data, FSM state transitions
+- **Key trait**: Pure FSM pattern ⭐ (fold, merge, accumulate for legacy)
+- **Example**: Order processing FSM, statistics, data merging
 
 ### ORCHESTRATOR Node
 - **Purpose**: Workflow coordination

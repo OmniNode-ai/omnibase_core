@@ -72,7 +72,7 @@ from contextlib import asynccontextmanager
 
 from pydantic import ValidationError
 from omnibase_core.nodes.node_compute import NodeCompute
-from omnibase_core.models.model_onex_error import ModelONEXError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_onex_warning import ModelONEXWarning
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer
 from omnibase_core.utils.circuit_breaker import CircuitBreakerMixin
@@ -1697,7 +1697,7 @@ dependencies:
       version: ">=2.0.0"
       components:
         - "nodes.base.node_compute_service"
-        - "models.model_onex_error"
+        - "models.errors.model_onex_error"
         - "models.model_onex_warning"
         - "utils.error_sanitizer"
         - "utils.circuit_breaker"
