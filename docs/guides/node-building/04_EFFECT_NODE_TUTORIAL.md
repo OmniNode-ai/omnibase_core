@@ -263,6 +263,10 @@ class ModelFileBackupOutput(BaseModel):
 
 ## Step 3: Implement the EFFECT Node
 
+### Quick Start: Using the Convenience Wrapper ✅ Recommended
+
+For most use cases, use the pre-configured `NodeEffect` class that includes built-in EFFECT functionality:
+
 **File**: `src/your_project/nodes/node_file_backup_effect.py`
 
 ```python
@@ -608,15 +612,66 @@ class NodeFileBackupEffect(NodeEffect):
         }
 ```python
 
+**What `NodeEffect` Provides**:
+- ✅ **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
+- ✅ **Transaction Management**: Built-in `ModelEffectTransaction` with rollback support
+- ✅ **Retry Logic**: Exponential backoff retry mechanism
+- ✅ **Circuit Breakers**: Per-service circuit breaker patterns
+- ✅ **Effect Handlers**: Registry for custom effect operations
+- ✅ **Concurrency Control**: Semaphore for limiting concurrent effects
+- ✅ **Performance Tracking**: Built-in metrics for effect execution
+- ✅ **Configuration Support**: Automatic config loading from `NodeConfigProvider`
+
 **Key Implementation Features**:
 
 - ✅ **Atomic Operations**: Uses temp file + rename pattern for safety
-- ✅ **Transaction Support**: Automatic rollback on failures
+- ✅ **Transaction Support**: Automatic rollback on failures (via NodeEffect)
 - ✅ **Retry Logic**: Inherited from base NodeEffect
-- ✅ **Circuit Breaker**: Prevents cascading failures
+- ✅ **Circuit Breaker**: Prevents cascading failures (via NodeEffect)
 - ✅ **Checksum Verification**: Ensures backup integrity
 - ✅ **Comprehensive Logging**: Full operation traceability
 - ✅ **Statistics Tracking**: Monitor performance and reliability
+
+### Advanced: Custom Base Class (When You Need Full Control)
+
+If you need custom mixin composition or want to build from scratch:
+
+```python
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+class NodeFileBackupEffect(NodeCoreBase):
+    """
+    Custom EFFECT node built from NodeCoreBase.
+
+    Use this approach when:
+    - You need custom mixin combinations
+    - You want fine-grained control over transaction logic
+    - You're implementing non-standard effect patterns
+    """
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+
+        # Manually initialize effect-specific features
+        # (NodeEffect does this automatically)
+        self.active_transactions = {}
+        self.circuit_breakers = {}
+        self.effect_handlers = {}
+        # ... rest of manual setup
+
+    # ... rest of implementation
+```
+
+**When to use custom base**:
+- Custom transaction management beyond ModelEffectTransaction
+- Non-standard retry/circuit breaker strategies
+- Special effect handler registration needs
+
+**When to use NodeEffect** (recommended):
+- Standard EFFECT operations (file I/O, database, API calls)
+- Need built-in transaction support and rollback
+- Want retry logic and circuit breakers
+- Following ONEX best practices
 
 ---
 

@@ -68,7 +68,6 @@ from omnibase_core.mixins.mixin_request_response_introspection import (
 from omnibase_core.mixins.mixin_serializable import MixinSerializable
 from omnibase_core.mixins.mixin_service_registry import MixinServiceRegistry
 from omnibase_core.mixins.mixin_tool_execution import MixinToolExecution
-from omnibase_core.mixins.mixin_workflow_support import MixinDagSupport
 from omnibase_core.mixins.mixin_yaml_serialization import MixinYAMLSerialization
 
 __all__ = [
@@ -78,7 +77,6 @@ __all__ = [
     "MixinCLIHandler",
     "MixinContractMetadata",
     "MixinContractStateReducer",
-    "MixinDagSupport",
     "MixinDebugDiscoveryLogging",
     "MixinEventDrivenNode",
     "MixinEventHandler",

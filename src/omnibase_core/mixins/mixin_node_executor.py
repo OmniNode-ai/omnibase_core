@@ -426,7 +426,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         """Register signal handlers for graceful shutdown."""
         try:
 
-            def signal_handler(signum: int, frame: Any) -> None:
+            def signal_handler(signum: int, _frame: Any) -> None:
                 self._log_info(
                     f"Received signal {signum}, initiating graceful shutdown"
                 )

@@ -1,7 +1,7 @@
-from .exception_fail_fast import ExceptionFailFast
+from .exception_fail_fast import ExceptionFailFastError
 
 
-class ExceptionDependencyFailed(ExceptionFailFast):
+class ExceptionDependencyFailedError(ExceptionFailFastError):
     """Raised when a required dependency is not available."""
 
     def __init__(self, message: str, dependency: str):

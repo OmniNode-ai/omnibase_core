@@ -20,18 +20,29 @@ class ModelOrchestratorOutput(BaseModel):
 
     Provides structured output storage for orchestrator execution
     results with type safety and validation.
+
+    Important:
+        The start_time and end_time fields currently both represent the workflow
+        completion timestamp (when the result was created), not an actual execution
+        time range. For the actual execution duration, use execution_time_ms instead.
     """
 
     # Execution summary
     execution_status: str = Field(default=..., description="Overall execution status")
     execution_time_ms: int = Field(
         default=...,
-        description="Total execution time in milliseconds",
+        description="Total execution time in milliseconds (use this for duration)",
     )
     start_time: str = Field(
-        default=..., description="Execution start time (ISO format)"
+        default=...,
+        description="Execution timestamp (ISO format). Note: Currently set to completion "
+        "time, not actual start. See execution_time_ms for duration.",
     )
-    end_time: str = Field(default=..., description="Execution end time (ISO format)")
+    end_time: str = Field(
+        default=...,
+        description="Execution timestamp (ISO format). Note: Currently same as start_time "
+        "(completion time). See execution_time_ms for duration.",
+    )
 
     # Step results
     completed_steps: list[str] = Field(

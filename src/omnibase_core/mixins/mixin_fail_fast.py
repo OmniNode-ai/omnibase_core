@@ -15,11 +15,15 @@ from typing import Any, TypeVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.exception_contract_violation import ExceptionContractViolation
-from omnibase_core.errors.exception_dependency_failed import ExceptionDependencyFailed
+from omnibase_core.errors.exception_contract_violation import (
+    ExceptionContractViolationError,
+)
+from omnibase_core.errors.exception_dependency_failed import (
+    ExceptionDependencyFailedError,
+)
 
 # Import extracted error classes
-from omnibase_core.errors.exception_fail_fast import ExceptionFailFast
+from omnibase_core.errors.exception_fail_fast import ExceptionFailFastError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -80,7 +84,7 @@ class MixinFailFast:
         def wrapper(*args: Any, **kwargs: Any) -> T:
             try:
                 return func(*args, **kwargs)
-            except ExceptionFailFast:
+            except ExceptionFailFastError:
                 # Re-raise our own fail fast errors
                 raise
             except Exception as e:
@@ -92,7 +96,7 @@ class MixinFailFast:
                     traceback=traceback.format_exc(),
                 )
                 # _handle_critical_error calls sys.exit(), but MyPy doesn't know that
-                raise ExceptionFailFast(
+                raise ExceptionFailFastError(
                     f"Critical error in {func.__name__}: {e!s}"
                 ) from e
 

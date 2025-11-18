@@ -1,0 +1,285 @@
+# Example: Declarative Orchestrator Node - Data Processing Pipeline
+#
+# This example demonstrates an orchestrator node that coordinates a multi-step
+# data processing workflow defined entirely in YAML.
+#
+# Node Implementation (NO custom code needed):
+#   class NodeDataPipelineOrchestrator(NodeOrchestratorDeclarative):
+#       pass  # All logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - Workflow definition with metadata
+# - Execution graph with node dependencies
+# - Coordination rules for parallel execution
+# - Failure recovery strategies
+# - Action emission for deferred execution
+# - Sequential/parallel/batch execution modes
+
+# Contract Metadata
+node_type: ORCHESTRATOR
+contract_version: {major: 1, minor: 0, patch: 0}
+
+# Workflow Coordination Subcontract
+workflow_coordination:
+  # Workflow Definition: Complete workflow specification
+  workflow_definition:
+    # Workflow Metadata
+    workflow_metadata:
+      workflow_name: data_processing_pipeline
+      workflow_version: {major: 1, minor: 0, patch: 0}
+      description: "Multi-stage data processing with validation and enrichment"
+      execution_mode: parallel # Can be: sequential, parallel, batch
+      author: "ONEX Framework Team"
+      tags:
+        - data-processing
+        - etl
+        - parallel
+      documentation_url: "https://docs.onex.ai/workflows/data-pipeline"
+
+    # Execution Graph: Nodes and their relationships
+    execution_graph:
+      nodes:
+        # Stage 1: Data Ingestion
+        - node_id: "fetch_raw_data"
+          node_type: effect
+          node_name: "Fetch Raw Data"
+          description: "Fetch raw data from external API"
+          target_node_type: "NodeDataFetcherEffect"
+          metadata:
+            api_endpoint: "https://api.example.com/data"
+            timeout_ms: 30000
+            retry_count: 3
+
+        # Stage 2: Parallel Processing (Schema Validation + Data Enrichment)
+        - node_id: "validate_schema"
+          node_type: compute
+          node_name: "Validate Schema"
+          description: "Validate data against expected schema"
+          target_node_type: "NodeSchemaValidatorCompute"
+          depends_on:
+            - fetch_raw_data
+          metadata:
+            schema_version: "2.0"
+            strict_mode: true
+
+        - node_id: "enrich_data"
+          node_type: compute
+          node_name: "Enrich Data"
+          description: "Enrich data with additional fields from cache"
+          target_node_type: "NodeDataEnricherCompute"
+          depends_on:
+            - fetch_raw_data
+          metadata:
+            enrichment_sources:
+              - cache
+              - lookup_table
+            max_enrichment_time_ms: 5000
+
+        # Stage 3: Data Aggregation (depends on validation + enrichment)
+        - node_id: "aggregate_metrics"
+          node_type: reducer
+          node_name: "Aggregate Metrics"
+          description: "Aggregate metrics from validated and enriched data"
+          target_node_type: "NodeMetricsAggregatorReducer"
+          depends_on:
+            - validate_schema
+            - enrich_data
+          metadata:
+            aggregation_type: "sum"
+            group_by_fields:
+              - "category"
+              - "region"
+
+        # Stage 4: Quality Check
+        - node_id: "quality_check"
+          node_type: compute
+          node_name: "Quality Check"
+          description: "Verify data quality meets thresholds"
+          target_node_type: "NodeQualityCheckerCompute"
+          depends_on:
+            - aggregate_metrics
+          metadata:
+            quality_threshold: 0.95
+            fail_on_low_quality: true
+
+        # Stage 5: Data Persistence (final step)
+        - node_id: "persist_results"
+          node_type: effect
+          node_name: "Persist Results"
+          description: "Save processed data to database"
+          target_node_type: "NodeDataPersisterEffect"
+          depends_on:
+            - quality_check
+          metadata:
+            database: "production_db"
+            table: "processed_data"
+            batch_size: 1000
+            upsert_mode: true
+
+        # Stage 6: Notification (parallel with persistence)
+        - node_id: "send_notification"
+          node_type: effect
+          node_name: "Send Notification"
+          description: "Send completion notification to stakeholders"
+          target_node_type: "NodeNotificationEffect"
+          depends_on:
+            - quality_check
+          metadata:
+            notification_channels:
+              - email
+              - slack
+            recipients:
+              - "data-team@example.com"
+            template: "pipeline_completion"
+
+      # Execution edges (derived from depends_on, but can be explicit)
+      edges:
+        - from_node: "fetch_raw_data"
+          to_node: "validate_schema"
+          edge_type: "data_flow"
+        - from_node: "fetch_raw_data"
+          to_node: "enrich_data"
+          edge_type: "data_flow"
+        - from_node: "validate_schema"
+          to_node: "aggregate_metrics"
+          edge_type: "data_flow"
+        - from_node: "enrich_data"
+          to_node: "aggregate_metrics"
+          edge_type: "data_flow"
+        - from_node: "aggregate_metrics"
+          to_node: "quality_check"
+          edge_type: "data_flow"
+        - from_node: "quality_check"
+          to_node: "persist_results"
+          edge_type: "data_flow"
+        - from_node: "quality_check"
+          to_node: "send_notification"
+          edge_type: "data_flow"
+
+    # Coordination Rules: How workflow execution is coordinated
+    coordination_rules:
+      # Allow parallel execution where dependencies permit
+      parallel_execution_allowed: true
+
+      # Maximum parallel steps to execute concurrently
+      max_parallel_steps: 4
+
+      # Failure recovery strategy
+      failure_recovery_strategy: retry # Options: retry, rollback, continue, fail_fast
+
+      # Retry configuration
+      max_retries: 3
+      retry_backoff_ms: 1000
+      retry_backoff_multiplier: 2.0
+
+      # Timeout configuration
+      timeout_ms: 300000 # 5 minutes total workflow timeout
+      step_timeout_ms: 60000 # 1 minute per step default
+
+      # Dependency resolution
+      dependency_resolution_enabled: true
+      detect_cycles: true
+      fail_on_cycle: true
+
+      # Partial failure handling
+      allow_partial_completion: false
+      min_required_steps_completion_percent: 100.0
+
+      # Load balancing (for batch mode)
+      enable_load_balancing: true
+      load_balance_strategy: "round_robin" # Options: round_robin, least_loaded, weighted
+
+      # Resource management
+      resource_constraints:
+        max_memory_mb: 2048
+        max_cpu_cores: 4
+        max_disk_io_mb_per_sec: 100
+
+      # Monitoring and observability
+      emit_step_metrics: true
+      emit_workflow_events: true
+      emit_dependency_graph: true
+
+  # Workflow Steps Template (optional - for step creation helper)
+  step_templates:
+    # Template for effect steps
+    - template_name: "effect_step"
+      step_type: "effect"
+      default_timeout_ms: 30000
+      default_retry_count: 3
+      default_priority: 1
+
+    # Template for compute steps
+    - template_name: "compute_step"
+      step_type: "compute"
+      default_timeout_ms: 60000
+      default_retry_count: 1
+      default_priority: 2
+
+    # Template for reducer steps
+    - template_name: "reducer_step"
+      step_type: "reducer"
+      default_timeout_ms: 120000
+      default_retry_count: 2
+      default_priority: 3
+
+# Example Usage:
+#
+# from omnibase_core.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
+# from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
+# from uuid import uuid4
+#
+# class NodeDataPipelineOrchestrator(NodeOrchestratorDeclarative):
+#     pass  # No custom code needed!
+#
+# # Create orchestrator
+# node = NodeDataPipelineOrchestrator(container)
+#
+# # Define workflow steps (or load from contract)
+# steps_config = [
+#     {"step_name": "Fetch Raw Data", "step_type": "effect", "timeout_ms": 30000},
+#     {"step_name": "Validate Schema", "step_type": "compute", "depends_on": [fetch_id]},
+#     {"step_name": "Enrich Data", "step_type": "compute", "depends_on": [fetch_id]},
+#     {"step_name": "Aggregate Metrics", "step_type": "reducer", "depends_on": [validate_id, enrich_id]},
+#     {"step_name": "Quality Check", "step_type": "compute", "depends_on": [aggregate_id]},
+#     {"step_name": "Persist Results", "step_type": "effect", "depends_on": [quality_id]},
+#     {"step_name": "Send Notification", "step_type": "effect", "depends_on": [quality_id]},
+# ]
+#
+# # Execute workflow
+# input_data = ModelOrchestratorInput(
+#     workflow_id=uuid4(),
+#     steps=steps_config,
+#     execution_mode=EnumExecutionMode.PARALLEL
+# )
+#
+# result = await node.process(input_data)
+#
+# print(f"Workflow Status: {result.execution_status}")
+# print(f"Completed Steps: {len(result.completed_steps)}")
+# print(f"Actions Emitted: {len(result.actions_emitted)}")
+# print(f"Execution Time: {result.execution_time_ms}ms")
+
+# Expected Execution Flow (Parallel Mode):
+#
+# Wave 1: fetch_raw_data
+# Wave 2: validate_schema, enrich_data (parallel)
+# Wave 3: aggregate_metrics
+# Wave 4: quality_check
+# Wave 5: persist_results, send_notification (parallel)
+#
+# Total waves: 5
+# Parallel speedup: ~40% compared to sequential execution
+
+# Metadata
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: "ONEX Framework Team"
+  description: "Declarative data processing pipeline orchestrator using workflow pattern"
+  tags:
+    - orchestrator
+    - workflow
+    - declarative
+    - data-pipeline
+    - parallel
+  documentation_url: "https://docs.onex.ai/orchestrators/data-pipeline"

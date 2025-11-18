@@ -5,7 +5,7 @@
 
 ## Your First 10 Minutes with ONEX
 
-This guide gets you building ONEX nodes as quickly as possible. You'll create a working COMPUTE node in under 10 minutes.
+This guide gets you building ONEX nodes as quickly as possible. You'll create a working node using pre-configured convenience wrappers in under 10 minutes.
 
 ## Prerequisites
 
@@ -15,7 +15,65 @@ This guide gets you building ONEX nodes as quickly as possible. You'll create a 
 
 ## What You'll Build
 
-A simple COMPUTE node that doubles numbers - demonstrating the core ONEX pattern with proper typing and error handling.
+A simple COMPUTE node that doubles numbers - demonstrating how to use ONEX convenience wrappers with minimal boilerplate.
+
+## The Four Convenience Wrappers
+
+ONEX provides pre-configured convenience classes for each node type. These eliminate 80+ lines of boilerplate initialization:
+
+### **NodeCompute** - Data Processing
+```python
+from omnibase_core.nodes.node_compute import NodeCompute
+
+class NodeMyCompute(NodeCompute):
+    async def process(self, input_data):
+        # Transform data, calculate, validate
+        return result
+```
+
+**Includes**: Caching layer, parallel processing, computation registry, performance monitoring
+
+### **NodeEffect** - External Interactions
+```python
+from omnibase_core.nodes.node_effect import NodeEffect
+
+class NodeMyEffect(NodeEffect):
+    async def process(self, input_data):
+        # Call APIs, database, file system
+        return result
+```
+
+**Includes**: Transaction management, circuit breakers, retry policies, file operations, event emission
+
+### **NodeReducer** - State Management
+```python
+from omnibase_core.nodes.node_reducer import NodeReducer
+
+class NodeMyReducer(NodeReducer):
+    async def process(self, input_data):
+        # Aggregate state, reduce data, manage FSM
+        return result
+```
+
+**Includes**: Streaming support, conflict resolution, reduction functions, batch processing
+
+### **NodeOrchestrator** - Workflow Coordination
+```python
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+
+class NodeMyOrchestrator(NodeOrchestrator):
+    async def process(self, input_data):
+        # Coordinate workflows, emit actions, manage dependencies
+        return result
+```
+
+**Includes**: Action emission (thunks), dependency management, parallel coordination, load balancing
+
+---
+
+## Tutorial: Building a COMPUTE Node
+
+Let's build a simple number doubler using **NodeCompute** to see how easy it is.
 
 ## Step 1: Create Your Project
 
@@ -44,23 +102,24 @@ touch src/my_project/nodes/__init__.py
 """A simple COMPUTE node that doubles numbers."""
 
 from typing import Dict, Any
-from omnibase_core.models.nodes.node_services import ModelServiceCompute
+from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
-class NodeDoublerCompute(ModelServiceCompute):
+class NodeDoublerCompute(NodeCompute):
     """
     A simple COMPUTE node that doubles numbers.
 
-    Uses ModelServiceCompute for production-ready features:
-    - Health checks and metrics
-    - Automatic caching support
+    Uses NodeCompute convenience wrapper for production-ready features:
+    - Caching layer for expensive computations
+    - Parallel processing support
+    - Computation registry
     - Performance monitoring
-    - Error handling patterns
+    - Automatic error handling
     """
 
     def __init__(self, container: ModelONEXContainer):
-        """Initialize the doubler node with service wrapper."""
+        """Initialize the doubler node."""
         super().__init__(container)
 
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -96,15 +155,25 @@ class NodeDoublerCompute(ModelServiceCompute):
         }
 ```python
 
-> **💡 Why ModelServiceCompute?**
+> **💡 Why Use Convenience Wrappers?**
 >
-> We use `ModelServiceCompute` (a service wrapper) instead of `NodeCompute` directly because:
-> - ✅ Includes health checks, metrics, and caching out-of-the-box
+> ONEX provides four pre-configured convenience wrappers (**NodeCompute**, **NodeEffect**, **NodeReducer**, **NodeOrchestrator**):
+> - ✅ Eliminate 80+ lines of boilerplate initialization
+> - ✅ Include all necessary mixins (caching, logging, metrics, error handling)
 > - ✅ Production-ready with best-practice patterns
-> - ✅ Less boilerplate code to write
-> - ✅ Consistent structure across all ONEX nodes
+> - ✅ Type-safe and fully tested
 >
-> For custom needs, you can inherit directly from `NodeCoreBase`. See [02_NODE_TYPES.md](../guides/node-building/02_NODE_TYPES.md#service-wrapper-decision-guide) for guidance.
+> **When to use each**:
+> - **NodeCompute**: Pure data processing (calculations, transformations, validations)
+> - **NodeEffect**: External interactions (APIs, databases, file systems, events)
+> - **NodeReducer**: State aggregation (streaming data, conflict resolution, FSM)
+> - **NodeOrchestrator**: Workflow coordination (multi-step workflows, dependencies, parallel execution)
+>
+> For detailed guides on each type, see:
+> - [COMPUTE Tutorial](../guides/node-building/03_COMPUTE_NODE_TUTORIAL.md)
+> - [EFFECT Tutorial](../guides/node-building/04_EFFECT_NODE_TUTORIAL.md)
+> - [REDUCER Tutorial](../guides/node-building/05_REDUCER_NODE_TUTORIAL.md)
+> - [ORCHESTRATOR Tutorial](../guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md)
 
 ## Step 3: Create a Test
 
@@ -255,20 +324,20 @@ poetry run python example_usage.py
 
 You created a production-ready COMPUTE node with:
 
-- ✅ **Service Wrapper** - ModelServiceCompute provides production features
-- ✅ **Zero boilerplate** - 80+ lines of setup eliminated
-- ✅ **Built-in monitoring** - Health checks and metrics included
+- ✅ **Convenience Wrapper** - NodeCompute eliminates 80+ lines of boilerplate
+- ✅ **Zero setup** - All mixins pre-configured (caching, logging, metrics, error handling)
+- ✅ **Built-in caching** - Automatic result caching for expensive computations
 - ✅ **Type safety** - Proper typing and validation
-- ✅ **Error handling** - Comprehensive input validation
+- ✅ **Error handling** - Comprehensive input validation with ModelOnexError
 - ✅ **Testing** - Full test coverage with pytest
-- ✅ **ONEX compliance** - Follows architectural patterns
-- ✅ **Async support** - Built for modern Python
+- ✅ **ONEX compliance** - Follows 4-node architecture patterns
+- ✅ **Async support** - Non-blocking computation with parallel processing support
 
 ## Key ONEX Concepts You Used
 
-1. **ModelServiceCompute (Service Wrapper)** - Production-ready COMPUTE node with essential mixins
-2. **Container Pattern** - Dependency injection for services
-3. **Async Processing** - Non-blocking computation
+1. **NodeCompute (Convenience Wrapper)** - Pre-configured COMPUTE node with caching and parallel processing
+2. **Container Pattern** - Dependency injection via ModelONEXContainer
+3. **Async Processing** - Non-blocking computation with async/await
 4. **Error Handling** - Proper exception management
 5. **Type Safety** - Input/output validation
 
@@ -276,19 +345,27 @@ You created a production-ready COMPUTE node with:
 
 Choose your learning path:
 
-### 🚀 **Continue Building**
-- [First Node Tutorial](FIRST_NODE.md) - Detailed walkthrough with models
-- [COMPUTE Tutorial](../guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) - Advanced patterns
+### 🚀 **Build Each Node Type** (Recommended)
 
-### 📚 **Learn More**
-- [What is a Node?](../guides/node-building/01_WHAT_IS_A_NODE.md) - Core concepts
-- [Node Types](../guides/node-building/02_NODE_TYPES.md) - All four node types
-- [ONEX Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - System design
+Start building with the other convenience wrappers:
 
-### 🏗️ **Build Different Node Types**
-- [EFFECT Tutorial](../guides/node-building/04_EFFECT_NODE_TUTORIAL.md) - Side effects
-- [REDUCER Tutorial](../guides/node-building/05_REDUCER_NODE_TUTORIAL.md) - State management
-- [ORCHESTRATOR Tutorial](../guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) - Workflow coordination
+1. **[EFFECT Tutorial](../guides/node-building/04_EFFECT_NODE_TUTORIAL.md)** - Build a file backup system
+   - Learn: Transaction management, circuit breakers, retry policies
+   - Use case: APIs, databases, file operations, event emission
+
+2. **[REDUCER Tutorial](../guides/node-building/05_REDUCER_NODE_TUTORIAL.md)** - Build a metrics aggregator
+   - Learn: Streaming data, conflict resolution, batch processing
+   - Use case: State machines, data aggregation, reduce operations
+
+3. **[ORCHESTRATOR Tutorial](../guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md)** - Build a workflow coordinator
+   - Learn: Action emission (thunks), dependency management, parallel execution
+   - Use case: Multi-step workflows, coordinating multiple nodes
+
+### 📚 **Deep Dive**
+- [First Node Tutorial](FIRST_NODE.md) - Complete example with Pydantic models
+- [COMPUTE Tutorial](../guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) - Advanced COMPUTE patterns
+- [Node Types](../guides/node-building/02_NODE_TYPES.md) - Understanding all four node types
+- [ONEX Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - System design principles
 
 ## Common Enhancements
 
@@ -371,16 +448,20 @@ poetry run mypy src/my_project/nodes/node_doubler_compute.py
 
 ## Summary
 
-🎉 **Congratulations!** You've built your first ONEX node!
+🎉 **Congratulations!** You've built your first ONEX node using convenience wrappers!
 
 You now understand:
-- ✅ How to create a COMPUTE node
-- ✅ ONEX architectural patterns
+- ✅ How to use **NodeCompute** convenience wrapper
+- ✅ The four node types (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)
+- ✅ What mixins each wrapper includes
+- ✅ ONEX 4-node architecture patterns
 - ✅ Async processing with proper error handling
 - ✅ Testing strategies
 - ✅ Type safety and validation
 
-**Ready for more?** Continue with the [First Node Tutorial](FIRST_NODE.md) for a deeper dive into ONEX patterns and best practices.
+**Ready for more?**
+- Try building other node types: [EFFECT](../guides/node-building/04_EFFECT_NODE_TUTORIAL.md), [REDUCER](../guides/node-building/05_REDUCER_NODE_TUTORIAL.md), [ORCHESTRATOR](../guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md)
+- Or dive deeper: [First Node Tutorial](FIRST_NODE.md) with Pydantic models and advanced patterns
 
 ---
 

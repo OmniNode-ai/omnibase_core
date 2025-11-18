@@ -13,8 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from omnibase_core.errors.exceptions import (
-    ExceptionConfiguration,
-    ExceptionInputValidation,
+    ExceptionConfigurationError,
+    ExceptionInputValidationError,
 )
 from omnibase_core.validation.validation_utils import (
     ModelDuplicationInfo,

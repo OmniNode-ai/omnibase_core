@@ -15,10 +15,10 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.validation.exceptions (hierarchy parent)
 """
 
-from .exception_validation_framework_error import ExceptionValidationFramework
+from .exception_validation_framework_error import ExceptionValidationFrameworkError
 
 
-class ExceptionInputValidation(ExceptionValidationFramework):
+class ExceptionInputValidationError(ExceptionValidationFrameworkError):
     """
     Raised when input parameters fail validation checks.
 

@@ -296,11 +296,11 @@ class TestRouteToLoggerNodeCacheBranches:
                     level=LogLevel.INFO,
                     event_type="test",
                     message="test message",
-                    node_id=None,
+                    _node_id=None,
                     correlation_id=correlation_id,
                     context=context,
                     data={},
-                    event_bus=None,
+                    _event_bus=None,
                 )
 
         # Should complete without error (cache refresh attempted with fallback)
@@ -321,11 +321,11 @@ class TestRouteToLoggerNodeCacheBranches:
             level=LogLevel.INFO,
             event_type="test",
             message="test message",
-            node_id=None,
+            _node_id=None,
             correlation_id=correlation_id,
             context=context,
             data={},
-            event_bus=None,
+            _event_bus=None,
         )
 
     def test_route_to_logger_node_fallback_no_services(self):
@@ -344,11 +344,11 @@ class TestRouteToLoggerNodeCacheBranches:
             level=LogLevel.INFO,
             event_type="test",
             message="test",
-            node_id=None,
+            _node_id=None,
             correlation_id=correlation_id,
             context=context,
             data={},
-            event_bus=None,
+            _event_bus=None,
         )
 
 

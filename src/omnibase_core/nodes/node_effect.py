@@ -999,7 +999,7 @@ class NodeEffect(NodeCoreBase):
             return result
 
         async def event_emission_handler(
-            operation_data: dict[str, Any], transaction: ModelEffectTransaction | None
+            operation_data: dict[str, Any], _transaction: ModelEffectTransaction | None
         ) -> bool:
             """Handle event emission to event bus."""
             event_type = operation_data["event_type"]

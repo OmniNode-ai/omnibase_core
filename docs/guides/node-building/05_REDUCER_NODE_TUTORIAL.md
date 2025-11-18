@@ -4,6 +4,149 @@
 **Difficulty**: Intermediate
 **Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md), [EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md)
 
+---
+
+## 🚀 Declarative FSM Architecture (Recommended Path)
+
+> **IMPORTANT UPDATE (2025-11-16)**: omnibase_core provides **comprehensive FSM subcontract infrastructure** for building reducer state machines **without custom Python code**. See [Declarative Workflow Findings](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for full details.
+
+### ✅ Available Today: FSM Execution Infrastructure (v0.3.2+)
+
+> **Status**: ✅ **IMPLEMENTED** as of omnibase_core v0.3.2 (2025-11-16)
+
+The omnibase_core codebase now includes complete FSM execution capabilities:
+
+**Infrastructure** (Models & Contracts):
+- **`ModelFSMSubcontract`** - Complete state machine definitions
+- **`ModelFSMStateDefinition`** - State definitions with entry/exit actions
+- **`ModelFSMStateTransition`** - Transition specifications with conditions
+- **`ModelFSMOperation`** - Operation definitions with rollback support
+
+**Runtime Execution** (NEW in v0.3.2):
+- **`utils/fsm_executor.py`** - Pure function FSM execution (548 lines)
+- **`MixinFSMExecution`** - Mixin for node integration (237 lines)
+- **Comprehensive Tests** - 18 unit tests, 610+ test lines
+- **100% Type Safety** - Zero `Any` types, full mypy strict compliance
+
+**Example YAML Contract** (fully functional):
+
+```yaml
+# contracts/reducer_metrics_aggregator.yaml
+node_type: REDUCER
+node_name: metrics_aggregator
+
+state_transitions:
+  state_machine_name: "metrics_aggregation_fsm"
+  state_machine_version: "1.0.0"
+  description: "FSM for aggregating metrics with conflict resolution"
+
+  # State definitions
+  states:
+    - state_name: idle
+      state_type: operational
+      is_terminal: false
+      entry_actions: ["log_ready"]
+
+    - state_name: collecting
+      state_type: operational
+      entry_actions: ["start_collection_timer"]
+      exit_actions: ["stop_collection_timer"]
+      validation_rules: ["validate_data_sources"]
+
+    - state_name: aggregating
+      state_type: operational
+      entry_actions: ["initialize_aggregation"]
+      validation_rules: ["validate_aggregation_strategy"]
+
+    - state_name: completed
+      state_type: terminal
+      is_terminal: true
+      entry_actions: ["emit_completion_event"]
+
+    - state_name: error
+      state_type: error
+      is_terminal: true
+
+  # Transitions
+  transitions:
+    - transition_name: start_collection
+      from_state: idle
+      to_state: collecting
+      trigger: collect_metrics
+      is_atomic: true
+      retry_enabled: true
+
+    - transition_name: begin_aggregation
+      from_state: collecting
+      to_state: aggregating
+      trigger: data_ready
+      conditions:
+        - condition_type: field_check
+          field: "data_sources"
+          operator: min_length
+          value: 1
+
+    - transition_name: complete_aggregation
+      from_state: aggregating
+      to_state: completed
+      trigger: aggregation_done
+
+    - transition_name: handle_error
+      from_state: "*"  # Wildcard: from any state
+      to_state: error
+      trigger: error_occurred
+
+  # FSM Configuration
+  persistence_enabled: true
+  recovery_enabled: true
+  rollback_enabled: true
+  checkpoint_interval_ms: 30000
+  conflict_resolution_strategy: priority_based
+  strict_validation_enabled: true
+```
+
+### 🎯 Vision: Minimal Customization Required
+
+**Goal**: Most reducer state machines should require **ZERO custom Python code**:
+
+1. **Define FSM in YAML** - States, transitions, actions
+2. **Validation automatic** - Pydantic models validate structure
+3. **Execution automatic** - Runtime FSM executor handles transitions
+
+**When Custom Code IS Needed**:
+- Custom aggregation algorithms beyond built-in strategies
+- Complex validation rules not expressible in YAML
+- Advanced conflict resolution logic
+
+### 📊 Current Status
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| FSM Subcontract Models | ✅ Complete | Full state machine support |
+| Pydantic Validation | ✅ Complete | Comprehensive validation |
+| Subcontract Composition | ✅ Complete | ModelContractReducer |
+| FSM Runtime Executor | ✅ Complete | fsm_executor.py with MixinFSMExecution |
+| Declarative Base Classes | ✅ Complete | NodeReducerDeclarative (production-ready) |
+| Documentation | ✅ Complete | Full tutorial and migration guides available |
+
+**See**: [DECLARATIVE_WORKFLOW_FINDINGS.md](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for implementation roadmap.
+
+---
+
+### Tutorial Approach
+
+This tutorial demonstrates **two implementation approaches**:
+1. **Manual FSM Implementation** (Current pattern): Custom Python code with pure FSM principles and Intent emission
+2. **Declarative FSM** (Recommended for new nodes): YAML-driven state machines using `NodeReducerDeclarative`
+
+**Both approaches are production-ready and fully supported.**
+
+**Learning Path**:
+1. ✅ Learn pure FSM pattern with Intents (this tutorial)
+2. ✅ Migrate to declarative FSM YAML contracts (see [MIGRATING_TO_DECLARATIVE_NODES.md](../../guides/MIGRATING_TO_DECLARATIVE_NODES.md))
+
+---
+
 ## What You'll Build
 
 In this tutorial, you'll build a production-ready **Metrics Aggregation Node** as a **pure FSM** that:
@@ -26,7 +169,7 @@ REDUCER nodes in ONEX are **pure finite state machines**:
 **Core Concept**:
 ```text
 δ(state, action) → (new_state, intents[])
-```python
+```
 
 **Tutorial Structure**:
 1. Understand pure FSM vs. stateful patterns
@@ -59,7 +202,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
         emit_log_event(LogLevel.INFO, "Aggregation complete")
 
         return result
-```python
+```
 
 ### ✅ New Pattern (Pure FSM, Intent Emission)
 ```python
@@ -222,7 +365,7 @@ class ModelMetricsAggregationInput(BaseModel):
         """Pydantic configuration."""
 
         frozen = True
-```python
+```
 
 ### Output Model with Intent Support
 
@@ -347,7 +490,7 @@ class ModelMetricsAggregationOutput(BaseModel):
         """Pydantic configuration."""
 
         frozen = True
-```python
+```
 
 ---
 
@@ -651,7 +794,66 @@ class NodeMetricsAggregatorReducer(NodeReducer):
                 **input_data.metadata,
             },
         )
+```
+
+**What `NodeReducer` Provides**:
+- ✅ **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
+- ✅ **Reduction Functions**: Registry for different reduction types (fold, aggregate, merge)
+- ✅ **Streaming Support**: Batch, incremental, and windowed processing modes
+- ✅ **Conflict Resolution**: Built-in strategies (sum, average, max, min, latest, merge)
+- ✅ **Streaming Windows**: Window management for time-based aggregation
+- ✅ **Performance Tracking**: Built-in metrics for reduction operations
+- ✅ **Configuration Support**: Automatic config loading from `NodeConfigProvider`
+- ✅ **Pure FSM Pattern**: Designed for stateless operation with Intent emission
+
+**Key Implementation Points**:
+- ✅ Inherits from `NodeReducer` convenience wrapper
+- ✅ Pure FSM pattern - no mutable state
+- ✅ Intent emission for side effects
+- ✅ Streaming support already available
+- ✅ Conflict resolution built-in
+
+### Advanced: Custom Base Class (When You Need Full Control)
+
+If you need custom mixin composition or want to build from scratch:
+
 ```python
+from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from collections import defaultdict
+
+class NodeMetricsAggregatorReducer(NodeCoreBase):
+    """
+    Custom REDUCER node built from NodeCoreBase.
+
+    Use this approach when:
+    - You need custom mixin combinations
+    - You want fine-grained control over reduction logic
+    - You're implementing non-standard aggregation patterns
+    """
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+
+        # Manually initialize reducer-specific features
+        # (NodeReducer does this automatically)
+        self.reduction_functions = {}
+        self.reduction_metrics = defaultdict(lambda: {"count": 0})
+        self.active_windows = {}
+        # ... rest of manual setup
+
+    # ... rest of implementation
+```
+
+**When to use custom base**:
+- Custom reduction algorithms beyond built-in strategies
+- Non-standard streaming or windowing logic
+- Special conflict resolution needs
+
+**When to use NodeReducer** (recommended):
+- Standard REDUCER operations (aggregation, folding, merging)
+- Need built-in streaming support
+- Want conflict resolution strategies
+- Following ONEX pure FSM pattern
 
 ---
 
@@ -686,7 +888,7 @@ Intent Flow Example:
                intent.payload["context"],
            )
 """
-```python
+```
 
 ### Effect Node for Intent Execution
 
@@ -760,7 +962,7 @@ class NodeIntentExecutorEffect(NodeEffect):
 
         # In real implementation, write to database
         print(f"💾 Persisting aggregation: {payload['operation_id']}")
-```python
+```
 
 ---
 
@@ -988,7 +1190,7 @@ async def test_intent_priority_ordering(aggregator_node):
 
     if persist_intents:
         assert persist_intents[0].priority == 1  # Highest priority
-```python
+```
 
 ---
 
@@ -1052,7 +1254,7 @@ async def aggregate_server_metrics():
 
 
 asyncio.run(aggregate_server_metrics())
-```python
+```
 
 ### Orchestrator Pattern for Full Workflow
 
@@ -1113,7 +1315,7 @@ async def main():
 
 
 asyncio.run(main())
-```python
+```
 
 ---
 
@@ -1139,7 +1341,7 @@ INTENT_TYPES = {
     "send_notification": "Notification Effect Node",
     "trigger_workflow": "Workflow Orchestrator Node",
 }
-```text
+```
 
 ### Conflict Resolution Strategies
 
@@ -1151,7 +1353,7 @@ EnumConflictResolution.TAKE_MAX     # Keep maximum value
 EnumConflictResolution.TAKE_MIN     # Keep minimum value
 EnumConflictResolution.TAKE_LATEST  # Use latest value
 EnumConflictResolution.MERGE        # Merge lists/objects
-```python
+```
 
 ---
 
@@ -1224,7 +1426,7 @@ async def aggregate_metrics(
         sources_processed=len(input_data.data_sources),
         items_processed=len(aggregated_data),
     )
-```yaml
+```
 
 **Step 3: Update Contract**
 
@@ -1236,7 +1438,7 @@ subcontracts:
 
 mixins:
   - "MixinIntentPublisher"
-```python
+```
 
 ### Testing with MixinIntentPublisher
 
@@ -1278,7 +1480,7 @@ async def test_reducer_publishes_aggregated_metrics():
     intent_payload = intent_envelope["payload"]
     assert intent_payload["target_topic"] == "dev.omninode-bridge.metrics.aggregated.v1"
     assert intent_payload["target_event_payload"]["aggregated_value"] == 150.0
-```python
+```
 
 ### Pattern Comparison
 
@@ -1304,7 +1506,7 @@ await self.publish_event_intent(
     event=my_event_model
 )
 return ModelMetricsAggregationOutput(result=data)
-```python
+```
 
 **Key Differences**:
 - ModelIntent: Returned in output, executed by orchestrator
@@ -1384,7 +1586,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
         """Pure aggregation logic (no I/O)."""
         # Implementation...
         pass
-```python
+```
 
 ### Further Reading
 
@@ -1442,7 +1644,7 @@ async def process(self, input_data):
         )
     ]
     return ModelOutput(result=result, intents=intents)
-```yaml
+```
 
 ---
 

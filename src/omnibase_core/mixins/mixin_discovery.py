@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from pydantic import TypeAdapter, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.discovery.model_mixin_info import ModelMixinInfo
@@ -43,6 +44,42 @@ class MixinDiscovery:
         self.mixins_path = mixins_path or (Path(__file__).parent.parent / "mixins")
         self.metadata_path = self.mixins_path / "mixin_metadata.yaml"
         self._mixins_cache: dict[str, ModelMixinInfo] | None = None
+
+    @staticmethod
+    def from_yaml_metadata(yaml_content: str) -> dict[str, Any]:
+        """
+        Parse YAML metadata content and validate structure with Pydantic.
+
+        This method uses yaml.safe_load() followed by Pydantic validation
+        to ensure type safety and proper structure validation.
+
+        Args:
+            yaml_content: Raw YAML content as string
+
+        Returns:
+            Validated metadata dictionary
+
+        Raises:
+            ModelOnexError: If YAML parsing or validation fails
+        """
+        try:
+            # Parse YAML to Python objects
+            raw_data = yaml.safe_load(yaml_content)
+
+            # Validate structure using Pydantic TypeAdapter
+            metadata_adapter = TypeAdapter(dict[str, Any])
+            return metadata_adapter.validate_python(raw_data)
+
+        except yaml.YAMLError as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Failed to parse mixin metadata YAML: {e}",
+            ) from e
+        except ValidationError as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid metadata format: expected dictionary, got {type(raw_data).__name__}",
+            ) from e
 
     def _load_metadata(self) -> dict[str, dict[str, Any]]:
         """
@@ -82,23 +119,12 @@ class MixinDiscovery:
 
         try:
             with open(self.metadata_path, encoding="utf-8") as f:
-                data = yaml.safe_load(
-                    f
-                )  # yaml-ok: Mixin discovery requires raw YAML parsing for flexible metadata loading
+                yaml_content = f.read()
 
-            if not isinstance(data, dict):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Invalid metadata format in {self.metadata_path}: expected dictionary",
-                )
-
+            # Parse and validate YAML using Pydantic
+            data = self.from_yaml_metadata(yaml_content)
             return data
 
-        except yaml.YAMLError as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Failed to parse mixin metadata YAML: {e}",
-            ) from e
         except UnicodeDecodeError as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.FILE_READ_ERROR,

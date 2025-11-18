@@ -454,15 +454,16 @@ class TestExecuteOrchestrated:
         # Mock _execute_workflow to avoid asyncio complexity in parallel CI
         expected_result = SimpleInputState(value="workflow: test")
 
-        with patch.object(
-            tool, "_execute_workflow", return_value=expected_result
-        ) as mock_exec:
+        # Use MagicMock for more robust mocking in high-parallelism CI
+        mock_workflow_exec = MagicMock(return_value=expected_result)
+
+        with patch.object(tool, "_execute_workflow", mock_workflow_exec):
             result = tool._execute_orchestrated(input_state)
 
-        # Verify _execute_workflow was called (orchestrated falls back to workflow)
-        mock_exec.assert_called_once_with(input_state)
-        # Verify correct result returned
-        assert result.value == "workflow: test"
+            # Verify _execute_workflow was called (orchestrated falls back to workflow)
+            mock_workflow_exec.assert_called_once_with(input_state)
+            # Verify correct result returned
+            assert result.value == "workflow: test"
 
 
 class TestCalculateComplexity:

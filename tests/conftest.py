@@ -58,14 +58,17 @@ def aggressive_gc_cleanup() -> Generator[None, None, None]:
 
     # Stop all event listener threads before garbage collection
     # Background threads with Mock objects can deadlock during gc.collect()
+    # Note: Don't wait for daemon threads - they'll be cleaned up automatically
+    # Waiting can cause timeouts in tests with 5s limits
     for thread in threading.enumerate():
-        if thread.name and "test_node_event_listener" in thread.name:
-            # Thread should have stopped naturally, but ensure cleanup
+        if thread.name and "event_listener" in thread.name:
+            # Thread is daemon - will be cleaned up automatically on test exit
+            # Only do a quick check without blocking
             if thread.is_alive():
-                # Give thread up to 2 seconds to finish
-                thread.join(timeout=2.0)
+                # Give thread 0.1s max - if not stopped, move on (it's daemon)
+                thread.join(timeout=0.1)
 
-    # Now safe to collect garbage - no background threads with Mock objects
+    # Now safe to collect garbage - daemon threads don't block gc
     gc.collect()
 
 
