@@ -115,7 +115,7 @@ from enum import Enum
 
 from pydantic import ValidationError
 from omnibase_core.nodes.base.node_orchestrator_service import NodeOrchestratorService
-from omnibase_core.models.model_onex_error import ModelONEXError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_onex_warning import ModelONEXWarning
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer
 from omnibase_core.utils.circuit_breaker import CircuitBreakerMixin

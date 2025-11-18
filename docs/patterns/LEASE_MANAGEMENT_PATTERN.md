@@ -99,7 +99,7 @@ class NodeMyOrchestrator(NodeCoreBase):
 Downstream nodes (Compute, Effect, Reducer) validate the lease before processing:
 
 ```python
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 class NodeDataProcessorCompute(NodeCoreBase):
     def __init__(self, container):
@@ -116,7 +116,7 @@ class NodeDataProcessorCompute(NodeCoreBase):
 
         # Check lease ownership
         if action.lease_id != self.expected_lease_id:
-            raise OnexError(
+            raise ModelOnexError(
                 message=f"Invalid lease_id: {action.lease_id}",
                 error_code="LEASE_VIOLATION",
                 context={
@@ -127,7 +127,7 @@ class NodeDataProcessorCompute(NodeCoreBase):
 
         # Check for stale actions
         if action.epoch < self.last_processed_epoch:
-            raise OnexError(
+            raise ModelOnexError(
                 message=f"Stale action: epoch {action.epoch} < {self.last_processed_epoch}",
                 error_code="STALE_EPOCH",
                 context={
@@ -275,7 +275,7 @@ class NodeMyCompute(NodeCoreBase):
 
         # Validate lease ownership
         if action.lease_id != self.expected_lease_id:
-            raise OnexError(
+            raise ModelOnexError(
                 message="Invalid lease_id - action from wrong Orchestrator",
                 error_code="LEASE_VIOLATION",
                 context={
@@ -286,7 +286,7 @@ class NodeMyCompute(NodeCoreBase):
 
         # Validate epoch (detect stale actions)
         if action.epoch < self.last_processed_epoch:
-            raise OnexError(
+            raise ModelOnexError(
                 message="Stale action detected (old epoch)",
                 error_code="STALE_EPOCH",
                 context={
@@ -323,7 +323,7 @@ class NodeMyCompute(NodeCoreBase):
 
         if action.epoch < self.current_epoch:
             # Stale action - reject immediately
-            raise OnexError(
+            raise ModelOnexError(
                 message=f"Stale action: epoch {action.epoch} < {self.current_epoch}",
                 error_code="STALE_EPOCH",
                 context={
@@ -335,7 +335,7 @@ class NodeMyCompute(NodeCoreBase):
 
         elif action.epoch > self.current_epoch:
             # Future action - may indicate missed updates
-            raise OnexError(
+            raise ModelOnexError(
                 message=f"Future action: epoch {action.epoch} > {self.current_epoch}",
                 error_code="FUTURE_EPOCH",
                 context={
@@ -424,7 +424,7 @@ class NodeMyOrchestrator(NodeCoreBase):
     def check_lease_validity(self):
         """Check if lease is still valid."""
         if self.lease_metadata.is_expired():
-            raise OnexError(
+            raise ModelOnexError(
                 message="Lease has expired",
                 error_code="LEASE_EXPIRED",
                 context={
@@ -481,7 +481,7 @@ class NodeLeaseManager(NodeCoreBase):
         """Revoke a lease (e.g., Orchestrator failure)."""
 
         if lease_id not in self.active_leases:
-            raise OnexError(
+            raise ModelOnexError(
                 message=f"Lease {lease_id} not found",
                 error_code="LEASE_NOT_FOUND",
             )
@@ -526,7 +526,7 @@ All action processors must validate the lease:
 async def process(self, action: ModelAction):
     # ✅ REQUIRED: Validate lease before processing
     if action.lease_id != self.expected_lease_id:
-        raise OnexError("Invalid lease_id")
+        raise ModelOnexError("Invalid lease_id")
 
     # Now safe to process
     result = await self._execute(action)
@@ -548,7 +548,7 @@ Never process actions from the past:
 
 ```python
 if action.epoch < self.last_processed_epoch:
-    raise OnexError("Stale action")  # ✅ REQUIRED
+    raise ModelOnexError("Stale action")  # ✅ REQUIRED
 ```python
 
 ### 5. Use TTL for Lease Expiration
@@ -568,7 +568,7 @@ self.lease_metadata = ModelLeaseMetadata(
 Comprehensive logging helps diagnose issues:
 
 ```python
-except OnexError as e:
+except ModelOnexError as e:
     self.logger.error(
         f"Lease violation: {e.message}",
         extra={
@@ -613,7 +613,7 @@ async def process(self, action: ModelAction):
 async def process(self, action: ModelAction):
     # GOOD: Validate epoch
     if action.epoch < self.last_processed_epoch:
-        raise OnexError("Stale action")
+        raise ModelOnexError("Stale action")
     return await self._execute(action)
 ```python
 
@@ -679,7 +679,7 @@ action = ModelAction(
 ```python
 import pytest
 from uuid import uuid4
-from omnibase_core.exceptions.onex_error import OnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_action import ModelAction
 
 def test_lease_validation_success():
@@ -706,7 +706,7 @@ def test_lease_validation_wrong_lease():
         epoch=0,
     )
 
-    with pytest.raises(OnexError) as exc_info:
+    with pytest.raises(ModelOnexError) as exc_info:
         orchestrator.validate_action(invalid_action)
 
     assert "LEASE_VIOLATION" in str(exc_info.value.error_code)
@@ -724,7 +724,7 @@ def test_epoch_validation_stale_action():
         epoch=3,  # Stale (< 5)
     )
 
-    with pytest.raises(OnexError) as exc_info:
+    with pytest.raises(ModelOnexError) as exc_info:
         compute.validate_action(stale_action)
 
     assert "STALE_EPOCH" in str(exc_info.value.error_code)
@@ -784,7 +784,7 @@ async def test_lease_expiration():
     assert orchestrator.lease_metadata.is_expired() is True
 
     # Verify cannot emit actions with expired lease
-    with pytest.raises(OnexError):
+    with pytest.raises(ModelOnexError):
         orchestrator.check_lease_validity()
 ```text
 

@@ -286,17 +286,17 @@ Common mixin categories:
 
 ## Error Handling
 
-The API uses `OnexError` for consistent error handling:
+The API uses `ModelOnexError` for consistent error handling:
 
 ```python
-from omnibase_core.errors.error_codes import OnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 discovery = MixinDiscovery()
 
 try:
     mixin = discovery.get_mixin("NonexistentMixin")
-except OnexError as e:
+except ModelOnexError as e:
     print(f"Error: {e.message}")
     print(f"Code: {e.error_code}")
 ```

@@ -103,7 +103,7 @@ No manual dependency wiring. The container handles it.
 Structured error handling is **built-in**:
 
 ```python
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 # Nodes raise structured errors

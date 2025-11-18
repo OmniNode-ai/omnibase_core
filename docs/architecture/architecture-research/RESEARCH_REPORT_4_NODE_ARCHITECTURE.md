@@ -53,7 +53,7 @@ The reference documentation defines a clear 4-node classification system:
 #### NodeCoreBase Foundation
 All specialized nodes inherit from `NodeCoreBase` providing:
 - Contract loading and validation
-- Error handling with OnexError chaining
+- Error handling with ModelOnexError chaining
 - Logging integration with structured events
 - Service discovery via ONEXContainer dependency injection
 - Lifecycle management hooks
@@ -163,7 +163,7 @@ definitions: {...}
 4. **Dependency Resolution**: Service dependency validation
 
 **Error Handling:**
-- OnexError with exception chaining for all validation failures
+- ModelOnexError with exception chaining for all validation failures
 - Comprehensive logging with context for troubleshooting
 - Fail-fast pattern for early error detection
 
@@ -272,7 +272,7 @@ class EventDrivenNode(
 3. **Service Integration**: Proper service layer with lifecycle management
 4. **Contract System**: Robust validation and configuration management
 5. **Mixin Flexibility**: Extensive mixin library for capability composition
-6. **Error Handling**: Consistent OnexError pattern with exception chaining
+6. **Error Handling**: Consistent ModelOnexError pattern with exception chaining
 7. **Type Safety**: Strong typing throughout with Pydantic models
 
 **⚠️ Areas for Enhancement:**

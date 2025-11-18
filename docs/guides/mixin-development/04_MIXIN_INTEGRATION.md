@@ -210,7 +210,7 @@ async def execute_effect(self, contract: ModelContractEffect):
 
 ```python
 from typing import Any
-from omnibase_core.exceptions import OnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 class NodeApiClientEffect(NodeEffect):
     """EFFECT node with error handling."""
@@ -267,7 +267,7 @@ class NodeApiClientEffect(NodeEffect):
         # Categorize error
         if error_config.is_error_fatal(error_type):
             # Fatal error - don't retry
-            raise OnexError(
+            raise ModelOnexError(
                 message=f"Fatal error occurred: {error_type}",
                 error_code="FATAL_ERROR",
                 original_error=error
@@ -278,7 +278,7 @@ class NodeApiClientEffect(NodeEffect):
             await self._record_error_metric(error_type, error_config)
 
         # Re-raise with context
-        raise OnexError(
+        raise ModelOnexError(
             message=f"Error after {error_config.error_retry_attempts} retries",
             error_code="MAX_RETRIES_EXCEEDED",
             original_error=error
@@ -315,7 +315,7 @@ class NodeApiClientEffect(NodeEffect):
 
         if circuit_status.status == EnumCircuitBreakerState.OPEN:
             # Circuit open - fail fast
-            raise OnexError(
+            raise ModelOnexError(
                 message="Circuit breaker open - operation blocked",
                 error_code="CIRCUIT_BREAKER_OPEN"
             )
@@ -409,7 +409,7 @@ class NodeDataProcessorCompute(NodeCompute):
         if health_config.check_before_execution:
             health_status = await self._perform_health_check(health_config)
             if health_status.status != "healthy":
-                raise OnexError(
+                raise ModelOnexError(
                     message=f"Health check failed: {health_status.message}",
                     error_code="HEALTH_CHECK_FAILED"
                 )
@@ -615,7 +615,7 @@ async def execute_effect(self, contract: ModelContractEffect):
     """Execute with configuration validation."""
     # Validate mixin configuration exists
     if not hasattr(contract, "error_handling_configuration"):
-        raise OnexError(
+        raise ModelOnexError(
             message="Error handling configuration missing",
             error_code="MISSING_MIXIN_CONFIGURATION"
         )
@@ -624,7 +624,7 @@ async def execute_effect(self, contract: ModelContractEffect):
 
     # Validate configuration values
     if error_config.circuit_failure_threshold < 1:
-        raise OnexError(
+        raise ModelOnexError(
             message="Invalid circuit breaker threshold",
             error_code="INVALID_MIXIN_CONFIGURATION"
         )

@@ -57,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 #### Build & CI Fixes
-- **Import Path**: Corrected import path for `EnumCoreErrorCode` from `omnibase_core.enums.enum_core_error_code` to `omnibase_core.errors.error_codes`
+- **Import Path**: Corrected import path for `EnumCoreErrorCode` from `omnibase_core.errors.error_codes` to `omnibase_core.enums.enum_core_error_code`
 - **Import Ordering**: Fixed isort import ordering in `mixin_discovery_responder.py` (omnibase_core before omnibase_spi)
 - **Missing Parameters**: Added missing `node_type` parameter to `create_from_node_info()` calls in introspection publisher
 
@@ -158,8 +158,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **60+ production-ready Pydantic models** with full type safety
 
 #### Error Handling
-- **OnexError Exception**: Structured error handling with Pydantic models
-- **ModelONEXError**: Comprehensive error context with correlation tracking
+- **ModelOnexError Exception**: Structured error handling with Pydantic models
+- **ModelOnexError**: Comprehensive error context with correlation tracking
 - **Error Chaining**: Full exception context preservation with `__cause__`
 - **Error Recovery**: Automatic retry logic with exponential backoff
 

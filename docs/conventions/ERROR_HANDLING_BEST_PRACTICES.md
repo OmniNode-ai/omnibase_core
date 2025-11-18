@@ -31,7 +31,7 @@ This document establishes comprehensive error handling standards for the ONEX Fo
 All ONEX errors inherit from the `ModelOnexError` base class which provides structured error context and correlation tracking:
 
 ```python
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from uuid import UUID
 from typing import Optional, Dict, Any

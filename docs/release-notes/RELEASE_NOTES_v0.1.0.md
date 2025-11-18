@@ -46,9 +46,9 @@ class MyNode(NodeComputeService):
 ModelEventEnvelope for inter-service messaging with correlation tracking and structured data flow.
 
 ### Structured Error Handling
-OnexError with Pydantic models for consistent, context-rich error management:
+ModelOnexError with Pydantic models for consistent, context-rich error management:
 ```python
-raise OnexError(
+raise ModelOnexError(
     message="Operation failed",
     error_code=EnumErrorCode.OPERATION_FAILED,
     context={"correlation_id": correlation_id}

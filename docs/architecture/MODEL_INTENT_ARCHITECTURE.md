@@ -962,5 +962,5 @@ ModelIntent(
 
 **Related Documentation**:
 - [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md)
-- [Reducer Node Guide](../guides/node-building/02_NODE_TYPES.md#reducer-nodes)
-- [Effect Node Guide](../guides/node-building/02_NODE_TYPES.md#effect-nodes)
+- [Reducer Node Guide](../guides/node-building/02_NODE_TYPES.md#reducer-node)
+- [Effect Node Guide](../guides/node-building/02_NODE_TYPES.md#effect-node)

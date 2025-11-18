@@ -186,7 +186,7 @@ action_b = ModelAction(lease_id=orchestrator_b.lease_id, ...)
 
 # Downstream node validates: only ONE lease_id accepted per workflow
 if action.lease_id != current_workflow_lease_id:
-    raise OnexError("Invalid lease_id: workflow owned by different orchestrator")
+    raise ModelOnexError("Invalid lease_id: workflow owned by different orchestrator")
 ```python
 
 ### epoch Field
@@ -242,11 +242,11 @@ class NodeDataProcessorCompute(NodeCoreBase):
 
         # Validate lease_id first
         if action.lease_id != self.current_workflow_lease_id:
-            raise OnexError("Invalid lease_id")
+            raise ModelOnexError("Invalid lease_id")
 
         # Validate epoch to detect stale actions
         if action.epoch < self.last_processed_epoch:
-            raise OnexError(
+            raise ModelOnexError(
                 f"Stale action detected: epoch {action.epoch} < "
                 f"last processed {self.last_processed_epoch}"
             )
@@ -562,14 +562,14 @@ class NodeDataTransformerCompute(NodeCoreBase):
 
         # Step 1: Validate lease_id (ownership proof)
         if not self._validate_lease_id(action):
-            raise OnexError(
+            raise ModelOnexError(
                 f"Invalid lease_id: {action.lease_id} not authorized "
                 f"for workflow"
             )
 
         # Step 2: Validate epoch (stale action detection)
         if not self._validate_epoch(action):
-            raise OnexError(
+            raise ModelOnexError(
                 f"Stale action detected: epoch {action.epoch} < "
                 f"last processed {self.active_leases.get(action.payload.get('workflow_id'), -1)}"
             )
@@ -641,19 +641,19 @@ async def validate_and_process_action(
 
     # Validation 1: Lease ownership
     if action.lease_id != current_workflow_lease_id:
-        raise OnexError("Invalid lease_id: workflow owned by different orchestrator")
+        raise ModelOnexError("Invalid lease_id: workflow owned by different orchestrator")
 
     # Validation 2: Epoch (stale detection)
     if ActionValidator.is_stale_action(action, last_processed_epoch):
-        raise OnexError(f"Stale action: epoch {action.epoch}")
+        raise ModelOnexError(f"Stale action: epoch {action.epoch}")
 
     # Validation 3: Timeout
     if not ActionValidator.validate_action_timeout(action):
-        raise OnexError(f"Action timeout exceeded: {action.timeout_ms}ms")
+        raise ModelOnexError(f"Action timeout exceeded: {action.timeout_ms}ms")
 
     # Validation 4: Dependencies
     if not ActionValidator.validate_dependencies_met(action, completed_actions):
-        raise OnexError("Action dependencies not met")
+        raise ModelOnexError("Action dependencies not met")
 
     # All validations passed - safe to process
     return await execute_action(action)
@@ -740,11 +740,11 @@ async def process_action(self, action: ModelAction):
 async def process_action(self, action: ModelAction):
     # ✅ Step 1: Validate lease_id
     if action.lease_id != self.current_workflow_lease_id:
-        raise OnexError("Invalid lease_id")
+        raise ModelOnexError("Invalid lease_id")
 
     # ✅ Step 2: Validate epoch
     if action.epoch < self.last_processed_epoch:
-        raise OnexError("Stale action")
+        raise ModelOnexError("Stale action")
 
     # ✅ Step 3: Safe to execute
     result = await self._execute(action.payload)

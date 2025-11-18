@@ -476,8 +476,8 @@ Implementation ready to proceed using omnibase_spi v0.2.0.
 ### Related Documentation
 
 - [ONEX Four-Node Architecture](../ONEX_FOUR_NODE_ARCHITECTURE.md)
-- [Protocol-Driven DI Guide](../../guides/PROTOCOL_DRIVEN_DI.md) (to be created)
-- [Registry Audit Report](../../../REGISTRY_AUDIT_REPORT.md)
+- [Protocol Architecture](../PROTOCOL_ARCHITECTURE.md)
+- [Dependency Injection](../DEPENDENCY_INJECTION.md)
 
 ### External References
 

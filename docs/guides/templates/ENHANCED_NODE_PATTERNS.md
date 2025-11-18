@@ -40,11 +40,14 @@ from enum import Enum
 import os
 import time
 
-from omnibase_core.config.base_node_config import BaseNodeConfig
-from omnibase_core.utils.security_validator import SecurityValidator
-from omnibase_core.utils.performance_timer import PerformanceTimer
+# NOTE: These are placeholder imports - omnibase_core.config and omnibase_core.utils modules
+# with these specific classes do not exist in core library. Implement your own configuration
+# and utility classes following these patterns in your service codebase.
+# from omnibase_core.config.base_node_config import BaseNodeConfig
+# from omnibase_core.utils.security_validator import SecurityValidator
+# from omnibase_core.utils.performance_timer import PerformanceTimer
 
-ConfigT = TypeVar('ConfigT', bound='BaseNodeConfig')
+ConfigT = TypeVar('ConfigT', bound='BaseModel')  # Use BaseModel instead of non-existent BaseNodeConfig
 
 
 class SecurityConfig(BaseModel):

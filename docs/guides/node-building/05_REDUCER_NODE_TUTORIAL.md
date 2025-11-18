@@ -526,7 +526,7 @@ from omnibase_core.enums.enum_reducer_types import (
     EnumStreamingMode,
     EnumConflictResolution,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 from your_project.nodes.model_metrics_aggregation_input import (

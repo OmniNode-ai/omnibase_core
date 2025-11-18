@@ -425,7 +425,7 @@ from omnibase_core.models.model_action import ModelAction
 from omnibase_core.models.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.models.model_orchestrator_output import ModelOrchestratorOutput
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel

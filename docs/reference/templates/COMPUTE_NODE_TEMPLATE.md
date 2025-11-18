@@ -72,7 +72,7 @@ from contextlib import asynccontextmanager
 
 from pydantic import ValidationError
 from omnibase_core.nodes.node_compute import NodeCompute
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_onex_warning import ModelONEXWarning
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer
 from omnibase_core.utils.circuit_breaker import CircuitBreakerMixin
@@ -355,9 +355,11 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Compute(
 from typing import Any, Dict, Optional, Type, TypeVar
 from pydantic import BaseModel, Field, validator
 
-from omnibase_core.config.base_node_config import BaseNodeConfig
+# NOTE: This is a placeholder import - omnibase_core.config module does not exist in core library.
+# Implement your own configuration base class following this pattern in your service codebase.
+# from omnibase_core.config.base_node_config import BaseNodeConfig
 
-ConfigT = TypeVar('ConfigT', bound='BaseNodeConfig')
+ConfigT = TypeVar('ConfigT', bound='BaseModel')  # Use BaseModel instead of non-existent BaseNodeConfig
 
 
 class CalculationConfig(BaseModel):

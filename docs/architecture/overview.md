@@ -194,7 +194,7 @@ await node.emit_event(event)
 ### Error Handling
 
 ```python
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 try:

@@ -127,7 +127,7 @@ class ModelContractCompute(ModelContractBase):
 
     Raises:
         ValidationError: If configuration is invalid or incompatible
-        OnexError: If ONEX compliance requirements are not met
+        ModelOnexError: If ONEX compliance requirements are not met
 
     Note:
         COMPUTE contracts must define clear input/output specifications
@@ -185,7 +185,7 @@ class ModelContractEffect(ModelContractBase):
     Raises:
         ConnectionError: If external service configuration is invalid
         ValidationError: If contract parameters are incompatible
-        OnexError: If ONEX effect node requirements are not satisfied
+        ModelOnexError: If ONEX effect node requirements are not satisfied
 
     Note:
         EFFECT contracts must handle all external dependencies gracefully
@@ -242,7 +242,7 @@ class ModelContractReducer(ModelContractBase):
     Raises:
         MemoryError: If memory management configuration exceeds system limits
         ValidationError: If reduction parameters are invalid
-        OnexError: If ONEX reducer requirements are not met
+        ModelOnexError: If ONEX reducer requirements are not met
 
     Note:
         REDUCER contracts must ensure proper state management and provide
@@ -301,7 +301,7 @@ class ModelContractOrchestrator(ModelContractBase):
     Raises:
         DependencyError: If required dependencies are not available
         ValidationError: If orchestration parameters are invalid
-        OnexError: If ONEX orchestrator requirements are not satisfied
+        ModelOnexError: If ONEX orchestrator requirements are not satisfied
 
     Note:
         ORCHESTRATOR contracts must define clear execution order and
@@ -931,14 +931,13 @@ class TypedDictPerformanceMetricData(TypedDict):
 All contract models follow standardized error handling patterns:
 
 ```python
-from omnibase_core.exceptions.base_onex_error import OnexError
-from omnibase_core.exceptions.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
-class ContractValidationError(OnexError):
+class ContractValidationError(ModelOnexError):
     """Contract-specific validation error."""
     pass
 
-class ConfigurationError(OnexError):
+class ConfigurationError(ModelOnexError):
     """Configuration-related error."""
     pass
 ```python
@@ -1037,7 +1036,7 @@ from omnibase_core.enums.enum_some_enum import EnumSomeEnum
 - Implement custom validators for complex constraints
 
 ### 3. Error Handling
-- Always inherit from `OnexError` for custom exceptions
+- Always inherit from `ModelOnexError` for custom exceptions
 - Include correlation IDs in error contexts
 - Provide clear error messages with actionable guidance
 - Chain exceptions to preserve error context

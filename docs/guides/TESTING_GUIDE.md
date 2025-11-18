@@ -194,7 +194,7 @@ async def test_reducer_node_state_persistence(reducer_node):
 
 ```python
 import pytest
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 class TestErrorHandlingNode(NodeCompute):

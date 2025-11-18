@@ -81,7 +81,7 @@ from omnibase_core.core.onex_container import ModelONEXContainer as ONEXContaine
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.core.core_error_codes import CoreErrorCode
-from omnibase_core.core.errors.onex_error import OnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .models.model_{MICROSERVICE_NAME}_input import Model{MICROSERVICE_NAME_PASCAL}Input
 from .models.model_{MICROSERVICE_NAME}_output import Model{MICROSERVICE_NAME_PASCAL}Output
@@ -226,7 +226,7 @@ class Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect(NodeEffectService):
 
             # Check circuit breaker
             if self._is_circuit_breaker_open():
-                raise OnexError(
+                raise ModelOnexError(
                     code=CoreErrorCode.CIRCUIT_BREAKER_OPEN,
                     message=f"{MICROSERVICE_NAME} circuit breaker is open"
                 )
@@ -239,7 +239,7 @@ class Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect(NodeEffectService):
             elif input_data.operation_type == Enum{MICROSERVICE_NAME_PASCAL}OperationType.HEALTH_CHECK:
                 return await self._handle_health_check_operation(input_data, start_time)
             else:
-                raise OnexError(
+                raise ModelOnexError(
                     code=CoreErrorCode.VALIDATION_ERROR,
                     message=f"Unsupported operation type: {input_data.operation_type}",
                 )
@@ -359,13 +359,13 @@ class Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect(NodeEffectService):
             try:
                 correlation_id = UUID(correlation_id)
             except ValueError:
-                raise OnexError(
+                raise ModelOnexError(
                     code=CoreErrorCode.VALIDATION_ERROR,
                     message="Invalid correlation ID format - must be valid UUID"
                 )
 
         if not isinstance(correlation_id, UUID):
-            raise OnexError(
+            raise ModelOnexError(
                 code=CoreErrorCode.VALIDATION_ERROR,
                 message="Correlation ID must be UUID type"
             )

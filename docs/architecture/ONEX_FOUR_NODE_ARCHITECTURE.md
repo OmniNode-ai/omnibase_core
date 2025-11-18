@@ -87,12 +87,12 @@ class DatabaseEffectService(NodeEffect):
 
         Raises:
             DatabaseConnectionError: If database is unreachable
-            OnexError: If contract validation fails
+            ModelOnexError: If contract validation fails
         """
         try:
             # Validate contract
             if not self._validate_database_contract(contract):
-                raise OnexError("Invalid database contract")
+                raise ModelOnexError("Invalid database contract")
 
             # Execute database operation with retry logic
             result = await self._execute_with_retry(contract)
@@ -110,7 +110,7 @@ class DatabaseEffectService(NodeEffect):
         except Exception as e:
             self.logger.error(f"Database operation failed: {e}",
                             correlation_id=contract.correlation_id)
-            raise OnexError("Database operation failed") from e
+            raise ModelOnexError("Database operation failed") from e
 
     async def _execute_with_retry(self, contract: ModelContractEffect):
         """Execute operation with exponential backoff retry."""
@@ -187,7 +187,7 @@ class DataTransformationComputeService(NodeCompute):
         Raises:
             AlgorithmNotFoundError: If specified algorithm is not available
             ValidationError: If input data validation fails
-            OnexError: If computation fails
+            ModelOnexError: If computation fails
         """
         start_time = time.time()
 
@@ -226,7 +226,7 @@ class DataTransformationComputeService(NodeCompute):
         except Exception as e:
             execution_time = time.time() - start_time
             self.performance_monitor.record_error(contract.correlation_id, e, execution_time)
-            raise OnexError("Computation failed") from e
+            raise ModelOnexError("Computation failed") from e
 
     async def _execute_parallel(self, algorithm, contract: ModelContractCompute):
         """Execute algorithm with parallel processing."""
@@ -336,7 +336,7 @@ class DataAggregationReducerService(NodeReducer):
         Raises:
             StateConsistencyError: If state consistency cannot be maintained
             TransactionError: If transaction management fails
-            OnexError: If reduction operation fails
+            ModelOnexError: If reduction operation fails
         """
         transaction_id = None
 
@@ -389,7 +389,7 @@ class DataAggregationReducerService(NodeReducer):
             # Rollback transaction on error
             if transaction_id:
                 await self.transaction_manager.rollback_transaction(transaction_id)
-            raise OnexError("Reduction operation failed") from e
+            raise ModelOnexError("Reduction operation failed") from e
 
     async def _execute_streaming_reduction(self, contract: ModelContractReducer, current_state):
         """Execute reduction with streaming data support."""
@@ -928,7 +928,7 @@ class WorkflowOrchestratorService(NodeOrchestrator):
         Raises:
             DependencyResolutionError: If required dependencies are not available
             WorkflowExecutionError: If workflow execution fails
-            OnexError: If orchestration fails
+            ModelOnexError: If orchestration fails
         """
         workflow_id = str(uuid4())
 
@@ -968,7 +968,7 @@ class WorkflowOrchestratorService(NodeOrchestrator):
 
         except Exception as e:
             await self._handle_orchestration_failure(contract, workflow_id, e)
-            raise OnexError("Workflow orchestration failed") from e
+            raise ModelOnexError("Workflow orchestration failed") from e
 
     async def _execute_sequential_workflow(self, contract: ModelContractOrchestrator, execution_context):
         """Execute workflow with sequential service coordination."""
@@ -1628,7 +1628,7 @@ async def execute_node_operation(self, contract):
         result = await self._process_contract(contract)
         return result
     except ValidationError as e:
-        raise OnexError(
+        raise ModelOnexError(
             message="Contract validation failed",
             correlation_id=contract.correlation_id,
             error_context={
@@ -1637,7 +1637,7 @@ async def execute_node_operation(self, contract):
             }
         ) from e
     except Exception as e:
-        raise OnexError(
+        raise ModelOnexError(
             message=f"Node processing failed: {e}",
             correlation_id=contract.correlation_id,
             error_context={
@@ -1657,17 +1657,17 @@ class PipelineErrorContext:
 
     def __init__(self, correlation_id: UUID):
         self.correlation_id = correlation_id
-        self.error_chain: List[OnexError] = []
+        self.error_chain: List[ModelOnexError] = []
         self.failed_nodes: List[str] = []
 
-    def add_error(self, error: OnexError, node_type: str):
+    def add_error(self, error: ModelOnexError, node_type: str):
         """Add error to the chain with node context."""
         self.error_chain.append(error)
         self.failed_nodes.append(node_type)
 
-    def create_pipeline_error(self) -> OnexError:
+    def create_pipeline_error(self) -> ModelOnexError:
         """Create comprehensive pipeline error."""
-        return OnexError(
+        return ModelOnexError(
             message=f"Pipeline failed at nodes: {', '.join(self.failed_nodes)}",
             correlation_id=self.correlation_id,
             error_context={
@@ -1930,7 +1930,7 @@ class TestPipelineIntegration(unittest.TestCase):
 ### Implementation Guidelines
 1. **Comprehensive Documentation**: Every public method must have complete docstrings
 2. **Type Safety**: Use specific types, avoid `Any` where possible
-3. **Error Handling**: Always inherit from `OnexError` for custom exceptions
+3. **Error Handling**: Always inherit from `ModelOnexError` for custom exceptions
 4. **Performance Monitoring**: Collect metrics for all operations
 5. **Health Checks**: Implement comprehensive health monitoring
 
