@@ -162,6 +162,19 @@ def validate_links() -> Dict[str, List[Dict]]:
                 })
                 continue
 
+            # Check if target is a directory instead of a file
+            if target_file.is_dir():
+                broken_links += 1
+                issues['link_to_directory'].append({
+                    'source': str(source_file.relative_to(BASE_DIR)),
+                    'line': line_num,
+                    'link_text': link_text,
+                    'link_path': link_path,
+                    'target': str(target_file.relative_to(BASE_DIR)),
+                    'issue': 'Link points to directory instead of file'
+                })
+                continue
+
             # Check anchor if present
             if anchor:
                 # Get headings from target file (with caching)
@@ -209,6 +222,17 @@ def print_report(issues: Dict[str, List[Dict]]):
             print(f"\n📄 {issue['source']}:{issue['line']}")
             print(f"   Link: [{issue['link_text']}]({issue['link_path']})")
             print(f"   ❌ {issue['issue']}: {issue['target']}")
+        print()
+
+    # Links to directories
+    if 'link_to_directory' in issues:
+        print(f"🟡 LINKS TO DIRECTORIES ({len(issues['link_to_directory'])})")
+        print("-" * 80)
+        for issue in issues['link_to_directory']:
+            print(f"\n📄 {issue['source']}:{issue['line']}")
+            print(f"   Link: [{issue['link_text']}]({issue['link_path']})")
+            print(f"   ❌ {issue['issue']}: {issue['target']}")
+            print(f"   💡 Suggestion: Link to a specific file like {issue['target']}/README.md or {issue['target']}/index.md")
         print()
 
     # Broken anchor references

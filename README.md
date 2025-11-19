@@ -106,7 +106,7 @@ src/omnibase_core/
 └── mixins/             # Declarative behaviors
 ```
 
-**See**: [Architecture Guide](docs/architecture/)
+**See**: [Architecture Overview](docs/architecture/overview.md)
 
 ## Advanced Topics
 
