@@ -19,7 +19,7 @@
 **Core Principle**: Create mixins that provide cross-cutting capabilities universally applicable across all node types rather than node-specific implementations.
 
 **Implementation Pattern**:
-```yaml
+```
 # Universal applicability configuration
 type: core_mixin
 compatibility:
@@ -36,7 +36,7 @@ capabilities:
     provides: [operation_timing, error_rate_tracking, success_metrics]
   configuration_management:
     provides: [type_safe_config, environment_variables, runtime_validation]
-```python
+```
 
 **Why This Works**:
 - Single source of truth for cross-cutting concerns
@@ -52,7 +52,7 @@ capabilities:
 **Implementation Components**:
 
 1. **Action Input Models** with validation:
-```python
+```
 class HandleErrorInput(BaseModel):
     error: Exception = Field(..., description="Exception instance to handle")
     context: Dict[str, Any] = Field(..., description="Operation context (will be sanitized)")
@@ -65,23 +65,23 @@ class HandleErrorInput(BaseModel):
         if v is not None and (len(v) < 8 or len(v) > 128):
             raise ValueError("correlation_id must be between 8-128 characters")
         return v
-```python
+```
 
 2. **Configuration Models** with defaults and constraints:
-```python
+```
 class ErrorHandlingConfig(BaseModel):
     sanitize_production_errors: bool = Field(True, description="Enable sensitive data sanitization")
     max_context_fields: int = Field(20, ge=1, description="Maximum context fields to include")
     correlation_id_required: bool = Field(False, description="Whether correlation ID is required")
-```python
+```
 
 3. **Enum-Based State Management**:
-```python
+```
 class CircuitBreakerState(str, Enum):
     CLOSED = "CLOSED"
     OPEN = "OPEN"
     HALF_OPEN = "HALF_OPEN"
-```python
+```
 
 **Benefits Achieved**:
 - Complete runtime validation of all inputs/outputs
@@ -97,7 +97,7 @@ class CircuitBreakerState(str, Enum):
 **Security Implementation Features**:
 
 1. **Sensitive Data Sanitization**:
-```yaml
+```
 capabilities:
   secure_error_handling:
     provides:
@@ -105,26 +105,26 @@ capabilities:
       - secure_error_messages      # Generate safe error messages
       - correlation_id_validation  # Validate tracking identifiers
       - operation_context_management # Manage context safely
-```yaml
+```
 
 2. **Configuration-Driven Security**:
-```yaml
+```
 configuration:
   error_handling:
     sanitize_production_errors:
       type: boolean
       default: true
       description: "Enable sensitive data sanitization in production"
-```python
+```
 
 3. **Safe Error Handling Pattern**:
-```python
+```
 class HandleErrorOutput(BaseModel):
     message: str = Field(..., description="Safe error message without sensitive information")
     safe_context: Dict[str, Any] = Field(..., description="Sanitized context safe for logging")
     error_id: str = Field(..., description="Unique identifier for error tracking")
     correlation_id: Optional[str] = Field(None, description="Request correlation ID")
-```text
+```
 
 **Security Benefits**:
 - Prevents information disclosure in production
@@ -139,27 +139,27 @@ class HandleErrorOutput(BaseModel):
 **Integration Design**:
 
 1. **Initialization Priority**:
-```yaml
+```
 integration:
   initialization_order: 1        # Initialize early as base functionality
   cleanup_order: 99             # Cleanup late to support other mixins
   required_for_health_check: true
   provides_base_functionality: true
-```yaml
+```
 
 2. **Dependency Declaration**:
-```yaml
+```
 dependencies:
   python_packages:
     - pydantic: ">=2.0.0"
     - asyncio: ">=3.4.0"
   internal_modules:
-    - omnibase_core.core.onex_error
+    - omnibase_core.models.errors.model_onex_error
     - omnibase_core.enums.enum_health_status
-```yaml
+```
 
 3. **Metrics Integration**:
-```yaml
+```
 metrics:
   provided:
     - error_handling.operations_total
@@ -170,7 +170,7 @@ metrics:
     - operation_name
     - node_type
     - error_type
-```python
+```
 
 **Integration Benefits**:
 - Seamless integration with existing ONEX infrastructure
@@ -231,7 +231,7 @@ metrics:
 **When to Use**: Any capability needed by multiple node types (logging, authentication, caching, monitoring, etc.)
 
 **Implementation Template**:
-```yaml
+```
 # 1. Universal compatibility
 type: core_mixin
 compatibility:
@@ -252,12 +252,12 @@ actions:
 configuration:
   capability_config:
     setting: {type, default, description}
-```python
+```
 
 ### Type Safety Implementation Pattern
 
 **Pydantic Model Organization**:
-```python
+```
 # 1. Enums for state management
 class StateEnum(str, Enum):
     VALUE1 = "value1"
@@ -277,7 +277,7 @@ class ActionOutput(BaseModel):
 # 4. Configuration models with defaults
 class CapabilityConfig(BaseModel):
     setting: Type = Field(default_value, description="Configuration setting")
-```python
+```
 
 ### Security-First Error Handling Pattern
 

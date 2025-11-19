@@ -113,7 +113,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
             errors.append(f"Contract validation failed: {e}")
 
         # All validation is now handled by Pydantic model
-        # Legacy manual validation removed for ONEX compliance
+        # Manual validation removed for ONEX compliance
 
     except OSError as e:
         # Collect OS errors during file reading

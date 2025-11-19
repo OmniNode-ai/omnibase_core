@@ -32,7 +32,7 @@ Each has a specific role. Together, they create a complete system.
 
 ## Core Concept
 
-```text
+```
 ┌──────────────────────────────────────────────────────────────┐
 │                         ONEX Node                             │
 │                                                               │
@@ -46,7 +46,7 @@ Each has a specific role. Together, they create a complete system.
 │  • Error handling built-in                                   │
 │  • Performance tracking                                      │
 └──────────────────────────────────────────────────────────────┘
-```python
+```
 
 ## Key Characteristics
 
@@ -54,7 +54,7 @@ Each has a specific role. Together, they create a complete system.
 
 Each node does **one thing well**:
 
-```python
+```
 # ✅ Good: Single responsibility
 class NodeDataValidatorCompute:
     """Validates data structure and content."""
@@ -67,13 +67,13 @@ class NodeDataValidatorAndSaverComputeEffect:
     async def process(self, input_data):
         validated = self.validate(input_data)
         self.save_to_database(validated)  # Mixing COMPUTE and EFFECT!
-```python
+```
 
 ### 2. Strongly Typed
 
 Inputs and outputs are **explicitly typed**:
 
-```python
+```
 # Example from real NodeCompute
 async def process(
     self,
@@ -81,20 +81,20 @@ async def process(
 ) -> ModelComputeOutput[T_Output]:          # ← Typed output
     """Process with type safety."""
     # Type checking happens automatically via Pydantic
-```python
+```
 
 ### 3. Dependency Injection
 
 Nodes receive dependencies through a **container**:
 
-```python
+```
 class NodeMyServiceCompute(NodeCoreBase):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         # Container provides all dependencies
         self.logger = container.logger
         self.config = container.compute_cache_config
-```python
+```
 
 No manual dependency wiring. The container handles it.
 
@@ -102,7 +102,7 @@ No manual dependency wiring. The container handles it.
 
 Structured error handling is **built-in**:
 
-```python
+```
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -112,13 +112,13 @@ raise ModelOnexError(
     message="Input validation failed",
     context={"field": "email", "value": input_value}
 )
-```python
+```
 
 ### 5. Performance Tracking
 
 Every node can track its performance:
 
-```python
+```
 # Built into base classes
 start_time = time.time()
 result = await self.process(input_data)
@@ -129,13 +129,13 @@ self.computation_metrics[operation_id] = {
     "duration_ms": processing_time_ms,
     "operation_type": input_data.operation_type
 }
-```python
+```
 
 ## Why Nodes?
 
 ### Problem: Monolithic Systems
 
-```python
+```
 # ❌ Monolithic approach
 class DataService:
     def process_request(self, data):
@@ -148,11 +148,11 @@ class DataService:
         # Notify other services
         self.notify(transformed)
         # All responsibilities mixed together!
-```python
+```
 
 ### Solution: Node-Based Architecture
 
-```python
+```
 # ✅ Node-based approach
 
 # EFFECT: Database interaction
@@ -179,7 +179,7 @@ class NodeDataProcessorOrchestrator:
         transformed = await self.transformer.process(fetched)
         result = await self.saver.process(transformed)
         return result
-```text
+```
 
 **Benefits**:
 - Each component testable in isolation
@@ -191,7 +191,7 @@ class NodeDataProcessorOrchestrator:
 
 ### The Four Node Types
 
-```text
+```
 External World          │      ONEX System        │   Data Flow
                        │                          │
 ┌─────────────────┐    │                          │
@@ -210,13 +210,13 @@ External World          │      ONEX System        │   Data Flow
                        │         ▼                │
                        │  ORCHESTRATOR Node ──────┼───▶ Coordinated result
                        │  (Coordinate)            │
-```text
+```
 
 ### Data Flow Example
 
 **Scenario**: Process user signup
 
-```python
+```
 # 1. EFFECT: Validate email via external API
 email_valid = await effect_node.process(
     ModelEffectInput(email=user.email)
@@ -248,13 +248,13 @@ save_result = await effect_node.process(
 result = await orchestrator_node.process(
     ModelOrchestratorInput(user_signup_request=user)
 )
-```python
+```
 
 ## Real-World Example
 
 Let's look at an actual node from omnibase_core:
 
-```python
+```
 # From: src/omnibase_core/nodes/node_compute.py
 
 class NodeCompute(NodeCoreBase):
@@ -319,7 +319,7 @@ class NodeCompute(NodeCoreBase):
             processing_time_ms=processing_time,
             cache_hit=False
         )
-```python
+```
 
 **Notice**:
 - ✅ Single responsibility: Pure computation
@@ -374,7 +374,7 @@ Now that you understand what nodes are, learn about the **four node types** and 
 
 ## Quick Reference
 
-```python
+```
 # Preferred: production-ready compute via service wrapper
 from omnibase_core.models.nodes.node_services import ModelServiceCompute
 
@@ -398,7 +398,7 @@ class NodeMyServiceCompute(NodeCoreBase):
         # Execute operation
         # Return output
         pass
-```python
+```
 
 **Essential imports**:
 - `NodeCoreBase` - Base class for all nodes

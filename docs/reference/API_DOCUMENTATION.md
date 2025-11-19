@@ -21,9 +21,9 @@ This document provides comprehensive API documentation for all contract models i
 
 All contract models follow the ONEX Four-Node Architecture:
 
-```text
+```
 EFFECT → COMPUTE → REDUCER → ORCHESTRATOR
-```python
+```
 
 #### Node Types and Responsibilities
 
@@ -45,7 +45,7 @@ Following ONEX standards, each model is defined in its own file:
 
 **File**: `src/omnibase_core/models/contracts/model_contract_base.py`
 
-```python
+```
 class ModelContractBase(BaseModel):
     """
     Base class for all ONEX contract models.
@@ -85,13 +85,13 @@ class ModelContractBase(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```python
+```
 
 ### ModelContractCompute
 
 **File**: `src/omnibase_core/models/contracts/model_contract_compute.py`
 
-```python
+```
 class ModelContractCompute(ModelContractBase):
     """
     Contract model for COMPUTE node operations.
@@ -127,7 +127,7 @@ class ModelContractCompute(ModelContractBase):
 
     Raises:
         ValidationError: If configuration is invalid or incompatible
-        OnexError: If ONEX compliance requirements are not met
+        ModelOnexError: If ONEX compliance requirements are not met
 
     Note:
         COMPUTE contracts must define clear input/output specifications
@@ -139,13 +139,13 @@ class ModelContractCompute(ModelContractBase):
     output_transformation: ModelOutputTransformationConfig
     performance_requirements: ModelPerformanceRequirements
     parallel_config: Optional[ModelParallelConfig] = None
-```python
+```
 
 ### ModelContractEffect
 
 **File**: `src/omnibase_core/models/contracts/model_contract_effect.py`
 
-```python
+```
 class ModelContractEffect(ModelContractBase):
     """
     Contract model for EFFECT node operations.
@@ -185,7 +185,7 @@ class ModelContractEffect(ModelContractBase):
     Raises:
         ConnectionError: If external service configuration is invalid
         ValidationError: If contract parameters are incompatible
-        OnexError: If ONEX effect node requirements are not satisfied
+        ModelOnexError: If ONEX effect node requirements are not satisfied
 
     Note:
         EFFECT contracts must handle all external dependencies gracefully
@@ -197,13 +197,13 @@ class ModelContractEffect(ModelContractBase):
     retry_config: ModelEffectRetryConfig
     caching_config: Optional[ModelCachingConfig] = None
     validation_rules: ModelValidationRules
-```python
+```
 
 ### ModelContractReducer
 
 **File**: `src/omnibase_core/models/contracts/model_contract_reducer.py`
 
-```python
+```
 class ModelContractReducer(ModelContractBase):
     """
     Contract model for REDUCER node operations.
@@ -242,7 +242,7 @@ class ModelContractReducer(ModelContractBase):
     Raises:
         MemoryError: If memory management configuration exceeds system limits
         ValidationError: If reduction parameters are invalid
-        OnexError: If ONEX reducer requirements are not met
+        ModelOnexError: If ONEX reducer requirements are not met
 
     Note:
         REDUCER contracts must ensure proper state management and provide
@@ -254,13 +254,13 @@ class ModelContractReducer(ModelContractBase):
     streaming_config: Optional[ModelStreamingConfig] = None
     transaction_config: Optional[ModelTransactionConfig] = None
     backup_config: Optional[ModelBackupConfig] = None
-```python
+```
 
 ### ModelContractOrchestrator
 
 **File**: `src/omnibase_core/models/contracts/model_contract_orchestrator.py`
 
-```python
+```
 class ModelContractOrchestrator(ModelContractBase):
     """
     Contract model for ORCHESTRATOR node operations.
@@ -301,7 +301,7 @@ class ModelContractOrchestrator(ModelContractBase):
     Raises:
         DependencyError: If required dependencies are not available
         ValidationError: If orchestration parameters are invalid
-        OnexError: If ONEX orchestrator requirements are not satisfied
+        ModelOnexError: If ONEX orchestrator requirements are not satisfied
 
     Note:
         ORCHESTRATOR contracts must define clear execution order and
@@ -313,7 +313,7 @@ class ModelContractOrchestrator(ModelContractBase):
     dependency_resolution: List[ModelDependency]
     lifecycle_config: ModelLifecycleConfig
     conflict_resolution: ModelConflictResolutionConfig
-```python
+```
 
 ## Configuration Models
 
@@ -321,7 +321,7 @@ class ModelContractOrchestrator(ModelContractBase):
 
 **File**: `src/omnibase_core/models/contracts/model_algorithm_config.py`
 
-```python
+```
 class ModelAlgorithmConfig(BaseModel):
     """
     Configuration for algorithm execution in COMPUTE nodes.
@@ -388,13 +388,13 @@ class ModelAlgorithmConfig(BaseModel):
         if not v or not isinstance(v, str):
             raise ValueError("algorithm_type must be a non-empty string")
         return v.lower()
-```python
+```
 
 ### ModelValidationRules
 
 **File**: `src/omnibase_core/models/contracts/model_validation_rules.py`
 
-```python
+```
 class ModelValidationRules(BaseModel):
     """
     Comprehensive validation rules for data processing contracts.
@@ -529,7 +529,7 @@ class ModelValidationRules(BaseModel):
             return True
         except ValueError:
             return False
-```python
+```
 
 ## Subcontract Models
 
@@ -537,7 +537,7 @@ class ModelValidationRules(BaseModel):
 
 **File**: `src/omnibase_core/models/contracts/subcontracts/model_aggregation_subcontract.py`
 
-```python
+```
 class ModelAggregationSubcontract(BaseModel):
     """
     Subcontract for data aggregation operations.
@@ -600,13 +600,13 @@ class ModelAggregationSubcontract(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```python
+```
 
 ### ModelFSMSubcontract
 
 **File**: `src/omnibase_core/models/contracts/subcontracts/model_fsm_subcontract.py`
 
-```python
+```
 class ModelFSMSubcontract(BaseModel):
     """
     Finite State Machine (FSM) subcontract for state-based processing.
@@ -721,7 +721,7 @@ class ModelFSMSubcontract(BaseModel):
                 errors.append(f"Transition to unknown state: {transition.to_state}")
 
         return errors
-```python
+```
 
 ## Enums
 
@@ -729,7 +729,7 @@ class ModelFSMSubcontract(BaseModel):
 
 **File**: `src/omnibase_core/enums/enum_dependency_type.py`
 
-```python
+```
 class EnumDependencyType(str, Enum):
     """
     Types of dependencies between services and components.
@@ -760,13 +760,13 @@ class EnumDependencyType(str, Enum):
     REQUIRED = "required"
     OPTIONAL = "optional"
     PREFERRED = "preferred"
-```python
+```
 
 ### EnumWorkflowCoordination
 
 **File**: `src/omnibase_core/enums/enum_workflow_coordination.py`
 
-```python
+```
 class EnumWorkflowCoordination(str, Enum):
     """
     Workflow coordination patterns for orchestrator nodes.
@@ -806,7 +806,7 @@ class EnumWorkflowCoordination(str, Enum):
     CONDITIONAL = "conditional"
     EVENT_DRIVEN = "event_driven"
     HYBRID = "hybrid"
-```python
+```
 
 ## TypedDict Definitions
 
@@ -814,7 +814,7 @@ class EnumWorkflowCoordination(str, Enum):
 
 **File**: `src/omnibase_core/types/typed_dict_capability_factory_kwargs.py`
 
-```python
+```
 class TypedDictCapabilityFactoryKwargs(TypedDict):
     """
     Keyword arguments for capability factory instantiation.
@@ -860,13 +860,13 @@ class TypedDictCapabilityFactoryKwargs(TypedDict):
     priority: NotRequired[int]
     tags: NotRequired[List[str]]
     metadata: NotRequired[dict[str, Any]]
-```python
+```
 
 ### TypedDictPerformanceMetricData
 
 **File**: `src/omnibase_core/types/typed_dict_performance_metric_data.py`
 
-```python
+```
 class TypedDictPerformanceMetricData(TypedDict):
     """
     Performance metric data structure for monitoring and analytics.
@@ -922,7 +922,7 @@ class TypedDictPerformanceMetricData(TypedDict):
     unit: NotRequired[str]
     tags: NotRequired[dict[str, str]]
     context: NotRequired[dict[str, Any]]
-```python
+```
 
 ## Error Handling
 
@@ -930,24 +930,23 @@ class TypedDictPerformanceMetricData(TypedDict):
 
 All contract models follow standardized error handling patterns:
 
-```python
-from omnibase_core.exceptions.base_onex_error import OnexError
-from omnibase_core.exceptions.model_onex_error import ModelOnexError
+```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-class ContractValidationError(OnexError):
+class ContractValidationError(ModelOnexError):
     """Contract-specific validation error."""
     pass
 
-class ConfigurationError(OnexError):
+class ConfigurationError(ModelOnexError):
     """Configuration-related error."""
     pass
-```python
+```
 
 ### Error Context
 
 All errors include rich context information:
 
-```python
+```
 try:
     contract.validate()
 except ValidationError as e:
@@ -960,7 +959,7 @@ except ValidationError as e:
             "timestamp": datetime.now(UTC)
         }
     ) from e
-```python
+```
 
 ## Migration Guide
 
@@ -1002,25 +1001,25 @@ except ValidationError as e:
 
 TypedDict classes moved from `models/` to `types/` directory:
 
-```python
+```
 # Old import
 from omnibase_core.models.some_typed_dict import SomeTypedDict
 
 # New import
 from omnibase_core.types.typed_dict_some_typed_dict import TypedDictSomeTypedDict
-```python
+```
 
 ### Enum Migration
 
 Enums moved to dedicated `enums/` directory:
 
-```python
+```
 # Old import
 from omnibase_core.models.enums import SomeEnum
 
 # New import
 from omnibase_core.enums.enum_some_enum import EnumSomeEnum
-```python
+```
 
 ## Best Practices
 
@@ -1037,7 +1036,7 @@ from omnibase_core.enums.enum_some_enum import EnumSomeEnum
 - Implement custom validators for complex constraints
 
 ### 3. Error Handling
-- Always inherit from `OnexError` for custom exceptions
+- Always inherit from `ModelOnexError` for custom exceptions
 - Include correlation IDs in error contexts
 - Provide clear error messages with actionable guidance
 - Chain exceptions to preserve error context

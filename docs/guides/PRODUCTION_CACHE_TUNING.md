@@ -17,7 +17,7 @@ This guide provides best practices for configuring `ModelComputeCacheConfig` to 
 ### Cache Size Guidelines
 
 Cache memory usage follows this approximate formula:
-```text
+```
 Total Memory (MB) = (max_size × avg_entry_size_kb) / 1024
 
 **Default Entry Size:** ~1KB per cached computation (varies by computation complexity)
@@ -35,7 +35,7 @@ Total Memory (MB) = (max_size × avg_entry_size_kb) / 1024
 
 ### Example Configurations
 
-```python
+```
 from omnibase_core.models.configuration.model_compute_cache_config import ModelComputeCacheConfig
 from omnibase_core.models.container.model_onex_container import create_model_onex_container
 
@@ -90,7 +90,7 @@ container = await create_model_onex_container(
 - Unknown or varying access patterns
 - Development and testing environments
 
-```python
+```
 config = ModelComputeCacheConfig(
     max_size=512,
     eviction_policy="lru"
@@ -113,7 +113,7 @@ config = ModelComputeCacheConfig(
 - Report generation with common templates
 - Data processing with repeated patterns
 
-```python
+```
 config = ModelComputeCacheConfig(
     max_size=1024,
     eviction_policy="lfu"
@@ -136,7 +136,7 @@ config = ModelComputeCacheConfig(
 - Sequential workflows
 - Memory-constrained environments
 
-```python
+```
 config = ModelComputeCacheConfig(
     max_size=256,
     eviction_policy="fifo"
@@ -186,7 +186,7 @@ config = ModelComputeCacheConfig(
 
 Statistics tracking is enabled by default but can be disabled for ultra-low latency requirements:
 
-```python
+```
 # Production monitoring (default)
 config = ModelComputeCacheConfig(enable_stats=True)
 
@@ -195,7 +195,7 @@ config = ModelComputeCacheConfig(enable_stats=False)
 
 ### Key Metrics to Monitor
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 
 # Get cache statistics
@@ -218,7 +218,7 @@ print(f"Total Requests: {stats['total_requests']}")
 
 ### Alerting Recommendations
 
-```python
+```
 # Example monitoring check
 def check_cache_health(node: NodeCompute) -> dict[str, bool]:
     stats = node.computation_cache.get_stats()
@@ -251,7 +251,7 @@ def check_cache_health(node: NodeCompute) -> dict[str, bool]:
 
 For adaptive systems, cache configuration can be adjusted at runtime:
 
-```python
+```
 # Analyze current metrics
 stats = node.computation_cache.get_stats()
 
@@ -270,7 +270,7 @@ if stats.get("hit_rate", 0) < 50:
 
 ### A/B Testing Cache Configurations
 
-```python
+```
 # Test different configurations
 configs = [
     ModelComputeCacheConfig(max_size=256, eviction_policy="lru"),
@@ -292,7 +292,7 @@ for config in configs:
 
 For advanced scenarios, combine NodeCompute cache with external caching:
 
-```python
+```
 # L1: NodeCompute in-memory cache (fast, small)
 compute_config = ModelComputeCacheConfig(
     max_size=256,

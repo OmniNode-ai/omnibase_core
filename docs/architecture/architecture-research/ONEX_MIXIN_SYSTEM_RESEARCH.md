@@ -18,7 +18,7 @@ ONEX uses a **three-layer mixin architecture**:
 
 Based on analysis of `mixin_health_check.yaml`, `mixin_performance_monitoring.yaml`, and `mixin_event_handling.yaml`:
 
-```yaml
+```
 # ONEX Mixin Contract Structure
 mixin_name: "mixin_name_here"
 mixin_version: {major: 1, minor: 0, patch: 0}
@@ -69,7 +69,7 @@ metrics:
     type: "counter|gauge|histogram"
     description: "Metric description"
     labels: ["label1", "label2"]
-```python
+```
 
 ### 3. Node Type Constraints
 
@@ -92,7 +92,7 @@ metrics:
 
 Each mixin gets backed by strongly-typed Pydantic models in `src/omnibase_core/model/subcontracts/`:
 
-```python
+```
 """
 Model backing for [Mixin Name] Subcontract.
 Generated from [mixin_name] subcontract following ONEX patterns.
@@ -121,20 +121,20 @@ class ModelMainSubcontract(BaseModel):
 
     class Config:
         json_schema_extra = {"example": {...}}
-```yaml
+```
 
 ### 5. Mixin Composition in Node Contracts
 
 Nodes consume mixins via the `subcontracts` section:
 
-```yaml
+```
 # In canary_compute/v1_0_0/contract.yaml
 subcontracts:
   - path: "../../subcontracts/health_check_subcontract.yaml"
     integration_field: "health_check_configuration"
   - path: "../../subcontracts/performance_monitoring_subcontract.yaml"
     integration_field: "performance_monitoring_configuration"
-```python
+```
 
 **Key Points:**
 - `path`: Relative path to mixin YAML file
@@ -159,7 +159,7 @@ The `EnhancedContractValidator` handles:
 ### 7. Implementation Patterns
 
 **File Organization:**
-```text
+```
 src/omnibase_core/nodes/canary/
 ├── mixins/                          # Mixin contract definitions
 │   ├── mixin_health_check.yaml
@@ -175,7 +175,7 @@ src/omnibase_core/model/subcontracts/  # Pydantic models
 ├── model_health_check_subcontract.py
 ├── model_performance_monitoring_subcontract.py
 └── ...
-```python
+```
 
 **Naming Conventions:**
 - Mixin YAML files: `mixin_[capability_name].yaml`
@@ -186,7 +186,7 @@ src/omnibase_core/model/subcontracts/  # Pydantic models
 
 Based on the established patterns, an error handling mixin should follow this structure:
 
-```yaml
+```
 # mixin_error_handling.yaml
 mixin_name: "mixin_error_handling"
 mixin_version: {major: 1, minor: 0, patch: 0}
@@ -218,7 +218,7 @@ error_handling_config:
   sensitive_data_scrubbing: true
 
 # Define error categories, metrics, and recovery strategies...
-```python
+```
 
 ### 9. Best Practices
 

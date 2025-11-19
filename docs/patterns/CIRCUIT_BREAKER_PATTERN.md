@@ -20,8 +20,8 @@ The Circuit Breaker pattern prevents an application from repeatedly trying to ex
 
 ### Basic Usage
 
-```python
-from omnibase_core.core.resilience import ExternalDependencyCircuitBreaker
+```
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 # Create circuit breaker
 circuit_breaker = ExternalDependencyCircuitBreaker("payment-api")
@@ -45,7 +45,7 @@ async def process_payment(amount: float):
     except CircuitBreakerException as e:
         logger.warning(f"Payment service unavailable: {e}")
         return {"status": "deferred", "message": "Payment will be processed later"}
-```python
+```
 
 ## Core Components
 
@@ -53,7 +53,7 @@ async def process_payment(amount: float):
 
 The main circuit breaker implementation with comprehensive features.
 
-```python
+```
 class ExternalDependencyCircuitBreaker:
     def __init__(
         self,
@@ -71,7 +71,7 @@ class ExternalDependencyCircuitBreaker:
     ) -> T:
         """Execute function through circuit breaker."""
         ...
-```python
+```
 
 ### Circuit Breaker States
 
@@ -94,8 +94,8 @@ class ExternalDependencyCircuitBreaker:
 
 Environment-configurable circuit breaker settings:
 
-```python
-from omnibase_core.core.resilience import ModelCircuitBreakerConfig
+```
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 config = ModelCircuitBreakerConfig(
     failure_threshold=5,          # Failures before opening
@@ -107,13 +107,13 @@ config = ModelCircuitBreakerConfig(
     exponential_backoff=True,     # Increase backoff on repeated failures
     max_backoff_seconds=300       # Maximum backoff time
 )
-```python
+```
 
 ## Usage Patterns
 
 ### 1. Function Call Pattern
 
-```python
+```
 async def example_function_call():
     circuit_breaker = ExternalDependencyCircuitBreaker("user-service")
 
@@ -129,11 +129,11 @@ async def example_function_call():
     except CircuitBreakerException:
         # Circuit is open - service is down
         return {"id": "user-123", "name": "Anonymous"}
-```python
+```
 
 ### 2. Fallback Pattern
 
-```python
+```
 async def example_with_fallback():
     circuit_breaker = ExternalDependencyCircuitBreaker("recommendation-service")
 
@@ -151,11 +151,11 @@ async def example_with_fallback():
     )
 
     return recommendations
-```python
+```
 
 ### 3. Context Manager Pattern
 
-```python
+```
 async def example_context_manager():
     circuit_breaker = ExternalDependencyCircuitBreaker("analytics-service")
 
@@ -170,11 +170,11 @@ async def example_context_manager():
         print("Analytics service unavailable - event cached locally")
     except Exception as e:
         print(f"Analytics tracking failed: {e}")
-```python
+```
 
 ### 4. Environment-Based Configuration
 
-```python
+```
 import os
 
 # Set circuit breaker configuration via environment variables
@@ -187,14 +187,14 @@ circuit_breaker = CircuitBreakerFactory.create_from_environment(
     "email-service",
     prefix="CB_EMAIL_SERVICE"
 )
-```python
+```
 
 ## Factory Methods
 
 ### Pre-configured Circuit Breakers
 
-```python
-from omnibase_core.core.resilience import CircuitBreakerFactory
+```
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 # Fast-fail circuit breaker - quick failure detection
 fast_cb = CircuitBreakerFactory.create_fast_fail("critical-service")
@@ -206,13 +206,13 @@ resilient_cb = CircuitBreakerFactory.create_resilient("background-service")
 
 # Environment-configured circuit breaker
 env_cb = CircuitBreakerFactory.create_from_environment("service-name")
-```text
+```
 
 ## Metrics and Monitoring
 
 ### Real-time Metrics
 
-```python
+```
 # Get current metrics
 metrics = circuit_breaker.get_metrics()
 
@@ -222,12 +222,12 @@ print(f"Success rate: {metrics.get_success_rate():.2%}")
 print(f"Failure rate: {metrics.get_failure_rate():.2%}")
 print(f"Average response time: {metrics.average_response_time_ms:.1f}ms")
 print(f"State changes: {metrics.state_changes}")
-```python
+```
 
 ### Event Handling
 
-```python
-from omnibase_core.core.resilience import CircuitBreakerEvent
+```
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 
 async def log_state_changes(cb, event, metrics):
     if event == CircuitBreakerEvent.STATE_CHANGE:
@@ -241,16 +241,12 @@ async def alert_on_failures(cb, event, metrics):
 # Register event listeners
 circuit_breaker.add_event_listener(CircuitBreakerEvent.STATE_CHANGE, log_state_changes)
 circuit_breaker.add_event_listener(CircuitBreakerEvent.FAILURE, alert_on_failures)
-```python
+```
 
 ### Global Registry
 
-```python
-from omnibase_core.core.resilience import (
-    register_circuit_breaker,
-    list_circuit_breakers,
-    get_circuit_breaker
-)
+```
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 # Register circuit breakers globally
 register_circuit_breaker("payment-api", payment_cb)
@@ -263,13 +259,13 @@ cb = get_circuit_breaker("payment-api")
 status_summary = list_circuit_breakers()
 for service, status in status_summary.items():
     print(f"{service}: {status['state']} (failure rate: {status['failure_rate']:.1%})")
-```text
+```
 
 ## Advanced Features
 
 ### Exponential Backoff
 
-```python
+```
 config = ModelCircuitBreakerConfig(
     recovery_timeout_seconds=60,
     exponential_backoff=True,      # Enable exponential backoff
@@ -279,35 +275,35 @@ config = ModelCircuitBreakerConfig(
 circuit_breaker = ExternalDependencyCircuitBreaker("unreliable-service", config)
 
 # Backoff progression: 60s → 120s → 240s → 300s (capped)
-```bash
+```
 
 ### Slow Call Detection
 
-```python
+```
 config = ModelCircuitBreakerConfig(
     slow_call_threshold_ms=5000,    # 5 second threshold
     slow_call_rate_threshold=0.3    # 30% slow calls trigger opening
 )
 
 # Circuit will open if 30% of requests take longer than 5 seconds
-```text
+```
 
 ### Manual Control
 
-```python
+```
 # Force circuit states for maintenance or testing
 await circuit_breaker.force_open()    # Force circuit open
 await circuit_breaker.force_close()   # Force circuit closed
 await circuit_breaker.reset()         # Reset all metrics and state
-```python
+```
 
 ## Integration Examples
 
 ### HTTP Client Integration
 
-```python
+```
 import httpx
-from omnibase_core.core.resilience import ExternalDependencyCircuitBreaker
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 class ResilientHTTPClient:
     def __init__(self, base_url: str, service_name: str):
@@ -333,13 +329,13 @@ class ResilientHTTPClient:
 # Usage
 client = ResilientHTTPClient("https://api.example.com", "example-api")
 data = await client.get("/users/123")
-```python
+```
 
 ### Database Integration
 
-```python
+```
 import asyncpg
-from omnibase_core.core.resilience import ExternalDependencyCircuitBreaker
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 class ResilientDatabase:
     def __init__(self, dsn: str):
@@ -378,12 +374,12 @@ class ResilientDatabase:
 # Usage
 db = ResilientDatabase("postgresql://user:pass@localhost/db")
 users = await db.fetch("SELECT * FROM users WHERE active = $1", True)
-```python
+```
 
 ### Message Queue Integration
 
-```python
-from omnibase_core.core.resilience import ExternalDependencyCircuitBreaker
+```
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 class ResilientMessagePublisher:
     def __init__(self, queue_url: str):
@@ -416,13 +412,13 @@ class ResilientMessagePublisher:
                 except Exception:
                     break  # Stop if service fails again
             self.local_queue.clear()
-```text
+```
 
 ## Best Practices
 
 ### 1. Choose Appropriate Thresholds
 
-```python
+```
 # Fast-fail for critical services
 critical_config = ModelCircuitBreakerConfig(
     failure_threshold=3,
@@ -437,11 +433,11 @@ background_config = ModelCircuitBreakerConfig(
     recovery_timeout_seconds=120,
     exponential_backoff=True
 )
-```python
+```
 
 ### 2. Implement Meaningful Fallbacks
 
-```python
+```
 # Good - Provides degraded functionality
 async def get_user_recommendations(user_id: str):
     async def primary():
@@ -457,11 +453,11 @@ async def get_user_recommendations(user_id: str):
 async def process_payment(amount: float):
     return await circuit_breaker.call(lambda: payment_api.charge(amount))
     # No fallback - users can't complete purchases when service is down
-```python
+```
 
 ### 3. Monitor Circuit Breaker Health
 
-```python
+```
 # Set up monitoring
 async def circuit_breaker_health_check():
     unhealthy_services = []
@@ -477,11 +473,11 @@ async def circuit_breaker_health_check():
 
 # Run periodically
 asyncio.create_task(circuit_breaker_health_check())
-```text
+```
 
 ### 4. Use Environment Configuration
 
-```python
+```
 # production.env
 CB_PAYMENT_API_FAILURE_THRESHOLD=5
 CB_PAYMENT_API_RECOVERY_TIMEOUT_SECONDS=60
@@ -494,11 +490,11 @@ CB_PAYMENT_API_EXPONENTIAL_BACKOFF=false
 
 # Application code
 payment_cb = CircuitBreakerFactory.create_from_environment("payment-api")
-```python
+```
 
 ### 5. Handle Circuit Breaker Exceptions Appropriately
 
-```python
+```
 async def handle_user_request():
     try:
         result = await circuit_breaker.call(external_service_call)
@@ -518,16 +514,16 @@ async def handle_user_request():
         # Actual service error
         logger.error(f"Service error: {e}")
         return {"status": "error", "message": "Service temporarily unavailable"}
-```python
+```
 
 ## Troubleshooting
 
 ### Debug Circuit Breaker State
 
-```python
+```
 # Enable debug logging
 import logging
-logging.getLogger('omnibase_core.core.resilience').setLevel(logging.DEBUG)
+logging.getLogger('your_module_name').setLevel(logging.DEBUG)  # Replace with actual module
 
 # Check circuit breaker state
 cb = get_circuit_breaker("my-service")
@@ -545,38 +541,38 @@ print(f"  Total requests: {metrics.total_requests}")
 print(f"  Success rate: {metrics.get_success_rate():.2%}")
 print(f"  In current window: {metrics.requests_in_window}")
 print(f"  Window failure rate: {metrics.get_failure_rate():.2%}")
-```text
+```
 
 ### Common Issues
 
 #### Circuit Opens Too Quickly
-```python
+```
 # Problem: Circuit opens on first few failures
 # Solution: Increase minimum_request_threshold
 config = ModelCircuitBreakerConfig(
     failure_threshold=5,
     minimum_request_threshold=20  # Need 20 requests before evaluating
 )
-```text
+```
 
 #### Circuit Doesn't Open When Expected  
-```python
+```
 # Problem: Service is failing but circuit stays closed
 # Solution: Check failure rate threshold and request count
 config = ModelCircuitBreakerConfig(
     failure_rate_threshold=0.3,  # Lower threshold (30%)
     minimum_request_threshold=5  # Lower minimum requests
 )
-```text
+```
 
 #### Slow Recovery
-```python
+```
 # Problem: Circuit takes too long to test recovery
 # Solution: Reduce recovery timeout
 config = ModelCircuitBreakerConfig(
     recovery_timeout_seconds=30,  # Test recovery sooner
     exponential_backoff=False     # Disable backoff for faster recovery
 )
-```text
+```
 
 This comprehensive circuit breaker implementation provides robust fault tolerance for external dependencies while maintaining observability and configurability for various service interaction patterns.

@@ -14,7 +14,7 @@ This document provides comprehensive API reference for all node classes in omnib
 
 **Purpose**: Pure computation nodes for business logic and data transformation.
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -25,7 +25,7 @@ class MyComputeNode(NodeCompute):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Your computation logic here
         return {"result": "computed_value"}
-```python
+```
 
 #### Key Methods
 
@@ -46,7 +46,7 @@ class MyComputeNode(NodeCompute):
 
 **Purpose**: Side effect nodes for external interactions (databases, APIs, file systems).
 
-```python
+```
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -57,7 +57,7 @@ class DatabaseEffectNode(NodeEffect):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Your side effect logic here
         return {"status": "completed"}
-```python
+```
 
 #### Key Methods
 
@@ -78,7 +78,7 @@ class DatabaseEffectNode(NodeEffect):
 
 **Purpose**: State management nodes for data aggregation and state transitions.
 
-```python
+```
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -89,7 +89,7 @@ class MetricsReducerNode(NodeReducer):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Your state management logic here
         return {"state": "updated"}
-```python
+```
 
 #### Key Methods
 
@@ -110,7 +110,7 @@ class MetricsReducerNode(NodeReducer):
 
 **Purpose**: Workflow coordination nodes for managing complex business processes.
 
-```python
+```
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -121,7 +121,7 @@ class WorkflowOrchestratorNode(NodeOrchestrator):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Your orchestration logic here
         return {"workflow": "completed"}
-```python
+```
 
 #### Key Methods
 
@@ -146,13 +146,13 @@ class WorkflowOrchestratorNode(NodeOrchestrator):
 
 **Purpose**: Pre-composed COMPUTE node with common mixins.
 
-```python
+```
 from omnibase_core.models.nodes.node_services.model_service_compute import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Pre-composed with MixinNodeService, NodeCompute, MixinHealthCheck, MixinCaching, MixinMetrics
 service = ModelServiceCompute(container)
-```python
+```
 
 ### ModelServiceEffect
 
@@ -160,13 +160,13 @@ service = ModelServiceCompute(container)
 
 **Purpose**: Pre-composed EFFECT node with common mixins.
 
-```python
+```
 from omnibase_core.models.nodes.node_services.model_service_effect import ModelServiceEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Pre-composed with MixinNodeService, NodeEffect, MixinHealthCheck, MixinEventBus, MixinMetrics
 service = ModelServiceEffect(container)
-```python
+```
 
 ### ModelServiceReducer
 
@@ -174,13 +174,13 @@ service = ModelServiceEffect(container)
 
 **Purpose**: Pre-composed REDUCER node with common mixins.
 
-```python
+```
 from omnibase_core.models.nodes.node_services.model_service_reducer import ModelServiceReducer
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Pre-composed with MixinNodeService, NodeReducer, MixinHealthCheck, MixinCaching, MixinMetrics
 service = ModelServiceReducer(container)
-```python
+```
 
 ### ModelServiceOrchestrator
 
@@ -188,13 +188,13 @@ service = ModelServiceReducer(container)
 
 **Purpose**: Pre-composed ORCHESTRATOR node with common mixins.
 
-```python
+```
 from omnibase_core.models.nodes.node_services.model_service_orchestrator import ModelServiceOrchestrator
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Pre-composed with MixinNodeService, NodeOrchestrator, MixinHealthCheck, MixinEventBus, MixinMetrics
 service = ModelServiceOrchestrator(container)
-```python
+```
 
 ## Base Infrastructure Classes
 
@@ -204,13 +204,13 @@ service = ModelServiceOrchestrator(container)
 
 **Purpose**: Abstract base class providing common infrastructure for all nodes.
 
-```python
+```
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 
 class MyCustomNode(NodeCoreBase):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
-```python
+```
 
 #### Key Methods
 
@@ -223,7 +223,7 @@ class MyCustomNode(NodeCoreBase):
 
 ### Basic Node Implementation
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any
@@ -260,11 +260,11 @@ class MyBusinessLogicNode(NodeCompute):
         """Execute core business logic."""
         # Add business logic
         return "processed_result"
-```python
+```
 
 ### Error Handling Pattern
 
-```python
+```
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -284,11 +284,11 @@ async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
             message=f"Processing failed: {str(e)}",
             context={"input_data": input_data}
         ) from e
-```python
+```
 
 ### Health Check Pattern
 
-```python
+```
 async def health_check(self) -> Dict[str, Any]:
     """Implement health check."""
     try:
@@ -312,7 +312,7 @@ async def health_check(self) -> Dict[str, Any]:
             "error": str(e),
             "timestamp": time.time()
         }
-```python
+```
 
 ## Thread Safety
 
@@ -320,7 +320,7 @@ async def health_check(self) -> Dict[str, Any]:
 
 ### Thread-Safe Usage
 
-```python
+```
 import threading
 
 # Option 1: Per-thread instances
@@ -334,13 +334,13 @@ def get_node_instance(container):
 # Option 2: Use service wrappers with thread-safe mixins
 from omnibase_core.models.nodes.node_services.model_service_compute import ModelServiceCompute
 service = ModelServiceCompute(container)  # May include thread-safe patterns
-```python
+```
 
 ## Performance Considerations
 
 ### Caching
 
-```python
+```
 # COMPUTE nodes include built-in caching
 class MyComputeNode(NodeCompute):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -356,11 +356,11 @@ class MyComputeNode(NodeCompute):
         # Cache result
         self.computation_cache.put(cache_key, result)
         return result
-```python
+```
 
 ### Metrics Collection
 
-```python
+```
 # All nodes support metrics collection
 class MyNode(NodeCompute):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -378,7 +378,7 @@ class MyNode(NodeCompute):
             # Record error metrics
             self.record_metric("error_count", 1)
             raise
-```text
+```
 
 ## Related Documentation
 

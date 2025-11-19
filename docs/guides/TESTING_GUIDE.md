@@ -26,7 +26,7 @@ This guide provides comprehensive testing strategies for ONEX nodes and the omni
 
 #### COMPUTE Node Testing
 
-```python
+```
 import pytest
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_compute import NodeCompute
@@ -74,11 +74,11 @@ async def test_compute_node_edge_cases(compute_node):
     # Test missing value
     result = await compute_node.process({})
     assert result["result"] == 0
-```python
+```
 
 #### EFFECT Node Testing
 
-```python
+```
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from omnibase_core.nodes.node_effect import NodeEffect
@@ -126,11 +126,11 @@ async def test_effect_node_failure(effect_node):
 
     with pytest.raises(ConnectionError):
         await effect_node.process({"input": "test"})
-```python
+```
 
 #### REDUCER Node Testing
 
-```python
+```
 import pytest
 from omnibase_core.nodes.node_reducer import NodeReducer
 
@@ -188,11 +188,11 @@ async def test_reducer_node_state_persistence(reducer_node):
 
     assert result["state"]["count"] == 1
     assert result["state"]["items"] == ["test"]
-```python
+```
 
 ### Error Handling Testing
 
-```python
+```
 import pytest
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -247,11 +247,11 @@ async def test_processing_error(error_node):
     error = exc_info.value
     assert error.error_code == EnumCoreErrorCode.PROCESSING_ERROR
     assert "Value must be positive" in error.message
-```python
+```
 
 ### Circuit Breaker Testing
 
-```python
+```
 import pytest
 from unittest.mock import AsyncMock
 from omnibase_core.utils.circuit_breaker import CircuitBreaker
@@ -313,13 +313,13 @@ async def test_circuit_breaker_recovery(circuit_breaker):
     result = await circuit_breaker.call(mock_func)
     assert result == "recovered"
     assert circuit_breaker.get_state() == "CLOSED"
-```python
+```
 
 ## Integration Testing
 
 ### Container Integration Testing
 
-```python
+```
 import pytest
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -371,11 +371,11 @@ async def test_container_service_resolution(integration_container):
     await cache_service.set("test_key", "test_value")
     cached_value = await cache_service.get("test_key")
     assert cached_value == "test_value"
-```python
+```
 
 ### Event System Integration Testing
 
-```python
+```
 import pytest
 from omnibase_core.models.model_event_envelope import ModelEventEnvelope
 
@@ -424,13 +424,13 @@ async def test_event_emission(event_node):
     assert event.payload == {"processed": True}
     assert event.source_node == "test_node"
     assert event.target_node == "effect_node"
-```python
+```
 
 ## Performance Testing
 
 ### Load Testing
 
-```python
+```
 import pytest
 import asyncio
 import time
@@ -478,11 +478,11 @@ async def test_memory_usage(compute_node):
 
     # Memory increase should be reasonable (less than 10MB)
     assert memory_increase < 10 * 1024 * 1024
-```python
+```
 
 ### Stress Testing
 
-```python
+```
 import pytest
 import asyncio
 import random
@@ -511,13 +511,13 @@ async def test_stress_conditions(compute_node):
     # Check that all results are valid
     valid_results = [r for r in results if isinstance(r, dict)]
     assert len(valid_results) == 1000
-```python
+```
 
 ## Test Utilities
 
 ### Test Fixtures
 
-```python
+```
 import pytest
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -545,11 +545,11 @@ def mock_services():
         "cache": AsyncMock(),
         "api": AsyncMock()
     }
-```python
+```
 
 ### Test Helpers
 
-```python
+```
 import pytest
 from typing import Dict, Any, List
 
@@ -598,7 +598,7 @@ async def test_with_helper(compute_node):
 
     assert len(results) == 100
     assert all(r["result"] == i * 2 for i, r in enumerate(results))
-```python
+```
 
 ## Test Configuration
 
@@ -621,11 +621,11 @@ markers =
     integration: Integration tests
     performance: Performance tests
     slow: Slow tests
-```python
+```
 
 ### conftest.py
 
-```python
+```
 import pytest
 import asyncio
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -648,13 +648,13 @@ def reset_container(container):
     yield
     # Cleanup if needed
     container.clear_services()
-```python
+```
 
 ## Best Practices
 
 ### 1. Test Organization
 
-```python
+```
 # tests/unit/test_compute_node.py
 class TestComputeNode:
     """Test class for COMPUTE node functionality."""
@@ -682,11 +682,11 @@ class TestNodeIntegration:
     def test_event_integration(self):
         """Test event system integration."""
         pass
-```text
+```
 
 ### 2. Test Data Management
 
-```python
+```
 # tests/fixtures/test_data.py
 VALID_INPUTS = [
     {"value": 1},
@@ -705,11 +705,11 @@ EXPECTED_OUTPUTS = [
     {"result": 200},
     {"result": 0}
 ]
-```python
+```
 
 ### 3. Mocking Strategies
 
-```python
+```
 from unittest.mock import AsyncMock, MagicMock, patch
 
 # Mock external dependencies
@@ -726,11 +726,11 @@ async def test_with_async_mock():
     mock_func = AsyncMock(return_value="mocked_result")
     result = await mock_func()
     assert result == "mocked_result"
-```python
+```
 
 ### 4. Test Coverage
 
-```python
+```
 # Run tests with coverage
 # pytest --cov=omnibase_core --cov-report=html
 
@@ -750,7 +750,7 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError"
 ]
-```python
+```
 
 ## Continuous Integration
 
@@ -779,7 +779,7 @@ The project uses a sophisticated CI pipeline with parallel test execution for op
 
 **Split Configuration**:
 
-```bash
+```
 # Each split runs a subset of tests using pytest-split
 poetry run pytest tests/ \
   --splits 12 \
@@ -788,7 +788,7 @@ poetry run pytest tests/ \
   --timeout=60 \
   --timeout-method=thread \
   --tb=short
-```python
+```
 
 **Why 12 Splits?**:
 - Increased from 10 to 12 splits to reduce resource exhaustion
@@ -799,7 +799,7 @@ poetry run pytest tests/ \
 #### Local Testing Commands
 
 **Standard local testing** (matches pyproject.toml config):
-```bash
+```
 # Run all tests with 4 workers (default)
 poetry run pytest tests/
 
@@ -811,10 +811,10 @@ poetry run pytest tests/ -n 8
 
 # Debug single test (disable parallelism)
 poetry run pytest tests/unit/test_specific.py -n 0 -xvs
-```python
+```
 
 **CI-equivalent local testing** (12 splits):
-```bash
+```
 # Run specific split locally (e.g., split 1 of 12)
 poetry run pytest tests/ --splits 12 --group 1 -n auto
 
@@ -822,7 +822,7 @@ poetry run pytest tests/ --splits 12 --group 1 -n auto
 for i in {1..12}; do
   poetry run pytest tests/ --splits 12 --group $i -n auto
 done
-```bash
+```
 
 #### Timeout Configuration
 
@@ -842,10 +842,10 @@ done
 
 **Status**: ✅ Enabled with strict configuration
 
-```bash
+```
 # CI runs strict mypy (0 errors required)
 poetry run mypy src/omnibase_core/
-```python
+```
 
 **Strict Mode**:
 - `disallow_untyped_defs = true`
@@ -856,13 +856,13 @@ poetry run mypy src/omnibase_core/
 
 **Target**: 60% minimum coverage (configured in pyproject.toml)
 
-```bash
+```
 # Run coverage locally
 poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing --cov-report=html
 
 # View HTML report
 open htmlcov/index.html
-```text
+```
 
 **CI Coverage**:
 - Only runs on `main` branch (saves CI time on PRs)

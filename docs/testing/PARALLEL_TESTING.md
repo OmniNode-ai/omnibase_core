@@ -9,7 +9,7 @@ Running all 12 test splits in parallel on a local machine causes resource exhaus
 ### The Root Cause
 
 **CI Environment (Correct)**:
-```text
+```
 12 GitHub Actions runners (physically separate machines)
 ├─ Runner 1: Split 1 with -n auto (8-12 workers) ✅ Isolated resources
 ├─ Runner 2: Split 2 with -n auto (8-12 workers) ✅ Isolated resources
@@ -18,10 +18,10 @@ Running all 12 test splits in parallel on a local machine causes resource exhaus
 └─ Runner 12: Split 12 with -n auto (8-12 workers) ✅ Isolated resources
 
 Total: 12 runners × ~10 workers = 120 workers across 12 SEPARATE machines ✅
-```text
+```
 
 **Local Environment (WRONG - Before Fix)**:
-```text
+```
 1 Local machine (single shared resource pool)
 ├─ Split 1 with -n auto (8-12 workers) ⚠️  Sharing CPU/memory
 ├─ Split 2 with -n auto (8-12 workers) ⚠️  Sharing CPU/memory
@@ -30,7 +30,7 @@ Total: 12 runners × ~10 workers = 120 workers across 12 SEPARATE machines ✅
 └─ Split 12 with -n auto (8-12 workers) ⚠️  Sharing CPU/memory
 
 Total: 12 splits × ~10 workers = 120 workers on ONE machine ❌ Resource exhaustion
-```bash
+```
 
 ## Solution: Resource-Constrained Parallel Execution
 
@@ -41,7 +41,7 @@ The fixed script (`scripts/run-coverage-parallel.sh`) implements three critical 
 **Problem**: Running all 12 splits simultaneously on one machine
 **Solution**: Run only N splits at a time (default: 3)
 
-```bash
+```
 # Configurable via environment variable
 export MAX_CONCURRENT_SPLITS=3  # Only 3 splits run at once
 
@@ -56,7 +56,7 @@ for i in {1..12}; do
     ((active_jobs--))
   fi
 done
-```python
+```
 
 **Impact**:
 - Before: 12 splits running simultaneously = resource exhaustion
@@ -68,7 +68,7 @@ done
 **Problem**: Each split uses `-n auto` which spawns 8-12 workers
 **Solution**: Explicitly set worker count to 2-4 per split
 
-```bash
+```
 # Configurable via environment variable
 export WORKERS_PER_SPLIT=4  # Only 4 workers per split
 
@@ -78,7 +78,7 @@ poetry run pytest tests/ \
   --group $split_num \
   -n $WORKERS_PER_SPLIT \  # Explicit control, not auto-detection
   ...
-```python
+```
 
 **Impact**:
 - Before: 12 splits × 10 workers (auto) = 120 total workers ❌
@@ -89,7 +89,7 @@ poetry run pytest tests/ \
 **Problem**: Tests continue running even after critical failures waste resources
 **Solution**: Stop after N failures (default: 10)
 
-```bash
+```
 # Configurable via environment variable
 export MAX_FAILURES=10
 
@@ -97,7 +97,7 @@ export MAX_FAILURES=10
 poetry run pytest tests/ \
   --maxfail=$MAX_FAILURES \  # Stop after 10 failures
   ...
-```bash
+```
 
 **Impact**:
 - Saves resources by stopping early on systematic failures
@@ -118,32 +118,32 @@ poetry run pytest tests/ \
 ### How to Configure
 
 **Option 1: Environment Variables (Temporary)**
-```bash
+```
 # Set for single execution
 export MAX_CONCURRENT_SPLITS=4
 export WORKERS_PER_SPLIT=6
 ./scripts/run-coverage-parallel.sh
-```text
+```
 
 **Option 2: Inline Configuration (One-Time)**
-```bash
+```
 # Override defaults inline
 MAX_CONCURRENT_SPLITS=2 WORKERS_PER_SPLIT=3 ./scripts/run-coverage-parallel.sh
-```bash
+```
 
 **Option 3: Shell Profile (Permanent)**
-```bash
+```
 # Add to ~/.zshrc or ~/.bashrc
 export MAX_CONCURRENT_SPLITS=3
 export WORKERS_PER_SPLIT=4
 export MAX_FAILURES=10
-```bash
+```
 
 ### Resource Warning System
 
 The script automatically detects CPU count and warns if configuration is too aggressive:
 
-```bash
+```
 🧪 Running parallel coverage tests (12 splits)
 📊 Resource Configuration:
    • Concurrent splits: 3
@@ -155,7 +155,7 @@ The script automatically detects CPU count and warns if configuration is too agg
    This may cause resource exhaustion. Consider reducing:
    export MAX_CONCURRENT_SPLITS=2
    export WORKERS_PER_SPLIT=4
-```text
+```
 
 **Rule of Thumb**: Total workers should not exceed 2× CPU cores
 - Formula: `MAX_CONCURRENT_SPLITS × WORKERS_PER_SPLIT ≤ 2 × CPU_COUNT`
@@ -165,7 +165,7 @@ The script automatically detects CPU count and warns if configuration is too agg
 
 ### CI Execution Model (Horizontal Scaling)
 
-```yaml
+```
 # .github/workflows/test.yml
 strategy:
   matrix:
@@ -174,7 +174,7 @@ strategy:
 # GitHub Actions provisions 12 separate runners
 # Each runner is a physically isolated VM with dedicated resources
 # No resource contention between splits
-```text
+```
 
 **Characteristics**:
 - **Isolation**: Each split runs on a separate VM (2 CPU cores, 7 GB RAM)
@@ -184,12 +184,12 @@ strategy:
 
 ### Local Execution Model (Vertical Scaling with Constraints)
 
-```bash
+```
 # scripts/run-coverage-parallel.sh
 # Single machine runs multiple splits sequentially in controlled batches
 # Shares CPU/memory/I/O across all active splits
 # Requires explicit resource management
-```python
+```
 
 **Characteristics**:
 - **Shared Resources**: All splits compete for CPU/memory/I/O on one machine
@@ -236,7 +236,7 @@ CI's horizontal scaling (12 isolated runners) is fundamentally different from lo
 
 ### 1. Start Conservative, Then Tune
 
-```bash
+```
 # Day 1: Start with conservative settings
 export MAX_CONCURRENT_SPLITS=2
 export WORKERS_PER_SPLIT=3
@@ -249,29 +249,29 @@ export WORKERS_PER_SPLIT=3
 export MAX_CONCURRENT_SPLITS=3
 export WORKERS_PER_SPLIT=4
 ./scripts/run-coverage-parallel.sh
-```python
+```
 
 ### 2. Monitor System Resources
 
 **macOS**:
-```bash
+```
 # Terminal 1: Run tests
 ./scripts/run-coverage-parallel.sh
 
 # Terminal 2: Monitor resources
 watch -n 1 'ps aux | grep pytest | wc -l'  # Worker count
 top -o cpu  # CPU usage
-```python
+```
 
 **Linux**:
-```bash
+```
 # Terminal 1: Run tests
 ./scripts/run-coverage-parallel.sh
 
 # Terminal 2: Monitor resources
 watch -n 1 'ps aux | grep pytest | wc -l'
 htop  # Interactive process viewer
-```bash
+```
 
 ### 3. Adjust Based on Symptoms
 
@@ -293,7 +293,7 @@ htop  # Interactive process viewer
 
 ### 4. Different Configurations for Different Tasks
 
-```bash
+```
 # Quick sanity check (fast, minimal resources)
 export MAX_CONCURRENT_SPLITS=2
 export WORKERS_PER_SPLIT=2
@@ -311,13 +311,13 @@ export MAX_CONCURRENT_SPLITS=4
 export WORKERS_PER_SPLIT=6
 export MAX_FAILURES=20
 ./scripts/run-coverage-parallel.sh
-```python
+```
 
 ### 5. CI Parity Testing
 
 To test a specific split exactly as CI runs it:
 
-```bash
+```
 # CI runs each split in isolation with -n auto
 # Replicate this locally:
 COVERAGE_FILE=.coverage.1 poetry run pytest tests/ \
@@ -328,7 +328,7 @@ COVERAGE_FILE=.coverage.1 poetry run pytest tests/ \
   --timeout-method=thread \
   --tb=short \
   -v
-```python
+```
 
 This tests a single split with CI's exact configuration (useful for debugging CI failures).
 
@@ -342,7 +342,7 @@ This tests a single split with CI's exact configuration (useful for debugging CI
 - System load remains high but no progress
 
 **Diagnosis**:
-```bash
+```
 # Check for zombie/stuck processes
 ps aux | grep pytest | grep -v grep
 
@@ -351,7 +351,7 @@ ps aux | grep "[D]"  # Uninterruptible sleep
 
 # Check system load
 uptime
-```python
+```
 
 **Solutions**:
 1. **Kill stuck processes**:
@@ -382,14 +382,14 @@ uptime
 - Dmesg shows OOM killer activity: `dmesg | grep -i kill`
 
 **Diagnosis**:
-```bash
+```
 # Check available memory
 free -h  # Linux
 vm_stat  # macOS
 
 # Check memory usage per worker
 ps aux | grep pytest | awk '{sum+=$6} END {print sum/1024 " MB total"}'
-```python
+```
 
 **Solutions**:
 1. **Reduce workers**:
@@ -413,7 +413,7 @@ ps aux | grep pytest | awk '{sum+=$6} END {print sum/1024 " MB total"}'
 - Flaky failures with concurrency-related errors
 
 **Diagnosis**:
-```bash
+```
 # Run failing split sequentially
 COVERAGE_FILE=.coverage.6 poetry run pytest tests/ \
   --splits 12 \
@@ -421,7 +421,7 @@ COVERAGE_FILE=.coverage.6 poetry run pytest tests/ \
   -v  # No -n flag = sequential
 
 # If it passes, it's a concurrency issue
-```python
+```
 
 **Solutions**:
 1. **Check for shared state** in tests (global variables, singletons)
@@ -436,12 +436,12 @@ COVERAGE_FILE=.coverage.6 poetry run pytest tests/ \
 ### Issue: Resource warning triggered
 
 **Symptoms**:
-```text
+```
 ⚠️  WARNING: Total workers (16) exceeds 2× CPU cores (8)
    This may cause resource exhaustion. Consider reducing:
    export MAX_CONCURRENT_SPLITS=2
    export WORKERS_PER_SPLIT=4
-```text
+```
 
 **Action**:
 - This is a **warning, not an error**
@@ -455,7 +455,7 @@ COVERAGE_FILE=.coverage.6 poetry run pytest tests/ \
 
 **Theory**: Total workers should balance parallelism with overhead
 
-```text
+```
 Optimal Total Workers = (CPU Cores × Efficiency Factor) / Overhead Factor
 
 Where:
@@ -467,7 +467,7 @@ Optimal = (8 × 1.5) / 1.2 = 10 workers
 
 Split across 3 concurrent splits:
 WORKERS_PER_SPLIT = 10 / 3 ≈ 3-4 workers
-```python
+```
 
 **In Practice**: Start with 2× CPU cores and adjust based on monitoring.
 
@@ -475,7 +475,7 @@ WORKERS_PER_SPLIT = 10 / 3 ≈ 3-4 workers
 
 To identify memory-heavy tests:
 
-```bash
+```
 # Install memory profiler
 poetry add --dev memory-profiler
 
@@ -484,13 +484,13 @@ poetry run python -m memory_profiler -m pytest tests/unit/specific_test.py -v
 
 # Find memory-heavy fixtures
 poetry run pytest tests/ --memprof --memprof-csv=memory.csv
-```python
+```
 
 ### Custom Split Distribution
 
 If certain splits consistently take longer, consider custom distribution:
 
-```bash
+```
 # Option 1: Run slow splits first with more workers
 WORKERS_PER_SPLIT=6 run_split 6 &  # Slow split
 WORKERS_PER_SPLIT=4 run_split 1 &  # Normal split
@@ -498,13 +498,13 @@ WORKERS_PER_SPLIT=4 run_split 2 &  # Normal split
 
 # Option 2: Increase total splits for better distribution
 # Change from 12 to 16 splits for finer-grained parallelism
-```python
+```
 
 ### Integration with CI
 
 To replicate CI behavior exactly in local environment (for debugging):
 
-```bash
+```
 # Create wrapper script that mimics CI matrix execution
 for split in {1..12}; do
   echo "=== Running Split $split/12 (CI mode) ==="
@@ -517,7 +517,7 @@ for split in {1..12}; do
     --tb=short \
     --junitxml=junit-$split.xml
 done
-```bash
+```
 
 **Warning**: This will cause resource exhaustion (same as original problem). Only use for debugging specific splits, not full runs.
 
@@ -537,12 +537,12 @@ done
 5. **Fail Fast**: Use `--maxfail` to stop on systematic failures
 
 **Default Configuration** (works for most machines):
-```bash
+```
 export MAX_CONCURRENT_SPLITS=3
 export WORKERS_PER_SPLIT=4
 export MAX_FAILURES=10
 ./scripts/run-coverage-parallel.sh
-```text
+```
 
 **Expected Results**:
 - Execution time: 5-8 minutes (vs 30+ sequential, vs 3-5 CI)

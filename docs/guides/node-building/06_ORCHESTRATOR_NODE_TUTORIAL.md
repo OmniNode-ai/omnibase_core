@@ -4,6 +4,24 @@
 **Difficulty**: Advanced
 **Prerequisites**: All other node tutorials (COMPUTE, EFFECT, REDUCER)
 
+## 🎯 Recommended Approach
+
+This tutorial shows **TWO approaches**:
+
+1. **RECOMMENDED (95% of use cases)**: `ModelServiceOrchestrator` wrapper
+   - Production-ready with built-in features
+   - Minimal boilerplate
+   - Health checks, metrics, event bus, workflow execution included
+
+2. **ADVANCED (5% of use cases)**: `NodeOrchestrator` base class
+   - Custom mixin composition
+   - Selective feature inclusion
+   - More control, more setup
+
+**Start with ModelServiceOrchestrator unless you have specific needs for NodeOrchestrator.**
+
+See [Node Class Hierarchy Guide](../../architecture/NODE_CLASS_HIERARCHY.md) for detailed comparison.
+
 ---
 
 ## 🚀 Declarative Workflow Architecture (Recommended Path)
@@ -23,7 +41,7 @@ The omnibase_core codebase now includes:
 
 **Example YAML Contract** (fully functional, production-ready):
 
-```yaml
+```
 # contracts/orchestrator_data_pipeline.yaml
 node_type: ORCHESTRATOR
 node_name: data_pipeline_orchestrator
@@ -132,7 +150,7 @@ ORCHESTRATOR nodes coordinate complex workflows in the ONEX architecture:
 
 ## Prerequisites Check
 
-```bash
+```
 # Verify Poetry and environment
 poetry --version
 pwd  # Should end with /omnibase_core
@@ -154,7 +172,7 @@ poetry run pytest tests/unit/nodes/test_node_orchestrator.py -v --maxfail=1
 
 An **action** is an Orchestrator-issued command that represents work to be done by a specific node type. Actions replace the legacy "thunk" terminology and include lease management for single-writer semantics:
 
-```python
+```
 from omnibase_core.models.model_action import ModelAction
 from omnibase_core.enums.enum_orchestrator_types import EnumActionType
 
@@ -211,7 +229,7 @@ Actions include **lease management** fields to ensure single-writer semantics an
 - Must match expected value for updates to succeed
 
 **Usage Example**:
-```python
+```
 from uuid import uuid4
 
 # Orchestrator creates action with initial lease and epoch
@@ -254,7 +272,7 @@ action_update = ModelAction(
 
 A **workflow step** groups related actions together:
 
-```python
+```
 from omnibase_core.models.model_workflow_step import ModelWorkflowStep
 
 step = ModelWorkflowStep(
@@ -280,7 +298,7 @@ ORCHESTRATOR nodes support three execution modes:
 
 The orchestrator builds a **dependency graph** to determine execution order:
 
-```text
+```
 Step 1 (Validate) ─┐
                    ├──> Step 3 (Aggregate)
 Step 2 (Fetch) ────┘
@@ -296,7 +314,7 @@ Execution order: Steps 1&2 in parallel → Step 3 → Step 4
 
 **File**: `src/your_project/nodes/model_pipeline_orchestrator_input.py`
 
-```python
+```
 """Input model for data processing pipeline orchestrator."""
 
 from pydantic import BaseModel, Field
@@ -396,13 +414,13 @@ class ModelPipelineOrchestratorInput(BaseModel):
 
 ## Step 2: Implement the ORCHESTRATOR Node
 
-### Quick Start: Using the Convenience Wrapper ✅ Recommended
+### ✅ RECOMMENDED: Using ModelServiceOrchestrator Wrapper
 
-For most use cases, use the pre-configured `NodeOrchestrator` class that includes built-in ORCHESTRATOR functionality:
+For **95% of use cases**, use the production-ready `ModelServiceOrchestrator` wrapper that includes all standard features:
 
 **File**: `src/your_project/nodes/node_pipeline_orchestrator.py`
 
-```python
+```
 """
 Data Processing Pipeline Orchestrator Node.
 
@@ -414,7 +432,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from typing import Any
 
-from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+from omnibase_core.infrastructure.infrastructure_bases import ModelServiceOrchestrator
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.enums.enum_orchestrator_types import (
     EnumExecutionMode,
@@ -433,7 +451,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from .model_pipeline_orchestrator_input import ModelPipelineOrchestratorInput
 
 
-class NodePipelineOrchestrator(NodeOrchestrator):
+class NodePipelineOrchestrator(ModelServiceOrchestrator):
     """
     Data Processing Pipeline Orchestrator.
 
@@ -446,7 +464,15 @@ class NodePipelineOrchestrator(NodeOrchestrator):
 
     Supports SEQUENTIAL, PARALLEL, and BATCH execution modes.
 
-    Inherits from NodeOrchestrator which provides:
+    Production-ready features (via ModelServiceOrchestrator):
+    - ✅ Health checks
+    - ✅ Metrics tracking
+    - ✅ Event bus integration
+    - ✅ Workflow execution engine
+    - ✅ Lease management
+    - ✅ Error handling and recovery
+
+    Inherits from ModelServiceOrchestrator which provides:
     - Workflow step execution
     - Action emission and coordination
     - Dependency resolution
@@ -781,8 +807,10 @@ class NodePipelineOrchestrator(NodeOrchestrator):
         )
 ```
 
-**What `NodeOrchestrator` Provides**:
-- ✅ **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
+**What `ModelServiceOrchestrator` Provides**:
+- ✅ **Health Checks**: Built-in readiness and liveness endpoints
+- ✅ **Metrics**: Automatic prometheus-style metrics tracking
+- ✅ **Event Bus**: Kafka/Redpanda integration for event publishing
 - ✅ **Workflow Execution**: Built-in execution for SEQUENTIAL, PARALLEL, and BATCH modes
 - ✅ **Action Management**: Action emission, tracking, and coordination
 - ✅ **Dependency Resolution**: Automatic dependency graph construction and execution ordering
@@ -799,22 +827,36 @@ class NodePipelineOrchestrator(NodeOrchestrator):
 3. **Lease Management**: All actions share the same `lease_id` from the orchestrator instance
 4. **Epoch Control**: Each action starts at epoch 1 for optimistic concurrency
 5. **Execution Mode Support**: The orchestrator supports SEQUENTIAL, PARALLEL, BATCH modes
-6. **Delegation Pattern**: Complex orchestration logic is delegated to `NodeOrchestrator` base class
+6. **Zero Boilerplate**: All production features included out-of-the-box
 7. **Type Safety**: All actions use `EnumActionType` for type specification
 
-### Advanced: Custom Base Class (When You Need Full Control)
+### When to Use Which Approach
 
-If you need custom mixin composition or want to build from scratch:
+| Feature | ModelServiceOrchestrator | NodeOrchestrator |
+|---------|-------------------------|------------------|
+| **Health Checks** | ✅ Included | ⚠️ Manual setup |
+| **Metrics** | ✅ Included | ⚠️ Manual setup |
+| **Event Bus** | ✅ Included | ⚠️ Manual setup |
+| **Workflow Execution** | ✅ Included | ✅ Included |
+| **Lease Management** | ✅ Included | ✅ Included |
+| **Setup Complexity** | Minimal | Moderate |
+| **Production Ready** | ✅ Yes | ⚠️ Requires configuration |
+| **Use Case** | 95% of applications | Custom mixin composition |
 
-```python
-from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+### 🔧 ADVANCED: Using NodeOrchestrator Base Class
 
-class NodePipelineOrchestrator(NodeCoreBase):
+For **5% of use cases** where you need custom mixin composition:
+
+```
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+from omnibase_core.mixins import MixinCustomWorkflow
+
+class NodePipelineOrchestrator(NodeOrchestrator, MixinCustomWorkflow):
     """
-    Custom ORCHESTRATOR node built from NodeCoreBase.
+    ORCHESTRATOR node with custom mixin composition.
 
     Use this approach when:
-    - You need custom mixin combinations
+    - You need specific mixin combinations not in ModelServiceOrchestrator
     - You want fine-grained control over workflow execution
     - You're implementing non-standard orchestration patterns
     """
@@ -823,7 +865,6 @@ class NodePipelineOrchestrator(NodeCoreBase):
         super().__init__(container)
 
         # Manually initialize orchestrator-specific features
-        # (NodeOrchestrator does this automatically)
         self.active_workflows = {}
         self.emitted_actions = {}
         self.workflow_states = {}
@@ -832,21 +873,22 @@ class NodePipelineOrchestrator(NodeCoreBase):
 
     async def process(self, input_data):
         # Custom workflow execution logic
-        # (NodeOrchestrator provides this automatically)
         pass
 
-    # ... rest of implementation
+    # ... rest of implementation (same as above)
 ```
 
-**When to use custom base**:
+**When to use NodeOrchestrator**:
 - Custom workflow execution strategies beyond built-in modes
+- Custom mixin combinations beyond ModelServiceOrchestrator
 - Non-standard action coordination patterns
 - Special dependency resolution logic
 
-**When to use NodeOrchestrator** (recommended):
-- Standard ORCHESTRATOR operations (multi-step workflows)
-- Need built-in execution modes (SEQUENTIAL, PARALLEL, BATCH)
-- Want dependency resolution and lease management
+**When to use ModelServiceOrchestrator** (recommended):
+- Standard ORCHESTRATOR operations (95% of cases)
+- Multi-step workflows with SEQUENTIAL, PARALLEL, BATCH modes
+- Production deployment
+- Need health checks, metrics, event bus out-of-the-box
 - Following ONEX best practices
 
 ---
@@ -857,7 +899,7 @@ Let's extend the orchestrator to support conditional execution:
 
 **File**: `src/your_project/nodes/node_conditional_pipeline_orchestrator.py`
 
-```python
+```
 """
 Conditional Pipeline Orchestrator with branching logic.
 
@@ -1008,7 +1050,7 @@ Let's see how the same pipeline executes in different modes:
 
 ### SEQUENTIAL Mode
 
-```python
+```
 # Create orchestrator
 orchestrator = NodePipelineOrchestrator(container)
 
@@ -1031,7 +1073,7 @@ result = await orchestrator.process(input_data)
 
 ### PARALLEL Mode
 
-```python
+```
 # Configure for parallel execution
 input_data = ModelPipelineOrchestratorInput(
     input_data={"id": "123", "data": "sample"},
@@ -1062,7 +1104,7 @@ result = await orchestrator.process(input_data)
 
 ### BATCH Mode
 
-```python
+```
 # Configure for batch execution with load balancing
 input_data = ModelPipelineOrchestratorInput(
     input_data={"id": "123", "data": "sample"},
@@ -1099,7 +1141,7 @@ result = await orchestrator.process(input_data)
 
 Add robust error handling with compensation logic:
 
-```python
+```
 class NodeResilientPipelineOrchestrator(NodePipelineOrchestrator):
     """
     Pipeline orchestrator with error recovery.
@@ -1224,7 +1266,7 @@ class NodeResilientPipelineOrchestrator(NodePipelineOrchestrator):
 
 **File**: `tests/nodes/test_node_pipeline_orchestrator.py`
 
-```python
+```
 """Tests for NodePipelineOrchestrator."""
 
 import pytest
@@ -1457,7 +1499,7 @@ async def test_action_emission(orchestrator):
 
 ### Example 1: ETL Pipeline
 
-```python
+```
 """ETL pipeline using ORCHESTRATOR node."""
 
 orchestrator = NodePipelineOrchestrator(container)
@@ -1486,7 +1528,7 @@ print(f"Actions emitted: {len(result.actions_emitted)}")
 
 ### Example 2: Real-Time Data Processing
 
-```python
+```
 """Real-time data processing with parallel execution."""
 
 orchestrator = NodePipelineOrchestrator(container)
@@ -1515,7 +1557,7 @@ print(f"Parallel executions: {result.parallel_executions}")
 
 ### Example 3: Conditional Workflow
 
-```python
+```
 """Conditional workflow based on data quality."""
 
 orchestrator = NodeConditionalPipelineOrchestrator(container)
@@ -1549,7 +1591,7 @@ print(f"Workflow path taken: {result.metadata.get('path', 'standard')}")
 
 Execute multiple operations in parallel, then aggregate:
 
-```python
+```
 """Fan-out/fan-in pattern for parallel data processing."""
 
 orchestrator_lease_id = uuid4()
@@ -1597,7 +1639,7 @@ aggregate_action = ModelAction(
 
 Prevent cascading failures with circuit breaker pattern:
 
-```python
+```
 """Circuit breaker pattern for resilient orchestration."""
 
 class NodeCircuitBreakerOrchestrator(NodePipelineOrchestrator):
@@ -1665,7 +1707,7 @@ class NodeCircuitBreakerOrchestrator(NodePipelineOrchestrator):
 
 Implement saga pattern with compensation:
 
-```python
+```
 """Saga pattern with compensation for distributed transactions."""
 
 class NodeSagaOrchestrator(NodePipelineOrchestrator):
@@ -1741,7 +1783,7 @@ class NodeSagaOrchestrator(NodePipelineOrchestrator):
 2. Verify timeout values are appropriate
 3. Enable debug logging to see step execution:
 
-```python
+```
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 
@@ -1762,7 +1804,7 @@ emit_log_event_sync(
 2. Enable dependency resolution: `dependency_resolution_enabled=True`
 3. Use SEQUENTIAL mode to force serial execution during debugging
 
-```python
+```
 # Verify dependency graph
 orchestrator_input = ModelOrchestratorInput(
     # ...
@@ -1780,7 +1822,7 @@ orchestrator_input = ModelOrchestratorInput(
 2. Verify `max_parallel_steps` is appropriate for your system
 3. Use BATCH mode for resource-constrained environments
 
-```python
+```
 # Optimize parallel configuration
 input_data = ModelPipelineOrchestratorInput(
     # ...
@@ -1798,7 +1840,7 @@ input_data = ModelPipelineOrchestratorInput(
 2. Clear workflow tracking dictionaries
 3. Limit concurrent workflows with semaphore
 
-```python
+```
 async def _cleanup_node_resources(self):
     """Cleanup orchestrator resources."""
     self.active_workflows.clear()
@@ -1814,7 +1856,7 @@ async def _cleanup_node_resources(self):
 
 While ORCHESTRATOR nodes primarily use action emission for coordination, you can optionally integrate LlamaIndex workflows via the `MixinHybridExecution` mixin:
 
-```python
+```
 """Optional LlamaIndex workflow integration."""
 
 from omnibase_core.mixins.mixin_hybrid_execution import MixinHybridExecution

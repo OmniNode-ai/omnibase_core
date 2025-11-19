@@ -19,13 +19,13 @@ The Mixin Discovery API provides programmatic access to mixin metadata, enabling
 
 The discovery API is included in omnibase_core. No additional installation required.
 
-```bash
+```
 poetry install
 ```
 
 ## Quick Start
 
-```python
+```
 from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 # Initialize discovery system
@@ -56,7 +56,7 @@ deps = discovery.get_mixin_dependencies("MixinRetry")
 
 Pydantic model representing mixin metadata:
 
-```python
+```
 class MixinInfo(BaseModel):
     name: str                           # Mixin class name
     description: str                    # Human-readable description
@@ -75,7 +75,7 @@ Main discovery API class:
 
 #### Initialization
 
-```python
+```
 discovery = MixinDiscovery(mixins_path: Optional[Path] = None)
 ```
 
@@ -87,7 +87,7 @@ discovery = MixinDiscovery(mixins_path: Optional[Path] = None)
 
 Get all available mixins with metadata.
 
-```python
+```
 all_mixins = discovery.get_all_mixins()
 for mixin in all_mixins:
     print(f"{mixin.name}: {mixin.description}")
@@ -97,7 +97,7 @@ for mixin in all_mixins:
 
 Get mixins filtered by category.
 
-```python
+```
 caching_mixins = discovery.get_mixins_by_category("performance")
 ```
 
@@ -105,7 +105,7 @@ caching_mixins = discovery.get_mixins_by_category("performance")
 
 Get a specific mixin by name.
 
-```python
+```
 retry_mixin = discovery.get_mixin("MixinRetry")
 print(f"Version: {retry_mixin.version}")
 ```
@@ -114,7 +114,7 @@ print(f"Version: {retry_mixin.version}")
 
 Find mixins compatible with given base mixins.
 
-```python
+```
 base = ["MixinRetry", "MixinHealthCheck"]
 compatible = discovery.find_compatible_mixins(base)
 ```
@@ -123,7 +123,7 @@ compatible = discovery.find_compatible_mixins(base)
 
 Get transitive dependencies for a mixin.
 
-```python
+```
 deps = discovery.get_mixin_dependencies("MixinRetry")
 # Returns: ["omnibase_core.models.infrastructure.model_retry_policy", ...]
 ```
@@ -132,7 +132,7 @@ deps = discovery.get_mixin_dependencies("MixinRetry")
 
 Validate that a set of mixins can be composed together.
 
-```python
+```
 composition = ["MixinRetry", "MixinHealthCheck"]
 is_valid, errors = discovery.validate_composition(composition)
 
@@ -147,7 +147,7 @@ else:
 
 Get all unique mixin categories.
 
-```python
+```
 categories = discovery.get_categories()
 # Returns: ["flow_control", "monitoring", "performance", ...]
 ```
@@ -156,7 +156,7 @@ categories = discovery.get_categories()
 
 ### Example 1: List All Mixins
 
-```python
+```
 from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 discovery = MixinDiscovery()
@@ -171,7 +171,7 @@ for mixin in all_mixins:
 
 ### Example 2: Build Intelligent Composition
 
-```python
+```
 from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 discovery = MixinDiscovery()
@@ -203,7 +203,7 @@ if is_valid:
 
 ### Example 3: Code Generation Context
 
-```python
+```
 from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 discovery = MixinDiscovery()
@@ -242,7 +242,7 @@ print(f"Total dependencies: {len(context['dependencies'])}")
 
 Mixins are defined in `/src/omnibase_core/mixins/mixin_metadata.yaml`:
 
-```yaml
+```
 mixin_retry:
   name: "MixinRetry"
   description: "Automatic retry logic with configurable backoff strategies"
@@ -286,17 +286,17 @@ Common mixin categories:
 
 ## Error Handling
 
-The API uses `OnexError` for consistent error handling:
+The API uses `ModelOnexError` for consistent error handling:
 
-```python
-from omnibase_core.errors.error_codes import OnexError
+```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 discovery = MixinDiscovery()
 
 try:
     mixin = discovery.get_mixin("NonexistentMixin")
-except OnexError as e:
+except ModelOnexError as e:
     print(f"Error: {e.message}")
     print(f"Code: {e.error_code}")
 ```
@@ -318,7 +318,7 @@ Common errors:
 
 Run unit tests:
 
-```bash
+```
 poetry run pytest tests/unit/discovery/test_mixin_discovery.py -xvs
 ```
 
@@ -336,7 +336,7 @@ Test coverage:
 
 ### With Autonomous Code Generation
 
-```python
+```
 from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 
 def generate_node_class(node_name: str, requirements: list[str]) -> str:
@@ -361,14 +361,14 @@ def generate_node_class(node_name: str, requirements: list[str]) -> str:
         imports.update(deps)
 
     # Generate class definition
-    class_def = f"class {node_name}(NodeEffectService, {', '.join(composition)}):"
+    class_def = f"class {node_name}(ModelServiceEffect, {', '.join(composition)}):"
 
     return class_def
 ```
 
 ### With Template Systems
 
-```python
+```
 from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 from jinja2 import Template
 
@@ -379,7 +379,7 @@ mixin = discovery.get_mixin("MixinRetry")
 
 # Generate code from template
 template = Template("""
-class {{ node_name }}(NodeEffectService, {{ mixin.name }}):
+class {{ node_name }}(ModelServiceEffect, {{ mixin.name }}):
     \"\"\"{{ mixin.description }}\"\"\"
 
     def __init__(self, **kwargs):

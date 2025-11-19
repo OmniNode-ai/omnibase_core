@@ -11,7 +11,7 @@ This document provides a complete reference for the ONEX mixin YAML schema. Use 
 
 ## Complete Schema Template
 
-```yaml
+```
 # ====================
 # REQUIRED FIELDS
 # ====================
@@ -95,7 +95,7 @@ metrics:                                      # Array: Metric definitions
       - "label1"
       - "label2"
     buckets: [1, 10, 100, 1000]              # Array: Histogram buckets (if type=histogram)
-```yaml
+```
 
 ## Field Definitions
 
@@ -110,29 +110,29 @@ metrics:                                      # Array: Metric definitions
 **Description**: Unique identifier for the mixin. Must be globally unique within the project.
 
 **Examples**:
-```yaml
+```
 mixin_name: "mixin_health_check"          # ✓ Good
 mixin_name: "mixin_error_handling"        # ✓ Good
 mixin_name: "health_check"                # ✗ Bad: Missing 'mixin_' prefix
 mixin_name: "mixin-health-check"          # ✗ Bad: Use underscores, not hyphens
-```yaml
+```
 
 #### mixin_version
 
 **Type**: `object`
 **Required**: Yes
 **Schema**:
-```yaml
+```
 mixin_version:
   major: integer  # Breaking changes
   minor: integer  # New features, backward compatible
   patch: integer  # Bug fixes
-```yaml
+```
 
 **Description**: Semantic versioning for the mixin. Follow [semver](https://semver.org/) principles.
 
 **Examples**:
-```yaml
+```
 # Initial release
 mixin_version: {major: 1, minor: 0, patch: 0}
 
@@ -144,7 +144,7 @@ mixin_version: {major: 1, minor: 1, patch: 1}
 
 # Breaking change
 mixin_version: {major: 2, minor: 0, patch: 0}
-```yaml
+```
 
 #### description
 
@@ -156,7 +156,7 @@ mixin_version: {major: 2, minor: 0, patch: 0}
 **Description**: Comprehensive description of what the mixin provides. Should be clear enough for developers to understand the mixin's purpose without reading the code.
 
 **Examples**:
-```yaml
+```
 # ✓ Good: Clear, comprehensive
 description: "Provides standardized error handling including circuit breakers, retry logic, and error categorization for resilient node operations"
 
@@ -165,7 +165,7 @@ description: "Error handling"
 
 # ✗ Bad: Too technical
 description: "Implements circuit breaker pattern with exponential backoff retry mechanism and error classification taxonomy"
-```text
+```
 
 #### applicable_node_types
 
@@ -176,7 +176,7 @@ description: "Implements circuit breaker pattern with exponential backoff retry 
 **Description**: List of node types where this mixin can be applied. Enforces architectural constraints.
 
 **Examples**:
-```yaml
+```
 # Core mixin (all nodes)
 applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 
@@ -188,7 +188,7 @@ applicable_node_types: ["REDUCER", "ORCHESTRATOR"]
 
 # Multiple specific types
 applicable_node_types: ["EFFECT", "REDUCER"]
-```yaml
+```
 
 ### Actions Section
 
@@ -200,18 +200,18 @@ applicable_node_types: ["EFFECT", "REDUCER"]
 **Description**: List of capabilities provided by the mixin. Each action represents a discrete operation.
 
 **Action Schema**:
-```yaml
+```
 - name: string                    # Required: Action identifier
   description: string             # Required: What action does
   inputs: array<string>           # Required: Input parameter names
   outputs: array<string>          # Required: Output parameter names
   required: boolean               # Required: Is action mandatory
   timeout_ms: integer             # Required: Action timeout (1-300000)
-```yaml
+```
 
 **Examples**:
 
-```yaml
+```
 # Simple action
 actions:
   - name: "check_health"
@@ -244,7 +244,7 @@ actions:
     outputs: ["cache_warming_result"]
     required: false
     timeout_ms: 60000
-```yaml
+```
 
 ### Configuration Section
 
@@ -257,7 +257,7 @@ actions:
 **Description**: Configuration parameters for the mixin. Define all configurable aspects with sensible defaults.
 
 **Structure**:
-```yaml
+```
 mixin_name_config:
   # Primitive values
   string_param: "default_value"
@@ -274,11 +274,11 @@ mixin_name_config:
   nested_config:
     sub_param1: value
     sub_param2: value
-```yaml
+```
 
 **Examples**:
 
-```yaml
+```
 # Health check configuration
 health_check_config:
   interval_seconds: 30
@@ -314,7 +314,7 @@ caching_config:
     - level: "L2"
       type: "redis"
       connection_string: "redis://localhost:6379"
-```bash
+```
 
 ### Output Models Section
 
@@ -326,7 +326,7 @@ caching_config:
 **Description**: Define the structure of action outputs. Provides documentation and validation schema.
 
 **Schema**:
-```yaml
+```
 output_models:
   model_name:                     # Output model identifier
     field_name: "type"            # Field with type definition
@@ -334,7 +334,7 @@ output_models:
       type: "object"
       properties:
         sub_field: "type"
-```yaml
+```
 
 **Type Definitions**:
 - `"string"` - String value
@@ -347,7 +347,7 @@ output_models:
 
 **Examples**:
 
-```yaml
+```
 output_models:
   health_check_result:
     status: "string"              # healthy/degraded/unhealthy
@@ -380,7 +380,7 @@ output_models:
     success_count: "integer"
     last_failure_time: "timestamp"
     next_retry_time: "timestamp"
-```yaml
+```
 
 ### Dependencies Section
 
@@ -392,12 +392,12 @@ output_models:
 **Description**: Capabilities that this mixin provides to other mixins or nodes.
 
 **Schema**:
-```yaml
+```
 dependencies:
   - name: string                  # Capability identifier
     type: string                  # Dependency type
     description: string           # What is provided
-```yaml
+```
 
 **Dependency Types**:
 - `"capability"` - Functional capability
@@ -407,7 +407,7 @@ dependencies:
 
 **Examples**:
 
-```yaml
+```
 dependencies:
   - name: "error_handling"
     type: "capability"
@@ -420,7 +420,7 @@ dependencies:
   - name: "metrics_collection"
     type: "protocol"
     description: "Provides metrics collection interface"
-```python
+```
 
 #### requires_dependencies
 
@@ -430,17 +430,17 @@ dependencies:
 **Description**: Capabilities that this mixin requires from other mixins or the system.
 
 **Schema**:
-```yaml
+```
 requires_dependencies:
   - name: string                  # Required capability
     type: string                  # Dependency type
     description: string           # Why it's needed
     optional: boolean             # Is it optional
-```yaml
+```
 
 **Examples**:
 
-```yaml
+```
 requires_dependencies:
   - name: "logging_protocol"
     type: "protocol"
@@ -456,7 +456,7 @@ requires_dependencies:
     type: "service"
     description: "Required for finding dependent services"
     optional: false
-```yaml
+```
 
 ### Metrics Section
 
@@ -468,14 +468,14 @@ requires_dependencies:
 **Description**: Metrics that this mixin collects and exposes.
 
 **Metric Schema**:
-```yaml
+```
 metrics:
   - name: string                  # Metric identifier
     type: string                  # counter|gauge|histogram
     description: string           # What metric measures
     labels: array<string>         # Metric labels
     buckets: array<number>        # Histogram buckets (if type=histogram)
-```yaml
+```
 
 **Metric Types**:
 - `"counter"` - Monotonically increasing value (e.g., total errors)
@@ -484,7 +484,7 @@ metrics:
 
 **Examples**:
 
-```yaml
+```
 metrics:
   # Counter metric
   - name: "errors_total"
@@ -511,13 +511,13 @@ metrics:
       - "operation_name"
       - "success"
     buckets: [1, 5, 10, 50, 100, 500, 1000, 5000, 10000]
-```yaml
+```
 
 ## Complete Examples
 
 ### Example 1: Simple Core Mixin
 
-```yaml
+```
 mixin_name: "mixin_logging"
 mixin_version: {major: 1, minor: 0, patch: 0}
 description: "Provides structured logging capabilities for ONEX nodes"
@@ -542,11 +542,11 @@ metrics:
     type: "counter"
     description: "Total log messages written"
     labels: ["level", "node_type"]
-```yaml
+```
 
 ### Example 2: EFFECT-Specific Mixin
 
-```yaml
+```
 mixin_name: "mixin_http_client"
 mixin_version: {major: 1, minor: 0, patch: 0}
 description: "Provides HTTP client capabilities with connection pooling and retry logic for EFFECT nodes"
@@ -604,11 +604,11 @@ metrics:
     description: "HTTP request duration"
     labels: ["method", "endpoint"]
     buckets: [10, 50, 100, 500, 1000, 5000, 10000]
-```python
+```
 
 ### Example 3: REDUCER-Specific Mixin
 
-```yaml
+```
 mixin_name: "mixin_state_persistence"
 mixin_version: {major: 1, minor: 0, patch: 0}
 description: "Provides state persistence and recovery capabilities for REDUCER nodes"
@@ -660,7 +660,7 @@ metrics:
     description: "Size of persisted state"
     labels: ["node_id"]
     buckets: [1024, 10240, 102400, 1048576, 10485760]
-```python
+```
 
 ## Validation Rules
 

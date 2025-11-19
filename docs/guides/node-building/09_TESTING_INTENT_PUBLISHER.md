@@ -15,10 +15,10 @@ This guide covers comprehensive testing strategies for nodes using `MixinIntentP
 `MixinIntentPublisher` is a mixin that allows nodes (especially REDUCER and COMPUTE nodes) to coordinate event publishing without performing direct I/O. Instead of publishing events directly to Kafka, nodes publish "intents" to a coordination topic.
 
 **Architecture**:
-```text
+```
 Node (pure logic) → publish_event_intent() → Kafka (intent topic)
     → IntentExecutor (future) → Kafka (domain topic)
-```python
+```
 
 **Key Benefits**:
 - ✅ Maintains node purity (no direct I/O)
@@ -34,7 +34,7 @@ Node (pure logic) → publish_event_intent() → Kafka (intent topic)
 
 The `tests/fixtures/fixture_intent_publisher.py` module provides fast test fixtures for intent publisher testing:
 
-```python
+```
 from tests.fixtures.fixture_intent_publisher import (
     IntentPublisherFixtures,    # Intent event models
     IntentResultFixtures,        # Intent publish results
@@ -42,13 +42,13 @@ from tests.fixtures.fixture_intent_publisher import (
     create_mock_kafka_client,    # Convenience factory
     create_test_event,           # Simple test event generator
 )
-```bash
+```
 
 ### IntentPublisherFixtures
 
 Create test intent models efficiently:
 
-```python
+```
 # Create event publish intent
 intent = IntentPublisherFixtures.event_publish_intent(
     target_topic="dev.test.metrics.v1",
@@ -64,13 +64,13 @@ result = IntentPublisherFixtures.intent_execution_result(
     success=True,
     execution_duration_ms=12.5
 )
-```text
+```
 
 ### MockKafkaClient
 
 Mock Kafka client for testing intent publishing without real Kafka:
 
-```python
+```
 # Create mock Kafka client
 mock_kafka = MockKafkaClient()
 
@@ -92,7 +92,7 @@ assert mock_kafka.published_messages[0]["topic"] == "dev.omninode-bridge.intents
 # Access specific messages
 messages = mock_kafka.get_messages_for_topic("dev.omninode-bridge.intents.event-publish.v1")
 assert len(messages) == 1
-```python
+```
 
 ---
 
@@ -102,7 +102,7 @@ assert len(messages) == 1
 
 Test that node publishes intent with correct structure:
 
-```python
+```
 import pytest
 from uuid import uuid4
 from tests.fixtures.fixture_intent_publisher import MockKafkaClient, create_test_event
@@ -129,13 +129,13 @@ async def test_node_publishes_intent():
 
     # Assert - Result is correct
     assert result.success is True
-```python
+```
 
 ### Pattern 2: Intent Content Verification
 
 Test that intent contains correct target and payload:
 
-```python
+```
 import json
 from omnibase_core.models.events.model_intent_events import TOPIC_EVENT_PUBLISH_INTENT
 
@@ -166,13 +166,13 @@ async def test_intent_content_is_correct():
     assert intent_payload["target_event_type"] == "METRICS_RECORDED"
     assert intent_payload["target_event_payload"]["metric_name"] == "processing_time"
     assert intent_payload["target_event_payload"]["value"] == 123.45
-```python
+```
 
 ### Pattern 3: Correlation ID Propagation
 
 Test that correlation IDs are properly propagated:
 
-```python
+```
 @pytest.mark.asyncio
 async def test_correlation_id_propagation():
     """Test that correlation ID flows through intent publishing."""
@@ -197,13 +197,13 @@ async def test_correlation_id_propagation():
     intent_envelope = json.loads(mock_kafka.published_messages[0]["value"])
     assert intent_envelope["correlation_id"] == str(correlation_id)
     assert intent_envelope["payload"]["correlation_id"] == str(correlation_id)
-```python
+```
 
 ### Pattern 4: Priority Handling
 
 Test that intent priorities are correctly set:
 
-```python
+```
 @pytest.mark.asyncio
 async def test_intent_priority_levels():
     """Test that different priority levels are handled correctly."""
@@ -239,13 +239,13 @@ async def test_intent_priority_levels():
 
     assert intents[0]["priority"] == 1
     assert intents[1]["priority"] == 10
-```python
+```
 
 ### Pattern 5: Error Handling
 
 Test error handling when Kafka publishing fails:
 
-```python
+```
 @pytest.mark.asyncio
 async def test_kafka_publish_error_handling():
     """Test that Kafka publish errors are properly handled."""
@@ -263,13 +263,13 @@ async def test_kafka_publish_error_handling():
             target_key="test-key",
             event=create_test_event("TEST")
         )
-```python
+```
 
 ### Pattern 6: Multiple Intent Publishing
 
 Test nodes that publish multiple intents:
 
-```python
+```
 @pytest.mark.asyncio
 async def test_multiple_intent_publishing():
     """Test node that publishes multiple intents in one execution."""
@@ -289,13 +289,13 @@ async def test_multiple_intent_publishing():
         intent_envelope = json.loads(message["value"])
         assert intent_envelope["event_type"] == "EVENT_PUBLISH_INTENT"
         assert "payload" in intent_envelope
-```python
+```
 
 ### Pattern 7: Pure Function Testing
 
 Test node logic WITHOUT Kafka (true unit test):
 
-```python
+```
 @pytest.mark.asyncio
 async def test_pure_reduction_logic():
     """Test pure reduction logic without intent publishing."""
@@ -316,7 +316,7 @@ async def test_pure_reduction_logic():
     assert aggregated.total == 60
     assert aggregated.count == 3
     assert aggregated.average == 20.0
-```python
+```
 
 ---
 
@@ -326,7 +326,7 @@ async def test_pure_reduction_logic():
 
 For integration tests that need real Kafka:
 
-```python
+```
 import pytest
 from testcontainers.kafka import KafkaContainer
 
@@ -357,7 +357,7 @@ async def test_intent_publishing_integration(kafka_container):
 
     # Assert - Consume from Kafka to verify
     # (implementation depends on your Kafka client)
-```python
+```
 
 ---
 
@@ -365,7 +365,7 @@ async def test_intent_publishing_integration(kafka_container):
 
 ### REDUCER Node Testing
 
-```python
+```
 @pytest.mark.asyncio
 async def test_reducer_publishes_aggregated_result():
     """Test REDUCER publishes intent after aggregation."""
@@ -392,11 +392,11 @@ async def test_reducer_publishes_aggregated_result():
     intent = json.loads(mock_kafka.published_messages[0]["value"])["payload"]
     assert intent["target_event_type"] == "METRICS_AGGREGATED"
     assert intent["target_event_payload"]["total"] == 60
-```python
+```
 
 ### COMPUTE Node Testing
 
-```python
+```
 @pytest.mark.asyncio
 async def test_compute_publishes_result_intent():
     """Test COMPUTE publishes intent after computation."""
@@ -416,11 +416,11 @@ async def test_compute_publishes_result_intent():
 
     # Assert - Intent published
     assert mock_kafka.get_message_count() == 1
-```python
+```
 
 ### ORCHESTRATOR Node Testing
 
-```python
+```
 @pytest.mark.asyncio
 async def test_orchestrator_publishes_coordination_intents():
     """Test ORCHESTRATOR publishes coordination intents."""
@@ -441,7 +441,7 @@ async def test_orchestrator_publishes_coordination_intents():
     for message in mock_kafka.published_messages:
         intent = json.loads(message["value"])["payload"]
         assert "STEP_" in intent["target_event_type"]
-```python
+```
 
 ---
 
@@ -449,7 +449,7 @@ async def test_orchestrator_publishes_coordination_intents():
 
 ### ✅ DO: Test Intent Emission, Not Execution
 
-```python
+```
 # ✅ CORRECT - Test intent is emitted correctly
 @pytest.mark.asyncio
 async def test_intent_emission():
@@ -460,20 +460,20 @@ async def test_intent_emission():
 
     # Assert intent was published
     assert mock_kafka.get_message_count() == 1
-```python
+```
 
-```python
+```
 # ❌ WRONG - Testing intent execution (not node's responsibility)
 @pytest.mark.asyncio
 async def test_intent_execution():
     # Don't test that event was actually published to target topic
     # That's the IntentExecutor's responsibility
     pass
-```python
+```
 
 ### ✅ DO: Separate Pure Logic from Coordination
 
-```python
+```
 # ✅ CORRECT - Test pure logic separately
 def test_pure_aggregation():
     node = MyReducerNode(create_minimal_container())
@@ -487,11 +487,11 @@ async def test_intent_coordination():
     node = MyReducerNode(create_test_container(kafka_client=mock_kafka))
     await node.execute_reduction([1, 2, 3])
     assert mock_kafka.get_message_count() == 1
-```python
+```
 
 ### ✅ DO: Use Fixtures for Common Setup
 
-```python
+```
 # ✅ CORRECT - Reusable test fixtures
 @pytest.fixture
 def mock_kafka():
@@ -507,11 +507,11 @@ def test_node(mock_kafka):
 def test_with_fixtures(test_node, mock_kafka):
     # Clean test using fixtures
     pass
-```python
+```
 
 ### ✅ DO: Test Error Scenarios
 
-```python
+```
 # ✅ CORRECT - Test error handling
 @pytest.mark.asyncio
 async def test_kafka_failure_handling():
@@ -522,11 +522,11 @@ async def test_kafka_failure_handling():
 
     with pytest.raises(RuntimeError):
         await node.publish_event_intent(...)
-```python
+```
 
 ### ❌ DON'T: Mock MixinIntentPublisher Methods
 
-```python
+```
 # ❌ WRONG - Don't mock the mixin itself
 from unittest.mock import patch
 
@@ -534,17 +534,17 @@ from unittest.mock import patch
 async def test_bad_pattern(mock_publish):
     # This defeats the purpose of testing
     pass
-```python
+```
 
 ### ❌ DON'T: Test with Real Kafka in Unit Tests
 
-```python
+```
 # ❌ WRONG - Don't use real Kafka in unit tests
 @pytest.mark.asyncio
 async def test_with_real_kafka():
     kafka_client = KafkaClient(bootstrap_servers="localhost:9092")
     # Too slow, requires infrastructure, not isolated
-```python
+```
 
 ---
 
@@ -552,7 +552,7 @@ async def test_with_real_kafka():
 
 Complete example test suite for a REDUCER node using MixinIntentPublisher:
 
-```python
+```
 """
 Test suite for MyMetricsReducer.
 
@@ -669,7 +669,7 @@ class TestMyMetricsReducer:
         # Act & Assert
         with pytest.raises(RuntimeError, match="Kafka connection failed"):
             await reducer.execute_reduction(metrics)
-```python
+```
 
 ---
 

@@ -38,14 +38,14 @@ Performance benchmarks were conducted to measure the overhead introduced by the 
 
 The `source_node_id` field is an optional UUID field added to `ModelOnexEnvelopeV1` to enable node-to-node event tracking in distributed ONEX workflows.
 
-```python
+```
 class ModelOnexEnvelopeV1(BaseModel):
     # ... other fields ...
     source_node_id: UUID | None = Field(
         default=None,
         description="UUID of the node instance that generated this event"
     )
-```python
+```
 
 ### Purpose
 
@@ -106,13 +106,13 @@ PR #71 reviewer requested benchmarks to quantify:
 
 **Test**: Envelope creation time with and without `source_node_id`
 
-```text
+```
 Creation Time Benchmark:
   Without source_node_id: 0.0060ms ± 0.0001ms
   With source_node_id:    0.0079ms ± 0.0001ms
   Overhead:               31.81%
   Absolute difference:    0.001900ms
-```yaml
+```
 
 **Analysis**:
 - Relative overhead: **31.81%** (within 45% threshold)
@@ -128,12 +128,12 @@ Creation Time Benchmark:
 
 **Test**: Dictionary serialization performance
 
-```text
+```
 model_dump() Serialization Benchmark:
   Without source_node_id: 0.0013ms ± 0.0000ms
   With source_node_id:    0.0014ms ± 0.0000ms
   Overhead:               4.03%
-```yaml
+```
 
 **Analysis**:
 - Relative overhead: **4.03%** (within 10% threshold)
@@ -149,12 +149,12 @@ model_dump() Serialization Benchmark:
 
 **Test**: JSON string serialization performance
 
-```text
+```
 model_dump_json() Serialization Benchmark:
   Without source_node_id: 0.0019ms ± 0.0000ms
   With source_node_id:    0.0021ms ± 0.0001ms
   Overhead:               9.50%
-```yaml
+```
 
 **Analysis**:
 - Relative overhead: **9.50%** (within 20% threshold)
@@ -170,7 +170,7 @@ model_dump_json() Serialization Benchmark:
 
 **Test**: Object size and serialized size impact
 
-```text
+```
 Memory Footprint Benchmark:
   Without source_node_id: 72 bytes
   With source_node_id:    72 bytes
@@ -180,7 +180,7 @@ Serialized JSON Size:
   Without source_node_id: 317 bytes
   With source_node_id:    351 bytes
   Overhead:               34 bytes
-```python
+```
 
 **Analysis**:
 - **Object memory**: **0 bytes overhead** (Python optimization)
@@ -219,12 +219,12 @@ Serialized JSON Size:
 
 **Test**: Serializing 1,000 envelopes to JSON
 
-```text
+```
 Bulk Serialization Benchmark (n=1000):
   Without source_node_id: 0.0043s
   With source_node_id:    0.0022s
   Overhead:               -29.54%
-```yaml
+```
 
 **Analysis**:
 - **Negative overhead**: With `source_node_id` is **faster** (!?)
@@ -240,12 +240,12 @@ Bulk Serialization Benchmark (n=1000):
 
 **Test**: Complete cycle (create → serialize → deserialize)
 
-```text
+```
 Round Trip Benchmark:
   Without source_node_id: 0.0116ms ± 0.0003ms
   With source_node_id:    0.0137ms ± 0.0001ms
   Overhead:               18.36%
-```yaml
+```
 
 **Analysis**:
 - Relative overhead: **18.36%** (within 30% threshold)
@@ -261,13 +261,13 @@ Round Trip Benchmark:
 
 **Test**: Process-level memory usage at scale (1,000 envelopes)
 
-```text
+```
 Process Memory Benchmark (n=1000):
   Baseline memory:        104.22MB
   After without:          104.22MB (+0.00KB)
   After with:             104.22MB (+0.00KB)
   Additional overhead:    0.00%
-```yaml
+```
 
 **Analysis**:
 - **No measurable memory increase**
@@ -283,7 +283,7 @@ Process Memory Benchmark (n=1000):
 
 **Test**: Baseline performance requirements
 
-```text
+```
 Baseline Creation Performance:
   Average time: 0.0081ms
   Baseline:     1.0000ms
@@ -293,7 +293,7 @@ Baseline Serialization Performance:
   Average time: 0.0021ms
   Baseline:     1.0000ms
   Status:       PASS (well under 1ms threshold)
-```python
+```
 
 **Analysis**:
 - All operations remain well under 1ms threshold
@@ -446,7 +446,7 @@ If overhead becomes a concern (unlikely):
 
 ### Execute All Benchmarks
 
-```bash
+```
 # Run complete benchmark suite
 poetry run pytest tests/performance/test_source_node_id_overhead.py -v
 
@@ -455,7 +455,7 @@ poetry run pytest tests/performance/test_source_node_id_overhead.py -v -s
 
 # Run specific test
 poetry run pytest tests/performance/test_source_node_id_overhead.py::TestSourceNodeIdOverhead::test_creation_time_overhead -v
-```python
+```
 
 ### Expected Output
 
@@ -496,9 +496,9 @@ Benchmarks should be re-run:
 
 ### Test File Location
 
-```text
+```
 tests/performance/test_source_node_id_overhead.py
-```python
+```
 
 ### Test Classes
 

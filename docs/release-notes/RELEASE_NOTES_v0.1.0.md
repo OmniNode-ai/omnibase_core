@@ -20,18 +20,18 @@ Complete implementation of the ONEX workflow pattern:
 
 ### Protocol-Driven Dependency Injection
 Type-safe service resolution without registry coupling:
-```python
+```
 logger = container.get_service("ProtocolLogger")
 event_bus = container.get_service("ProtocolEventBus")
-```python
+```
 
 ### Zero Boilerplate Development
 Pre-composed service classes eliminate 80+ lines of initialization:
-```python
-class MyNode(NodeComputeService):
+```
+class MyNode(ModelServiceCompute):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)  # All boilerplate handled!
-```python
+```
 
 ### Comprehensive Mixin System
 15+ reusable mixins for cross-cutting concerns:
@@ -46,14 +46,14 @@ class MyNode(NodeComputeService):
 ModelEventEnvelope for inter-service messaging with correlation tracking and structured data flow.
 
 ### Structured Error Handling
-OnexError with Pydantic models for consistent, context-rich error management:
-```python
-raise OnexError(
+ModelOnexError with Pydantic models for consistent, context-rich error management:
+```
+raise ModelOnexError(
     message="Operation failed",
     error_code=EnumErrorCode.OPERATION_FAILED,
     context={"correlation_id": correlation_id}
 )
-```python
+```
 
 ### Production-Ready Validation
 - 60+ Pydantic models with comprehensive runtime validation
@@ -68,16 +68,16 @@ raise OnexError(
 - Poetry (package manager)
 
 ### Install from GitHub
-```bash
+```
 # Using Poetry (recommended)
 poetry add git+https://github.com/OmniNode-ai/omnibase_core.git@v0.1.0
 
 # Using pip
 pip install git+https://github.com/OmniNode-ai/omnibase_core.git@v0.1.0
-```python
+```
 
 ### Development Installation
-```bash
+```
 # Clone the repository
 git clone https://github.com/OmniNode-ai/omnibase_core.git
 cd omnibase_core
@@ -90,13 +90,13 @@ poetry run pytest tests/
 
 # Run type checking
 poetry run mypy src/omnibase_core/
-```python
+```
 
 ## Quick Start
 
 ### Your First Node
 
-```python
+```
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -110,7 +110,7 @@ class NodeMyServiceCompute(NodeCoreBase):
         """Transform input data."""
         result = input_data.value * 2  # Simple computation
         return {"result": result}
-```python
+```
 
 ### Learn More
 - **Getting Started**: [Quick Start Guide](../getting-started/QUICK_START.md)
@@ -125,7 +125,7 @@ class NodeMyServiceCompute(NodeCoreBase):
 This release renames "Thunk" to "Action" for clearer semantics:
 
 **Import Changes**:
-```python
+```
 # v0.0.x
 from omnibase_core.models.orchestrator.model_action import ModelThunk
 from omnibase_core.enums.enum_workflow_execution import EnumThunkType
@@ -133,7 +133,7 @@ from omnibase_core.enums.enum_workflow_execution import EnumThunkType
 # v0.1.0
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
-```python
+```
 
 **Field Changes**:
 - `thunk_id` → `action_id`
@@ -148,7 +148,7 @@ from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
 Removed backward compatibility methods in Reducer. Now uses pure FSM with Intent emission:
 
-```python
+```
 # OLD (removed)
 await self.update_state(new_state)
 
@@ -159,7 +159,7 @@ intent = ModelIntent(
     payload={"data": value}
 )
 await self.emit_intent(intent)
-```python
+```
 
 ## Known Issues
 

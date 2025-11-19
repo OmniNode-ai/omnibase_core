@@ -19,13 +19,13 @@ omnibase_core has excellent domain alignment with omnibase_spi protocols. Only s
 
 **Recommended Action:**
 Implement `ProtocolServiceRegistry` from `omnibase_spi.protocols.container`:
-```python
+```
 from omnibase_spi.protocols.container import (
     ProtocolServiceRegistry,
     ProtocolServiceRegistration,
     ProtocolDIServiceInstance,
 )
-```python
+```
 
 **Benefits:**
 - Comprehensive DI system (singleton, transient, scoped, pooled)
@@ -50,13 +50,13 @@ from omnibase_spi.protocols.container import (
 
 **Recommended Action:**
 Implement validation protocols for public interfaces:
-```python
+```
 from omnibase_spi.protocols.validation import (
     ProtocolComplianceValidator,
     ProtocolQualityValidator,
     ProtocolValidator,
 )
-```python
+```
 
 **Benefits:**
 - Type-safe contracts ensure interface compliance
@@ -86,7 +86,7 @@ from omnibase_spi.protocols.validation import (
 
 **Recommended Action:**
 Add `ProtocolNodeConfiguration` support (externalize configs):
-```python
+```
 from omnibase_spi.protocols.node import ProtocolNodeConfiguration
 
 # Before
@@ -95,7 +95,7 @@ self.default_timeout_ms = 30000  # Hardcoded
 # After
 self.config = await container.get_service(ProtocolNodeConfiguration)
 self.default_timeout_ms = await self.config.get_timeout_ms("effect_execution", 30000)
-```python
+```
 
 **Benefits:**
 - Environment-specific configs (dev/staging/prod)

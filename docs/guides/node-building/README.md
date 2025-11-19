@@ -89,7 +89,7 @@ Before building nodes, ensure you have:
 
 Verify your environment:
 
-```bash
+```
 # Check Python version
 python --version  # Should be 3.11+
 
@@ -101,7 +101,7 @@ poetry add omnibase_core
 
 # Verify installation
 poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ omnibase_core ready!')"
-```python
+```
 
 ## Learning Path
 
@@ -155,7 +155,7 @@ poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ om
 
 ### Adding Nodes to Your Project
 
-```bash
+```
 # In your project directory
 poetry add omnibase_core
 
@@ -165,11 +165,11 @@ touch src/your_project/nodes/__init__.py
 
 # Follow tutorials to create nodes
 # Example: src/your_project/nodes/node_data_processor_compute.py
-```python
+```
 
 ### Project Structure
 
-```text
+```
 your_project/
 ├── pyproject.toml                    # Poetry configuration
 ├── src/
@@ -186,7 +186,7 @@ your_project/
     └── nodes/                        # Node tests
         ├── test_node_data_processor.py
         └── test_node_api_client.py
-```text
+```
 
 ## Getting Help
 

@@ -45,7 +45,7 @@ Nodes communicate through:
 
 ### High-Level Components
 
-```text
+```
 ┌─────────────────────────────────────────────────────────────┐
 │                    ONEX Framework                           │
 ├─────────────────────────────────────────────────────────────┤
@@ -62,7 +62,7 @@ Nodes communicate through:
 │  │  (Pydantic) │  │  (Async)    │  │ (Structured)│  │     │ │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────┘ │
 └─────────────────────────────────────────────────────────────┘
-```python
+```
 
 ### Node Responsibilities
 
@@ -165,7 +165,7 @@ Nodes communicate through:
 
 ### Dependency Injection Container
 
-```python
+```
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 container = ModelONEXContainer()
@@ -174,11 +174,11 @@ container.register_service("CacheService", cache_service)
 
 # Resolve services
 db_service = container.get_service("DatabaseService")
-```python
+```
 
 ### Event System
 
-```python
+```
 from omnibase_core.models.model_event_envelope import ModelEventEnvelope
 
 # Emit event
@@ -189,11 +189,11 @@ event = ModelEventEnvelope(
     target_node="effect_node"
 )
 await node.emit_event(event)
-```python
+```
 
 ### Error Handling
 
-```python
+```
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -205,11 +205,11 @@ except Exception as e:
         message=f"Processing failed: {str(e)}",
         context={"input_data": input_data}
     ) from e
-```python
+```
 
 ### Circuit Breaker Pattern
 
-```python
+```
 from omnibase_core.utils.circuit_breaker import CircuitBreaker
 
 breaker = CircuitBreaker(
@@ -221,7 +221,7 @@ try:
     result = await breaker.call(risky_operation)
 except CircuitBreakerOpenException:
     result = fallback_operation()
-```python
+```
 
 ## Benefits
 
@@ -263,15 +263,15 @@ except CircuitBreakerOpenException:
 
 ### 2. Implement Your Node
 Prefer a service wrapper to eliminate boilerplate and ensure correct mixin ordering:
-```python
+```
 from omnibase_core.models.nodes.node_services import ModelServiceCompute
 
 class MyComputeService(ModelServiceCompute):
     pass
-```python
+```
 
 Or compose manually only when you need specialized capabilities:
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -282,10 +282,10 @@ class MyComputeNode(NodeCompute):
     async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Your business logic here
         return {"result": "processed"}
-```python
+```
 
 ### 3. Add Error Handling
-```python
+```
 from omnibase_core.utils.standard_error_handling import standard_error_handling
 
 @standard_error_handling(
@@ -296,10 +296,10 @@ from omnibase_core.utils.standard_error_handling import standard_error_handling
 async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
     # Your logic here
     return {"result": "processed"}
-```python
+```
 
 ### 4. Add Testing
-```python
+```
 import pytest
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -315,7 +315,7 @@ def node(container):
 async def test_process(node):
     result = await node.process({"input": "test"})
     assert result["result"] == "processed"
-```text
+```
 
 ## Related Documentation
 

@@ -53,7 +53,7 @@ The reference documentation defines a clear 4-node classification system:
 #### NodeCoreBase Foundation
 All specialized nodes inherit from `NodeCoreBase` providing:
 - Contract loading and validation
-- Error handling with OnexError chaining
+- Error handling with ModelOnexError chaining
 - Logging integration with structured events
 - Service discovery via ONEXContainer dependency injection
 - Lifecycle management hooks
@@ -61,7 +61,7 @@ All specialized nodes inherit from `NodeCoreBase` providing:
 #### Specialized Node Implementations
 
 **1. NodeCompute** (`node_compute.py`)
-```python
+```
 class NodeCompute(NodeCoreBase):
     """Pure computation node for stateless data transformations."""
 
@@ -71,10 +71,10 @@ class NodeCompute(NodeCoreBase):
     - Mathematical operations
     - Data transformations
     - Parallel execution support
-```python
+```
 
 **2. NodeEffect** (`node_effect.py`)
-```python
+```
 class NodeEffect(NodeCoreBase):
     """Side effect execution node for external interactions."""
 
@@ -84,10 +84,10 @@ class NodeEffect(NodeCoreBase):
     - Database operations
     - Retry logic and circuit breakers
     - Connection pooling
-```python
+```
 
 **3. NodeReducer** (`node_reducer.py`)
-```python
+```
 class NodeReducer(NodeCoreBase):
     """Data aggregation and state reduction node."""
 
@@ -97,10 +97,10 @@ class NodeReducer(NodeCoreBase):
     - Streaming data processing
     - Windowing for large datasets
     - Conflict resolution strategies
-```python
+```
 
 **4. NodeOrchestrator** (`node_orchestrator.py`)
-```python
+```
 class NodeOrchestrator(NodeCoreBase):
     """Workflow coordination node for control flow management."""
 
@@ -110,7 +110,7 @@ class NodeOrchestrator(NodeCoreBase):
     - Parallel execution coordination
     - Dependency graph management
     - Load balancing strategies
-```python
+```
 
 ## 2. Contract System Architecture
 
@@ -130,7 +130,7 @@ class NodeOrchestrator(NodeCoreBase):
 6. **Service Integration**: Inject via ONEXContainer dependency injection
 
 #### Contract Structure:
-```yaml
+```
 # Standard ONEX Contract Format
 contract_version:
   major: 1
@@ -152,7 +152,7 @@ dependencies:
 input_state: {...}
 output_state: {...}
 definitions: {...}
-```python
+```
 
 ### 2.2 Contract Validation Patterns
 
@@ -163,7 +163,7 @@ definitions: {...}
 4. **Dependency Resolution**: Service dependency validation
 
 **Error Handling:**
-- OnexError with exception chaining for all validation failures
+- ModelOnexError with exception chaining for all validation failures
 - Comprehensive logging with context for troubleshooting
 - Fail-fast pattern for early error detection
 
@@ -180,13 +180,13 @@ Use the standard `ModelService*` wrappers for production-ready compositions:
 - `ModelServiceOrchestrator`: `MixinNodeService` + `NodeOrchestrator` + `MixinHealthCheck` + `MixinEventBus` + `MixinMetrics`
 
 #### Service Composition Example:
-```python
+```
 from omnibase_core.models.nodes.node_services import ModelServiceEffect
 
 class NodeDatabaseWriter(ModelServiceEffect):
     """Effect node with health checks, events, and metrics pre-wired."""
     pass
-```python
+```
 
 ### 3.2 Service Lifecycle Management
 
@@ -241,7 +241,7 @@ class NodeDatabaseWriter(ModelServiceEffect):
 ### 4.2 Mixin Composition Patterns
 
 **Pattern 1: Service-Ready Node Composition**
-```python
+```
 class NodeTypeService(
     NodeType,                    # Core node functionality
     MixinNodeService,           # Service capabilities
@@ -249,10 +249,10 @@ class NodeTypeService(
     MixinHealthCheck,           # Health monitoring
 ):
     """Full service-ready node with all standard capabilities."""
-```python
+```
 
 **Pattern 2: Event-Driven Node Composition**
-```python
+```
 class EventDrivenNode(
     NodeType,
     MixinEventDrivenNode,       # Event handling
@@ -260,7 +260,7 @@ class EventDrivenNode(
     MixinIntrospection,         # Runtime introspection
 ):
     """Event-driven node with introspection capabilities."""
-```python
+```
 
 ## 5. Implementation Comparison & Gap Analysis
 
@@ -272,7 +272,7 @@ class EventDrivenNode(
 3. **Service Integration**: Proper service layer with lifecycle management
 4. **Contract System**: Robust validation and configuration management
 5. **Mixin Flexibility**: Extensive mixin library for capability composition
-6. **Error Handling**: Consistent OnexError pattern with exception chaining
+6. **Error Handling**: Consistent ModelOnexError pattern with exception chaining
 7. **Type Safety**: Strong typing throughout with Pydantic models
 
 **⚠️ Areas for Enhancement:**
@@ -313,11 +313,11 @@ class EventDrivenNode(
 ### 6.2 Service Discovery & Dependency Injection
 
 **ONEXContainer Pattern:**
-```python
+```
 # Service resolution via duck typing
 event_bus = container.get_service("ProtocolEventBus")
 metadata_loader = container.get_service("ProtocolSchemaLoader")
-```python
+```
 
 **Benefits:**
 - Loose coupling between services

@@ -31,7 +31,7 @@ ORCHESTRATOR nodes use the **Action pattern** for delegating work to other nodes
 
 ### Example Action Creation
 
-```python
+```
 action = ModelAction(
     action_id=uuid4(),
     action_type=EnumActionType.EXECUTE_WORKFLOW,
@@ -41,11 +41,11 @@ action = ModelAction(
     epoch=self.current_epoch,  # Optimistic concurrency
     priority=5,
 )
-```python
+```
 
 ## Directory Structure
 
-```text
+```
 {REPOSITORY_NAME}/
 ├── src/
 │   └── {REPOSITORY_NAME}/
@@ -97,13 +97,13 @@ action = ModelAction(
                     ├── test_contracts.py
                     ├── test_models.py
                     └── test_workflows.py
-```python
+```
 
 ## Template Files
 
 ### 1. Node Implementation (`node.py`)
 
-```python
+```
 """ONEX ORCHESTRATOR node for {DOMAIN} {MICROSERVICE_NAME} operations."""
 
 import asyncio
@@ -114,8 +114,8 @@ from contextlib import asynccontextmanager
 from enum import Enum
 
 from pydantic import ValidationError
-from omnibase_core.nodes.base.node_orchestrator_service import NodeOrchestratorService
-from omnibase_core.models.model_onex_error import ModelONEXError
+from omnibase_core.infrastructure.infrastructure_bases import ModelServiceOrchestrator
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_onex_warning import ModelONEXWarning
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer
 from omnibase_core.utils.circuit_breaker import CircuitBreakerMixin
@@ -136,7 +136,7 @@ from .utils.workflow_scheduler import WorkflowScheduler
 
 
 class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(
-    NodeOrchestratorService[
+    ModelServiceOrchestrator[
         Model{DomainCamelCase}{MicroserviceCamelCase}OrchestratorInput,
         Model{DomainCamelCase}{MicroserviceCamelCase}OrchestratorOutput,
         {DomainCamelCase}{MicroserviceCamelCase}OrchestratorConfig
@@ -838,10 +838,7 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(
                 "error": sanitized_error,
                 "timestamp": time.time()
             }
-```text
+```
 
 This template provides the complete ORCHESTRATOR node implementation with workflow orchestration, state management, error recovery, and comprehensive monitoring. The full template would continue with the remaining files (configuration, models, enums, workflows, utils, subcontracts, and manifest) following the same unified architecture patterns established in the previous templates.
 
-<function_calls>
-<invoke name="TodoWrite">
-<parameter name="todos">[{"content": "Create omnibase_core enhancement document", "status": "completed", "activeForm": "Creating omnibase_core changes document"}, {"content": "Create omnibase_infra enhancement document", "status": "completed", "activeForm": "Creating omnibase_infra changes document"}, {"content": "Extend patterns to other node types (COMPUTE, REDUCER, ORCHESTRATOR)", "status": "completed", "activeForm": "Extending patterns to other node types"}, {"content": "Validate unified architecture across all node types", "status": "completed", "activeForm": "Validating unified architecture"}]

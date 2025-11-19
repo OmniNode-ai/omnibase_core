@@ -26,17 +26,17 @@ This document establishes comprehensive error handling standards for the ONEX Fo
 
 ## ONEX Error Framework
 
-### OnexError Base Class
+### ModelOnexError Base Class
 
-All ONEX errors inherit from the `OnexError` base class which provides structured error context and correlation tracking:
+All ONEX errors inherit from the `ModelOnexError` base class which provides structured error context and correlation tracking:
 
-```python
-from omnibase_core.exceptions.base_onex_error import OnexError
+```
+# ModelOnexError class definition (from omnibase_core.models.errors.model_onex_error)
 from uuid import UUID
 from typing import Optional, Dict, Any
 from datetime import UTC, datetime
 
-class OnexError(Exception):
+class ModelOnexError(Exception):
     """
     Base exception class for all ONEX-related errors.
 
@@ -91,14 +91,14 @@ class OnexError(Exception):
         """Human-readable error representation."""
         context = f" (correlation_id: {self.correlation_id})" if self.correlation_id else ""
         return f"{self.error_code}: {self.message}{context}"
-```python
+```
 
 ### Specialized Error Classes
 
 #### Contract Validation Errors
 
-```python
-class ContractValidationError(OnexError):
+```
+class ContractValidationError(ModelOnexError):
     """
     Error raised when contract validation fails.
 
@@ -149,12 +149,12 @@ def validate_contract(contract: ModelContractBase) -> None:
             ],
             contract_type=type(contract).__name__
         ) from e
-```python
+```
 
 #### Node Operation Errors
 
-```python
-class NodeOperationError(OnexError):
+```
+class NodeOperationError(ModelOnexError):
     """
     Error raised during ONEX node operations.
 
@@ -230,12 +230,12 @@ class OrchestratorNodeError(NodeOperationError):
             node_type="orchestrator",
             **kwargs
         )
-```python
+```
 
 #### Subcontract Execution Errors
 
-```python
-class SubcontractExecutionError(OnexError):
+```
+class SubcontractExecutionError(ModelOnexError):
     """
     Error raised during subcontract execution.
 
@@ -328,20 +328,20 @@ class RoutingError(SubcontractExecutionError):
             subcontract_type="routing",
             **kwargs
         )
-```python
+```
 
 ## Error Handling Patterns
 
 ### Pattern 1: Standard Error Handling Decorator
 
-```python
+```
 from functools import wraps
 from typing import Callable, Any
 import logging
 import traceback
 
 def standard_error_handling(
-    error_class: type = OnexError,
+    error_class: type = ModelOnexError,
     component: str = None,
     operation: str = None,
     recoverable: bool = False,
@@ -390,8 +390,8 @@ def standard_error_handling(
 
             try:
                 return await func(*args, **kwargs)
-            except OnexError:
-                # Re-raise ONEX errors without modification
+            except ModelOnexError:
+                # Re-raise ModelOnexError without modification
                 raise
             except Exception as e:
                 # Log the original exception
@@ -407,7 +407,7 @@ def standard_error_handling(
                     }
                 )
 
-                # Create structured ONEX error
+                # Create structured ModelOnexError
                 raise error_class(
                     message=f"Error in {operation or func.__name__}: {str(e)}",
                     correlation_id=correlation_id,
@@ -440,7 +440,7 @@ def standard_error_handling(
 
             try:
                 return func(*args, **kwargs)
-            except OnexError:
+            except ModelOnexError:
                 raise
             except Exception as e:
                 logger = logging.getLogger(component or func.__module__)
@@ -479,7 +479,7 @@ def standard_error_handling(
     return decorator
 
 # Usage Examples
-class DatabaseEffectService(NodeEffectService):
+class DatabaseEffectService(ModelServiceEffect):
     """EFFECT node with standardized error handling."""
 
     @standard_error_handling(
@@ -516,11 +516,11 @@ class DatabaseEffectService(NodeEffectService):
                 for operation in operations:
                     await conn.execute(operation["query"], operation["parameters"])
                 return True
-```python
+```
 
 ### Pattern 2: Circuit Breaker Pattern
 
-```python
+```
 from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -579,7 +579,7 @@ class CircuitBreaker:
 
         Raises:
             CircuitBreakerOpenError: If circuit breaker is open
-            OnexError: If function execution fails
+            ModelOnexError: If function execution fails
         """
         # Check circuit breaker state
         await self._update_state()
@@ -624,9 +624,9 @@ class CircuitBreaker:
         except Exception as e:
             await self._record_failure()
 
-            # Wrap in ONEX error if not already
-            if not isinstance(e, OnexError):
-                raise OnexError(
+            # Wrap in ModelOnexError if not already
+            if not isinstance(e, ModelOnexError):
+                raise ModelOnexError(
                     message=f"Circuit breaker '{self.name}' operation failed: {str(e)}",
                     correlation_id=self.correlation_id,
                     error_context={
@@ -682,7 +682,7 @@ class CircuitBreaker:
             self.state = CircuitBreakerState.OPEN
 
 # Circuit breaker error classes
-class CircuitBreakerError(OnexError):
+class CircuitBreakerError(ModelOnexError):
     """Base class for circuit breaker errors."""
 
     def __init__(self, message: str, correlation_id: Optional[UUID] = None, **kwargs):
@@ -758,12 +758,13 @@ class ExternalServiceEffectNode(ModelServiceEffect):
         """Make the actual API call."""
         # Implementation of API call
         pass
-```python
+```
 
 ### Pattern 3: Retry Logic with Exponential Backoff
 
 ```python
 import asyncio
+import logging
 import random
 from typing import List, Optional, Type, Union
 
@@ -807,7 +808,7 @@ async def retry_with_backoff(
         Function result
 
     Raises:
-        OnexError: If all retry attempts fail
+        ModelOnexError: If all retry attempts fail
     """
     last_exception = None
     delay = config.initial_delay
@@ -821,8 +822,8 @@ async def retry_with_backoff(
             # Check if exception is retryable
             if not any(isinstance(e, exc_type) for exc_type in config.retryable_exceptions):
                 # Not retryable, raise immediately
-                if not isinstance(e, OnexError):
-                    raise OnexError(
+                if not isinstance(e, ModelOnexError):
+                    raise ModelOnexError(
                         message=f"Non-retryable error: {str(e)}",
                         correlation_id=correlation_id,
                         error_context={
@@ -865,8 +866,8 @@ async def retry_with_backoff(
             delay = min(delay * config.backoff_multiplier, config.max_delay)
 
     # All attempts failed
-    if not isinstance(last_exception, OnexError):
-        raise OnexError(
+    if not isinstance(last_exception, ModelOnexError):
+        raise ModelOnexError(
             message=f"All {config.max_attempts} retry attempts failed: {str(last_exception)}",
             correlation_id=correlation_id,
             error_context={
@@ -880,7 +881,7 @@ async def retry_with_backoff(
             recoverable=False
         ) from last_exception
     else:
-        # Update the ONEX error with retry context
+        # Update the ModelOnexError with retry context
         last_exception.error_context.update({
             "retry_attempts": config.max_attempts,
             "all_attempts_failed": True
@@ -948,7 +949,7 @@ def with_retry(
     return decorator
 
 # Usage Example
-class ReliableEffectService(NodeEffectService):
+class ReliableEffectService(ModelServiceEffect):
     """EFFECT node with retry logic."""
 
     @with_retry(
@@ -972,13 +973,13 @@ class ReliableEffectService(NodeEffectService):
             )
             response.raise_for_status()
             return response.json()
-```python
+```
 
 ## Error Recovery Strategies
 
 ### Recovery Strategy 1: Graceful Degradation
 
-```python
+```
 class GracefulDegradationMixin:
     """
     Mixin for implementing graceful degradation patterns.
@@ -1018,7 +1019,7 @@ class GracefulDegradationMixin:
             Function result or fallback result
 
         Raises:
-            OnexError: If critical service fails or no fallback available
+            ModelOnexError: If critical service fails or no fallback available
         """
         try:
             # If service is already degraded and critical, fail fast
@@ -1069,8 +1070,8 @@ class GracefulDegradationMixin:
 
             # If critical service, fail immediately
             if critical:
-                if not isinstance(e, OnexError):
-                    raise OnexError(
+                if not isinstance(e, ModelOnexError):
+                    raise ModelOnexError(
                         message=f"Critical service '{service_name}' failed: {str(e)}",
                         correlation_id=correlation_id,
                         error_context={
@@ -1099,7 +1100,7 @@ class GracefulDegradationMixin:
                     return result
                 except Exception as fallback_error:
                     # Both primary and fallback failed
-                    raise OnexError(
+                    raise ModelOnexError(
                         message=f"Both primary and fallback failed for service '{service_name}'",
                         correlation_id=correlation_id,
                         error_context={
@@ -1141,7 +1142,7 @@ class GracefulDegradationMixin:
         }
 
 # Usage Example
-class ResilientComputeService(NodeComputeService, GracefulDegradationMixin):
+class ResilientComputeService(ModelServiceCompute, GracefulDegradationMixin):
     """COMPUTE node with graceful degradation."""
 
     async def process_data(
@@ -1186,13 +1187,13 @@ class ResilientComputeService(NodeComputeService, GracefulDegradationMixin):
             "service_health": self.get_service_health(),
             "correlation_id": str(correlation_id)
         }
-```python
+```
 
 ## Error Monitoring and Observability
 
 ### Error Metrics Collection
 
-```python
+```
 from omnibase_core.types.typed_dict_performance_metric_data import TypedDictPerformanceMetricData
 
 class ErrorMetricsCollector:
@@ -1203,7 +1204,7 @@ class ErrorMetricsCollector:
 
     async def record_error(
         self,
-        error: OnexError,
+        error: ModelOnexError,
         component: str,
         operation: str
     ):
@@ -1277,11 +1278,11 @@ class ErrorMetricsCollector:
         }
 
         await self.metrics_service.send_metrics([metric])
-```python
+```
 
 ### Error Alerting
 
-```python
+```
 class ErrorAlertManager:
     """Manage error alerts and notifications."""
 
@@ -1291,7 +1292,7 @@ class ErrorAlertManager:
         self.error_counts: Dict[str, int] = {}
         self.last_alert_times: Dict[str, datetime] = {}
 
-    async def process_error(self, error: OnexError, component: str):
+    async def process_error(self, error: ModelOnexError, component: str):
         """Process error and trigger alerts if thresholds are exceeded."""
         error_key = f"{component}:{error.error_code}"
 
@@ -1308,7 +1309,7 @@ class ErrorAlertManager:
 
     async def _trigger_alert(
         self,
-        error: OnexError,
+        error: ModelOnexError,
         component: str,
         count: int
     ):
@@ -1335,13 +1336,13 @@ class ErrorAlertManager:
 
         await self.alert_service.send_alert(alert_data)
         self.last_alert_times[alert_key] = now
-```python
+```
 
 ## Testing Error Handling
 
 ### Unit Testing Error Scenarios
 
-```python
+```
 import pytest
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
@@ -1402,11 +1403,11 @@ class TestErrorHandling:
         failing_func = AsyncMock(side_effect=Exception("Service failure"))
 
         # First failure
-        with pytest.raises(OnexError):
+        with pytest.raises(ModelOnexError):
             await circuit_breaker.call(failing_func)
 
         # Second failure - should open circuit
-        with pytest.raises(OnexError):
+        with pytest.raises(ModelOnexError):
             await circuit_breaker.call(failing_func)
 
         # Third call - should be rejected by open circuit
@@ -1469,14 +1470,14 @@ class TestErrorHandling:
             try:
                 raise ValueError("Original error")
             except ValueError as e:
-                raise OnexError(
+                raise ModelOnexError(
                     message="Processing failed",
                     correlation_id=correlation_id,
                     error_context=original_context,
                     component="processor",
                     operation="process_data"
                 ) from e
-        except OnexError as final_error:
+        except ModelOnexError as final_error:
             assert final_error.correlation_id == correlation_id
             assert final_error.error_context["user_id"] == "123"
             assert final_error.error_context["operation"] == "data_processing"
@@ -1496,7 +1497,7 @@ class TestEffectService:
 
 class TestServiceWithDegradation(GracefulDegradationMixin):
     pass
-```python
+```
 
 ## Summary
 

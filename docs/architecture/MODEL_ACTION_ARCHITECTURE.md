@@ -17,7 +17,7 @@ ModelAction is a strongly-typed Pydantic model that encapsulates:
 
 Actions flow from the **Orchestrator** node to downstream nodes (Compute, Effect, Reducer):
 
-```text
+```
 ┌──────────────────┐
 │  ORCHESTRATOR    │
 │  (Coordinates)   │
@@ -29,7 +29,7 @@ Actions flow from the **Orchestrator** node to downstream nodes (Compute, Effect
 │  (Validates lease_id & epoch)          │
 │  (Executes action)                     │
 └────────────────────────────────────────┘
-```python
+```
 
 **Key Characteristics:**
 - **Unidirectional**: Actions flow from Orchestrator → downstream nodes
@@ -76,7 +76,7 @@ The rename from **Thunk** to **Action** reflects:
 4. **Developer Experience**: "Action" is self-explanatory; "Thunk" requires functional programming background
 
 **Example Naming Evolution:**
-```python
+```
 # Legacy naming (misleading)
 thunk = ModelThunk(
     thunk_id=uuid4(),
@@ -91,7 +91,7 @@ action = ModelAction(
     lease_id=orchestrator.lease_id,  # Proves ownership
     epoch=orchestrator.current_epoch,  # Tracks version
 )
-```python
+```
 
 ### Migration Notes
 
@@ -148,7 +148,7 @@ Lease management provides **single-writer semantics** for distributed workflows,
 
 The `lease_id` ensures that only **one Orchestrator** can control a workflow at any given time:
 
-```python
+```
 class NodeMyOrchestrator(NodeCoreBase):
     def __init__(self, container):
         super().__init__(container)
@@ -169,11 +169,13 @@ class NodeMyOrchestrator(NodeCoreBase):
 
         await self.event_bus.publish(action)
         self.current_epoch += 1  # Increment after emission
-```text
+```
 
 **Prevents Concurrent Modification**:
 
-```python
+```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 # Orchestrator A claims workflow
 orchestrator_a.lease_id = UUID("a1a1a1a1-...")
 
@@ -186,8 +188,8 @@ action_b = ModelAction(lease_id=orchestrator_b.lease_id, ...)
 
 # Downstream node validates: only ONE lease_id accepted per workflow
 if action.lease_id != current_workflow_lease_id:
-    raise OnexError("Invalid lease_id: workflow owned by different orchestrator")
-```python
+    raise ModelOnexError("Invalid lease_id: workflow owned by different orchestrator")
+```
 
 ### epoch Field
 
@@ -205,7 +207,7 @@ if action.lease_id != current_workflow_lease_id:
 
 The `epoch` field enables detection of stale actions without distributed locks:
 
-```python
+```
 class NodeMyOrchestrator(NodeCoreBase):
     def __init__(self, container):
         super().__init__(container)
@@ -229,24 +231,26 @@ class NodeMyOrchestrator(NodeCoreBase):
 
         # Increment epoch AFTER emission
         self.current_epoch += 1  # Now at version 1, 2, 3, ...
-```python
+```
 
 **Epoch Validation Pattern**:
 
 Downstream nodes validate epochs to reject stale actions:
 
-```python
+```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 class NodeDataProcessorCompute(NodeCoreBase):
     async def process_action(self, action: ModelAction):
         """Process action with epoch validation."""
 
         # Validate lease_id first
         if action.lease_id != self.current_workflow_lease_id:
-            raise OnexError("Invalid lease_id")
+            raise ModelOnexError("Invalid lease_id")
 
         # Validate epoch to detect stale actions
         if action.epoch < self.last_processed_epoch:
-            raise OnexError(
+            raise ModelOnexError(
                 f"Stale action detected: epoch {action.epoch} < "
                 f"last processed {self.last_processed_epoch}"
             )
@@ -258,11 +262,11 @@ class NodeDataProcessorCompute(NodeCoreBase):
         self.last_processed_epoch = action.epoch
 
         return result
-```text
+```
 
 **Epoch Monotonicity Guarantee**:
 
-```text
+```
 Orchestrator State:      epoch=0 → emit → epoch=1 → emit → epoch=2 → emit → epoch=3
                                     │              │              │
                                     ▼              ▼              ▼
@@ -270,24 +274,24 @@ Actions Emitted:            Action(epoch=0)  Action(epoch=1)  Action(epoch=2)
                                     │              │              │
                                     ▼              ▼              ▼
 Downstream Validation:      epoch >= 0       epoch >= 1       epoch >= 2
-```text
+```
 
 If actions arrive out-of-order, epochs detect the issue:
-```text
+```
 Received: Action(epoch=2) → OK, process and set last_processed_epoch=2
 Received: Action(epoch=1) → REJECT, epoch < last_processed_epoch (stale!)
-```text
+```
 
 ## ModelAction Fields
 
 ### Core Identification
 
-```python
+```
 action_id: UUID = Field(
     default_factory=uuid4,
     description="Unique action identifier (UUID)"
 )
-```yaml
+```
 
 **Purpose**: Globally unique identifier for distributed tracing and action tracking.
 
@@ -297,12 +301,12 @@ action_id: UUID = Field(
 
 ### Action Routing
 
-```python
+```
 action_type: EnumActionType = Field(
     ...,
     description="Type of action for routing"
 )
-```yaml
+```
 
 **Values**:
 - `EnumActionType.COMPUTE` - Pure computation/transformation
@@ -315,12 +319,12 @@ action_type: EnumActionType = Field(
 
 ---
 
-```python
+```
 target_node_type: str = Field(
     ...,
     description="Target node type for execution"
 )
-```python
+```
 
 **Purpose**: Specifies which node class should execute this action.
 
@@ -330,12 +334,12 @@ target_node_type: str = Field(
 
 ### Execution Parameters
 
-```python
+```
 payload: dict[str, Any] = Field(
     default_factory=dict,
     description="Action payload data"
 )
-```yaml
+```
 
 **Purpose**: Execution context and input data for action processing.
 
@@ -343,32 +347,32 @@ payload: dict[str, Any] = Field(
 
 ---
 
-```python
+```
 dependencies: list[UUID] = Field(
     default_factory=list,
     description="List of dependency action IDs (UUIDs)"
 )
-```text
+```
 
 **Purpose**: Declare action dependencies for execution ordering.
 
 **Example**:
-```python
+```
 action_b = ModelAction(
     action_id=uuid4(),
     dependencies=[action_a.action_id],  # Wait for action_a to complete
     ...
 )
-```yaml
+```
 
 ---
 
-```python
+```
 priority: int = Field(
     default=1,
     description="Execution priority (higher = more urgent)"
 )
-```yaml
+```
 
 **Range**: 1 (lowest) to 10 (highest)
 
@@ -376,12 +380,12 @@ priority: int = Field(
 
 ---
 
-```python
+```
 timeout_ms: int = Field(
     default=30000,
     description="Execution timeout in milliseconds"
 )
-```yaml
+```
 
 **Default**: 30 seconds (30000ms)
 
@@ -391,7 +395,7 @@ timeout_ms: int = Field(
 
 ### Lease Management Fields
 
-```python
+```
 lease_id: UUID = Field(
     ...,
     description="Lease ID proving Orchestrator ownership"
@@ -401,7 +405,7 @@ epoch: int = Field(
     ...,
     description="Monotonically increasing version number"
 )
-```yaml
+```
 
 **See**: [Lease Management](#lease-management) section above for detailed semantics.
 
@@ -409,23 +413,23 @@ epoch: int = Field(
 
 ### Retry and Metadata
 
-```python
+```
 retry_count: int = Field(
     default=0,
     description="Number of retry attempts"
 )
-```yaml
+```
 
 **Purpose**: Track retry attempts for idempotency and circuit breaking.
 
 ---
 
-```python
+```
 metadata: dict[str, Any] = Field(
     default_factory=dict,
     description="Additional metadata"
 )
-```yaml
+```
 
 **Purpose**: Extensible metadata for logging, tracing, or custom processing.
 
@@ -437,12 +441,12 @@ metadata: dict[str, Any] = Field(
 
 ---
 
-```python
+```
 created_at: datetime = Field(
     default_factory=datetime.now,
     description="Action creation timestamp"
 )
-```python
+```
 
 **Purpose**: Audit trail and action lifecycle tracking.
 
@@ -452,7 +456,7 @@ created_at: datetime = Field(
 
 **Basic Action Emission**:
 
-```python
+```
 from uuid import uuid4
 from datetime import datetime
 from omnibase_core.models.model_action import ModelAction
@@ -502,11 +506,11 @@ class NodeWorkflowOrchestrator(NodeCoreBase):
 
         await self.event_bus.publish(effect_action)
         self.current_epoch += 1  # Increment to version 2
-```python
+```
 
 **Action with Metadata**:
 
-```python
+```
 action = ModelAction(
     action_id=uuid4(),
     action_type=EnumActionType.REDUCE,
@@ -521,11 +525,11 @@ action = ModelAction(
         "tenant_id": "tenant-123",
     },
 )
-```python
+```
 
 **Conditional Action Emission**:
 
-```python
+```
 async def emit_conditional_action(self, condition: bool, payload: dict):
     """Emit action only if condition is met."""
 
@@ -545,13 +549,15 @@ async def emit_conditional_action(self, condition: bool, payload: dict):
 
     await self.event_bus.publish(action)
     self.current_epoch += 1
-```python
+```
 
 ### Validating Actions
 
 **Lease Validation in Downstream Nodes**:
 
-```python
+```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 class NodeDataTransformerCompute(NodeCoreBase):
     def __init__(self, container):
         super().__init__(container)
@@ -562,14 +568,14 @@ class NodeDataTransformerCompute(NodeCoreBase):
 
         # Step 1: Validate lease_id (ownership proof)
         if not self._validate_lease_id(action):
-            raise OnexError(
+            raise ModelOnexError(
                 f"Invalid lease_id: {action.lease_id} not authorized "
                 f"for workflow"
             )
 
         # Step 2: Validate epoch (stale action detection)
         if not self._validate_epoch(action):
-            raise OnexError(
+            raise ModelOnexError(
                 f"Stale action detected: epoch {action.epoch} < "
                 f"last processed {self.active_leases.get(action.payload.get('workflow_id'), -1)}"
             )
@@ -598,11 +604,14 @@ class NodeDataTransformerCompute(NodeCoreBase):
 
         last_epoch = self.active_leases.get(workflow_id, -1)
         return action.epoch >= last_epoch
-```python
+```
 
 **Stale Action Detection**:
 
-```python
+```
+from datetime import datetime
+from uuid import UUID
+
 class ActionValidator:
     """Utility class for action validation."""
 
@@ -627,11 +636,13 @@ class ActionValidator:
     ) -> bool:
         """Check if all action dependencies are satisfied."""
         return all(dep_id in completed_actions for dep_id in action.dependencies)
-```python
+```
 
 **Comprehensive Validation Pattern**:
 
-```python
+```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 async def validate_and_process_action(
     action: ModelAction,
     last_processed_epoch: int,
@@ -641,40 +652,40 @@ async def validate_and_process_action(
 
     # Validation 1: Lease ownership
     if action.lease_id != current_workflow_lease_id:
-        raise OnexError("Invalid lease_id: workflow owned by different orchestrator")
+        raise ModelOnexError("Invalid lease_id: workflow owned by different orchestrator")
 
     # Validation 2: Epoch (stale detection)
     if ActionValidator.is_stale_action(action, last_processed_epoch):
-        raise OnexError(f"Stale action: epoch {action.epoch}")
+        raise ModelOnexError(f"Stale action: epoch {action.epoch}")
 
     # Validation 3: Timeout
     if not ActionValidator.validate_action_timeout(action):
-        raise OnexError(f"Action timeout exceeded: {action.timeout_ms}ms")
+        raise ModelOnexError(f"Action timeout exceeded: {action.timeout_ms}ms")
 
     # Validation 4: Dependencies
     if not ActionValidator.validate_dependencies_met(action, completed_actions):
-        raise OnexError("Action dependencies not met")
+        raise ModelOnexError("Action dependencies not met")
 
     # All validations passed - safe to process
     return await execute_action(action)
-```text
+```
 
 ## Best Practices
 
 ### Always Set lease_id in Orchestrator
 
 **❌ WRONG - Missing lease_id**:
-```python
+```
 action = ModelAction(
     action_id=uuid4(),
     action_type=EnumActionType.COMPUTE,
     target_node_type="NodeProcessorCompute",
     # Missing lease_id and epoch!
 )
-```python
+```
 
 **✅ CORRECT - Lease ownership guaranteed**:
-```python
+```
 class NodeMyOrchestrator(NodeCoreBase):
     def __init__(self, container):
         super().__init__(container)
@@ -691,14 +702,14 @@ class NodeMyOrchestrator(NodeCoreBase):
         )
         await self.publish(action)
         self.current_epoch += 1  # ✅ Increment after emission
-```python
+```
 
 ---
 
 ### Increment Epoch on State Changes
 
 **❌ WRONG - Epoch never increments**:
-```python
+```
 async def emit_multiple_actions(self):
     for i in range(10):
         action = ModelAction(
@@ -708,10 +719,10 @@ async def emit_multiple_actions(self):
         )
         await self.publish(action)
     # self.current_epoch never incremented
-```python
+```
 
 **✅ CORRECT - Epoch tracks each state change**:
-```python
+```
 async def emit_multiple_actions(self):
     for i in range(10):
         action = ModelAction(
@@ -721,30 +732,32 @@ async def emit_multiple_actions(self):
         )
         await self.publish(action)
         self.current_epoch += 1  # ✅ Increment after each emission
-```python
+```
 
 ---
 
 ### Validate Lease Before Action Execution
 
 **❌ WRONG - No lease validation**:
-```python
+```
 async def process_action(self, action: ModelAction):
     # ❌ Blindly execute without checking lease_id or epoch
     result = await self._execute(action.payload)
     return result
-```python
+```
 
 **✅ CORRECT - Comprehensive lease validation**:
-```python
+```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 async def process_action(self, action: ModelAction):
     # ✅ Step 1: Validate lease_id
     if action.lease_id != self.current_workflow_lease_id:
-        raise OnexError("Invalid lease_id")
+        raise ModelOnexError("Invalid lease_id")
 
     # ✅ Step 2: Validate epoch
     if action.epoch < self.last_processed_epoch:
-        raise OnexError("Stale action")
+        raise ModelOnexError("Stale action")
 
     # ✅ Step 3: Safe to execute
     result = await self._execute(action.payload)
@@ -753,22 +766,22 @@ async def process_action(self, action: ModelAction):
     self.last_processed_epoch = action.epoch
 
     return result
-```yaml
+```
 
 ---
 
 ### Use Strong Typing for Payloads
 
 **❌ WRONG - Untyped payload**:
-```python
+```
 action = ModelAction(
     action_type=EnumActionType.COMPUTE,
     payload={"data": some_data},  # ❌ What keys? What types?
 )
-```python
+```
 
 **✅ CORRECT - Strongly-typed payload schema**:
-```python
+```
 from pydantic import BaseModel
 
 class ComputePayload(BaseModel):
@@ -788,14 +801,14 @@ action = ModelAction(
     action_type=EnumActionType.COMPUTE,
     payload=payload.model_dump(),  # ✅ Validated payload
 )
-```python
+```
 
 ---
 
 ### Track Action Dependencies for Ordering
 
 **✅ Dependency Tracking Example**:
-```python
+```
 async def orchestrate_multi_step_workflow(self, input_data: dict):
     """Orchestrate workflow with dependency tracking."""
 
@@ -837,14 +850,14 @@ async def orchestrate_multi_step_workflow(self, input_data: dict):
     )
     await self.publish(store_action)
     self.current_epoch += 1
-```python
+```
 
 ---
 
 ### Log Action Lifecycle Events
 
 **✅ Comprehensive Action Logging**:
-```python
+```
 async def emit_action_with_logging(self, action_type, payload):
     """Emit action with full lifecycle logging."""
 
@@ -879,7 +892,7 @@ async def emit_action_with_logging(self, action_type, payload):
         previous_epoch=self.current_epoch - 1,
         current_epoch=self.current_epoch,
     )
-```python
+```
 
 ## Related Documentation
 

@@ -108,16 +108,16 @@ This document provides a comprehensive index of all documentation related to tes
 
 ### 1. Import Test Fixtures
 
-```python
+```
 from tests.fixtures.fixture_intent_publisher import (
     MockKafkaClient,
     create_test_event,
 )
-```python
+```
 
 ### 2. Create Mock Kafka Client
 
-```python
+```
 @pytest.fixture
 def mock_kafka():
     return MockKafkaClient()
@@ -126,11 +126,11 @@ def mock_kafka():
 def test_node(mock_kafka):
     container = create_test_container(kafka_client=mock_kafka)
     return MyReducerNode(container)
-```python
+```
 
 ### 3. Write Test
 
-```python
+```
 @pytest.mark.asyncio
 async def test_node_publishes_intent(test_node, mock_kafka):
     # Act
@@ -139,7 +139,7 @@ async def test_node_publishes_intent(test_node, mock_kafka):
     # Assert
     assert mock_kafka.get_message_count() == 1
     assert mock_kafka.published_messages[0]["topic"] == "dev.omninode-bridge.intents.event-publish.v1"
-```python
+```
 
 ---
 
@@ -211,7 +211,7 @@ async def test_node_publishes_intent(test_node, mock_kafka):
 
 ### Testing REDUCER Publishing Aggregated Results
 
-```python
+```
 @pytest.mark.asyncio
 async def test_reducer_publishes_aggregated_results():
     mock_kafka = MockKafkaClient()
@@ -222,11 +222,11 @@ async def test_reducer_publishes_aggregated_results():
     assert mock_kafka.get_message_count() == 1
     intent = json.loads(mock_kafka.published_messages[0]["value"])["payload"]
     assert intent["target_event_type"] == "METRICS_AGGREGATED"
-```python
+```
 
 ### Testing COMPUTE Publishing Computed Results
 
-```python
+```
 @pytest.mark.asyncio
 async def test_compute_publishes_result():
     mock_kafka = MockKafkaClient()
@@ -236,11 +236,11 @@ async def test_compute_publishes_result():
 
     assert mock_kafka.get_message_count() == 1
     assert result.transformed is True
-```python
+```
 
 ### Testing Error Handling
 
-```python
+```
 @pytest.mark.asyncio
 async def test_kafka_failure_handling():
     mock_kafka = MockKafkaClient()
@@ -249,7 +249,7 @@ async def test_kafka_failure_handling():
 
     with pytest.raises(RuntimeError, match="Kafka unavailable"):
         await node.publish_event_intent(...)
-```python
+```
 
 ---
 
@@ -276,7 +276,7 @@ async def test_kafka_failure_handling():
 
 ## Running Tests
 
-```bash
+```
 # All intent publisher tests
 poetry run pytest tests/ -k "intent" -v
 
@@ -288,7 +288,7 @@ poetry run pytest tests/ --cov=src/omnibase_core/mixins/mixin_intent_publisher.p
 
 # Fast tests only (no integration)
 poetry run pytest tests/ -m "not integration" -v
-```python
+```
 
 ---
 
@@ -307,33 +307,33 @@ poetry run pytest tests/ -m "not integration" -v
 
 **Solution**: Ensure MockKafkaClient is registered in test container:
 
-```python
+```
 def create_test_container(kafka_client=None):
     container = ModelONEXContainer()
     container.register_service("kafka_client", kafka_client or MockKafkaClient())
     return container
-```text
+```
 
 ### Issue: Intent envelope parsing fails
 
 **Solution**: Parse JSON carefully, accounting for envelope structure:
 
-```python
+```
 intent_envelope = json.loads(message["value"])
 intent_payload = intent_envelope["payload"]  # Intent is inside envelope
-```text
+```
 
 ### Issue: Correlation ID doesn't match
 
 **Solution**: UUIDs are serialized as strings in JSON:
 
-```python
+```
 # Correct
 assert intent_envelope["correlation_id"] == str(correlation_id)
 
 # Incorrect
 assert intent_envelope["correlation_id"] == correlation_id  # Type mismatch
-```python
+```
 
 ---
 

@@ -16,7 +16,7 @@ The ONEX ecosystem consists of multiple repositories with distinct purposes and 
 **Package Name**: `omnibase_core`
 **Version**: `0.2.0`
 
-```text
+```
 omnibase_core/
 ├── src/
 │   └── omnibase_core/
@@ -77,7 +77,7 @@ omnibase_core/
 **Package Name**: `omninode_bridge`
 **Version**: `0.1.0`
 
-```text
+```
 omninode_bridge/
 ├── src/
 │   └── omninode_bridge/
@@ -117,7 +117,7 @@ omninode_bridge/
 **Package Name**: `archon`
 **Version**: `0.1.0`
 
-```text
+```
 omniarchon/
 ├── python/                     # Main Python package
 │   ├── src/
@@ -149,7 +149,7 @@ omniarchon/
 **Package Name**: `omnibase_infra`
 **Version**: `0.1.0`
 
-```text
+```
 omnibase_infra/
 ├── src/
 │   └── omnibase_infra/
@@ -167,7 +167,7 @@ omnibase_infra/
 ```
 
 **Infrastructure Node Patterns**:
-- `NodeEffectService` - Legacy service base class
+- `ModelServiceEffect` - Legacy service base class
 - Custom mixin compositions for infrastructure needs
 - Direct integration with external systems (PostgreSQL, Kafka, Consul)
 
@@ -178,7 +178,7 @@ omnibase_infra/
 **Package Name**: `omnimemory`
 **Version**: `0.1.0`
 
-```text
+```
 omnimemory/
 ├── src/
 │   └── omnimemory/
@@ -197,7 +197,7 @@ omnimemory/
 **Package Name**: `omnibase`
 **Version**: `0.1.0`
 
-```text
+```
 omnibase_3/
 ├── src/
 │   └── omnibase/               # Legacy core implementation
@@ -249,7 +249,7 @@ pydantic = "^2.11.7"
 
 ### Dependency Relationships
 
-```text
+```
 omnibase_core (core framework)
 ├── omninode_bridge (depends on omnibase_core)
 ├── omnibase_infra (depends on omnibase_core)
@@ -263,7 +263,7 @@ omnibase_core (core framework)
 
 **Location**: `omnibase_core/src/omnibase_core/models/nodes/node_services/`
 
-```python
+```
 from omnibase_core.models.nodes.node_services import ModelServiceCompute
 
 class MyComputeNode(ModelServiceCompute):
@@ -282,7 +282,7 @@ class MyComputeNode(ModelServiceCompute):
 
 **Location**: `omninode_bridge/src/omninode_bridge/nodes/`
 
-```python
+```
 from omnibase_core.nodes.node_effect import NodeEffect
 from omninode_bridge.nodes.mixins.health_mixin import HealthCheckMixin
 
@@ -300,15 +300,15 @@ class MyBridgeEffect(NodeEffect, HealthCheckMixin):
 
 **Location**: `omnibase_infra/src/omnibase_infra/nodes/`
 
-```python
-from omnibase_core.core.node_effect_service import NodeEffectService
+```
+from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
 
-class MyInfraEffect(NodeEffectService):
+class MyInfraEffect(ModelServiceEffect):
     """Legacy infrastructure node."""
     pass
 ```
 
-**Note**: `NodeEffectService` is deprecated in favor of `ModelService*` wrappers
+**Note**: `ModelServiceEffect` is deprecated in favor of `ModelService*` wrappers
 
 ## Mixin Distribution
 
@@ -344,7 +344,7 @@ Based on ecosystem analysis, these capabilities may need to be added to core:
 1. **Update Documentation** - Use service wrapper patterns in all examples
 2. **Add Missing Mixins** - Implement identified missing capabilities in core
 3. **Create Bridge Wrappers** - Add bridge-specific service wrappers
-4. **Deprecate Legacy Patterns** - Mark `NodeEffectService` as deprecated
+4. **Deprecate Legacy Patterns** - Mark `ModelServiceEffect` as deprecated
 
 ### Long-term Strategy
 1. **Standardize on Wrappers** - All new nodes use `ModelService*` wrappers
@@ -379,7 +379,7 @@ All repositories use semantic versioning with `0.1.0` as the current version. De
 
 Each repository follows a consistent testing pattern:
 
-```text
+```
 tests/
 ├── unit/                       # Unit tests
 │   ├── mixins/                # Mixin tests

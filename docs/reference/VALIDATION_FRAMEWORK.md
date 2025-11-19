@@ -15,7 +15,7 @@ Comprehensive validation framework for ONEX compliance across the omni* ecosyste
 
 Since this is part of `omnibase_core`, install the package:
 
-```bash
+```
 pip install omnibase_core
 ```
 
@@ -25,7 +25,7 @@ pip install omnibase_core
 
 The easiest way to use validation tools is through the CLI:
 
-```bash
+```
 # Run all validations
 python -m omnibase_core.validation all
 
@@ -43,7 +43,7 @@ python -m omnibase_core.validation list
 
 Import and use validation functions in your code:
 
-```python
+```
 from omnibase_core.validation import (
     validate_architecture,
     validate_union_usage,
@@ -81,7 +81,7 @@ Enforces ONEX one-model-per-file architectural principle:
 - No mixed types (models + enums + protocols in same file)
 - Proper separation of concerns
 
-```bash
+```
 # CLI
 python -m omnibase_core.validation architecture src/ --max-violations 0
 
@@ -105,7 +105,7 @@ Detects problematic Union type patterns:
 - Overly broad unions
 - Union[T, None] instead of Optional[T]
 
-```bash
+```
 # CLI
 python -m omnibase_core.validation union-usage src/ --max-unions 100 --strict
 
@@ -116,7 +116,7 @@ result = validate_union_usage("src/", max_unions=100, strict=True)
 
 #### Examples of Issues Detected:
 
-```python
+```
 # ❌ Problematic patterns
 Union[str, int, bool, float]  # Too many primitives
 Union[str, int, dict, list]   # Mixed primitive/complex
@@ -137,7 +137,7 @@ Validates YAML contract files:
 - No manual YAML in restricted areas
 - Proper contract structure
 
-```bash
+```
 # CLI
 python -m omnibase_core.validation contracts contracts/
 
@@ -156,7 +156,7 @@ Checks code patterns and conventions:
 - Anti-pattern detection (Manager, Handler, etc.)
 - Function naming conventions
 
-```bash
+```
 # CLI
 python -m omnibase_core.validation patterns src/ --strict
 
@@ -167,7 +167,7 @@ result = validate_patterns("src/", strict=True)
 
 #### Examples of Issues Fixed:
 
-```python
+```
 # ❌ Problematic patterns
 class User(BaseModel):           # Should be ModelUser
     user_id: str                 # Should be UUID
@@ -189,7 +189,7 @@ class ModelUserService:          # Specific domain name
 
 Add to your `.pre-commit-config.yaml`:
 
-```yaml
+```
 repos:
   - repo: local
     hooks:
@@ -206,7 +206,7 @@ repos:
 
 Add to your GitHub Actions workflow:
 
-```yaml
+```
 - name: ONEX Validation
   run: |
     pip install omnibase_core
@@ -217,7 +217,7 @@ Add to your GitHub Actions workflow:
 
 Create custom validation scripts for your repository:
 
-```python
+```
 #!/usr/bin/env python3
 """Custom validation for my-repo."""
 
@@ -260,7 +260,7 @@ if __name__ == "__main__":
 
 Create a custom validation suite for specific needs:
 
-```python
+```
 from omnibase_core.validation import ValidationSuite
 from pathlib import Path
 
@@ -282,7 +282,7 @@ if not arch_result.success:
 
 Validate individual files:
 
-```python
+```
 from omnibase_core.validation.types import validate_union_usage_file
 from omnibase_core.validation.patterns import validate_patterns_file
 from pathlib import Path
@@ -310,7 +310,7 @@ print(f"Found {len(pattern_issues)} pattern issues")
 
 For repositories with special needs, create custom validation wrappers:
 
-```python
+```
 # my_repo_validation.py
 from omnibase_core.validation import validate_all
 
@@ -330,7 +330,7 @@ def validate_my_repo(strict=True):
 
 All validation functions return a `ValidationResult` object:
 
-```python
+```
 @dataclass
 class ValidationResult:
     success: bool                    # Overall success status
@@ -362,7 +362,7 @@ class ValidationResult:
 
 Run with verbose output:
 
-```bash
+```
 python -m omnibase_core.validation all --verbose
 ```
 
@@ -386,7 +386,7 @@ To add new validation tools:
 
 ### FastAPI Service Repository
 
-```python
+```
 # validate_service.py
 from omnibase_core.validation import validate_all
 
@@ -409,7 +409,7 @@ def validate_service():
 
 ### CLI Tool Repository
 
-```python
+```
 # validate_cli.py  
 from omnibase_core.validation import validate_patterns, validate_union_usage
 

@@ -16,7 +16,7 @@ This document provides comprehensive API reference for all Pydantic models in om
 
 **Purpose**: Dependency injection container for service resolution.
 
-```python
+```
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Create container
@@ -27,7 +27,7 @@ container.register_service("MyService", my_service_instance)
 
 # Resolve services
 service = container.get_service("MyService")
-```python
+```
 
 #### Key Methods
 
@@ -44,7 +44,7 @@ service = container.get_service("MyService")
 
 **Purpose**: Standard input model for COMPUTE nodes.
 
-```python
+```
 from omnibase_core.models.model_compute_input import ModelComputeInput
 
 input_data = ModelComputeInput(
@@ -52,7 +52,7 @@ input_data = ModelComputeInput(
     data={"values": [1, 2, 3, 4, 5]},
     correlation_id="12345"
 )
-```python
+```
 
 #### ModelComputeOutput
 
@@ -60,7 +60,7 @@ input_data = ModelComputeInput(
 
 **Purpose**: Standard output model for COMPUTE nodes.
 
-```python
+```
 from omnibase_core.models.model_compute_output import ModelComputeOutput
 
 output_data = ModelComputeOutput(
@@ -69,7 +69,7 @@ output_data = ModelComputeOutput(
     processing_time_ms=2.5,
     correlation_id="12345"
 )
-```python
+```
 
 ### Error Models
 
@@ -79,7 +79,7 @@ output_data = ModelComputeOutput(
 
 **Purpose**: Standard error model for ONEX framework.
 
-```python
+```
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -88,7 +88,7 @@ error = ModelOnexError(
     message="Invalid input data",
     context={"field": "value", "expected": "string"}
 )
-```python
+```
 
 #### Key Properties
 
@@ -106,7 +106,7 @@ error = ModelOnexError(
 
 **Purpose**: Event envelope for inter-node communication.
 
-```python
+```
 from omnibase_core.models.model_event_envelope import ModelEventEnvelope
 
 event = ModelEventEnvelope(
@@ -115,7 +115,7 @@ event = ModelEventEnvelope(
     source_node="compute_node_1",
     target_node="effect_node_1"
 )
-```python
+```
 
 ### Intent and Action Models
 
@@ -125,7 +125,7 @@ event = ModelEventEnvelope(
 
 **Purpose**: Intent model for side effect requests.
 
-```python
+```
 from omnibase_core.models.model_intent import ModelIntent
 from omnibase_core.enums.enum_intent_type import EnumIntentType
 
@@ -134,7 +134,7 @@ intent = ModelIntent(
     payload={"table": "users", "data": {"name": "John"}},
     priority="high"
 )
-```python
+```
 
 #### ModelAction
 
@@ -142,7 +142,7 @@ intent = ModelIntent(
 
 **Purpose**: Action model for state transitions.
 
-```python
+```
 from omnibase_core.models.model_action import ModelAction
 from omnibase_core.enums.enum_action_type import EnumActionType
 
@@ -151,7 +151,7 @@ action = ModelAction(
     payload={"field": "status", "value": "completed"},
     timestamp=time.time()
 )
-```python
+```
 
 ### Cache Models
 
@@ -161,7 +161,7 @@ action = ModelAction(
 
 **Purpose**: LRU cache for computation results.
 
-```python
+```
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
 
 cache = ModelComputeCache(max_size=1000, default_ttl_minutes=30)
@@ -174,7 +174,7 @@ result = cache.get("key")
 
 # Check if exists
 exists = cache.contains("key")
-```python
+```
 
 #### Key Methods
 
@@ -192,7 +192,7 @@ exists = cache.contains("key")
 
 **Purpose**: Circuit breaker for failure handling.
 
-```python
+```
 from omnibase_core.models.infrastructure.model_circuit_breaker import ModelCircuitBreaker
 
 breaker = ModelCircuitBreaker(
@@ -210,7 +210,7 @@ if breaker.can_execute():
         raise
 else:
     raise Exception("Circuit breaker is open")
-```python
+```
 
 #### Key Methods
 
@@ -227,7 +227,7 @@ else:
 
 **Purpose**: Transaction management for side effects.
 
-```python
+```
 from omnibase_core.models.infrastructure.model_effect_transaction import ModelEffectTransaction
 
 async with ModelEffectTransaction() as transaction:
@@ -240,14 +240,14 @@ async with ModelEffectTransaction() as transaction:
 
     # Transaction commits automatically on success
     # or rolls back on exception
-```python
+```
 
 ## Validation Patterns
 
 ### Input Validation
 
-```python
-from pydantic import BaseModel, Field, validator
+```
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 
 class MyInputModel(BaseModel):
@@ -258,24 +258,26 @@ class MyInputModel(BaseModel):
     email: str = Field(description="Email address", regex=r'^[\w\.-]+@[\w\.-]+\.\w+$')
     tags: List[str] = Field(description="User tags", max_items=10)
 
-    @validator('name')
+    @field_validator('name')
+    @classmethod
     def validate_name(cls, v):
         """Custom name validation."""
         if not v.strip():
             raise ValueError("Name cannot be empty")
         return v.strip()
 
-    @validator('tags')
+    @field_validator('tags')
+    @classmethod
     def validate_tags(cls, v):
         """Custom tags validation."""
         if len(set(v)) != len(v):
             raise ValueError("Tags must be unique")
         return v
-```python
+```
 
 ### Output Validation
 
-```python
+```
 class MyOutputModel(BaseModel):
     """Example output model with validation."""
 
@@ -284,22 +286,23 @@ class MyOutputModel(BaseModel):
     error_message: Optional[str] = Field(description="Error message if failed")
     processing_time_ms: float = Field(description="Processing time", ge=0)
 
-    @validator('error_message')
-    def validate_error_message(cls, v, values):
+    @field_validator('error_message')
+    @classmethod
+    def validate_error_message(cls, v, info):
         """Validate error message consistency."""
-        success = values.get('success', True)
+        success = info.data.get('success', True)
         if success and v is not None:
             raise ValueError("Error message should be None when success is True")
         if not success and v is None:
             raise ValueError("Error message required when success is False")
         return v
-```python
+```
 
 ## Serialization Patterns
 
 ### JSON Serialization
 
-```python
+```
 # Convert to JSON
 json_data = model.json()
 
@@ -311,11 +314,11 @@ dict_data = model.dict()
 
 # Convert from dict
 model = MyModel(**dict_data)
-```python
+```
 
 ### Custom Serialization
 
-```python
+```
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Any
@@ -338,13 +341,13 @@ class CustomModel(BaseModel):
             "data": self.data,
             "version": "1.0"
         }
-```python
+```
 
 ## Error Handling Patterns
 
 ### Validation Error Handling
 
-```python
+```
 from pydantic import ValidationError
 
 try:
@@ -364,11 +367,11 @@ except ValidationError as e:
         message="Input validation failed",
         context={"errors": error_details}
     )
-```python
+```
 
 ### Model Error Conversion
 
-```python
+```
 def convert_to_onex_error(error: Exception, context: Dict[str, Any]) -> ModelOnexError:
     """Convert any exception to ModelOnexError."""
 
@@ -390,24 +393,24 @@ def convert_to_onex_error(error: Exception, context: Dict[str, Any]) -> ModelOne
             message=f"Processing failed: {str(error)}",
             context=context
         )
-```python
+```
 
 ## Performance Considerations
 
 ### Model Caching
 
-```python
+```
 from functools import lru_cache
 
 @lru_cache(maxsize=128)
 def create_model_from_dict(model_class: type, data: Dict[str, Any]) -> BaseModel:
     """Cache model creation for performance."""
     return model_class(**data)
-```python
+```
 
 ### Lazy Loading
 
-```python
+```
 from typing import Optional
 
 class LazyModel(BaseModel):
@@ -426,7 +429,7 @@ class LazyModel(BaseModel):
         """Load expensive data."""
         # Expensive operation here
         return {"loaded": "data"}
-```python
+```
 
 ## Related Documentation
 

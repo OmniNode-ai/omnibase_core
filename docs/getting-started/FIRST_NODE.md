@@ -27,7 +27,7 @@ A temperature converter COMPUTE node that:
 
 ### Step 1: Project Setup
 
-```bash
+```
 # Create project directory
 mkdir temperature-converter
 cd temperature-converter
@@ -44,13 +44,13 @@ touch src/temperature_converter/__init__.py
 touch src/temperature_converter/nodes/__init__.py
 touch src/temperature_converter/models/__init__.py
 touch src/temperature_converter/enums/__init__.py
-```python
+```
 
 ### Step 2: Define Enums
 
 **File**: `src/temperature_converter/enums/temperature_unit.py`
 
-```python
+```
 """Temperature unit enumeration."""
 
 from enum import Enum
@@ -76,13 +76,13 @@ class TemperatureUnit(str, Enum):
             self.KELVIN: "K"
         }
         return symbols[self]
-```python
+```
 
 ### Step 3: Define Input Model
 
 **File**: `src/temperature_converter/models/temperature_input.py`
 
-```python
+```
 """Input model for temperature conversion."""
 
 from typing import Optional
@@ -157,13 +157,13 @@ class TemperatureInput(BaseModel):
                 raise ValueError("Temperature cannot be below absolute zero (0K)")
 
         return v
-```python
+```
 
 ### Step 4: Define Output Model
 
 **File**: `src/temperature_converter/models/temperature_output.py`
 
-```python
+```
 """Output model for temperature conversion."""
 
 from typing import Optional
@@ -206,13 +206,13 @@ class TemperatureOutput(BaseModel):
 
     success: bool = Field(default=True, description="Whether conversion was successful")
     error_message: Optional[str] = Field(default=None, description="Error message if conversion failed")
-```python
+```
 
 ### Step 5: Implement the Node
 
 **File**: `src/temperature_converter/nodes/temperature_converter_compute.py`
 
-```python
+```
 """Temperature converter COMPUTE node."""
 
 import time
@@ -348,13 +348,13 @@ class TemperatureConverterCompute(NodeCompute):
             "total_operations": total_operations,
             "success_rate_percent": round(success_rate, 2)
         }
-```python
+```
 
 ### Step 6: Write Comprehensive Tests
 
 **File**: `tests/nodes/test_temperature_converter.py`
 
-```python
+```
 """Tests for temperature converter node."""
 
 import pytest
@@ -558,11 +558,11 @@ async def test_processing_time_tracking(converter):
     assert "processing_time_ms" in result
     assert isinstance(result["processing_time_ms"], float)
     assert result["processing_time_ms"] >= 0
-```python
+```
 
 ### Step 7: Run Tests and Validation
 
-```bash
+```
 # Run tests
 poetry run pytest tests/ -v
 
@@ -571,13 +571,13 @@ poetry run mypy src/
 
 # Run linting
 poetry run ruff check src/ tests/
-```python
+```
 
 ### Step 8: Create Usage Example
 
 **File**: `example_usage.py`
 
-```python
+```
 """Example usage of the temperature converter."""
 
 import asyncio
@@ -617,11 +617,11 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-```bash
+```
 
 Run it:
 
-```bash
+```
 poetry run python example_usage.py
 
 # Expected output:
@@ -634,7 +634,7 @@ poetry run python example_usage.py
 # -40°C = -40.0°F
 #
 # Statistics: 5 conversions, 100.0% success rate
-```python
+```
 
 ## What You Learned
 
@@ -693,28 +693,28 @@ Try these enhancements:
 ### Common Issues
 
 #### Import Errors
-```bash
+```
 # Ensure you're in the virtual environment
 poetry shell
 
 # Check imports
 poetry run python -c "from temperature_converter.nodes.temperature_converter_compute import TemperatureConverterCompute"
-```python
+```
 
 #### Test Failures
-```bash
+```
 # Run with verbose output
 poetry run pytest tests/ -vvs
 
 # Run specific test
 poetry run pytest tests/nodes/test_temperature_converter.py::test_celsius_to_fahrenheit -v
-```bash
+```
 
 #### Type Checking Issues
-```bash
+```
 # Run MyPy with more details
 poetry run mypy src/ --show-error-codes
-```python
+```
 
 ## Summary
 

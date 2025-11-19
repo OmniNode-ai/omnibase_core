@@ -47,7 +47,7 @@ Added `@model_validator` that:
 
 The validator triggers a `UserWarning` for the `MERGE_WITH_OVERRIDE` mode (both flags `True`) to alert users about potential complexity:
 
-```python
+```
 @model_validator(mode="after")
 def validate_flag_consistency(self) -> "ModelEnvironmentValidationRules":
     """Validate flag combination consistency and warn about edge cases."""
@@ -59,7 +59,7 @@ def validate_flag_consistency(self) -> "ModelEnvironmentValidationRules":
 
 Updated field descriptions to be more explicit:
 
-```python
+```
 inherit_from_default: bool = Field(
     default=True,
     description=(
@@ -97,7 +97,7 @@ Updated existing edge case tests to document the inheritance mode being tested.
 
 All tests pass (36/36 excluding pre-existing unrelated failure):
 
-```bash
+```
 poetry run pytest tests/unit/models/contracts/subcontracts/test_model_environment_validation_rules.py -k "not test_validation_rules_with_all_rule_types"
 ```
 
@@ -107,7 +107,7 @@ poetry run pytest tests/unit/models/contracts/subcontracts/test_model_environmen
 
 Mypy type checking passes with strict mode:
 
-```bash
+```
 poetry run mypy src/omnibase_core/models/contracts/subcontracts/model_environment_validation_rules.py
 ```
 
@@ -122,7 +122,7 @@ poetry run mypy src/omnibase_core/models/contracts/subcontracts/model_environmen
 
 ## Usage Example
 
-```python
+```
 import warnings
 from omnibase_core.models.contracts.subcontracts.model_environment_validation_rules import ModelEnvironmentValidationRules
 from omnibase_core.enums.enum_environment import EnumEnvironment

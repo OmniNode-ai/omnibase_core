@@ -27,7 +27,7 @@ Thank you for your interest in contributing to omnibase_core! This document prov
 1. **Read the documentation**:
    - [ONEX Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
    - [Node Building Guide](docs/guides/node-building/README.md)
-   - [Development Workflow](docs/guides/development-workflow.md)
+   - Development Workflow (coming soon)
 
 2. **Explore the codebase**:
    - Review existing node implementations in `src/omnibase_core/`
@@ -121,7 +121,7 @@ We welcome:
 - Utils: `util_<name>.py`
 
 **Classes**:
-- Nodes: `Node<Name><Type>` (e.g., `NodeComputeService`)
+- Nodes: `Node<Name><Type>` (e.g., `NodeMyServiceCompute`)
 - Models: `Model<Name>` (e.g., `ModelEventEnvelope`)
 - Enums: `Enum<Name>` (e.g., `EnumNodeType`)
 
@@ -144,11 +144,14 @@ We welcome:
        value: int = Field(ge=0)
    ```
 
-3. **Error Handling**: Use OnexError with proper error codes
+3. **Error Handling**: Use ModelOnexError with proper error codes
    ```python
-   raise OnexError(
+   from omnibase_core.models.errors.model_onex_error import ModelOnexError
+   from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+   raise ModelOnexError(
        message="Operation failed",
-       error_code=EnumErrorCode.OPERATION_FAILED
+       error_code=EnumCoreErrorCode.OPERATION_FAILED
    )
    ```
 

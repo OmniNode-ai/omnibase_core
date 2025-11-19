@@ -21,7 +21,7 @@ String version literals bypass type safety and introduce runtime parsing failure
 
 ### ❌ WRONG - String Version Literals
 
-```python
+```
 # Direct string literals
 version = "1.0.0"  # NEVER DO THIS
 
@@ -33,11 +33,11 @@ node.update_version("1.0.0")  # NEVER DO THIS
 
 # In YAML contracts (flat string)
 version: "1.0.0"  # NEVER DO THIS
-```yaml
+```
 
 ### ✅ CORRECT - Structured Versions
 
-```python
+```
 # Use ModelSemVer constructor
 version = ModelSemVer(1, 0, 0)  # CORRECT
 
@@ -49,7 +49,7 @@ version:
   major: 1
   minor: 0
   patch: 0
-```python
+```
 
 ### Why This Matters
 
@@ -138,37 +138,37 @@ The following patterns are **explicitly allowed** and will not trigger validatio
 ### Migration Guide
 
 **Before**:
-```python
+```
 # Old pattern
 from omnibase_core.models.model_semver import ModelSemVer
 
 class MyNode:
     def __init__(self):
         self.version = ModelSemVer.parse("1.0.0")
-```python
+```
 
 **After**:
-```python
+```
 # New pattern
 from omnibase_core.models.model_semver import ModelSemVer
 
 class MyNode:
     def __init__(self):
         self.version = ModelSemVer(1, 0, 0)
-```yaml
+```
 
 **YAML Contracts Before**:
-```yaml
+```
 version: "1.0.0"
-```yaml
+```
 
 **YAML Contracts After**:
-```yaml
+```
 version:
   major: 1
   minor: 0
   patch: 0
-```yaml
+```
 
 ### Related Documentation
 
@@ -221,7 +221,7 @@ When adding new anti-patterns to this document:
 
 ### Related Documentation
 [Links to relevant docs]
-```yaml
+```
 
 ---
 

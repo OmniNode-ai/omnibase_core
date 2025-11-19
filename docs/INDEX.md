@@ -18,7 +18,7 @@
 
 ## 📚 Documentation Structure
 
-```text
+```
 omnibase_core/docs/
 │
 ├── Getting Started          → New developer onboarding
@@ -27,7 +27,7 @@ omnibase_core/docs/
 ├── Architecture             → System design and concepts
 ├── Reference                → Templates and API docs
 └── Specialized Topics       → Threading, errors, patterns
-```python
+```
 
 ---
 
@@ -71,7 +71,15 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
+| [**Mixin-Subcontract Mapping**](guides/MIXIN_SUBCONTRACT_MAPPING.md) | Relationship between mixins and subcontracts ⭐ **NEW** | ✅ Complete |
 | [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
+
+### Manifest Models
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) | Mixin metadata validation and discovery (11 models, 39 tests) | ✅ Complete |
+| [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) | Docker Compose YAML validation (16 integrated models, 25 tests) | ✅ Complete |
 
 ---
 
@@ -83,6 +91,7 @@ omnibase_core/docs/
 |----------|-------------|--------|
 | [Architecture Overview](architecture/OVERVIEW.md) | High-level system design | ✅ Complete |
 | [**Four-Node Pattern**](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX architecture ⭐ **Excellent!** | ✅ Complete |
+| [**Node Class Hierarchy**](architecture/NODE_CLASS_HIERARCHY.md) | ModelService* vs Node* vs NodeCoreBase ⭐ **CRITICAL** | ✅ Complete |
 | [**Container Types**](architecture/CONTAINER_TYPES.md) | ModelContainer vs ModelONEXContainer ⚠️ **CRITICAL** | ✅ Complete |
 | [Dependency Injection](architecture/DEPENDENCY_INJECTION.md) | ModelONEXContainer patterns | ✅ Complete |
 | [Contract System](architecture/CONTRACT_SYSTEM.md) | Contract architecture | ✅ Complete |
@@ -212,6 +221,7 @@ omnibase_core/docs/
 |------|-------|
 | **Build my first node** | [Node Building Guide](guides/node-building/README.md) → [COMPUTE Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) |
 | **Understand node types** | [Node Types](guides/node-building/02_NODE_TYPES.md) |
+| **Choose the right base class** | [Node Class Hierarchy](architecture/NODE_CLASS_HIERARCHY.md) |
 | **Use a production template** | [Node Templates](guides/templates/) |
 | **Handle errors properly** | [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md) |
 | **Secure my code** | [Security Validators](../scripts/validation/README.md) |
@@ -221,6 +231,8 @@ omnibase_core/docs/
 | **Monitor CI performance** | [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) |
 | **Debug async hangs** | [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md) |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
+| **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |
+| **Validate docker-compose.yaml** | [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) - Docker validation |
 
 ---
 

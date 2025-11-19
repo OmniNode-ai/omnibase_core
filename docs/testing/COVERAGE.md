@@ -21,7 +21,7 @@ The `scripts/run-coverage-parallel.sh` script runs pytest with coverage collecti
 
 ### Architecture
 
-```text
+```
 ┌─────────────────────────────────────────────────────────────┐
 │                  Parallel Test Execution                     │
 ├─────────────────────────────────────────────────────────────┤
@@ -45,23 +45,23 @@ The `scripts/run-coverage-parallel.sh` script runs pytest with coverage collecti
 │  coverage html     →  htmlcov/index.html                     │
 │                                                               │
 └─────────────────────────────────────────────────────────────┘
-```python
+```
 
 ## Usage
 
 ### Quick Start
 
-```bash
+```
 # Run parallel coverage tests with default configuration (from project root)
 # Default: 3 concurrent splits × 4 workers = 12 total workers
 ./scripts/run-coverage-parallel.sh
-```bash
+```
 
 ### Resource Configuration
 
 Customize parallelism based on your machine's capabilities:
 
-```bash
+```
 # Conservative (low-end machines: 4-6 cores, 8-16 GB RAM)
 export MAX_CONCURRENT_SPLITS=2
 export WORKERS_PER_SPLIT=3
@@ -76,13 +76,13 @@ export WORKERS_PER_SPLIT=4
 export MAX_CONCURRENT_SPLITS=4
 export WORKERS_PER_SPLIT=6
 ./scripts/run-coverage-parallel.sh
-```python
+```
 
 **See [PARALLEL_TESTING.md](PARALLEL_TESTING.md#resource-configuration-guide)** for detailed configuration guidance.
 
 ### Expected Output
 
-```text
+```
 🧪 Running parallel coverage tests (12 splits)
 📊 Resource Configuration:
    • Concurrent splits: 3
@@ -116,14 +116,14 @@ TOTAL                                      8542    542    94%
 📂 HTML report: htmlcov/index.html
 🌐 Open with: open htmlcov/index.html
 ⏱️  Total time: 3m 42s
-```text
+```
 
 ### Viewing HTML Report
 
-```bash
+```
 # Open coverage report in browser
 open htmlcov/index.html
-```text
+```
 
 The HTML report provides:
 - Line-by-line coverage visualization
@@ -166,7 +166,7 @@ fail_under = 60
 precision = 2
 show_missing = true
 skip_covered = false
-```python
+```
 
 ### Split Configuration
 
@@ -213,7 +213,7 @@ The script uses `set -e` to fail fast on errors:
 **Cause**: All splits may have failed or not produced coverage data.
 
 **Solution**:
-```bash
+```
 # Check for coverage files
 ls -la .coverage.*
 
@@ -224,27 +224,27 @@ COVERAGE_FILE=.coverage.test poetry run pytest tests/ \
   --cov=src/omnibase_core \
   --cov-report=term \
   -v
-```python
+```
 
 ### Issue: Coverage percentage is lower than expected
 
 **Cause**: Some files may not be executed by any tests.
 
 **Solution**:
-```bash
+```
 # Identify uncovered files
 poetry run coverage report --show-missing
 
 # Check which tests cover specific files
 poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
-```python
+```
 
 ### Issue: Script hangs or doesn't complete
 
 **Cause**: One or more splits may be stuck or resource exhaustion occurred.
 
 **Solution**:
-```bash
+```
 # Monitor running processes
 ps aux | grep pytest
 
@@ -255,7 +255,7 @@ pkill -f "pytest tests/"
 export MAX_CONCURRENT_SPLITS=2
 export WORKERS_PER_SPLIT=2
 ./scripts/run-coverage-parallel.sh
-```bash
+```
 
 **See [PARALLEL_TESTING.md](PARALLEL_TESTING.md#troubleshooting)** for comprehensive troubleshooting guide.
 
@@ -264,7 +264,7 @@ export WORKERS_PER_SPLIT=2
 **Cause**: Too many concurrent workers causing resource exhaustion.
 
 **Solution**:
-```bash
+```
 # Reduce concurrency immediately
 export MAX_CONCURRENT_SPLITS=2
 export WORKERS_PER_SPLIT=3
@@ -273,14 +273,14 @@ export WORKERS_PER_SPLIT=3
 ./scripts/run-coverage-parallel.sh
 
 # The script will warn if configuration is too aggressive
-```text
+```
 
 ### Issue: Resource warning displayed
 
 **Example**:
-```text
+```
 ⚠️  WARNING: Total workers (16) exceeds 2× CPU cores (8)
-```python
+```
 
 **Action**: This is a warning, not an error. The script will run, but:
 - If system becomes sluggish, reduce `MAX_CONCURRENT_SPLITS` or `WORKERS_PER_SPLIT`
@@ -291,7 +291,7 @@ export WORKERS_PER_SPLIT=3
 
 While this script is designed for local development, it can be integrated into CI:
 
-```yaml
+```
 # .github/workflows/coverage.yml
 - name: Run parallel coverage tests
   run: ./scripts/run-coverage-parallel.sh
@@ -300,7 +300,7 @@ While this script is designed for local development, it can be integrated into C
   uses: codecov/codecov-action@v3
   with:
     files: .coverage
-```python
+```
 
 ## Best Practices
 
@@ -323,7 +323,7 @@ While this script is designed for local development, it can be integrated into C
 
 To increase parallelization (e.g., 24 splits):
 
-```bash
+```
 # Edit scripts/run-coverage-parallel.sh
 for i in {1..24}; do  # Changed from {1..12}
   ...
@@ -331,15 +331,15 @@ for i in {1..24}; do  # Changed from {1..12}
   --group $i \
   ...
 done
-```python
+```
 
 ### Adjusting Coverage Thresholds
 
-```bash
+```
 # Edit pyproject.toml
 [tool.coverage.report]
 fail_under = 70  # Increased from 60
-```text
+```
 
 Then re-run the script to validate against new threshold.
 

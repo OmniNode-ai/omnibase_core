@@ -56,7 +56,7 @@ We adopt **Protocol-Based Dependency Injection** via `ServiceRegistry` as the ex
 - `ModelServiceRegistration` - Service registration metadata (Pydantic BaseModel)
 
 **Usage Pattern**:
-```python
+```
 # Initialize registry
 config = create_default_registry_config()
 registry = ServiceRegistry(config)
@@ -73,7 +73,7 @@ logger = await registry.resolve_service(ProtocolLogger)
 ```
 
 **Integration with Container**:
-```python
+```
 # ModelONEXContainer integration (lines 125-149)
 self._service_registry = ServiceRegistry(registry_config)
 
@@ -135,7 +135,7 @@ These are **NOT dependency injection registries** - they serve business logic pu
 
 ### Dependency Injection (ServiceRegistry)
 
-```text
+```
 User Code
     │
     ▼
@@ -151,11 +151,11 @@ ServiceRegistry.resolve_service(ProtocolLogger)
     ├─→ Resolve by lifecycle (singleton/transient)
     │
     └─→ Return typed instance: logger (type: ProtocolLogger)
-```python
+```
 
 ### Business Registry (Action Discovery)
 
-```text
+```
 Node Contract (contract.yaml)
     │
     ▼
@@ -171,11 +171,11 @@ ModelCliAction.from_contract_action(...)  # Pydantic model
 ModelActionRegistry.register_action(action)
     │
     └─→ Stored in _actions dict for CLI routing
-```python
+```
 
 ### Runtime Discovery (MixinServiceRegistry)
 
-```python
+```
 Tool Node Starts
     │
     ▼
@@ -191,7 +191,7 @@ Create MixinServiceRegistryEntry (Pydantic)
 Store in self.service_registry[tool_id]
     │
     └─→ Tool available in live catalog
-```python
+```
 
 ---
 
@@ -223,7 +223,7 @@ Store in self.service_registry[tool_id]
 
 ### Singleton (Default)
 
-```python
+```
 # Register singleton
 await registry.register_instance(
     interface=ProtocolLogger,
@@ -235,11 +235,11 @@ await registry.register_instance(
 logger1 = await registry.resolve_service(ProtocolLogger)
 logger2 = await registry.resolve_service(ProtocolLogger)
 assert logger1 is logger2  # Same instance
-```text
+```
 
 ### Transient (Planned v2.0)
 
-```python
+```
 # Register transient (requires factory support)
 await registry.register_factory(
     interface=ProtocolConnectionPool,
@@ -251,11 +251,11 @@ await registry.register_factory(
 pool1 = await registry.resolve_service(ProtocolConnectionPool)
 pool2 = await registry.resolve_service(ProtocolConnectionPool)
 assert pool1 is not pool2  # Different instances
-```text
+```
 
 ### Scoped (Planned v2.0)
 
-```python
+```
 # Register scoped service
 await registry.register_service(
     interface=ProtocolRequestContext,
@@ -269,7 +269,7 @@ async with registry.create_scope("request") as scope:
     ctx1 = await scope.resolve_service(ProtocolRequestContext)
     ctx2 = await scope.resolve_service(ProtocolRequestContext)
     assert ctx1 is ctx2  # Same within scope
-```python
+```
 
 ---
 
@@ -279,7 +279,7 @@ async with registry.create_scope("request") as scope:
 
 The container supports both ServiceRegistry (new) and legacy fallback:
 
-```python
+```
 async def get_service_async(
     self,
     protocol_type: type[T],
@@ -298,7 +298,7 @@ async def get_service_async(
     }
     provider_name = provider_map.get(protocol_type.__name__)
     return getattr(self._base_container, provider_name)()
-```python
+```
 
 **Migration Path**: v1.0 uses fallback, v2.0 will be ServiceRegistry-only.
 
@@ -334,13 +334,13 @@ async def get_service_async(
 ### Alternative 1: Concrete Class DI
 
 **Pattern**:
-```python
+```
 # Register by concrete class
 registry.register(LoggerImpl, singleton=True)
 
 # Resolve by concrete class
 logger = registry.resolve(LoggerImpl)
-```text
+```
 
 **Rejected Because**:
 - ❌ Tight coupling to implementation
@@ -351,13 +351,13 @@ logger = registry.resolve(LoggerImpl)
 ### Alternative 2: String-Based Resolution
 
 **Pattern**:
-```python
+```
 # Register by string name
 registry.register("logger", logger_instance)
 
 # Resolve by string
 logger = registry.resolve("logger")
-```python
+```
 
 **Rejected Because**:
 - ❌ No type safety (returns `Any`)
@@ -368,12 +368,12 @@ logger = registry.resolve("logger")
 ### Alternative 3: Decorator-Based DI
 
 **Pattern**:
-```python
+```
 @injectable(ProtocolLogger)
 class MyService:
     def __init__(self, logger: ProtocolLogger):
         self.logger = logger
-```python
+```
 
 **Rejected Because**:
 - ❌ Requires complex decorator machinery
@@ -431,24 +431,24 @@ The codebase contains TODO comments that are often misinterpreted as "legacy reg
 ### model_onex_container.py Lines 58-61
 
 **Current**:
-```python
+```
 # TODO: These imports require omnibase-spi protocols that may not be available yet
-```bash
+```
 
 **Clarified**:
-```python
+```
 # FUTURE (v2.0): Protocol integrations now available in omnibase-spi v0.2.0
 # These protocols enable external service discovery and database pooling.
 # Ready for implementation - Tracking: https://github.com/OmniNode-ai/omnibase_spi/issues/42
-```python
+```
 
 ### model_onex_container.py Lines 304-305
 
 **Current**:
-```python
+```
 # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
 # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
-```python
+```
 
 **Status**:
 ProtocolServiceResolver is now available in omnibase_spi v0.2.0 and ready for implementation.
@@ -458,10 +458,10 @@ ProtocolServiceDiscovery, and other external dependencies.
 ### model_onex_container.py Lines 531-560
 
 **Current**:
-```python
+```
 # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
 # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
-```python
+```
 
 **Status**:
 ProtocolServiceResolver is now available for implementation of external service health checks.
@@ -476,8 +476,8 @@ Implementation ready to proceed using omnibase_spi v0.2.0.
 ### Related Documentation
 
 - [ONEX Four-Node Architecture](../ONEX_FOUR_NODE_ARCHITECTURE.md)
-- [Protocol-Driven DI Guide](../../guides/PROTOCOL_DRIVEN_DI.md) (to be created)
-- [Registry Audit Report](../../../REGISTRY_AUDIT_REPORT.md)
+- [Protocol Architecture](../PROTOCOL_ARCHITECTURE.md)
+- [Dependency Injection](../DEPENDENCY_INJECTION.md)
 
 ### External References
 

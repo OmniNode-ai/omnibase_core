@@ -65,13 +65,13 @@ This comprehensive guide teaches you how to create production-ready mixins (subc
 
 ### Verification
 
-```bash
+```
 # Verify environment
 poetry run python -c "from omnibase_core.model.subcontracts import ModelHealthCheckSubcontract; print('✓ Mixin system ready!')"
 
 # Check existing mixins
 ls /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/nodes/canary/mixins/
-```python
+```
 
 ## Learning Path
 
@@ -203,7 +203,7 @@ Applicable to all node types:
 
 ### Adding Mixins to Your Project
 
-```bash
+```
 # In your project directory
 mkdir -p src/your_project/mixins
 mkdir -p src/your_project/model/subcontracts
@@ -213,11 +213,11 @@ touch src/your_project/mixins/mixin_your_feature.yaml
 
 # Create backing Pydantic model
 touch src/your_project/model/subcontracts/model_your_feature_subcontract.py
-```python
+```
 
 ### Project Structure
 
-```text
+```
 your_project/
 ├── pyproject.toml
 ├── src/
@@ -239,23 +239,23 @@ your_project/
     └── mixins/                                  # Mixin tests
         ├── test_mixin_logging.py
         └── test_mixin_authentication.py
-```bash
+```
 
 ## Validation and Testing
 
 ### Contract Validation
 
-```bash
+```
 # Validate mixin contract
 poetry run onex run contract_validator --contract src/your_project/mixins/mixin_your_feature.yaml
 
 # Validate complete node contract (with mixins)
 poetry run onex run contract_validator --contract src/your_project/nodes/your_node/v1_0_0/contract.yaml
-```python
+```
 
 ### Testing Mixins
 
-```python
+```
 # Test mixin Pydantic model
 import pytest
 from your_project.model.subcontracts import ModelYourFeatureSubcontract
@@ -268,7 +268,7 @@ def test_mixin_validation():
     )
     assert mixin.feature_enabled is True
     assert mixin.timeout_ms == 5000
-```python
+```
 
 **See**: [Best Practices](05_BEST_PRACTICES.md) for comprehensive testing strategies
 

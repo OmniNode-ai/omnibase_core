@@ -21,13 +21,13 @@ This guide teaches you how to create strongly-typed Pydantic backing models for 
 
 ### Relationship to YAML Contracts
 
-```text
+```
 YAML Contract (Definition)
     ↓ [Contract Loader]
 Pydantic Model (Runtime)
     ↓ [Validation]
 Node Implementation (Usage)
-```bash
+```
 
 ## Step 1: File Setup
 
@@ -36,16 +36,16 @@ Node Implementation (Usage)
 **Location**: `src/omnibase_core/model/subcontracts/`
 **Naming**: `model_[capability_name]_subcontract.py`
 
-```bash
+```
 cd /Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/model/subcontracts/
 
 # Create your model file
 touch model_error_handling_subcontract.py
-```python
+```
 
 ### Basic Imports
 
-```python
+```
 """
 Model backing for Error Handling Subcontract.
 Generated from mixin_error_handling subcontract following ONEX patterns.
@@ -54,9 +54,9 @@ Generated from mixin_error_handling subcontract following ONEX patterns.
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, Field, validator, root_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from uuid import UUID
-```python
+```
 
 ## Step 2: Define Supporting Models
 
@@ -64,7 +64,7 @@ from uuid import UUID
 
 Create enums for constrained string values:
 
-```python
+```
 class EnumErrorCategory(str, Enum):
     """Error category classification."""
     TRANSIENT = "transient"           # Temporary errors (retry possible)
@@ -86,13 +86,13 @@ class EnumHandlingStrategy(str, Enum):
     FAIL_FAST = "fail_fast"     # Fail immediately
     FALLBACK = "fallback"       # Use fallback value
     IGNORE = "ignore"           # Log and continue
-```python
+```
 
 ### Result Models
 
 Create models for action outputs:
 
-```python
+```
 class ModelErrorHandlingResult(BaseModel):
     """Error handling result model."""
 
@@ -178,13 +178,13 @@ class ModelRetryDecision(BaseModel):
         default=False,
         description="Whether max retry attempts reached"
     )
-```python
+```
 
 ## Step 3: Main Subcontract Model
 
 ### Basic Structure
 
-```python
+```
 class ModelErrorHandlingSubcontract(BaseModel):
     """
     Error handling subcontract Pydantic backing model.
@@ -302,12 +302,13 @@ class ModelErrorHandlingSubcontract(BaseModel):
                 ]
             }
         }
-```python
+```
 
 ### Adding Validators
 
-```python
-    @validator("error_log_level")
+```
+    @field_validator("error_log_level")
+    @classmethod
     def validate_log_level(cls, v: str) -> str:
         """Validate log level is valid."""
         valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -315,11 +316,12 @@ class ModelErrorHandlingSubcontract(BaseModel):
             raise ValueError(f"Log level must be one of: {valid_levels}")
         return v.upper()
 
-    @validator("circuit_timeout_ms")
-    def validate_circuit_timeout(cls, v: int, values: dict) -> int:
+    @field_validator("circuit_timeout_ms")
+    @classmethod
+    def validate_circuit_timeout(cls, v: int, info) -> int:
         """Ensure circuit timeout is reasonable."""
-        retry_delay = values.get("error_retry_delay_ms", 1000)
-        retry_attempts = values.get("error_retry_attempts", 3)
+        retry_delay = info.data.get("error_retry_delay_ms", 1000)
+        retry_attempts = info.data.get("error_retry_attempts", 3)
 
         # Circuit timeout should be longer than max retry time
         max_retry_time = retry_delay * retry_attempts * 2
@@ -331,11 +333,11 @@ class ModelErrorHandlingSubcontract(BaseModel):
 
         return v
 
-    @root_validator
-    def validate_error_types(cls, values: dict) -> dict:
+    @model_validator(mode='after')
+    def validate_error_types(self):
         """Ensure no overlap between retriable and fatal error types."""
-        retriable = set(values.get("retriable_error_types", []))
-        fatal = set(values.get("fatal_error_types", []))
+        retriable = set(self.retriable_error_types or [])
+        fatal = set(self.fatal_error_types or [])
 
         overlap = retriable & fatal
         if overlap:
@@ -343,13 +345,13 @@ class ModelErrorHandlingSubcontract(BaseModel):
                 f"Error types cannot be both retriable and fatal: {overlap}"
             )
 
-        return values
+        return self
 
-    @root_validator
-    def validate_retry_config(cls, values: dict) -> dict:
+    @model_validator(mode='after')
+    def validate_retry_config(self):
         """Validate retry configuration is coherent."""
-        initial_delay = values.get("error_retry_delay_ms", 1000)
-        max_delay = values.get("max_retry_delay_ms", 30000)
+        initial_delay = self.error_retry_delay_ms
+        max_delay = self.max_retry_delay_ms
 
         if initial_delay > max_delay:
             raise ValueError(
@@ -357,12 +359,12 @@ class ModelErrorHandlingSubcontract(BaseModel):
                 f"max retry delay ({max_delay}ms)"
             )
 
-        return values
-```python
+        return self
+```
 
 ### Helper Methods
 
-```python
+```
     def is_error_retriable(self, error_type: str) -> bool:
         """Check if error type is retriable."""
         return error_type in self.retriable_error_types
@@ -382,13 +384,13 @@ class ModelErrorHandlingSubcontract(BaseModel):
             self.enable_circuit_breaker
             and failure_count >= self.circuit_failure_threshold
         )
-```python
+```
 
 ## Step 4: Export Model
 
 ### Update __init__.py
 
-```python
+```
 # src/omnibase_core/model/subcontracts/__init__.py
 
 from .model_error_handling_subcontract import (
@@ -410,13 +412,13 @@ __all__ = [
     "EnumCircuitBreakerState",
     "EnumHandlingStrategy",
 ]
-```python
+```
 
 ## Step 5: Test Your Model
 
 ### Unit Tests
 
-```python
+```
 # tests/model/subcontracts/test_model_error_handling_subcontract.py
 
 import pytest
@@ -580,24 +582,24 @@ class TestModelErrorHandlingSubcontract:
         model = ModelErrorHandlingSubcontract.model_validate_json(json_data)
         assert model.circuit_failure_threshold == 10
         assert model.error_retry_attempts == 5
-```python
+```
 
 ## Common Patterns
 
 ### Pattern 1: Optional Fields
 
-```python
+```
 class ModelOptionalConfig(BaseModel):
     """Model with optional fields."""
 
     required_field: str = Field(..., description="This field is required")
     optional_field: Optional[str] = Field(None, description="This field is optional")
     optional_with_default: str = Field("default", description="Optional with default")
-```python
+```
 
 ### Pattern 2: Constrained Values
 
-```python
+```
 class ModelConstrainedValues(BaseModel):
     """Model with constrained values."""
 
@@ -606,11 +608,11 @@ class ModelConstrainedValues(BaseModel):
     percentage: float = Field(..., ge=0.0, le=1.0, description="0.0 to 1.0")
     non_empty_string: str = Field(..., min_length=1, description="Cannot be empty")
     max_length_string: str = Field(..., max_length=256, description="Max 256 chars")
-```python
+```
 
 ### Pattern 3: Complex Nested Models
 
-```python
+```
 class ModelNestedConfig(BaseModel):
     """Inner nested configuration."""
     setting1: str = Field(default="value1")
@@ -623,11 +625,11 @@ class ModelMainConfig(BaseModel):
         default_factory=ModelNestedConfig,
         description="Nested configuration"
     )
-```python
+```
 
 ### Pattern 4: Discriminated Unions
 
-```python
+```
 from typing import Union, Literal
 
 class ModelStrategyA(BaseModel):
@@ -643,7 +645,7 @@ class ModelStrategyB(BaseModel):
 class ModelMainWithStrategy(BaseModel):
     """Model with strategy selection."""
     strategy: Union[ModelStrategyA, ModelStrategyB] = Field(..., discriminator="type")
-```text
+```
 
 ## Best Practices
 
@@ -651,33 +653,34 @@ class ModelMainWithStrategy(BaseModel):
 
 Always provide clear descriptions:
 
-```python
+```
 timeout_ms: int = Field(
     default=5000,
     ge=100,
     le=60000,
     description="Operation timeout in milliseconds. Must be between 100ms and 60s."
 )
-```python
+```
 
 ### 2. Validation
 
 Add validators for complex logic:
 
-```python
-@validator("max_connections")
-def validate_connections(cls, v: int, values: dict) -> int:
-    min_connections = values.get("min_connections", 1)
+```
+@field_validator("max_connections")
+@classmethod
+def validate_connections(cls, v: int, info) -> int:
+    min_connections = info.data.get("min_connections", 1)
     if v < min_connections:
         raise ValueError(f"max_connections ({v}) must be >= min_connections ({min_connections})")
     return v
-```python
+```
 
 ### 3. Helper Methods
 
 Add convenience methods:
 
-```python
+```
 def is_enabled(self) -> bool:
     """Check if feature is enabled."""
     return self.enabled and self.threshold > 0
@@ -685,13 +688,13 @@ def is_enabled(self) -> bool:
 def get_timeout_seconds(self) -> float:
     """Get timeout in seconds."""
     return self.timeout_ms / 1000.0
-```python
+```
 
 ### 4. Examples
 
 Provide realistic examples in Config:
 
-```python
+```
 class Config:
     json_schema_extra = {
         "example": {
@@ -700,7 +703,7 @@ class Config:
             "enabled": True
         }
     }
-```python
+```
 
 ## Troubleshooting
 
@@ -730,7 +733,7 @@ class Config:
 **Solutions**:
 1. Check validator decorator syntax
 2. Verify field name matches
-3. Use `@validator` for single field, `@root_validator` for multiple
+3. Use `@field_validator` for single field, `@model_validator` for cross-field validation
 
 ## Next Steps
 

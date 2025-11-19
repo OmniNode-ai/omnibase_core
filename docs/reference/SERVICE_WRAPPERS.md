@@ -31,7 +31,7 @@ Service wrappers reduce this to **one import, one inheritance**.
 
 #### Usage:
 
-```python
+```
 from omnibase_core.models.nodes.node_services import ModelServiceEffect
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 
@@ -76,7 +76,7 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 
 #### Usage:
 
-```python
+```
 from omnibase_core.models.nodes.node_services import ModelServiceCompute
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
@@ -127,7 +127,7 @@ Compute nodes often perform expensive operations (ML inference, complex transfor
 
 #### Usage:
 
-```python
+```
 from omnibase_core.models.nodes.node_services import ModelServiceOrchestrator
 from omnibase_core.models.contracts.model_contract_orchestrator import ModelContractOrchestrator
 
@@ -181,7 +181,7 @@ class NodeWorkflowOrchestrator(ModelServiceOrchestrator):
 
 #### Usage:
 
-```python
+```
 from omnibase_core.models.nodes.node_services import ModelServiceReducer
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
@@ -237,7 +237,7 @@ Reducers often aggregate large datasets (sum, average, group-by operations). Cac
 ## Custom Composition Examples
 
 ### Example 1: Fault-Tolerant API Client
-```python
+```
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.mixins.mixin_retry import MixinRetry
 from omnibase_core.mixins.mixin_circuit_breaker import MixinCircuitBreaker
@@ -259,7 +259,7 @@ class ResilientApiClient(
 ```
 
 ### Example 2: High-Performance Compute Node (No Caching)
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
@@ -279,7 +279,7 @@ class StreamProcessorCompute(
 ```
 
 ### Example 3: Secure Data Processor
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.mixins.mixin_security import MixinSecurity
 from omnibase_core.mixins.mixin_validation import MixinValidation
@@ -340,7 +340,7 @@ Python's MRO (Method Resolution Order) determines which method gets called when 
 
 #### Standard Service MRO Examples:
 
-```python
+```
 # ModelServiceEffect MRO
 ModelServiceEffect → NodeEffect → MixinHealthCheck → MixinEventBus
 → MixinMetrics → NodeCoreBase → ABC
@@ -361,7 +361,7 @@ Always put the **most specific** class first (node type), followed by mixins in 
 ## Migration Guide: From Infrastructure Classes to Service Wrappers
 
 ### Old Infrastructure Classes (Legacy)
-```python
+```
 from omnibase_core.infrastructure.infrastructure_bases import NodeEffectExecutor
 
 class MyDatabaseWriter(NodeEffectExecutor):
@@ -371,7 +371,7 @@ class MyDatabaseWriter(NodeEffectExecutor):
 ```
 
 ### New Service Wrappers (Recommended)
-```python
+```
 from omnibase_core.models.nodes.node_services import ModelServiceEffect
 
 class MyDatabaseWriter(ModelServiceEffect):
@@ -393,7 +393,7 @@ class MyDatabaseWriter(ModelServiceEffect):
 ## Testing Service Wrappers
 
 ### Unit Testing with Mocked Mixins
-```python
+```
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from omnibase_core.models.nodes.node_services import ModelServiceEffect
@@ -422,7 +422,7 @@ class TestMyDatabaseWriter:
 ```
 
 ### Integration Testing with Real Mixins
-```python
+```
 import pytest
 from omnibase_core.models.nodes.node_services import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -472,7 +472,7 @@ class TestDataTransformerIntegration:
 Unless you have specific requirements, start with standard service wrappers. They provide production-ready capabilities out of the box.
 
 ### 2. Override Health Checks for Custom Dependencies
-```python
+```
 class MyApiClient(ModelServiceEffect):
     def get_health_checks(self):
         return [
@@ -483,7 +483,7 @@ class MyApiClient(ModelServiceEffect):
 ```
 
 ### 3. Configure Cache TTL Based on Data Staleness
-```python
+```
 class MyTransformer(ModelServiceCompute):
     async def execute_compute(self, contract):
         # Short TTL for frequently changing data
@@ -494,7 +494,7 @@ class MyTransformer(ModelServiceCompute):
 ```
 
 ### 4. Use Correlation IDs for Event Tracking
-```python
+```
 class MyWorkflow(ModelServiceOrchestrator):
     async def execute_orchestration(self, contract):
         # Propagate correlation ID through all events
@@ -506,7 +506,7 @@ class MyWorkflow(ModelServiceOrchestrator):
 ```
 
 ### 5. Monitor Cache Hit Ratios
-```python
+```
 # Check cache effectiveness periodically
 if self.cache_hit_ratio < 0.5:
     logger.warning(f"Low cache hit ratio: {self.cache_hit_ratio:.0%}")

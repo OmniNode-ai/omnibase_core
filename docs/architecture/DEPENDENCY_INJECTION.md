@@ -10,20 +10,20 @@ Protocol-driven dependency injection patterns using ModelONEXContainer.
 
 ONEX uses **protocol-based service resolution** instead of concrete class dependencies:
 
-```python
+```
 # ❌ Wrong: Concrete dependency
 from my_logger import ConcreteLogger
 logger = ConcreteLogger()
 
 # ✅ Right: Protocol-based resolution
 logger = container.get_service("ProtocolLogger")
-```python
+```
 
 ## Container Architecture
 
 ### ModelONEXContainer
 
-```python
+```
 class ModelONEXContainer(BaseModel):
     """Protocol-driven dependency injection container."""
 
@@ -34,44 +34,44 @@ class ModelONEXContainer(BaseModel):
     def register_service(self, protocol_name: str, implementation: Any):
         """Register service implementation."""
         pass
-```text
+```
 
 ## Service Registration
 
 ### Register Services
 
-```python
+```
 container = ModelONEXContainer()
 
 # Register concrete implementations
 container.register_service("ProtocolLogger", my_logger_instance)
 container.register_service("ProtocolEventBus", event_bus_instance)
 container.register_service("ProtocolCache", cache_instance)
-```python
+```
 
 ### Service Resolution
 
-```python
-class MyNode(NodeComputeService):
+```
+class MyNode(ModelServiceCompute):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
 
         # Resolve dependencies by protocol
         self.logger = container.get_service("ProtocolLogger")
         self.cache = container.get_service("ProtocolCache")
-```python
+```
 
 ## Protocol Definitions
 
 Protocols define interfaces without implementation:
 
-```python
+```
 from typing import Protocol
 
 class ProtocolLogger(Protocol):
     def info(self, message: str) -> None: ...
     def error(self, message: str, exc_info: bool = False) -> None: ...
-```python
+```
 
 ## Benefits
 
@@ -84,7 +84,7 @@ class ProtocolLogger(Protocol):
 
 ### Mock Dependencies
 
-```python
+```
 class MockLogger:
     def info(self, message: str) -> None:
         print(f"MOCK: {message}")
@@ -95,7 +95,7 @@ class MockLogger:
 # Use in tests
 test_container = ModelONEXContainer()
 test_container.register_service("ProtocolLogger", MockLogger())
-```yaml
+```
 
 ## Common Protocols
 

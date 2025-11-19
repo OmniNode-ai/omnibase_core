@@ -106,8 +106,8 @@ When spawning polymorphic agents or AI assistants:
 |-----------|---------|----------|
 | **EFFECT** | External interactions (I/O) | API calls, database ops, file system, message queues |
 | **COMPUTE** | Data processing & transformation | Calculations, validations, data mapping |
-| **REDUCER** | State aggregation & management | State machines, accumulators, event reduction |
-| **ORCHESTRATOR** | Workflow coordination | Multi-step workflows, parallel execution, error recovery |
+| **REDUCER** | State aggregation & management | State machines (FSM w/ ModelIntent), accumulators, event reduction |
+| **ORCHESTRATOR** | Workflow coordination | Multi-step workflows (ModelAction w/ Leases), parallel execution, error recovery |
 
 ### Protocol-Driven Dependency Injection
 
@@ -141,6 +141,20 @@ class NodeMyServiceCompute(NodeCoreBase):
 ```
 
 **CRITICAL**: Always call `super().__init__(container)` - this eliminates 80+ lines of boilerplate.
+
+### Advanced Patterns (ONEX v2.0)
+
+**ModelIntent Pattern** (REDUCER nodes):
+- Pure FSM transitions without direct side effects
+- Intent-based state machines for declarative state management
+- Separates state transition logic from side effect execution
+
+**ModelAction Pattern** (ORCHESTRATOR nodes):
+- Lease-based single-writer semantics for distributed coordination
+- Declarative action definitions with automatic retry and rollback
+- Resource locking and conflict resolution for concurrent workflows
+
+**See**: [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) for complete details and [Migration Guide](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for upgrading existing nodes.
 
 ### Container Types: CRITICAL DISTINCTION
 
@@ -551,7 +565,7 @@ pre-commit run mypy --all-files
 #### Always use ModelOnexError, never generic Exception:
 
 ```python
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 # Raise structured error
@@ -645,6 +659,7 @@ class MyNode(NodeCoreBase, MixinDiscoveryResponder):
 |--------|-----------|------|
 | **New Developers** | [Getting Started Guide](docs/getting-started/) | 15 min |
 | **Building Nodes** | [Node Building Guide](docs/guides/node-building/README.md) ⭐ | 30-60 min |
+| **Choosing Base Classes** | [Node Class Hierarchy](docs/architecture/NODE_CLASS_HIERARCHY.md) ⭐ | 20 min |
 | **Understanding Architecture** | [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | 30 min |
 | **Reference & Templates** | [Node Templates](docs/reference/templates/) | - |
 | **Error Handling** | [Error Handling Best Practices](docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md) | 20 min |

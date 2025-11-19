@@ -26,7 +26,7 @@ This document provides comprehensive docstring templates for all contract model 
 
 ### ModelAlgorithmConfig Template
 
-```python
+```
 class ModelAlgorithmConfig(BaseModel):
     """
     Configuration for algorithm execution in COMPUTE nodes.
@@ -134,11 +134,11 @@ class ModelAlgorithmConfig(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```python
+```
 
 ### ModelBackupConfig Template
 
-```python
+```
 class ModelBackupConfig(BaseModel):
     """
     Configuration for state backup and recovery operations in REDUCER nodes.
@@ -261,11 +261,11 @@ class ModelBackupConfig(BaseModel):
         extra="forbid",
         validate_assignment=True
     )
-```python
+```
 
 ### ModelEventDescriptor Template
 
-```python
+```
 class ModelEventDescriptor(BaseModel):
     """
     Event descriptor for event-driven processing in ORCHESTRATOR nodes.
@@ -391,13 +391,13 @@ class ModelEventDescriptor(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```python
+```
 
 ## Subcontract Model Docstring Templates
 
 ### ModelAggregationSubcontract Template
 
-```python
+```
 class ModelAggregationSubcontract(BaseModel):
     """
     Subcontract for data aggregation operations in ONEX pipeline processing.
@@ -550,11 +550,11 @@ class ModelAggregationSubcontract(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```python
+```
 
 ### ModelFSMSubcontract Template
 
-```python
+```
 class ModelFSMSubcontract(BaseModel):
     """
     Finite State Machine (FSM) subcontract for state-based workflow processing.
@@ -822,13 +822,13 @@ class ModelFSMSubcontract(BaseModel):
         validate_assignment=True,
         use_enum_values=True
     )
-```python
+```
 
 ## TypedDict Docstring Templates
 
 ### TypedDictPerformanceMetricData Template
 
-```python
+```
 class TypedDictPerformanceMetricData(TypedDict):
     """
     Performance metric data structure for ONEX monitoring and analytics.
@@ -1004,13 +1004,13 @@ class TypedDictPerformanceMetricData(TypedDict):
     unit: NotRequired[str]
     tags: NotRequired[dict[str, str]]
     context: NotRequired[dict[str, Any]]
-```python
+```
 
 ## Enum Docstring Templates
 
 ### EnumWorkflowCoordination Template
 
-```python
+```
 class EnumWorkflowCoordination(str, Enum):
     """
     Workflow coordination patterns for ORCHESTRATOR node execution strategies.
@@ -1174,7 +1174,7 @@ class EnumWorkflowCoordination(str, Enum):
     CONDITIONAL = "conditional"
     EVENT_DRIVEN = "event_driven"
     HYBRID = "hybrid"
-```yaml
+```
 
 ## Best Practices for Docstring Implementation
 

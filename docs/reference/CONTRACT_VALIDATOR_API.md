@@ -18,7 +18,7 @@ The Contract Validator API provides programmatic validation of YAML contracts an
 
 ## Installation
 
-```python
+```
 from omnibase_core.validation import ContractValidator, ContractValidationResult
 ```
 
@@ -26,7 +26,7 @@ from omnibase_core.validation import ContractValidator, ContractValidationResult
 
 ### Validate YAML Contract
 
-```python
+```
 from omnibase_core.validation import ContractValidator
 
 validator = ContractValidator()
@@ -61,7 +61,7 @@ else:
 
 ### Validate Model Compliance
 
-```python
+```
 model_code = """
 from pydantic import BaseModel, Field
 
@@ -86,7 +86,7 @@ else:
 
 ### Validate Contract File
 
-```python
+```
 result = validator.validate_contract_file("/path/to/contract.yaml", "effect")
 
 if result.is_valid:
@@ -163,27 +163,27 @@ The validator uses a weighted scoring system:
 ## Contract Types Supported
 
 ### Effect Contracts
-```python
+```
 result = validator.validate_contract_yaml(yaml_content, "effect")
 ```
 - Requires: `io_operations` field
 - Validates: Transaction management, retry policies, external services
 
 ### Compute Contracts
-```python
+```
 result = validator.validate_contract_yaml(yaml_content, "compute")
 ```
 - Requires: `algorithm` field
 - Validates: Algorithm configuration, parallel processing
 
 ### Reducer Contracts
-```python
+```
 result = validator.validate_contract_yaml(yaml_content, "reducer")
 ```
 - Validates: State management, aggregation logic
 
 ### Orchestrator Contracts
-```python
+```
 result = validator.validate_contract_yaml(yaml_content, "orchestrator")
 ```
 - Validates: Workflow coordination, routing logic
@@ -240,7 +240,7 @@ See `/examples/contract_validator_usage.py` for comprehensive examples including
 
 The validator is designed for autonomous code generation:
 
-```python
+```
 def generate_contract_autonomously(requirements):
     """Autonomous contract generation with validation."""
 
@@ -284,7 +284,7 @@ Comprehensive test suite with 19 test cases covering:
 - Edge cases
 
 Run tests:
-```bash
+```
 poetry run pytest tests/unit/validation/test_contract_validator.py -v
 ```
 
