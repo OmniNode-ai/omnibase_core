@@ -28,7 +28,6 @@ from omnibase_core.models.core.model_mixin_metadata import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-
 # =============================================================================
 # ModelMixinVersion Tests
 # =============================================================================

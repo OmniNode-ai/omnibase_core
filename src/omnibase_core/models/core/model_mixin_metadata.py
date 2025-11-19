@@ -13,7 +13,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-
 # =============================================================================
 # Version Model
 # =============================================================================
