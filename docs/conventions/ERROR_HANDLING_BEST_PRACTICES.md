@@ -480,7 +480,7 @@ def standard_error_handling(
     return decorator
 
 # Usage Examples
-class DatabaseEffectService(NodeEffectService):
+class DatabaseEffectService(ModelServiceEffect):
     """EFFECT node with standardized error handling."""
 
     @standard_error_handling(
@@ -949,7 +949,7 @@ def with_retry(
     return decorator
 
 # Usage Example
-class ReliableEffectService(NodeEffectService):
+class ReliableEffectService(ModelServiceEffect):
     """EFFECT node with retry logic."""
 
     @with_retry(
@@ -1142,7 +1142,7 @@ class GracefulDegradationMixin:
         }
 
 # Usage Example
-class ResilientComputeService(NodeComputeService, GracefulDegradationMixin):
+class ResilientComputeService(ModelServiceCompute, GracefulDegradationMixin):
     """COMPUTE node with graceful degradation."""
 
     async def process_data(

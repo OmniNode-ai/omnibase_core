@@ -144,10 +144,10 @@ realtime_aggregation = ModelAggregationSubcontract(
 **Integration with REDUCER Nodes**:
 
 ```python
-from omnibase_core.core.infrastructure_service_bases import NodeReducerService
+from omnibase_core.infrastructure.infrastructure_bases import ModelServiceReducer
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
-class AggregationReducerService(NodeReducerService):
+class AggregationReducerService(ModelServiceReducer):
     """REDUCER node with aggregation subcontract support."""
 
     async def execute_reduction(self, contract: ModelContractReducer) -> ModelReducerOutput:
@@ -342,9 +342,9 @@ pipeline_fsm = ModelFSMSubcontract(
 **Integration with ORCHESTRATOR Nodes**:
 
 ```python
-from omnibase_core.core.infrastructure_service_bases import NodeOrchestratorService
+from omnibase_core.infrastructure.infrastructure_bases import ModelServiceOrchestrator
 
-class FSMOrchestratorService(NodeOrchestratorService):
+class FSMOrchestratorService(ModelServiceOrchestrator):
     """ORCHESTRATOR node with FSM subcontract support."""
 
     async def execute_orchestration(self, contract: ModelContractOrchestrator):
@@ -483,9 +483,9 @@ microservice_routing = ModelRoutingSubcontract(
 **Integration with EFFECT Nodes**:
 
 ```python
-from omnibase_core.core.infrastructure_service_bases import NodeEffectService
+from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
 
-class RoutingEffectService(NodeEffectService):
+class RoutingEffectService(ModelServiceEffect):
     """EFFECT node with routing subcontract support."""
 
     async def execute_effect(self, contract: ModelContractEffect):

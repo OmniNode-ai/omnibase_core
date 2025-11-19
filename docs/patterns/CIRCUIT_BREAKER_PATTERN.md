@@ -21,7 +21,7 @@ The Circuit Breaker pattern prevents an application from repeatedly trying to ex
 ### Basic Usage
 
 ```python
-from omnibase_core.core.resilience import ExternalDependencyCircuitBreaker
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 # Create circuit breaker
 circuit_breaker = ExternalDependencyCircuitBreaker("payment-api")
@@ -95,7 +95,7 @@ class ExternalDependencyCircuitBreaker:
 Environment-configurable circuit breaker settings:
 
 ```python
-from omnibase_core.core.resilience import ModelCircuitBreakerConfig
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 config = ModelCircuitBreakerConfig(
     failure_threshold=5,          # Failures before opening
@@ -194,7 +194,7 @@ circuit_breaker = CircuitBreakerFactory.create_from_environment(
 ### Pre-configured Circuit Breakers
 
 ```python
-from omnibase_core.core.resilience import CircuitBreakerFactory
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 # Fast-fail circuit breaker - quick failure detection
 fast_cb = CircuitBreakerFactory.create_fast_fail("critical-service")
@@ -227,7 +227,7 @@ print(f"State changes: {metrics.state_changes}")
 ### Event Handling
 
 ```python
-from omnibase_core.core.resilience import CircuitBreakerEvent
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 
 async def log_state_changes(cb, event, metrics):
     if event == CircuitBreakerEvent.STATE_CHANGE:
@@ -246,11 +246,7 @@ circuit_breaker.add_event_listener(CircuitBreakerEvent.FAILURE, alert_on_failure
 ### Global Registry
 
 ```python
-from omnibase_core.core.resilience import (
-    register_circuit_breaker,
-    list_circuit_breakers,
-    get_circuit_breaker
-)
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 # Register circuit breakers globally
 register_circuit_breaker("payment-api", payment_cb)
@@ -307,7 +303,7 @@ await circuit_breaker.reset()         # Reset all metrics and state
 
 ```python
 import httpx
-from omnibase_core.core.resilience import ExternalDependencyCircuitBreaker
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 class ResilientHTTPClient:
     def __init__(self, base_url: str, service_name: str):
@@ -339,7 +335,7 @@ data = await client.get("/users/123")
 
 ```python
 import asyncpg
-from omnibase_core.core.resilience import ExternalDependencyCircuitBreaker
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 class ResilientDatabase:
     def __init__(self, dsn: str):
@@ -383,7 +379,7 @@ users = await db.fetch("SELECT * FROM users WHERE active = $1", True)
 ### Message Queue Integration
 
 ```python
-from omnibase_core.core.resilience import ExternalDependencyCircuitBreaker
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 class ResilientMessagePublisher:
     def __init__(self, queue_url: str):
@@ -527,7 +523,7 @@ async def handle_user_request():
 ```python
 # Enable debug logging
 import logging
-logging.getLogger('omnibase_core.core.resilience').setLevel(logging.DEBUG)
+logging.getLogger('your_module_name').setLevel(logging.DEBUG)  # Replace with actual module
 
 # Check circuit breaker state
 cb = get_circuit_breaker("my-service")

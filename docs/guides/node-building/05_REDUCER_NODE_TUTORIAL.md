@@ -4,6 +4,24 @@
 **Difficulty**: Intermediate
 **Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md), [EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md)
 
+## 🎯 Recommended Approach
+
+This tutorial shows **TWO approaches**:
+
+1. **RECOMMENDED (95% of use cases)**: `ModelServiceReducer` wrapper
+   - Production-ready with built-in features
+   - Minimal boilerplate
+   - Health checks, metrics, event bus, FSM execution included
+
+2. **ADVANCED (5% of use cases)**: `NodeReducer` base class
+   - Custom mixin composition
+   - Selective feature inclusion
+   - More control, more setup
+
+**Start with ModelServiceReducer unless you have specific needs for NodeReducer.**
+
+See [Node Class Hierarchy Guide](../../architecture/NODE_CLASS_HIERARCHY.md) for detailed comparison.
+
 ---
 
 ## 🚀 Declarative FSM Architecture (Recommended Path)

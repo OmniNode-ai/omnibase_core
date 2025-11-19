@@ -154,7 +154,7 @@ dependencies:
     - pydantic: ">=2.0.0"
     - asyncio: ">=3.4.0"
   internal_modules:
-    - omnibase_core.core.onex_error
+    - omnibase_core.models.errors.model_onex_error
     - omnibase_core.enums.enum_health_status
 ```yaml
 

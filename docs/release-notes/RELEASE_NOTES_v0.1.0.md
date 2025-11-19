@@ -28,7 +28,7 @@ event_bus = container.get_service("ProtocolEventBus")
 ### Zero Boilerplate Development
 Pre-composed service classes eliminate 80+ lines of initialization:
 ```python
-class MyNode(NodeComputeService):
+class MyNode(ModelServiceCompute):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)  # All boilerplate handled!
 ```python

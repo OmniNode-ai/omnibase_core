@@ -24,38 +24,97 @@ This repository contains the core building blocks that all ONEX tools and servic
 
 ## Repository Structure
 
+### Core Framework Structure
+
+**Note**: This is a high-level view. The framework contains 1,865 source files organized into these main directories:
+
 ```text
 src/omnibase_core/
-├── infrastructure/                 # Node base classes
-│   └── node_core_base.py          # Core base class with built-in features
-├── nodes/                          # Specialized node implementations
-│   ├── node_compute.py            # COMPUTE node base class
-│   ├── node_effect.py             # EFFECT node base class
-│   ├── node_reducer.py            # REDUCER node base class
-│   └── node_orchestrator.py       # ORCHESTRATOR node base class
-├── models/                         # Pydantic models
-│   ├── container/                 # Container models
+├── constants/                  # Project constants and configuration
+├── container/                  # DI container implementation
+├── decorators/                 # Utility decorators
+│   └── error_handling.py       # @standard_error_handling decorator
+├── discovery/                  # Service discovery mechanisms
+├── enums/                      # Core enumerations (325+ enum files)
+│   ├── enum_core_error_code.py
+│   ├── enum_health_status.py
+│   ├── enum_node_type.py
+│   └── ... (many more)
+├── errors/                     # Error handling utilities
+├── events/                     # Event system implementation
+├── infrastructure/             # Base classes and core infrastructure
+│   ├── node_core_base.py       # Core base class for all nodes (RECOMMENDED)
+│   ├── node_base.py            # Base node functionality
+│   ├── infrastructure_bases.py # Production-ready service wrappers
+│   ├── computation_cache.py    # Caching utilities
+│   ├── load_balancer.py        # Load balancing
+│   └── node_config_provider.py # Configuration management
+├── logging/                    # Logging utilities
+├── mixins/                     # Reusable behavior mixins (45+ mixin files)
+│   ├── mixin_discovery_responder.py
+│   ├── mixin_event_handler.py
+│   ├── mixin_workflow_support.py
+│   └── ... (many more)
+├── models/                     # Pydantic models (60+ subdirectories)
+│   ├── container/
 │   │   └── model_onex_container.py  # Protocol-driven DI container
-│   ├── events/                    # Event models
+│   ├── errors/
+│   │   └── model_onex_error.py      # Structured error model
+│   ├── events/
 │   │   └── model_event_envelope.py  # Event communication envelope
-│   └── errors/                    # Error models
-│       └── model_onex_error.py    # Structured error model
-├── enums/                         # Core enumerations
-│   ├── enum_health_status.py     # Health status values
-│   ├── enum_node_type.py         # Node type classifications
-│   └── enum_core_error_code.py   # Error code classifications
-├── decorators/                    # Utility decorators
-│   └── error_handling.py         # @standard_error_handling decorator
-├── mixins/                        # Reusable behavior mixins
-│   ├── mixin_discovery_responder.py  # Service discovery
-│   ├── mixin_event_handler.py        # Event handling
-│   └── mixin_workflow_support.py     # Workflow support
-└── examples/                      # Example usage scripts
-    ├── contract_validator_usage.py    # Contract validation examples
-    ├── field_accessor_migration.py    # Field accessor migration guide
-    ├── mixin_discovery_usage.py       # Mixin system usage examples
-    ├── practical_migration_example.py # Migration patterns and examples
-    └── validation_usage_example.py    # Validation system examples
+│   ├── nodes/
+│   │   └── node_services/
+│   │       ├── model_service_compute.py
+│   │       ├── model_service_effect.py
+│   │       ├── model_service_orchestrator.py
+│   │       └── model_service_reducer.py
+│   └── ... (configuration, contracts, fsm, workflow, etc.)
+├── nodes/                      # Node implementations
+│   ├── node_compute.py                  # COMPUTE node base class
+│   ├── node_effect.py                   # EFFECT node base class
+│   ├── node_orchestrator.py             # ORCHESTRATOR node base class
+│   ├── node_orchestrator_declarative.py # Declarative workflow support
+│   ├── node_reducer.py                  # REDUCER node base class
+│   └── node_reducer_declarative.py      # Declarative FSM support
+├── primitives/                 # Primitive types
+├── types/                      # Type definitions (94+ type files)
+├── utils/                      # Utility functions (16+ util files)
+└── validation/                 # Validation framework (20+ validation files)
+```
+
+### Production Node Structure
+
+When building production nodes, follow this directory structure:
+
+```text
+{REPOSITORY_NAME}/
+└── nodes/
+    └── node_{domain}_{microservice_name}_{type}/
+        ├── __init__.py
+        ├── v1_0_0/
+        │   ├── __init__.py
+        │   ├── node.py                    # Main node implementation
+        │   ├── config.py                  # Configuration
+        │   ├── contracts/
+        │   │   └── subcontracts/
+        │   │       ├── input_subcontract.yaml
+        │   │       ├── output_subcontract.yaml
+        │   │       └── config_subcontract.yaml
+        │   ├── models/
+        │   │   ├── model_*_input.py       # Typed input model
+        │   │   ├── model_*_output.py      # Typed output model
+        │   │   └── model_*_config.py      # Configuration model
+        │   ├── enums/
+        │   │   └── enum_*_operation_type.py  # Operation types
+        │   ├── utils/
+        │   │   └── (domain-specific utilities)
+        │   └── manifest.yaml              # Node metadata, deps, deployment specs
+        └── tests/
+            ├── __init__.py
+            ├── unit/
+            │   └── test_node.py
+            └── integration/
+                └── test_integration.py
 ```
 
 ## Concurrency and Thread Safety
@@ -114,6 +173,7 @@ See [docs/THREADING.md](docs/guides/THREADING.md) for complete guidelines and mi
 |--------|-----------|------|
 | **New Developers** | [Getting Started Guide](docs/getting-started/) | 15 min |
 | **Building Nodes** | [Node Building Guide](docs/guides/node-building/README.md) ⭐ | 30-60 min |
+| **Choosing Base Classes** | [Node Class Hierarchy](docs/architecture/NODE_CLASS_HIERARCHY.md) ⭐ | 20 min |
 | **Understanding Architecture** | [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | 30 min |
 | **Reference & Templates** | [Node Templates](docs/reference/templates/) | - |
 | **Error Handling** | [Error Handling Best Practices](docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md) | 20 min |
@@ -156,21 +216,24 @@ poetry add --group dev package-name
 ### Your First Node
 
 ```python
-from omnibase_core.nodes.node_compute import NodeCompute
+# ✅ RECOMMENDED: Use production-ready service wrapper
+from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.model_compute_input import ModelComputeInput
 from omnibase_core.models.model_compute_output import ModelComputeOutput
 
-class NodeMyServiceCompute(NodeCompute):
+class NodeMyServiceCompute(ModelServiceCompute):
     """
-    My first COMPUTE node.
+    My first COMPUTE node using production-ready wrapper.
 
-    Built-in features from NodeCompute:
+    Built-in features from ModelServiceCompute:
     - Automatic caching with TTL and max size controls
     - Circuit breaker for fault tolerance
     - Result validation with Pydantic models
     - Error handling with structured errors
     - Health checks and monitoring
+    - Event bus integration
+    - Metrics tracking
     """
 
     def __init__(self, container: ModelONEXContainer):
@@ -214,32 +277,17 @@ The project uses Poetry for package management. Configuration is in `pyproject.t
 - Development dependencies
 - Tool configurations (ruff, pytest, mypy, etc.)
 
-### 3. Strip Legacy Registry Dependencies from ModelONEXContainer
-**Current Issue**: ModelONEXContainer still has references to legacy registries that need removal:
-
-```python
-# TODO: Remove these legacy registry imports and dependencies
-# from omnibase.core.registries.* import ...
-# self._specialized_registries = {...}
-```
-
-**Action Required**: Update `ModelONEXContainer` to use pure protocol-based resolution:
-```python
-def get_service(self, protocol_name: str) -> Any:
-    """Get service by protocol name, not registry lookup."""
-    # Clean protocol-based resolution only
-```
-
-### 4. Create Package Structure
+### 3. Create Package Structure
 ```bash
 # Create all missing __init__.py files
 find src/omnibase_core -type d -exec touch {}/__init__.py \;
 
-# Create consolidated exports in infrastructure_service_bases.py
-# (Already complete - exports all 4 node base classes)
+# Create consolidated exports in infrastructure_bases.py
+# (Currently exports: ModelServiceEffect, ModelServiceCompute)
+# (Coming soon: ModelServiceReducer, ModelServiceOrchestrator)
 ```
 
-### 5. Set Up Development Environment
+### 4. Set Up Development Environment
 ```bash
 # Install all dependencies (Poetry manages virtual environment automatically)
 poetry install
@@ -251,7 +299,7 @@ poetry shell
 poetry add ../omnibase_spi --editable
 ```
 
-### 6. Configure Testing Framework
+### 5. Configure Testing Framework
 Create `tests/` directory structure:
 ```bash
 mkdir -p tests/{unit,integration,examples}
@@ -273,7 +321,7 @@ poetry run pytest tests/unit/test_node_services.py -v
 poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 ```
 
-### 7. Explore Example Scripts
+### 6. Explore Example Scripts
 The `examples/` directory contains usage examples demonstrating framework patterns:
 
 **Available Examples**:
@@ -291,25 +339,57 @@ The `examples/` directory contains usage examples demonstrating framework patter
 The foundation of all ONEX tools:
 
 ```python
-# Option 1: Import specific node type directly (RECOMMENDED)
+# ✅ RECOMMENDED: Production-ready service wrappers (currently available)
+from omnibase_core.infrastructure.infrastructure_bases import (
+    ModelServiceEffect,    # EFFECT node wrapper (available)
+    ModelServiceCompute,   # COMPUTE node wrapper (available)
+)
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+# Note: ModelServiceReducer and ModelServiceOrchestrator coming soon
+# For now, use NodeReducer and NodeOrchestrator from omnibase_core.nodes
+
+class MyDatabaseWriter(ModelServiceEffect):
+    """
+    Built-in features:
+    - Health checks
+    - Event bus integration
+    - Metrics tracking
+    - Standard error handling
+    """
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)  # 80+ lines of boilerplate eliminated!
+
+# ⚙️ ADVANCED: Direct node classes (use when you need lower-level control)
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-class MyTool(NodeEffect):
+class MyCustomEffect(NodeEffect):
+    """
+    Advanced usage - provides foundation for building custom wrappers.
+    Most developers should use ModelServiceEffect instead.
+    """
     def __init__(self, container: ModelONEXContainer):
-        super().__init__(container)  # 80+ lines of boilerplate eliminated!
+        super().__init__(container)
 
-# Option 2: Import base class for custom nodes
+# 🔧 EXPERT: Base class for completely custom node types
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 
 class MyCustomNode(NodeCoreBase):
-    """Use this when building a custom node type."""
+    """Use this only when building a completely new node type."""
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
 ```
+
+**When to use which?**
+
+| Base Class | Use When | Features |
+|-----------|----------|----------|
+| **ModelService*** | Production nodes (95% of cases) | Health checks, event bus, metrics, error handling |
+| **Node*** | Custom wrappers or special needs | Core node features, more control |
+| **NodeCoreBase** | New node type entirely | Minimal foundation, full control |
 
 ### 2. Protocol-Driven Dependency Injection
 ```python
@@ -353,18 +433,34 @@ async def execute_effect(
 
 ### 1. Node Implementation Pattern
 ```python
-from omnibase_core.nodes.node_compute import NodeCompute  # Or NodeEffect, NodeReducer, NodeOrchestrator
+# ✅ RECOMMENDED: Use production-ready service wrappers (currently available)
+from omnibase_core.infrastructure.infrastructure_bases import (
+    ModelServiceEffect,      # For I/O operations (available)
+    ModelServiceCompute,     # For data processing (available)
+)
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-class YourTool(NodeCompute):  # Choose: NodeEffect, NodeCompute, NodeReducer, NodeOrchestrator
+# Note: For REDUCER and ORCHESTRATOR nodes, use direct node classes for now
+from omnibase_core.nodes.node_reducer import NodeReducer           # For state aggregation
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator # For workflow coordination
+
+class YourTool(ModelServiceCompute):  # Choose appropriate service wrapper
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)  # MANDATORY - handles all boilerplate
 
-        # Protocol-based dependency resolution
+        # Protocol-based dependency resolution (if needed beyond what wrapper provides)
         self.logger = container.get_service("ProtocolLogger")
         self.event_bus = container.get_service("ProtocolEventBus")
 
         # Business-specific initialization only
+
+# ⚙️ ADVANCED: Direct node classes (only when you need lower-level control)
+from omnibase_core.nodes.node_compute import NodeCompute
+
+class YourCustomTool(NodeCompute):
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+        # Advanced customization here
 ```
 
 ### 2. Error Handling Requirements

@@ -121,7 +121,7 @@ We welcome:
 - Utils: `util_<name>.py`
 
 **Classes**:
-- Nodes: `Node<Name><Type>` (e.g., `NodeComputeService`)
+- Nodes: `Node<Name><Type>` (e.g., `NodeMyServiceCompute`)
 - Models: `Model<Name>` (e.g., `ModelEventEnvelope`)
 - Enums: `Enum<Name>` (e.g., `EnumNodeType`)
 

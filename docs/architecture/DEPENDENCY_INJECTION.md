@@ -52,7 +52,7 @@ container.register_service("ProtocolCache", cache_instance)
 ### Service Resolution
 
 ```python
-class MyNode(NodeComputeService):
+class MyNode(ModelServiceCompute):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
 

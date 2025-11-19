@@ -1686,7 +1686,7 @@ Nodes support parallel processing within their operations:
 
 ```python
 # COMPUTE node with parallel processing
-class ParallelComputeService(NodeComputeService):
+class ParallelComputeService(ModelServiceCompute):
     async def execute_compute(self, contract: ModelContractCompute):
         if contract.parallel_config:
             # Split data into chunks for parallel processing

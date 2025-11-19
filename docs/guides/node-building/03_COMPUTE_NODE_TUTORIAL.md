@@ -4,6 +4,24 @@
 **Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md), [Node Types](02_NODE_TYPES.md)
 **What You'll Build**: A price calculation node with tax, discounts, and caching
 
+## 🎯 Recommended Approach
+
+This tutorial shows **TWO approaches**:
+
+1. **RECOMMENDED (95% of use cases)**: `ModelServiceCompute` wrapper
+   - Production-ready with built-in features
+   - Minimal boilerplate
+   - Health checks, metrics, event bus included
+
+2. **ADVANCED (5% of use cases)**: `NodeCompute` base class
+   - Custom mixin composition
+   - Selective feature inclusion
+   - More control, more setup
+
+**Start with ModelServiceCompute unless you have specific needs for NodeCompute.**
+
+See [Node Class Hierarchy Guide](../../architecture/NODE_CLASS_HIERARCHY.md) for detailed comparison.
+
 ## Overview
 
 In this tutorial, you'll build a complete COMPUTE node that calculates prices with tax and discounts. You'll learn:
@@ -216,9 +234,9 @@ class ModelPriceCalculatorOutput(BaseModel):
 
 Now build the actual node.
 
-### Quick Start: Using the Convenience Wrapper ✅ Recommended
+### ✅ RECOMMENDED: Using ModelServiceCompute Wrapper
 
-For most use cases, use the pre-configured `NodeCompute` class that includes built-in COMPUTE functionality:
+For **95% of use cases**, use the production-ready `ModelServiceCompute` wrapper that includes all standard features:
 
 **File**: `src/your_project/nodes/node_price_calculator_compute.py`
 
@@ -227,7 +245,7 @@ For most use cases, use the pre-configured `NodeCompute` class that includes bui
 
 import time
 from typing import Dict
-from omnibase_core.nodes.node_compute import NodeCompute
+from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -236,19 +254,20 @@ from .model_price_calculator_input import ModelPriceCalculatorInput
 from .model_price_calculator_output import ModelPriceCalculatorOutput
 
 
-class NodePriceCalculatorCompute(NodeCompute):
+class NodePriceCalculatorCompute(ModelServiceCompute):
     """
     COMPUTE node for price calculations.
 
     Calculates cart total with discounts and tax. Implements caching
     for performance on repeated calculations.
 
-    Features:
-    - Subtotal calculation
-    - Discount code support
-    - Tax calculation
-    - Result caching
-    - Performance tracking
+    Production-ready features (via ModelServiceCompute):
+    - ✅ Health checks
+    - ✅ Metrics tracking
+    - ✅ Event bus integration
+    - ✅ Circuit breaker
+    - ✅ Result caching
+    - ✅ Performance tracking
     """
 
     # Discount codes (in production, fetch from database)
@@ -474,8 +493,11 @@ class NodePriceCalculatorCompute(NodeCompute):
         }
 ```python
 
-**What `NodeCompute` Provides**:
-- ✅ **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
+**What `ModelServiceCompute` Provides**:
+- ✅ **Health Checks**: Built-in readiness and liveness endpoints
+- ✅ **Metrics**: Automatic prometheus-style metrics tracking
+- ✅ **Event Bus**: Kafka/Redpanda integration for event publishing
+- ✅ **Circuit Breaker**: Automatic failure protection
 - ✅ **Computation Cache**: Built-in `ModelComputeCache` with TTL and eviction policies
 - ✅ **Thread Pool**: `ThreadPoolExecutor` for parallel computation support
 - ✅ **Computation Registry**: Register and manage computation functions
@@ -483,27 +505,40 @@ class NodePriceCalculatorCompute(NodeCompute):
 - ✅ **Configuration Support**: Automatic config loading from `NodeConfigProvider`
 
 **Key Implementation Points**:
-- ✅ Inherits from `NodeCompute` convenience wrapper
+- ✅ Inherits from `ModelServiceCompute` production wrapper
 - ✅ Typed `process()` method
-- ✅ Caching already available via base class
+- ✅ Zero boilerplate for production features
 - ✅ Comprehensive error handling
 - ✅ Performance tracking built-in
 - ✅ Clear separation of concerns
 
-### Advanced: Custom Base Class (When You Need Full Control)
+### When to Use Which Approach
 
-If you need custom mixin composition or want to build from scratch:
+| Feature | ModelServiceCompute | NodeCompute |
+|---------|---------------------|-------------|
+| **Health Checks** | ✅ Included | ⚠️ Manual setup |
+| **Metrics** | ✅ Included | ⚠️ Manual setup |
+| **Event Bus** | ✅ Included | ⚠️ Manual setup |
+| **Circuit Breaker** | ✅ Included | ⚠️ Manual setup |
+| **Setup Complexity** | Minimal | Moderate |
+| **Production Ready** | ✅ Yes | ⚠️ Requires configuration |
+| **Use Case** | 95% of applications | Custom mixin composition |
+
+### 🔧 ADVANCED: Using NodeCompute Base Class
+
+For **5% of use cases** where you need custom mixin composition:
 
 ```python
-from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.nodes.node_compute import NodeCompute
+from omnibase_core.mixins import MixinCustomBehavior
 
-class NodePriceCalculatorCompute(NodeCoreBase):
+class NodePriceCalculatorCompute(NodeCompute, MixinCustomBehavior):
     """
-    Custom COMPUTE node built from NodeCoreBase.
+    COMPUTE node with custom mixin composition.
 
     Use this approach when:
-    - You need custom mixin combinations
-    - You want fine-grained control over initialization
+    - You need specific mixin combinations not in ModelServiceCompute
+    - You want selective feature inclusion
     - You're implementing non-standard patterns
     """
 
@@ -511,23 +546,23 @@ class NodePriceCalculatorCompute(NodeCoreBase):
         super().__init__(container)
 
         # Manually initialize computation-specific features
-        # (NodeCompute does this automatically)
         self._cache = {}
         self.computation_count = 0
         self.cache_hits = 0
 
-    # ... rest of implementation
+    # ... rest of implementation (same as above)
 ```
 
-**When to use custom base**:
-- Custom mixin requirements beyond NodeCompute
+**When to use NodeCompute**:
+- Custom mixin combinations beyond ModelServiceCompute
+- Selective feature inclusion (not all production features needed)
 - Non-standard caching strategies
 - Special initialization needs
 
-**When to use NodeCompute** (recommended):
-- Standard COMPUTE operations
-- Need built-in caching and thread pooling
-- Want configuration auto-loading
+**When to use ModelServiceCompute** (recommended):
+- Standard COMPUTE operations (95% of cases)
+- Production deployment
+- Need health checks, metrics, event bus out-of-the-box
 - Following ONEX best practices
 
 ## Step 4: Write Tests
@@ -880,11 +915,16 @@ poetry run pytest tests/nodes/test_node_price_calculator.py -vvs
 You've learned:
 
 - ✅ COMPUTE node structure and patterns
+- ✅ **ModelServiceCompute** - Production-ready wrapper (RECOMMENDED)
+- ✅ **NodeCompute** - Custom mixin composition (ADVANCED)
+- ✅ When to use which approach
 - ✅ Type-safe input/output models
 - ✅ Caching implementation
 - ✅ Error handling and validation
 - ✅ Comprehensive testing
 - ✅ Performance tracking
+
+**Key Takeaway**: Start with `ModelServiceCompute` for 95% of use cases. Only use `NodeCompute` when you need custom mixin composition.
 
 **Congratulations!** You've built a production-ready COMPUTE node! 🎉
 

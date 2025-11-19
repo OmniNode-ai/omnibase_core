@@ -89,7 +89,7 @@ def reduce_state(
 ### Event Publishing
 
 ```python
-class MyNode(NodeComputeService):
+class MyNode(ModelServiceCompute):
     async def process(self, data: dict) -> dict:
         # Process data
         result = await self.compute(data)
@@ -110,7 +110,7 @@ class MyNode(NodeComputeService):
 ### Event Subscription
 
 ```python
-class MyNode(NodeEffectService):
+class MyNode(ModelServiceEffect):
     async def initialize(self):
         event_bus = self.container.get_service("ProtocolEventBus")
 
@@ -132,7 +132,7 @@ class MyNode(NodeEffectService):
 ### Intent Execution
 
 ```python
-class MyEffectNode(NodeEffectService):
+class MyEffectNode(ModelServiceEffect):
     async def execute_intent(self, intent: ModelIntent):
         """Execute Intent from REDUCER."""
 

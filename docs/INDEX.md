@@ -83,6 +83,7 @@ omnibase_core/docs/
 |----------|-------------|--------|
 | [Architecture Overview](architecture/OVERVIEW.md) | High-level system design | ✅ Complete |
 | [**Four-Node Pattern**](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX architecture ⭐ **Excellent!** | ✅ Complete |
+| [**Node Class Hierarchy**](architecture/NODE_CLASS_HIERARCHY.md) | ModelService* vs Node* vs NodeCoreBase ⭐ **CRITICAL** | ✅ Complete |
 | [**Container Types**](architecture/CONTAINER_TYPES.md) | ModelContainer vs ModelONEXContainer ⚠️ **CRITICAL** | ✅ Complete |
 | [Dependency Injection](architecture/DEPENDENCY_INJECTION.md) | ModelONEXContainer patterns | ✅ Complete |
 | [Contract System](architecture/CONTRACT_SYSTEM.md) | Contract architecture | ✅ Complete |
@@ -212,6 +213,7 @@ omnibase_core/docs/
 |------|-------|
 | **Build my first node** | [Node Building Guide](guides/node-building/README.md) → [COMPUTE Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) |
 | **Understand node types** | [Node Types](guides/node-building/02_NODE_TYPES.md) |
+| **Choose the right base class** | [Node Class Hierarchy](architecture/NODE_CLASS_HIERARCHY.md) |
 | **Use a production template** | [Node Templates](guides/templates/) |
 | **Handle errors properly** | [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md) |
 | **Secure my code** | [Security Validators](../scripts/validation/README.md) |

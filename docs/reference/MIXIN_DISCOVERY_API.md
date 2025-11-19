@@ -361,7 +361,7 @@ def generate_node_class(node_name: str, requirements: list[str]) -> str:
         imports.update(deps)
 
     # Generate class definition
-    class_def = f"class {node_name}(NodeEffectService, {', '.join(composition)}):"
+    class_def = f"class {node_name}(ModelServiceEffect, {', '.join(composition)}):"
 
     return class_def
 ```
@@ -379,7 +379,7 @@ mixin = discovery.get_mixin("MixinRetry")
 
 # Generate code from template
 template = Template("""
-class {{ node_name }}(NodeEffectService, {{ mixin.name }}):
+class {{ node_name }}(ModelServiceEffect, {{ mixin.name }}):
     \"\"\"{{ mixin.description }}\"\"\"
 
     def __init__(self, **kwargs):

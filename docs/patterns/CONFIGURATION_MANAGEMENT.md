@@ -21,7 +21,7 @@ The configuration system is built around the `ModelEnvironmentConfig` base class
 ### Basic Usage
 
 ```python
-from omnibase_core.core.configuration import ModelEnvironmentConfig
+from omnibase_core.models.configuration.model_database_config import ModelDatabaseConfig
 from pydantic import Field
 
 class ModelDatabaseConfig(ModelEnvironmentConfig):
@@ -84,7 +84,7 @@ key = prefix.format_key("database_host")  # -> "MYAPP_DATABASE_HOST"
 Centralized management for multiple configurations.
 
 ```python
-from omnibase_core.core.configuration import config_registry, register_config
+from omnibase_core.models.configuration import model_database_config
 
 # Register configurations
 db_config = register_config('database', ModelDatabaseConfig, prefix='DB')
@@ -179,7 +179,7 @@ config = ModelApplicationConfig.from_environment(prefix='APP')
 ### Production Environment Detection
 
 ```python
-from omnibase_core.core.configuration import is_production_environment
+from omnibase_core.models.configuration import model_database_config
 
 # Checks ENVIRONMENT, NODE_ENV, DEBUG, DEV_MODE variables
 if is_production_environment():
@@ -220,12 +220,7 @@ for doc in docs:
 ### Quick Environment Helpers
 
 ```python
-from omnibase_core.core.configuration import (
-    get_env_bool,
-    get_env_int,
-    get_env_float,
-    get_env_list
-)
+from omnibase_core.models.configuration import model_database_config
 
 # Cached environment variable access with type conversion
 debug = get_env_bool('DEBUG', False)
@@ -288,7 +283,7 @@ config_registry.register('database', ModelDatabaseConfig.from_environment(prefix
 config_registry.register('redis', ModelRedisConfig.from_environment(prefix='REDIS'))
 
 # In your service modules
-from omnibase_core.core.configuration import config_registry
+from omnibase_core.models.configuration import model_database_config
 
 def get_database_connection():
     db_config = config_registry.get('database')
@@ -378,7 +373,7 @@ port = get_env_int('PORT', 8000)  # Uses 8000 if PORT is invalid
 
 ```python
 from fastapi import FastAPI
-from omnibase_core.core.configuration import ModelEnvironmentConfig
+from omnibase_core.models.configuration.model_database_config import ModelDatabaseConfig
 
 class ModelAppConfig(ModelEnvironmentConfig):
     debug: bool = Field(default=False)
@@ -397,7 +392,7 @@ async def health():
 
 ```python
 import asyncpg
-from omnibase_core.core.configuration import ModelEnvironmentConfig
+from omnibase_core.models.configuration.model_database_config import ModelDatabaseConfig
 
 class ModelDatabaseConfig(ModelEnvironmentConfig):
     host: str = Field(default="localhost")
@@ -463,7 +458,7 @@ config = ModelConfig.from_environment()
 ```python
 # Enable debug logging
 import logging
-logging.getLogger('omnibase_core.core.configuration').setLevel(logging.DEBUG)
+logging.getLogger('your_module_name').setLevel(logging.DEBUG)  # Replace with actual module
 
 # Check generated environment keys
 keys = ModelConfig._generate_env_keys('field_name')
@@ -477,7 +472,7 @@ print(f"Configuration summary: {config.get_env_summary()}")
 ### Verify Environment Detection
 
 ```python
-from omnibase_core.core.configuration import is_production_environment
+from omnibase_core.models.configuration import model_database_config
 
 print(f"Production environment: {is_production_environment()}")
 print(f"Environment variables checked:")

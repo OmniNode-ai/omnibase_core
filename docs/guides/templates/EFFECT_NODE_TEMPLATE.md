@@ -75,12 +75,13 @@ from datetime import datetime
 from typing import Dict, List, Optional, Union, Any, Pattern, Callable
 from uuid import UUID, uuid4
 
-from omnibase_core.core.node_effect import ModelEffectInput, ModelEffectOutput
-from omnibase_core.core.node_effect_service import NodeEffectService
-from omnibase_core.core.onex_container import ModelONEXContainer as ONEXContainer
+from omnibase_core.models.model_effect_input import ModelEffectInput
+from omnibase_core.models.model_effect_output import ModelEffectOutput
+from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer as ONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
-from omnibase_core.core.core_error_codes import CoreErrorCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 
 from .models.model_{MICROSERVICE_NAME}_input import Model{MICROSERVICE_NAME_PASCAL}Input
@@ -89,7 +90,7 @@ from .models.model_{MICROSERVICE_NAME}_config import Model{MICROSERVICE_NAME_PAS
 from .enums.enum_{MICROSERVICE_NAME}_operation_type import Enum{MICROSERVICE_NAME_PASCAL}OperationType
 
 
-class Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect(NodeEffectService):
+class Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect(ModelServiceEffect):
     """
     {DOMAIN} {MICROSERVICE_NAME} Effect Node - ONEX 4-Node Architecture Implementation.
 
@@ -1099,7 +1100,7 @@ from {REPOSITORY_NAME}.nodes.node_{DOMAIN}_{MICROSERVICE_NAME}_effect import (
     Model{MICROSERVICE_NAME_PASCAL}Input,
     Enum{MICROSERVICE_NAME_PASCAL}OperationType,
 )
-from omnibase_core.core.onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from uuid import uuid4
 
 # Initialize node
