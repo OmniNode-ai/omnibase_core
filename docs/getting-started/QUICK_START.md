@@ -22,7 +22,7 @@ A simple COMPUTE node that doubles numbers - demonstrating how to use ONEX conve
 ONEX provides pre-configured convenience classes for each node type. These eliminate 80+ lines of boilerplate initialization:
 
 ### **NodeCompute** - Data Processing
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 
 class NodeMyCompute(NodeCompute):
@@ -34,7 +34,7 @@ class NodeMyCompute(NodeCompute):
 **Includes**: Caching layer, parallel processing, computation registry, performance monitoring
 
 ### **NodeEffect** - External Interactions
-```python
+```
 from omnibase_core.nodes.node_effect import NodeEffect
 
 class NodeMyEffect(NodeEffect):
@@ -46,7 +46,7 @@ class NodeMyEffect(NodeEffect):
 **Includes**: Transaction management, circuit breakers, retry policies, file operations, event emission
 
 ### **NodeReducer** - State Management
-```python
+```
 from omnibase_core.nodes.node_reducer import NodeReducer
 
 class NodeMyReducer(NodeReducer):
@@ -58,7 +58,7 @@ class NodeMyReducer(NodeReducer):
 **Includes**: Streaming support, conflict resolution, reduction functions, batch processing
 
 ### **NodeOrchestrator** - Workflow Coordination
-```python
+```
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 
 class NodeMyOrchestrator(NodeOrchestrator):
@@ -77,7 +77,7 @@ Let's build a simple number doubler using **NodeCompute** to see how easy it is.
 
 ## Step 1: Create Your Project
 
-```bash
+```
 # Create a new directory for your project
 mkdir my-first-onex-node
 cd my-first-onex-node
@@ -92,13 +92,13 @@ mkdir -p src/my_project/nodes
 mkdir -p tests
 touch src/my_project/__init__.py
 touch src/my_project/nodes/__init__.py
-```python
+```
 
 ## Step 2: Create Your Node
 
 **File**: `src/my_project/nodes/node_doubler_compute.py`
 
-```python
+```
 """A simple COMPUTE node that doubles numbers."""
 
 from typing import Dict, Any
@@ -153,7 +153,7 @@ class NodeDoublerCompute(NodeCompute):
             "original_value": numeric_value,
             "operation": "double"
         }
-```python
+```
 
 > **💡 Why Use Convenience Wrappers?**
 >
@@ -179,7 +179,7 @@ class NodeDoublerCompute(NodeCompute):
 
 **File**: `tests/test_doubler.py`
 
-```python
+```
 """Tests for the doubler compute node."""
 
 import pytest
@@ -248,11 +248,11 @@ async def test_non_numeric_value_raises_error(doubler_node):
     """Test that non-numeric value raises ValueError."""
     with pytest.raises(ValueError, match="Value must be numeric"):
         await doubler_node.process({"value": "not a number"})
-```python
+```
 
 ## Step 4: Run Your Tests
 
-```bash
+```
 # Run the tests
 poetry run pytest tests/test_doubler.py -v
 
@@ -263,13 +263,13 @@ poetry run pytest tests/test_doubler.py -v
 # tests/test_doubler.py::test_double_float PASSED
 # tests/test_doubler.py::test_missing_value_raises_error PASSED
 # tests/test_doubler.py::test_non_numeric_value_raises_error PASSED
-```python
+```
 
 ## Step 5: Use Your Node
 
 **File**: `example_usage.py`
 
-```python
+```
 """Example usage of the doubler node."""
 
 import asyncio
@@ -304,11 +304,11 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-```bash
+```
 
 Run it:
 
-```bash
+```
 poetry run python example_usage.py
 
 # Expected output:
@@ -318,7 +318,7 @@ poetry run python example_usage.py
 # Input: -5 → Output: -10
 # Input: 0 → Output: 0
 # Input: 3.14 → Output: 6.28
-```python
+```
 
 ## What Just Happened?
 
@@ -371,7 +371,7 @@ Start building with the other convenience wrappers:
 
 ### Add Input/Output Models
 
-```python
+```
 from pydantic import BaseModel, Field
 
 class DoublerInput(BaseModel):
@@ -381,11 +381,11 @@ class DoublerOutput(BaseModel):
     result: float = Field(description="Doubled value")
     original_value: float = Field(description="Original input value")
     operation: str = Field(default="double", description="Operation performed")
-```python
+```
 
 ### Add Caching
 
-```python
+```
 def __init__(self, container: ModelONEXContainer):
     super().__init__(container)
     self._cache = {}  # Simple cache
@@ -398,11 +398,11 @@ async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
     result = await self._compute(input_data)
     self._cache[cache_key] = result
     return result
-```python
+```
 
 ### Add Logging
 
-```python
+```
 import logging
 
 logger = logging.getLogger(__name__)
@@ -412,39 +412,39 @@ async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
     result = await self._compute(input_data)
     logger.info(f"Result: {result}")
     return result
-```python
+```
 
 ## Troubleshooting
 
 ### Import Errors
 
-```bash
+```
 # Ensure you're in the virtual environment
 poetry shell
 
 # Check installation
 poetry run python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('OK')"
-```python
+```
 
 ### Test Failures
 
-```bash
+```
 # Run with verbose output
 poetry run pytest tests/test_doubler.py -vvs
 
 # Run specific test
 poetry run pytest tests/test_doubler.py::test_double_positive_number -v
-```bash
+```
 
 ### Type Checking
 
-```bash
+```
 # Install mypy
 poetry add --group dev mypy
 
 # Run type checking
 poetry run mypy src/my_project/nodes/node_doubler_compute.py
-```yaml
+```
 
 ## Summary
 

@@ -21,7 +21,7 @@ This template provides the **pure FSM architecture pattern** for ONEX REDUCER no
 
 ## Directory Structure
 
-```text
+```
 {REPOSITORY_NAME}/
 ├── src/
 │   └── {REPOSITORY_NAME}/
@@ -63,13 +63,13 @@ This template provides the **pure FSM architecture pattern** for ONEX REDUCER no
                     ├── test_config.py
                     ├── test_contracts.py
                     └── test_models.py
-```python
+```
 
 ## Template Files
 
 ### 1. Pure FSM Node Implementation (`node.py`)
 
-```python
+```
 """Pure FSM REDUCER node for {DOMAIN} {MICROSERVICE_NAME} operations."""
 
 import asyncio
@@ -698,11 +698,11 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(NodeCoreBase):
 
         key_str = json.dumps(key_data, sort_keys=True)
         return f"reduction:{hashlib.sha256(key_str.encode()).hexdigest()[:16]}"
-```python
+```
 
 ### 2. Output Model with Intents (`model_{DOMAIN}_{MICROSERVICE_NAME}_reducer_output.py`)
 
-```python
+```
 """Output model for {DOMAIN} {MICROSERVICE_NAME} REDUCER operations."""
 
 from typing import Any, Dict, List, Optional
@@ -748,11 +748,11 @@ class Model{DomainCamelCase}{MicroserviceCamelCase}ReducerOutput(BaseModel):
         """Pydantic configuration."""
         validate_assignment = True
         extra = "forbid"
-```python
+```
 
 ### 3. Pure Utility Functions (`utils/data_aggregator.py`)
 
-```python
+```
 """Pure aggregation functions for REDUCER operations."""
 
 from typing import Any, Dict, List
@@ -829,7 +829,7 @@ async def aggregate_data(
         return {
             "error": f"Unsupported aggregation strategy: {strategy}"
         }
-```python
+```
 
 ## FSM Compliance Checklist
 
@@ -844,18 +844,18 @@ async def aggregate_data(
 
 ### ❌ Mutable State in __init__
 
-```python
+```
 # WRONG: Mutable state
 def __init__(self, container):
     super().__init__(container)
     self.metrics = []           # ❌ Mutable list
     self.cache = {}             # ❌ Mutable dict
     self.counter = 0            # ❌ Mutable counter
-```python
+```
 
 ### ❌ Direct Side Effects in process()
 
-```python
+```
 # WRONG: Direct side effects
 async def process(self, input_data):
     # ❌ Direct logging
@@ -868,11 +868,11 @@ async def process(self, input_data):
     self.cache[key] = result
 
     return result
-```python
+```
 
 ### ❌ State Mutations
 
-```python
+```
 # WRONG: State mutation
 async def process(self, input_data):
     # ❌ Modifying instance state
@@ -880,7 +880,7 @@ async def process(self, input_data):
     self.active_streams.add(stream_id)
 
     return result
-```python
+```
 
 ## Migration Guide
 
@@ -894,7 +894,7 @@ To migrate existing REDUCER nodes to pure FSM:
 
 ## Testing Pure FSM Reducers
 
-```python
+```
 async def test_pure_reducer_no_side_effects():
     """Verify reducer has no side effects."""
     container = ModelONEXContainer(...)
@@ -927,7 +927,7 @@ async def test_reducer_emits_intents():
     intent_types = {intent.intent_type for intent in output.intents}
     assert EnumIntentType.LOG in intent_types
     assert EnumIntentType.METRIC in intent_types
-```text
+```
 
 ## References
 

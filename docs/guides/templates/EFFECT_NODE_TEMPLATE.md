@@ -10,7 +10,7 @@ This template provides a complete "cookie cutter" approach for generating consis
 
 ## 📁 Directory Structure Template
 
-```text
+```
 src/{REPOSITORY_NAME}/nodes/node_{DOMAIN}_{MICROSERVICE_NAME}_effect/
 ├── __init__.py                                    # Package exports
 ├── v1_0_0/                                       # Versioned implementation
@@ -31,7 +31,7 @@ src/{REPOSITORY_NAME}/nodes/node_{DOMAIN}_{MICROSERVICE_NAME}_effect/
 │       ├── version_manifest.yaml
 │       └── compatibility_matrix.yaml
 └── README.md                                    # Node documentation
-```python
+```
 
 ## 🔧 Customization Points
 
@@ -49,7 +49,7 @@ Replace the following placeholders when using this template:
 
 **File**: `v1_0_0/node.py`
 
-```python
+```
 #!/usr/bin/env python3
 """
 {DOMAIN} {MICROSERVICE_NAME} Effect Node - ONEX 4-Node Architecture Implementation.
@@ -82,7 +82,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.enums.node import EnumHealthStatus
 from omnibase_core.model.core.model_health_status import ModelHealthStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .models.model_{MICROSERVICE_NAME}_input import Model{MICROSERVICE_NAME_PASCAL}Input
 from .models.model_{MICROSERVICE_NAME}_output import Model{MICROSERVICE_NAME_PASCAL}Output
@@ -228,7 +228,7 @@ class Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect(ModelServiceEffect):
             # Check circuit breaker
             if self._is_circuit_breaker_open():
                 raise ModelOnexError(
-                    code=CoreErrorCode.CIRCUIT_BREAKER_OPEN,
+                    code=EnumCoreErrorCode.CIRCUIT_BREAKER_OPEN,
                     message=f"{MICROSERVICE_NAME} circuit breaker is open"
                 )
 
@@ -241,7 +241,7 @@ class Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect(ModelServiceEffect):
                 return await self._handle_health_check_operation(input_data, start_time)
             else:
                 raise ModelOnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Unsupported operation type: {input_data.operation_type}",
                 )
 
@@ -361,13 +361,13 @@ class Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect(ModelServiceEffect):
                 correlation_id = UUID(correlation_id)
             except ValueError:
                 raise ModelOnexError(
-                    code=CoreErrorCode.VALIDATION_ERROR,
+                    code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Invalid correlation ID format - must be valid UUID"
                 )
 
         if not isinstance(correlation_id, UUID):
             raise ModelOnexError(
-                code=CoreErrorCode.VALIDATION_ERROR,
+                code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Correlation ID must be UUID type"
             )
 
@@ -463,13 +463,13 @@ async def main():
 if __name__ == "__main__":
     import asyncio
     asyncio.run(main())
-```python
+```
 
 ### 2. Input Model Template
 
 **File**: `models/model_{MICROSERVICE_NAME}_input.py`
 
-```python
+```
 """{MICROSERVICE_NAME} input envelope model."""
 
 from typing import Optional, Dict, Any
@@ -509,13 +509,13 @@ class Model{MICROSERVICE_NAME_PASCAL}Input(BaseModel):
     )
 
     # Add domain-specific fields here
-```python
+```
 
 ### 3. Output Model Template
 
 **File**: `models/model_{MICROSERVICE_NAME}_output.py`
 
-```python
+```
 """{MICROSERVICE_NAME} output envelope model."""
 
 from typing import Optional, Dict, Any
@@ -556,13 +556,13 @@ class Model{MICROSERVICE_NAME_PASCAL}Output(BaseModel):
     )
 
     # Add domain-specific response fields here
-```python
+```
 
 ### 4. Configuration Model Template
 
 **File**: `models/model_{MICROSERVICE_NAME}_config.py`
 
-```python
+```
 """{MICROSERVICE_NAME} configuration model."""
 
 from typing import Dict, Any
@@ -615,13 +615,13 @@ class Model{MICROSERVICE_NAME_PASCAL}Config(BaseModel):
             )
         else:
             return cls(**base_config)
-```python
+```
 
 ### 5. Operation Type Enum Template
 
 **File**: `enums/enum_{MICROSERVICE_NAME}_operation_type.py`
 
-```python
+```
 """{MICROSERVICE_NAME} operation type enumeration."""
 
 from enum import Enum
@@ -635,13 +635,13 @@ class Enum{MICROSERVICE_NAME_PASCAL}OperationType(str, Enum):
     HEALTH_CHECK = "health_check"
 
     # Add domain-specific operation types here
-```python
+```
 
 ### 6. Package Export Templates
 
 **File**: `__init__.py` (root)
 
-```python
+```
 """{DOMAIN} {MICROSERVICE_NAME} Effect Node Package."""
 
 from .v1_0_0 import (
@@ -659,11 +659,11 @@ __all__ = [
     "Model{MICROSERVICE_NAME_PASCAL}Config",
     "Enum{MICROSERVICE_NAME_PASCAL}OperationType",
 ]
-```python
+```
 
 **File**: `v1_0_0/__init__.py`
 
-```python
+```
 """Version 1.0.0 of {DOMAIN} {MICROSERVICE_NAME} Effect Node."""
 
 from .node import Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect
@@ -679,7 +679,7 @@ __all__ = [
     "Model{MICROSERVICE_NAME_PASCAL}Config",
     "Enum{MICROSERVICE_NAME_PASCAL}OperationType",
 ]
-```python
+```
 
 ## 📋 Contract Templates
 
@@ -687,7 +687,7 @@ __all__ = [
 
 **File**: `contracts/{MICROSERVICE_NAME}_processing_subcontract.yaml`
 
-```yaml
+```
 # {MICROSERVICE_NAME} Processing Subcontract
 # Defines core operation patterns and business logic flows
 
@@ -788,13 +788,13 @@ spec:
       - circuit_breaker_state
       - resource_availability
       - external_dependency_health
-```yaml
+```
 
 ### 8. Management Subcontract Template
 
 **File**: `contracts/{MICROSERVICE_NAME}_management_subcontract.yaml`
 
-```yaml
+```
 # {MICROSERVICE_NAME} Management Subcontract  
 # Defines resource management, lifecycle, and operational patterns
 
@@ -920,7 +920,7 @@ spec:
       - architecture_version: "4.0"
       - interface_compliance: true
       - health_check_standard: true
-```yaml
+```
 
 ## 📊 Manifest Templates
 
@@ -928,7 +928,7 @@ spec:
 
 **File**: `manifests/version_manifest.yaml`
 
-```yaml
+```
 # Version Manifest for {DOMAIN} {MICROSERVICE_NAME} Effect Node
 # Defines version metadata, compatibility, and deployment information
 
@@ -1002,13 +1002,13 @@ spec:
     api_docs: docs/api.md
     contracts: contracts/
     examples: examples/
-```yaml
+```
 
 ### 10. Compatibility Matrix Template
 
 **File**: `manifests/compatibility_matrix.yaml`
 
-```yaml
+```
 # Compatibility Matrix for {DOMAIN} {MICROSERVICE_NAME} Effect Node
 # Defines cross-version compatibility and migration paths
 
@@ -1060,7 +1060,7 @@ spec:
     notice_period_months: 6
     support_period_months: 12
     removal_timeline: "following_major_version"
-```python
+```
 
 ## 📖 Documentation Template
 
@@ -1094,7 +1094,7 @@ This EFFECT node provides {DOMAIN} {MICROSERVICE_NAME} capabilities as a special
 
 ## Quick Start
 
-```python
+```
 from {REPOSITORY_NAME}.nodes.node_{DOMAIN}_{MICROSERVICE_NAME}_effect import (
     Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect,
     Model{MICROSERVICE_NAME_PASCAL}Input,
@@ -1117,13 +1117,13 @@ request = Model{MICROSERVICE_NAME_PASCAL}Input(
 # Execute operation
 result = await effect_node.process(request)
 print(f"Success: {result.success}")
-```bash
+```
 
 ## Configuration
 
 The node supports environment-specific configuration:
 
-```python
+```
 from {REPOSITORY_NAME}.nodes.node_{DOMAIN}_{MICROSERVICE_NAME}_effect import Model{MICROSERVICE_NAME_PASCAL}Config
 
 # Production configuration
@@ -1131,7 +1131,7 @@ config = Model{MICROSERVICE_NAME_PASCAL}Config.for_environment("production")
 
 # Development configuration
 config = Model{MICROSERVICE_NAME_PASCAL}Config.for_environment("development")
-```bash
+```
 
 ## Operations
 
@@ -1169,13 +1169,13 @@ The node provides comprehensive monitoring:
 ## Development
 
 ### Setup
-```bash
+```
 poetry install
 poetry run pytest tests/
-```bash
+```
 
 ### Testing
-```bash
+```
 # Unit tests
 poetry run pytest tests/unit/
 
@@ -1189,7 +1189,7 @@ poetry run pytest tests/contracts/
 ## License
 
 MIT License - see LICENSE file for details.
-```yaml
+```
 
 ## 🚀 Usage Instructions
 

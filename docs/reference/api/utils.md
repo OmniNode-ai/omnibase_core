@@ -19,7 +19,7 @@ This document provides comprehensive API reference for utility functions and hel
 
 This decorator eliminates 6+ lines of boilerplate error handling code and ensures consistent error patterns across all nodes.
 
-```python
+```
 from omnibase_core.decorators.error_handling import standard_error_handling
 
 @standard_error_handling(operation_name="data processing")
@@ -27,13 +27,13 @@ async def process_data(self, input_data):
     # Just business logic - no try/catch needed
     result = await self.transform_data(input_data)
     return result
-```python
+```
 
 **Parameters**:
 - `operation_name: str` - Human-readable name for the operation (used in error messages)
 
 **Error Handling Pattern Applied**:
-```python
+```
 try:
     return original_function(*args, **kwargs)
 except ModelOnexError:
@@ -43,7 +43,7 @@ except Exception as e:
         f"{operation_name} failed: {str(e)}",
         EnumCoreErrorCode.OPERATION_FAILED
     ) from e
-```python
+```
 
 ### validation_error_handling
 
@@ -53,14 +53,14 @@ except Exception as e:
 
 Similar to `standard_error_handling` but specifically designed for validation operations.
 
-```python
+```
 from omnibase_core.decorators.error_handling import validation_error_handling
 
 @validation_error_handling(operation_name="input validation")
 def validate_user_input(self, user_data):
     # Validation logic
     return validated_data
-```python
+```
 
 ---
 
@@ -72,7 +72,7 @@ def validate_user_input(self, user_data):
 
 **Purpose**: Centralized UUID generation and validation service.
 
-```python
+```
 from omnibase_core.utils.uuid_service import UtilUUID
 
 # Generate UUID4
@@ -95,7 +95,7 @@ uuid = UtilUUID.from_string("550e8400-e29b-41d4-a716-446655440000")
 correlation_id = UtilUUID.generate_correlation_id()
 event_id = UtilUUID.generate_event_id()
 session_id = UtilUUID.generate_session_id()
-```python
+```
 
 **Methods**:
 - `generate() -> UUID` - Generate a new UUID4
@@ -120,7 +120,7 @@ session_id = UtilUUID.generate_session_id()
 
 This function provides type-safe YAML loading with Pydantic model validation for security and structure verification.
 
-```python
+```
 from pathlib import Path
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 from pydantic import BaseModel
@@ -136,7 +136,7 @@ config = load_and_validate_yaml_model(config_path, MyConfig)
 
 # Access validated data
 print(f"Database: {config.database_host}:{config.database_port}")
-```python
+```
 
 **Parameters**:
 - `path: Path` - Path to the YAML file
@@ -160,7 +160,7 @@ print(f"Database: {config.database_host}:{config.database_port}")
 
 This replaces hardcoded if/elif chains with a declarative, extensible converter registry pattern.
 
-```python
+```
 from omnibase_core.utils.field_converter import FieldConverter
 
 # Define a field converter
@@ -172,7 +172,7 @@ converter = FieldConverter(
 
 # Use in field conversion registry
 # (See model_field_converter_registry for usage)
-```python
+```
 
 **Attributes**:
 - `field_name: str` - Name of the field to convert
@@ -199,7 +199,7 @@ Provides centralized management of field conversion strategies.
 
 Provides a protocol-based logging interface for consistent logging across ONEX services.
 
-```python
+```
 from omnibase_core.utils.service_logging import ServiceLogging
 
 # Initialize with logger protocol
@@ -218,7 +218,7 @@ def my_function():
 
 # Get performance metrics
 metrics = logger.tool_logger_performance_metrics(operation_name="data_processing")
-```python
+```
 
 **Methods**:
 - `emit_log_event(*args, **kwargs)` - Emit log event via protocol
@@ -289,9 +289,9 @@ Provides additional decorators for common patterns in ONEX development.
 
 ### Error Handling Pattern
 
-```python
+```
 from omnibase_core.decorators.error_handling import standard_error_handling
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 class MyNode(NodeCoreBase):
@@ -300,11 +300,11 @@ class MyNode(NodeCoreBase):
         # Just business logic - error handling is automatic
         result = await self.transform_data(input_data)
         return result
-```python
+```
 
 ### UUID Generation Pattern
 
-```python
+```
 from omnibase_core.utils.uuid_service import UtilUUID
 
 class MyNode(NodeCoreBase):
@@ -316,11 +316,11 @@ class MyNode(NodeCoreBase):
         user_id = UtilUUID.ensure_uuid(input_data.get("user_id"))
 
         return {"correlation_id": correlation_id, "user_id": user_id}
-```python
+```
 
 ### YAML Configuration Loading Pattern
 
-```python
+```
 from pathlib import Path
 from omnibase_core.utils.safe_yaml_loader import load_and_validate_yaml_model
 from pydantic import BaseModel
@@ -337,7 +337,7 @@ class MyNode(NodeCoreBase):
         # Load and validate configuration
         config_path = Path("config/database.yaml")
         self.db_config = load_and_validate_yaml_model(config_path, DatabaseConfig)
-```python
+```
 
 ---
 

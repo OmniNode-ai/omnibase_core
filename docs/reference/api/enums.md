@@ -16,7 +16,7 @@ This document provides comprehensive API reference for all enumeration types in 
 
 **Purpose**: Standard error codes for ONEX framework.
 
-```python
+```
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 # Usage in error handling
@@ -24,7 +24,7 @@ error = ModelOnexError(
     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
     message="Input validation failed"
 )
-```python
+```
 
 #### Available Error Codes
 
@@ -47,11 +47,11 @@ error = ModelOnexError(
 
 **Purpose**: Node type classification.
 
-```python
+```
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
 node_type = EnumNodeType.COMPUTE
-```python
+```
 
 #### Available Node Types
 
@@ -92,14 +92,14 @@ node_type = EnumNodeType.COMPUTE
 
 **Purpose**: Intent types for side effect requests.
 
-```python
+```
 from omnibase_core.enums.enum_intent_type import EnumIntentType
 
 intent = ModelIntent(
     intent_type=EnumIntentType.DATABASE_WRITE,
     payload={"table": "users"}
 )
-```python
+```
 
 #### Available Intent Types
 
@@ -122,14 +122,14 @@ intent = ModelIntent(
 
 **Purpose**: Action types for state transitions.
 
-```python
+```
 from omnibase_core.enums.enum_action_type import EnumActionType
 
 action = ModelAction(
     action_type=EnumActionType.UPDATE_STATE,
     payload={"field": "status", "value": "completed"}
 )
-```python
+```
 
 #### Available Action Types
 
@@ -149,14 +149,14 @@ action = ModelAction(
 
 **Purpose**: Circuit breaker state management.
 
-```python
+```
 from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 
 state = circuit_breaker.get_state()
 if state == EnumCircuitBreakerState.OPEN:
     # Circuit breaker is open, don't execute
     pass
-```python
+```
 
 #### Available States
 
@@ -172,11 +172,11 @@ if state == EnumCircuitBreakerState.OPEN:
 
 **Purpose**: Health status indicators.
 
-```python
+```
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 
 health_status = EnumHealthStatus.HEALTHY
-```python
+```
 
 #### Available Statuses
 
@@ -205,11 +205,11 @@ health_status = EnumHealthStatus.HEALTHY
 
 **Purpose**: Operation execution status.
 
-```python
+```
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 
 status = EnumOperationStatus.SUCCESS
-```python
+```
 
 #### Available Statuses
 
@@ -235,11 +235,11 @@ status = EnumOperationStatus.SUCCESS
 
 **Purpose**: Message roles in communication.
 
-```python
+```
 from omnibase_core.enums.enum_message_role import EnumMessageRole
 
 message_role = EnumMessageRole.REQUEST
-```python
+```
 
 #### Available Roles
 
@@ -257,11 +257,11 @@ message_role = EnumMessageRole.REQUEST
 
 **Purpose**: Supported LLM providers.
 
-```python
+```
 from omnibase_core.enums.enum_llm_provider import EnumLLMProvider
 
 provider = EnumLLMProvider.OPENAI
-```python
+```
 
 #### Available Providers
 
@@ -279,11 +279,11 @@ provider = EnumLLMProvider.OPENAI
 
 **Purpose**: Metric measurement types.
 
-```python
+```
 from omnibase_core.enums.enum_metric_type import EnumMetricType
 
 metric_type = EnumMetricType.COUNTER
-```python
+```
 
 #### Available Types
 
@@ -297,8 +297,8 @@ metric_type = EnumMetricType.COUNTER
 
 ### Enum Validation
 
-```python
-from pydantic import BaseModel, Field, validator
+```
+from pydantic import BaseModel, Field, field_validator
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
 class NodeConfig(BaseModel):
@@ -307,17 +307,18 @@ class NodeConfig(BaseModel):
     node_type: EnumNodeType = Field(description="Type of node")
     name: str = Field(description="Node name")
 
-    @validator('node_type')
+    @field_validator('node_type')
+    @classmethod
     def validate_node_type(cls, v):
         """Validate node type."""
         if v not in EnumNodeType:
             raise ValueError(f"Invalid node type: {v}")
         return v
-```python
+```
 
 ### Enum Comparison
 
-```python
+```
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 
 def check_health(health_status: EnumHealthStatus) -> bool:
@@ -327,11 +328,11 @@ def check_health(health_status: EnumHealthStatus) -> bool:
 # Usage
 if check_health(node.health_status):
     print("Node is operational")
-```python
+```
 
 ### Enum Iteration
 
-```python
+```
 from omnibase_core.enums.enum_intent_type import EnumIntentType
 
 def get_all_intent_types() -> List[str]:
@@ -341,11 +342,11 @@ def get_all_intent_types() -> List[str]:
 # Usage
 available_intents = get_all_intent_types()
 print(f"Available intents: {available_intents}")
-```python
+```
 
 ### Enum Mapping
 
-```python
+```
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 
 # Map status to HTTP status codes
@@ -361,11 +362,11 @@ STATUS_TO_HTTP = {
 def get_http_status(operation_status: EnumOperationStatus) -> int:
     """Get HTTP status code for operation status."""
     return STATUS_TO_HTTP.get(operation_status, 500)
-```python
+```
 
 ### Custom Enum Methods
 
-```python
+```
 from enum import Enum
 
 class EnumCustomStatus(str, Enum):
@@ -392,13 +393,13 @@ class EnumCustomStatus(str, Enum):
             self.PENDING: "Pending"
         }
         return display_names.get(self, self.value.title())
-```python
+```
 
 ## Error Handling with Enums
 
 ### Enum Error Conversion
 
-```python
+```
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -410,11 +411,11 @@ def convert_status_to_error_code(status: EnumOperationStatus) -> EnumCoreErrorCo
         EnumOperationStatus.CANCELLED: EnumCoreErrorCode.PROCESSING_ERROR
     }
     return status_to_error.get(status, EnumCoreErrorCode.PROCESSING_ERROR)
-```python
+```
 
 ### Enum Validation in Error Handling
 
-```python
+```
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 
 def validate_health_status(status: str) -> EnumHealthStatus:
@@ -423,13 +424,13 @@ def validate_health_status(status: str) -> EnumHealthStatus:
         return EnumHealthStatus(status)
     except ValueError:
         raise ValueError(f"Invalid health status: {status}. Valid values: {[s.value for s in EnumHealthStatus]}")
-```python
+```
 
 ## Performance Considerations
 
 ### Enum Caching
 
-```python
+```
 from functools import lru_cache
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
@@ -437,11 +438,11 @@ from omnibase_core.enums.enum_node_type import EnumNodeType
 def is_compute_node(node_type: EnumNodeType) -> bool:
     """Cache enum comparison for performance."""
     return node_type == EnumNodeType.COMPUTE
-```python
+```
 
 ### Enum Lookup Optimization
 
-```python
+```
 from omnibase_core.enums.enum_intent_type import EnumIntentType
 
 # Pre-compute lookup table for performance
@@ -450,7 +451,7 @@ INTENT_TYPE_LOOKUP = {intent_type.value: intent_type for intent_type in EnumInte
 def get_intent_type(value: str) -> EnumIntentType:
     """Fast enum lookup."""
     return INTENT_TYPE_LOOKUP.get(value, EnumIntentType.API_CALL)
-```python
+```
 
 ## Related Documentation
 

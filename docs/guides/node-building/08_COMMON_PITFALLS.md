@@ -23,7 +23,7 @@ This guide identifies common mistakes and pitfalls when building ONEX nodes, alo
 
 **❌ Bad Practice**: Combining multiple node types in one class
 
-```python
+```
 class BadNode(NodeCompute):
     """BAD: Mixing COMPUTE and EFFECT responsibilities."""
 
@@ -38,11 +38,11 @@ class BadNode(NodeCompute):
         await self.email_service.send("result@example.com", result)
 
         return {"result": result}
-```python
+```
 
 **✅ Good Practice**: Separate concerns into different node types
 
-```python
+```
 class GoodComputeNode(NodeCompute):
     """GOOD: Pure computation only."""
 
@@ -63,13 +63,13 @@ class GoodEffectNode(NodeEffect):
         await self.email_service.send("result@example.com", result)
 
         return {"status": "saved"}
-```python
+```
 
 ### 2. Ignoring Node Type Contracts
 
 **❌ Bad Practice**: Not following node type contracts
 
-```python
+```
 class BadComputeNode(NodeCompute):
     """BAD: COMPUTE node with side effects."""
 
@@ -77,11 +77,11 @@ class BadComputeNode(NodeCompute):
         # This violates COMPUTE contract (no side effects)
         self.global_state["last_result"] = input_data["value"]
         return {"result": input_data["value"] * 2}
-```python
+```
 
 **✅ Good Practice**: Follow node type contracts strictly
 
-```python
+```
 class GoodComputeNode(NodeCompute):
     """GOOD: Pure computation following COMPUTE contract."""
 
@@ -89,13 +89,13 @@ class GoodComputeNode(NodeCompute):
         # Pure computation only
         result = input_data["value"] * 2
         return {"result": result}
-```python
+```
 
 ### 3. Tight Coupling Between Nodes
 
 **❌ Bad Practice**: Direct dependencies between nodes
 
-```python
+```
 class BadNode(NodeCompute):
     """BAD: Tight coupling to specific node implementation."""
 
@@ -108,11 +108,11 @@ class BadNode(NodeCompute):
         # Direct call to another node
         result = await self.database_node.process(input_data)
         return result
-```python
+```
 
 **✅ Good Practice**: Use dependency injection and protocols
 
-```python
+```
 class GoodNode(NodeCompute):
     """GOOD: Loose coupling through dependency injection."""
 
@@ -125,7 +125,7 @@ class GoodNode(NodeCompute):
         # Use service interface
         result = await self.database_service.query(input_data["query"])
         return {"result": result}
-```python
+```
 
 ## Error Handling Pitfalls
 
@@ -133,7 +133,7 @@ class GoodNode(NodeCompute):
 
 **❌ Bad Practice**: Catching and ignoring exceptions
 
-```python
+```
 class BadNode(NodeCompute):
     """BAD: Swallowing exceptions silently."""
 
@@ -144,12 +144,12 @@ class BadNode(NodeCompute):
         except Exception as e:
             # BAD: Swallowing exception
             return {"result": None, "error": "Something went wrong"}
-```python
+```
 
 **✅ Good Practice**: Proper error handling with context
 
-```python
-from omnibase_core.errors.model_onex_error import ModelOnexError
+```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 class GoodNode(NodeCompute):
@@ -171,13 +171,13 @@ class GoodNode(NodeCompute):
                 message=f"Processing failed: {str(e)}",
                 context={"input_data": input_data}
             ) from e
-```python
+```
 
 ### 2. Generic Error Messages
 
 **❌ Bad Practice**: Non-descriptive error messages
 
-```python
+```
 class BadNode(NodeCompute):
     """BAD: Generic error messages."""
 
@@ -187,11 +187,11 @@ class BadNode(NodeCompute):
 
         if input_data["value"] < 0:
             raise ValueError("Error")  # BAD: Same generic message
-```python
+```
 
 **✅ Good Practice**: Specific, actionable error messages
 
-```python
+```
 class GoodNode(NodeCompute):
     """GOOD: Specific error messages."""
 
@@ -201,13 +201,13 @@ class GoodNode(NodeCompute):
 
         if input_data["value"] < 0:
             raise ValueError(f"Value must be non-negative, got: {input_data['value']}")
-```python
+```
 
 ### 3. Not Handling Async Exceptions
 
 **❌ Bad Practice**: Not handling async-specific exceptions
 
-```python
+```
 class BadNode(NodeCompute):
     """BAD: Not handling async exceptions."""
 
@@ -215,11 +215,11 @@ class BadNode(NodeCompute):
         # BAD: No handling of asyncio.TimeoutError, CancelledError, etc.
         result = await self.async_operation(input_data)
         return {"result": result}
-```python
+```
 
 **✅ Good Practice**: Handle async exceptions appropriately
 
-```python
+```
 import asyncio
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -242,7 +242,7 @@ class GoodNode(NodeCompute):
                 message="Operation was cancelled",
                 context={"input_data": input_data}
             ) from e
-```python
+```
 
 ## Performance Pitfalls
 
@@ -250,7 +250,7 @@ class GoodNode(NodeCompute):
 
 **❌ Bad Practice**: Blocking operations in async methods
 
-```python
+```
 import time
 import requests
 
@@ -265,11 +265,11 @@ class BadNode(NodeCompute):
         time.sleep(5)
 
         return {"result": response.json()}
-```python
+```
 
 **✅ Good Practice**: Use async alternatives
 
-```python
+```
 import aiohttp
 import asyncio
 
@@ -286,13 +286,13 @@ class GoodNode(NodeCompute):
         await asyncio.sleep(5)
 
         return {"result": data}
-```python
+```
 
 ### 2. Memory Leaks in Long-Running Nodes
 
 **❌ Bad Practice**: Accumulating data without cleanup
 
-```python
+```
 class BadNode(NodeCompute):
     """BAD: Memory leak from accumulating data."""
 
@@ -304,11 +304,11 @@ class BadNode(NodeCompute):
         result = input_data["value"] * 2
         self.processed_data.append(result)  # BAD: Keeps growing
         return {"result": result}
-```python
+```
 
 **✅ Good Practice**: Implement proper cleanup
 
-```python
+```
 class GoodNode(NodeCompute):
     """GOOD: Proper memory management."""
 
@@ -330,13 +330,13 @@ class GoodNode(NodeCompute):
     def cleanup(self):
         """GOOD: Explicit cleanup method."""
         self.processed_data.clear()
-```python
+```
 
 ### 3. Inefficient Caching
 
 **❌ Bad Practice**: Inefficient cache implementation
 
-```python
+```
 class BadNode(NodeCompute):
     """BAD: Inefficient caching."""
 
@@ -353,11 +353,11 @@ class BadNode(NodeCompute):
         result = await self.expensive_operation(input_data)
         self.cache[cache_key] = result  # BAD: No size limit
         return result
-```python
+```
 
 **✅ Good Practice**: Efficient caching with limits
 
-```python
+```
 import hashlib
 import json
 import time
@@ -404,7 +404,7 @@ class GoodNode(NodeCompute):
         """GOOD: Efficient cache key generation."""
         sorted_data = json.dumps(input_data, sort_keys=True)
         return hashlib.md5(sorted_data.encode()).hexdigest()
-```python
+```
 
 ## Threading Pitfalls
 
@@ -412,7 +412,7 @@ class GoodNode(NodeCompute):
 
 **❌ Bad Practice**: Sharing mutable state between threads
 
-```python
+```
 class BadNode(NodeCompute):
     """BAD: Sharing mutable state."""
 
@@ -424,11 +424,11 @@ class BadNode(NodeCompute):
         # BAD: Modifying shared state
         self.shared_data[input_data["key"]] = input_data["value"]
         return {"result": "processed"}
-```python
+```
 
 **✅ Good Practice**: Use thread-safe patterns
 
-```python
+```
 import threading
 from typing import Dict, Any
 
@@ -453,13 +453,13 @@ class GoodNode(NodeCompute):
         if hasattr(self._thread_local, 'data'):
             return self._thread_local.data.copy()
         return {}
-```python
+```
 
 ### 2. Not Handling Thread Safety in Circuit Breakers
 
 **❌ Bad Practice**: Circuit breaker not thread-safe
 
-```python
+```
 class BadNode(NodeEffect):
     """BAD: Non-thread-safe circuit breaker."""
 
@@ -480,11 +480,11 @@ class BadNode(NodeEffect):
         except Exception:
             self.failure_count += 1  # BAD: Race condition
             raise
-```python
+```
 
 **✅ Good Practice**: Thread-safe circuit breaker
 
-```python
+```
 import threading
 import time
 
@@ -524,7 +524,7 @@ class GoodNode(NodeEffect):
                 return False
             return True
         return False
-```python
+```
 
 ## Testing Pitfalls
 
@@ -532,17 +532,17 @@ class GoodNode(NodeEffect):
 
 **❌ Bad Practice**: Only testing happy path
 
-```python
+```
 def test_node_success():
     """BAD: Only testing success case."""
     node = MyNode(container)
     result = await node.process({"value": 5})
     assert result["result"] == 10
-```python
+```
 
 **✅ Good Practice**: Test error conditions
 
-```python
+```
 def test_node_success():
     """GOOD: Test success case."""
     node = MyNode(container)
@@ -566,24 +566,24 @@ def test_node_missing_input():
 
     error = exc_info.value
     assert "required" in error.message.lower()
-```python
+```
 
 ### 2. Not Mocking External Dependencies
 
 **❌ Bad Practice**: Testing with real external services
 
-```python
+```
 def test_node_with_real_api():
     """BAD: Using real API in tests."""
     node = MyNode(container)
     result = await node.process({"url": "https://api.example.com/data"})
     # BAD: This makes real API calls
     assert result["status"] == 200
-```python
+```
 
 **✅ Good Practice**: Mock external dependencies
 
-```python
+```
 from unittest.mock import AsyncMock, patch
 
 def test_node_with_mocked_api():
@@ -600,23 +600,23 @@ def test_node_with_mocked_api():
 
         assert result["status"] == 200
         assert result["data"] == {"data": "test"}
-```python
+```
 
 ### 3. Not Testing Async Behavior
 
 **❌ Bad Practice**: Not testing async-specific behavior
 
-```python
+```
 def test_node():
     """BAD: Not testing async behavior."""
     node = MyNode(container)
     result = node.process({"value": 5})  # BAD: Not awaiting
     assert result["result"] == 10
-```python
+```
 
 **✅ Good Practice**: Proper async testing
 
-```python
+```
 @pytest.mark.asyncio
 async def test_node_async():
     """GOOD: Proper async testing."""
@@ -635,7 +635,7 @@ async def test_node_concurrent():
 
     assert len(results) == 10
     assert all(r["result"] == i * 2 for i, r in enumerate(results))
-```python
+```
 
 ## Configuration Pitfalls
 
@@ -643,7 +643,7 @@ async def test_node_concurrent():
 
 **❌ Bad Practice**: Hardcoded configuration values
 
-```python
+```
 class BadNode(NodeCompute):
     """BAD: Hardcoded configuration."""
 
@@ -652,11 +652,11 @@ class BadNode(NodeCompute):
         self.timeout = 30  # BAD: Hardcoded
         self.retry_count = 3  # BAD: Hardcoded
         self.api_url = "https://api.example.com"  # BAD: Hardcoded
-```python
+```
 
 **✅ Good Practice**: Configurable parameters
 
-```python
+```
 class GoodNode(NodeCompute):
     """GOOD: Configurable parameters."""
 
@@ -668,13 +668,13 @@ class GoodNode(NodeCompute):
         self.timeout = config.get("timeout", 30)
         self.retry_count = config.get("retry_count", 3)
         self.api_url = config.get("api_url", "https://api.example.com")
-```python
+```
 
 ### 2. Not Validating Configuration
 
 **❌ Bad Practice**: Not validating configuration
 
-```python
+```
 class BadNode(NodeCompute):
     """BAD: No configuration validation."""
 
@@ -683,11 +683,11 @@ class BadNode(NodeCompute):
         # BAD: No validation
         self.timeout = config["timeout"]
         self.retry_count = config["retry_count"]
-```python
+```
 
 **✅ Good Practice**: Validate configuration
 
-```python
+```
 class GoodNode(NodeCompute):
     """GOOD: Configuration validation."""
 
@@ -713,7 +713,7 @@ class GoodNode(NodeCompute):
         if retry_count < 0:
             raise ValueError("Retry count must be non-negative")
         return retry_count
-```python
+```
 
 ## Memory Management Pitfalls
 
@@ -721,7 +721,7 @@ class GoodNode(NodeCompute):
 
 **❌ Bad Practice**: Not cleaning up resources
 
-```python
+```
 class BadNode(NodeEffect):
     """BAD: Not cleaning up resources."""
 
@@ -733,11 +733,11 @@ class BadNode(NodeEffect):
         # BAD: Session never closed
         async with self.session.get("https://api.example.com") as response:
             return await response.json()
-```python
+```
 
 **✅ Good Practice**: Proper resource cleanup
 
-```python
+```
 class GoodNode(NodeEffect):
     """GOOD: Proper resource cleanup."""
 
@@ -760,13 +760,13 @@ class GoodNode(NodeEffect):
         """GOOD: Cleanup on exit."""
         if self.session:
             await self.session.close()
-```python
+```
 
 ### 2. Accumulating Data Without Bounds
 
 **❌ Bad Practice**: Unlimited data accumulation
 
-```python
+```
 class BadNode(NodeReducer):
     """BAD: Unlimited data accumulation."""
 
@@ -781,11 +781,11 @@ class BadNode(NodeReducer):
             "data": input_data
         })
         return {"processed": True}
-```python
+```
 
 **✅ Good Practice**: Bounded data accumulation
 
-```python
+```
 class GoodNode(NodeReducer):
     """GOOD: Bounded data accumulation."""
 
@@ -806,7 +806,7 @@ class GoodNode(NodeReducer):
             self.state_history = self.state_history[-self.max_history_size:]
 
         return {"processed": True}
-```python
+```
 
 ## Best Practices Summary
 

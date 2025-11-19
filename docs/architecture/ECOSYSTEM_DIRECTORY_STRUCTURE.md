@@ -16,7 +16,7 @@ The ONEX ecosystem consists of multiple repositories with distinct purposes and 
 **Package Name**: `omnibase_core`
 **Version**: `0.2.0`
 
-```text
+```
 omnibase_core/
 ├── src/
 │   └── omnibase_core/
@@ -77,7 +77,7 @@ omnibase_core/
 **Package Name**: `omninode_bridge`
 **Version**: `0.1.0`
 
-```text
+```
 omninode_bridge/
 ├── src/
 │   └── omninode_bridge/
@@ -117,7 +117,7 @@ omninode_bridge/
 **Package Name**: `archon`
 **Version**: `0.1.0`
 
-```text
+```
 omniarchon/
 ├── python/                     # Main Python package
 │   ├── src/
@@ -149,7 +149,7 @@ omniarchon/
 **Package Name**: `omnibase_infra`
 **Version**: `0.1.0`
 
-```text
+```
 omnibase_infra/
 ├── src/
 │   └── omnibase_infra/
@@ -178,7 +178,7 @@ omnibase_infra/
 **Package Name**: `omnimemory`
 **Version**: `0.1.0`
 
-```text
+```
 omnimemory/
 ├── src/
 │   └── omnimemory/
@@ -197,7 +197,7 @@ omnimemory/
 **Package Name**: `omnibase`
 **Version**: `0.1.0`
 
-```text
+```
 omnibase_3/
 ├── src/
 │   └── omnibase/               # Legacy core implementation
@@ -249,7 +249,7 @@ pydantic = "^2.11.7"
 
 ### Dependency Relationships
 
-```text
+```
 omnibase_core (core framework)
 ├── omninode_bridge (depends on omnibase_core)
 ├── omnibase_infra (depends on omnibase_core)
@@ -263,7 +263,7 @@ omnibase_core (core framework)
 
 **Location**: `omnibase_core/src/omnibase_core/models/nodes/node_services/`
 
-```python
+```
 from omnibase_core.models.nodes.node_services import ModelServiceCompute
 
 class MyComputeNode(ModelServiceCompute):
@@ -282,7 +282,7 @@ class MyComputeNode(ModelServiceCompute):
 
 **Location**: `omninode_bridge/src/omninode_bridge/nodes/`
 
-```python
+```
 from omnibase_core.nodes.node_effect import NodeEffect
 from omninode_bridge.nodes.mixins.health_mixin import HealthCheckMixin
 
@@ -300,7 +300,7 @@ class MyBridgeEffect(NodeEffect, HealthCheckMixin):
 
 **Location**: `omnibase_infra/src/omnibase_infra/nodes/`
 
-```python
+```
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
 
 class MyInfraEffect(ModelServiceEffect):
@@ -379,7 +379,7 @@ All repositories use semantic versioning with `0.1.0` as the current version. De
 
 Each repository follows a consistent testing pattern:
 
-```text
+```
 tests/
 ├── unit/                       # Unit tests
 │   ├── mixins/                # Mixin tests

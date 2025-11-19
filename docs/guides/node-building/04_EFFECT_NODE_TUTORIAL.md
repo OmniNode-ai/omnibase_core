@@ -53,7 +53,7 @@ EFFECT nodes handle all external interactions in the ONEX architecture:
 
 Before starting, verify your environment:
 
-```bash
+```
 # Check Poetry is installed
 poetry --version
 
@@ -65,7 +65,7 @@ poetry install
 
 # Run a quick test to ensure everything works
 poetry run pytest tests/unit/nodes/test_node_effect.py -v -k "test_file_operation" --maxfail=1
-```python
+```
 
 ✅ **If tests pass**, you're ready to begin!
 ⚠️ **If tests fail**, see [Troubleshooting](#troubleshooting) at the end of this guide.
@@ -78,7 +78,7 @@ poetry run pytest tests/unit/nodes/test_node_effect.py -v -k "test_file_operatio
 
 EFFECT nodes use **ModelEffectInput** as a base, but we'll create a domain-specific model for clarity:
 
-```python
+```
 """Input model for file backup EFFECT node."""
 
 from pathlib import Path
@@ -150,7 +150,7 @@ class ModelFileBackupInput(BaseModel):
 
         frozen = True  # Immutable after creation
         extra = "forbid"  # Reject unknown fields
-```python
+```
 
 **Key Points**:
 - ✅ Uses Pydantic for automatic validation
@@ -165,7 +165,7 @@ class ModelFileBackupInput(BaseModel):
 
 **File**: `src/your_project/nodes/model_file_backup_output.py`
 
-```python
+```
 """Output model for file backup EFFECT node."""
 
 from datetime import datetime
@@ -268,7 +268,7 @@ class ModelFileBackupOutput(BaseModel):
         """Pydantic configuration."""
 
         frozen = True  # Immutable after creation
-```python
+```
 
 **Key Points**:
 - ✅ Comprehensive result information
@@ -287,7 +287,7 @@ For **95% of use cases**, use the production-ready `ModelServiceEffect` wrapper 
 
 **File**: `src/your_project/nodes/node_file_backup_effect.py`
 
-```python
+```
 """
 File Backup EFFECT Node - Production Implementation.
 
@@ -310,7 +310,7 @@ from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
 from omnibase_core.models.model_effect_input import ModelEffectInput
 from omnibase_core.models.model_effect_output import ModelEffectOutput
 from omnibase_core.enums.enum_effect_types import EnumEffectType
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -628,7 +628,7 @@ class NodeFileBackupEffect(ModelServiceEffect):
                 max(self.backup_stats["total_backups"], 1)
             ) * 100,
         }
-```python
+```
 
 **What `ModelServiceEffect` Provides**:
 - ✅ **Health Checks**: Built-in readiness and liveness endpoints
@@ -670,7 +670,7 @@ class NodeFileBackupEffect(ModelServiceEffect):
 
 For **5% of use cases** where you need custom mixin composition:
 
-```python
+```
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.mixins import MixinCustomTransactions
 
@@ -715,7 +715,7 @@ class NodeFileBackupEffect(NodeEffect, MixinCustomTransactions):
 
 **File**: `tests/unit/nodes/test_node_file_backup_effect.py`
 
-```python
+```
 """Tests for NodeFileBackupEffect."""
 
 import pytest
@@ -853,7 +853,7 @@ async def test_backup_statistics_tracking(backup_node, temp_source_file, tmp_pat
     assert final_stats["total_backups"] == initial_stats["total_backups"] + 1
     assert final_stats["successful_backups"] == initial_stats["successful_backups"] + 1
     assert final_stats["total_bytes_backed_up"] > initial_stats["total_bytes_backed_up"]
-```python
+```
 
 **Testing Best Practices**:
 
@@ -869,7 +869,7 @@ async def test_backup_statistics_tracking(backup_node, temp_source_file, tmp_pat
 
 ### Basic File Backup
 
-```python
+```
 import asyncio
 from pathlib import Path
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -902,11 +902,11 @@ async def backup_important_file():
 
 
 asyncio.run(backup_important_file())
-```python
+```
 
 ### Batch Backup with Error Handling
 
-```python
+```
 async def backup_multiple_files(file_list: list[Path], backup_dir: Path):
     """Backup multiple files with comprehensive error handling."""
     container = ModelONEXContainer()
@@ -940,7 +940,7 @@ async def backup_multiple_files(file_list: list[Path], backup_dir: Path):
     print(f"\n📈 Node Statistics:")
     print(f"   Success Rate: {stats['success_rate']:.1f}%")
     print(f"   Total Bytes: {stats['total_bytes_backed_up']:,}")
-```yaml
+```
 
 ---
 
@@ -951,21 +951,21 @@ async def backup_multiple_files(file_list: list[Path], backup_dir: Path):
 **Problem**: Tests fail with "container not configured"
 
 **Solution**:
-```python
+```
 # Ensure container has required services
 container = ModelONEXContainer()
 # Add any required service registrations
-```python
+```
 
 **Problem**: Permission errors during backup
 
 **Solution**:
-```python
+```
 # Use temp directories for tests
 import tempfile
 with tempfile.TemporaryDirectory() as tmpdir:
     backup_path = Path(tmpdir) / "backup.txt"
-```yaml
+```
 
 ---
 
@@ -983,13 +983,13 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
 ### Key Methods
 
-```python
+```
 # Core EFFECT methods
 await node.process(effect_input)  # Execute with retry/circuit breaker
 await node.execute_file_operation(...)  # File I/O helper
 await node.emit_state_change_event(...)  # Event emission
 await node.transaction_context(operation_id)  # Transaction mgmt
-```yaml
+```
 
 ---
 

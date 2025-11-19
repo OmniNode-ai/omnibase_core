@@ -41,7 +41,7 @@ The omnibase_core codebase has **comprehensive YAML contract support** for decla
 
 **File**: `src/omnibase_core/models/contracts/subcontracts/model_fsm_subcontract.py`
 
-```python
+```
 class ModelFSMSubcontract(BaseModel):
     """FSM (Finite State Machine) subcontract model."""
 
@@ -87,7 +87,7 @@ class ModelFSMSubcontract(BaseModel):
 
 **File**: `src/omnibase_core/models/contracts/subcontracts/model_workflow_definition.py`
 
-```python
+```
 class ModelWorkflowDefinition(BaseModel):
     """Complete workflow definition."""
 
@@ -106,7 +106,7 @@ class ModelWorkflowDefinition(BaseModel):
 
 **File**: `src/omnibase_core/models/contracts/model_contract_reducer.py`
 
-```python
+```
 class ModelContractReducer(ModelContractBase):
     """Contract model for NodeReducer implementations."""
 
@@ -141,7 +141,7 @@ All subcontract models include:
 **Current State**: Primarily imperative Python code
 
 **Key Methods**:
-```python
+```
 async def process(self, input_data: ModelOrchestratorInput) -> ModelOrchestratorOutput:
     """Execute workflow coordination with thunk emission."""
     # Lines 142-267: Imperative workflow execution
@@ -169,7 +169,7 @@ async def process(self, input_data: ModelOrchestratorInput) -> ModelOrchestrator
 **Current State**: Primarily imperative Python code with custom reduction functions
 
 **Key Patterns**:
-```python
+```
 def __init__(self, container: ModelONEXContainer) -> None:
     """PURE FSM PATTERN: No mutable instance state."""
     super().__init__(container)
@@ -211,7 +211,7 @@ def __init__(self, container: ModelONEXContainer) -> None:
 
 **File**: `src/omnibase_core/mixins/mixin_workflow_support.py`
 
-```python
+```
 class MixinDagSupport:
     """Mixin providing Workflow event support for ONEX tools."""
 
@@ -257,7 +257,7 @@ class MixinDagSupport:
 **Status**: ✅ **COMPLETE** (Mixin-based approach)
 
 **Implementation**:
-```python
+```
 # src/omnibase_core/mixins/mixin_fsm_execution.py
 class MixinFSMExecution:
     """Mixin providing FSM execution from YAML contracts."""
@@ -267,7 +267,7 @@ class MixinFSMExecution:
 ```
 
 **Runtime Functions** (`utils/fsm_executor.py`):
-```python
+```
 def execute_transition(
     fsm: ModelFSMSubcontract,
     current_state: str,
@@ -282,7 +282,7 @@ def execute_transition(
 **Status**: ✅ **COMPLETE** (Mixin-based approach)
 
 **Implementation**:
-```python
+```
 # src/omnibase_core/mixins/mixin_workflow_execution.py
 class MixinWorkflowExecution:
     """Mixin providing workflow execution from YAML contracts."""
@@ -292,7 +292,7 @@ class MixinWorkflowExecution:
 ```
 
 **Runtime Functions** (`utils/workflow_executor.py`):
-```python
+```
 # Pure functions for workflow execution
 # Handles sequential, parallel, and mixed execution modes
 ```
@@ -302,7 +302,7 @@ class MixinWorkflowExecution:
 **Partial**: Declarative Node Base Classes
 
 **Current**: Nodes compose mixins for FSM/workflow capabilities
-```python
+```
 # Current pattern (v0.3.2)
 class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
     """Reducer with declarative FSM support."""
@@ -310,7 +310,7 @@ class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
 ```
 
 **Future** (Planned for Phase 3):
-```python
+```
 # Planned declarative base classes
 class NodeReducerDeclarative(NodeCoreBase):
     """Fully declarative reducer - YAML contract only."""

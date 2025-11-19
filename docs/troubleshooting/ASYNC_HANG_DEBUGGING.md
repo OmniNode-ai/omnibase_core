@@ -39,26 +39,26 @@ Error: The operation was canceled.
 ## Detection Steps
 
 ### Step 1: Identify Last Passing Test
-```bash
+```
 # Look at CI output or local test run
 # Note the test that passed just before the hang
 # Example: test_handles_various_data_types at 97%
 ```
 
 ### Step 2: Find Next Test in Collection Order
-```bash
+```
 poetry run pytest tests/ --collect-only -q | grep -A 5 "test_handles_various_data_types"
 ```
 
 ### Step 3: Search for Unawaited Async Calls
-```bash
+```
 # Look for publish_async, send_async, or other async method calls
 # that are NOT preceded by 'await'
 grep -n "\.publish_async\|\.send_async\|async def" src/omnibase_core/mixins/*.py
 ```
 
 ### Step 4: Check for Sync Methods Calling Async
-```bash
+```
 # Find methods that call *_async but are not themselves async
 rg "def\s+\w+\(" -A 20 src/omnibase_core/mixins/ | grep "publish_async\|send_async"
 ```
@@ -71,7 +71,7 @@ rg "def\s+\w+\(" -A 20 src/omnibase_core/mixins/ | grep "publish_async\|send_asy
 
 **File**: `src/omnibase_core/mixins/mixin_workflow_support.py:141`
 
-```python
+```
 def emit_dag_completion_event(self, result, status):
     """Synchronous method."""
     # ... setup code ...
@@ -93,7 +93,7 @@ def emit_dag_completion_event(self, result, status):
 
 ### ✅ Correct: Helper Method with Coroutine Detection
 
-```python
+```
 def emit_dag_completion_event(self, result, status):
     """Synchronous method."""
     # ... setup code ...
@@ -139,22 +139,22 @@ def _publish_event(self, envelope: Any) -> None:
 After implementing the fix:
 
 ### 1. Run Affected Tests
-```bash
+```
 poetry run pytest tests/unit/mixins/test_mixin_workflow_support.py -xvs
 ```
 
 ### 2. Check Type Safety
-```bash
+```
 poetry run mypy src/omnibase_core/mixins/mixin_workflow_support.py
 ```
 
 ### 3. Smoke Test Related Modules
-```bash
+```
 poetry run pytest tests/unit/mixins/ -x --tb=short
 ```
 
 ### 4. Full Test Suite (if time permits)
-```bash
+```
 poetry run pytest tests/ -x
 ```
 
@@ -187,7 +187,7 @@ When writing code that interacts with async methods:
 
 ### Search Patterns
 
-```bash
+```
 # Find potential async issues
 rg "\.publish_async\(" --type py
 rg "\.send_async\(" --type py

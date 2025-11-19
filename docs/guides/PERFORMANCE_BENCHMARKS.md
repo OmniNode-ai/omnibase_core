@@ -54,46 +54,46 @@ This suite addresses PR feedback requirements for performance benchmarks at scal
 ## Running Performance Tests
 
 ### Full Performance Suite
-```bash
+```
 # Run all performance tests
 poetry run python -m pytest tests/performance/ -v
 
 # Run with performance output
 poetry run python -m pytest tests/performance/ -v -s
-```python
+```
 
 ### Specific Test Categories
-```bash
+```
 # Run only ModelWorkflowDependency tests
 poetry run python -m pytest tests/performance/core/contracts/test_model_workflow_dependency_performance.py -v -s
 
 # Run only ModelDependency tests
 poetry run python -m pytest tests/performance/core/contracts/test_model_dependency_performance.py -v -s
-```python
+```
 
 ### Individual Performance Tests
-```bash
+```
 # Test single dependency validation speed
 poetry run python -m pytest tests/performance/core/contracts/test_model_workflow_dependency_performance.py::TestModelWorkflowDependencyPerformance::test_single_dependency_validation_performance -v -s
 
 # Test regex performance
 poetry run python -m pytest tests/performance/core/contracts/test_model_dependency_performance.py::TestModelDependencyPerformance::test_regex_compilation_performance -v -s
-```python
+```
 
 ### Slow Tests (Memory and Stress Tests)
-```bash
+```
 # Run slow tests (may take several seconds each)
 poetry run python -m pytest tests/performance/ -m slow -v -s
 
 # Skip slow tests for faster runs
 poetry run python -m pytest tests/performance/ -m "not slow" -v -s
-```yaml
+```
 
 ## Performance Metrics Output
 
 Performance tests output detailed metrics:
 
-```text
+```
 ✅ Single dependency validation: 0.016ms average
 ✅ Non-circular validation (100 deps): 0.76ms
 ✅ Circular detection (50 attempts): 2.38ms
@@ -104,7 +104,7 @@ Performance tests output detailed metrics:
 ✅ Creation throughput: 4065 dependencies/sec
 ✅ Memory per dependency: 1247.3 bytes
 ✅ Concurrent validation: 2847.3 deps/sec throughput
-```python
+```
 
 ## Test Configuration
 
@@ -120,7 +120,7 @@ markers =
     memory: marks tests that measure memory usage
     concurrent: marks tests that use threading/multiprocessing
     benchmark: marks performance benchmark tests
-```python
+```
 
 ### Test Markers
 - `@pytest.mark.slow` - Tests taking >2 seconds
@@ -177,13 +177,13 @@ This performance testing suite directly addresses PR #19 feedback:
 ### Performance Regression Detection
 Performance tests can be integrated into CI to detect regressions:
 
-```bash
+```
 # Run performance tests in CI
 poetry run python -m pytest tests/performance/ --tb=short --disable-warnings
 
 # Performance regression detection (future enhancement)
 poetry run python -m pytest tests/performance/ --benchmark-json=performance-results.json
-```yaml
+```
 
 ### Performance Monitoring
 - Tests output standardized metrics for monitoring

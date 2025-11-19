@@ -50,7 +50,7 @@ The ONEX mixin system uses a three-layer architecture that separates concerns wh
 - Dependency declarations
 
 **Example Structure**:
-```yaml
+```
 mixin_name: "mixin_health_check"
 mixin_version: {major: 1, minor: 0, patch: 0}
 description: "Health monitoring capabilities for ONEX nodes"
@@ -68,7 +68,7 @@ health_check_config:
   interval_seconds: 30
   timeout_ms: 5000
   retry_attempts: 3
-```python
+```
 
 ### Layer 2: Pydantic Model Files
 
@@ -84,7 +84,7 @@ health_check_config:
 - Serialization/deserialization
 
 **Example Structure**:
-```python
+```
 from pydantic import BaseModel, Field
 from typing import List
 
@@ -107,7 +107,7 @@ class ModelHealthCheckSubcontract(BaseModel):
                 "retry_attempts": 3
             }
         }
-```yaml
+```
 
 ### Layer 3: Integration Layer
 
@@ -122,7 +122,7 @@ class ModelHealthCheckSubcontract(BaseModel):
 - Composition of multiple mixins
 
 **Example Structure**:
-```yaml
+```
 # In node contract: canary_compute/v1_0_0/contract.yaml
 node_name: "canary_compute"
 node_type: "COMPUTE"
@@ -132,7 +132,7 @@ subcontracts:
     integration_field: "health_check_configuration"
   - path: "../../subcontracts/performance_monitoring_subcontract.yaml"
     integration_field: "performance_monitoring_configuration"
-```python
+```
 
 ## Node Type Constraints
 
@@ -205,7 +205,7 @@ Specialized mixins enforce architectural boundaries:
 
 ### Directory Structure
 
-```text
+```
 src/omnibase_core/
 ├── nodes/canary/
 │   ├── mixins/                          # Mixin contract definitions
@@ -230,7 +230,7 @@ src/omnibase_core/
     ├── model_performance_monitoring_subcontract.py
     ├── model_event_handling_subcontract.py
     └── ...
-```python
+```
 
 ### Naming Conventions
 
@@ -287,7 +287,7 @@ The `EnhancedContractValidator` handles mixin validation and integration:
 
 **Contract Loading Process**:
 
-```python
+```
 # Pseudocode for contract loading flow
 def load_node_contract(contract_path: Path) -> ModelContractContent:
     # 1. Load main contract
@@ -314,7 +314,7 @@ def load_node_contract(contract_path: Path) -> ModelContractContent:
     validate_complete_contract(contract)
 
     return contract
-```yaml
+```
 
 ## Integration with Contract System
 
@@ -322,12 +322,12 @@ def load_node_contract(contract_path: Path) -> ModelContractContent:
 
 Nodes consume mixins through the `subcontracts` section of their contract:
 
-```yaml
+```
 # Node contract
 subcontracts:
   - path: "../../subcontracts/health_check_subcontract.yaml"
     integration_field: "health_check_configuration"
-```python
+```
 
 **Path Resolution**:
 - Relative paths from node contract location
@@ -343,7 +343,7 @@ subcontracts:
 
 Multiple mixins compose additively:
 
-```yaml
+```
 subcontracts:
   - path: "../../subcontracts/health_check_subcontract.yaml"
     integration_field: "health_check_configuration"
@@ -351,7 +351,7 @@ subcontracts:
     integration_field: "performance_monitoring_configuration"
   - path: "../../subcontracts/event_handling_subcontract.yaml"
     integration_field: "event_handling_configuration"
-```python
+```
 
 **Composition Rules**:
 - Each mixin contributes independent capabilities
@@ -363,7 +363,7 @@ subcontracts:
 
 **Node Implementation**:
 
-```python
+```
 from omnibase_core.nodes import NodeCompute
 from omnibase_core.model.contracts import ModelContractCompute
 
@@ -387,7 +387,7 @@ class MyComputeNode(NodeCompute):
             await self._record_metrics(result, perf_config)
 
         return result
-```python
+```
 
 ## Architectural Principles
 

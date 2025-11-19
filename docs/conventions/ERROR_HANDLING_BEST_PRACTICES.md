@@ -30,9 +30,8 @@ This document establishes comprehensive error handling standards for the ONEX Fo
 
 All ONEX errors inherit from the `ModelOnexError` base class which provides structured error context and correlation tracking:
 
-```python
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+```
+# ModelOnexError class definition (from omnibase_core.models.errors.model_onex_error)
 from uuid import UUID
 from typing import Optional, Dict, Any
 from datetime import UTC, datetime
@@ -98,7 +97,7 @@ class ModelOnexError(Exception):
 
 #### Contract Validation Errors
 
-```python
+```
 class ContractValidationError(ModelOnexError):
     """
     Error raised when contract validation fails.
@@ -154,7 +153,7 @@ def validate_contract(contract: ModelContractBase) -> None:
 
 #### Node Operation Errors
 
-```python
+```
 class NodeOperationError(ModelOnexError):
     """
     Error raised during ONEX node operations.
@@ -235,7 +234,7 @@ class OrchestratorNodeError(NodeOperationError):
 
 #### Subcontract Execution Errors
 
-```python
+```
 class SubcontractExecutionError(ModelOnexError):
     """
     Error raised during subcontract execution.
@@ -335,7 +334,7 @@ class RoutingError(SubcontractExecutionError):
 
 ### Pattern 1: Standard Error Handling Decorator
 
-```python
+```
 from functools import wraps
 from typing import Callable, Any
 import logging
@@ -521,7 +520,7 @@ class DatabaseEffectService(ModelServiceEffect):
 
 ### Pattern 2: Circuit Breaker Pattern
 
-```python
+```
 from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -765,6 +764,7 @@ class ExternalServiceEffectNode(ModelServiceEffect):
 
 ```python
 import asyncio
+import logging
 import random
 from typing import List, Optional, Type, Union
 
@@ -979,7 +979,7 @@ class ReliableEffectService(ModelServiceEffect):
 
 ### Recovery Strategy 1: Graceful Degradation
 
-```python
+```
 class GracefulDegradationMixin:
     """
     Mixin for implementing graceful degradation patterns.
@@ -1193,7 +1193,7 @@ class ResilientComputeService(ModelServiceCompute, GracefulDegradationMixin):
 
 ### Error Metrics Collection
 
-```python
+```
 from omnibase_core.types.typed_dict_performance_metric_data import TypedDictPerformanceMetricData
 
 class ErrorMetricsCollector:
@@ -1282,7 +1282,7 @@ class ErrorMetricsCollector:
 
 ### Error Alerting
 
-```python
+```
 class ErrorAlertManager:
     """Manage error alerts and notifications."""
 
@@ -1342,7 +1342,7 @@ class ErrorAlertManager:
 
 ### Unit Testing Error Scenarios
 
-```python
+```
 import pytest
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4

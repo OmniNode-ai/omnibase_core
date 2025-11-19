@@ -81,7 +81,7 @@ All 4 phases of declarative node implementation are complete:
 ### Step 1: Identify Node Type
 
 **Reducer Node** - Manages state and aggregates data:
-```python
+```
 class NodeMyReducer(NodeReducer):
     async def process(self, input_data):
         # Custom state management code
@@ -89,7 +89,7 @@ class NodeMyReducer(NodeReducer):
 ```
 
 **Orchestrator Node** - Coordinates multi-step workflows:
-```python
+```
 class NodeMyOrchestrator(NodeOrchestrator):
     async def process(self, input_data):
         # Custom workflow coordination code
@@ -126,7 +126,7 @@ Verify behavior matches original implementation.
 
 #### Before (Code-Based)
 
-```python
+```
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.models.model_reducer_input import ModelReducerInput
 from omnibase_core.models.model_reducer_output import ModelReducerOutput
@@ -215,7 +215,7 @@ class NodeMetricsAggregator(NodeReducer):
 
 **Node Implementation (99% reduction in code):**
 
-```python
+```
 from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
 
 class NodeMetricsAggregator(NodeReducerDeclarative):
@@ -225,7 +225,7 @@ class NodeMetricsAggregator(NodeReducerDeclarative):
 
 **YAML Contract (`contracts/metrics_aggregator.yaml`):**
 
-```yaml
+```
 state_transitions:
   state_machine_name: metrics_aggregation_fsm
   initial_state: idle
@@ -328,7 +328,7 @@ state_transitions:
 
 #### Before (Code-Based)
 
-```python
+```
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.models.orchestrator import ModelOrchestratorOutput
@@ -408,7 +408,7 @@ class NodeDataPipeline(NodeOrchestrator):
 
 **Node Implementation (99% reduction in code):**
 
-```python
+```
 from omnibase_core.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
 
 class NodeDataPipeline(NodeOrchestratorDeclarative):
@@ -418,7 +418,7 @@ class NodeDataPipeline(NodeOrchestratorDeclarative):
 
 **YAML Contract (`contracts/data_pipeline.yaml`):**
 
-```yaml
+```
 workflow_coordination:
   workflow_definition:
     workflow_metadata:
@@ -485,7 +485,7 @@ workflow_coordination:
 
 ### Test Reducer Migration
 
-```python
+```
 import pytest
 from uuid import uuid4
 
@@ -526,7 +526,7 @@ def test_reducer_fsm_transitions():
 
 ### Test Orchestrator Migration
 
-```python
+```
 def test_orchestrator_workflow_execution():
     """Test orchestrator workflow execution."""
     node = NodeDataPipeline(container)
@@ -568,7 +568,7 @@ def test_orchestrator_workflow_execution():
 **Cause**: Node contract doesn't have `state_transitions` field
 
 **Solution**:
-```python
+```
 # Ensure your contract has FSM subcontract
 class MyNodeContract(BaseModel):
     state_transitions: ModelFSMSubcontract  # Add this field
@@ -582,7 +582,7 @@ node.fsm_contract = ModelFSMSubcontract.parse_file("contract.yaml")
 **Cause**: Node contract doesn't have `workflow_coordination` field
 
 **Solution**:
-```python
+```
 # Ensure your contract has workflow coordination
 class MyNodeContract(BaseModel):
     workflow_coordination: ModelWorkflowCoordination  # Add this field
@@ -596,7 +596,7 @@ node.workflow_definition = ModelWorkflowDefinition.parse_file("workflow.yaml")
 **Cause**: Condition syntax incorrect or context missing
 
 **Solution**:
-```yaml
+```
 # Verify expression syntax
 conditions:
   - expression: "data_sources min_length 1"  # Correct
@@ -610,7 +610,7 @@ conditions:
 **Cause**: Workflow has circular dependencies
 
 **Solution**:
-```yaml
+```
 # Fix circular dependency
 nodes:
   - node_id: "step1"

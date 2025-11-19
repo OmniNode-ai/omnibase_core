@@ -306,9 +306,7 @@ class TestModelMixinMetadata:
 
     def test_metadata_compatibility_conflict(self) -> None:
         """Test conflicting compatibility raises error."""
-        with pytest.raises(
-            ValueError, match="conflicting compatibility"
-        ):
+        with pytest.raises(ValueError, match="conflicting compatibility"):
             ModelMixinMetadata(
                 name="Test",
                 description="Test",
@@ -330,7 +328,8 @@ class TestModelMixinMetadata:
                     description="Simple config", config={"enabled": True}
                 ),
                 "advanced": ModelMixinPreset(
-                    description="Advanced config", config={"enabled": True, "debug": True}
+                    description="Advanced config",
+                    config={"enabled": True, "debug": True},
                 ),
             },
         )
@@ -492,9 +491,7 @@ class TestModelMixinMetadataCollection:
     def test_validate_compatibility_unknown_mixin(self) -> None:
         """Test validating with unknown mixin."""
         collection = ModelMixinMetadataCollection()
-        is_compatible, conflicts = collection.validate_compatibility(
-            ["UnknownMixin"]
-        )
+        is_compatible, conflicts = collection.validate_compatibility(["UnknownMixin"])
         assert not is_compatible
         assert len(conflicts) == 1
         assert "Unknown mixin" in conflicts[0]

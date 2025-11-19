@@ -23,7 +23,7 @@ This catalog provides a comprehensive collection of common patterns for building
 
 **Use Case**: Transform data from one format to another.
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -86,13 +86,13 @@ class DataTransformationCompute(NodeCompute):
                 normalized[normalized_key] = value
 
         return normalized
-```python
+```
 
 ### 2. Calculation Engine Pattern
 
 **Use Case**: Perform complex calculations with multiple operations.
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -166,13 +166,13 @@ class CalculationEngineCompute(NodeCompute):
 
     async def _log(self, a: float, b: float) -> float:
         return math.log(a)
-```python
+```
 
 ### 3. Validation Engine Pattern
 
 **Use Case**: Validate data against multiple rules and schemas.
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -315,7 +315,7 @@ class ValidationEngineCompute(NodeCompute):
         if not pattern:
             return False
         return bool(re.match(pattern, value))
-```python
+```
 
 ## EFFECT Node Patterns
 
@@ -323,7 +323,7 @@ class ValidationEngineCompute(NodeCompute):
 
 **Use Case**: Perform database operations with transaction management.
 
-```python
+```
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -452,13 +452,13 @@ class DatabaseOperationsEffect(NodeEffect):
         """Rollback a database transaction."""
         # Implementation would use actual database service
         pass
-```python
+```
 
 ### 2. API Integration Pattern
 
 **Use Case**: Integrate with external APIs with retry and circuit breaker.
 
-```python
+```
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -568,7 +568,7 @@ class APIIntegrationEffect(NodeEffect):
         """Async context manager exit."""
         if self.session:
             await self.session.close()
-```python
+```
 
 ## REDUCER Node Patterns
 
@@ -576,7 +576,7 @@ class APIIntegrationEffect(NodeEffect):
 
 **Use Case**: Implement state machines with pure state transitions.
 
-```python
+```
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -672,13 +672,13 @@ class OrderStateMachineReducer(NodeReducer):
     def get_state_history(self) -> List[Dict[str, Any]]:
         """Get state transition history."""
         return self.state["history"].copy()
-```python
+```
 
 ### 2. Data Aggregation Pattern
 
 **Use Case**: Aggregate data from multiple sources with time windows.
 
-```python
+```
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -786,7 +786,7 @@ class DataAggregationReducer(NodeReducer):
                 point for point in self.aggregated_data[group_key]
                 if point["timestamp"] >= cutoff_time
             ]
-```python
+```
 
 ## ORCHESTRATOR Node Patterns
 
@@ -794,7 +794,7 @@ class DataAggregationReducer(NodeReducer):
 
 **Use Case**: Coordinate complex workflows with error handling and recovery.
 
-```python
+```
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -996,7 +996,7 @@ class WorkflowOrchestrator(NodeOrchestrator):
     def get_active_workflows(self) -> Dict[str, Dict[str, Any]]:
         """Get all active workflows."""
         return self.active_workflows.copy()
-```python
+```
 
 ## Cross-Cutting Patterns
 
@@ -1004,7 +1004,7 @@ class WorkflowOrchestrator(NodeOrchestrator):
 
 **Use Case**: Add caching to any node type for performance optimization.
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, Optional
@@ -1107,13 +1107,13 @@ class CachedComputeNode(NodeCompute, CachingMixin):
         """Actual processing logic."""
         # Your business logic here
         return {"result": "processed"}
-```python
+```
 
 ### 2. Metrics Collection Pattern
 
 **Use Case**: Collect performance metrics from any node type.
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any
@@ -1213,13 +1213,13 @@ class MetricsComputeNode(NodeCompute, MetricsMixin):
         """Actual processing logic."""
         # Your business logic here
         return {"result": "processed"}
-```python
+```
 
 ## Error Handling Patterns
 
 ### 1. Retry with Exponential Backoff
 
-```python
+```
 from omnibase_core.utils.retry import retry_with_backoff, RetryConfig
 
 class RetryableNode(NodeCompute):
@@ -1249,11 +1249,11 @@ class RetryableNode(NodeCompute):
         """Actual processing logic that may fail."""
         # Your business logic here
         return {"result": "processed"}
-```python
+```
 
 ### 2. Circuit Breaker Pattern
 
-```python
+```
 from omnibase_core.utils.circuit_breaker import CircuitBreaker
 
 class CircuitBreakerNode(NodeEffect):
@@ -1284,13 +1284,13 @@ class CircuitBreakerNode(NodeEffect):
     async def _fallback_operation(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """Fallback operation when circuit breaker is open."""
         return {"result": "fallback", "circuit_breaker_open": True}
-```python
+```
 
 ## Performance Patterns
 
 ### 1. Batch Processing Pattern
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, List
@@ -1348,11 +1348,11 @@ class BatchProcessingNode(NodeCompute):
         """Process a single item."""
         # Your business logic here
         return {"processed": True, "item": item}
-```python
+```
 
 ### 2. Streaming Processing Pattern
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from typing import Dict, Any, AsyncGenerator
@@ -1414,13 +1414,13 @@ class StreamingProcessingNode(NodeCompute):
         """Process a single item."""
         # Your business logic here
         return {"processed": True, "item": item}
-```python
+```
 
 ## Testing Patterns
 
 ### 1. Mock Service Pattern
 
-```python
+```
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -1474,11 +1474,11 @@ async def test_with_mock_services(mock_container):
     """Test node with mock services."""
     # Your test logic here
     pass
-```python
+```
 
 ### 2. Test Data Factory Pattern
 
-```python
+```
 import pytest
 from typing import Dict, Any, List
 import random
@@ -1546,7 +1546,7 @@ async def test_with_factory_data(test_data):
     # Your test logic here
     assert user_data["name"] == "TestUser"
     assert order_data["user_id"] == user_data["id"]
-```text
+```
 
 ## Related Documentation
 

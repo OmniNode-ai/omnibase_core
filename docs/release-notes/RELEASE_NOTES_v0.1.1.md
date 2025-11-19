@@ -42,7 +42,7 @@ This release maintains full backward compatibility with v0.1.0 while adding new 
 #### TypedDict for Discovery Stats
 Replace generic dict with strongly-typed `TypedDictDiscoveryStats`:
 
-```python
+```
 from omnibase_core.types.typed_dict_discovery_stats import TypedDictDiscoveryStats
 
 # Type-safe discovery statistics
@@ -54,7 +54,7 @@ stats: TypedDictDiscoveryStats = {
     "filtered_requests": 5,  # NEW: Separate tracking
     "error_count": 1  # NEW: Comprehensive error tracking
 }
-```python
+```
 
 **Benefits**:
 - Strong typing for mypy strict mode compliance
@@ -65,7 +65,7 @@ stats: TypedDictDiscoveryStats = {
 #### Enhanced Error Handling
 Discovery errors now logged with structured context instead of silent failures:
 
-```python
+```
 # Before: Silent exception handling
 try:
     process_discovery_request()
@@ -81,14 +81,14 @@ except Exception as e:
         context={"component": component, "error": str(e)}
     )
     self.discovery_stats["error_count"] += 1
-```python
+```
 
 ### Node Introspection Improvements
 
 #### ONEX Architecture Classification
 Nodes now self-report their architectural type:
 
-```python
+```
 from omnibase_core.models.discovery.model_nodeintrospectionevent import (
     ModelNodeIntrospectionEvent
 )
@@ -102,7 +102,7 @@ event = ModelNodeIntrospectionEvent.create_from_node_info(
     capabilities=["transform", "validate"],
     dependencies=["database", "cache"]
 )
-```python
+```
 
 **Node Types** (validated):
 - `effect` - External I/O, APIs, side effects
@@ -119,7 +119,7 @@ event = ModelNodeIntrospectionEvent.create_from_node_info(
 #### Source Node Tracking
 Track event origins across node-to-node communication:
 
-```python
+```
 from omnibase_core.models.core.model_onex_envelope_v1 import ModelOnexEnvelopeV1
 
 # Create envelope with source tracking
@@ -129,7 +129,7 @@ envelope = ModelOnexEnvelopeV1(
     source_node_id=my_node_id,  # NEW: Track event source
     payload=event_data
 )
-```python
+```
 
 **Benefits**:
 - Complete event lineage tracking
@@ -192,21 +192,21 @@ Improved node building guides with:
 #### Optional: Node Introspection Enhancement
 If using custom node introspection, implement `get_node_type()`:
 
-```python
+```
 class MyCustomNode(NodeCoreBase):
     """Custom node with explicit type."""
 
     def get_node_type(self) -> str:
         """Return ONEX node type."""
         return "compute"  # or "effect", "reducer", "orchestrator"
-```python
+```
 
 **Note**: This is only required if you're using the introspection system. Most applications won't need changes.
 
 #### Optional: Validation Rules Migration
 For strict typing, migrate validation_rules to ModelValidationRules:
 
-```python
+```
 # OLD (still works via backward compatibility)
 validation_rules = {"required": ["field1"], "type": "object"}
 
@@ -217,7 +217,7 @@ validation_rules = ModelValidationRules(
     required=["field1"],
     type="object"
 )
-```python
+```
 
 **Note**: Automatic conversion still works, but explicit ModelValidationRules provides better type safety.
 
@@ -285,23 +285,23 @@ validation_rules = ModelValidationRules(
 
 ### Upgrade from v0.1.0
 
-```bash
+```
 # Using Poetry (recommended)
 poetry add git+https://github.com/OmniNode-ai/omnibase_core.git@v0.1.1
 
 # Or update existing installation
 poetry update omnibase-core
-```python
+```
 
 ### Fresh Installation
 
-```bash
+```
 # Using Poetry
 poetry add git+https://github.com/OmniNode-ai/omnibase_core.git@v0.1.1
 
 # Using pip
 pip install git+https://github.com/OmniNode-ai/omnibase_core.git@v0.1.1
-```python
+```
 
 ### Requirements
 - Python 3.12+

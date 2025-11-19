@@ -18,7 +18,7 @@
 
 ## 📚 Documentation Structure
 
-```text
+```
 omnibase_core/docs/
 │
 ├── Getting Started          → New developer onboarding
@@ -27,7 +27,7 @@ omnibase_core/docs/
 ├── Architecture             → System design and concepts
 ├── Reference                → Templates and API docs
 └── Specialized Topics       → Threading, errors, patterns
-```python
+```
 
 ---
 

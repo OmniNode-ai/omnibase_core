@@ -45,7 +45,7 @@ The `epoch` is a monotonically increasing version number that tracks workflow st
 
 When an Orchestrator initializes, it claims ownership by generating a unique lease_id:
 
-```python
+```
 from uuid import uuid4
 from omnibase_core.onex.node_core_base import NodeCoreBase
 
@@ -63,13 +63,13 @@ class NodeMyOrchestrator(NodeCoreBase):
 
         # Track workflow state
         self.workflow_state = "initialized"
-```python
+```
 
 ### 2. Action Emission with Lease
 
 All actions emitted by the Orchestrator must include the lease_id and current epoch:
 
-```python
+```
 from omnibase_core.models.model_action import ModelAction
 from omnibase_core.enums.enum_action_type import EnumActionType
 
@@ -92,14 +92,14 @@ class NodeMyOrchestrator(NodeCoreBase):
 
         # Increment epoch after emitting action
         self.current_epoch += 1
-```python
+```
 
 ### 3. Lease Validation
 
 Downstream nodes (Compute, Effect, Reducer) validate the lease before processing:
 
-```python
-from omnibase_core.errors.model_onex_error import ModelOnexError
+```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 class NodeDataProcessorCompute(NodeCoreBase):
     def __init__(self, container):
@@ -111,7 +111,7 @@ class NodeDataProcessorCompute(NodeCoreBase):
         # Track last processed epoch
         self.last_processed_epoch = -1
 
-    def validate_action(self, action: ModelAction) -> bool:
+    def validate_action(self, action: ModelAction, correlation_id: UUID) -> bool:
         """Validate action lease and epoch."""
 
         # Check lease ownership
@@ -119,6 +119,7 @@ class NodeDataProcessorCompute(NodeCoreBase):
             raise ModelOnexError(
                 message=f"Invalid lease_id: {action.lease_id}",
                 error_code="LEASE_VIOLATION",
+                correlation_id=correlation_id,
                 context={
                     "expected_lease": str(self.expected_lease_id),
                     "received_lease": str(action.lease_id),
@@ -130,6 +131,7 @@ class NodeDataProcessorCompute(NodeCoreBase):
             raise ModelOnexError(
                 message=f"Stale action: epoch {action.epoch} < {self.last_processed_epoch}",
                 error_code="STALE_EPOCH",
+                correlation_id=correlation_id,
                 context={
                     "action_epoch": action.epoch,
                     "current_epoch": self.last_processed_epoch,
@@ -138,11 +140,11 @@ class NodeDataProcessorCompute(NodeCoreBase):
 
         return True
 
-    async def process(self, action: ModelAction):
+    async def process(self, action: ModelAction, correlation_id: UUID):
         """Process action after validation."""
 
         # Validate lease and epoch
-        self.validate_action(action)
+        self.validate_action(action, correlation_id)
 
         # Process the action
         result = await self._execute_computation(action.payload)
@@ -151,13 +153,13 @@ class NodeDataProcessorCompute(NodeCoreBase):
         self.last_processed_epoch = action.epoch
 
         return result
-```python
+```
 
 ### 4. Epoch Increment
 
 The Orchestrator increments the epoch on every state change:
 
-```python
+```
 class NodeMyOrchestrator(NodeCoreBase):
     async def update_workflow_state(self, new_state: str):
         """Update workflow state and increment epoch."""
@@ -180,7 +182,7 @@ class NodeMyOrchestrator(NodeCoreBase):
             await self.update_workflow_state("step_completed")
         else:
             await self.update_workflow_state("step_failed")
-```python
+```
 
 ## Lease Patterns
 
@@ -188,7 +190,7 @@ class NodeMyOrchestrator(NodeCoreBase):
 
 The primary pattern: one Orchestrator owns and controls a workflow instance.
 
-```python
+```
 class NodeWorkflowOrchestrator(NodeCoreBase):
     """Single-writer Orchestrator with lease management."""
 
@@ -246,13 +248,13 @@ class NodeWorkflowOrchestrator(NodeCoreBase):
             EnumActionType.STORE_RESULTS,
             {"processed_data": self.processed_data}
         )
-```python
+```
 
 ### Lease Validation in Compute/Effect
 
 Compute and Effect nodes validate leases before executing work:
 
-```python
+```
 class NodeMyCompute(NodeCoreBase):
     """Compute node with lease validation."""
 
@@ -268,7 +270,7 @@ class NodeMyCompute(NodeCoreBase):
         self.expected_lease_id = lease_id
         self.logger.info(f"Lease set to {lease_id}")
 
-    async def process(self, input_data: dict):
+    async def process(self, input_data: dict, correlation_id: UUID):
         """Process input with lease validation."""
 
         action = input_data.get("action")
@@ -278,6 +280,7 @@ class NodeMyCompute(NodeCoreBase):
             raise ModelOnexError(
                 message="Invalid lease_id - action from wrong Orchestrator",
                 error_code="LEASE_VIOLATION",
+                correlation_id=correlation_id,
                 context={
                     "expected": str(self.expected_lease_id),
                     "received": str(action.lease_id),
@@ -289,6 +292,7 @@ class NodeMyCompute(NodeCoreBase):
             raise ModelOnexError(
                 message="Stale action detected (old epoch)",
                 error_code="STALE_EPOCH",
+                correlation_id=correlation_id,
                 context={
                     "action_epoch": action.epoch,
                     "current_epoch": self.last_processed_epoch,
@@ -302,7 +306,7 @@ class NodeMyCompute(NodeCoreBase):
         self.last_processed_epoch = action.epoch
 
         return result
-```python
+```
 
 ## Optimistic Concurrency Control
 
@@ -316,9 +320,9 @@ The epoch mechanism prevents race conditions when multiple actions are in flight
 
 ### Epoch Conflict Resolution
 
-```python
+```
 class NodeMyCompute(NodeCoreBase):
-    def handle_epoch_conflict(self, action: ModelAction):
+    def handle_epoch_conflict(self, action: ModelAction, correlation_id: UUID):
         """Handle epoch-based conflicts."""
 
         if action.epoch < self.current_epoch:
@@ -326,6 +330,7 @@ class NodeMyCompute(NodeCoreBase):
             raise ModelOnexError(
                 message=f"Stale action: epoch {action.epoch} < {self.current_epoch}",
                 error_code="STALE_EPOCH",
+                correlation_id=correlation_id,
                 context={
                     "action_epoch": action.epoch,
                     "current_epoch": self.current_epoch,
@@ -338,6 +343,7 @@ class NodeMyCompute(NodeCoreBase):
             raise ModelOnexError(
                 message=f"Future action: epoch {action.epoch} > {self.current_epoch}",
                 error_code="FUTURE_EPOCH",
+                correlation_id=correlation_id,
                 context={
                     "action_epoch": action.epoch,
                     "current_epoch": self.current_epoch,
@@ -348,13 +354,13 @@ class NodeMyCompute(NodeCoreBase):
         else:
             # Current epoch - process action normally
             self._process_action(action)
-```python
+```
 
 ### Multi-Orchestrator Coordination
 
 When multiple Orchestrators need to coordinate (rare), use lease handoff:
 
-```python
+```
 class NodePrimaryOrchestrator(NodeCoreBase):
     async def handoff_lease(self, secondary_orchestrator: "NodeSecondaryOrchestrator"):
         """Transfer lease to another Orchestrator."""
@@ -381,7 +387,7 @@ class NodePrimaryOrchestrator(NodeCoreBase):
 
         # Secondary claims new lease
         secondary_orchestrator.claim_lease(new_lease_id, self.current_epoch + 1)
-```python
+```
 
 ## Lease Expiration
 
@@ -389,7 +395,7 @@ class NodePrimaryOrchestrator(NodeCoreBase):
 
 Leases can expire after a TTL to prevent orphaned workflows:
 
-```python
+```
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 
@@ -421,25 +427,26 @@ class NodeMyOrchestrator(NodeCoreBase):
             ttl_seconds=300,  # 5 minutes
         )
 
-    def check_lease_validity(self):
+    def check_lease_validity(self, correlation_id: UUID):
         """Check if lease is still valid."""
         if self.lease_metadata.is_expired():
             raise ModelOnexError(
                 message="Lease has expired",
                 error_code="LEASE_EXPIRED",
+                correlation_id=correlation_id,
                 context={
                     "lease_id": str(self.lease_id),
                     "acquired_at": self.lease_metadata.acquired_at.isoformat(),
                     "ttl_seconds": self.lease_metadata.ttl_seconds,
                 }
             )
-```python
+```
 
 ### Lease Renewal
 
 Orchestrators can renew leases before expiration:
 
-```python
+```
 class NodeMyOrchestrator(NodeCoreBase):
     async def renew_lease(self):
         """Renew lease before expiration."""
@@ -463,13 +470,13 @@ class NodeMyOrchestrator(NodeCoreBase):
 
             # Execute step
             await self.execute_step(step)
-```python
+```
 
 ### Lease Revocation
 
 The system can revoke leases for failed Orchestrators:
 
-```python
+```
 class NodeLeaseManager(NodeCoreBase):
     """Centralized lease management."""
 
@@ -477,13 +484,14 @@ class NodeLeaseManager(NodeCoreBase):
         super().__init__(container)
         self.active_leases: dict[UUID, ModelLeaseMetadata] = {}
 
-    async def revoke_lease(self, lease_id: UUID, reason: str):
+    async def revoke_lease(self, lease_id: UUID, reason: str, correlation_id: UUID):
         """Revoke a lease (e.g., Orchestrator failure)."""
 
         if lease_id not in self.active_leases:
             raise ModelOnexError(
                 message=f"Lease {lease_id} not found",
                 error_code="LEASE_NOT_FOUND",
+                correlation_id=correlation_id,
             )
 
         # Remove lease
@@ -502,7 +510,7 @@ class NodeLeaseManager(NodeCoreBase):
         await self.event_bus.publish(revocation_event)
 
         self.logger.warning(f"Revoked lease {lease_id}: {reason}")
-```python
+```
 
 ## Best Practices
 
@@ -510,64 +518,70 @@ class NodeLeaseManager(NodeCoreBase):
 
 Every Orchestrator must generate and maintain a unique lease_id:
 
-```python
+```
 class NodeMyOrchestrator(NodeCoreBase):
     def __init__(self, container):
         super().__init__(container)
         self.lease_id = uuid4()  # ✅ REQUIRED
         self.current_epoch = 0
-```python
+```
 
 ### 2. Validate lease_id Before Action Execution
 
 All action processors must validate the lease:
 
-```python
-async def process(self, action: ModelAction):
+```
+async def process(self, action: ModelAction, correlation_id: UUID):
     # ✅ REQUIRED: Validate lease before processing
     if action.lease_id != self.expected_lease_id:
-        raise ModelOnexError("Invalid lease_id")
+        raise ModelOnexError(
+            message="Invalid lease_id",
+            correlation_id=correlation_id
+        )
 
     # Now safe to process
     result = await self._execute(action)
-```python
+```
 
 ### 3. Increment Epoch on Every State Change
 
 Maintain strict epoch discipline:
 
-```python
+```
 async def update_state(self, new_state: str):
     self.workflow_state = new_state
     self.current_epoch += 1  # ✅ REQUIRED
-```python
+```
 
 ### 4. Reject Stale Actions (Old Epoch)
 
 Never process actions from the past:
 
-```python
+```
 if action.epoch < self.last_processed_epoch:
-    raise ModelOnexError("Stale action")  # ✅ REQUIRED
-```python
+    raise ModelOnexError(
+        message="Stale action",
+        correlation_id=correlation_id
+    )  # ✅ REQUIRED
+```
 
 ### 5. Use TTL for Lease Expiration
 
 Set reasonable TTLs to prevent orphaned workflows:
 
-```python
+```
 self.lease_metadata = ModelLeaseMetadata(
     lease_id=self.lease_id,
     acquired_at=datetime.now(),
     ttl_seconds=300,  # ✅ RECOMMENDED: 5 minutes
 )
-```python
+```
 
 ### 6. Log Lease Violations for Debugging
 
 Comprehensive logging helps diagnose issues:
 
-```python
+```
 except ModelOnexError as e:
     self.logger.error(
         f"Lease violation: {e.message}",
@@ -579,107 +593,110 @@ except ModelOnexError as e:
         }
     )
     raise
-```text
+```
 
 ## Anti-Patterns
 
 ### ❌ Sharing lease_id Across Orchestrators
 
 **Wrong:**
-```python
+```
 # BAD: Multiple Orchestrators sharing same lease
 orchestrator_a.lease_id = shared_lease
 orchestrator_b.lease_id = shared_lease  # Violates single-writer semantics
-```text
+```
 
 **Right:**
-```python
+```
 # GOOD: Each Orchestrator has unique lease
 orchestrator_a.lease_id = uuid4()
 orchestrator_b.lease_id = uuid4()
-```python
+```
 
 ### ❌ Skipping Epoch Validation
 
 **Wrong:**
-```python
+```
 async def process(self, action: ModelAction):
     # BAD: No epoch validation
     return await self._execute(action)
-```python
+```
 
 **Right:**
-```python
-async def process(self, action: ModelAction):
+```
+async def process(self, action: ModelAction, correlation_id: UUID):
     # GOOD: Validate epoch
     if action.epoch < self.last_processed_epoch:
-        raise ModelOnexError("Stale action")
+        raise ModelOnexError(
+            message="Stale action",
+            correlation_id=correlation_id
+        )
     return await self._execute(action)
-```python
+```
 
 ### ❌ Not Incrementing Epoch on State Changes
 
 **Wrong:**
-```python
+```
 async def update_state(self, new_state: str):
     # BAD: State changed but epoch not incremented
     self.workflow_state = new_state
-```python
+```
 
 **Right:**
-```python
+```
 async def update_state(self, new_state: str):
     # GOOD: Increment epoch with state change
     self.workflow_state = new_state
     self.current_epoch += 1
-```python
+```
 
 ### ❌ Reusing Expired Leases
 
 **Wrong:**
-```python
+```
 if self.lease_metadata.is_expired():
     # BAD: Continue using expired lease
     await self.emit_action(action_type, payload)
-```python
+```
 
 **Right:**
-```python
+```
 if self.lease_metadata.is_expired():
     # GOOD: Renew or re-acquire lease
     await self.renew_lease()
     await self.emit_action(action_type, payload)
-```text
+```
 
 ### ❌ Allowing Actions Without lease_id
 
 **Wrong:**
-```python
+```
 action = ModelAction(
     action_type=EnumActionType.EXECUTE,
     payload={"data": value},
     # BAD: No lease_id
 )
-```python
+```
 
 **Right:**
-```python
+```
 action = ModelAction(
     action_type=EnumActionType.EXECUTE,
     payload={"data": value},
     lease_id=self.lease_id,  # GOOD: Include lease
     epoch=self.current_epoch,
 )
-```python
+```
 
 ## Testing Lease Management
 
 ### Unit Tests
 
-```python
+```
 import pytest
 from uuid import uuid4
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_action import ModelAction
 
 def test_lease_validation_success():
@@ -737,11 +754,11 @@ def test_epoch_increment_on_state_change():
     orchestrator.update_workflow_state("processing")
 
     assert orchestrator.current_epoch == initial_epoch + 1
-```python
+```
 
 ### Integration Tests
 
-```python
+```
 @pytest.mark.asyncio
 async def test_full_workflow_with_lease():
     """Test complete workflow with lease management."""
@@ -786,7 +803,7 @@ async def test_lease_expiration():
     # Verify cannot emit actions with expired lease
     with pytest.raises(ModelOnexError):
         orchestrator.check_lease_validity()
-```text
+```
 
 ## Summary
 

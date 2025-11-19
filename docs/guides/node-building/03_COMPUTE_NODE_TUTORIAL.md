@@ -36,7 +36,7 @@ In this tutorial, you'll build a complete COMPUTE node that calculates prices wi
 
 ## What We're Building
 
-```python
+```
 # Usage example
 calculator = NodePriceCalculatorCompute(container)
 
@@ -58,13 +58,13 @@ print(result.result)
 #     "tax": 3.24,       # 8% tax on discounted amount
 #     "total": 43.74
 # }
-```python
+```
 
 ## Project Setup
 
 ### 1. Create Project Structure
 
-```bash
+```
 # Navigate to your project
 cd your_project
 
@@ -76,23 +76,23 @@ mkdir -p tests/nodes
 touch src/your_project/nodes/__init__.py
 touch src/your_project/nodes/node_price_calculator_compute.py
 touch tests/nodes/test_node_price_calculator.py
-```python
+```
 
 ### 2. Install Dependencies
 
-```bash
+```
 # Ensure you have omnibase_core
 poetry add omnibase_core
 
 # Add dev dependencies for testing
 poetry add --group dev pytest pytest-asyncio
-```python
+```
 
 ### 3. Verify Installation
 
-```bash
+```
 poetry run python -c "from omnibase_core.infrastructure.node_core_base import NodeCoreBase; print('✓ Ready!')"
-```python
+```
 
 ## Step 1: Define Input Model
 
@@ -100,11 +100,11 @@ First, define what data your node accepts.
 
 **File**: `src/your_project/nodes/model_price_calculator_input.py`
 
-```python
+```
 """Input model for price calculator."""
 
 from typing import List
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class CartItem(BaseModel):
@@ -140,18 +140,17 @@ class ModelPriceCalculatorInput(BaseModel):
         description="Request correlation ID for tracing"
     )
 
-    @validator("items")
+    @field_validator("items")
+    @classmethod
     def validate_items(cls, v):
         """Ensure at least one item exists."""
         if not v or len(v) == 0:
             raise ValueError("Cart must contain at least one item")
         return v
 
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
-
-        schema_extra = {
+    model_config = {
+        "validate_assignment": True,
+        "json_schema_extra": {
             "example": {
                 "items": [
                     {"name": "Widget", "price": 10.00, "quantity": 2},
@@ -161,7 +160,8 @@ class ModelPriceCalculatorInput(BaseModel):
                 "tax_rate": 0.08
             }
         }
-```python
+    }
+```
 
 **Key points**:
 - ✅ Uses Pydantic for automatic validation
@@ -175,7 +175,7 @@ Define what your node returns.
 
 **File**: `src/your_project/nodes/model_price_calculator_output.py`
 
-```python
+```
 """Output model for price calculator."""
 
 from typing import Optional
@@ -223,7 +223,7 @@ class ModelPriceCalculatorOutput(BaseModel):
                 "cache_hit": False
             }
         }
-```python
+```
 
 **Key points**:
 - ✅ All calculation results included
@@ -240,14 +240,14 @@ For **95% of use cases**, use the production-ready `ModelServiceCompute` wrapper
 
 **File**: `src/your_project/nodes/node_price_calculator_compute.py`
 
-```python
+```
 """COMPUTE node for price calculation with tax and discounts."""
 
 import time
 from typing import Dict
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 from .model_price_calculator_input import ModelPriceCalculatorInput
@@ -491,7 +491,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
                 if total_requests > 0 else 0.0
             )
         }
-```python
+```
 
 **What `ModelServiceCompute` Provides**:
 - ✅ **Health Checks**: Built-in readiness and liveness endpoints
@@ -528,7 +528,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
 
 For **5% of use cases** where you need custom mixin composition:
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.mixins import MixinCustomBehavior
 
@@ -571,7 +571,7 @@ Always test your nodes!
 
 **File**: `tests/nodes/test_node_price_calculator.py`
 
-```python
+```
 """Tests for price calculator node."""
 
 import pytest
@@ -734,11 +734,11 @@ async def test_metrics(calculator):
     assert metrics["computations"] == 1  # First request computed
     assert metrics["cache_hits"] == 1    # Second request cached
     assert metrics["cache_hit_rate"] == 0.5  # 50% hit rate
-```python
+```
 
 ## Step 5: Run Tests
 
-```bash
+```
 # Run all tests
 poetry run pytest tests/nodes/test_node_price_calculator.py -v
 
@@ -747,10 +747,10 @@ poetry run pytest tests/nodes/test_node_price_calculator.py::test_basic_calculat
 
 # Run with coverage
 poetry run pytest tests/nodes/test_node_price_calculator.py --cov=src/your_project/nodes --cov-report=term-missing
-```text
+```
 
 **Expected output**:
-```text
+```
 tests/nodes/test_node_price_calculator.py::test_basic_calculation PASSED
 tests/nodes/test_node_price_calculator.py::test_percentage_discount PASSED
 tests/nodes/test_node_price_calculator.py::test_flat_discount PASSED
@@ -761,13 +761,13 @@ tests/nodes/test_node_price_calculator.py::test_validation_error_negative_price 
 tests/nodes/test_node_price_calculator.py::test_metrics PASSED
 
 ================================ 8 passed in 0.12s ================================
-```python
+```
 
 ## Step 6: Use Your Node
 
 Now use it in your application!
 
-```python
+```
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from your_project.nodes.node_price_calculator_compute import NodePriceCalculatorCompute
 from your_project.nodes.model_price_calculator_input import (
@@ -798,7 +798,7 @@ print(f"Discount: -${result.discount:.2f}")
 print(f"Tax: ${result.tax:.2f}")
 print(f"Total: ${result.total:.2f}")
 print(f"Processing time: {result.processing_time_ms:.2f}ms")
-```python
+```
 
 ## What You've Built
 
@@ -814,7 +814,7 @@ print(f"Processing time: {result.processing_time_ms:.2f}ms")
 
 ### 1. Add Logging
 
-```python
+```
 from omnibase_core.logging.structured import emit_log_event_sync
 
 async def process(self, input_data):
@@ -827,11 +827,11 @@ async def process(self, input_data):
         }
     )
     # ... rest of processing
-```python
+```
 
 ### 2. Add Redis Caching
 
-```python
+```
 import redis.asyncio as redis
 
 def __init__(self, container):
@@ -854,11 +854,11 @@ async def process(self, input_data):
         result.json()
     )
     return result
-```python
+```
 
 ### 3. Add Parallel Processing
 
-```python
+```
 async def process_batch(
     self,
     inputs: List[ModelPriceCalculatorInput]
@@ -867,7 +867,7 @@ async def process_batch(
     tasks = [self.process(input_data) for input_data in inputs]
     results = await asyncio.gather(*tasks)
     return results
-```python
+```
 
 ## Next Steps
 
@@ -890,25 +890,25 @@ You've successfully built a COMPUTE node! Now:
 
 ### Import Errors
 
-```bash
+```
 # If you see import errors
 poetry install
 poetry run python -c "from omnibase_core.infrastructure.node_core_base import NodeCoreBase"
-```bash
+```
 
 ### Type Checking Failures
 
-```bash
+```
 # Run mypy to check types
 poetry run mypy src/your_project/nodes/node_price_calculator_compute.py
-```python
+```
 
 ### Test Failures
 
-```bash
+```
 # Run tests with verbose output
 poetry run pytest tests/nodes/test_node_price_calculator.py -vvs
-```text
+```
 
 ## Summary
 

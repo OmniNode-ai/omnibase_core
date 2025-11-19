@@ -15,7 +15,7 @@ This guide provides best practices, patterns, tools, and utilities for creating 
 **Principle**: Each mixin should address exactly one cross-cutting concern.
 
 **✓ Good Examples**:
-```yaml
+```
 # ✓ Single concern: Error handling
 mixin_name: "mixin_error_handling"
 description: "Provides error handling and retry logic"
@@ -27,10 +27,10 @@ description: "Provides structured logging capabilities"
 # ✓ Single concern: Caching
 mixin_name: "mixin_caching"
 description: "Provides multi-tier caching strategies"
-```yaml
+```
 
 **✗ Bad Examples**:
-```yaml
+```
 # ✗ Multiple concerns
 mixin_name: "mixin_utilities"
 description: "Provides error handling, logging, and caching"
@@ -38,14 +38,14 @@ description: "Provides error handling, logging, and caching"
 # ✗ Too broad
 mixin_name: "mixin_everything"
 description: "All the features you need"
-```yaml
+```
 
 ### 2. Composability
 
 **Principle**: Mixins should work together without conflicts.
 
 **✓ Good Design**:
-```yaml
+```
 # Independent mixins that compose well
 subcontracts:
   - path: "../../mixins/mixin_error_handling.yaml"
@@ -56,10 +56,10 @@ subcontracts:
 
   - path: "../../mixins/mixin_caching.yaml"
     integration_field: "caching_configuration"  # ✓ Unique field
-```yaml
+```
 
 **✗ Bad Design**:
-```yaml
+```
 # Conflicting integration fields
 subcontracts:
   - path: "../../mixins/mixin_error_handling.yaml"
@@ -67,14 +67,14 @@ subcontracts:
 
   - path: "../../mixins/mixin_caching.yaml"
     integration_field: "config"  # ✗ Conflict!
-```yaml
+```
 
 ### 3. Explicit Over Implicit
 
 **Principle**: Make dependencies and requirements explicit in contracts.
 
 **✓ Good Practice**:
-```yaml
+```
 # Explicit dependencies
 requires_dependencies:
   - name: "logging_protocol"
@@ -86,14 +86,14 @@ requires_dependencies:
     type: "protocol"
     description: "Optional metrics collection"
     optional: true  # ✓ Clearly optional
-```text
+```
 
 **✗ Bad Practice**:
-```yaml
+```
 # Implicit dependencies (undocumented)
 # Code assumes logging exists but doesn't declare it
 # ✗ No requires_dependencies section
-```text
+```
 
 ## Naming Conventions
 
@@ -101,7 +101,7 @@ requires_dependencies:
 
 **Pattern**: `mixin_[capability_name].yaml`
 
-```bash
+```
 # ✓ Good names
 mixin_error_handling.yaml
 mixin_circuit_breaker.yaml
@@ -113,13 +113,13 @@ error_handling.yaml         # Missing 'mixin_' prefix
 mixin-error-handling.yaml   # Use underscores, not hyphens
 ErrorHandling.yaml          # Use lowercase
 mixin_errors.yaml           # Too vague
-```python
+```
 
 ### Pydantic Model Files
 
 **Pattern**: `model_[capability_name]_subcontract.py`
 
-```python
+```
 # ✓ Good names
 model_error_handling_subcontract.py
 model_circuit_breaker_subcontract.py
@@ -129,13 +129,13 @@ model_rate_limiting_subcontract.py
 error_handling_model.py     # Wrong pattern
 model_error_handling.py     # Missing '_subcontract'
 ModelErrorHandling.py       # Use lowercase
-```python
+```
 
 ### Pydantic Model Classes
 
 **Pattern**: `Model[CapabilityName]Subcontract`
 
-```python
+```
 # ✓ Good class names
 class ModelErrorHandlingSubcontract(BaseModel):
     ...
@@ -149,13 +149,13 @@ class ErrorHandlingSubcontract(BaseModel):  # Missing 'Model' prefix
 
 class ModelErrorHandling(BaseModel):  # Missing 'Subcontract' suffix
     ...
-```text
+```
 
 ### Integration Fields
 
 **Pattern**: `{capability}_configuration`
 
-```yaml
+```
 # ✓ Good integration fields
 integration_field: "error_handling_configuration"
 integration_field: "circuit_breaker_configuration"
@@ -165,7 +165,7 @@ integration_field: "authentication_configuration"
 integration_field: "config"                  # Too generic
 integration_field: "error_handling"          # Missing '_configuration'
 integration_field: "error_handling_config"   # Use 'configuration', not 'config'
-```text
+```
 
 ## Configuration Best Practices
 
@@ -173,7 +173,7 @@ integration_field: "error_handling_config"   # Use 'configuration', not 'config'
 
 Provide production-ready defaults:
 
-```yaml
+```
 error_handling_config:
   # ✓ Good: Sensible defaults
   enable_circuit_breaker: true        # Default to fault tolerance
@@ -185,13 +185,13 @@ error_handling_config:
   # enable_circuit_breaker: false     # ✗ Unsafe default
   # circuit_failure_threshold: 1000   # ✗ Way too high
   # error_retry_attempts: 100         # ✗ Way too many
-```python
+```
 
 ### Configuration Validation
 
 Add constraints to prevent invalid configurations:
 
-```python
+```
 class ModelErrorHandlingSubcontract(BaseModel):
     """Error handling subcontract with validation."""
 
@@ -213,13 +213,13 @@ class ModelErrorHandlingSubcontract(BaseModel):
     # ✗ Bad: No constraints
     # circuit_failure_threshold: int = 5  # Any value allowed
     # error_retry_attempts: int = 3       # Could be negative or huge
-```python
+```
 
 ### Environment-Specific Configuration
 
 Support different configurations for different environments:
 
-```python
+```
 class ModelCircuitBreakerSubcontract(BaseModel):
     """Circuit breaker with environment support."""
 
@@ -245,7 +245,7 @@ class ModelCircuitBreakerSubcontract(BaseModel):
             )
         else:
             return cls()  # Use defaults
-```bash
+```
 
 ## Action Design
 
@@ -253,7 +253,7 @@ class ModelCircuitBreakerSubcontract(BaseModel):
 
 Provide comprehensive action definitions:
 
-```yaml
+```
 actions:
   # ✓ Good: Complete specification
   - name: "handle_error"
@@ -275,13 +275,13 @@ actions:
     outputs: ["result"]            # ✗ What is "result"?
     required: true
     # ✗ Missing timeout
-```yaml
+```
 
 ### Timeout Guidelines
 
 Set appropriate timeouts based on operation complexity:
 
-```yaml
+```
 actions:
   # Fast operations
   - name: "validate_input"
@@ -303,7 +303,7 @@ actions:
 
   - name: "batch_process"
     timeout_ms: 60000      # ✓ Large batch processing
-```python
+```
 
 ## Validation Best Practices
 
@@ -311,7 +311,7 @@ actions:
 
 Implement validation at multiple levels:
 
-```python
+```
 class ModelErrorHandlingSubcontract(BaseModel):
     """Error handling with multi-level validation."""
 
@@ -323,7 +323,8 @@ class ModelErrorHandlingSubcontract(BaseModel):
     # - Type checking
 
     # Level 2: Single-field validators
-    @validator("circuit_failure_threshold")
+    @field_validator("circuit_failure_threshold")
+    @classmethod
     def validate_threshold(cls, v: int) -> int:
         """Additional threshold validation."""
         if v > 50:
@@ -334,11 +335,11 @@ class ModelErrorHandlingSubcontract(BaseModel):
         return v
 
     # Level 3: Cross-field validators
-    @root_validator
-    def validate_circuit_and_retry(cls, values: dict) -> dict:
+    @model_validator(mode='after')
+    def validate_circuit_and_retry(self):
         """Validate circuit breaker and retry are coherent."""
-        threshold = values.get("circuit_failure_threshold", 5)
-        retries = values.get("error_retry_attempts", 3)
+        threshold = self.circuit_failure_threshold
+        retries = self.error_retry_attempts
 
         if threshold < retries:
             raise ValueError(
@@ -346,17 +347,18 @@ class ModelErrorHandlingSubcontract(BaseModel):
                 f"retry attempts ({retries}) to allow retries before circuit opens"
             )
 
-        return values
-```python
+        return self
+```
 
 ### Validation Error Messages
 
 Provide clear, actionable error messages:
 
-```python
+```
 # ✓ Good: Clear and actionable
-@validator("circuit_timeout_ms")
-def validate_timeout(cls, v: int, values: dict) -> int:
+@field_validator("circuit_timeout_ms")
+@classmethod
+def validate_timeout(cls, v: int, info) -> int:
     """Validate circuit timeout is reasonable."""
     if v < 1000:
         raise ValueError(
@@ -367,13 +369,14 @@ def validate_timeout(cls, v: int, values: dict) -> int:
     return v
 
 # ✗ Bad: Vague error message
-@validator("circuit_timeout_ms")
+@field_validator("circuit_timeout_ms")
+@classmethod
 def validate_timeout(cls, v: int) -> int:
     """Validate timeout."""
     if v < 1000:
         raise ValueError("Invalid timeout")  # ✗ Not helpful
     return v
-```yaml
+```
 
 ## Documentation
 
@@ -381,7 +384,7 @@ def validate_timeout(cls, v: int) -> int:
 
 Document your mixin thoroughly:
 
-```yaml
+```
 mixin_name: "mixin_error_handling"
 mixin_version: {major: 1, minor: 0, patch: 0}
 description: |
@@ -407,13 +410,13 @@ description: |
 
   **Examples**:
   See docs/guides/mixin-development/examples/error_handling_examples.md
-```python
+```
 
 ### Inline Code Documentation
 
 Document your Pydantic models thoroughly:
 
-```python
+```
 class ModelErrorHandlingSubcontract(BaseModel):
     """
     Error handling subcontract Pydantic backing model.
@@ -463,7 +466,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
             "Recommended: 5 for development, 10 for production."
         )
     )
-```python
+```
 
 ## Testing
 
@@ -471,7 +474,7 @@ class ModelErrorHandlingSubcontract(BaseModel):
 
 Test all aspects of your mixin:
 
-```python
+```
 # tests/model/subcontracts/test_model_error_handling_subcontract.py
 
 class TestModelErrorHandlingSubcontract:
@@ -558,7 +561,7 @@ class TestModelErrorHandlingSubcontract:
         assert prod_config.enable_circuit_breaker is True
         assert prod_config.circuit_failure_threshold >= 5
         assert prod_config.error_retry_attempts <= 10
-```bash
+```
 
 ## Tools and Utilities
 
@@ -566,7 +569,7 @@ class TestModelErrorHandlingSubcontract:
 
 Use the enhanced contract validator:
 
-```bash
+```
 # Validate mixin contract
 poetry run onex run contract_validator \
     --contract src/your_project/mixins/mixin_error_handling.yaml \
@@ -577,26 +580,26 @@ poetry run onex run contract_validator \
     --contract src/your_project/nodes/api_client_effect/v1_0_0/contract.yaml \
     --check-mixins \
     --verbose
-```python
+```
 
 ### Type Generation
 
 Generate Pydantic models from YAML contracts:
 
-```bash
+```
 # Generate model skeleton
 poetry run onex run generate_model \
     --contract src/your_project/mixins/mixin_error_handling.yaml \
     --output src/your_project/model/subcontracts/model_error_handling_subcontract.py
 
 # Note: Review and customize generated model
-```bash
+```
 
 ### Mixin Inspector
 
 Inspect mixin usage across project:
 
-```bash
+```
 # Find all nodes using a specific mixin
 poetry run onex run inspect_mixin \
     --mixin mixin_error_handling \
@@ -607,19 +610,19 @@ poetry run onex run inspect_mixin \
 # - api_client_effect (v1.0.0)
 # - database_connector_effect (v1.0.0)
 # - external_api_gateway_effect (v2.0.0)
-```python
+```
 
 ### Documentation Generator
 
 Generate documentation from mixin contracts:
 
-```bash
+```
 # Generate mixin documentation
 poetry run onex run generate_mixin_docs \
     --mixin src/your_project/mixins/mixin_error_handling.yaml \
     --output docs/mixins/ERROR_HANDLING_MIXIN.md \
     --include-examples
-```python
+```
 
 ## Performance Optimization
 
@@ -627,7 +630,7 @@ poetry run onex run generate_mixin_docs \
 
 Load mixin configurations lazily when possible:
 
-```python
+```
 class NodeApiClientEffect(NodeEffect):
     """Node with lazy mixin loading."""
 
@@ -641,13 +644,13 @@ class NodeApiClientEffect(NodeEffect):
         if self._error_config is None:
             self._error_config = self.contract.error_handling_configuration
         return self._error_config
-```python
+```
 
 ### Caching Mixin Results
 
 Cache expensive mixin operations:
 
-```python
+```
 from functools import lru_cache
 
 class NodeDataProcessor(NodeCompute):
@@ -657,13 +660,13 @@ class NodeDataProcessor(NodeCompute):
     def calculate_retry_delay(self, attempt: int) -> int:
         """Calculate retry delay with caching."""
         return self.error_config.calculate_retry_delay(attempt)
-```python
+```
 
 ### Minimize Validation
 
 Validate once at initialization, not per-execution:
 
-```python
+```
 class NodeApiClientEffect(NodeEffect):
     """Node with validation at initialization."""
 
@@ -684,7 +687,7 @@ class NodeApiClientEffect(NodeEffect):
         """Validate error handling configuration."""
         if self.error_config.circuit_failure_threshold < 1:
             raise ValueError("Invalid circuit breaker threshold")
-```python
+```
 
 ## Common Pitfalls
 
@@ -692,17 +695,17 @@ class NodeApiClientEffect(NodeEffect):
 
 **❌ Bad**: Mixin depends on specific node implementation
 
-```python
+```
 # ✗ Bad: Mixin code assumes specific node methods
 class ErrorHandlingMixin:
     def handle_error(self, error):
         # ✗ Assumes node has _log_error method
         self._log_error(error)
-```python
+```
 
 **✅ Good**: Mixin uses protocols/interfaces
 
-```python
+```
 # ✓ Good: Mixin uses dependency injection
 class ErrorHandlingMixin:
     def __init__(self, logger: LoggerProtocol):
@@ -711,51 +714,51 @@ class ErrorHandlingMixin:
     def handle_error(self, error):
         # ✓ Uses injected logger
         self.logger.log_error(error)
-```text
+```
 
 ### Pitfall 2: Configuration Conflicts
 
 **❌ Bad**: Multiple mixins try to configure the same thing
 
-```yaml
+```
 # ✗ Bad: Both mixins configure timeouts
 mixin_error_handling:
   timeout_ms: 5000
 
 mixin_circuit_breaker:
   timeout_ms: 10000  # ✗ Which timeout wins?
-```text
+```
 
 **✅ Good**: Clear separation of concerns
 
-```yaml
+```
 # ✓ Good: Each mixin has distinct configuration
 error_handling_config:
   retry_timeout_ms: 5000  # ✓ Specific to retries
 
 circuit_breaker_config:
   circuit_timeout_ms: 10000  # ✓ Specific to circuit breaker
-```yaml
+```
 
 ### Pitfall 3: Missing Node Type Constraints
 
 **❌ Bad**: Mixin applicable to wrong node types
 
-```yaml
+```
 # ✗ Bad: State management mixin allows COMPUTE nodes
 mixin_name: "mixin_state_persistence"
 applicable_node_types: ["COMPUTE", "EFFECT", "REDUCER", "ORCHESTRATOR"]
 # ✗ COMPUTE nodes should be stateless!
-```yaml
+```
 
 **✅ Good**: Correct node type constraints
 
-```yaml
+```
 # ✓ Good: State management only for REDUCER
 mixin_name: "mixin_state_persistence"
 applicable_node_types: ["REDUCER"]
 # ✓ Only stateful nodes
-```python
+```
 
 ## Checklist
 

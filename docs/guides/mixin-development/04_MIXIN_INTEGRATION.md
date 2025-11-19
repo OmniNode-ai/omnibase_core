@@ -11,13 +11,13 @@ This guide teaches you how to integrate mixins into ONEX nodes. You'll learn how
 
 ## Integration Flow
 
-```text
+```
 1. Create Mixin YAML Contract
 2. Create Pydantic Backing Model
 3. Reference Mixin in Node Contract     ← This guide
 4. Access Mixin Config in Node Code     ← This guide
 5. Use Mixin Capabilities              ← This guide
-```yaml
+```
 
 ## Step 1: Reference Mixin in Node Contract
 
@@ -25,7 +25,7 @@ This guide teaches you how to integrate mixins into ONEX nodes. You'll learn how
 
 **Node Contract Location**: `src/your_project/nodes/your_node/v1_0_0/contract.yaml`
 
-```yaml
+```
 # node_api_client_effect/v1_0_0/contract.yaml
 node_name: "api_client_effect"
 node_type: "EFFECT"
@@ -36,11 +36,11 @@ description: "EFFECT node for external API interactions"
 subcontracts:
   - path: "../../../mixins/mixin_error_handling.yaml"
     integration_field: "error_handling_configuration"
-```yaml
+```
 
 ### Multiple Mixin References
 
-```yaml
+```
 # node_data_processor_compute/v1_0_0/contract.yaml
 node_name: "data_processor_compute"
 node_type: "COMPUTE"
@@ -60,13 +60,13 @@ subcontracts:
   # Custom mixin for this node
   - path: "../../../mixins/mixin_error_handling.yaml"
     integration_field: "error_handling_configuration"
-```python
+```
 
 ### Path Resolution
 
 **Relative Paths**: Paths are relative to the node contract file location.
 
-```text
+```
 Project Structure:
 src/your_project/
 ├── mixins/
@@ -83,14 +83,14 @@ Path from contract to mixin:
     │    │    └─ Up to your_project/
     │    └────── Up to nodes/
     └─────────── Up to api_client_effect/
-```text
+```
 
 ### Integration Field Naming
 
 **Pattern**: `{capability}_configuration`
 
 **Examples**:
-```yaml
+```
 # ✓ Good: Clear, descriptive
 integration_field: "error_handling_configuration"
 integration_field: "circuit_breaker_configuration"
@@ -100,13 +100,13 @@ integration_field: "caching_configuration"
 integration_field: "config"
 integration_field: "settings"
 integration_field: "error_config"  # Missing '_configuration' suffix
-```bash
+```
 
 ## Step 2: Validate Contract with Mixins
 
 ### Use Contract Validator
 
-```bash
+```
 # Validate node contract (including mixins)
 poetry run onex run contract_validator \
     --contract src/your_project/nodes/api_client_effect/v1_0_0/contract.yaml
@@ -119,29 +119,29 @@ poetry run onex run contract_validator \
 # ✓ Node type constraints validated (EFFECT can use mixin_error_handling)
 # ✓ Integration fields valid
 # ✓ Contract complete and valid
-```text
+```
 
 ### Common Validation Errors
 
 **Error 1: Path Not Found**
-```yaml
+```
 Error: Subcontract file not found: ../../../mixins/mixin_error_handling.yaml
-```python
+```
 
 **Solution**: Verify relative path is correct from contract location.
 
 **Error 2: Node Type Constraint Violation**
-```yaml
+```
 Error: Mixin 'mixin_state_management' not applicable to node type 'COMPUTE'
        Applicable types: ['REDUCER', 'ORCHESTRATOR']
-```text
+```
 
 **Solution**: Only use mixins allowed for your node type.
 
 **Error 3: Duplicate Integration Field**
-```yaml
+```
 Error: Integration field 'error_handling_configuration' used multiple times
-```python
+```
 
 **Solution**: Each mixin must have unique integration field name.
 
@@ -149,17 +149,17 @@ Error: Integration field 'error_handling_configuration' used multiple times
 
 ### Import Mixin Model
 
-```python
+```
 # src/your_project/nodes/node_api_client_effect.py
 
 from omnibase_core.nodes import NodeEffect
 from omnibase_core.model.contracts import ModelContractEffect
 from omnibase_core.model.subcontracts import ModelErrorHandlingSubcontract
-```python
+```
 
 ### Access Configuration in Node
 
-```python
+```
 class NodeApiClientEffect(NodeEffect):
     """EFFECT node with error handling mixin."""
 
@@ -185,11 +185,11 @@ class NodeApiClientEffect(NodeEffect):
         except Exception as e:
             # Use mixin capabilities
             return await self._handle_error_with_mixin(e, error_config)
-```python
+```
 
 ### Pattern: Mixin Configuration Check
 
-```python
+```
 async def execute_effect(self, contract: ModelContractEffect):
     """Execute with optional mixin configuration."""
 
@@ -202,15 +202,15 @@ async def execute_effect(self, contract: ModelContractEffect):
         error_config = None
 
     # Your logic here
-```python
+```
 
 ## Step 4: Implement Mixin Capabilities
 
 ### Pattern 1: Error Handling Mixin
 
-```python
+```
 from typing import Any
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 class NodeApiClientEffect(NodeEffect):
     """EFFECT node with error handling."""
@@ -283,11 +283,11 @@ class NodeApiClientEffect(NodeEffect):
             error_code="MAX_RETRIES_EXCEEDED",
             original_error=error
         )
-```python
+```
 
 ### Pattern 2: Circuit Breaker Mixin
 
-```python
+```
 from datetime import datetime, timedelta
 from omnibase_core.model.subcontracts import (
     ModelCircuitBreakerStatus,
@@ -391,11 +391,11 @@ class NodeApiClientEffect(NodeEffect):
         elif circuit.status == EnumCircuitBreakerState.CLOSED:
             # Reset failure count on success
             circuit.failure_count = max(0, circuit.failure_count - 1)
-```python
+```
 
 ### Pattern 3: Health Check Mixin
 
-```python
+```
 from omnibase_core.model.subcontracts import ModelHealthCheckSubcontract
 
 class NodeDataProcessorCompute(NodeCompute):
@@ -448,11 +448,11 @@ class NodeDataProcessorCompute(NodeCompute):
             "checks": dict(checks),
             "timestamp": datetime.now()
         }
-```python
+```
 
 ### Pattern 4: Performance Monitoring Mixin
 
-```python
+```
 import time
 from omnibase_core.model.subcontracts import ModelPerformanceMonitoringSubcontract
 
@@ -522,13 +522,13 @@ class NodeAggregatorReducer(NodeReducer):
             await self._send_to_prometheus(metrics)
         elif config.metrics_backend == "statsd":
             await self._send_to_statsd(metrics)
-```python
+```
 
 ## Step 5: Testing Integrated Mixins
 
 ### Unit Test with Mixin
 
-```python
+```
 # tests/nodes/test_node_api_client_effect.py
 
 import pytest
@@ -602,7 +602,7 @@ async def test_node_circuit_breaker_with_mixin(node_contract):
     # Circuit should now be open
     circuit_status = node._get_circuit_status("default")
     assert circuit_status.status == "open"
-```python
+```
 
 ## Best Practices
 
@@ -610,7 +610,7 @@ async def test_node_circuit_breaker_with_mixin(node_contract):
 
 Validate mixin configuration early:
 
-```python
+```
 async def execute_effect(self, contract: ModelContractEffect):
     """Execute with configuration validation."""
     # Validate mixin configuration exists
@@ -631,13 +631,13 @@ async def execute_effect(self, contract: ModelContractEffect):
 
     # Execute with validated configuration
     return await self._execute_with_config(contract, error_config)
-```python
+```
 
 ### 2. Mixin Configuration Override
 
 Allow runtime configuration overrides:
 
-```python
+```
 async def execute_effect(self, contract: ModelContractEffect):
     """Execute with optional config override."""
     # Get mixin configuration
@@ -649,13 +649,13 @@ async def execute_effect(self, contract: ModelContractEffect):
         error_config.error_retry_attempts = contract.runtime_config["retry_attempts"]
 
     return await self._execute_with_config(contract, error_config)
-```python
+```
 
 ### 3. Graceful Degradation
 
 Handle missing mixin gracefully:
 
-```python
+```
 async def execute_effect(self, contract: ModelContractEffect):
     """Execute with optional mixin."""
     # Try to use mixin if available
@@ -666,13 +666,13 @@ async def execute_effect(self, contract: ModelContractEffect):
         # Fall back to basic execution
         self.logger.warning("Error handling mixin not configured, using default behavior")
         return await self._call_external_api(contract)
-```python
+```
 
 ### 4. Mixin Capability Documentation
 
 Document which mixins your node supports:
 
-```python
+```
 class NodeApiClientEffect(NodeEffect):
     """
     EFFECT node for external API interactions.
@@ -689,7 +689,7 @@ class NodeApiClientEffect(NodeEffect):
     - `mixin_health_check`: Recommended for production
     - `mixin_performance_monitoring`: Recommended for observability
     """
-```python
+```
 
 ## Troubleshooting
 

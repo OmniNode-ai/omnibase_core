@@ -255,7 +255,7 @@ Create `docs/conventions/TERMINOLOGY_GUIDE.md` with:
 5. **Temporal Language Avoidance**
 
 ### Pre-Commit Hook Suggestion
-```bash
+```
 # Detect temporal language in documentation
 if git diff --cached --name-only | grep -q '\.md$'; then
     if git diff --cached | grep -E "(New pattern|Old pattern|new feature|old feature)"; then

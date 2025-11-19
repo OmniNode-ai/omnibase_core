@@ -24,7 +24,7 @@ Agent templates are optimized for:
 ### 1. Template Format Specification
 
 #### Standard Template Structure
-```yaml
+```
 # Each template will follow this structure:
 template:
   metadata:
@@ -49,7 +49,7 @@ template:
       - name: "Checkpoint name"
         command: "poetry run pytest ..."
         expected_result: "Success criteria"
-```text
+```
 
 ### 2. COMPUTE Node Templates
 
@@ -58,14 +58,14 @@ template:
 **Use Case**: Data validation, formatting, calculation
 **Complexity**: Simple
 
-```python
+```
 # TODO: Complete template with:
 # - Full imports section
 # - Contract definitions
 # - Node implementation
 # - Test suite
 # - Validation commands
-```text
+```
 
 #### Template: Batch Data Processor
 **Purpose**: Processing collections of items
@@ -84,14 +84,14 @@ template:
 **Use Case**: CRUD operations, data persistence
 **Complexity**: Intermediate
 
-```python
+```
 # TODO: Complete template with:
 # - Database dependency injection
 # - Transaction management
 # - Error handling and rollback
 # - Idempotency considerations
 # - Test suite with mocks
-```text
+```
 
 #### Template: HTTP API Client
 **Purpose**: Call external REST APIs with retry logic
@@ -110,14 +110,14 @@ template:
 **Use Case**: Workflow state management, status tracking
 **Complexity**: Advanced
 
-```python
+```
 # TODO: Complete template with:
 # - FSM pattern implementation
 # - Intent emission
 # - State transition validation
 # - Event handling
 # - Test suite for all transitions
-```python
+```
 
 #### Template: Metrics Aggregator
 **Purpose**: Collect and aggregate metrics data
@@ -136,14 +136,14 @@ template:
 **Use Case**: Multi-step processes with dependencies
 **Complexity**: Intermediate
 
-```python
+```
 # TODO: Complete template with:
 # - Dependency injection of child nodes
 # - Lease management for Actions
 # - Error recovery strategies
 # - Progress tracking
 # - Test suite for workflow
-```text
+```
 
 #### Template: Parallel Workflow
 **Purpose**: Execute independent nodes concurrently
@@ -158,7 +158,7 @@ template:
 ### 6. Agent Interaction Patterns
 
 #### Pattern: Template Selection Decision Tree
-```yaml
+```
 agent_decision_flow:
   question_1: "Does the node perform I/O operations?"
     yes: "Consider EFFECT or ORCHESTRATOR"
@@ -171,10 +171,10 @@ agent_decision_flow:
   question_3: "Does it coordinate other nodes?"
     yes: "Use ORCHESTRATOR template"
     no: "Use EFFECT template"
-```python
+```
 
 #### Pattern: Validation Workflow
-```yaml
+```
 agent_validation_steps:
   1. Generate code from template
   2. Run: poetry run mypy src/your_module/
@@ -183,13 +183,13 @@ agent_validation_steps:
   5. Check: Type checking passes
   6. Check: Coverage > 90%
   7. Confirm: Ready for integration
-```python
+```
 
 ### 7. Copy-Paste Ready Templates
 
 Each template will include:
 
-```python
+```
 """
 TEMPLATE: [Template Name]
 PURPOSE: [What it does]
@@ -208,21 +208,21 @@ STEP 4: Integrate into your project
 # poetry run mypy src/your_module/node_your_name_type.py
 # poetry run pytest tests/unit/test_node_your_name.py -xvs
 # Expected: All tests pass, type checking passes
-```python
+```
 
 ### 8. Agent-Specific Utilities
 
 #### Template Variable Extraction
-```python
+```
 # TODO: Provide regex/parsing tools for extracting:
 # - Node name from template
 # - Node type from template
 # - Required dependencies from template
 # - Validation commands from template
-```text
+```
 
 #### Automated Validation Scripts
-```bash
+```
 # TODO: Provide validation scripts:
 # validate_template.sh <node_file> <test_file>
 # - Checks imports
@@ -230,7 +230,7 @@ STEP 4: Integrate into your project
 # - Runs tests
 # - Verifies coverage
 # - Reports success/failure
-```python
+```
 
 ## Temporary Resources
 
@@ -243,7 +243,7 @@ While agent-specific templates are being developed, AI agents can use:
 - [ORCHESTRATOR Node Template](../../guides/templates/ORCHESTRATOR_NODE_TEMPLATE.md)
 
 ### Parsing Strategy for Existing Templates
-```python
+```
 # Agents should:
 # 1. Read template markdown
 # 2. Extract code blocks (```python sections)
@@ -282,7 +282,7 @@ An AI agent successfully using these templates should:
 
 ## Agent Workflow Example
 
-```yaml
+```
 agent_workflow:
   input: "User request: 'Create a node that calculates shipping costs'"
 

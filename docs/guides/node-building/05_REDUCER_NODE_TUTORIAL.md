@@ -48,7 +48,7 @@ The omnibase_core codebase now includes complete FSM execution capabilities:
 
 **Example YAML Contract** (fully functional):
 
-```yaml
+```
 # contracts/reducer_metrics_aggregator.yaml
 node_type: REDUCER
 node_name: metrics_aggregator
@@ -185,7 +185,7 @@ REDUCER nodes in ONEX are **pure finite state machines**:
 - **Effect Delegation**: Let Effect nodes handle I/O, logging, metrics
 
 **Core Concept**:
-```text
+```
 δ(state, action) → (new_state, intents[])
 ```
 
@@ -202,7 +202,7 @@ REDUCER nodes in ONEX are **pure finite state machines**:
 ## Pure FSM Pattern: Key Principles
 
 ### ❌ Old Pattern (Stateful, Side Effects)
-```python
+```
 class NodeMetricsAggregatorReducer(NodeReducer):
     def __init__(self, container):
         super().__init__(container)
@@ -223,7 +223,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
 ```
 
 ### ✅ New Pattern (Pure FSM, Intent Emission)
-```python
+```
 class NodeMetricsAggregatorReducer(NodeReducer):
     def __init__(self, container):
         super().__init__(container)
@@ -269,7 +269,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
             items_processed=len(aggregated_data),
             intents=intents,  # Side effects described, not executed
         )
-```python
+```
 
 **Key Difference**:
 - **Reducer**: Describes what side effects *should* happen (Intents)
@@ -280,7 +280,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
 
 ## Prerequisites Check
 
-```bash
+```
 # Verify Poetry and environment
 poetry --version
 pwd  # Should end with /omnibase_core
@@ -290,7 +290,7 @@ poetry install
 
 # Run existing reducer tests
 poetry run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1
-```python
+```
 
 ---
 
@@ -300,7 +300,7 @@ poetry run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1
 
 **File**: `src/your_project/nodes/model_metrics_aggregation_input.py`
 
-```python
+```
 """Input model for metrics aggregation REDUCER node."""
 
 from enum import Enum
@@ -389,7 +389,7 @@ class ModelMetricsAggregationInput(BaseModel):
 
 **File**: `src/your_project/nodes/model_metrics_aggregation_output.py`
 
-```python
+```
 """Output model for metrics aggregation REDUCER node."""
 
 from datetime import datetime
@@ -516,7 +516,7 @@ class ModelMetricsAggregationOutput(BaseModel):
 
 **File**: `src/your_project/nodes/node_metrics_aggregator_reducer.py`
 
-```python
+```
 """
 Metrics Aggregator REDUCER Node - Pure FSM Implementation.
 
@@ -544,7 +544,7 @@ from omnibase_core.enums.enum_reducer_types import (
     EnumStreamingMode,
     EnumConflictResolution,
 )
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 from your_project.nodes.model_metrics_aggregation_input import (
@@ -835,7 +835,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
 
 If you need custom mixin composition or want to build from scratch:
 
-```python
+```
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from collections import defaultdict
 
@@ -879,7 +879,7 @@ class NodeMetricsAggregatorReducer(NodeCoreBase):
 
 ### How Intents Flow to Effect Nodes
 
-```python
+```
 """
 Intent Flow Example:
 
@@ -912,7 +912,7 @@ Intent Flow Example:
 
 **File**: `src/your_project/nodes/node_intent_executor_effect.py`
 
-```python
+```
 """Effect node that executes Intents from Reducer nodes."""
 
 from omnibase_core.nodes.node_effect import NodeEffect
@@ -988,7 +988,7 @@ class NodeIntentExecutorEffect(NodeEffect):
 
 **File**: `tests/unit/nodes/test_node_metrics_aggregator_reducer.py`
 
-```python
+```
 """Tests for Pure FSM NodeMetricsAggregatorReducer."""
 
 import pytest
@@ -1216,7 +1216,7 @@ async def test_intent_priority_ordering(aggregator_node):
 
 ### Basic Metrics Aggregation with Intent Execution
 
-```python
+```
 import asyncio
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from your_project.nodes.node_metrics_aggregator_reducer import NodeMetricsAggregatorReducer
@@ -1276,7 +1276,7 @@ asyncio.run(aggregate_server_metrics())
 
 ### Orchestrator Pattern for Full Workflow
 
-```python
+```
 """
 Full orchestration pattern showing Reducer → Effect flow.
 """
@@ -1350,7 +1350,7 @@ asyncio.run(main())
 
 ### Intent Types
 
-```python
+```
 # Common Intent types for Reducer nodes
 INTENT_TYPES = {
     "log_event": "Logging Effect Node",
@@ -1363,7 +1363,7 @@ INTENT_TYPES = {
 
 ### Conflict Resolution Strategies
 
-```python
+```
 # Available strategies
 EnumConflictResolution.SUM          # Add values together
 EnumConflictResolution.AVERAGE      # Average conflicting values
@@ -1391,7 +1391,7 @@ While `ModelIntent` is used for general side effects, **MixinIntentPublisher** p
 
 **Step 1: Inherit from Mixin**
 
-```python
+```
 from omnibase_core.mixins import MixinIntentPublisher
 from omnibase_core.nodes.node_reducer import NodeReducer
 
@@ -1402,11 +1402,11 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
         super().__init__(container)
         # Initialize intent publisher (REQUIRED)
         self._init_intent_publisher(container)
-```python
+```
 
 **Step 2: Publish Events as Intents**
 
-```python
+```
 async def aggregate_metrics(
     self,
     input_data: ModelMetricsAggregationInput,
@@ -1448,7 +1448,7 @@ async def aggregate_metrics(
 
 **Step 3: Update Contract**
 
-```yaml
+```
 # contract.yaml
 subcontracts:
   refs:
@@ -1460,7 +1460,7 @@ mixins:
 
 ### Testing with MixinIntentPublisher
 
-```python
+```
 import pytest
 from tests.fixtures.fixture_intent_publisher import MockKafkaClient
 
@@ -1503,7 +1503,7 @@ async def test_reducer_publishes_aggregated_metrics():
 ### Pattern Comparison
 
 **ModelIntent (General Side Effects)**:
-```python
+```
 # Use for: Logging, metrics, notifications, general I/O
 intents = [
     ModelIntent(
@@ -1513,10 +1513,10 @@ intents = [
     )
 ]
 return ModelMetricsAggregationOutput(result=data, intents=intents)
-```python
+```
 
 **MixinIntentPublisher (Event Publishing)**:
-```python
+```
 # Use for: Publishing domain events to Kafka topics
 await self.publish_event_intent(
     target_topic="my.events.v1",
@@ -1534,7 +1534,7 @@ return ModelMetricsAggregationOutput(result=data)
 
 ### Complete Example
 
-```python
+```
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -1634,7 +1634,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
 
 ### ❌ Anti-Patterns to Avoid
 
-```python
+```
 # ❌ WRONG: Mutable state
 class NodeBadReducer(NodeReducer):
     def __init__(self, container):

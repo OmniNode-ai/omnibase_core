@@ -247,8 +247,8 @@ class ModelDiscoverySubcontract(BaseModel):
                 ),
             )
 
-        # Validate discovery_channels not empty
-        if not self.discovery_channels:
+        # Validate discovery_channels not empty (only when enabled)
+        if self.enabled and not self.discovery_channels:
             msg = "discovery_channels cannot be empty when discovery is enabled"
             raise ModelOnexError(
                 message=msg,

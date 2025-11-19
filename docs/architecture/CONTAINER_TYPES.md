@@ -29,7 +29,7 @@ omnibase_core uses TWO distinct container types that serve completely different 
 - Type-safe value passing with context
 
 **Example**:
-```python
+```
 from omnibase_core.models.core.model_container import ModelContainer
 
 # Create a value container
@@ -74,7 +74,7 @@ config_value.validate_with(
 - Service caching and performance monitoring
 
 **Example**:
-```python
+```
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_spi import ProtocolLogger
 
@@ -128,7 +128,7 @@ class MyNode(NodeCoreBase):
 
 ### ❌ WRONG: Using ModelContainer in Node Constructor
 
-```python
+```
 from omnibase_core.models.core.model_container import ModelContainer
 
 class MyNode(NodeCoreBase):
@@ -142,7 +142,7 @@ class MyNode(NodeCoreBase):
 
 ### ✅ CORRECT: Using ModelONEXContainer in Node Constructor
 
-```python
+```
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 class MyNode(NodeCoreBase):
@@ -154,7 +154,7 @@ class MyNode(NodeCoreBase):
 
 ### ❌ WRONG: Using ModelONEXContainer as Value Wrapper
 
-```python
+```
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Trying to wrap a value
@@ -168,7 +168,7 @@ container.value = "my_data"  # ❌ WRONG!
 
 ### ✅ CORRECT: Using ModelContainer for Value Wrapping
 
-```python
+```
 from omnibase_core.models.core.model_container import ModelContainer
 
 # Wrap a value with metadata
@@ -183,7 +183,7 @@ wrapped_value = ModelContainer.create(
 
 ## Decision Tree: Which Container to Use?
 
-```text
+```
 Are you writing a node class?
 ├─ Yes → Use ModelONEXContainer in __init__
 │         def __init__(self, container: ModelONEXContainer)
@@ -226,7 +226,7 @@ Are you writing a node class?
 
 ### Example 1: Node Implementation (Use ModelONEXContainer)
 
-```python
+```
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_spi import ProtocolLogger, ProtocolEventBus
@@ -249,7 +249,7 @@ class NodeDataProcessor(NodeCoreBase):
 
 ### Example 2: Configuration Value (Use ModelContainer[T])
 
-```python
+```
 from omnibase_core.models.core.model_container import ModelContainer
 
 class ConfigManager:
@@ -277,7 +277,7 @@ class ConfigManager:
 
 ### Example 3: Service Factory (Use ModelONEXContainer)
 
-```python
+```
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 async def create_service_layer(
@@ -305,7 +305,7 @@ async def create_service_layer(
 **Symptom**: Node initialization fails with `AttributeError: 'ModelContainer' object has no attribute 'get_service'`
 
 **Fix**:
-```python
+```
 # Before (❌ Wrong)
 from omnibase_core.models.core.model_container import ModelContainer
 
@@ -327,7 +327,7 @@ class MyNode(NodeCoreBase):
 
 ### Correct Type Hints
 
-```python
+```
 from typing import TypeVar
 from omnibase_core.models.core.model_container import ModelContainer
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -356,7 +356,7 @@ Both container types are fully compatible with `mypy --strict`:
 
 ### Testing with ModelContainer[T]
 
-```python
+```
 def test_value_container():
     """Test value container functionality."""
 
@@ -378,7 +378,7 @@ def test_value_container():
 
 ### Testing with ModelONEXContainer
 
-```python
+```
 async def test_service_resolution():
     """Test DI container functionality."""
 

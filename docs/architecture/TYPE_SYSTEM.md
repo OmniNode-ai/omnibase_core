@@ -17,7 +17,7 @@ Type conventions and patterns used throughout the ONEX framework.
 
 ### Pydantic Models
 
-```python
+```
 from pydantic import BaseModel, Field
 
 class MyModel(BaseModel):
@@ -25,11 +25,11 @@ class MyModel(BaseModel):
     name: str
     value: int = Field(ge=0, description="Non-negative integer")
     optional_data: Optional[dict] = None
-```python
+```
 
 ### Type Annotations
 
-```python
+```
 from typing import Optional, List, Dict, Any, Protocol
 
 # Function signatures
@@ -45,11 +45,11 @@ async def fetch_data(
     timeout: float = 30.0
 ) -> List[dict]:
     pass
-```python
+```
 
 ### Protocol Definitions
 
-```python
+```
 from typing import Protocol
 
 class ProtocolCache(Protocol):
@@ -58,13 +58,13 @@ class ProtocolCache(Protocol):
     def get(self, key: str) -> Optional[Any]: ...
     def set(self, key: str, value: Any, ttl: int) -> None: ...
     def delete(self, key: str) -> bool: ...
-```python
+```
 
 ## Common Types
 
 ### Result Types
 
-```python
+```
 from typing import Union, TypedDict
 
 class Success(TypedDict):
@@ -76,11 +76,11 @@ class Failure(TypedDict):
     error: str
 
 Result = Union[Success, Failure]
-```python
+```
 
 ### Generic Types
 
-```python
+```
 from typing import TypeVar, Generic
 
 T = TypeVar('T')
@@ -91,7 +91,7 @@ class Container(Generic[T]):
 
     def get(self) -> T:
         return self.value
-```bash
+```
 
 ## Type Checking
 
@@ -104,11 +104,11 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-```bash
+```
 
 ### Running Type Checks
 
-```bash
+```
 # Check all code
 poetry run mypy src/
 
@@ -117,13 +117,13 @@ poetry run mypy src/ --verbose
 
 # Check specific file
 poetry run mypy src/my_module.py
-```python
+```
 
 ## Best Practices
 
 ### 1. Always Annotate Return Types
 
-```python
+```
 # ❌ Wrong: No return type
 def calculate(x, y):
     return x + y
@@ -131,11 +131,11 @@ def calculate(x, y):
 # ✅ Right: Explicit return type
 def calculate(x: float, y: float) -> float:
     return x + y
-```python
+```
 
 ### 2. Use Optional for Nullable Values
 
-```python
+```
 # ❌ Wrong: Implicit None
 def get_user(id: str) -> dict:
     return None  # Type error!
@@ -143,11 +143,11 @@ def get_user(id: str) -> dict:
 # ✅ Right: Explicit Optional
 def get_user(id: str) -> Optional[dict]:
     return None  # OK
-```python
+```
 
 ### 3. Use TypedDict for Structured Dicts
 
-```python
+```
 from typing import TypedDict
 
 # ❌ Wrong: Unstructured dict
@@ -164,38 +164,38 @@ class OutputData(TypedDict):
 
 def process(data: InputData) -> OutputData:
     pass
-```python
+```
 
 ## Advanced Patterns
 
 ### Literal Types
 
-```python
+```
 from typing import Literal
 
 ExecutionMode = Literal["sequential", "parallel", "batch"]
 
 def execute(mode: ExecutionMode) -> None:
     pass
-```python
+```
 
 ### Union Types
 
-```python
+```
 from typing import Union
 
 def process(data: Union[str, int, float]) -> str:
     return str(data)
-```python
+```
 
 ### Type Guards
 
-```python
+```
 from typing import TypeGuard
 
 def is_string_list(val: list) -> TypeGuard[List[str]]:
     return all(isinstance(x, str) for x in val)
-```python
+```
 
 ## Next Steps
 

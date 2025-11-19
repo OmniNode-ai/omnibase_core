@@ -86,7 +86,7 @@ This document provides a complete implementation plan for closing the gap betwee
 
 ### ✅ Correct Pattern: Execution via Mixins + Utilities
 
-```python
+```
 # ✅ CORRECT - Mixin-based execution
 class MixinFSMExecution:
     """Mixin providing FSM execution from YAML contracts."""
@@ -122,7 +122,7 @@ async def execute_transition(
 
 ### Component Architecture
 
-```text
+```
 ┌─────────────────────────────────────────────────────────────┐
 │                   YAML Contracts (✅ Complete)               │
 │  ModelFSMSubcontract, ModelWorkflowCoordinationSubcontract  │
@@ -158,7 +158,7 @@ async def execute_transition(
 
 **File**: `src/omnibase_core/utils/fsm_executor.py`
 
-```python
+```
 """
 FSM execution utilities for declarative state machines.
 
@@ -181,7 +181,7 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_state_transition impo
 )
 from omnibase_core.models.model_intent import ModelIntent
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class FSMTransitionResult:
@@ -560,7 +560,7 @@ def _find_reachable_states(fsm: ModelFSMSubcontract) -> set[str]:
 
 **File**: `src/omnibase_core/mixins/mixin_fsm_execution.py`
 
-```python
+```
 """
 Mixin for FSM execution from YAML contracts.
 
@@ -674,7 +674,7 @@ class MixinFSMExecution:
 
 Add new entry:
 
-```yaml
+```
 mixins:
   # ... existing mixins ...
 
@@ -776,7 +776,7 @@ mixins:
 
 **File**: `src/omnibase_core/utils/workflow_executor.py`
 
-```python
+```
 """
 Workflow execution utilities for declarative orchestration.
 
@@ -798,7 +798,7 @@ from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.orchestrator.model_action import ModelAction
 
 
@@ -1331,7 +1331,7 @@ def _has_dependency_cycles(
 
 **File**: `src/omnibase_core/mixins/mixin_workflow_execution.py`
 
-```python
+```
 """
 Mixin for workflow execution from YAML contracts.
 
@@ -1446,7 +1446,7 @@ class MixinWorkflowExecution:
 
 **Important**: After implementing Phase 1 and Phase 2, we discovered that **mixins already provide all needed functionality**. You don't need `NodeReducerDeclarative` or `NodeOrchestratorDeclarative` - just compose mixins directly!
 
-```python
+```
 # ✅ CORRECT - Compose mixins directly
 class NodeMetricsReducer(NodeCoreBase, MixinFSMExecution, MixinEventBus):
     """Reducer with FSM and event bus - no special base needed!"""
@@ -1480,7 +1480,7 @@ Create comprehensive example contracts demonstrating common patterns:
 
 **File**: `examples/contracts/reducer_with_fsm_and_events.yaml`
 
-```yaml
+```
 node_type: REDUCER
 node_name: metrics_aggregator_with_events
 node_version: 1.0.0
@@ -1514,7 +1514,7 @@ event_coordination:
 ```
 
 **Usage**:
-```python
+```
 class NodeMetricsReducer(NodeCoreBase, MixinFSMExecution, MixinEventBus):
     # No custom FSM code - driven by YAML!
     # MixinFSMExecution provides execute_fsm_transition()
@@ -1526,7 +1526,7 @@ class NodeMetricsReducer(NodeCoreBase, MixinFSMExecution, MixinEventBus):
 
 **File**: `examples/contracts/orchestrator_parallel_workflow.yaml`
 
-```yaml
+```
 node_type: ORCHESTRATOR
 node_name: parallel_data_pipeline
 node_version: 1.0.0
@@ -1552,7 +1552,7 @@ workflow_coordination:
 ```
 
 **Usage**:
-```python
+```
 class NodePipelineOrchestrator(NodeCoreBase, MixinWorkflowExecution):
     # No custom workflow code - driven by YAML!
     # MixinWorkflowExecution provides execute_workflow_from_contract()
@@ -1563,7 +1563,7 @@ class NodePipelineOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
 **File**: `examples/contracts/orchestrator_with_error_recovery.yaml`
 
-```yaml
+```
 node_type: ORCHESTRATOR
 workflow_coordination:
   execution_mode: sequential
@@ -1584,7 +1584,7 @@ workflow_coordination:
 
 **When to use**: State-driven aggregation, lifecycle management
 
-```python
+```
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.mixins.mixin_event_bus import MixinEventBus
@@ -1625,7 +1625,7 @@ class NodeMyReducer(NodeCoreBase, MixinFSMExecution, MixinEventBus):
 
 **When to use**: Multi-step workflows, parallel coordination
 
-```python
+```
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
 
@@ -1658,7 +1658,7 @@ class NodeMyOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
 #### Composing Multiple Mixins
 
-```python
+```
 # ✅ GOOD - Clear, declarative composition
 class NodeAdvancedReducer(
     NodeCoreBase,           # Always first
@@ -1681,7 +1681,7 @@ class NodeAdvancedReducer(
 
 #### Avoiding Common Pitfalls
 
-```python
+```
 # ❌ BAD - Don't create unnecessary base classes
 class NodeReducerDeclarative(NodeCoreBase, MixinFSMExecution):
     """This is redundant - just use mixins directly!"""
@@ -1713,7 +1713,7 @@ Create `examples/contracts/` with:
 
 **File**: `examples/contracts/reducer_metrics_aggregator.yaml`
 
-```yaml
+```
 node_type: REDUCER
 node_name: metrics_aggregator_declarative
 node_version: 1.0.0
@@ -1840,7 +1840,7 @@ state_transitions:
 
 **File**: `examples/contracts/orchestrator_data_pipeline.yaml`
 
-```yaml
+```
 node_type: ORCHESTRATOR
 node_name: data_pipeline_orchestrator
 node_version: 1.0.0
@@ -1959,7 +1959,7 @@ workflow_coordination:
 
 #### Before: Imperative Pattern
 
-```python
+```
 class NodeMyReducer(NodeReducer):
     def __init__(self, container):
         super().__init__(container)
@@ -1979,7 +1979,7 @@ class NodeMyReducer(NodeReducer):
 
 #### After: Declarative Pattern with Mixins
 
-```python
+```
 # 1. Create YAML contract (one time)
 # contracts/my_reducer.yaml
 node_type: REDUCER
@@ -2031,7 +2031,7 @@ node = NodeMyReducer(container, contract)
 
 **File**: `tests/unit/utils/test_fsm_executor.py`
 
-```python
+```
 """Tests for FSM execution utilities."""
 
 import pytest
@@ -2074,7 +2074,7 @@ async def test_fsm_transition_success():
 
 **File**: `tests/integration/test_fsm_mixin_integration.py`
 
-```python
+```
 """Integration tests for FSM execution mixin."""
 
 import pytest
@@ -2191,7 +2191,7 @@ async def test_reducer_with_fsm_mixin(container):
 
 ## Appendix: Key Files Created
 
-```text
+```
 Implementation Components:
 ├── src/omnibase_core/
 │   ├── utils/

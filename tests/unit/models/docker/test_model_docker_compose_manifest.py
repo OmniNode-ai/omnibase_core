@@ -15,7 +15,9 @@ from omnibase_core.models.docker.model_docker_compose_manifest import (
 from omnibase_core.models.docker.model_docker_network_config import (
     ModelDockerNetworkConfig,
 )
-from omnibase_core.models.docker.model_docker_volume_config import ModelDockerVolumeConfig
+from omnibase_core.models.docker.model_docker_volume_config import (
+    ModelDockerVolumeConfig,
+)
 
 
 class TestModelDockerComposeManifest:

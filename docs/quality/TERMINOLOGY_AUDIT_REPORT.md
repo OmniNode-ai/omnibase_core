@@ -169,7 +169,7 @@ class NodeFileBackupEffect      ← Code
 - Multiple examples showing correct usage patterns
 
 ✅ **Consistent Code Examples**:
-```python
+```
 # ✅ Correct - DI container in node constructor
 def __init__(self, container: ModelONEXContainer):
     super().__init__(container)
@@ -203,7 +203,7 @@ config = ModelContainer.create(value="production")
 **Evidence**:
 
 ✅ **Consistent Patterns**:
-```python
+```
 # Get services by protocol interface (never by concrete class)
 event_bus = container.get_service("ProtocolEventBus")
 ```

@@ -30,24 +30,20 @@ This document enhances our unified ONEX node templates by integrating breakthrou
 
 ### Enhanced Configuration Pattern
 
-```python
+```
 """Enhanced configuration with canary security patterns."""
 
 import re
 from typing import Any, Dict, List, Optional, Type, TypeVar, Pattern
-from pydantic import BaseModel, Field, validator, root_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from enum import Enum
 import os
 import time
 
-# NOTE: These are placeholder imports - omnibase_core.config and omnibase_core.utils modules
-# with these specific classes do not exist in core library. Implement your own configuration
-# and utility classes following these patterns in your service codebase.
-# from omnibase_core.config.base_node_config import BaseNodeConfig
-# from omnibase_core.utils.security_validator import SecurityValidator
-# from omnibase_core.utils.performance_timer import PerformanceTimer
+# NOTE: Configuration classes use Pydantic BaseModel.
+# Implement your own utility classes as needed in your service codebase.
 
-ConfigT = TypeVar('ConfigT', bound='BaseModel')  # Use BaseModel instead of non-existent BaseNodeConfig
+ConfigT = TypeVar('ConfigT', bound='BaseModel')
 
 
 class SecurityConfig(BaseModel):
@@ -115,7 +111,7 @@ class EventConfig(BaseModel):
     emit_lifecycle_events: bool = Field(default=True, description="Emit node lifecycle events")
 
 
-class Enhanced{NodeType}Config(BaseNodeConfig):
+class Enhanced{NodeType}Config(BaseModel):
     """Enhanced configuration template with canary innovations."""
 
     # Core node settings
@@ -142,21 +138,22 @@ class Enhanced{NodeType}Config(BaseNodeConfig):
     tool_manifest_path: Optional[str] = Field(default=None, description="Path to tool manifest")
     enable_tool_validation: bool = Field(default=True, description="Enable tool interface validation")
 
-    @root_validator
-    def validate_performance_consistency(cls, values):
+    @model_validator(mode='after')
+    def validate_performance_consistency(self):
         """Validate performance configuration consistency."""
-        security_budget = values.get('performance_config', {}).get('security_validation_budget_ms', 1.0)
-        target_latency = values.get('performance_config', {}).get('target_latency_ms', 100.0)
+        security_budget = getattr(self.performance_config, 'security_validation_budget_ms', 1.0)
+        target_latency = getattr(self.performance_config, 'target_latency_ms', 100.0)
 
         if security_budget > target_latency * 0.1:  # Security should be <10% of total latency
             raise ValueError(f"Security validation budget ({security_budget}ms) too high for target latency ({target_latency}ms)")
 
-        return values
+        return self
 
-    @validator('node_timeout_ms')
-    def validate_timeout_hierarchy(cls, v, values):
+    @field_validator('node_timeout_ms')
+    @classmethod
+    def validate_timeout_hierarchy(cls, v, info):
         """Validate timeout hierarchy consistency."""
-        threshold = values.get('performance_threshold_ms', 5000.0)
+        threshold = info.data.get('performance_threshold_ms', 5000.0)
         if v < threshold:
             raise ValueError(f"Node timeout ({v}ms) must be >= performance threshold ({threshold}ms)")
         return v
@@ -220,11 +217,11 @@ class Enhanced{NodeType}Config(BaseNodeConfig):
                 event_buffer_size=2000 if environment == "production" else 500
             )
         )
-```python
+```
 
 ### Enhanced Node Implementation Pattern
 
-```python
+```
 """Enhanced node implementation with canary security and performance patterns."""
 
 import asyncio
@@ -236,7 +233,7 @@ from dataclasses import dataclass
 
 from omnibase_core.nodes.base.node_{node_type}_service import Node{NodeType}Service
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer
-from omnibase_core.utils.circuit_breaker import CircuitBreakerMixin
+from omnibase_core.utils.circuit_breaker import CircuitBreakerMixin, CircuitBreakerError
 from omnibase_core.utils.performance_timer import PerformanceTimer
 from omnibase_core.utils.security_validator import SecurityValidator
 from omnibase_core.utils.event_emitter import EventEmitter
@@ -389,6 +386,9 @@ class Enhanced{NodeType}Node(
         # Store correlation ID for event tracking
         self._current_correlation_id = getattr(input_data, 'correlation_id', None)
 
+        # Capture operation start time for accurate duration calculation
+        operation_start = time.perf_counter()
+
         async with self._enhanced_performance_tracking("process"):
             try:
                 # Enhanced security validation with performance tracking
@@ -399,15 +399,15 @@ class Enhanced{NodeType}Node(
                     # Execute core business logic
                     result = await self._execute_core_logic(input_data)
 
-                # Enhanced result validation
-                await self._validate_output_security(result)
+                # Enhanced result validation and sanitization
+                result = await self._validate_output_security(result)
 
                 # Emit success event
                 if self._event_emitter:
                     await self._event_emitter.emit("operation_completed", {
                         "operation": "process",
                         "success": True,
-                        "processing_time_ms": security_time + (time.perf_counter() * 1000),
+                        "processing_time_ms": security_time + ((time.perf_counter() - operation_start) * 1000),
                         "timestamp": time.time()
                     })
 
@@ -428,7 +428,7 @@ class Enhanced{NodeType}Node(
         """Core business logic implementation - to be overridden by specific nodes."""
         raise NotImplementedError("Subclasses must implement core business logic")
 
-    async def _validate_output_security(self, output_data: OutputT) -> None:
+    async def _validate_output_security(self, output_data: OutputT) -> OutputT:
         """Validate output data for security compliance."""
         if self.config.security_config.enable_pii_sanitization:
             # Scan output for PII leakage
@@ -440,8 +440,11 @@ class Enhanced{NodeType}Node(
                             "pattern_matched": pattern.pattern,
                             "timestamp": time.time()
                         })
-                    # Sanitize output
-                    output_data = self._security_validator.sanitize_output(output_data)
+                    # Sanitize output and return sanitized version
+                    return self._security_validator.sanitize_output(output_data)
+
+        # Return original output if no sanitization needed
+        return output_data
 
     async def enhanced_health_check(self) -> Dict[str, Any]:
         """Enhanced health check with canary monitoring patterns."""
@@ -601,11 +604,11 @@ class Enhanced{NodeType}Node(
             },
             "health": self._health_status
         }
-```python
+```
 
 ### Enhanced Subcontract Pattern
 
-```yaml
+```
 # Enhanced subcontract with canary security and performance patterns
 
 api_version: "v1.0.0"
@@ -848,7 +851,7 @@ examples:
         priority_level: "critical"
         max_processing_time_ms: 100
         enable_detailed_metrics: false
-```python
+```
 
 ## 🚀 Implementation Benefits
 
@@ -872,6 +875,3 @@ examples:
 
 These enhanced patterns represent the next evolution of ONEX node architecture, incorporating production-proven innovations from the omnibase_infra canary implementations while maintaining the unified structure and consistency of our original templates.
 
-<function_calls>
-<invoke name="TodoWrite">
-<parameter name="todos">[{"content": "Create omnibase_core enhancement document", "status": "completed", "activeForm": "Creating omnibase_core changes document"}, {"content": "Create omnibase_infra enhancement document", "status": "completed", "activeForm": "Creating omnibase_infra changes document"}, {"content": "Extend patterns to other node types (COMPUTE, REDUCER, ORCHESTRATOR)", "status": "completed", "activeForm": "Extending patterns to other node types"}, {"content": "Analyze omnibase_infra canary nodes for pattern insights", "status": "completed", "activeForm": "Analyzing omnibase_infra canary nodes"}, {"content": "Enhance templates with canary node patterns", "status": "completed", "activeForm": "Enhancing templates with canary patterns"}, {"content": "Validate unified architecture across all node types", "status": "in_progress", "activeForm": "Validating unified architecture"}]

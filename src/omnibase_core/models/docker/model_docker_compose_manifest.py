@@ -36,7 +36,9 @@ from omnibase_core.models.docker.model_docker_resources import ModelDockerResour
 from omnibase_core.models.docker.model_docker_restart_policy import (
     ModelDockerRestartPolicy,
 )
-from omnibase_core.models.docker.model_docker_volume_config import ModelDockerVolumeConfig
+from omnibase_core.models.docker.model_docker_volume_config import (
+    ModelDockerVolumeConfig,
+)
 
 
 class ModelDockerConfigFile(BaseModel):
@@ -194,7 +196,9 @@ class ModelDockerComposeManifest(BaseModel):
                         )
 
         if errors:
-            raise ValueError("Service reference validation failed:\n" + "\n".join(errors))
+            raise ValueError(
+                "Service reference validation failed:\n" + "\n".join(errors)
+            )
 
         return self
 
@@ -266,6 +270,12 @@ class ModelDockerComposeManifest(BaseModel):
     def detect_port_conflicts(self) -> list[str]:
         """Detect port conflicts across services.
 
+        Handles all Docker port formats:
+        - Simple: "8080:80"
+        - With IP: "127.0.0.1:8080:80"
+        - With protocol: "8080:80/tcp"
+        - Combined: "127.0.0.1:8080:80/tcp"
+
         Returns:
             List of warning messages about port conflicts
         """
@@ -275,8 +285,27 @@ class ModelDockerComposeManifest(BaseModel):
         for service_name, service in self.services.items():
             if service.ports:
                 for port_mapping in service.ports:
-                    # Extract host port from mapping like "8080:80" or "8080"
-                    host_port = port_mapping.split(":")[0]
+                    # Strip protocol suffix if present (e.g., "/tcp", "/udp")
+                    port_spec = port_mapping.split("/")[0]
+
+                    # Parse port specification
+                    parts = port_spec.split(":")
+                    host_port: str
+
+                    if len(parts) == 1:
+                        # Format: "8080" (host port only)
+                        host_port = parts[0]
+                    elif len(parts) == 2:
+                        # Format: "8080:80" (host:container)
+                        host_port = parts[0]
+                    elif len(parts) == 3:
+                        # Format: "127.0.0.1:8080:80" (ip:host:container)
+                        # Use IP:host_port as the key to avoid false conflicts
+                        host_port = f"{parts[0]}:{parts[1]}"
+                    else:
+                        # Invalid format, skip
+                        continue
+
                     if host_port not in port_map:
                         port_map[host_port] = []
                     port_map[host_port].append(service_name)
@@ -408,7 +437,9 @@ class ModelDockerComposeManifest(BaseModel):
                 if service.labels:
                     service_dict["labels"] = service.labels
                 if service.deploy:
-                    service_dict["deploy"] = service.deploy.model_dump(exclude_none=True)
+                    service_dict["deploy"] = service.deploy.model_dump(
+                        exclude_none=True
+                    )
 
                 services_data[service_name] = service_dict
             data["services"] = services_data

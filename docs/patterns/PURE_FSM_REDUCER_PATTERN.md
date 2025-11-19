@@ -24,9 +24,9 @@ The Pure FSM (Finite State Machine) Reducer pattern ensures that Reducer nodes o
 
 ### Core Formula
 
-```text
+```
 δ(state, action) → (new_state, intents[])
-```python
+```
 
 Where:
 - **δ** (delta) = Pure reduction function
@@ -62,7 +62,7 @@ Pure FSM Reducers must not maintain mutable state between invocations. Configura
 
 #### ❌ Anti-pattern: Mutable Instance State
 
-```python
+```
 class NodeMetricsReducer(NodeReducer):
     def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
@@ -72,7 +72,7 @@ class NodeMetricsReducer(NodeReducer):
         self.windows: dict[str, ModelStreamingWindow] = {}
         self.reduction_count = 0
         self.last_result: Any = None
-```python
+```
 
 **Why this is wrong:**
 - Breaks determinism (results depend on previous calls)
@@ -82,7 +82,7 @@ class NodeMetricsReducer(NodeReducer):
 
 #### ✅ Correct: Immutable Configuration Only
 
-```python
+```
 class NodeMetricsReducer(NodeReducer):
     def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
@@ -94,7 +94,7 @@ class NodeMetricsReducer(NodeReducer):
 
         # ✅ CORRECT: No mutable runtime state
         # All state flows through ModelReducerInput/ModelReducerOutput
-```python
+```
 
 **Why this is correct:**
 - Configuration is immutable (set once, never changed)
@@ -110,7 +110,7 @@ Pure FSM Reducers must not perform I/O operations directly. All side effects mus
 
 #### ❌ Anti-pattern: Direct Side Effects
 
-```python
+```
 async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
     # ❌ WRONG: Direct I/O operations
     result = self._reduce(input_data.data)
@@ -128,7 +128,7 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
     await self.db.save_result(result)
 
     return ModelReducerOutput(result=result)
-```python
+```
 
 **Why this is wrong:**
 - Cannot test without mocking I/O dependencies
@@ -138,7 +138,7 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
 
 #### ✅ Correct: Intent Emission
 
-```python
+```
 async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
     # ✅ CORRECT: Pure reduction
     result = self._reduce(input_data.data)
@@ -174,7 +174,7 @@ async def process(self, input_data: ModelReducerInput) -> ModelReducerOutput:
     ]
 
     return ModelReducerOutput(result=result, intents=intents)
-```python
+```
 
 **Why this is correct:**
 - Pure function (no hidden I/O)
@@ -199,7 +199,7 @@ All reduction logic must be implemented as pure functions: deterministic, refere
 
 #### ❌ Anti-pattern: Impure Function
 
-```python
+```
 async def _reduce_metrics(self, items: list[dict]) -> dict:
     # ❌ WRONG: Depends on system time
     current_time = datetime.now()
@@ -215,11 +215,11 @@ async def _reduce_metrics(self, items: list[dict]) -> dict:
     # ❌ WRONG: Non-deterministic (random sampling)
     sample_size = random.randint(1, len(items))
     return {"sample": items[:sample_size]}
-```python
+```
 
 #### ✅ Correct: Pure Function
 
-```python
+```
 async def _reduce_metrics(
     self,
     items: list[dict],
@@ -242,7 +242,7 @@ async def _reduce_metrics(
     # ✅ CORRECT: Deterministic (seed from input)
     sample_size = config.get("sample_size", len(items))
     return {"sample": processed_items[:sample_size]}
-```python
+```
 
 ---
 
@@ -254,17 +254,17 @@ The Intent Emission pattern is the mechanism for describing side effects in Pure
 
 Execute the reduction logic as a pure function, transforming input data into result.
 
-```python
+```
 async def process(self, input_data: ModelReducerInput[T]) -> ModelReducerOutput[R]:
     # Step 1: Pure reduction
     result = self._reduce_items(input_data.data)
-```python
+```
 
 ### Step 2: Describe Side Effects as Intents
 
 Create Intent objects that describe what side effects should occur. Do not execute them.
 
-```python
+```
     # Step 2: Describe side effects
     intents: list[ModelIntent] = []
 
@@ -294,13 +294,13 @@ Create Intent objects that describe what side effects should occur. Do not execu
         },
         priority=2  # Medium priority
     ))
-```python
+```
 
 ### Step 3: Return State + Intents
 
 Return the new state (result) along with the intents describing side effects.
 
-```python
+```
     # Step 3: Return state + intents
     return ModelReducerOutput(
         result=result,
@@ -311,11 +311,11 @@ Return the new state (result) along with the intents describing side effects.
         intents=intents,  # Effect node will execute these
         metadata={"strategy": "pure_fsm"}
     )
-```python
+```
 
 ### Complete Intent Emission Example
 
-```python
+```
 class NodeDataAggregatorReducer(NodeReducer):
     async def process(
         self,
@@ -387,7 +387,7 @@ class NodeDataAggregatorReducer(NodeReducer):
                     result[key] = []
                 result[key].append(value)
         return result
-```python
+```
 
 ---
 
@@ -397,7 +397,7 @@ class NodeDataAggregatorReducer(NodeReducer):
 
 Pure FSM Reducers are trivial to test because they have no side effects or external dependencies.
 
-```python
+```
 def test_reducer_simple():
     """Test reducer without mocks or complex setup."""
     # Arrange
@@ -421,13 +421,13 @@ def test_reducer_simple():
     metric_intent = next(i for i in output.intents if i.intent_type == "log_metric")
     assert metric_intent.target == "metrics_service"
     assert metric_intent.payload["items_count"] == 3
-```python
+```
 
 ### 2. Determinism
 
 Pure functions guarantee same inputs always produce same outputs, enabling reliable testing and debugging.
 
-```python
+```
 def test_reducer_determinism():
     """Verify reducer is deterministic."""
     container = ModelONEXContainer()
@@ -444,13 +444,13 @@ def test_reducer_determinism():
     # All results must be identical
     assert all(r.result == results[0].result for r in results)
     assert all(r.items_processed == 3 for r in results)
-```python
+```
 
 ### 3. Composability
 
 Pure reducers can be composed without worrying about side effects or state interference.
 
-```python
+```
 async def compose_reducers(
     data: list[dict],
     reducer1: NodeReducer,
@@ -473,13 +473,13 @@ async def compose_reducers(
         "intents": all_intents,
         "total_items": output1.items_processed + output2.items_processed
     }
-```python
+```
 
 ### 4. Debuggability
 
 No hidden side effects means complete visibility into what the reducer does.
 
-```python
+```
 async def debug_reducer_execution(reducer: NodeReducer, input_data: ModelReducerInput):
     """Debug reducer execution with full visibility."""
     output = await reducer.process(input_data)
@@ -495,13 +495,13 @@ async def debug_reducer_execution(reducer: NodeReducer, input_data: ModelReducer
         print(f"    Payload: {intent.payload}")
 
     # No hidden side effects to discover!
-```python
+```
 
 ### 5. Concurrency Safety
 
 Pure reducers are inherently thread-safe and can be executed concurrently without locks.
 
-```python
+```
 async def parallel_reduction(items: list[list[dict]], reducer: NodeReducer):
     """Execute reducer in parallel safely (no shared state)."""
     tasks = [
@@ -513,7 +513,7 @@ async def parallel_reduction(items: list[list[dict]], reducer: NodeReducer):
     results = await asyncio.gather(*tasks)
 
     return [r.result for r in results]
-```python
+```
 
 ---
 
@@ -523,7 +523,7 @@ async def parallel_reduction(items: list[list[dict]], reducer: NodeReducer):
 
 **Problem**: State persists between invocations, breaking determinism.
 
-```python
+```
 # ❌ WRONG
 class NodeMetricsReducer(NodeReducer):
     def __init__(self, container):
@@ -534,11 +534,11 @@ class NodeMetricsReducer(NodeReducer):
         result = self._reduce(input_data.data)
         self.total_processed += len(input_data.data)  # ❌ Mutation
         return ModelReducerOutput(result=result)
-```python
+```
 
 **Solution**: Pass state through input/output.
 
-```python
+```
 # ✅ CORRECT
 class NodeMetricsReducer(NodeReducer):
     async def process(self, input_data):
@@ -552,23 +552,23 @@ class NodeMetricsReducer(NodeReducer):
             result=result,
             metadata={"total_processed": new_total}
         )
-```python
+```
 
 ### 2. Direct Database Calls
 
 **Problem**: I/O operations make testing difficult and violate separation of concerns.
 
-```python
+```
 # ❌ WRONG
 async def process(self, input_data):
     result = self._reduce(input_data.data)
     await self.db.save(result)  # ❌ Direct I/O
     return ModelReducerOutput(result=result)
-```python
+```
 
 **Solution**: Emit persistence intent.
 
-```python
+```
 # ✅ CORRECT
 async def process(self, input_data):
     result = self._reduce(input_data.data)
@@ -582,24 +582,24 @@ async def process(self, input_data):
     ]
 
     return ModelReducerOutput(result=result, intents=intents)
-```python
+```
 
 ### 3. Direct Logging Calls
 
 **Problem**: Logging is a side effect that should be described, not executed.
 
-```python
+```
 # ❌ WRONG
 async def process(self, input_data):
     self.logger.info("Starting reduction")  # ❌ Direct logging
     result = self._reduce(input_data.data)
     self.logger.info("Reduction complete")  # ❌ Direct logging
     return ModelReducerOutput(result=result)
-```python
+```
 
 **Solution**: Emit logging intents.
 
-```python
+```
 # ✅ CORRECT
 async def process(self, input_data):
     result = self._reduce(input_data.data)
@@ -613,24 +613,24 @@ async def process(self, input_data):
     ]
 
     return ModelReducerOutput(result=result, intents=intents)
-```python
+```
 
 ### 4. File I/O Operations
 
 **Problem**: File operations are side effects and make testing complex.
 
-```python
+```
 # ❌ WRONG
 async def process(self, input_data):
     result = self._reduce(input_data.data)
     with open("output.json", "w") as f:  # ❌ File I/O
         json.dump(result, f)
     return ModelReducerOutput(result=result)
-```python
+```
 
 **Solution**: Emit file write intent.
 
-```python
+```
 # ✅ CORRECT
 async def process(self, input_data):
     result = self._reduce(input_data.data)
@@ -647,23 +647,23 @@ async def process(self, input_data):
     ]
 
     return ModelReducerOutput(result=result, intents=intents)
-```python
+```
 
 ### 5. Network Requests
 
 **Problem**: Network calls introduce non-determinism and external dependencies.
 
-```python
+```
 # ❌ WRONG
 async def process(self, input_data):
     result = self._reduce(input_data.data)
     await self.http_client.post("/api/results", json=result)  # ❌ Network I/O
     return ModelReducerOutput(result=result)
-```python
+```
 
 **Solution**: Emit HTTP request intent.
 
-```python
+```
 # ✅ CORRECT
 async def process(self, input_data):
     result = self._reduce(input_data.data)
@@ -680,29 +680,29 @@ async def process(self, input_data):
     ]
 
     return ModelReducerOutput(result=result, intents=intents)
-```python
+```
 
 ### 6. System Time Dependencies
 
 **Problem**: `datetime.now()` introduces non-determinism.
 
-```python
+```
 # ❌ WRONG
 async def process(self, input_data):
     current_time = datetime.now()  # ❌ Non-deterministic
     result = self._reduce_with_timestamp(input_data.data, current_time)
     return ModelReducerOutput(result=result)
-```python
+```
 
 **Solution**: Accept timestamp as input.
 
-```python
+```
 # ✅ CORRECT
 async def process(self, input_data):
     timestamp = input_data.metadata.get("timestamp", datetime.now())
     result = self._reduce_with_timestamp(input_data.data, timestamp)
     return ModelReducerOutput(result=result)
-```python
+```
 
 ---
 
@@ -723,27 +723,27 @@ Audit your Reducer for:
 Move immutable configuration to `__init__`, remove mutable state.
 
 **Before**:
-```python
+```
 def __init__(self, container):
     super().__init__(container)
     self.metrics = {}  # ❌ Mutable
     self.batch_size = 1000  # ✅ Immutable config (OK)
-```python
+```
 
 **After**:
-```python
+```
 def __init__(self, container):
     super().__init__(container)
     # self.metrics removed (now passed through state)
     self.batch_size = 1000  # ✅ Immutable config
-```python
+```
 
 ### Step 3: Convert Side Effects to Intents
 
 Replace direct I/O with Intent emission.
 
 **Before**:
-```python
+```
 async def process(self, input_data):
     result = self._reduce(input_data.data)
 
@@ -753,10 +753,10 @@ async def process(self, input_data):
     await self.db.save(result)
 
     return ModelReducerOutput(result=result)
-```python
+```
 
 **After**:
-```python
+```
 async def process(self, input_data):
     result = self._reduce(input_data.data)
 
@@ -780,14 +780,14 @@ async def process(self, input_data):
     ]
 
     return ModelReducerOutput(result=result, intents=intents)
-```python
+```
 
 ### Step 4: Pass State Through Input/Output
 
 Replace instance variables with state passed through `metadata`.
 
 **Before**:
-```python
+```
 def __init__(self, container):
     super().__init__(container)
     self.window = ModelStreamingWindow()  # ❌ Mutable state
@@ -796,10 +796,10 @@ async def process(self, input_data):
     self.window.add_items(input_data.data)  # ❌ Mutation
     result = self.window.get_aggregated()
     return ModelReducerOutput(result=result)
-```python
+```
 
 **After**:
-```python
+```
 async def process(self, input_data):
     # Reconstruct window from input metadata
     window_data = input_data.metadata.get("window_state", {})
@@ -814,34 +814,34 @@ async def process(self, input_data):
         result=result,
         metadata={"window_state": window_copy.to_dict()}
     )
-```python
+```
 
 ### Step 5: Make Functions Pure
 
 Ensure all reduction logic is deterministic.
 
 **Before**:
-```python
+```
 def _reduce(self, items):
     # ❌ Non-deterministic
     sample = random.sample(items, k=min(10, len(items)))
     return sum(sample)
-```python
+```
 
 **After**:
-```python
+```
 def _reduce(self, items, seed=None):
     # ✅ Deterministic (seed from input)
     if seed is not None:
         random.seed(seed)
     sample = random.sample(items, k=min(10, len(items)))
     return sum(sample)
-```python
+```
 
 ### Complete Migration Example
 
 **Before (Impure)**:
-```python
+```
 class NodeDataReducer(NodeReducer):
     def __init__(self, container):
         super().__init__(container)
@@ -873,10 +873,10 @@ class NodeDataReducer(NodeReducer):
         result = sum(items)
         self.cache[cache_key] = result
         return result
-```python
+```
 
 **After (Pure FSM)**:
-```python
+```
 class NodeDataReducer(NodeReducer):
     def __init__(self, container):
         super().__init__(container)
@@ -925,7 +925,7 @@ class NodeDataReducer(NodeReducer):
         result = sum(items)
         cache[cache_key] = result  # Local mutation OK (not instance variable)
         return result
-```python
+```
 
 ---
 
@@ -933,7 +933,7 @@ class NodeDataReducer(NodeReducer):
 
 ### Basic Purity Test
 
-```python
+```
 def test_reducer_purity():
     """Verify reducer is pure (same inputs → same outputs)."""
     container = ModelONEXContainer()
@@ -953,11 +953,11 @@ def test_reducer_purity():
     assert output1.result == output2.result == output3.result
     assert output1.items_processed == output2.items_processed == output3.items_processed
     assert output1.intents == output2.intents  # Even intents must match
-```python
+```
 
 ### Intent Verification Test
 
-```python
+```
 def test_reducer_intent_emission():
     """Verify correct intents are emitted."""
     container = ModelONEXContainer()
@@ -980,11 +980,11 @@ def test_reducer_intent_emission():
     metric_intent = next(i for i in output.intents if i.intent_type == "persist_metrics")
     assert metric_intent.target == "database_service"
     assert metric_intent.payload["total_processed"] == 3
-```python
+```
 
 ### Determinism Test
 
-```python
+```
 def test_reducer_determinism():
     """Verify reducer produces deterministic results."""
     container = ModelONEXContainer()
@@ -1003,11 +1003,11 @@ def test_reducer_determinism():
     # All results must be identical
     first_result = results[0].result
     assert all(r.result == first_result for r in results)
-```python
+```
 
 ### Composition Test
 
-```python
+```
 def test_reducer_composition():
     """Verify reducers can be composed without side effects."""
     container = ModelONEXContainer()
@@ -1027,11 +1027,11 @@ def test_reducer_composition():
     # Combine intents
     all_intents = output1.intents + output2.intents
     assert len(all_intents) == 4  # 2 from each reducer
-```python
+```
 
 ### State Threading Test
 
-```python
+```
 def test_reducer_state_threading():
     """Verify state flows correctly through input/output."""
     container = ModelONEXContainer()
@@ -1054,11 +1054,11 @@ def test_reducer_state_threading():
     )
     output2 = await reducer.process(input2)
     assert output2.metadata["total_processed"] == 5  # 3 + 2
-```python
+```
 
 ### Concurrent Execution Test
 
-```python
+```
 def test_reducer_concurrent_safety():
     """Verify reducer is safe for concurrent execution."""
     container = ModelONEXContainer()
@@ -1079,7 +1079,7 @@ def test_reducer_concurrent_safety():
     for i, output in enumerate(results):
         expected_sum = sum(range(i, i + 10))
         assert output.result == expected_sum
-```python
+```
 
 ---
 
@@ -1089,7 +1089,7 @@ def test_reducer_concurrent_safety():
 
 Aggregates tickets by status with conflict resolution.
 
-```python
+```
 class NodeTicketAggregatorReducer(NodeReducer):
     """Aggregate tickets by status with metadata rollup."""
 
@@ -1158,13 +1158,13 @@ class NodeTicketAggregatorReducer(NodeReducer):
             }
             for group, tickets_in_group in groups.items()
         }
-```python
+```
 
 ### Example 2: Metrics Rollup Reducer
 
 Rolls up time-series metrics with windowing.
 
-```python
+```
 class NodeMetricsRollupReducer(NodeReducer):
     """Roll up time-series metrics into aggregated summaries."""
 
@@ -1239,13 +1239,13 @@ class NodeMetricsRollupReducer(NodeReducer):
                 for window_key, window_metrics in windows.items()
             }
         }
-```python
+```
 
 ### Example 3: Dependency Graph Reducer
 
 Analyzes dependency graphs for cycles.
 
-```python
+```
 class NodeDependencyGraphReducer(NodeReducer):
     """Analyze dependency graphs for cycles and critical paths."""
 
@@ -1324,7 +1324,7 @@ class NodeDependencyGraphReducer(NodeReducer):
             "cycle_count": len(cycles),
             "total_nodes": len(graph)
         }
-```yaml
+```
 
 ---
 
@@ -1332,7 +1332,7 @@ class NodeDependencyGraphReducer(NodeReducer):
 
 ### 4-Node Architecture Flow
 
-```text
+```
 ┌─────────────────┐
 │  Orchestrator   │  Coordinates workflow
 └────────┬────────┘
@@ -1351,11 +1351,11 @@ class NodeDependencyGraphReducer(NodeReducer):
 ┌─────────────────┐
 │     Effect      │  Executes intents (I/O, logging, metrics)
 └─────────────────┘
-```python
+```
 
 ### Reducer → Effect Integration
 
-```python
+```
 # Orchestrator coordinates Reducer → Effect flow
 class NodeWorkflowOrchestrator(NodeOrchestrator):
     async def execute_reduction_workflow(self, data: list[dict]) -> dict:
@@ -1384,11 +1384,11 @@ class NodeWorkflowOrchestrator(NodeOrchestrator):
             "result": reducer_output.result,
             "effects_executed": len(effect_results)
         }
-```yaml
+```
 
 ### Contract-Based Reducer Definition
 
-```yaml
+```
 # model_contract_reducer_ticket_aggregation.yaml
 name: "TicketAggregationReducer"
 version:
@@ -1423,7 +1423,7 @@ fsm_guarantees:
   deterministic: true
   no_side_effects: true
   intent_based: true
-```yaml
+```
 
 ---
 

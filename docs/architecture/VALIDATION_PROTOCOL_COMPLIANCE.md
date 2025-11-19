@@ -89,7 +89,7 @@ All existing methods remain unchanged and fully functional:
 
 ### Using ProtocolContractValidator
 
-```python
+```
 from omnibase_core.validation.contract_validator import ProtocolContractValidator
 from omnibase_spi.protocols.validation.protocol_compliance_validator import (
     ProtocolComplianceValidator
@@ -110,11 +110,11 @@ print(f"Valid: {result.is_valid}, Score: {result.score}")
 
 # Protocol methods (stubs - will be implemented in future versions)
 # await validator.validate_file_compliance("path/to/file.py")
-```python
+```
 
 ### Using ModelProtocolAuditor
 
-```python
+```
 from omnibase_core.validation.auditor_protocol import ModelProtocolAuditor
 from omnibase_spi.protocols.validation.protocol_quality_validator import (
     ProtocolQualityValidator
@@ -136,7 +136,7 @@ print(f"Duplicates: {result.duplicates_found}")
 
 # Protocol methods (stubs - will be implemented in future versions)
 # await auditor.validate_file_quality("path/to/file.py")
-```python
+```
 
 ## Protocol Compliance Testing
 
@@ -154,13 +154,13 @@ Comprehensive tests verify protocol compliance in `tests/unit/validation/test_pr
 
 ### Running Tests
 
-```bash
+```
 # Run protocol compliance tests
 poetry run pytest tests/unit/validation/test_protocol_compliance.py -v
 
 # Run all validation tests (verify backward compatibility)
 poetry run pytest tests/unit/validation/ -v
-```yaml
+```
 
 ## Implementation Status
 
@@ -200,15 +200,15 @@ Protocol method implementations will be added incrementally:
 
 No changes required! All existing code continues to work:
 
-```python
+```
 # This still works exactly as before
 validator = ProtocolContractValidator()
 result = validator.validate_contract_yaml(yaml_content)
-```python
+```
 
 ### For New Code Using Protocols
 
-```python
+```
 # New code can use protocol types for flexibility
 from omnibase_spi.protocols.validation.protocol_compliance_validator import (
     ProtocolComplianceValidator
@@ -221,7 +221,7 @@ def validate_with_protocol(validator: ProtocolComplianceValidator) -> None:
 
     # Or future protocol methods
     # await validator.validate_file_compliance("file.py")
-```python
+```
 
 ## Design Decisions
 
@@ -250,9 +250,9 @@ All changes are purely additive:
 ### Type Annotations
 
 Protocol attributes use union types with None to indicate optional dependencies:
-```python
+```
 self.onex_standards: ProtocolONEXStandards | None = None
-```text
+```
 
 This allows:
 - Gradual adoption of protocol features

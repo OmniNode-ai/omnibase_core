@@ -12,8 +12,10 @@ Event-driven architecture patterns for ONEX services using ModelEventEnvelope an
 
 All events use `ModelEventEnvelope` for consistent communication:
 
-```python
-from omnibase_core.model.core.model_event_envelope import ModelEventEnvelope
+```
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from uuid import UUID
+from datetime import datetime
 
 envelope = ModelEventEnvelope(
     event_type="DATA_PROCESSED",
@@ -21,13 +23,13 @@ envelope = ModelEventEnvelope(
     metadata={"source": "node_compute", "timestamp": datetime.now()},
     correlation_id=UUID("...")
 )
-```python
+```
 
 ### Intent Emission Pattern (REDUCER)
 
 REDUCER nodes emit Intents instead of performing side effects:
 
-```python
+```
 def reduce_state(
     state: ModelState,
     action: ModelAction
@@ -46,21 +48,21 @@ def reduce_state(
     ]
 
     return new_state, intents
-```text
+```
 
 ## Event Flow Patterns
 
 ### Pattern 1: Request-Response
 
-```text
+```
 ┌─────────┐     event      ┌─────────┐     event      ┌─────────┐
 │ Client  │ ──────────────> │  Node   │ ──────────────> │ Client  │
 └─────────┘                 └─────────┘                 └─────────┘
-```text
+```
 
 ### Pattern 2: Publish-Subscribe
 
-```text
+```
 ┌─────────┐                 ┌─────────────┐
 │Publisher│ ───────────────>│  Event Bus  │
 └─────────┘                 └──────┬──────┘
@@ -71,24 +73,24 @@ def reduce_state(
              ┌──────────┐   ┌──────────┐   ┌──────────┐
              │Subscriber│   │Subscriber│   │Subscriber│
              └──────────┘   └──────────┘   └──────────┘
-```text
+```
 
 ### Pattern 3: Intent → Action Flow (Pure FSM)
 
-```text
+```
 ┌─────────┐   Action   ┌─────────┐  Intents  ┌────────┐
 │Orchestr │ ─────────> │ Reducer │ ────────> │ Effect │
 └─────────┘            └─────────┘           └────────┘
                             │
                             v
                      New State (Pure)
-```python
+```
 
 ## Implementation Patterns
 
 ### Event Publishing
 
-```python
+```
 class MyNode(ModelServiceCompute):
     async def process(self, data: dict) -> dict:
         # Process data
@@ -105,11 +107,11 @@ class MyNode(ModelServiceCompute):
         await event_bus.publish(event)
 
         return result
-```python
+```
 
 ### Event Subscription
 
-```python
+```
 class MyNode(ModelServiceEffect):
     async def initialize(self):
         event_bus = self.container.get_service("ProtocolEventBus")
@@ -127,11 +129,11 @@ class MyNode(ModelServiceEffect):
         """Handle computation complete event."""
         result = envelope.payload["result"]
         await self.save_result(result)
-```python
+```
 
 ### Intent Execution
 
-```python
+```
 class MyEffectNode(ModelServiceEffect):
     async def execute_intent(self, intent: ModelIntent):
         """Execute Intent from REDUCER."""
@@ -143,7 +145,7 @@ class MyEffectNode(ModelServiceEffect):
                 await self.save_data(intent.payload)
             case "EXTERNAL_API":
                 await self.call_api(intent.payload)
-```text
+```
 
 ## Benefits
 
@@ -157,17 +159,17 @@ class MyEffectNode(ModelServiceEffect):
 
 ### 1. Use Correlation IDs
 
-```python
+```
 envelope = ModelEventEnvelope(
     event_type="DATA_PROCESSED",
     payload=data,
     correlation_id=incoming_request.correlation_id  # Propagate
 )
-```python
+```
 
 ### 2. Type-Safe Event Types
 
-```python
+```
 class EnumEventType(str, Enum):
     DATA_PROCESSED = "data_processed"
     ERROR_OCCURRED = "error_occurred"
@@ -178,11 +180,11 @@ envelope = ModelEventEnvelope(
     event_type=EnumEventType.DATA_PROCESSED,
     payload=data
 )
-```python
+```
 
 ### 3. Structured Event Payloads
 
-```python
+```
 # ❌ Bad: Unstructured payload
 payload = {"data": "something", "other": 123}
 
@@ -192,11 +194,11 @@ class DataProcessedPayload(BaseModel):
     metrics: dict
 
 payload = DataProcessedPayload(result="success", metrics={...})
-```python
+```
 
 ## Testing Event-Driven Code
 
-```python
+```
 @pytest.mark.asyncio
 async def test_event_publishing():
     # Arrange
@@ -212,7 +214,7 @@ async def test_event_publishing():
     # Assert
     assert len(mock_event_bus.published_events) == 1
     assert mock_event_bus.published_events[0].event_type == "COMPUTATION_COMPLETE"
-```yaml
+```
 
 ## Next Steps
 

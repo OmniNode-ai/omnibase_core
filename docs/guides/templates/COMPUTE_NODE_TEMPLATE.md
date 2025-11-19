@@ -14,7 +14,7 @@ This template provides the unified architecture pattern for ONEX COMPUTE nodes. 
 
 ## Directory Structure
 
-```text
+```
 {REPOSITORY_NAME}/
 ├── src/
 │   └── {REPOSITORY_NAME}/
@@ -55,13 +55,13 @@ This template provides the unified architecture pattern for ONEX COMPUTE nodes. 
                     ├── test_config.py
                     ├── test_contracts.py
                     └── test_models.py
-```python
+```
 
 ## Template Files
 
 ### 1. Node Implementation (`node.py`)
 
-```python
+```
 """ONEX COMPUTE node for {DOMAIN} {MICROSERVICE_NAME} operations."""
 
 import asyncio
@@ -72,7 +72,7 @@ from contextlib import asynccontextmanager
 
 from pydantic import ValidationError
 from omnibase_core.nodes.node_compute import NodeCompute
-from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_onex_warning import ModelONEXWarning
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer
 from omnibase_core.utils.circuit_breaker import CircuitBreakerMixin
@@ -345,21 +345,20 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Compute(
                 "error": sanitized_error,
                 "timestamp": time.time()
             }
-```python
+```
 
 ### 2. Configuration (`config.py`)
 
-```python
+```
 """Configuration for {DOMAIN} {MICROSERVICE_NAME} COMPUTE node."""
 
 from typing import Any, Dict, Optional, Type, TypeVar
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
-# NOTE: This is a placeholder import - omnibase_core.config module does not exist in core library.
-# Implement your own configuration base class following this pattern in your service codebase.
-# from omnibase_core.config.base_node_config import BaseNodeConfig
+# NOTE: Configuration classes use Pydantic BaseModel.
+# You can create your own base configuration class in your service codebase if needed.
 
-ConfigT = TypeVar('ConfigT', bound='BaseModel')  # Use BaseModel instead of non-existent BaseNodeConfig
+ConfigT = TypeVar('ConfigT', bound='BaseModel')
 
 
 class CalculationConfig(BaseModel):
@@ -391,7 +390,7 @@ class PerformanceConfig(BaseModel):
     memory_limit_mb: float = Field(default=500.0, ge=100.0, le=8192.0, description="Memory usage limit in MB")
 
 
-class {DomainCamelCase}{MicroserviceCamelCase}ComputeConfig(BaseNodeConfig):
+class {DomainCamelCase}{MicroserviceCamelCase}ComputeConfig(BaseModel):
     """Configuration for {DOMAIN} {MICROSERVICE_NAME} COMPUTE operations."""
 
     # Core computation settings
@@ -442,19 +441,21 @@ class {DomainCamelCase}{MicroserviceCamelCase}ComputeConfig(BaseNodeConfig):
         description="Domain-specific configuration parameters"
     )
 
-    @validator('computation_timeout_ms')
-    def validate_timeout(cls, v, values):
+    @field_validator('computation_timeout_ms')
+    @classmethod
+    def validate_timeout(cls, v, info):
         """Ensure computation timeout is reasonable for the performance threshold."""
-        threshold = values.get('performance_threshold_ms', 1000.0)
+        threshold = info.data.get('performance_threshold_ms', 1000.0)
         if v < threshold:
             raise ValueError(f"Computation timeout ({v}ms) must be >= performance threshold ({threshold}ms)")
         return v
 
-    @validator('max_concurrent_computations')
-    def validate_concurrency(cls, v, values):
+    @field_validator('max_concurrent_computations')
+    @classmethod
+    def validate_concurrency(cls, v, info):
         """Ensure concurrency settings are appropriate for the configuration."""
-        if 'performance_config' in values:
-            memory_limit = values['performance_config'].memory_limit_mb
+        if 'performance_config' in info.data:
+            memory_limit = info.data['performance_config'].memory_limit_mb
             estimated_memory_per_computation = 10.0  # MB estimate
             max_by_memory = int(memory_limit / estimated_memory_per_computation)
             if v > max_by_memory:
@@ -544,16 +545,16 @@ class {DomainCamelCase}{MicroserviceCamelCase}ComputeConfig(BaseNodeConfig):
                 }
             }
         }
-```python
+```
 
 ### 3. Input Model (`model_{DOMAIN}_{MICROSERVICE_NAME}_compute_input.py`)
 
-```python
+```
 """Input model for {DOMAIN} {MICROSERVICE_NAME} COMPUTE operations."""
 
 from typing import Any, Dict, List, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from ..enums.enum_{DOMAIN}_{MICROSERVICE_NAME}_operation_type import Enum{DomainCamelCase}{MicroserviceCamelCase}OperationType
 
@@ -626,10 +627,11 @@ class Model{DomainCamelCase}{MicroserviceCamelCase}ComputeInput(BaseModel):
         ge=0
     )
 
-    @validator('computation_data')
-    def validate_computation_data(cls, v, values):
+    @field_validator('computation_data')
+    @classmethod
+    def validate_computation_data(cls, v, info):
         """Validate computation data based on operation type."""
-        operation_type = values.get('operation_type')
+        operation_type = info.data.get('operation_type')
 
         if not isinstance(v, dict) or not v:
             raise ValueError("Computation data must be a non-empty dictionary")
@@ -650,10 +652,11 @@ class Model{DomainCamelCase}{MicroserviceCamelCase}ComputeInput(BaseModel):
 
         return v
 
-    @validator('calculation_parameters')
-    def validate_calculation_parameters(cls, v, values):
+    @field_validator('calculation_parameters')
+    @classmethod
+    def validate_calculation_parameters(cls, v, info):
         """Validate calculation parameters when provided."""
-        operation_type = values.get('operation_type')
+        operation_type = info.data.get('operation_type')
 
         if operation_type == Enum{DomainCamelCase}{MicroserviceCamelCase}OperationType.CALCULATE and v is None:
             raise ValueError("Calculate operation requires calculation_parameters")
@@ -663,10 +666,11 @@ class Model{DomainCamelCase}{MicroserviceCamelCase}ComputeInput(BaseModel):
 
         return v
 
-    @validator('transformation_rules')
-    def validate_transformation_rules(cls, v, values):
+    @field_validator('transformation_rules')
+    @classmethod
+    def validate_transformation_rules(cls, v, info):
         """Validate transformation rules when provided."""
-        operation_type = values.get('operation_type')
+        operation_type = info.data.get('operation_type')
 
         if operation_type == Enum{DomainCamelCase}{MicroserviceCamelCase}OperationType.TRANSFORM and v is None:
             raise ValueError("Transform operation requires transformation_rules")
@@ -684,10 +688,11 @@ class Model{DomainCamelCase}{MicroserviceCamelCase}ComputeInput(BaseModel):
 
         return v
 
-    @validator('analysis_criteria')
-    def validate_analysis_criteria(cls, v, values):
+    @field_validator('analysis_criteria')
+    @classmethod
+    def validate_analysis_criteria(cls, v, info):
         """Validate analysis criteria when provided."""
-        operation_type = values.get('operation_type')
+        operation_type = info.data.get('operation_type')
 
         if operation_type == Enum{DomainCamelCase}{MicroserviceCamelCase}OperationType.ANALYZE and v is None:
             raise ValueError("Analyze operation requires analysis_criteria")
@@ -719,11 +724,11 @@ class Model{DomainCamelCase}{MicroserviceCamelCase}ComputeInput(BaseModel):
                 "request_timestamp": 1640995200.0
             }
         }
-```python
+```
 
 ### 4. Output Model (`model_{DOMAIN}_{MICROSERVICE_NAME}_compute_output.py`)
 
-```python
+```
 """Output model for {DOMAIN} {MICROSERVICE_NAME} COMPUTE operations."""
 
 from typing import Any, Dict, Optional
@@ -840,11 +845,11 @@ class Model{DomainCamelCase}{MicroserviceCamelCase}ComputeOutput(BaseModel):
                 "cpu_utilization_percent": 23.7
             }
         }
-```python
+```
 
 ### 5. Operation Type Enum (`enum_{DOMAIN}_{MICROSERVICE_NAME}_operation_type.py`)
 
-```python
+```
 """Operation type enumeration for {DOMAIN} {MICROSERVICE_NAME} COMPUTE operations."""
 
 from enum import Enum
@@ -957,13 +962,13 @@ class Enum{DomainCamelCase}{MicroserviceCamelCase}OperationType(str, Enum):
             cls.FILTER,
             cls.SORT
         ]
-```yaml
+```
 
 ### 6. YAML Subcontracts
 
 #### Input Subcontract (`subcontracts/input_subcontract.yaml`)
 
-```yaml
+```
 # {DOMAIN} {MICROSERVICE_NAME} COMPUTE Input Subcontract
 # Defines the expected input structure for computation operations
 
@@ -1145,11 +1150,11 @@ examples:
             include_headers: true
       output_format: "standard"
       request_timestamp: 1640995200.0
-```yaml
+```
 
 ### 7. Output Subcontract (`subcontracts/output_subcontract.yaml`)
 
-```yaml
+```
 # {DOMAIN} {MICROSERVICE_NAME} COMPUTE Output Subcontract
 # Defines the expected output structure for computation operations
 
@@ -1357,11 +1362,11 @@ examples:
       timestamp: 1640995206.456
       processing_time_ms: 5.2
       result_confidence: 0.0
-```yaml
+```
 
 ### 8. Config Subcontract (`subcontracts/config_subcontract.yaml`)
 
-```yaml
+```
 # {DOMAIN} {MICROSERVICE_NAME} COMPUTE Config Subcontract
 # Defines the configuration schema for computation operations
 
@@ -1614,11 +1619,11 @@ examples:
         memory_limit_mb: 256
       circuit_breaker_threshold: 10
       circuit_breaker_timeout: 120
-```python
+```
 
 ### 9. Manifest (`manifest.yaml`)
 
-```yaml
+```
 # {DOMAIN} {MICROSERVICE_NAME} COMPUTE Node Manifest
 # Defines metadata, dependencies, and deployment specifications
 
@@ -1699,7 +1704,7 @@ dependencies:
       version: ">=2.0.0"
       components:
         - "nodes.base.node_compute_service"
-        - "models.model_onex_error"
+        - "errors.model_onex_error"
         - "models.model_onex_warning"
         - "utils.error_sanitizer"
         - "utils.circuit_breaker"
@@ -1912,7 +1917,7 @@ integrations:
     - service_type: "metrics"
       protocol: "prometheus"
       optional: true
-```python
+```
 
 ## Usage Instructions
 

@@ -10,7 +10,7 @@ This document defines the approved union patterns for ONEX projects. Our codebas
 **Use:** Optional fields that may be None
 **Syntax:** `T | None` (Python 3.10+ modern syntax)
 
-```python
+```
 # ✅ GOOD: Modern optional syntax
 user_id: UUID | None = Field(default=None, description="Optional user reference")
 error_message: str | None = Field(default=None)
@@ -23,13 +23,13 @@ def process_data(data: str, config: dict[str, Any] | None = None) -> None:
 # ✅ GOOD: Return types
 def find_user(user_id: UUID) -> User | None:
     pass
-```python
+```
 
 ### Pattern 2: Discriminated Unions with Type Safety
 **Use:** When you need to represent multiple possible data structures
 **Requirement:** Must have a discriminator field (usually with Literal types)
 
-```python
+```
 # ✅ GOOD: Discriminated union with value_type discriminator
 class ModelSchemaValue(BaseModel):
     value_type: Literal["string", "number", "boolean", "null", "array", "object"]
@@ -46,13 +46,13 @@ class ModelMigrationConflictUnion(BaseModel):
     source_signature: str | None = None
     spi_signature: str | None = None
     # ... other discriminated fields
-```python
+```
 
 ### Pattern 3: Generic Result/Error Patterns
 **Use:** For error handling and result types
 **Requirement:** Use with generic type parameters
 
-```python
+```
 # ✅ GOOD: Generic result patterns
 from typing import TypeVar, Generic
 
@@ -66,12 +66,12 @@ class Result(Generic[T, E]):
 # ✅ GOOD: Function signatures using Result patterns
 def safe_operation() -> Result[User, ValidationError]:
     pass
-```python
+```
 
 ## ❌ Anti-Patterns (Blocked by Validation)
 
 ### Anti-Pattern 1: Primitive Overload
-```python
+```
 # ❌ BAD: Too many primitive types
 Union[str, int, bool, float]  # Replace with discriminated union
 
@@ -82,10 +82,10 @@ class ModelPrimitiveValue(BaseModel):
     integer_value: int | None = None
     boolean_value: bool | None = None
     float_value: float | None = None
-```python
+```
 
 ### Anti-Pattern 2: Mixed Primitive/Complex
-```python
+```
 # ❌ BAD: Mixed primitive and complex types
 Union[str, int, dict, list]  # Replace with flexible value model
 
@@ -95,10 +95,10 @@ class ModelFlexibleValue(BaseModel):
     primitive_value: str | int | None = None
     collection_value: list[Any] | None = None
     mapping_value: dict[str, Any] | None = None
-```python
+```
 
 ### Anti-Pattern 3: Lazy Union Usage
-```python
+```
 # ❌ BAD: Lazy union without structure
 Union[str, dict, list, Any]  # Too generic, no type safety
 
@@ -108,16 +108,16 @@ class ModelDataValue(BaseModel):
     text_data: str | None = None
     structured_data: dict[str, str] | None = None
     collection_data: list[str] | None = None
-```text
+```
 
 ### Anti-Pattern 4: Old Optional Syntax
-```python
+```
 # ❌ BAD: Old Union syntax for optional
 Union[str, None]  # Use modern syntax
 
 # ✅ GOOD: Modern optional syntax
 str | None
-```python
+```
 
 ## Validation Rules
 
@@ -134,7 +134,7 @@ Our pre-commit hook enforces these patterns with:
 - **Error handling?** → Use Result[T, E] pattern
 
 ### Step 2: Create Discriminated Union Model
-```python
+```
 # Template for discriminated union
 class ModelYourDataUnion(BaseModel):
     data_type: Literal["type1", "type2", "type3"]  # Discriminator
@@ -147,7 +147,7 @@ class ModelYourDataUnion(BaseModel):
     def validate_discriminator_consistency(cls, v, info):
         # Add validation logic to ensure only appropriate field is set
         return v
-```python
+```
 
 ### Step 3: Migrate Existing Usage
 1. Replace union type annotations with new model
@@ -158,22 +158,22 @@ class ModelYourDataUnion(BaseModel):
 ## Examples from Codebase
 
 ### ModelSchemaValue (Schema Value Handling)
-```python
+```
 # Replaces: Union[str, int, float, bool, dict, list, None]
 class ModelSchemaValue(BaseModel):
     value_type: str  # Discriminator
     string_value: str | None = None
     number_value: ModelNumericValue | None = None
     # ... other typed fields
-```python
+```
 
 ### ModelMigrationConflictUnion (Conflict Resolution)
-```python
+```
 # Replaces: Union[TypedDictMigrationDuplicateConflictDict, TypedDictMigrationNameConflictDict]
 class ModelMigrationConflictUnion(BaseModel):
     conflict_type: Literal["name_conflict", "exact_duplicate"]  # Discriminator
     # ... discriminated fields based on conflict_type
-```yaml
+```
 
 ## Best Practices
 

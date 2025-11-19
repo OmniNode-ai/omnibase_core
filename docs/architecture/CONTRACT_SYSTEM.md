@@ -12,20 +12,20 @@ The ONEX contract system defines typed interfaces for all node operations using 
 
 All contracts inherit from `ModelContractBase`:
 
-```python
+```
 class ModelContractBase(BaseModel):
     """Base contract for all ONEX operations."""
     name: str
     version: str
     description: Optional[str]
     node_type: EnumNodeType
-```python
+```
 
 ### Specialized Contracts
 
 Each node type has specific contracts:
 
-```python
+```
 # EFFECT contract
 class ModelContractEffect(ModelContractBase):
     operation_type: str
@@ -46,7 +46,7 @@ class ModelContractReducer(ModelContractBase):
 class ModelContractOrchestrator(ModelContractBase):
     workflow_definition: dict
     execution_mode: str
-```python
+```
 
 ## Subcontracts
 
@@ -67,7 +67,7 @@ Complex operations use subcontracts for specialized behaviors:
 
 Pydantic provides automatic validation:
 
-```python
+```
 # Valid contract
 contract = ModelContractCompute(
     name="price_calculator",
@@ -82,7 +82,7 @@ contract = ModelContractCompute(
     version="1.0.0",
     # Missing required node_type
 )  # Raises ValidationError
-```python
+```
 
 ## Benefits
 
@@ -96,19 +96,19 @@ contract = ModelContractCompute(
 
 ### Contract Composition
 
-```python
+```
 class MyComplexContract(ModelContractBase):
     compute_config: ModelContractCompute
     effect_config: ModelContractEffect
-```python
+```
 
 ### Contract Extension
 
-```python
+```
 class MyCustomContract(ModelContractCompute):
     custom_field: str
     advanced_options: dict
-```python
+```
 
 ## Next Steps
 

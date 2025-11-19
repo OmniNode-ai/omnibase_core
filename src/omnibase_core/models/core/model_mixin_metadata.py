@@ -90,7 +90,15 @@ class ModelMixinConfigField(BaseModel):
     @classmethod
     def validate_type(cls, v: str) -> str:
         """Validate field type is supported."""
-        valid_types = {"string", "integer", "float", "number", "boolean", "array", "object"}
+        valid_types = {
+            "string",
+            "integer",
+            "float",
+            "number",
+            "boolean",
+            "array",
+            "object",
+        }
         if v not in valid_types:
             raise ValueError(f"Invalid field type '{v}'. Must be one of {valid_types}")
         return v
@@ -259,7 +267,9 @@ class ModelMixinMetadata(BaseModel):
 
     # Dependencies and compatibility
     requires: list[str] = Field(default_factory=list, description="Required imports")
-    compatible_with: list[str] = Field(default_factory=list, description="Compatible mixins")
+    compatible_with: list[str] = Field(
+        default_factory=list, description="Compatible mixins"
+    )
     incompatible_with: list[str] = Field(
         default_factory=list, description="Incompatible mixins"
     )
@@ -270,8 +280,12 @@ class ModelMixinMetadata(BaseModel):
     )
 
     # Usage and examples
-    usage_examples: list[str] = Field(default_factory=list, description="Usage examples")
-    presets: dict[str, ModelMixinPreset] = Field(default_factory=dict, description="Presets")
+    usage_examples: list[str] = Field(
+        default_factory=list, description="Usage examples"
+    )
+    presets: dict[str, ModelMixinPreset] = Field(
+        default_factory=dict, description="Presets"
+    )
 
     # Code generation
     code_patterns: ModelMixinCodePatterns | None = Field(
@@ -425,7 +439,9 @@ class ModelMixinMetadataCollection(BaseModel):
                     performance = ModelMixinPerformance(
                         overhead_per_call=perf_data.get("overhead_per_call", ""),
                         memory_per_instance=perf_data.get("memory_per_instance", ""),
-                        recommended_max_retries=perf_data.get("recommended_max_retries"),
+                        recommended_max_retries=perf_data.get(
+                            "recommended_max_retries"
+                        ),
                         typical_use_cases=use_cases,
                     )
 
@@ -511,7 +527,10 @@ class ModelMixinMetadataCollection(BaseModel):
                     continue
 
                 # Check if explicitly incompatible
-                if name2 in mixin1.incompatible_with or name1 in mixin2.incompatible_with:
+                if (
+                    name2 in mixin1.incompatible_with
+                    or name1 in mixin2.incompatible_with
+                ):
                     conflicts.append(
                         f"Incompatible mixins: {mixin1.name} and {mixin2.name}"
                     )

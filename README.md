@@ -597,7 +597,7 @@ logger = container.get_service("ProtocolLogger")
 ### 3. Structured Error Handling
 ```python
 from omnibase_core.decorators.error_handling import standard_error_handling
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 @standard_error_handling  # Eliminates 6+ lines of try/catch boilerplate

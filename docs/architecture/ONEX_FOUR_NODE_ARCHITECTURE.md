@@ -26,7 +26,7 @@ flowchart LR
     style External fill:#fff,stroke:#999,stroke-dasharray: 5 5
     style Intents fill:#fff,stroke:#999,stroke-dasharray: 5 5
     style Actions fill:#fff,stroke:#999,stroke-dasharray: 5 5
-```python
+```
 
 ### Data Flow Direction
 
@@ -58,7 +58,7 @@ The ONEX pattern enforces unidirectional data flow from left to right:
 
 **Implementation Example**:
 
-```python
+```
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 
@@ -92,7 +92,10 @@ class DatabaseEffectService(NodeEffect):
         try:
             # Validate contract
             if not self._validate_database_contract(contract):
-                raise ModelOnexError("Invalid database contract")
+                raise ModelOnexError(
+                    message="Invalid database contract",
+                    correlation_id=contract.correlation_id
+                )
 
             # Execute database operation with retry logic
             result = await self._execute_with_retry(contract)
@@ -110,7 +113,10 @@ class DatabaseEffectService(NodeEffect):
         except Exception as e:
             self.logger.error(f"Database operation failed: {e}",
                             correlation_id=contract.correlation_id)
-            raise ModelOnexError("Database operation failed") from e
+            raise ModelOnexError(
+                message="Database operation failed",
+                correlation_id=contract.correlation_id
+            ) from e
 
     async def _execute_with_retry(self, contract: ModelContractEffect):
         """Execute operation with exponential backoff retry."""
@@ -128,7 +134,7 @@ class DatabaseEffectService(NodeEffect):
         required_params = ["query", "parameters"]
         return all(param in contract.io_operation_config.parameters
                   for param in required_params)
-```python
+```
 
 **Best Practices**:
 - Always include correlation IDs in external calls
@@ -157,7 +163,7 @@ class DatabaseEffectService(NodeEffect):
 
 **Implementation Example**:
 
-```python
+```
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
@@ -226,7 +232,10 @@ class DataTransformationComputeService(NodeCompute):
         except Exception as e:
             execution_time = time.time() - start_time
             self.performance_monitor.record_error(contract.correlation_id, e, execution_time)
-            raise ModelOnexError("Computation failed") from e
+            raise ModelOnexError(
+                message="Computation failed",
+                correlation_id=contract.correlation_id
+            ) from e
 
     async def _execute_parallel(self, algorithm, contract: ModelContractCompute):
         """Execute algorithm with parallel processing."""
@@ -276,7 +285,7 @@ class DataTransformationComputeService(NodeCompute):
             return list(data)
         else:
             return data  # No transformation needed
-```python
+```
 
 **Best Practices**:
 - Implement comprehensive input validation
@@ -306,7 +315,7 @@ class DataTransformationComputeService(NodeCompute):
 
 **Implementation Example**:
 
-```python
+```
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
@@ -389,7 +398,10 @@ class DataAggregationReducerService(NodeReducer):
             # Rollback transaction on error
             if transaction_id:
                 await self.transaction_manager.rollback_transaction(transaction_id)
-            raise ModelOnexError("Reduction operation failed") from e
+            raise ModelOnexError(
+                message="Reduction operation failed",
+                correlation_id=contract.correlation_id
+            ) from e
 
     async def _execute_streaming_reduction(self, contract: ModelContractReducer, current_state):
         """Execute reduction with streaming data support."""
@@ -454,7 +466,7 @@ class DataAggregationReducerService(NodeReducer):
             backup_config.backup_location,
             backup_data
         )
-```python
+```
 
 **Best Practices**:
 - Implement transactional consistency where required
@@ -472,9 +484,9 @@ class DataAggregationReducerService(NodeReducer):
 ModelIntent represents a **declarative description** of a side effect that should be executed, emitted by a pure Reducer and executed by an Effect node. This pattern maintains the Reducer's purity while enabling complex side effects.
 
 **Pure FSM Pattern**:
-```text
+```
 δ(state, action) → (new_state, intents[])
-```text
+```
 
 Where:
 - `state`: Current immutable state
@@ -520,11 +532,11 @@ sequenceDiagram
     deactivate Executor
 
     Note over Reducer,Effect: Separation: Reducer declares WHAT<br/>Effect determines HOW
-```python
+```
 
 ### ModelIntent Structure
 
-```python
+```
 from uuid import UUID
 from enum import Enum
 from pydantic import BaseModel, Field
@@ -588,13 +600,13 @@ class ModelIntent(BaseModel):
 
     class Config:
         frozen = True  # Intents are immutable
-```python
+```
 
 ### Reducer Intent Emission Pattern
 
 **Pure Reducer Implementation**:
 
-```python
+```
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType, EnumIntentPriority
@@ -732,13 +744,13 @@ class OrderProcessingReducerService(NodeReducer):
     def _calculate_total(self, items: list) -> float:
         """Pure calculation - no side effects."""
         return sum(item.get("price", 0) * item.get("quantity", 1) for item in items)
-```python
+```
 
 ### Effect Node Intent Execution
 
 **Intent Executor Implementation**:
 
-```python
+```
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
@@ -807,7 +819,7 @@ class IntentExecutorEffectService(NodeEffect):
             elif operation == "update":
                 return await conn.execute_update(intent.target, data)
             # ... etc
-```python
+```
 
 ### Key Benefits
 
@@ -816,7 +828,7 @@ class IntentExecutorEffectService(NodeEffect):
 - **Effect**: Handles complexity of execution, retries, errors
 
 **Testability**:
-```python
+```
 # Test Reducer without mocking external dependencies
 def test_place_order_transition():
     reducer = OrderProcessingReducerService()
@@ -835,7 +847,7 @@ def test_place_order_transition():
     assert result.intents[0].intent_type == EnumIntentType.DATABASE_WRITE
     assert result.intents[1].intent_type == EnumIntentType.NOTIFICATION
     assert result.intents[2].intent_type == EnumIntentType.MESSAGE_PUBLISH
-```python
+```
 
 **Flexibility**:
 - Effect node can change implementation without affecting Reducer
@@ -845,7 +857,7 @@ def test_place_order_transition():
 ### Intent vs Direct Side Effects
 
 **Anti-Pattern** (Direct side effects in Reducer):
-```python
+```
 # ❌ WRONG - Reducer directly executes side effects
 async def execute_reduction(self, contract):
     new_state = self._calculate_new_state(contract)
@@ -857,10 +869,10 @@ async def execute_reduction(self, contract):
     await self.email_service.send_email(...)
 
     return ModelReducerOutput(aggregated_data=new_state)
-```python
+```
 
 **Correct Pattern** (Intent emission):
-```python
+```
 # ✅ CORRECT - Reducer emits intents
 def execute_reduction(self, contract):
     new_state = self._calculate_new_state(contract)
@@ -875,7 +887,7 @@ def execute_reduction(self, contract):
         aggregated_data=new_state,
         intents=intents  # Effect node executes these
     )
-```python
+```
 
 ### 4. ORCHESTRATOR Node
 
@@ -897,7 +909,7 @@ def execute_reduction(self, contract):
 
 **Implementation Example**:
 
-```python
+```
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.models.contracts.model_contract_orchestrator import ModelContractOrchestrator
 
@@ -968,7 +980,10 @@ class WorkflowOrchestratorService(NodeOrchestrator):
 
         except Exception as e:
             await self._handle_orchestration_failure(contract, workflow_id, e)
-            raise ModelOnexError("Workflow orchestration failed") from e
+            raise ModelOnexError(
+                message="Workflow orchestration failed",
+                correlation_id=contract.correlation_id
+            ) from e
 
     async def _execute_sequential_workflow(self, contract: ModelContractOrchestrator, execution_context):
         """Execute workflow with sequential service coordination."""
@@ -1120,7 +1135,7 @@ class WorkflowOrchestratorService(NodeOrchestrator):
             return "skip"
         else:
             return "abort"
-```text
+```
 
 **Best Practices**:
 - Implement comprehensive dependency validation
@@ -1183,11 +1198,11 @@ sequenceDiagram
     deactivate Executor
 
     Note over Orch1,StateStore: Lease + Epoch = Reliable Coordination
-```python
+```
 
 ### ModelAction Structure
 
-```python
+```
 from uuid import UUID
 from enum import Enum
 from pydantic import BaseModel, Field
@@ -1262,13 +1277,13 @@ class ModelAction(BaseModel):
 
     class Config:
         frozen = True  # Actions are immutable once issued
-```python
+```
 
 ### Lease Management
 
 **Lease Acquisition**:
 
-```python
+```
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.models.model_action import ModelAction, EnumActionType
 from uuid import uuid4
@@ -1371,13 +1386,13 @@ class LeaseAwareOrchestratorService(NodeOrchestrator):
             ))
 
         return actions
-```python
+```
 
 ### Action Validation and Execution
 
 **Lease Validation**:
 
-```python
+```
 class ActionValidator:
     """
     Validates Actions against lease ownership and epoch consistency.
@@ -1437,13 +1452,13 @@ class ActionValidator:
         await self.state_manager.increment_epoch(action.correlation_id)
 
         return result
-```python
+```
 
 ### Optimistic Concurrency with Epochs
 
 **Epoch-Based Conflict Detection**:
 
-```python
+```
 class WorkflowStateManager:
     """
     Manages workflow state with epoch-based optimistic concurrency.
@@ -1476,7 +1491,7 @@ class WorkflowStateManager:
             )
 
         return current_epoch + 1
-```python
+```
 
 ### Action vs Generic "Thunk"
 
@@ -1493,7 +1508,7 @@ class WorkflowStateManager:
 | **Serialization** | JSON-serializable for distributed systems | Cannot serialize closures |
 
 **Anti-Pattern** (Generic Thunk):
-```python
+```
 # ❌ WRONG - No ownership, no versioning, not serializable
 class GenericThunk:
     def __init__(self, callback):
@@ -1505,10 +1520,10 @@ class GenericThunk:
 # Usage
 thunk = GenericThunk(lambda: some_dangerous_operation())
 await orchestrator.execute(thunk)  # No lease check, no epoch validation!
-```text
+```
 
 **Correct Pattern** (Structured Action):
-```python
+```
 # ✅ CORRECT - Lease-based ownership, epoch versioning, fully typed
 action = ModelAction(
     action_id=uuid4(),
@@ -1524,13 +1539,13 @@ action = ModelAction(
 
 # Validation happens automatically
 await action_executor.execute_validated_action(action)
-```text
+```
 
 ### Single-Writer Semantics Enforcement
 
 **Lease Conflicts**:
 
-```python
+```
 # Scenario: Two orchestrators try to coordinate same workflow
 
 # Orchestrator A acquires lease
@@ -1559,7 +1574,7 @@ action_b = ModelAction(
     ...
 )
 await execute_action(action_b)  # ❌ LeaseValidationError
-```text
+```
 
 ### Key Benefits
 
@@ -1584,7 +1599,7 @@ await execute_action(action_b)  # ❌ LeaseValidationError
 
 All communication between nodes uses typed contracts:
 
-```python
+```
 # EFFECT → COMPUTE
 effect_output = await effect_node.execute_effect(effect_contract)
 compute_contract = ModelContractCompute(
@@ -1593,13 +1608,13 @@ compute_contract = ModelContractCompute(
     algorithm_config=algorithm_config
 )
 compute_output = await compute_node.execute_compute(compute_contract)
-```python
+```
 
 ### Event-Driven Communication
 
 Nodes can also communicate through events:
 
-```python
+```
 # Publish event from EFFECT node
 await event_bus.publish(DataAvailableEvent(
     correlation_id=correlation_id,
@@ -1612,7 +1627,7 @@ await event_bus.publish(DataAvailableEvent(
 async def handle_data_available(event: DataAvailableEvent):
     # Process data from EFFECT node
     pass
-```python
+```
 
 ## Error Handling Patterns
 
@@ -1620,7 +1635,7 @@ async def handle_data_available(event: DataAvailableEvent):
 
 Each node implements standardized error handling:
 
-```python
+```
 @standard_error_handling
 async def execute_node_operation(self, contract):
     try:
@@ -1631,7 +1646,7 @@ async def execute_node_operation(self, contract):
         raise ModelOnexError(
             message="Contract validation failed",
             correlation_id=contract.correlation_id,
-            error_context={
+            context={
                 "node_type": self.__class__.__name__,
                 "validation_errors": e.errors()
             }
@@ -1640,18 +1655,18 @@ async def execute_node_operation(self, contract):
         raise ModelOnexError(
             message=f"Node processing failed: {e}",
             correlation_id=contract.correlation_id,
-            error_context={
+            context={
                 "node_type": self.__class__.__name__,
                 "operation": "execute_node_operation"
             }
         ) from e
-```python
+```
 
 ### Cross-Node Error Propagation
 
 Errors propagate through the pipeline with context:
 
-```python
+```
 class PipelineErrorContext:
     """Track errors across the entire ONEX pipeline."""
 
@@ -1676,7 +1691,7 @@ class PipelineErrorContext:
                 "total_errors": len(self.error_chain)
             }
         )
-```python
+```
 
 ## Performance Optimization
 
@@ -1684,7 +1699,7 @@ class PipelineErrorContext:
 
 Nodes support parallel processing within their operations:
 
-```python
+```
 # COMPUTE node with parallel processing
 class ParallelComputeService(ModelServiceCompute):
     async def execute_compute(self, contract: ModelContractCompute):
@@ -1702,13 +1717,13 @@ class ParallelComputeService(ModelServiceCompute):
             # Merge results
             final_result = self._merge_results(results)
             return final_result
-```python
+```
 
 ### Resource Management
 
 Nodes implement resource pooling and management:
 
-```python
+```
 class ResourceManagedEffectService(NodeEffect):
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
@@ -1720,7 +1735,7 @@ class ResourceManagedEffectService(NodeEffect):
             async with self.connection_pool.acquire() as connection:
                 # Use pooled connection for operation
                 return await self._execute_with_connection(connection, contract)
-```python
+```
 
 ## Monitoring and Observability
 
@@ -1728,7 +1743,7 @@ class ResourceManagedEffectService(NodeEffect):
 
 All nodes collect performance metrics:
 
-```python
+```
 class MonitoredNodeService:
     def __init__(self, container: ModelONEXContainer):
         self.metrics_collector = container.get_service("ProtocolMetricsCollector")
@@ -1767,13 +1782,13 @@ class MonitoredNodeService:
                 }
             )
             raise
-```python
+```
 
 ### Health Checks
 
 Nodes provide health check endpoints:
 
-```python
+```
 class HealthCheckMixin:
     async def health_check(self) -> NodeHealthStatus:
         """Perform comprehensive health check."""
@@ -1810,7 +1825,7 @@ class HealthCheckMixin:
                 status=EnumHealthStatus.UNHEALTHY,
                 details={"error": str(e)}
             )
-```python
+```
 
 ## Testing Strategies
 
@@ -1818,7 +1833,7 @@ class HealthCheckMixin:
 
 Each node type has specific testing patterns:
 
-```python
+```
 class TestEffectNode(unittest.TestCase):
     async def test_external_service_interaction(self):
         """Test EFFECT node external service interaction."""
@@ -1861,13 +1876,13 @@ class TestComputeNode(unittest.TestCase):
 
         # Verify computation result
         self.assertEqual(result.processed_data, 15)
-```python
+```
 
 ### Integration Testing
 
 Test complete pipeline flows:
 
-```python
+```
 class TestPipelineIntegration(unittest.TestCase):
     async def test_complete_pipeline_flow(self):
         """Test complete EFFECT → COMPUTE → REDUCER → ORCHESTRATOR flow."""
@@ -1916,7 +1931,7 @@ class TestPipelineIntegration(unittest.TestCase):
         # Verify complete pipeline
         self.assertEqual(final_result.correlation_id, correlation_id)
         self.assertIsNotNone(final_result.orchestration_result)
-```python
+```
 
 ## Best Practices Summary
 
