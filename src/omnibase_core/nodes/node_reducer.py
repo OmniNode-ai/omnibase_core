@@ -95,7 +95,7 @@ class NodeReducer(NodeCoreBase):
         self.max_memory_usage_mb = 512
         self.streaming_buffer_size = 10000
 
-        # Configuration: Legacy attribute initialization for existing functionality
+        # Configuration: Attribute initialization for existing functionality
         # These attributes support current implementation patterns
         self.reduction_functions: dict[EnumReductionType, Callable[..., Any]] = {}
         self.reduction_metrics: dict[str, dict[str, float]] = defaultdict(

@@ -2,7 +2,52 @@
 
 ## Overview
 
-The ONEX Subcontract Package provides specialized contract models for complex operations within the Four-Node Architecture. Subcontracts enable sophisticated processing patterns including finite state machines, data aggregation, routing, and workflow coordination while maintaining ONEX compliance and correlation tracking.
+The ONEX Subcontract Package provides specialized contract models for complex operations within the Four-Node Architecture. Subcontracts enable sophisticated processing patterns including finite state machines, data aggregation, routing, workflow coordination, introspection, discovery, event handling, lifecycle management, observability, and tool execution while maintaining ONEX compliance and correlation tracking.
+
+### Complete Subcontract Inventory
+
+The package includes **25 specialized subcontracts** organized by functional domain:
+
+**Core Processing Subcontracts:**
+1. **ModelAggregationSubcontract** - Data consolidation and statistical operations
+2. **ModelFSMSubcontract** - Finite state machine workflow processing
+3. **ModelRoutingSubcontract** - Request routing and load balancing
+4. **ModelCachingSubcontract** - Intelligent caching strategies
+
+**Event-Driven Subcontracts:**
+5. **ModelEventTypeSubcontract** - Event processing and routing
+6. **ModelEventBusSubcontract** - Event bus configuration and management
+7. **ModelEventHandlingSubcontract** ⭐ - Event subscription, filtering, and handler lifecycle
+
+**Infrastructure Subcontracts:**
+8. **ModelStateManagementSubcontract** - State persistence and recovery
+9. **ModelConfigurationSubcontract** - Dynamic configuration management
+10. **ModelCircuitBreakerSubcontract** - Circuit breaker patterns
+11. **ModelHealthCheckSubcontract** - Health monitoring configuration
+12. **ModelRetrySubcontract** - Retry logic and resilience
+
+**Security and Validation:**
+13. **ModelSecuritySubcontract** - Security policies and authentication
+14. **ModelValidationSubcontract** - Input/output validation rules
+15. **ModelSerializationSubcontract** - Serialization format control
+
+**Observability and Discovery:**
+16. **ModelLoggingSubcontract** - Structured logging configuration
+17. **ModelMetricsSubcontract** - Performance metrics collection
+18. **ModelIntrospectionSubcontract** ⭐ - Node metadata exposure and schema export
+19. **ModelDiscoverySubcontract** ⭐ - Service discovery and capability advertisement
+20. **ModelObservabilitySubcontract** ⭐ - Unified observability (logging, metrics, tracing)
+
+**Workflow and Orchestration:**
+21. **ModelWorkflowCoordinationSubcontract** - Multi-step workflow coordination
+22. **ModelLifecycleSubcontract** ⭐ - Node startup/shutdown and lifecycle hooks
+23. **ModelToolExecutionSubcontract** ⭐ - Tool execution and resource management
+
+**Specialized Patterns:**
+24. **ModelLoadBalancingSubcontract** - Advanced load balancing strategies
+25. **ModelRequestTransformationSubcontract** - Request/response transformation
+
+⭐ = **New in v1.0.0** - Recently added with comprehensive validation and ONEX compliance
 
 ## Architectural Principles
 
@@ -1092,6 +1137,582 @@ class SubcontractHealthMonitor:
 
         return health_status
 ```python
+
+## New Subcontracts (v1.0.0)
+
+### 5. Introspection Subcontract ⭐
+
+**Primary Purpose**: Node metadata exposure, schema export, and discovery support
+
+**File**: `model_introspection_subcontract.py`
+
+**Key Features**:
+- Comprehensive node metadata introspection (32 configurable fields)
+- JSON schema and OpenAPI schema export
+- Security-focused field filtering and redaction
+- Depth-limited introspection to prevent performance issues
+- Caching support for introspection responses
+- Integration with discovery and registration systems
+
+**Field Categories**:
+
+**Metadata Inclusion Controls** (8 fields):
+- `include_metadata` - Master switch for metadata inclusion
+- `include_core_metadata` - Core fields (name, version, type)
+- `include_organization_metadata` - Author, description, tags
+- `include_contract` - Contract details
+- `include_input_schema` / `include_output_schema` - I/O schemas
+- `include_cli_interface` - CLI interface details
+- `include_capabilities` - Node capabilities
+
+**Dependency and Configuration** (5 fields):
+- `include_dependencies` - Runtime dependencies
+- `include_optional_dependencies` - Optional dependencies
+- `include_external_tools` - External tool dependencies
+- `include_state_models` - State model information
+- `include_error_codes` - Error code definitions
+
+**Filtering and Security** (7 fields):
+- `depth_limit` - Maximum introspection depth (1-50, recommended ≤30)
+- `exclude_fields` - Specific fields to exclude
+- `exclude_field_patterns` - Security patterns (password, secret, token, api_key, etc.)
+- `redact_sensitive_info` - Auto-redact sensitive information
+- `require_authentication` - Require auth for introspection
+- `allowed_introspection_sources` - IP allowlist for introspection
+
+**Performance and Output** (6 fields):
+- `cache_introspection_response` - Cache responses
+- `cache_ttl_seconds` - Cache TTL (60-3600s, default 300s)
+- `export_json_schema` / `export_openapi_schema` - Schema export formats
+- `compact_output` - Compact JSON output
+- `include_timestamps` / `include_version_info` - Timestamp/version controls
+
+**Discovery Integration** (4 fields):
+- `enable_auto_discovery` - Auto-discovery by registry services
+- `enable_health_check` - Include health check endpoint
+- `enable_lifecycle_hooks` - Include lifecycle hook info
+
+**Validators** (4):
+1. `validate_depth_limit()` - Warns if depth > 30 (performance)
+2. `validate_cache_ttl()` - Ensures TTL ≥ 60s when caching enabled
+3. `validate_introspection_consistency()` - Validates enabled features when introspection enabled
+4. `validate_security_consistency()` - Ensures redaction enabled when auth required
+
+**Usage Pattern**:
+
+```python
+from omnibase_core.models.contracts.subcontracts.model_introspection_subcontract import ModelIntrospectionSubcontract
+
+# Production introspection with security controls
+production_introspection = ModelIntrospectionSubcontract(
+    introspection_enabled=True,
+
+    # Metadata configuration
+    include_metadata=True,
+    include_core_metadata=True,
+    include_organization_metadata=True,
+    include_contract=True,
+    include_input_schema=True,
+    include_output_schema=True,
+
+    # Security controls
+    redact_sensitive_info=True,
+    require_authentication=True,
+    exclude_field_patterns=[
+        "password", "secret", "token", "api_key",
+        "private_key", "credential", "auth_token"
+    ],
+    depth_limit=10,  # Reasonable depth
+
+    # Performance optimization
+    cache_introspection_response=True,
+    cache_ttl_seconds=300,  # 5 minutes
+
+    # Schema export
+    export_json_schema=True,
+    export_openapi_schema=False,  # Disable for internal nodes
+
+    # Discovery integration
+    enable_auto_discovery=True,
+    enable_health_check=True,
+)
+```
+
+**YAML Contract Example**:
+
+```yaml
+introspection:
+  introspection_enabled: true
+
+  # Metadata controls
+  include_metadata: true
+  include_core_metadata: true
+  include_contract: true
+  include_input_schema: true
+  include_output_schema: true
+  include_capabilities: true
+
+  # Security
+  redact_sensitive_info: true
+  exclude_field_patterns:
+    - password
+    - secret
+    - token
+    - api_key
+
+  # Performance
+  depth_limit: 10
+  cache_introspection_response: true
+  cache_ttl_seconds: 300
+
+  # Discovery
+  enable_auto_discovery: true
+  enable_health_check: true
+```
+
+**Common Use Cases**:
+- Service discovery and registration
+- API documentation generation
+- Health monitoring dashboards
+- Debugging and troubleshooting
+
+---
+
+### 6. Discovery Subcontract ⭐
+
+**Primary Purpose**: Service discovery responder configuration and broadcast handling
+
+**File**: `model_discovery_subcontract.py`
+
+**Key Features**:
+- Automatic discovery broadcast response (24 configurable fields)
+- Rate limiting and throttling to prevent discovery spam
+- Capability advertisement and filtering
+- Event bus integration with dedicated consumer groups
+- Health status integration
+- Response compression for large payloads
+
+**Field Categories**:
+
+**Core Configuration** (2 fields):
+- `enabled` - Enable/disable discovery responder
+- `auto_start` - Auto-start on node initialization
+
+**Rate Limiting** (2 fields):
+- `response_throttle_seconds` - Min time between responses (0.1-300s, default 1.0s)
+- `response_timeout_seconds` - Max response generation time (0.5-60s, default 5.0s)
+
+**Capability Advertisement** (2 fields):
+- `advertise_capabilities` - Include capabilities in responses
+- `custom_capabilities` - Additional custom capabilities beyond auto-detected
+
+**Event Bus Integration** (2 fields):
+- `discovery_channels` - Event channels (default: `["onex.discovery.broadcast", "onex.discovery.response"]`)
+- `use_dedicated_consumer_group` - Node-specific consumer group
+
+**Response Content** (5 fields):
+- `include_introspection` - Full node introspection data
+- `include_event_channels` - Event channel information
+- `include_version_info` - Node version information
+- `include_health_status` - Current health status
+- `default_health_status` - Fallback status (healthy/degraded/unhealthy)
+
+**Filtering** (3 fields):
+- `filter_enabled` - Enable custom request filtering
+- `match_node_types` - Node types to match (empty = match all)
+- `required_capabilities_filter` - Only respond if request requires these capabilities
+
+**Monitoring** (4 fields):
+- `enable_metrics` - Discovery response metrics
+- `enable_detailed_logging` - Detailed operation logging
+- `log_throttled_requests` - Log throttled requests (can be noisy)
+- `log_filtered_requests` - Log filtered requests (can be noisy)
+
+**Performance** (2 fields):
+- `max_response_size_bytes` - Max response size (1KB-1MB, default 100KB)
+- `enable_response_compression` - Compress large payloads
+
+**Validators** (5):
+1. Validates `default_health_status` must be healthy/degraded/unhealthy
+2. Validates `discovery_channels` cannot be empty
+3. Validates `response_throttle_seconds` < `response_timeout_seconds`
+4. Warns if `max_response_size_bytes` > 512KB (performance)
+5. Validates at least one response content type enabled
+
+**YAML Contract Example**:
+
+```yaml
+discovery:
+  enabled: true
+  auto_start: true
+
+  # Rate limiting
+  response_throttle_seconds: 1.0
+  response_timeout_seconds: 5.0
+
+  # Capabilities
+  advertise_capabilities: true
+  custom_capabilities:
+    - data-processing
+    - ml-inference
+
+  # Response content
+  include_introspection: true
+  include_health_status: true
+  default_health_status: healthy
+
+  # Performance
+  max_response_size_bytes: 102400
+  enable_metrics: true
+```
+
+**Integration with MixinDiscoveryResponder**: Designed for use with `MixinDiscoveryResponder` mixin.
+
+---
+
+### 7. Event Handling Subcontract ⭐
+
+**Primary Purpose**: Event subscription, filtering, and handler lifecycle management
+
+**File**: `model_event_handling_subcontract.py`
+
+**Key Features**:
+- Comprehensive event handling configuration (25+ fields)
+- Pattern-based event filtering (node ID, node name, fnmatch patterns)
+- Automatic introspection and discovery request handling
+- Retry logic with exponential backoff
+- Dead letter queue for failed events
+- Async and sync event bus support
+
+**Field Categories**:
+
+**Core Configuration** (2 fields):
+- `enabled` - Enable event handling functionality
+- `subscribed_events` - Event types to subscribe to (default: `["NODE_INTROSPECTION_REQUEST", "NODE_DISCOVERY_REQUEST"]`)
+
+**Subscription Management** (1 field):
+- `auto_subscribe_on_init` - Auto-subscribe during initialization
+
+**Event Filtering** (4 fields):
+- `event_filters` - Custom filtering rules (dict with patterns)
+- `enable_node_id_filtering` - Filter by node ID (fnmatch patterns)
+- `enable_node_name_filtering` - Filter by node name (fnmatch patterns)
+- `respond_to_all_when_no_filter` - Respond to all when no filters present
+
+**Introspection Handling** (3 fields):
+- `handle_introspection_requests` - Handle NODE_INTROSPECTION_REQUEST events
+- `handle_discovery_requests` - Handle NODE_DISCOVERY_REQUEST events
+- `filter_introspection_data` - Filter based on requested_types in metadata
+
+**Event Bus Support** (3 fields):
+- `async_event_bus_support` - Support async event bus (subscribe_async)
+- `sync_event_bus_fallback` - Fall back to sync when async unavailable
+- `cleanup_on_shutdown` - Auto-cleanup handlers on shutdown
+
+**Retry and Resilience** (3 fields):
+- `max_retries` - Maximum retry attempts (0-10, default 3)
+- `retry_delay_seconds` - Delay between retries (0.1-60s, default 1.0s)
+- `retry_exponential_backoff` - Use exponential backoff
+
+**Dead Letter Queue** (3 fields):
+- `dead_letter_channel` - DLQ channel (None = no DLQ)
+- `dead_letter_max_events` - Max events in DLQ (10-10000, default 1000)
+- `dead_letter_overflow_strategy` - DLQ overflow: drop_oldest/drop_newest/block
+
+**Validators** (4):
+1. Validates `subscribed_events` cannot be empty when enabled
+2. Validates `dead_letter_channel` format (alphanumeric + _ . -)
+3. Validates `dead_letter_overflow_strategy` in allowed values
+4. Comprehensive configuration validation
+
+**YAML Contract Example**:
+
+```yaml
+event_handling:
+  enabled: true
+
+  # Subscriptions
+  subscribed_events:
+    - NODE_INTROSPECTION_REQUEST
+    - NODE_DISCOVERY_REQUEST
+    - DATA_PROCESSING_REQUEST
+  auto_subscribe_on_init: true
+
+  # Filtering
+  event_filters:
+    node_name: "compute-*"
+    environment: production
+  enable_node_id_filtering: true
+
+  # Retry
+  max_retries: 3
+  retry_delay_seconds: 1.0
+  retry_exponential_backoff: true
+
+  # Dead letter queue
+  dead_letter_channel: onex.dlq.events
+  dead_letter_max_events: 1000
+  dead_letter_overflow_strategy: drop_oldest
+
+  # Performance
+  handler_timeout_seconds: 30.0
+  track_handler_performance: true
+```
+
+**Test Coverage**: 43 comprehensive tests validating all validators, edge cases, and integration patterns.
+
+---
+
+### 8. Lifecycle Subcontract ⭐
+
+**Primary Purpose**: Node startup/shutdown management and lifecycle hooks
+
+**File**: `model_lifecycle_subcontract.py`
+
+**Key Features**:
+- Comprehensive lifecycle management (29 configurable fields)
+- Startup and shutdown timeout configuration
+- Graceful shutdown with proper resource cleanup
+- Pre/post lifecycle hooks
+- Automatic node registration/deregistration
+- Health checks during lifecycle transitions
+
+**Field Categories**:
+
+**Startup Configuration** (4 fields):
+- `startup_timeout_seconds` - Max startup time (1-3600s, default 30s)
+- `startup_retry_enabled` - Retry on startup failure
+- `max_startup_retries` - Max retry attempts (0-10, default 3)
+- `startup_retry_delay_seconds` - Delay between retries (1-60s, default 5s)
+
+**Shutdown Configuration** (3 fields):
+- `shutdown_timeout_seconds` - Max graceful shutdown time (1-3600s, default 30s)
+- `enable_graceful_shutdown` - Enable graceful shutdown
+- `force_shutdown_after_timeout` - Force shutdown if timeout exceeded
+
+**Registration** (3 fields):
+- `auto_register_on_startup` - Auto-register on event bus
+- `auto_deregister_on_shutdown` - Auto-deregister from event bus
+- `publish_shutdown_event` - Publish NODE_SHUTDOWN event
+
+**Lifecycle Hooks** (4 fields):
+- `pre_startup_hooks` - Hook functions before startup
+- `post_startup_hooks` - Hook functions after startup
+- `pre_shutdown_hooks` - Hook functions before shutdown
+- `post_shutdown_hooks` - Hook functions after shutdown
+
+**Validators** (8):
+1. Validates hook names must be valid Python identifiers
+2. Validates shutdown timeout allows adequate cleanup time
+3. Validates hook timeout < startup/shutdown timeout
+4. Validates cleanup timeout ≤ shutdown timeout
+5. Validates health check timeout < startup timeout
+6. Validates event emission requires corresponding registration
+
+**YAML Contract Example**:
+
+```yaml
+lifecycle:
+  # Startup
+  startup_timeout_seconds: 60.0
+  startup_retry_enabled: true
+  max_startup_retries: 3
+
+  # Shutdown
+  shutdown_timeout_seconds: 60.0
+  enable_graceful_shutdown: true
+  force_shutdown_after_timeout: true
+
+  # Hooks
+  pre_startup_hooks:
+    - initialize_database
+    - connect_to_services
+  post_startup_hooks:
+    - warm_cache
+
+  # Events
+  emit_lifecycle_events: true
+  emit_node_announce: true
+  emit_node_shutdown: true
+
+  # Cleanup
+  cleanup_event_handlers: true
+  cleanup_resources: true
+```
+
+---
+
+### 9. Observability Subcontract ⭐
+
+**Primary Purpose**: Unified observability configuration (logging, metrics, distributed tracing)
+
+**File**: `model_observability_subcontract.py`
+
+**Key Features**:
+- Unified observability across all three pillars (20+ fields)
+- Distributed tracing with OpenTelemetry support
+- Performance profiling with CPU, memory, I/O instrumentation
+- Configurable sampling rates for production efficiency
+- Export format configuration (JSON, OpenTelemetry, Prometheus)
+- Sensitive data redaction
+
+**Field Categories**:
+
+**Logging** (3 fields):
+- `log_level` - Logging level (DEBUG/INFO/WARNING/ERROR/CRITICAL)
+- `enable_structured_logging` - Structured logging with consistent fields
+- `enable_correlation_tracking` - Track correlation IDs
+
+**Distributed Tracing** (5 fields):
+- `enable_tracing` - Enable distributed tracing
+- `trace_sampling_rate` - Sampling rate (0.0-1.0, default 0.1)
+- `trace_propagation_format` - Context format (w3c/b3/jaeger)
+- `trace_exporter_endpoint` - OTLP collector endpoint
+- `trace_service_name` - Service name (defaults to node name)
+
+**Performance Profiling** (6 fields):
+- `enable_profiling` - Enable performance profiling
+- `profiling_sampling_rate` - Sampling rate (0.0-1.0, default 0.01)
+- `profile_cpu` - CPU profiling
+- `profile_memory` - Memory profiling
+- `profile_io` - I/O profiling (higher overhead)
+- `profiling_output_path` - Output path (defaults to temp)
+
+**Validators** (7):
+1. Validates log level must be DEBUG/INFO/WARNING/ERROR/CRITICAL
+2. Validates trace propagation format must be w3c/b3/jaeger
+3. Validates export format must be json/opentelemetry/prometheus
+4. Warns if trace sampling rate > 0.5 (50% overhead)
+5. Warns if profiling sampling rate > 0.1 (10% overhead)
+6. Requires trace_exporter_endpoint when tracing enabled
+7. Validates at least one profiler enabled when profiling enabled
+
+**YAML Contract Example**:
+
+```yaml
+observability:
+  enabled: true
+
+  # Logging
+  log_level: INFO
+  enable_structured_logging: true
+  enable_correlation_tracking: true
+
+  # Tracing
+  enable_tracing: true
+  trace_sampling_rate: 0.1
+  trace_propagation_format: w3c
+  trace_exporter_endpoint: http://otel-collector:4318
+
+  # Profiling
+  enable_profiling: true
+  profiling_sampling_rate: 0.01
+  profile_cpu: true
+  profile_memory: true
+
+  # Export
+  export_format: opentelemetry
+  export_interval_seconds: 60
+
+  # Security
+  enable_sensitive_data_redaction: true
+```
+
+**Test Coverage**: 44 comprehensive tests validating all validators, sampling rates, and integration patterns.
+
+---
+
+### 10. Tool Execution Subcontract ⭐
+
+**Primary Purpose**: Standardized tool execution with resource management
+
+**File**: `model_tool_execution_subcontract.py`
+
+**Key Features**:
+- Comprehensive tool execution configuration (30+ fields)
+- Execution timeout and parallel execution limits
+- Retry logic with exponential backoff
+- Output capture and buffering
+- Environment variable management
+- Resource isolation and limits
+
+**Field Categories**:
+
+**Core Execution** (2 fields):
+- `enabled` - Enable tool execution
+- `timeout_seconds` - Max execution time (0.1-3600s, default 30s)
+
+**Parallel Execution** (3 fields):
+- `max_parallel_executions` - Max concurrent executions (1-100, default 1)
+- `queue_overflow_policy` - Overflow policy (block/reject/drop_oldest)
+- `max_queue_size` - Max queue size (1-10000, default 100)
+
+**Retry Configuration** (4 fields):
+- `retry_on_failure` - Auto-retry failed executions
+- `max_retry_attempts` - Max retries (0-10, default 3)
+- `retry_delay_seconds` - Delay between retries (0-60s, default 1s)
+- `retry_exponential_backoff` - Exponential backoff
+
+**Helper Methods** (5):
+1. `get_effective_timeout(attempt)` - Timeout with exponential backoff
+2. `get_retry_delay(attempt)` - Retry delay with exponential backoff
+3. `should_retry(attempt, error)` - Retry decision logic
+4. `get_output_buffer_size_bytes()` - Buffer size in bytes
+5. `get_effective_environment(additional_vars)` - Merged environment with sanitization
+6. `is_within_resource_limits(memory_mb, cpu_percent)` - Resource limit check
+
+**Validators** (5):
+1. Validates `queue_overflow_policy` must be block/reject/drop_oldest
+2. Validates `error_handling_strategy` must be propagate/suppress/log_and_continue
+3. Validates retry configuration consistency
+4. Validates resource limits require resource_isolation=True
+5. Validates event execution requires enabled=True
+
+**YAML Contract Example**:
+
+```yaml
+tool_execution:
+  enabled: true
+  timeout_seconds: 60.0
+
+  # Parallel execution
+  max_parallel_executions: 4
+  queue_overflow_policy: block
+
+  # Retry
+  retry_on_failure: true
+  max_retry_attempts: 3
+  retry_exponential_backoff: true
+
+  # Resource limits
+  resource_isolation: true
+  max_memory_mb: 2048
+  max_cpu_percent: 80
+
+  # Monitoring
+  emit_execution_metrics: true
+```
+
+**Security**: The `sanitize_environment` flag removes potentially dangerous environment variables to prevent library injection attacks.
+
+---
+
+## Mixin-Subcontract Integration Matrix
+
+This table shows which mixins are designed to work with which subcontracts:
+
+| Mixin | Subcontract | Purpose |
+|-------|-------------|---------|
+| **MixinDiscoveryResponder** | ModelDiscoverySubcontract | Service discovery broadcast response |
+| **MixinEventHandler** | ModelEventHandlingSubcontract | Event subscription and filtering |
+| **MixinNodeLifecycle** | ModelLifecycleSubcontract | Startup/shutdown management |
+| **MixinIntrospection** | ModelIntrospectionSubcontract | Node metadata and schema exposure |
+| **MixinToolExecution** | ModelToolExecutionSubcontract | Tool execution and resource management |
+| **MixinMetrics** | ModelObservabilitySubcontract | Performance metrics collection |
+| **MixinFSMExecution** | ModelFSMSubcontract | State machine execution |
+| **MixinCaching** | ModelCachingSubcontract | Cache management |
+| **MixinEventListener** | ModelEventTypeSubcontract | Event type routing |
+| **MixinHealthCheck** | ModelHealthCheckSubcontract | Health monitoring |
 
 ## Best Practices and Recommendations
 

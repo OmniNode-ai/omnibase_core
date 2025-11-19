@@ -71,6 +71,7 @@ omnibase_core/docs/
 
 | Document | Description | Status |
 |----------|-------------|--------|
+| [**Mixin-Subcontract Mapping**](guides/MIXIN_SUBCONTRACT_MAPPING.md) | Relationship between mixins and subcontracts ⭐ **NEW** | ✅ Complete |
 | [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
 
 ---

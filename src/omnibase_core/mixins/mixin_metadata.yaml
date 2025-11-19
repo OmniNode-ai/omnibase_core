@@ -3071,3 +3071,308 @@ mixin_workflow_execution:
         - "Action emission for workflow steps"
         - "Dependency-aware execution"
         - "Sequential, parallel, and batch modes"
+
+# =============================================================================
+# MixinDiscoveryResponder - Service Discovery Response
+# =============================================================================
+mixin_discovery_responder:
+  name: "MixinDiscoveryResponder"
+  description: "Service discovery responder for ONEX discovery broadcasts with rate limiting, capability advertisement, and introspection integration"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "service_discovery"
+
+  # Subcontract reference
+  subcontract_model: "omnibase_core.models.contracts.subcontracts.model_discovery_subcontract.ModelDiscoverySubcontract"
+  subcontract_description: "Provides declarative configuration for discovery response behavior, rate limiting, capability advertisement, and event bus routing"
+
+  requires:
+    - "omnibase_core.models.contracts.subcontracts.model_discovery_subcontract"
+    - "omnibase_spi.protocols.core.ProtocolEventBus"
+    - "pydantic"
+
+  compatible_with:
+    - "MixinEventBus"
+    - "MixinHealthCheck"
+    - "MixinIntrospection"
+    - "MixinLogging"
+    - "MixinMetrics"
+
+  incompatible_with: []
+
+  config_schema:
+    enabled:
+      type: "boolean"
+      default: true
+      description: "Enable discovery responder functionality"
+    response_throttle_seconds:
+      type: "float"
+      minimum: 0.1
+      maximum: 300.0
+      default: 1.0
+      description: "Minimum seconds between discovery responses"
+    advertise_capabilities:
+      type: "boolean"
+      default: true
+      description: "Include node capabilities in discovery responses"
+    discovery_channels:
+      type: "array"
+      items:
+        type: "string"
+      default: ["onex.discovery.broadcast", "onex.discovery.response"]
+      description: "Event bus channels for discovery communication"
+
+  usage_examples:
+    - "All ONEX nodes for service discovery participation"
+    - "Microservices advertising capabilities to discovery broadcasts"
+    - "Health-aware discovery with introspection data"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-11-19"
+      changes:
+        - "Added subcontract mapping to ModelDiscoverySubcontract"
+        - "Initial metadata definition with declarative configuration"
+
+# =============================================================================
+# MixinIntrospection - Node Introspection
+# =============================================================================
+mixin_introspection:
+  name: "MixinIntrospection"
+  description: "Node introspection capabilities providing metadata, capabilities, and runtime information for monitoring and discovery"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "observability"
+
+  # Subcontract reference
+  subcontract_model: "omnibase_core.models.contracts.subcontracts.model_introspection_subcontract.ModelIntrospectionSubcontract"
+  subcontract_description: "Enables declarative introspection configuration including metadata exposure, capability reporting, and performance metrics"
+
+  requires:
+    - "omnibase_core.models.contracts.subcontracts.model_introspection_subcontract"
+    - "omnibase_core.models.metadata.model_node_metadata"
+    - "pydantic"
+
+  compatible_with:
+    - "MixinDiscoveryResponder"
+    - "MixinHealthCheck"
+    - "MixinMetrics"
+    - "MixinLogging"
+
+  incompatible_with: []
+
+  config_schema:
+    enabled:
+      type: "boolean"
+      default: true
+      description: "Enable introspection capabilities"
+    include_metadata:
+      type: "boolean"
+      default: true
+      description: "Include node metadata in introspection"
+    include_capabilities:
+      type: "boolean"
+      default: true
+      description: "Include node capabilities list"
+    include_performance_metrics:
+      type: "boolean"
+      default: false
+      description: "Include runtime performance metrics"
+
+  usage_examples:
+    - "All ONEX nodes for runtime introspection"
+    - "Discovery responders providing node metadata"
+    - "Monitoring systems querying node capabilities"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-11-19"
+      changes:
+        - "Added subcontract mapping to ModelIntrospectionSubcontract"
+        - "Initial metadata definition with declarative configuration"
+
+# =============================================================================
+# MixinEventHandler - Event Processing
+# =============================================================================
+mixin_event_handler:
+  name: "MixinEventHandler"
+  description: "Event handling capabilities for processing ONEX event bus messages with routing, filtering, and error handling"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "event_driven"
+
+  # Subcontract reference
+  subcontract_model: "omnibase_core.models.contracts.subcontracts.model_event_handling_subcontract.ModelEventHandlingSubcontract"
+  subcontract_description: "Provides declarative event handler configuration including routing rules, filters, retry policies, and dead letter queues"
+
+  requires:
+    - "omnibase_core.models.contracts.subcontracts.model_event_handling_subcontract"
+    - "omnibase_spi.protocols.core.ProtocolEventBus"
+    - "omnibase_core.models.events.model_event_envelope"
+    - "pydantic"
+
+  compatible_with:
+    - "MixinEventBus"
+    - "MixinLogging"
+    - "MixinMetrics"
+    - "MixinRetry"
+    - "MixinCircuitBreaker"
+
+  incompatible_with: []
+
+  config_schema:
+    enabled:
+      type: "boolean"
+      default: true
+      description: "Enable event handler functionality"
+    event_channels:
+      type: "array"
+      items:
+        type: "string"
+      default: []
+      description: "Event bus channels to subscribe to"
+    enable_filtering:
+      type: "boolean"
+      default: true
+      description: "Enable event filtering based on routing rules"
+    max_retry_attempts:
+      type: "integer"
+      minimum: 0
+      maximum: 10
+      default: 3
+      description: "Maximum retry attempts for failed event processing"
+
+  usage_examples:
+    - "Event-driven nodes processing ONEX event bus messages"
+    - "REDUCER nodes consuming state change events"
+    - "ORCHESTRATOR nodes coordinating multi-step workflows via events"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-11-19"
+      changes:
+        - "Added subcontract mapping to ModelEventHandlingSubcontract"
+        - "Initial metadata definition with declarative configuration"
+
+# =============================================================================
+# MixinNodeLifecycle - Node Lifecycle Management
+# =============================================================================
+mixin_node_lifecycle:
+  name: "MixinNodeLifecycle"
+  description: "Node lifecycle management for initialization, startup, shutdown, and cleanup with health checks and state transitions"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "infrastructure"
+
+  # Subcontract reference
+  subcontract_model: "omnibase_core.models.contracts.subcontracts.model_lifecycle_subcontract.ModelLifecycleSubcontract"
+  subcontract_description: "Enables declarative lifecycle configuration including startup hooks, shutdown grace periods, and health check integration"
+
+  requires:
+    - "omnibase_core.models.contracts.subcontracts.model_lifecycle_subcontract"
+    - "omnibase_core.enums.enum_node_lifecycle_state"
+    - "pydantic"
+
+  compatible_with:
+    - "MixinHealthCheck"
+    - "MixinLogging"
+    - "MixinMetrics"
+    - "MixinEventBus"
+
+  incompatible_with: []
+
+  config_schema:
+    enable_lifecycle_hooks:
+      type: "boolean"
+      default: true
+      description: "Enable lifecycle hook execution"
+    startup_timeout_seconds:
+      type: "float"
+      minimum: 1.0
+      maximum: 300.0
+      default: 30.0
+      description: "Maximum time allowed for node startup"
+    shutdown_grace_period_seconds:
+      type: "float"
+      minimum: 0.0
+      maximum: 300.0
+      default: 30.0
+      description: "Grace period for graceful shutdown"
+    enable_health_checks:
+      type: "boolean"
+      default: true
+      description: "Enable health checks during lifecycle transitions"
+
+  usage_examples:
+    - "All ONEX nodes for standardized lifecycle management"
+    - "Service startup with dependency initialization"
+    - "Graceful shutdown with resource cleanup"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-11-19"
+      changes:
+        - "Added subcontract mapping to ModelLifecycleSubcontract"
+        - "Initial metadata definition with declarative configuration"
+
+# =============================================================================
+# MixinToolExecution - Tool/Action Execution
+# =============================================================================
+mixin_tool_execution:
+  name: "MixinToolExecution"
+  description: "Tool and action execution capabilities for LLM integration, validation, and monitoring with sandboxing and timeout protection"
+  version: {major: 1, minor: 0, patch: 0}
+  category: "integration"
+
+  # Subcontract reference
+  subcontract_model: "omnibase_core.models.contracts.subcontracts.model_tool_execution_subcontract.ModelToolExecutionSubcontract"
+  subcontract_description: "Provides declarative tool execution configuration including sandboxing, timeout limits, validation rules, and result caching"
+
+  requires:
+    - "omnibase_core.models.contracts.subcontracts.model_tool_execution_subcontract"
+    - "omnibase_core.models.tools.model_tool_definition"
+    - "pydantic"
+
+  compatible_with:
+    - "MixinValidation"
+    - "MixinLogging"
+    - "MixinMetrics"
+    - "MixinCaching"
+    - "MixinRetry"
+    - "MixinCircuitBreaker"
+
+  incompatible_with: []
+
+  config_schema:
+    enabled:
+      type: "boolean"
+      default: true
+      description: "Enable tool execution functionality"
+    execution_timeout_seconds:
+      type: "float"
+      minimum: 1.0
+      maximum: 3600.0
+      default: 60.0
+      description: "Maximum time allowed for tool execution"
+    enable_sandboxing:
+      type: "boolean"
+      default: true
+      description: "Enable execution sandboxing for security"
+    enable_validation:
+      type: "boolean"
+      default: true
+      description: "Enable input/output validation"
+    max_concurrent_executions:
+      type: "integer"
+      minimum: 1
+      maximum: 100
+      default: 10
+      description: "Maximum concurrent tool executions"
+
+  usage_examples:
+    - "LLM agents executing tools with validation"
+    - "ORCHESTRATOR nodes coordinating tool-based workflows"
+    - "API integrations with timeout and sandboxing"
+
+  version_history:
+    - version: {major: 1, minor: 0, patch: 0}
+      date: "2025-11-19"
+      changes:
+        - "Added subcontract mapping to ModelToolExecutionSubcontract"
+        - "Initial metadata definition with declarative configuration"

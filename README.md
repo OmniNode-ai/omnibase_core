@@ -97,9 +97,8 @@ When building production nodes, follow this directory structure:
         │   ├── config.py                  # Configuration
         │   ├── contracts/
         │   │   └── subcontracts/
-        │   │       ├── input_subcontract.yaml
-        │   │       ├── output_subcontract.yaml
-        │   │       └── config_subcontract.yaml
+        │   │       # Subcontracts are Pydantic models in omnibase_core
+        │   │       # See "Available Subcontracts" section below
         │   ├── models/
         │   │   ├── model_*_input.py       # Typed input model
         │   │   ├── model_*_output.py      # Typed output model
@@ -116,6 +115,110 @@ When building production nodes, follow this directory structure:
             └── integration/
                 └── test_integration.py
 ```
+
+## Available Subcontracts (23)
+
+ONEX provides **23 specialized subcontract models** for declarative node configuration. Subcontracts enable nodes to declare their behavior, requirements, and capabilities using Pydantic models instead of imperative code.
+
+**Location**: `src/omnibase_core/models/contracts/subcontracts/`
+
+**Architecture Documentation**: [Subcontract Architecture Guide](docs/architecture/SUBCONTRACT_ARCHITECTURE.md)
+
+### Core Behavioral Subcontracts (6)
+
+Define the fundamental behavior patterns for ONEX nodes:
+
+| Subcontract | Purpose | Primary Node Type | Key Features |
+|-------------|---------|-------------------|--------------|
+| **ModelFSMSubcontract** | Finite state machine definitions | REDUCER | State transitions, guards, actions |
+| **ModelEventTypeSubcontract** | Event type definitions | ALL | Event schemas, versioning, routing |
+| **ModelAggregationSubcontract** | Data aggregation rules | REDUCER | Windowing, grouping, rollups |
+| **ModelStateManagementSubcontract** | State persistence | REDUCER | Snapshotting, recovery, TTL |
+| **ModelRoutingSubcontract** | Message routing | ORCHESTRATOR | Load balancing, routing rules |
+| **ModelWorkflowCoordinationSubcontract** | Workflow orchestration | ORCHESTRATOR | Step definitions, dependencies, rollback |
+
+### Infrastructure Subcontracts (6)
+
+Configure infrastructure concerns like caching, events, and fault tolerance:
+
+| Subcontract | Purpose | Primary Node Type | Key Features |
+|-------------|---------|-------------------|--------------|
+| **ModelCachingSubcontract** | Cache strategies | COMPUTE | TTL, eviction policies, size limits |
+| **ModelEventBusSubcontract** | Event bus configuration | ALL | Topics, partitions, serialization |
+| **ModelHealthCheckSubcontract** | Health monitoring | ALL | Endpoints, thresholds, dependencies |
+| **ModelMetricsSubcontract** | Metrics collection | ALL | Counters, gauges, histograms |
+| **ModelLoggingSubcontract** | Logging configuration | ALL | Levels, formats, destinations |
+| **ModelCircuitBreakerSubcontract** | Fault tolerance | EFFECT | Thresholds, timeouts, fallbacks |
+
+### Cross-Cutting Subcontracts (7)
+
+Handle cross-cutting concerns that apply to multiple node types:
+
+| Subcontract | Purpose | Primary Node Type | Key Features |
+|-------------|---------|-------------------|--------------|
+| **ModelRetrySubcontract** | Retry policies | EFFECT | Max attempts, backoff, jitter |
+| **ModelSecuritySubcontract** | Security configuration | ALL | Authentication, authorization, encryption |
+| **ModelSerializationSubcontract** | Serialization rules | ALL | Formats, codecs, compression |
+| **ModelValidationSubcontract** | Validation rules | ALL | Schemas, constraints, sanitization |
+| **ModelConfigurationSubcontract** | Configuration management | ALL | Sources, precedence, reloading |
+| **ModelObservabilitySubcontract** | Observability | ALL | Tracing, profiling, instrumentation |
+| **ModelToolExecutionSubcontract** | Tool execution | ALL | Timeouts, concurrency, isolation |
+
+### Discovery & Introspection Subcontracts (4)
+
+Enable service discovery and runtime introspection:
+
+| Subcontract | Purpose | Primary Node Type | Key Features |
+|-------------|---------|-------------------|--------------|
+| **ModelDiscoverySubcontract** | Service discovery | ALL | Endpoints, capabilities, versions |
+| **ModelIntrospectionSubcontract** | Introspection rules | ALL | Schema exposure, capabilities listing |
+| **ModelEventHandlingSubcontract** | Event handling | ALL | Handlers, filters, ordering |
+| **ModelLifecycleSubcontract** | Node lifecycle | ALL | Startup, shutdown, health transitions |
+
+### Declarative Mixins with Subcontract Support
+
+Eight mixins support declarative YAML configuration via subcontracts:
+
+| Mixin | Subcontract | Purpose | Usage Pattern |
+|-------|-------------|---------|---------------|
+| **MixinFSMExecution** | ModelFSMSubcontract | State machine execution | REDUCER nodes with state transitions |
+| **MixinCaching** | ModelCachingSubcontract | Cache strategies | COMPUTE nodes with memoization |
+| **MixinWorkflowExecution** | ModelWorkflowCoordinationSubcontract | Workflow coordination | ORCHESTRATOR nodes with multi-step workflows |
+| **MixinHealthCheck** | ModelHealthCheckSubcontract | Health monitoring | ALL nodes with health endpoints |
+| **MixinMetrics** | ModelMetricsSubcontract | Metrics collection | ALL nodes with observability |
+| **MixinDiscoveryResponder** | ModelDiscoverySubcontract | Service discovery | ALL nodes with discovery support |
+| **MixinIntrospection** | ModelIntrospectionSubcontract | Introspection rules | ALL nodes with schema exposure |
+| **MixinEventHandler** | ModelEventHandlingSubcontract | Event handling | ALL nodes with event processing |
+
+### Subcontract Usage Example
+
+```python
+from omnibase_core.models.contracts.subcontracts.model_caching_subcontract import ModelCachingSubcontract
+from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract import ModelHealthCheckSubcontract
+
+# Define subcontract in your node contract
+class MyNodeContract(BaseContract):
+    """Node contract with declarative subcontracts."""
+
+    # Caching configuration
+    caching: ModelCachingSubcontract = ModelCachingSubcontract(
+        cache_ttl_seconds=300,
+        max_cache_size=1000,
+        eviction_policy="lru"
+    )
+
+    # Health check configuration
+    health: ModelHealthCheckSubcontract = ModelHealthCheckSubcontract(
+        health_check_interval_seconds=30,
+        health_check_timeout_seconds=5,
+        required_dependencies=["database", "event_bus"]
+    )
+```
+
+**See Also**:
+- [Subcontract Architecture Guide](docs/architecture/SUBCONTRACT_ARCHITECTURE.md) - Complete architecture documentation
+- [Declarative Node Migration Guide](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) - Migration from imperative to declarative patterns
+- [Mixin Metadata](src/omnibase_core/mixins/mixin_metadata.yaml) - Complete mixin-to-subcontract mappings
 
 ## Concurrency and Thread Safety
 
