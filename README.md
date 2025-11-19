@@ -116,6 +116,99 @@ When building production nodes, follow this directory structure:
                 └── test_integration.py
 ```
 
+## Manifest Models
+
+ONEX provides **structured manifest models** for validating and working with system-wide configuration files.
+
+### Available Manifests
+
+#### ModelMixinMetadata
+
+**Purpose**: Load, validate, and query mixin metadata from `mixin_metadata.yaml`
+
+**Location**: `src/omnibase_core/models/core/model_mixin_metadata.py`
+
+**Features**:
+- 11 nested Pydantic models for complete mixin metadata
+- Version management with semantic versioning
+- Configuration schema validation
+- Code pattern definitions for generation
+- Performance characteristics tracking
+- Compatibility validation between mixins
+
+**Usage Example**:
+```python
+from pathlib import Path
+from omnibase_core.models.core.model_mixin_metadata import ModelMixinMetadataCollection
+
+# Load all mixin metadata
+collection = ModelMixinMetadataCollection.load_from_yaml(
+    Path("src/omnibase_core/mixins/mixin_metadata.yaml")
+)
+
+# Get specific mixin
+retry_mixin = collection.get_mixin("retry")
+print(f"Version: {retry_mixin.version}")
+print(f"Category: {retry_mixin.category}")
+
+# Check compatibility
+mixins_to_use = ["retry", "circuit_breaker", "caching"]
+is_compatible, conflicts = collection.validate_compatibility(mixins_to_use)
+
+# Get all mixins by category
+flow_control_mixins = collection.get_mixins_by_category("flow_control")
+```
+
+#### ModelDockerComposeManifest
+
+**Purpose**: Validate and manipulate complete `docker-compose.yaml` files
+
+**Location**: `src/omnibase_core/models/docker/model_docker_compose_manifest.py`
+
+**Features**:
+- Integrates 16 existing Docker models into unified structure
+- Service, network, volume, config, and secret definitions
+- Dependency validation (circular dependency detection)
+- Port conflict detection
+- Load from/save to YAML with full validation
+
+**Usage Example**:
+```python
+from pathlib import Path
+from omnibase_core.models.docker.model_docker_compose_manifest import (
+    ModelDockerComposeManifest
+)
+
+# Load from YAML
+manifest = ModelDockerComposeManifest.load_from_yaml(
+    Path("docker-compose.yaml")
+)
+
+# Access services
+api_service = manifest.get_service("api")
+print(f"Image: {api_service.image}")
+print(f"Ports: {api_service.ports}")
+
+# Validate dependencies
+dep_warnings = manifest.validate_dependencies()
+if dep_warnings:
+    print("Dependency issues:", dep_warnings)
+
+# Detect port conflicts
+port_warnings = manifest.detect_port_conflicts()
+if port_warnings:
+    print("Port conflicts:", port_warnings)
+
+# Save to YAML
+manifest.save_to_yaml(Path("output.yaml"))
+```
+
+**See Also**:
+- [Mixin Metadata Tests](tests/unit/models/core/test_model_mixin_metadata.py) - 39 comprehensive tests
+- [Docker Compose Manifest Tests](tests/unit/models/docker/test_model_docker_compose_manifest.py) - 25 comprehensive tests
+
+---
+
 ## Available Subcontracts (23)
 
 ONEX provides **23 specialized subcontract models** for declarative node configuration. Subcontracts enable nodes to declare their behavior, requirements, and capabilities using Pydantic models instead of imperative code.

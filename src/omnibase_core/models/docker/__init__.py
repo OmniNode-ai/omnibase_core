@@ -75,6 +75,14 @@ from omnibase_core.models.docker.model_docker_volume_config import (
     ModelDockerVolumeConfig,
 )
 
+# Docker Compose manifest
+from omnibase_core.models.docker.model_docker_compose_manifest import (
+    ModelDockerComposeManifest,
+    ModelDockerConfigFile,
+    ModelDockerSecretFile,
+    ModelDockerService,
+)
+
 __all__ = [
     # Compose service models
     "ModelComposeServiceDefinition",
@@ -88,6 +96,11 @@ __all__ = [
     # Compose generator
     "ModelDockerComposeGenerator",
     "ModelDockerComposeGeneratorClass",
+    # Compose manifest
+    "ModelDockerComposeManifest",
+    "ModelDockerConfigFile",
+    "ModelDockerSecretFile",
+    "ModelDockerService",
     # Deploy configuration
     "ModelDockerDeployConfig",
     "ModelDockerDeployConfigClass",

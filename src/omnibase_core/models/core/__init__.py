@@ -42,6 +42,19 @@ from .model_result_accessor import ModelResultAccessor
 from .model_typed_accessor import ModelTypedAccessor
 from .model_typed_configuration import ModelTypedConfiguration
 
+# Mixin metadata pattern
+from .model_mixin_metadata import (
+    ModelMixinMetadata,
+    ModelMixinMetadataCollection,
+    ModelMixinVersion,
+    ModelMixinMethod,
+    ModelMixinProperty,
+    ModelMixinConfigField,
+    ModelMixinPreset,
+    ModelMixinPerformance,
+    ModelMixinCodePatterns,
+)
+
 # Generic factory pattern
 try:
     from .model_capability_factory import ModelCapabilityFactory
@@ -126,6 +139,16 @@ __all__ = [
     # Generic metadata pattern
     "ModelGenericMetadata",
     "ModelGenericProperties",
+    # Mixin metadata pattern
+    "ModelMixinMetadata",
+    "ModelMixinMetadataCollection",
+    "ModelMixinVersion",
+    "ModelMixinMethod",
+    "ModelMixinProperty",
+    "ModelMixinConfigField",
+    "ModelMixinPreset",
+    "ModelMixinPerformance",
+    "ModelMixinCodePatterns",
     # Factory patterns (with graceful degradation)
     "ModelCapabilityFactory",
     "ModelGenericFactory",

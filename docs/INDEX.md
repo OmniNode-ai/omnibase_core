@@ -74,6 +74,13 @@ omnibase_core/docs/
 | [**Mixin-Subcontract Mapping**](guides/MIXIN_SUBCONTRACT_MAPPING.md) | Relationship between mixins and subcontracts ⭐ **NEW** | ✅ Complete |
 | [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
 
+### Manifest Models
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) | Mixin metadata validation and discovery (11 models, 39 tests) | ✅ Complete |
+| [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) | Docker Compose YAML validation (16 integrated models, 25 tests) | ✅ Complete |
+
 ---
 
 ## 🏗️ Architecture
@@ -224,6 +231,8 @@ omnibase_core/docs/
 | **Monitor CI performance** | [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) |
 | **Debug async hangs** | [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md) |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
+| **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |
+| **Validate docker-compose.yaml** | [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) - Docker validation |
 
 ---
 
