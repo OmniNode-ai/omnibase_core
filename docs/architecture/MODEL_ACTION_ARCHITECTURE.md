@@ -174,6 +174,8 @@ class NodeMyOrchestrator(NodeCoreBase):
 **Prevents Concurrent Modification**:
 
 ```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 # Orchestrator A claims workflow
 orchestrator_a.lease_id = UUID("a1a1a1a1-...")
 
@@ -236,6 +238,8 @@ class NodeMyOrchestrator(NodeCoreBase):
 Downstream nodes validate epochs to reject stale actions:
 
 ```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 class NodeDataProcessorCompute(NodeCoreBase):
     async def process_action(self, action: ModelAction):
         """Process action with epoch validation."""
@@ -552,6 +556,8 @@ async def emit_conditional_action(self, condition: bool, payload: dict):
 **Lease Validation in Downstream Nodes**:
 
 ```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 class NodeDataTransformerCompute(NodeCoreBase):
     def __init__(self, container):
         super().__init__(container)
@@ -603,6 +609,9 @@ class NodeDataTransformerCompute(NodeCoreBase):
 **Stale Action Detection**:
 
 ```
+from datetime import datetime
+from uuid import UUID
+
 class ActionValidator:
     """Utility class for action validation."""
 
@@ -632,6 +641,8 @@ class ActionValidator:
 **Comprehensive Validation Pattern**:
 
 ```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 async def validate_and_process_action(
     action: ModelAction,
     last_processed_epoch: int,
@@ -737,6 +748,8 @@ async def process_action(self, action: ModelAction):
 
 **✅ CORRECT - Comprehensive lease validation**:
 ```
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 async def process_action(self, action: ModelAction):
     # ✅ Step 1: Validate lease_id
     if action.lease_id != self.current_workflow_lease_id:
