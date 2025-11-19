@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2025-11-19
+
+### Added
+
+#### Subcontract Models
+- **6 New Subcontract Models**: Complete mixin-subcontract architecture with comprehensive Pydantic models
+  - `ModelDiscoverySubcontract`: Service discovery configuration with channel validation
+  - `ModelEventHandlingSubcontract`: Event subscription and filtering patterns
+  - `ModelIntrospectionSubcontract`: Node metadata and capability introspection
+  - `ModelLifecycleSubcontract`: Initialization and shutdown lifecycle management
+  - `ModelObservabilitySubcontract`: Metrics, logging, and tracing configuration
+  - `ModelToolExecutionSubcontract`: Tool and capability execution framework
+- **Comprehensive Test Coverage**: 960+ tests for all subcontract models with validation, serialization, and edge case testing
+
+#### Metadata & Manifest Models
+- **ModelMixinMetadata**: Declarative mixin metadata with schema validation and subcontract integration
+- **ModelDockerComposeManifest**: Docker Compose configuration parsing with port conflict detection and YAML validation
+- **Mixin Metadata YAML**: 305-line metadata file (`mixin_metadata.yaml`) with schemas and examples for 5 mixins
+
+#### Documentation Enhancements
+- **NODE_CLASS_HIERARCHY.md** (1364 lines): Complete guide to ONEX node class hierarchy with decision trees and migration paths
+- **MIXIN_SUBCONTRACT_MAPPING.md** (1104 lines): Comprehensive mapping guide for mixin-to-subcontract relationships
+- **TERMINOLOGY_AUDIT_REPORT.md**: Standardization audit for ONEX v2.0 terminology
+- **TERMINOLOGY_FIXES_CHECKLIST.md**: Checklist for terminology consistency across codebase
+
+#### Tools & Scripts
+- **validate_docs_links.py**: Markdown link validation tool scanning for broken file and anchor references
+- **fix_documentation_links.py**: Automated link correction script for predefined fixes
+
+### Changed
+
+#### Error Handling Standardization
+- **ModelOnexError Migration**: Renamed `OnexError` → `ModelOnexError` across all documentation and templates (27+ files)
+- **Import Path Consolidation**: Standardized import paths to `omnibase_core.models.errors.model_onex_error`
+- **correlation_id Best Practices**: Added correlation_id parameter to 19+ error examples for improved traceability
+
+#### Documentation Improvements
+- **Pydantic v2 Migration**: Updated 25+ template examples from `@validator` → `@field_validator`
+- **Code Example Fixes**: Fixed 91 malformed markdown code fences and 22 inconsistent import paths
+- **Template Updates**: Replaced `BaseNodeConfig` with `BaseModel` in 3 template files
+- **Processing Time Calculations**: Fixed duration calculation bugs in ENHANCED_NODE_PATTERNS
+- **Security Sanitization**: Fixed output propagation in security validation examples
+
+#### Node Base Class Updates
+- **Service Wrapper Promotion**: Documentation now recommends `ModelService*` wrappers over legacy `Node*` bases
+- **Advanced Patterns Introduction**: Added ONEX v2.0 patterns (ModelIntent for REDUCER, ModelAction for ORCHESTRATOR)
+
+### Fixed
+
+#### Source Code Bugs
+- **Discovery Validation**: Fixed `model_discovery_subcontract.py` to only validate channels when `enabled=True`
+- **Port Parsing**: Enhanced `model_docker_compose_manifest.py` to handle all Docker port formats (IP prefix, protocol suffix)
+- **Import Ordering**: Fixed isort configuration alignment between local and CI environments
+
+#### Documentation Fixes
+- **Missing Imports**: Added `ModelOnexError`, `CircuitBreakerError`, `datetime`, `UUID` imports to 8+ code examples
+- **Enum Naming**: Standardized to `EnumCoreErrorCode` across 4+ occurrences
+- **Legacy Module Paths**: Updated manifest dependency paths from `models.model_onex_error` → `errors.model_onex_error`
+- **Stray Artifacts**: Removed generator artifacts from 2 template files
+
+### Quality & CI
+- **CI Performance**: All test splits running within expected 2m30s-3m30s benchmark
+- **Test Coverage**: Maintained 60%+ coverage requirement with 12,198 tests
+- **Type Safety**: 100% mypy strict compliance (0 errors in 1,840 source files)
+- **Code Quality**: Black, isort, and ruff all passing
+
 ## [0.2.0] - 2025-10-31
 
 ### Added
