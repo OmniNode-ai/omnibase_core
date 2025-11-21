@@ -299,6 +299,15 @@ secrets:
         with pytest.raises(ModelOnexError, match="Empty or invalid YAML"):
             ModelDockerComposeManifest.from_yaml(yaml_path)
 
+    def test_load_from_yaml_malformed(self, tmp_path: Path) -> None:
+        """Test loading from malformed YAML file."""
+        yaml_path = tmp_path / "malformed.yaml"
+        # Write invalid YAML syntax (unclosed bracket, invalid structure)
+        yaml_path.write_text("version: 3.8\nservices:\n  api:\n    image: [unclosed")
+
+        with pytest.raises(ModelOnexError, match="Failed to load YAML from"):
+            ModelDockerComposeManifest.from_yaml(yaml_path)
+
     def test_save_to_yaml_basic(self, tmp_path: Path) -> None:
         """Test saving basic manifest to YAML."""
         service = ModelDockerService(

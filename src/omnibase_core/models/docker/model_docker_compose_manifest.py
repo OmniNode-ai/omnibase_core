@@ -89,7 +89,7 @@ class ModelDockerComposeManifest(BaseModel):
             ModelSemVer instance
 
         Raises:
-            ModelOnexError: If version format is invalid
+            ModelOnexError: If version format is invalid (EnumCoreErrorCode.VALIDATION_ERROR)
         """
         # If already ModelSemVer, return as-is
         if isinstance(v, ModelSemVer):
@@ -118,7 +118,7 @@ class ModelDockerComposeManifest(BaseModel):
             Validated manifest
 
         Raises:
-            ValueError: If invalid references are found
+            ModelOnexError: If invalid references are found (EnumCoreErrorCode.VALIDATION_FAILED)
         """
         errors = []
 
@@ -290,8 +290,14 @@ class ModelDockerComposeManifest(BaseModel):
             )
 
         # Load YAML data
-        with open(yaml_path) as f:
-            yaml_data = yaml.safe_load(f)
+        try:
+            with open(yaml_path, encoding="utf-8") as f:
+                yaml_data = yaml.safe_load(f)
+        except Exception as e:
+            raise ModelOnexError(
+                message=f"Failed to load YAML from {yaml_path}: {e}",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+            ) from e
 
         if not yaml_data:
             raise ModelOnexError(
