@@ -1,0 +1,23 @@
+# YAML Validation Allowlist
+#
+# This file defines exceptions to the manual YAML validation detection hook.
+# These are legitimate utility functions and files that need to use yaml.safe_load()
+# for valid architectural reasons (e.g., parsing before Pydantic validation).
+
+# Files allowed to use yaml.safe_load() (utility modules)
+allowed_files:
+  - "src/omnibase_core/utils/util_safe_yaml_loader.py" # YAML utility functions
+  - "src/omnibase_core/validation/contracts.py" # Contract validation utilities
+  - "src/omnibase_core/validation/contract_validator.py" # Contract validator - preprocesses YAML
+
+# Specific filenames that are allowed (matched by basename)
+allowed_filenames:
+  - "util_safe_yaml_loader.py"
+
+# Function names allowed to use yaml.safe_load()
+allowed_functions:
+  - "load_and_validate_yaml_model" # Utility function in contracts.py - uses Pydantic validation
+  - "validate_model_compliance" # Validator in contract_validator.py - inspects raw YAML
+  - "validate_contract_yaml" # Contract validator - preprocesses YAML before Pydantic validation
+  - "load_yaml_content" # Generic YAML loading utility
+  - "parse_yaml_safely" # Safe YAML parsing utility

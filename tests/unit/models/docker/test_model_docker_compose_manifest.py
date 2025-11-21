@@ -5,19 +5,22 @@ from pathlib import Path
 
 import pytest
 import yaml
+from pydantic import ValidationError
 
 from omnibase_core.models.docker.model_docker_compose_manifest import (
     ModelDockerComposeManifest,
-    ModelDockerConfigFile,
-    ModelDockerSecretFile,
-    ModelDockerService,
 )
+from omnibase_core.models.docker.model_docker_config_file import ModelDockerConfigFile
 from omnibase_core.models.docker.model_docker_network_config import (
     ModelDockerNetworkConfig,
 )
+from omnibase_core.models.docker.model_docker_secret_file import ModelDockerSecretFile
+from omnibase_core.models.docker.model_docker_service import ModelDockerService
 from omnibase_core.models.docker.model_docker_volume_config import (
     ModelDockerVolumeConfig,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelDockerComposeManifest:
@@ -27,7 +30,7 @@ class TestModelDockerComposeManifest:
         """Test creating empty manifest with defaults."""
         manifest = ModelDockerComposeManifest()
 
-        assert manifest.version == "3.8"
+        assert manifest.version == ModelSemVer(major=3, minor=8, patch=0)
         assert manifest.services == {}
         assert manifest.networks == {}
         assert manifest.volumes == {}
@@ -54,18 +57,26 @@ class TestModelDockerComposeManifest:
 
     def test_version_validation_valid(self) -> None:
         """Test version validation with valid versions."""
-        valid_versions = ["3.8", "3", "2.4", "3.9", "2"]
+        valid_versions = [
+            ("3.8", ModelSemVer(major=3, minor=8, patch=0)),
+            ("3", ModelSemVer(major=3, minor=0, patch=0)),
+            ("2.4", ModelSemVer(major=2, minor=4, patch=0)),
+            ("3.9", ModelSemVer(major=3, minor=9, patch=0)),
+            ("2", ModelSemVer(major=2, minor=0, patch=0)),
+        ]
 
-        for version in valid_versions:
-            manifest = ModelDockerComposeManifest(version=version)
-            assert manifest.version == version
+        for version_str, expected_semver in valid_versions:
+            manifest = ModelDockerComposeManifest(version=version_str)
+            assert manifest.version == expected_semver
 
     def test_version_validation_invalid(self) -> None:
         """Test version validation with invalid versions."""
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
         invalid_versions = ["3.8.1beta", "v3.8", "latest", "3.x"]
 
         for version in invalid_versions:
-            with pytest.raises(ValueError, match="Invalid version format"):
+            with pytest.raises((ValidationError, ModelOnexError)):
                 ModelDockerComposeManifest(version=version)
 
     def test_get_service_exists(self) -> None:
@@ -81,7 +92,7 @@ class TestModelDockerComposeManifest:
         """Test getting non-existent service."""
         manifest = ModelDockerComposeManifest()
 
-        with pytest.raises(KeyError, match="Service 'api' not found"):
+        with pytest.raises(ModelOnexError, match="Service 'api' not found"):
             manifest.get_service("api")
 
     def test_get_all_services(self) -> None:
@@ -143,7 +154,9 @@ class TestModelDockerComposeManifest:
             networks=["undefined_network"],
         )
 
-        with pytest.raises(ValueError, match="undefined network 'undefined_network'"):
+        with pytest.raises(
+            ModelOnexError, match="undefined network 'undefined_network'"
+        ):
             ModelDockerComposeManifest(services={"api": service})
 
     def test_validate_service_references_valid_network(self) -> None:
@@ -170,7 +183,9 @@ class TestModelDockerComposeManifest:
             depends_on={"undefined_service": {"condition": "service_started"}},
         )
 
-        with pytest.raises(ValueError, match="undefined service 'undefined_service'"):
+        with pytest.raises(
+            ModelOnexError, match="undefined service 'undefined_service'"
+        ):
             ModelDockerComposeManifest(services={"api": service})
 
     def test_detect_port_conflicts_no_conflicts(self) -> None:
@@ -237,9 +252,9 @@ volumes:
         yaml_path = tmp_path / "docker-compose.yaml"
         yaml_path.write_text(yaml_content)
 
-        manifest = ModelDockerComposeManifest.load_from_yaml(yaml_path)
+        manifest = ModelDockerComposeManifest.from_yaml(yaml_path)
 
-        assert manifest.version == "3.8"
+        assert manifest.version == ModelSemVer(major=3, minor=8, patch=0)
         assert "api" in manifest.services
         assert manifest.services["api"].image == "python:3.12"
         assert "app_network" in manifest.networks
@@ -262,7 +277,7 @@ secrets:
         yaml_path = tmp_path / "docker-compose.yaml"
         yaml_path.write_text(yaml_content)
 
-        manifest = ModelDockerComposeManifest.load_from_yaml(yaml_path)
+        manifest = ModelDockerComposeManifest.from_yaml(yaml_path)
 
         assert "app_config" in manifest.configs
         assert manifest.configs["app_config"].file == "./config.json"
@@ -273,16 +288,16 @@ secrets:
         """Test loading from non-existent file."""
         yaml_path = tmp_path / "nonexistent.yaml"
 
-        with pytest.raises(FileNotFoundError):
-            ModelDockerComposeManifest.load_from_yaml(yaml_path)
+        with pytest.raises(ModelOnexError, match="YAML file not found"):
+            ModelDockerComposeManifest.from_yaml(yaml_path)
 
     def test_load_from_yaml_empty_file(self, tmp_path: Path) -> None:
         """Test loading from empty YAML file."""
         yaml_path = tmp_path / "empty.yaml"
         yaml_path.write_text("")
 
-        with pytest.raises(ValueError, match="Empty or invalid YAML"):
-            ModelDockerComposeManifest.load_from_yaml(yaml_path)
+        with pytest.raises(ModelOnexError, match="Empty or invalid YAML"):
+            ModelDockerComposeManifest.from_yaml(yaml_path)
 
     def test_save_to_yaml_basic(self, tmp_path: Path) -> None:
         """Test saving basic manifest to YAML."""
@@ -368,14 +383,14 @@ networks:
         yaml_path1.write_text(yaml_content)
 
         # Load
-        manifest1 = ModelDockerComposeManifest.load_from_yaml(yaml_path1)
+        manifest1 = ModelDockerComposeManifest.from_yaml(yaml_path1)
 
         # Save
         yaml_path2 = tmp_path / "output.yaml"
         manifest1.save_to_yaml(yaml_path2)
 
         # Load again
-        manifest2 = ModelDockerComposeManifest.load_from_yaml(yaml_path2)
+        manifest2 = ModelDockerComposeManifest.from_yaml(yaml_path2)
 
         # Compare
         assert manifest1.version == manifest2.version

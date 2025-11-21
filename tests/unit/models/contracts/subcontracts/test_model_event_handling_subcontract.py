@@ -39,8 +39,9 @@ class TestModelEventHandlingSubcontractBasics:
 
     def test_interface_version(self) -> None:
         """Test interface version is set correctly."""
-        assert ModelEventHandlingSubcontract.INTERFACE_VERSION == ModelSemVer(
-            major=1, minor=0, patch=0
+        assert (
+            ModelSemVer(major=1, minor=0, patch=0)
+            == ModelEventHandlingSubcontract.INTERFACE_VERSION
         )
 
     def test_minimal_instantiation(self) -> None:

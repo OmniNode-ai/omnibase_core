@@ -15,6 +15,7 @@ from omnibase_core.models.contracts.subcontracts.model_fsmtransitionaction impor
     ModelFSMTransitionAction,
 )
 from omnibase_core.models.core.model_action_config_value import from_int, from_string
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelFSMTransitionActionValidation:
@@ -40,8 +41,8 @@ class TestModelFSMTransitionActionValidation:
         assert len(action.action_config) == 2
 
     def test_invalid_action_with_duplicate_parameters(self) -> None:
-        """Test that actions with duplicate parameter names raise ValueError."""
-        with pytest.raises(ValidationError) as exc_info:
+        """Test that actions with duplicate parameter names raise ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelFSMTransitionAction(
                 action_name="invalid_action",
                 action_type="validate",
@@ -64,7 +65,7 @@ class TestModelFSMTransitionActionValidation:
 
     def test_invalid_action_with_multiple_duplicates(self) -> None:
         """Test that multiple duplicate parameter names are all reported."""
-        with pytest.raises(ValidationError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelFSMTransitionAction(
                 action_name="invalid_action",
                 action_type="validate",

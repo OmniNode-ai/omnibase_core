@@ -14,6 +14,7 @@ from omnibase_core.enums.enum_environment_validation_rule_type import (
 from omnibase_core.models.contracts.subcontracts.model_environment_validation_rule import (
     ModelEnvironmentValidationRule,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelEnvironmentValidationRuleValidation:
@@ -374,7 +375,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
 
     def test_range_type_without_min_max_values(self) -> None:
         """Test that range type requires at least one of min_value or max_value."""
-        with pytest.raises(ValidationError, match="RANGE rule requires at least"):
+        with pytest.raises(ModelOnexError, match="RANGE rule requires at least"):
             ModelEnvironmentValidationRule(
                 config_key="key",
                 validation_rule="rule",
@@ -383,9 +384,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
 
     def test_format_type_without_format_pattern(self) -> None:
         """Test that format type requires format_pattern to be set."""
-        with pytest.raises(
-            ValidationError, match="FORMAT rule requires format_pattern"
-        ):
+        with pytest.raises(ModelOnexError, match="FORMAT rule requires format_pattern"):
             ModelEnvironmentValidationRule(
                 config_key="key",
                 validation_rule="rule",
@@ -395,7 +394,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
     def test_allowed_values_type_without_allowed_values_list(self) -> None:
         """Test that allowed_values type requires non-empty allowed_values list."""
         with pytest.raises(
-            ValidationError, match="ALLOWED_VALUES rule requires non-empty"
+            ModelOnexError, match="ALLOWED_VALUES rule requires non-empty"
         ):
             ModelEnvironmentValidationRule(
                 config_key="key",
@@ -448,7 +447,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_range_type_without_any_bounds_raises_error(self) -> None:
         """Test that RANGE rule without min_value or max_value raises error."""
         with pytest.raises(
-            ValidationError, match="RANGE rule requires at least min_value or max_value"
+            ModelOnexError, match="RANGE rule requires at least min_value or max_value"
         ):
             ModelEnvironmentValidationRule(
                 config_key="value",
@@ -470,7 +469,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_format_type_without_format_pattern_raises_error(self) -> None:
         """Test that FORMAT rule without format_pattern raises error."""
         with pytest.raises(
-            ValidationError, match="FORMAT rule requires format_pattern to be set"
+            ModelOnexError, match="FORMAT rule requires format_pattern to be set"
         ):
             ModelEnvironmentValidationRule(
                 config_key="email",
@@ -481,7 +480,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_format_type_with_empty_format_pattern_raises_error(self) -> None:
         """Test that FORMAT rule with empty format_pattern raises error."""
         with pytest.raises(
-            ValidationError, match="FORMAT rule requires format_pattern to be set"
+            ModelOnexError, match="FORMAT rule requires format_pattern to be set"
         ):
             ModelEnvironmentValidationRule(
                 config_key="email",
@@ -515,7 +514,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_allowed_values_type_with_empty_list_raises_error(self) -> None:
         """Test that ALLOWED_VALUES rule with empty list raises error."""
         with pytest.raises(
-            ValidationError,
+            ModelOnexError,
             match="ALLOWED_VALUES rule requires non-empty allowed_values list",
         ):
             ModelEnvironmentValidationRule(
@@ -528,7 +527,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_allowed_values_type_without_list_raises_error(self) -> None:
         """Test that ALLOWED_VALUES rule without allowed_values raises error."""
         with pytest.raises(
-            ValidationError,
+            ModelOnexError,
             match="ALLOWED_VALUES rule requires non-empty allowed_values list",
         ):
             ModelEnvironmentValidationRule(
@@ -628,6 +627,6 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
 
         # Changing to RANGE without bounds should raise error
         with pytest.raises(
-            ValidationError, match="RANGE rule requires at least min_value or max_value"
+            ModelOnexError, match="RANGE rule requires at least min_value or max_value"
         ):
             rule.rule_type = EnumEnvironmentValidationRuleType.RANGE

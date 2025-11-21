@@ -1,0 +1,56 @@
+"""Pydantic model for mixin configuration field definitions.
+
+This module provides the ModelMixinConfigField class for defining
+configuration schema in mixin metadata.
+"""
+
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+
+class ModelMixinConfigField(BaseModel):
+    """Configuration field definition in mixin metadata.
+
+    Attributes:
+        type: Field type (string, integer, float, boolean, array, object)
+        default: Default value for the field
+        description: Human-readable field description
+        minimum: Minimum value (for numeric types)
+        maximum: Maximum value (for numeric types)
+        enum: Allowed values (for enum types)
+        items: Item schema (for array types)
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: str = Field(..., description="Field type")
+    default: Any = Field(None, description="Default value")
+    description: str = Field("", description="Field description")
+    minimum: float | int | None = Field(None, description="Minimum value")
+    maximum: float | int | None = Field(None, description="Maximum value")
+    enum: list[str] | None = Field(None, description="Allowed enum values")
+    items: dict[str, Any] | None = Field(None, description="Array item schema")
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v: str) -> str:
+        """Validate field type is supported."""
+        valid_types = {
+            "string",
+            "integer",
+            "float",
+            "number",
+            "boolean",
+            "array",
+            "object",
+        }
+        if v not in valid_types:
+            raise ModelOnexError(
+                message=f"Invalid field type '{v}'. Must be one of {valid_types}",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+            )
+        return v

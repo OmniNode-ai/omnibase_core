@@ -14,17 +14,19 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.models.core.model_mixin_metadata import (
+from omnibase_core.models.core import (
     ModelMixinCodePatterns,
     ModelMixinConfigField,
     ModelMixinMetadata,
     ModelMixinMetadataCollection,
     ModelMixinMethod,
     ModelMixinPerformance,
-    ModelMixinPerformanceUseCase,
     ModelMixinPreset,
     ModelMixinProperty,
     ModelMixinVersion,
+)
+from omnibase_core.models.core.model_mixin_performance_use_case import (
+    ModelMixinPerformanceUseCase,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -53,7 +55,7 @@ class TestModelMixinVersion:
 
     def test_version_from_string_invalid_format(self) -> None:
         """Test parsing invalid version string raises error."""
-        with pytest.raises(ModelOnexError, match="Invalid version string"):
+        with pytest.raises(ModelOnexError, match="Invalid version format"):
             ModelMixinVersion.from_string("1.2")
 
     def test_version_from_string_non_numeric(self) -> None:
@@ -123,7 +125,7 @@ class TestModelMixinConfigField:
 
     def test_config_field_invalid_type(self) -> None:
         """Test invalid field type raises error."""
-        with pytest.raises(ValueError, match="Invalid field type"):
+        with pytest.raises(ModelOnexError, match="Invalid field type"):
             ModelMixinConfigField(type="invalid_type", description="Bad field")
 
 
@@ -305,7 +307,7 @@ class TestModelMixinMetadata:
 
     def test_metadata_compatibility_conflict(self) -> None:
         """Test conflicting compatibility raises error."""
-        with pytest.raises(ValueError, match="conflicting compatibility"):
+        with pytest.raises(ModelOnexError, match="conflicting compatibility"):
             ModelMixinMetadata(
                 name="Test",
                 description="Test",
@@ -549,7 +551,7 @@ class TestYAMLLoading:
         if not yaml_path.exists():
             pytest.skip(f"mixin_metadata.yaml not found at {yaml_path}")
 
-        collection = ModelMixinMetadataCollection.load_from_yaml(yaml_path)
+        collection = ModelMixinMetadataCollection.from_yaml(yaml_path)
 
         # Basic validation
         assert collection.get_mixin_count() > 0
@@ -565,7 +567,7 @@ class TestYAMLLoading:
     def test_load_nonexistent_file(self) -> None:
         """Test loading non-existent file raises error."""
         with pytest.raises(ModelOnexError, match="not found"):
-            ModelMixinMetadataCollection.load_from_yaml("/nonexistent/path.yaml")
+            ModelMixinMetadataCollection.from_yaml("/nonexistent/path.yaml")
 
     def test_load_invalid_yaml(self, tmp_path: Path) -> None:
         """Test loading invalid YAML raises error."""
@@ -573,7 +575,7 @@ class TestYAMLLoading:
         yaml_file.write_text("{ invalid yaml content [")
 
         with pytest.raises(ModelOnexError, match="Failed to load YAML"):
-            ModelMixinMetadataCollection.load_from_yaml(yaml_file)
+            ModelMixinMetadataCollection.from_yaml(yaml_file)
 
     def test_load_non_dict_yaml(self, tmp_path: Path) -> None:
         """Test loading non-dict YAML raises error."""
@@ -581,7 +583,7 @@ class TestYAMLLoading:
         yaml_file.write_text("- item1\n- item2\n")
 
         with pytest.raises(ModelOnexError, match="Expected dict"):
-            ModelMixinMetadataCollection.load_from_yaml(yaml_file)
+            ModelMixinMetadataCollection.from_yaml(yaml_file)
 
 
 # =============================================================================
@@ -620,7 +622,7 @@ mixin_test:
         yaml_file.write_text(yaml_content)
 
         # Load
-        collection = ModelMixinMetadataCollection.load_from_yaml(yaml_file)
+        collection = ModelMixinMetadataCollection.from_yaml(yaml_file)
 
         # Query
         assert collection.get_mixin_count() == 1

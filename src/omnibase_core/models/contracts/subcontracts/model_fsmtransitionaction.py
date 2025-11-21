@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 from .model_action_config_parameter import ModelActionConfigParameter
 
 
@@ -62,8 +65,9 @@ class ModelFSMTransitionAction(BaseModel):
                 duplicates.add(param.parameter_name)
             seen.add(param.parameter_name)
         if duplicates:
-            raise ValueError(
-                f"Duplicate parameter names in action_config: {sorted(duplicates)}"
+            raise ModelOnexError(
+                message=f"Duplicate parameter names in action_config: {sorted(duplicates)}",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         return self
 

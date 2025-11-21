@@ -10,90 +10,18 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from omnibase_core.models.docker.model_docker_build_config import ModelDockerBuildConfig
-from omnibase_core.models.docker.model_docker_deploy_config import (
-    ModelDockerDeployConfig,
-)
-from omnibase_core.models.docker.model_docker_healthcheck_config import (
-    ModelDockerHealthcheckConfig,
-)
-from omnibase_core.models.docker.model_docker_healthcheck_test import (
-    ModelDockerHealthcheckTest,
-)
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.docker.model_docker_config_file import ModelDockerConfigFile
 from omnibase_core.models.docker.model_docker_network_config import (
     ModelDockerNetworkConfig,
 )
-from omnibase_core.models.docker.model_docker_placement_constraints import (
-    ModelDockerPlacementConstraints,
-)
-from omnibase_core.models.docker.model_docker_resource_limits import (
-    ModelDockerResourceLimits,
-)
-from omnibase_core.models.docker.model_docker_resource_reservations import (
-    ModelDockerResourceReservations,
-)
-from omnibase_core.models.docker.model_docker_resources import ModelDockerResources
-from omnibase_core.models.docker.model_docker_restart_policy import (
-    ModelDockerRestartPolicy,
-)
+from omnibase_core.models.docker.model_docker_secret_file import ModelDockerSecretFile
+from omnibase_core.models.docker.model_docker_service import ModelDockerService
 from omnibase_core.models.docker.model_docker_volume_config import (
     ModelDockerVolumeConfig,
 )
-
-
-class ModelDockerConfigFile(BaseModel):
-    """Docker config file configuration."""
-
-    file: str | None = Field(default=None, description="Path to config file")
-    external: bool | None = Field(default=False, description="External config")
-    name: str | None = Field(default=None, description="Config name")
-
-
-class ModelDockerSecretFile(BaseModel):
-    """Docker secret file configuration."""
-
-    file: str | None = Field(default=None, description="Path to secret file")
-    external: bool | None = Field(default=False, description="External secret")
-    name: str | None = Field(default=None, description="Secret name")
-
-
-class ModelDockerService(BaseModel):
-    """Docker Compose service definition (Pydantic version)."""
-
-    name: str = Field(description="Service name")
-    image: str | None = Field(default=None, description="Docker image")
-    build: ModelDockerBuildConfig | None = Field(
-        default=None,
-        description="Build configuration",
-    )
-    command: str | list[str] | None = Field(
-        default=None,
-        description="Command to run",
-    )
-    environment: dict[str, str] | None = Field(
-        default=None,
-        description="Environment variables",
-    )
-    ports: list[str] | None = Field(default=None, description="Port mappings")
-    volumes: list[str] | None = Field(default=None, description="Volume mounts")
-    depends_on: dict[str, dict[str, str]] | None = Field(
-        default=None,
-        description="Service dependencies",
-    )
-    healthcheck: ModelDockerHealthcheckConfig | None = Field(
-        default=None,
-        description="Health check configuration",
-    )
-    restart: str = Field(default="unless-stopped", description="Restart policy")
-    networks: list[str] | None = Field(default=None, description="Networks to join")
-    labels: dict[str, str] | None = Field(
-        default=None,
-        description="Container labels",
-    )
-    deploy: ModelDockerDeployConfig | None = Field(
-        default=None,
-        description="Deploy configuration",
-    )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelDockerComposeManifest(BaseModel):
@@ -105,7 +33,7 @@ class ModelDockerComposeManifest(BaseModel):
     Example:
         ```python
         # Load from YAML
-        manifest = ModelDockerComposeManifest.load_from_yaml(
+        manifest = ModelDockerComposeManifest.from_yaml(
             Path("docker-compose.yaml")
         )
 
@@ -120,7 +48,10 @@ class ModelDockerComposeManifest(BaseModel):
         ```
     """
 
-    version: str = Field(default="3.8", description="Docker Compose version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=3, minor=8, patch=0),
+        description="Docker Compose version",
+    )
     services: dict[str, ModelDockerService] = Field(
         default_factory=dict,
         description="Service definitions",
@@ -143,25 +74,41 @@ class ModelDockerComposeManifest(BaseModel):
     )
     name: str | None = Field(default=None, description="Docker Compose project name")
 
-    @field_validator("version")
+    @field_validator("version", mode="before")
     @classmethod
-    def validate_version(cls, v: str) -> str:
-        """Validate Docker Compose version format.
+    def validate_version(cls, v: str | ModelSemVer) -> ModelSemVer:
+        """Validate Docker Compose version format and convert to ModelSemVer.
+
+        Docker Compose uses versions like "3.8" or "3" (major.minor format).
+        This validator converts them to ModelSemVer by adding patch=0.
 
         Args:
-            v: Version string to validate
+            v: Version string or ModelSemVer to validate
 
         Returns:
-            Validated version string
+            ModelSemVer instance
 
         Raises:
-            ValueError: If version format is invalid
+            ModelOnexError: If version format is invalid
         """
-        # Accept versions like "3.8", "3", "2.4", etc.
+        # If already ModelSemVer, return as-is
+        if isinstance(v, ModelSemVer):
+            return v
+
+        # Parse Docker Compose version string (e.g., "3.8", "3", "2.4")
         parts = v.split(".")
         if not all(part.isdigit() for part in parts):
-            raise ValueError(f"Invalid version format: {v}")
-        return v
+            raise ModelOnexError(
+                message=f"Invalid version format: {v}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
+        # Convert to ModelSemVer (add patch=0 if not present)
+        major = int(parts[0])
+        minor = int(parts[1]) if len(parts) > 1 else 0
+        patch = int(parts[2]) if len(parts) > 2 else 0
+
+        return ModelSemVer(major=major, minor=minor, patch=patch)
 
     @model_validator(mode="after")
     def validate_service_references(self) -> "ModelDockerComposeManifest":
@@ -188,7 +135,7 @@ class ModelDockerComposeManifest(BaseModel):
         # Validate dependency references
         for service_name, service in self.services.items():
             if service.depends_on:
-                for dep in service.depends_on.keys():
+                for dep in service.depends_on:
                     if dep not in self.services:
                         errors.append(
                             f"Service '{service_name}' depends on "
@@ -196,8 +143,9 @@ class ModelDockerComposeManifest(BaseModel):
                         )
 
         if errors:
-            raise ValueError(
-                "Service reference validation failed:\n" + "\n".join(errors)
+            raise ModelOnexError(
+                message="Service reference validation failed:\n" + "\n".join(errors),
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
 
         return self
@@ -212,10 +160,13 @@ class ModelDockerComposeManifest(BaseModel):
             Service definition
 
         Raises:
-            KeyError: If service not found
+            ModelOnexError: If service not found
         """
         if name not in self.services:
-            raise KeyError(f"Service '{name}' not found")
+            raise ModelOnexError(
+                message=f"Service '{name}' not found",
+                error_code=EnumCoreErrorCode.RESOURCE_NOT_FOUND,
+            )
         return self.services[name]
 
     def get_all_services(self) -> list[ModelDockerService]:
@@ -320,7 +271,7 @@ class ModelDockerComposeManifest(BaseModel):
         return warnings
 
     @classmethod
-    def load_from_yaml(cls, yaml_path: Path) -> "ModelDockerComposeManifest":
+    def from_yaml(cls, yaml_path: Path) -> "ModelDockerComposeManifest":
         """Load Docker Compose manifest from YAML file.
 
         Args:
@@ -330,67 +281,41 @@ class ModelDockerComposeManifest(BaseModel):
             Loaded manifest
 
         Raises:
-            FileNotFoundError: If YAML file doesn't exist
-            ValueError: If YAML is invalid
+            ModelOnexError: If YAML file doesn't exist or is invalid
         """
         if not yaml_path.exists():
-            raise FileNotFoundError(f"YAML file not found: {yaml_path}")
+            raise ModelOnexError(
+                message=f"YAML file not found: {yaml_path}",
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+            )
 
-        with open(yaml_path, "r") as f:
-            data = yaml.safe_load(f)
+        # Load YAML data
+        with open(yaml_path) as f:
+            yaml_data = yaml.safe_load(f)
 
-        if not data:
-            raise ValueError(f"Empty or invalid YAML file: {yaml_path}")
+        if not yaml_data:
+            raise ModelOnexError(
+                message=f"Empty or invalid YAML file: {yaml_path}",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+            )
 
-        # Convert services to ModelDockerService
-        services_dict = {}
-        if "services" in data:
-            for service_name, service_data in data["services"].items():
-                # Add service name to data
-                service_data["name"] = service_name
-                services_dict[service_name] = ModelDockerService(**service_data)
+        # Process services: add service name to each service data for validation
+        if "services" in yaml_data:
+            for service_name, service_data in yaml_data["services"].items():
+                if service_data is None:
+                    yaml_data["services"][service_name] = {"name": service_name}
+                else:
+                    service_data["name"] = service_name
 
-        # Convert networks
-        networks_dict = {}
-        if "networks" in data:
-            for network_name, network_data in data["networks"].items():
-                if network_data is None:
-                    network_data = {}
-                networks_dict[network_name] = ModelDockerNetworkConfig(**network_data)
+        # Ensure null entries are converted to empty dicts for proper validation
+        for section in ["networks", "volumes", "configs", "secrets"]:
+            if yaml_data.get(section):
+                for key, value in yaml_data[section].items():
+                    if value is None:
+                        yaml_data[section][key] = {}
 
-        # Convert volumes
-        volumes_dict = {}
-        if "volumes" in data:
-            for volume_name, volume_data in data["volumes"].items():
-                if volume_data is None:
-                    volume_data = {}
-                volumes_dict[volume_name] = ModelDockerVolumeConfig(**volume_data)
-
-        # Convert configs
-        configs_dict = {}
-        if "configs" in data:
-            for config_name, config_data in data["configs"].items():
-                if config_data is None:
-                    config_data = {}
-                configs_dict[config_name] = ModelDockerConfigFile(**config_data)
-
-        # Convert secrets
-        secrets_dict = {}
-        if "secrets" in data:
-            for secret_name, secret_data in data["secrets"].items():
-                if secret_data is None:
-                    secret_data = {}
-                secrets_dict[secret_name] = ModelDockerSecretFile(**secret_data)
-
-        return cls(
-            version=data.get("version", "3.8"),
-            services=services_dict,
-            networks=networks_dict,
-            volumes=volumes_dict,
-            configs=configs_dict,
-            secrets=secrets_dict,
-            name=data.get("name"),
-        )
+        # Validate with Pydantic
+        return cls.model_validate(yaml_data)
 
     def save_to_yaml(self, yaml_path: Path) -> None:
         """Save Docker Compose manifest to YAML file.
@@ -399,8 +324,10 @@ class ModelDockerComposeManifest(BaseModel):
             yaml_path: Path to output docker-compose.yaml file
         """
         # Convert to dict for YAML serialization
+        # Serialize version as Docker Compose format (major.minor, no patch)
+        version_str = f"{self.version.major}.{self.version.minor}"
         data: dict[str, Any] = {
-            "version": self.version,
+            "version": version_str,
         }
 
         if self.name:
@@ -475,8 +402,3 @@ class ModelDockerComposeManifest(BaseModel):
         # Write to YAML
         with open(yaml_path, "w") as f:
             yaml.dump(data, f, default_flow_style=False, sort_keys=False)
-
-
-# Rebuild models to resolve forward references
-ModelDockerService.model_rebuild()
-ModelDockerComposeManifest.model_rebuild()

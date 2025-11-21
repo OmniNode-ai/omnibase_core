@@ -12,6 +12,7 @@ from omnibase_core.enums.enum_resource_unit import EnumResourceUnit
 from omnibase_core.models.contracts.subcontracts.model_resource_usage_metric import (
     ModelResourceUsageMetric,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelResourceUsageMetricValidation:
@@ -45,8 +46,8 @@ class TestModelResourceUsageMetricValidation:
         assert metric.usage_value == 0.0
 
     def test_invalid_percentage_exceeds_maximum(self) -> None:
-        """Test that percentage values > 150 raise ValueError."""
-        with pytest.raises(ValidationError) as exc_info:
+        """Test that percentage values > 150 raise ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelResourceUsageMetric(
                 resource_name="cpu",
                 usage_value=151.0,
@@ -59,8 +60,8 @@ class TestModelResourceUsageMetricValidation:
         assert "is_percentage=False" in error_msg
 
     def test_invalid_percentage_far_exceeds_maximum(self) -> None:
-        """Test that percentage values far above 150 raise ValueError."""
-        with pytest.raises(ValidationError) as exc_info:
+        """Test that percentage values far above 150 raise ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelResourceUsageMetric(
                 resource_name="memory",
                 usage_value=999.9,
@@ -203,7 +204,7 @@ class TestModelResourceUsageMetricEdgeCases:
 
     def test_percentage_just_above_150(self) -> None:
         """Test that 150.01 is rejected for percentages."""
-        with pytest.raises(ValidationError):
+        with pytest.raises(ModelOnexError):
             ModelResourceUsageMetric(
                 resource_name="cpu",
                 usage_value=150.01,
