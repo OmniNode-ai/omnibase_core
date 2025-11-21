@@ -225,8 +225,6 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
         # Convert output to dict
         if hasattr(output, "model_dump"):
             output_dict = output.model_dump()
-        elif hasattr(output, "dict"):
-            output_dict = output.dict()
         elif isinstance(output, dict):
             output_dict = output
         else:

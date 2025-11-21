@@ -17,6 +17,7 @@ from omnibase_core.enums.enum_state_management import (
     EnumConflictResolution,
     EnumConsistencyLevel,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelStateSynchronization(BaseModel):
@@ -26,6 +27,12 @@ class ModelStateSynchronization(BaseModel):
     Defines synchronization policies for distributed
     state management and consistency guarantees.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     synchronization_enabled: bool = Field(
         default=False,

@@ -13,6 +13,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelRoutingMetrics(BaseModel):
     """
@@ -21,6 +23,12 @@ class ModelRoutingMetrics(BaseModel):
     Defines metrics collection, monitoring,
     and alerting for routing operations.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     metrics_enabled: bool = Field(
         default=True,

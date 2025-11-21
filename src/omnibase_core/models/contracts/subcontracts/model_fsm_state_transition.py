@@ -13,6 +13,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 from .model_fsm_transition_action import ModelFSMTransitionAction
 from .model_fsm_transition_condition import ModelFSMTransitionCondition
 
@@ -24,6 +26,12 @@ class ModelFSMStateTransition(BaseModel):
     Defines complete transition behavior including source/target states,
     triggers, conditions, actions, and rollback mechanisms.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     transition_name: str = Field(
         default=...,

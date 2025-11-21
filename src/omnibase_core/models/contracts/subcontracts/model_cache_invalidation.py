@@ -10,6 +10,8 @@ Model for cache invalidation policies in the ONEX caching system.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelCacheInvalidation(BaseModel):
     """
@@ -18,6 +20,12 @@ class ModelCacheInvalidation(BaseModel):
     Defines cache invalidation strategies,
     triggers, and cleanup policies.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     invalidation_strategy: str = Field(
         default=...,

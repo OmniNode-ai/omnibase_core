@@ -13,12 +13,20 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 from .model_node_assignment import ModelNodeAssignment
 from .model_synchronization_point import ModelSynchronizationPoint
 
 
 class ModelCoordinationResult(BaseModel):
     """Result of node coordination operation."""
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     coordination_id: UUID = Field(
         default_factory=uuid4,

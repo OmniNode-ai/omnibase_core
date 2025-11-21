@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_parameter_type import EnumParameterType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelAggregationParameter(BaseModel):
@@ -20,6 +21,12 @@ class ModelAggregationParameter(BaseModel):
     Replaces loose dict[str, PrimitiveValueType] with validated structure
     ensuring type safety and runtime validation.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     parameter_name: str = Field(
         ...,

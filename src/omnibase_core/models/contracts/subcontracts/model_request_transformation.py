@@ -13,6 +13,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 from .model_header_transformation import ModelHeaderTransformation
 from .model_query_parameter_rule import ModelQueryParameterRule
 from .model_response_header_rule import ModelResponseHeaderRule
@@ -25,6 +27,12 @@ class ModelRequestTransformation(BaseModel):
     Defines request/response transformation rules,
     header manipulation, and payload modification.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     transformation_enabled: bool = Field(
         default=False,

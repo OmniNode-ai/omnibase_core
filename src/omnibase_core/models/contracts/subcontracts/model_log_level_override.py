@@ -10,6 +10,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelLogLevelOverride(BaseModel):
@@ -19,6 +20,12 @@ class ModelLogLevelOverride(BaseModel):
     Defines per-module or per-logger log level overrides with
     proper enum validation and type safety.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     logger_name: str = Field(
         ...,

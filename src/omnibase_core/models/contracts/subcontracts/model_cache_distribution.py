@@ -8,6 +8,8 @@ Model for distributed caching configuration in the ONEX caching system.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelCacheDistribution(BaseModel):
     """
@@ -16,6 +18,12 @@ class ModelCacheDistribution(BaseModel):
     Defines distributed cache behavior,
     synchronization, and consistency policies.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     distributed_enabled: bool = Field(
         default=False,

@@ -10,6 +10,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_mapping_type import EnumMappingType
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelEventMappingRule(BaseModel):
@@ -19,6 +20,12 @@ class ModelEventMappingRule(BaseModel):
     Defines transformations for event fields with proper validation
     and type safety.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     source_field: str = Field(
         ...,

@@ -14,6 +14,7 @@ from omnibase_core.enums.enum_environment_validation_rule_type import (
     EnumEnvironmentValidationRuleType,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelEnvironmentValidationRule(BaseModel):
@@ -23,6 +24,12 @@ class ModelEnvironmentValidationRule(BaseModel):
     Defines validation rules specific to a configuration key within
     a particular environment.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     config_key: str = Field(
         ...,

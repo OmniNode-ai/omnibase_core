@@ -13,6 +13,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 from .model_aggregation_parameter import ModelAggregationParameter
 
 
@@ -23,6 +25,12 @@ class ModelAggregationFunction(BaseModel):
     Defines aggregation functions, parameters,
     and computational requirements for data processing.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     function_name: str = Field(
         default=...,

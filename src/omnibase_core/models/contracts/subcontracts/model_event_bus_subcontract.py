@@ -46,6 +46,12 @@ class ModelEventBusSubcontract(BaseModel):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
+
     # Core event bus configuration
     event_bus_enabled: bool = Field(
         default=True,

@@ -10,6 +10,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_health_detail_type import EnumHealthDetailType
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelComponentHealthDetail(BaseModel):
@@ -19,6 +20,12 @@ class ModelComponentHealthDetail(BaseModel):
     Provides structured health information with proper validation
     and type safety.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     detail_key: str = Field(
         ...,

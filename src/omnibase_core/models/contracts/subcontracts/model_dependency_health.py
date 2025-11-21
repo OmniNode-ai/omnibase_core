@@ -13,10 +13,17 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelDependencyHealth(BaseModel):
     """Health status of external dependencies."""
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     dependency_name: str = Field(..., description="Name of the external dependency")
 

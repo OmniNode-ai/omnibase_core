@@ -12,6 +12,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_action_config_value import ModelActionConfigValue
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelActionConfigParameter(BaseModel):
@@ -21,6 +22,12 @@ class ModelActionConfigParameter(BaseModel):
     Provides structured configuration with proper validation
     and type safety for FSM transition actions.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     parameter_name: str = Field(
         ...,

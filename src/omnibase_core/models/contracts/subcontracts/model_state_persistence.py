@@ -14,6 +14,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_state_management import EnumStorageBackend
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelStatePersistence(BaseModel):
@@ -23,6 +24,12 @@ class ModelStatePersistence(BaseModel):
     Defines state storage, backup, and recovery
     strategies for durable state management.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     persistence_enabled: bool = Field(
         default=True,

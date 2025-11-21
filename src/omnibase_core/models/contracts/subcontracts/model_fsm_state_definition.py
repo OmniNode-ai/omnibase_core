@@ -13,6 +13,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelFSMStateDefinition(BaseModel):
     """
@@ -21,6 +23,12 @@ class ModelFSMStateDefinition(BaseModel):
     Defines state properties, lifecycle management,
     and validation rules for FSM state handling.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     state_name: str = Field(
         default=..., description="Unique name for the state", min_length=1

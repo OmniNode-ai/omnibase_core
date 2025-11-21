@@ -13,6 +13,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelWindowingStrategy(BaseModel):
     """
@@ -21,6 +23,12 @@ class ModelWindowingStrategy(BaseModel):
     Defines windowing policies, sizes, and
     time-based aggregation parameters.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     windowing_enabled: bool = Field(
         default=False,

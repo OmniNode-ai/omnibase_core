@@ -23,6 +23,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_fsmtransitionaction import ModelFSMTransitionAction
 
@@ -33,6 +34,12 @@ class ModelActionConfigValue(BaseModel):
 
     Replaces dict[str, PrimitiveValueType | list[str]] with proper type safety.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     value_type: Literal["scalar", "list[Any]"] = Field(
         default=...,

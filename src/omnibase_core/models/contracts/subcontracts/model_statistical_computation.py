@@ -13,6 +13,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelStatisticalComputation(BaseModel):
     """
@@ -21,6 +23,12 @@ class ModelStatisticalComputation(BaseModel):
     Defines statistical functions, approximations,
     and advanced analytical computations.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     statistical_enabled: bool = Field(
         default=False,

@@ -273,7 +273,7 @@ class ModelSecurityEventCollection(BaseModel):
             if hasattr(event, "model_dump"):
                 event_dict = event.model_dump()
             else:
-                event_dict = event.dict() if hasattr(event, "dict") else event.__dict__
+                event_dict = event.__dict__
             for key, value in event_dict.items():
                 if isinstance(value, datetime):
                     event_dict[key] = value.isoformat()

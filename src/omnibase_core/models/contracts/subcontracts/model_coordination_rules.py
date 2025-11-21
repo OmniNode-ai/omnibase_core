@@ -11,10 +11,17 @@ Model for workflow coordination rules in the ONEX workflow coordination system.
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelCoordinationRules(BaseModel):
     """Rules for workflow coordination."""
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     synchronization_points: list[str] = Field(
         default_factory=list,

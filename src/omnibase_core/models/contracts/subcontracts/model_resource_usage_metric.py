@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field, model_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_resource_unit import EnumResourceUnit
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelResourceUsageMetric(BaseModel):
@@ -21,6 +22,12 @@ class ModelResourceUsageMetric(BaseModel):
     Provides structured resource usage information with proper
     validation and type safety.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     resource_name: str = Field(
         ...,

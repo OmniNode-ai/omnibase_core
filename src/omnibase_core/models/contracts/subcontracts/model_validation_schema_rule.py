@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field, model_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_rule_type import EnumValidationRuleType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelValidationSchemaRule(BaseModel):
@@ -25,6 +26,12 @@ class ModelValidationSchemaRule(BaseModel):
     Defines validation rules for configuration keys with type safety
     and runtime validation.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version",
+    )
 
     key_name: str = Field(
         ...,
