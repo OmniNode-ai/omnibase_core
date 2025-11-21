@@ -313,8 +313,8 @@ async def execute_orchestration(
 
 All manifest models have comprehensive test coverage:
 
-- **Mixin Metadata Tests**: [/Volumes/PRO-G40/Code/omnibase_core/tests/unit/models/core/test_model_mixin_metadata.py](/Volumes/PRO-G40/Code/omnibase_core/tests/unit/models/core/test_model_mixin_metadata.py) - 39 tests
-- **Docker Compose Manifest Tests**: [/Volumes/PRO-G40/Code/omnibase_core/tests/unit/models/docker/test_model_docker_compose_manifest.py](/Volumes/PRO-G40/Code/omnibase_core/tests/unit/models/docker/test_model_docker_compose_manifest.py) - 26 tests
+- **Mixin Metadata Tests**: [../../tests/unit/models/core/test_model_mixin_metadata.py](../../tests/unit/models/core/test_model_mixin_metadata.py) - 39 tests
+- **Docker Compose Manifest Tests**: [../../tests/unit/models/docker/test_model_docker_compose_manifest.py](../../tests/unit/models/docker/test_model_docker_compose_manifest.py) - 26 tests
 
 **Example Test Pattern**:
 ```python
