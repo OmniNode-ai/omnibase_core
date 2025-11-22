@@ -15,7 +15,9 @@ class ModelMixinMethodParameter(BaseModel):
     Attributes:
         name: Parameter name
         type: Parameter type annotation
-        default: Default value (if optional)
+        default: Default value (if optional). None indicates no default
+            (parameter is required). Use explicit None in a container
+            (e.g., [None]) to represent 'default is None'.
         description: Parameter description
     """
 
@@ -23,5 +25,12 @@ class ModelMixinMethodParameter(BaseModel):
 
     name: str = Field(..., description="Parameter name")
     type: str = Field(..., description="Parameter type annotation")
-    default: Any = Field(None, description="Default value")
+    default: Any = Field(
+        None,
+        description=(
+            "Default value for the parameter. "
+            "None indicates no default (parameter is required). "
+            "Use explicit None in a container (e.g., [None]) to represent 'default is None'."
+        ),
+    )
     description: str = Field("", description="Parameter description")

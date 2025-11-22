@@ -71,8 +71,6 @@ class TestModelDockerComposeManifest:
 
     def test_version_validation_invalid(self) -> None:
         """Test version validation with invalid versions."""
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
         invalid_versions = ["3.8.1beta", "v3.8", "latest", "3.x"]
 
         for version in invalid_versions:

@@ -142,6 +142,7 @@ __all__ = [
     "ModelExtensionValue",
     "ModelLoggingConfig",
     "ModelNamespace",
+    "ModelNodeMetadata",
     "ModelNodeMetadataBlock",
     "ModelSourceRepository",
     "ModelStateContractBlock",

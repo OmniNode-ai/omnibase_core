@@ -38,7 +38,20 @@ class ModelMixinConfigField(BaseModel):
     @field_validator("type")
     @classmethod
     def validate_type(cls, v: str) -> str:
-        """Validate field type is supported."""
+        """Validate field type is supported.
+
+        Type distinctions:
+        - 'number': Accepts both int and float values (flexible numeric type)
+        - 'float': Explicit floating-point type only (strict validation)
+        - 'integer': Explicit integer type only (strict validation)
+        - 'string': Text values
+        - 'boolean': True/False values
+        - 'array': List/array values (use 'items' to define schema)
+        - 'object': Dictionary/object values
+
+        Use 'number' for flexibility when both int and float are acceptable.
+        Use specific types ('float' or 'integer') for strict type validation.
+        """
         valid_types = {
             "string",
             "integer",

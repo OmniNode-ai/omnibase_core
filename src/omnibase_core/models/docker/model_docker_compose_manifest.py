@@ -89,11 +89,18 @@ class ModelDockerComposeManifest(BaseModel):
             ModelSemVer instance
 
         Raises:
-            ModelOnexError: If version format is invalid (EnumCoreErrorCode.VALIDATION_ERROR)
+            ModelOnexError: If version format is invalid (VALIDATION_ERROR)
         """
         # If already ModelSemVer, return as-is
         if isinstance(v, ModelSemVer):
             return v
+
+        # Type check: ensure input is string before calling string methods
+        if not isinstance(v, str):
+            raise ModelOnexError(
+                message=f"Invalid version type: {type(v).__name__}; expected string or ModelSemVer",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
 
         # Parse Docker Compose version string (e.g., "3.8", "3", "2.4")
         parts = v.split(".")
@@ -118,7 +125,7 @@ class ModelDockerComposeManifest(BaseModel):
             Validated manifest
 
         Raises:
-            ModelOnexError: If invalid references are found (EnumCoreErrorCode.VALIDATION_FAILED)
+            ModelOnexError: If service dependencies reference undefined services (VALIDATION_FAILED)
         """
         errors = []
 
@@ -406,5 +413,5 @@ class ModelDockerComposeManifest(BaseModel):
             }
 
         # Write to YAML
-        with open(yaml_path, "w") as f:
+        with open(yaml_path, "w", encoding="utf-8") as f:
             yaml.dump(data, f, default_flow_style=False, sort_keys=False)

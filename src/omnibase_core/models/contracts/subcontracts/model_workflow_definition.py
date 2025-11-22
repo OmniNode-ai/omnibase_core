@@ -22,8 +22,7 @@ class ModelWorkflowDefinition(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Model version",
+        description="Model version (MUST be provided in YAML contract)",
     )
 
     workflow_metadata: ModelWorkflowDefinitionMetadata = Field(
@@ -37,7 +36,9 @@ class ModelWorkflowDefinition(BaseModel):
     )
 
     coordination_rules: ModelCoordinationRules = Field(
-        default_factory=ModelCoordinationRules,
+        default_factory=lambda: ModelCoordinationRules(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Rules for workflow coordination",
     )
 

@@ -55,8 +55,7 @@ class ModelHealthCheckSubcontract(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Model version",
+        description="Model version (MUST be provided in YAML contract)",
     )
 
     subcontract_name: str = Field(
@@ -64,8 +63,7 @@ class ModelHealthCheckSubcontract(BaseModel):
     )
 
     subcontract_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Version of the subcontract",
+        description="Version of the subcontract (MUST be provided in YAML contract)",
     )
 
     applicable_node_types: list[str] = Field(

@@ -9,6 +9,7 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_mixin_code_patterns import ModelMixinCodePatterns
 from omnibase_core.models.core.model_mixin_config_field import ModelMixinConfigField
 from omnibase_core.models.core.model_mixin_metadata import ModelMixinMetadata
@@ -49,17 +50,24 @@ class ModelMixinMetadataCollection(BaseModel):
         """
         yaml_path = Path(yaml_path)
         if not yaml_path.exists():
-            raise ModelOnexError(f"Mixin metadata file not found: {yaml_path}")
+            raise ModelOnexError(
+                message=f"Mixin metadata file not found: {yaml_path}",
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+            )
 
         try:
             with yaml_path.open("r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
         except Exception as e:
-            raise ModelOnexError(f"Failed to load YAML from {yaml_path}: {e}") from e
+            raise ModelOnexError(
+                message=f"Failed to load YAML from {yaml_path}: {e}",
+                error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+            ) from e
 
         if not isinstance(data, dict):
             raise ModelOnexError(
-                f"Expected dict at root of {yaml_path}, got {type(data)}"
+                message=f"Expected dict at root of {yaml_path}, got {type(data)}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
         mixins = {}
@@ -78,27 +86,57 @@ class ModelMixinMetadataCollection(BaseModel):
                 # Parse config schema
                 config_schema = {}
                 if "config_schema" in mixin_data:
-                    for field_name, field_data in mixin_data["config_schema"].items():
+                    cs_data = mixin_data["config_schema"] or {}
+                    if not isinstance(cs_data, dict):
+                        raise ModelOnexError(
+                            message=f"config_schema for mixin '{key}' must be a mapping, got {type(cs_data).__name__}",
+                            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        )
+                    for field_name, field_data in cs_data.items():
                         config_schema[field_name] = ModelMixinConfigField(**field_data)
 
                 # Parse presets
                 presets = {}
                 if "presets" in mixin_data:
-                    for preset_name, preset_data in mixin_data["presets"].items():
+                    presets_data = mixin_data["presets"] or {}
+                    if not isinstance(presets_data, dict):
+                        raise ModelOnexError(
+                            message=f"presets for mixin '{key}' must be a mapping, got {type(presets_data).__name__}",
+                            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        )
+                    for preset_name, preset_data in presets_data.items():
                         presets[preset_name] = ModelMixinPreset(**preset_data)
 
                 # Parse code patterns
                 code_patterns = None
                 if "code_patterns" in mixin_data:
-                    cp_data = mixin_data["code_patterns"]
+                    cp_data = mixin_data["code_patterns"] or {}
+                    if not isinstance(cp_data, dict):
+                        raise ModelOnexError(
+                            message=f"code_patterns for mixin '{key}' must be a mapping, got {type(cp_data).__name__}",
+                            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        )
+
                     methods = []
                     if "methods" in cp_data:
-                        for method_data in cp_data["methods"]:
+                        methods_data = cp_data["methods"] or []
+                        if not isinstance(methods_data, list):
+                            raise ModelOnexError(
+                                message=f"code_patterns.methods for mixin '{key}' must be a list, got {type(methods_data).__name__}",
+                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                            )
+                        for method_data in methods_data:
                             methods.append(ModelMixinMethod(**method_data))
 
                     properties = []
                     if "properties" in cp_data:
-                        for prop_data in cp_data["properties"]:
+                        properties_data = cp_data["properties"] or []
+                        if not isinstance(properties_data, list):
+                            raise ModelOnexError(
+                                message=f"code_patterns.properties for mixin '{key}' must be a list, got {type(properties_data).__name__}",
+                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                            )
+                        for prop_data in properties_data:
                             properties.append(ModelMixinProperty(**prop_data))
 
                     code_patterns = ModelMixinCodePatterns(
@@ -111,10 +149,22 @@ class ModelMixinMetadataCollection(BaseModel):
                 # Parse performance
                 performance = None
                 if "performance" in mixin_data:
-                    perf_data = mixin_data["performance"]
+                    perf_data = mixin_data["performance"] or {}
+                    if not isinstance(perf_data, dict):
+                        raise ModelOnexError(
+                            message=f"performance for mixin '{key}' must be a mapping, got {type(perf_data).__name__}",
+                            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        )
+
                     use_cases = []
                     if "typical_use_cases" in perf_data:
-                        for uc_data in perf_data["typical_use_cases"]:
+                        use_cases_data = perf_data["typical_use_cases"] or []
+                        if not isinstance(use_cases_data, list):
+                            raise ModelOnexError(
+                                message=f"performance.typical_use_cases for mixin '{key}' must be a list, got {type(use_cases_data).__name__}",
+                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                            )
+                        for uc_data in use_cases_data:
                             use_cases.append(ModelMixinPerformanceUseCase(**uc_data))
 
                     performance = ModelMixinPerformance(
@@ -148,7 +198,8 @@ class ModelMixinMetadataCollection(BaseModel):
 
             except Exception as e:
                 raise ModelOnexError(
-                    f"Failed to parse mixin '{key}' from {yaml_path}: {e}"
+                    message=f"Failed to parse mixin '{key}' from {yaml_path}: {e}",
+                    error_code=EnumCoreErrorCode.PARSING_ERROR,
                 ) from e
 
         return cls(mixins=mixins)

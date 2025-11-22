@@ -54,8 +54,7 @@ class ModelAggregationSubcontract(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Model version",
+        description="Model version (MUST be provided in YAML contract)",
     )
 
     # Core aggregation configuration
@@ -83,7 +82,9 @@ class ModelAggregationSubcontract(BaseModel):
 
     # Data grouping configuration
     grouping: ModelDataGrouping = Field(
-        default_factory=ModelDataGrouping,
+        default_factory=lambda: ModelDataGrouping(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Data grouping configuration",
     )
 
@@ -101,7 +102,9 @@ class ModelAggregationSubcontract(BaseModel):
 
     # Performance optimization
     performance: ModelAggregationPerformance = Field(
-        default_factory=ModelAggregationPerformance,
+        default_factory=lambda: ModelAggregationPerformance(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Performance optimization configuration",
     )
 

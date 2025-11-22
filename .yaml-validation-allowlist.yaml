@@ -5,19 +5,51 @@
 # for valid architectural reasons (e.g., parsing before Pydantic validation).
 
 # Files allowed to use yaml.safe_load() (utility modules)
+# These files provide foundational YAML parsing utilities that sit BEFORE Pydantic validation
+# in the architecture. They need raw YAML access to prepare data for model validation.
 allowed_files:
-  - "src/omnibase_core/utils/util_safe_yaml_loader.py" # YAML utility functions
-  - "src/omnibase_core/validation/contracts.py" # Contract validation utilities
-  - "src/omnibase_core/validation/contract_validator.py" # Contract validator - preprocesses YAML
+  # Core YAML utility - provides safe loading primitives for the entire codebase
+  # Used by validation layer to convert raw YAML → Pydantic models
+  - "src/omnibase_core/utils/util_safe_yaml_loader.py"
+
+  # Contract validation entry point - orchestrates YAML→Pydantic conversion
+  # Provides high-level API for loading/validating contract YAML files
+  - "src/omnibase_core/validation/contracts.py"
+
+  # Contract validator implementation - preprocesses YAML structure before validation
+  # Inspects raw YAML to ensure it meets contract schema requirements
+  - "src/omnibase_core/validation/contract_validator.py"
 
 # Specific filenames that are allowed (matched by basename)
+# Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
   - "util_safe_yaml_loader.py"
 
 # Function names allowed to use yaml.safe_load()
+# These functions form the YAML→Pydantic validation pipeline and need raw YAML access
+# to prepare data structures before Pydantic model instantiation.
 allowed_functions:
-  - "load_and_validate_yaml_model" # Utility function in contracts.py - uses Pydantic validation
-  - "validate_model_compliance" # Validator in contract_validator.py - inspects raw YAML
-  - "validate_contract_yaml" # Contract validator - preprocesses YAML before Pydantic validation
-  - "load_yaml_content" # Generic YAML loading utility
-  - "parse_yaml_safely" # Safe YAML parsing utility
+  # YAML→Pydantic conversion utility (contracts.py, util_safe_yaml_loader.py)
+  # Loads raw YAML and validates against a Pydantic model schema
+  # Rationale: Must parse YAML before passing to Pydantic for validation
+  - "load_and_validate_yaml_model"
+
+  # Contract compliance validator (contract_validator.py)
+  # Inspects raw YAML structure to verify it matches contract schema
+  # Rationale: Needs access to raw YAML dict to check structural requirements
+  - "validate_model_compliance"
+
+  # Contract YAML preprocessor (contract_validator.py)
+  # Validates contract YAML before Pydantic model instantiation
+  # Rationale: Pre-validation step that checks YAML structure before type conversion
+  - "validate_contract_yaml"
+
+  # YAML content loader (util_safe_yaml_loader.py)
+  # Generic utility for loading YAML content into Pydantic models
+  # Rationale: Foundation utility that bridges YAML parsing and Pydantic validation
+  - "load_yaml_content_as_model"
+
+  # Schema example extractor (util_safe_yaml_loader.py)
+  # Extracts example configurations from YAML schema definitions
+  # Rationale: Parses schema YAML to extract embedded examples for documentation
+  - "extract_example_from_schema"

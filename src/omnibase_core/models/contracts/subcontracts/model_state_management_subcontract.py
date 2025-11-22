@@ -62,8 +62,10 @@ class ModelStateManagementSubcontract(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Model version",
+        description=(
+            "Model instance version - tracks the semantic version of this "
+            "specific ModelStateManagementSubcontract instance (MUST be provided in YAML contract)"
+        ),
     )
 
     model_config = ConfigDict(
@@ -96,13 +98,17 @@ class ModelStateManagementSubcontract(BaseModel):
 
     # State persistence configuration
     persistence: ModelStatePersistence = Field(
-        default_factory=ModelStatePersistence,
+        default_factory=lambda: ModelStatePersistence(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="State persistence configuration",
     )
 
     # State validation configuration
     validation: ModelStateValidation = Field(
-        default_factory=ModelStateValidation,
+        default_factory=lambda: ModelStateValidation(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="State validation configuration",
     )
 
@@ -114,8 +120,13 @@ class ModelStateManagementSubcontract(BaseModel):
 
     # State versioning and migration
     versioning: ModelStateVersioning = Field(
-        default_factory=ModelStateVersioning,
-        description="State versioning configuration",
+        default_factory=lambda: ModelStateVersioning(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
+        description=(
+            "State versioning configuration - defines the version tracking "
+            "strategy for managed state data (not the model instance itself)"
+        ),
     )
 
     # State access and concurrency

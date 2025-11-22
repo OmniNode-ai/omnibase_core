@@ -61,8 +61,7 @@ class ModelFSMSubcontract(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Model version",
+        description="Model version (MUST be provided in YAML contract)",
     )
 
     # Core FSM identification
@@ -73,8 +72,7 @@ class ModelFSMSubcontract(BaseModel):
     )
 
     state_machine_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Version of the state machine definition",
+        description="Version of the state machine definition (MUST be provided in YAML contract)",
     )
 
     description: str = Field(
