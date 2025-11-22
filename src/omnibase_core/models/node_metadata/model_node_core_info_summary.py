@@ -38,7 +38,10 @@ class ModelNodeCoreInfoSummary(BaseModel):
     node_id: UUID = Field(description="Node identifier")
     node_name: str = Field(description="Node name")
     node_type: EnumMetadataNodeType = Field(description="Node type value")
-    node_version: ModelSemVer = Field(description="Node version")
+    node_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Node version",
+    )
     status: EnumStatus = Field(description="Node status value")
     health: EnumNodeHealthStatus = Field(description="Node health status")
     is_active: bool = Field(description="Whether node is active")

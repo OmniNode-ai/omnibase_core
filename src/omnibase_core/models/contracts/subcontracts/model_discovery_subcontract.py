@@ -77,6 +77,7 @@ class ModelDiscoverySubcontract(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Model version (MUST be provided in YAML contract)",
     )
 

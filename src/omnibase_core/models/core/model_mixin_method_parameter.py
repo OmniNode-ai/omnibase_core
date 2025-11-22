@@ -15,9 +15,7 @@ class ModelMixinMethodParameter(BaseModel):
     Attributes:
         name: Parameter name
         type: Parameter type annotation
-        default: Default value (if optional). None indicates no default
-            (parameter is required). Use explicit None in a container
-            (e.g., [None]) to represent 'default is None'.
+        default: Default value (None indicates no default; use explicit None for parameters with None default)
         description: Parameter description
     """
 

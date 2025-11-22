@@ -18,7 +18,10 @@ class ModelMetadata(BaseModel):
     )
     uuid: str = Field(default=..., description="Unique identifier for this file")
     name: str = Field(default=..., description="File name")
-    version: ModelSemVer = Field(default=..., description="File version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="File version",
+    )
     author: str = Field(default=..., description="Author of the file")
     created_at: datetime = Field(default=..., description="Creation timestamp")
     last_modified_at: datetime = Field(

@@ -17,7 +17,10 @@ class ModelDiscoveryResponseModelMetadata(BaseModel):
     health_status: str = Field(default=..., description="Current health status")
     capabilities: list[str] = Field(default=..., description="Node capabilities")
     node_type: str = Field(default=..., description="Node type classification")
-    version: ModelSemVer = Field(default=..., description="Node version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Node version",
+    )
     event_channels: list[str] = Field(
         default=..., description="Supported event channels"
     )

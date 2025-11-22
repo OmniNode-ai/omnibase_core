@@ -31,6 +31,7 @@ class ModelWorkflowInstance(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Model version (MUST be provided in YAML contract)",
     )
 
@@ -42,6 +43,7 @@ class ModelWorkflowInstance(BaseModel):
     workflow_name: str = Field(default=..., description="Name of the workflow")
 
     workflow_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Version of the workflow definition (MUST be provided in YAML contract)",
     )
 

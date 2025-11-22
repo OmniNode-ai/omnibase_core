@@ -17,7 +17,10 @@ class ModelNodeInfo(BaseModel):
     """Information about a discovered ONEX node."""
 
     name: str = Field(default=..., description="Node name")
-    version: ModelSemVer = Field(default=..., description="Node version")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Node version",
+    )
     description: str = Field(default=..., description="Node description")
     status: str = Field(default=..., description="Node status")
     trust_level: str = Field(default=..., description="Node trust level")

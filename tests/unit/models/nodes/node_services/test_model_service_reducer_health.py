@@ -424,7 +424,8 @@ class TestServiceReducerHealthMonitoring:
 
         # Act
         with patch("asyncio.sleep", mock_sleep):
-            await service_reducer._health_monitor_loop()
+            with pytest.raises(asyncio.CancelledError):
+                await service_reducer._health_monitor_loop()
 
         # Assert
         cancel_logs = [msg for msg in log_messages if "cancelled" in msg.lower()]

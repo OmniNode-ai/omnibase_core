@@ -3,53 +3,44 @@
 # This file defines exceptions to the manual YAML validation detection hook.
 # These are legitimate utility functions and files that need to use yaml.safe_load()
 # for valid architectural reasons (e.g., parsing before Pydantic validation).
+#
+# Each entry includes a 'reason' field explaining the architectural justification
+# for allowing YAML parsing in that context.
 
 # Files allowed to use yaml.safe_load() (utility modules)
 # These files provide foundational YAML parsing utilities that sit BEFORE Pydantic validation
 # in the architecture. They need raw YAML access to prepare data for model validation.
 allowed_files:
-  # Core YAML utility - provides safe loading primitives for the entire codebase
-  # Used by validation layer to convert raw YAML → Pydantic models
-  - "src/omnibase_core/utils/util_safe_yaml_loader.py"
+  - file: "src/omnibase_core/utils/util_safe_yaml_loader.py"
+    reason: "Foundational utility layer that bridges raw YAML parsing and Pydantic validation - provides safe loading primitives for entire codebase"
 
-  # Contract validation entry point - orchestrates YAML→Pydantic conversion
-  # Provides high-level API for loading/validating contract YAML files
-  - "src/omnibase_core/validation/contracts.py"
+  - file: "src/omnibase_core/validation/contracts.py"
+    reason: "Central orchestrator for YAML contract file parsing and validation - provides high-level API for loading/validating contract YAML files"
 
-  # Contract validator implementation - preprocesses YAML structure before validation
-  # Inspects raw YAML to ensure it meets contract schema requirements
-  - "src/omnibase_core/validation/contract_validator.py"
+  - file: "src/omnibase_core/validation/contract_validator.py"
+    reason: "Validation layer that requires inspection of raw YAML structure before type conversion - preprocesses YAML to ensure it meets contract schema requirements"
 
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
-  - "util_safe_yaml_loader.py"
+  - filename: "util_safe_yaml_loader.py"
+    reason: "Core utility that should be allowed regardless of module path location - may be copied to multiple locations for modularity"
 
 # Function names allowed to use yaml.safe_load()
 # These functions form the YAML→Pydantic validation pipeline and need raw YAML access
 # to prepare data structures before Pydantic model instantiation.
 allowed_functions:
-  # YAML→Pydantic conversion utility (contracts.py, util_safe_yaml_loader.py)
-  # Loads raw YAML and validates against a Pydantic model schema
-  # Rationale: Must parse YAML before passing to Pydantic for validation
-  - "load_and_validate_yaml_model"
+  - function: "load_and_validate_yaml_model"
+    reason: "Must parse YAML before passing to Pydantic for validation - YAML→Pydantic conversion utility that loads raw YAML and validates against model schema"
 
-  # Contract compliance validator (contract_validator.py)
-  # Inspects raw YAML structure to verify it matches contract schema
-  # Rationale: Needs access to raw YAML dict to check structural requirements
-  - "validate_model_compliance"
+  - function: "validate_model_compliance"
+    reason: "Needs access to raw YAML dict to check structural requirements - contract compliance validator that inspects YAML structure before model instantiation"
 
-  # Contract YAML preprocessor (contract_validator.py)
-  # Validates contract YAML before Pydantic model instantiation
-  # Rationale: Pre-validation step that checks YAML structure before type conversion
-  - "validate_contract_yaml"
+  - function: "validate_contract_yaml"
+    reason: "Pre-validation step that checks YAML structure before type conversion - validates contract YAML before Pydantic model instantiation"
 
-  # YAML content loader (util_safe_yaml_loader.py)
-  # Generic utility for loading YAML content into Pydantic models
-  # Rationale: Foundation utility that bridges YAML parsing and Pydantic validation
-  - "load_yaml_content_as_model"
+  - function: "load_yaml_content_as_model"
+    reason: "Foundation utility that bridges YAML parsing and Pydantic validation - generic utility for loading YAML content into Pydantic models"
 
-  # Schema example extractor (util_safe_yaml_loader.py)
-  # Extracts example configurations from YAML schema definitions
-  # Rationale: Parses schema YAML to extract embedded examples for documentation
-  - "extract_example_from_schema"
+  - function: "extract_example_from_schema"
+    reason: "Parses schema YAML to extract embedded examples for documentation - schema example extractor that extracts configurations from YAML schema definitions"
