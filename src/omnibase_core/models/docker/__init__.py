@@ -34,10 +34,10 @@ from omnibase_core.models.docker.model_docker_compose_generator_class import (
 # Docker Compose manifest
 from omnibase_core.models.docker.model_docker_compose_manifest import (
     ModelDockerComposeManifest,
-    ModelDockerConfigFile,
-    ModelDockerSecretFile,
-    ModelDockerService,
 )
+
+# Docker Compose config and secret files
+from omnibase_core.models.docker.model_docker_config_file import ModelDockerConfigFile
 
 # Docker deployment configuration
 from omnibase_core.models.docker.model_docker_deploy_config import (
@@ -72,6 +72,10 @@ from omnibase_core.models.docker.model_docker_placement_constraints import (
 from omnibase_core.models.docker.model_docker_restart_policy import (
     ModelDockerRestartPolicy,
 )
+from omnibase_core.models.docker.model_docker_secret_file import ModelDockerSecretFile
+
+# Docker Compose service
+from omnibase_core.models.docker.model_docker_service import ModelDockerService
 
 # Docker template generator
 from omnibase_core.models.docker.model_docker_template_generator import (
@@ -121,3 +125,8 @@ __all__ = [
     # Volume configuration
     "ModelDockerVolumeConfig",
 ]
+
+# Rebuild models after all imports to resolve forward references
+ModelDockerDeployConfigClass.model_rebuild()
+ModelDockerService.model_rebuild()
+ModelDockerComposeManifest.model_rebuild()

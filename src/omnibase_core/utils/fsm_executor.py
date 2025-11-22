@@ -623,3 +623,13 @@ def _find_reachable_states(fsm: ModelFSMSubcontract) -> set[str]:
                     queue.append(transition.to_state)
 
     return reachable
+
+
+# Public API
+__all__ = [
+    "FSMState",
+    "FSMTransitionResult",
+    "execute_transition",
+    "get_initial_state",
+    "validate_fsm_contract",
+]

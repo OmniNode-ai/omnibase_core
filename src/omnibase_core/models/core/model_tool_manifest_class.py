@@ -59,6 +59,7 @@ class ModelToolManifest(BaseModel):
 
     # === VERSION CATALOG ===
     current_stable_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Current stable version identifier",
     )
     current_development_version: ModelSemVer | None = Field(

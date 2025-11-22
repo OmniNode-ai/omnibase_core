@@ -729,3 +729,12 @@ def _has_dependency_cycles(
                 return True
 
     return False
+
+
+# Public API
+__all__ = [
+    "WorkflowExecutionResult",
+    "execute_workflow",
+    "get_execution_order",
+    "validate_workflow_definition",
+]

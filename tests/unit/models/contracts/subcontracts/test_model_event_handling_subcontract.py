@@ -39,9 +39,21 @@ class TestModelEventHandlingSubcontractBasics:
 
     def test_interface_version(self) -> None:
         """Test interface version is set correctly."""
-        assert ModelEventHandlingSubcontract.INTERFACE_VERSION == ModelSemVer(
-            major=1, minor=0, patch=0
+        assert (
+            ModelSemVer(major=1, minor=0, patch=0)
+            == ModelEventHandlingSubcontract.INTERFACE_VERSION
         )
+
+    def test_version_field(self) -> None:
+        """Test version field is properly set on instance."""
+        version = ModelSemVer(major=1, minor=0, patch=0)
+        subcontract = ModelEventHandlingSubcontract(version=version)
+
+        assert isinstance(subcontract.version, ModelSemVer)
+        assert subcontract.version == version
+        assert subcontract.version.major == 1
+        assert subcontract.version.minor == 0
+        assert subcontract.version.patch == 0
 
     def test_minimal_instantiation(self) -> None:
         """Test minimal valid instantiation."""

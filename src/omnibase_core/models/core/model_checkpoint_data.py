@@ -59,8 +59,8 @@ class ModelCheckpointData(BaseModel):
     )
 
     version: ModelSemVer = Field(
-        description="Checkpoint data format version",
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Checkpoint data format version",
     )
 
     size_bytes: int = Field(

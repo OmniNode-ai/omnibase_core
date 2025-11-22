@@ -369,6 +369,7 @@ class MixinNodeService:
 
         except asyncio.CancelledError:
             self._log_info("Service event loop cancelled")
+            raise  # Re-raise to properly signal task cancellation
         except Exception as e:
             self._log_error(f"Service event loop error: {e}")
             raise
@@ -391,7 +392,7 @@ class MixinNodeService:
 
             except asyncio.CancelledError:
                 self._log_info("Health monitor cancelled")
-                break  # Exit loop on cancellation
+                raise  # Re-raise to properly signal task cancellation
             except Exception as e:
                 self._log_error(f"Health monitor error: {e}")
                 break  # Exit loop on exception
@@ -494,10 +495,6 @@ class MixinNodeService:
             # Pydantic v2 model - use mode='json' for JSON-serializable output
             serialized: dict[str, Any] = result.model_dump(mode="json")
             return serialized
-        if hasattr(result, "dict"):
-            # Pydantic v1 model (fallback)
-            result_dict: dict[str, Any] = result.dict()
-            return result_dict
         if hasattr(result, "__dict__"):
             # Regular object
             obj_dict: dict[str, Any] = result.__dict__

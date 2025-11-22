@@ -18,7 +18,10 @@ class ModelHandlerMetadata(BaseModel):
     """
 
     handler_name: str = Field(default=..., description="Handler name.")
-    handler_version: ModelSemVer = Field(default=..., description="Handler version.")
+    handler_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Handler version.",
+    )
     handler_author: str = Field(default=..., description="Handler author.")
     handler_description: str = Field(default=..., description="Handler description.")
     supported_extensions: list[str] = Field(

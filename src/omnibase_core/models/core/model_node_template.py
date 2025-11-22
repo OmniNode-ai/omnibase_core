@@ -47,6 +47,7 @@ class ModelNodeTemplateConfig(BaseModel):
     """
 
     template_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Version of the template system being used",
     )
     node_name: str = Field(description="Name of the node to generate")

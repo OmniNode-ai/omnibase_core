@@ -126,29 +126,33 @@ class ModelValueUnion(BaseModel):
         Raises:
             ModelOnexError: If value type is unsupported
         """
+        # Ensure data is a dict
+        result: dict[str, Any]
         if not isinstance(data, dict):
-            data = {"value": data}
+            result = {"value": data}
+        else:
+            result = data
 
         # If value_type already specified, validate it's correct
-        if "value_type" in data:
-            return data
+        if "value_type" in result:
+            return result
 
         # Infer type from value
-        value = data.get("value")
+        value = result.get("value")
 
         # Check bool BEFORE int (bool is subclass of int in Python)
         if isinstance(value, bool):
-            data["value_type"] = "bool"
+            result["value_type"] = "bool"
         elif isinstance(value, int):
-            data["value_type"] = "int"
+            result["value_type"] = "int"
         elif isinstance(value, float):
-            data["value_type"] = "float"
+            result["value_type"] = "float"
         elif isinstance(value, str):
-            data["value_type"] = "str"
+            result["value_type"] = "str"
         elif isinstance(value, list):
-            data["value_type"] = "list"
+            result["value_type"] = "list"
         elif isinstance(value, dict):
-            data["value_type"] = "dict"
+            result["value_type"] = "dict"
         else:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -159,7 +163,7 @@ class ModelValueUnion(BaseModel):
                 },
             )
 
-        return data
+        return result
 
     @model_validator(mode="after")
     def validate_value_type_match(self) -> ModelValueUnion:

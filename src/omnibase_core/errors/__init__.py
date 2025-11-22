@@ -1,4 +1,18 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from omnibase_core.models.common.model_onex_warning import (  # noqa: TC004
+        ModelOnexWarning,
+    )
+    from omnibase_core.models.common.model_registry_error import (  # noqa: TC004
+        ModelRegistryError,
+    )
+    from omnibase_core.models.core.model_cli_adapter import (  # noqa: TC004
+        ModelCLIAdapter,
+    )
+    from omnibase_core.models.errors.model_onex_error import (  # noqa: TC004
+        ModelOnexError,
+    )
 
 """Core error handling for ONEX framework."""
 

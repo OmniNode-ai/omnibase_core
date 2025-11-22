@@ -115,7 +115,10 @@ class ModelEventDescriptor(BaseModel):
     service_name: str = Field(
         default=..., description="Service name for Consul registration"
     )
-    service_version: ModelSemVer = Field(default=..., description="Service version")
+    service_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Service version",
+    )
     node_id: UUID | None = Field(
         default=None, description="Node ID hosting the service"
     )

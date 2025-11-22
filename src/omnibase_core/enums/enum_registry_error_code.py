@@ -40,4 +40,4 @@ class EnumRegistryErrorCode(EnumOnexErrorCode):
         return EnumCLIExitCode.ERROR.value
 
 
-__all__ = ["EnumRegistryErrorCode"]
+__all__ = ["EnumRegistryErrorCode", "EnumOnexErrorCode"]

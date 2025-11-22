@@ -34,7 +34,10 @@ class ModelContractContent(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     # === REQUIRED FIELDS ===
-    contract_version: ModelSemVer = Field(default=..., description="Contract version")
+    contract_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Contract version",
+    )
     node_name: str = Field(default=..., description="Node name")
     node_type: EnumNodeType = Field(
         default=..., description="ONEX node type classification"

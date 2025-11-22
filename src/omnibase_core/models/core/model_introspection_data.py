@@ -22,7 +22,10 @@ class ModelIntrospectionData(BaseModel):
 
     # Core introspection fields
     node_name: str = Field(default=..., description="Node name")
-    node_version: ModelSemVer = Field(default=..., description="Node version")
+    node_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Node version",
+    )
     node_type: str = Field(default=..., description="Node type/category")
     description: str | None = Field(default=None, description="Node description")
 

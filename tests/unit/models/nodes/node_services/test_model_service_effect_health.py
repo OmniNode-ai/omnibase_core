@@ -453,7 +453,8 @@ class TestHealthMonitoringLoop:
         # Mock sleep to raise CancelledError
         with patch("asyncio.sleep", side_effect=asyncio.CancelledError):
             with patch.object(service_effect, "_log_info") as mock_log_info:
-                await service_effect._health_monitor_loop()
+                with pytest.raises(asyncio.CancelledError):
+                    await service_effect._health_monitor_loop()
 
         # Check that cancellation was logged
         cancellation_logged = any(

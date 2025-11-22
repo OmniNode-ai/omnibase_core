@@ -43,7 +43,10 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
     node_name: str = Field(
         default=..., description="Name of the node (e.g. 'node_generator')"
     )
-    version: ModelSemVer = Field(default=..., description="Version of the node")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of the node",
+    )
 
     # ONEX Architecture Classification
     node_type: str = Field(

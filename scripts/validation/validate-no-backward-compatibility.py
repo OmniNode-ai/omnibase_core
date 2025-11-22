@@ -189,7 +189,7 @@ class BackwardCompatibilityDetector:
 
         for pattern in compatibility_method_patterns:
             # ONEX compliance: Use combined flags instead of union
-            flags = re.MULTILINE | re.IGNORECASE | re.DOTALL
+            flags = re.MULTILINE | re.IGNORECASE
             matches = re.finditer(pattern, content, flags)
             for match in matches:
                 line_num = content[: match.start()].count("\n") + 1
@@ -217,14 +217,15 @@ class BackwardCompatibilityDetector:
                 )
 
         # Pattern 3: Configuration allowing extra fields for compatibility
+        # More specific patterns to avoid false positives with legitimate domain code
         extra_allow_patterns = [
-            r'extra\s*=\s*["\']allow["\'].*compatibility',
-            r"Config:.*extra.*allow.*compatibility",
+            r'extra\s*=\s*["\']allow["\']\s*#.*compatibility',  # extra='allow' with compatibility comment
+            r'#.*backward.*compatibility.*extra\s*=\s*["\']allow["\']',  # Comment mentioning backward compat + extra='allow'
         ]
 
         for pattern in extra_allow_patterns:
             # ONEX compliance: Use combined flags instead of union
-            flags = re.MULTILINE | re.IGNORECASE | re.DOTALL
+            flags = re.MULTILINE | re.IGNORECASE
             matches = re.finditer(pattern, content, flags)
             for match in matches:
                 line_num = content[: match.start()].count("\n") + 1

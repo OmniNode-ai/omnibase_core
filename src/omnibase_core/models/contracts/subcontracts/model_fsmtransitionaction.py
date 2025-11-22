@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 from .model_action_config_parameter import ModelActionConfigParameter
 
 
@@ -12,6 +16,12 @@ class ModelFSMTransitionAction(BaseModel):
     Defines actions to execute during state transitions,
     including logging, validation, and state modifications.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     action_name: str = Field(
         default=...,
@@ -62,8 +72,9 @@ class ModelFSMTransitionAction(BaseModel):
                 duplicates.add(param.parameter_name)
             seen.add(param.parameter_name)
         if duplicates:
-            raise ValueError(
-                f"Duplicate parameter names in action_config: {sorted(duplicates)}"
+            raise ModelOnexError(
+                message=f"Duplicate parameter names in action_config: {sorted(duplicates)}",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         return self
 

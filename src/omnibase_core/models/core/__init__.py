@@ -31,17 +31,15 @@ from .model_generic_collection_summary import ModelGenericCollectionSummary
 from .model_generic_properties import ModelGenericProperties
 
 # Mixin metadata pattern
-from .model_mixin_metadata import (
-    ModelMixinCodePatterns,
-    ModelMixinConfigField,
-    ModelMixinMetadata,
-    ModelMixinMetadataCollection,
-    ModelMixinMethod,
-    ModelMixinPerformance,
-    ModelMixinPreset,
-    ModelMixinProperty,
-    ModelMixinVersion,
-)
+from .model_mixin_code_patterns import ModelMixinCodePatterns
+from .model_mixin_config_field import ModelMixinConfigField
+from .model_mixin_metadata import ModelMixinMetadata
+from .model_mixin_metadata_collection import ModelMixinMetadataCollection
+from .model_mixin_method import ModelMixinMethod
+from .model_mixin_performance import ModelMixinPerformance
+from .model_mixin_preset import ModelMixinPreset
+from .model_mixin_property import ModelMixinProperty
+from .model_mixin_version import ModelMixinVersion
 
 # Event envelope patterns
 from .model_onex_envelope_v1 import ModelOnexEnvelopeV1

@@ -148,4 +148,12 @@ __all__ = [
     "ModelSecretConfig",
     "ModelSecretManager",
     "ModelSecureCredentials",
+    # Functions from model_secret_manager
+    "get_secret_manager",
+    "init_secret_manager",
+    "init_secret_manager_from_manager",
+    # Functions defined in this module
+    "create_secret_manager_for_environment",
+    "validate_secret_configuration",
+    "get_security_recommendations",
 ]
