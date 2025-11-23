@@ -20,31 +20,31 @@ FIXES = [
         "README.md",
         "[Threading Guide](docs/reference/THREADING.md)",
         "[Threading Guide](docs/guides/THREADING.md)",
-        "Fix Threading Guide path"
+        "Fix Threading Guide path",
     ),
     (
         "README.md",
         "[Patterns Catalog](docs/guides/node-building/07-patterns-catalog.md)",
         "[Patterns Catalog](docs/guides/node-building/07_PATTERNS_CATALOG.md)",
-        "Fix Patterns Catalog filename"
+        "Fix Patterns Catalog filename",
     ),
     (
         "docs/quality/TERMINOLOGY_AUDIT_REPORT.md",
         "[MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md)",
         "[MIGRATING_TO_DECLARATIVE_NODES.md](../guides/MIGRATING_TO_DECLARATIVE_NODES.md)",
-        "Fix migration guide path"
+        "Fix migration guide path",
     ),
     (
         "docs/architecture/MODEL_INTENT_ARCHITECTURE.md",
         "[Reducer Node Guide](../guides/node-building/02_NODE_TYPES.md#reducer-nodes)",
         "[Reducer Node Guide](../guides/node-building/02_NODE_TYPES.md#reducer-node)",
-        "Fix reducer node anchor (singular)"
+        "Fix reducer node anchor (singular)",
     ),
     (
         "docs/architecture/MODEL_INTENT_ARCHITECTURE.md",
         "[Effect Node Guide](../guides/node-building/02_NODE_TYPES.md#effect-nodes)",
         "[Effect Node Guide](../guides/node-building/02_NODE_TYPES.md#effect-node)",
-        "Fix effect node anchor (singular)"
+        "Fix effect node anchor (singular)",
     ),
 ]
 
@@ -69,7 +69,7 @@ def apply_fixes():
 
         # Read file
         try:
-            content = full_path.read_text(encoding='utf-8')
+            content = full_path.read_text(encoding="utf-8")
         except Exception as e:
             print(f"   ❌ Error reading file: {e}")
             failure_count += 1
@@ -77,7 +77,7 @@ def apply_fixes():
 
         # Check if old text exists
         if old_text not in content:
-            print(f"   ⚠️  Text not found (may already be fixed)")
+            print("   ⚠️  Text not found (may already be fixed)")
             continue
 
         # Apply fix
@@ -85,14 +85,14 @@ def apply_fixes():
 
         # Verify fix was applied
         if new_content == content:
-            print(f"   ❌ Fix not applied")
+            print("   ❌ Fix not applied")
             failure_count += 1
             continue
 
         # Write back
         try:
-            full_path.write_text(new_content, encoding='utf-8')
-            print(f"   ✅ Fixed")
+            full_path.write_text(new_content, encoding="utf-8")
+            print("   ✅ Fixed")
             success_count += 1
         except Exception as e:
             print(f"   ❌ Error writing file: {e}")

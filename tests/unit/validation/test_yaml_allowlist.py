@@ -32,13 +32,21 @@ def allowlist_config() -> dict[str, Any]:
 @pytest.fixture
 def allowed_files(allowlist_config: dict[str, Any]) -> list[str]:
     """Get list of allowed files from allowlist."""
-    return allowlist_config.get("allowed_files", [])
+    files = allowlist_config.get("allowed_files", [])
+    # Handle both old format (list of strings) and new format (list of dicts)
+    if files and isinstance(files[0], dict):
+        return [entry["file"] for entry in files]
+    return files
 
 
 @pytest.fixture
 def allowed_functions(allowlist_config: dict[str, Any]) -> list[str]:
     """Get list of allowed functions from allowlist."""
-    return allowlist_config.get("allowed_functions", [])
+    functions = allowlist_config.get("allowed_functions", [])
+    # Handle both old format (list of strings) and new format (list of dicts)
+    if functions and isinstance(functions[0], dict):
+        return [entry["function"] for entry in functions]
+    return functions
 
 
 class TestAllowlistFileExistence:
@@ -247,16 +255,22 @@ class TestAllowlistStructure:
         self, allowlist_config: dict[str, Any]
     ) -> None:
         """Verify no duplicate entries in allowlist sections."""
-        sections = ["allowed_files", "allowed_filenames", "allowed_functions"]
+        sections_config = {
+            "allowed_files": "file",
+            "allowed_filenames": "filename",
+            "allowed_functions": "function",
+        }
         duplicates = []
 
-        for section in sections:
+        for section, key in sections_config.items():
             items = allowlist_config.get(section, [])
             seen = set()
             for item in items:
-                if item in seen:
-                    duplicates.append(f"{section}: {item}")
-                seen.add(item)
+                # Handle both old format (strings) and new format (dicts)
+                value = item[key] if isinstance(item, dict) else item
+                if value in seen:
+                    duplicates.append(f"{section}: {value}")
+                seen.add(value)
 
         assert not duplicates, (
             f"Found duplicate entries in allowlist:\n"
@@ -304,7 +318,12 @@ class TestAllowlistCoverage:
         with ALLOWLIST_FILE.open("r") as f:
             allowlist = yaml.safe_load(f)
 
-        allowed_functions = set(allowlist.get("allowed_functions", []))
+        # Extract function names from new format (list of dicts)
+        allowed_functions_raw = allowlist.get("allowed_functions", [])
+        if allowed_functions_raw and isinstance(allowed_functions_raw[0], dict):
+            allowed_functions = {entry["function"] for entry in allowed_functions_raw}
+        else:
+            allowed_functions = set(allowed_functions_raw)
 
         # Check coverage
         missing_functions = [
@@ -316,4 +335,52 @@ class TestAllowlistCoverage:
             f"but are not in the allowlist:\n"
             f"{chr(10).join(f'  - {f}' for f in missing_functions)}\n\n"
             f"Add these to .yaml-validation-allowlist.yaml"
+        )
+
+
+class TestAllowlistMetadata:
+    """Test that allowlist entries have required metadata."""
+
+    def test_entries_have_metadata(self, allowlist_config: dict[str, Any]) -> None:
+        """Verify entries have required metadata fields (reason, added, review)."""
+        from datetime import datetime
+
+        missing_metadata = []
+
+        for section in ["allowed_files", "allowed_functions", "allowed_filenames"]:
+            entries = allowlist_config.get(section, [])
+            for entry in entries:
+                if isinstance(entry, dict):
+                    # Check required fields
+                    key_field = (
+                        "file"
+                        if section == "allowed_files"
+                        else (
+                            "function" if section == "allowed_functions" else "filename"
+                        )
+                    )
+                    name = entry.get(key_field, "UNKNOWN")
+
+                    if "reason" not in entry:
+                        missing_metadata.append(f"{section}:{name} - missing 'reason'")
+                    if "added" not in entry:
+                        missing_metadata.append(f"{section}:{name} - missing 'added'")
+                    if "review" not in entry:
+                        missing_metadata.append(f"{section}:{name} - missing 'review'")
+
+                    # Validate date format
+                    for date_field in ["added", "review"]:
+                        if date_field in entry:
+                            try:
+                                datetime.strptime(entry[date_field], "%Y-%m-%d")
+                            except ValueError:
+                                missing_metadata.append(
+                                    f"{section}:{name} - invalid {date_field} format "
+                                    f"'{entry[date_field]}' (use YYYY-MM-DD)"
+                                )
+
+        assert not missing_metadata, (
+            f"The following entries have missing or invalid metadata:\n"
+            f"{chr(10).join(f'  - {m}' for m in missing_metadata)}\n\n"
+            f"Each entry must have: reason, added (YYYY-MM-DD), review (YYYY-MM-DD)"
         )

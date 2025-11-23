@@ -257,15 +257,33 @@ class ManualYamlValidationDetector:
 
     def _is_in_safe_yaml_loader(self, file_path: Path) -> bool:
         """Check if file is in the allowlist for YAML utilities."""
-        # Check filename against allowed filenames
-        allowed_filenames = self.config.get("allowed_filenames", [])
+        # Check filename against allowed filenames (handle both old and new format)
+        allowed_filenames_raw = self.config.get("allowed_filenames", [])
+        allowed_filenames = []
+        for entry in allowed_filenames_raw:
+            if isinstance(entry, dict):
+                allowed_filenames.append(entry.get("filename", ""))
+            elif isinstance(entry, str):
+                allowed_filenames.append(entry)
+
         if file_path.name in allowed_filenames:
             return True
 
-        # Check full path against allowed files
-        allowed_files = self.config.get("allowed_files", [])
+        # Check full path against allowed files (handle both old and new format)
+        allowed_files_raw = self.config.get("allowed_files", [])
+        allowed_files = []
+        for entry in allowed_files_raw:
+            if isinstance(entry, dict):
+                allowed_files.append(entry.get("file", ""))
+            elif isinstance(entry, str):
+                allowed_files.append(entry)
+
         file_str = str(file_path)
-        return any(file_str.endswith(allowed_path) for allowed_path in allowed_files)
+        return any(
+            file_str.endswith(allowed_path)
+            for allowed_path in allowed_files
+            if allowed_path
+        )
 
     def _is_in_yaml_utility_function(self) -> bool:
         """Check if we're in a legitimate YAML utility function."""
@@ -273,7 +291,15 @@ class ManualYamlValidationDetector:
         if current_function is None:
             return False
 
-        allowed_functions = self.config.get("allowed_functions", [])
+        # Handle both old format (list of strings) and new format (list of dicts)
+        allowed_functions_raw = self.config.get("allowed_functions", [])
+        allowed_functions = []
+        for entry in allowed_functions_raw:
+            if isinstance(entry, dict):
+                allowed_functions.append(entry.get("function", ""))
+            elif isinstance(entry, str):
+                allowed_functions.append(entry)
+
         return current_function in allowed_functions
 
     def _is_in_test_file(self, file_path: Path) -> bool:

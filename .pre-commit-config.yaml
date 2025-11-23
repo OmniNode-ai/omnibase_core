@@ -120,6 +120,14 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      - id: validate-no-empty-directories
+        name: ONEX Empty Directory Prevention
+        entry: poetry run python scripts/validation/validate-no-empty-directories.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       # String Version Anti-Pattern Detection
       # Prevents use of ModelSemVer.parse("X.Y.Z") and direct version string literals
       # Enforces structured versions: ModelSemVer(1, 0, 0) instead of "1.0.0"

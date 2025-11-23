@@ -1,11 +1,21 @@
 # YAML Validation Allowlist
 #
-# This file defines exceptions to the manual YAML validation detection hook.
-# These are legitimate utility functions and files that need to use yaml.safe_load()
-# for valid architectural reasons (e.g., parsing before Pydantic validation).
+# Purpose: Defines exceptions to the manual YAML validation detection hook.
+#          These are legitimate utility functions and files that need to use yaml.safe_load()
+#          for valid architectural reasons (e.g., parsing before Pydantic validation).
 #
-# Each entry includes a 'reason' field explaining the architectural justification
-# for allowing YAML parsing in that context.
+# Review Cycle: Quarterly (check for stale entries, validate paths still exist)
+# Next Review: 2025-02-22
+#
+# Format Requirements:
+#   - reason: Architectural justification for allowing YAML parsing
+#   - added: Date entry was added (YYYY-MM-DD)
+#   - review: Target date for next review/removal consideration (YYYY-MM-DD)
+#
+# Maintenance Notes:
+#   - Run tests/unit/validation/test_allowlist_integrity.py to validate entries
+#   - Remove entries when underlying code is refactored to use Pydantic validation
+#   - Update 'review' dates when entries are confirmed still needed
 
 # Files allowed to use yaml.safe_load() (utility modules)
 # These files provide foundational YAML parsing utilities that sit BEFORE Pydantic validation
@@ -13,18 +23,26 @@
 allowed_files:
   - file: "src/omnibase_core/utils/util_safe_yaml_loader.py"
     reason: "Foundational utility layer that bridges raw YAML parsing and Pydantic validation - provides safe loading primitives for entire codebase"
+    added: "2024-10-15"
+    review: "2025-04-15"
 
   - file: "src/omnibase_core/validation/contracts.py"
     reason: "Central orchestrator for YAML contract file parsing and validation - provides high-level API for loading/validating contract YAML files"
+    added: "2024-10-15"
+    review: "2025-04-15"
 
   - file: "src/omnibase_core/validation/contract_validator.py"
     reason: "Validation layer that requires inspection of raw YAML structure before type conversion - preprocesses YAML to ensure it meets contract schema requirements"
+    added: "2024-10-15"
+    review: "2025-04-15"
 
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
   - filename: "util_safe_yaml_loader.py"
     reason: "Core utility that should be allowed regardless of module path location - may be copied to multiple locations for modularity"
+    added: "2024-10-15"
+    review: "2025-04-15"
 
 # Function names allowed to use yaml.safe_load()
 # These functions form the YAML→Pydantic validation pipeline and need raw YAML access
@@ -32,15 +50,25 @@ allowed_filenames:
 allowed_functions:
   - function: "load_and_validate_yaml_model"
     reason: "Must parse YAML before passing to Pydantic for validation - YAML→Pydantic conversion utility that loads raw YAML and validates against model schema"
+    added: "2024-10-15"
+    review: "2025-04-15"
 
   - function: "validate_model_compliance"
     reason: "Needs access to raw YAML dict to check structural requirements - contract compliance validator that inspects YAML structure before model instantiation"
+    added: "2024-10-15"
+    review: "2025-04-15"
 
   - function: "validate_contract_yaml"
     reason: "Pre-validation step that checks YAML structure before type conversion - validates contract YAML before Pydantic model instantiation"
+    added: "2024-10-15"
+    review: "2025-04-15"
 
   - function: "load_yaml_content_as_model"
     reason: "Foundation utility that bridges YAML parsing and Pydantic validation - generic utility for loading YAML content into Pydantic models"
+    added: "2024-10-15"
+    review: "2025-04-15"
 
   - function: "extract_example_from_schema"
     reason: "Parses schema YAML to extract embedded examples for documentation - schema example extractor that extracts configurations from YAML schema definitions"
+    added: "2024-10-15"
+    review: "2025-04-15"

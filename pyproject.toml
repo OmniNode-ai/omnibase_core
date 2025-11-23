@@ -116,6 +116,7 @@ pytest-split = "^0.10.0"
 pytest-timeout = "^2.4.0"
 pytest-rerunfailures = "^16.1"
 pytest-testmon = "^2.1.3"
+interrogate = "^1.7.0"
 
 [tool.ruff]
 target-version = "py312"
@@ -219,6 +220,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "scripts/validation/test_timeout_compatibility.py" = ["I001"]  # Import sorting conflicts with isort
 "tests/unit/validation/test_protocol_compliance.py" = ["I001"]  # Import sorting conflicts with isort
+"tests/unit/validation/test_yaml_allowlist.py" = ["DTZ007"]  # Date format validation without timezone
 "src/omnibase_core/mixins/mixin_event_bus.py" = ["I001"]  # Import order conflicts with import semantics
 "src/omnibase_core/mixins/mixin_event_handler.py" = ["I001"]  # Import order conflicts with import semantics
 "src/omnibase_core/mixins/mixin_discovery_responder.py" = ["I001"]  # Import sorting skipped by isort - sync with isort skip list
