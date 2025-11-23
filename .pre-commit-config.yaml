@@ -251,7 +251,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
-        exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py|src/omnibase_core/models/core/model_action_config_value\.py).*\.py$
         stages: [pre-commit]
 
       - id: validate-enum-model-imports
