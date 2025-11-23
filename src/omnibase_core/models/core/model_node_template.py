@@ -35,7 +35,10 @@ from pydantic import BaseModel
 from omnibase_core.models.core.model_node_template_config import (
     ModelNodeTemplateConfigConfig,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelNodeTemplateConfig(BaseModel):
@@ -47,7 +50,7 @@ class ModelNodeTemplateConfig(BaseModel):
     """
 
     template_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the template system being used",
     )
     node_name: str = Field(description="Name of the node to generate")

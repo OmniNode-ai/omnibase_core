@@ -10,7 +10,10 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_tool_manifest import (
@@ -59,7 +62,7 @@ class ModelToolManifest(BaseModel):
 
     # === VERSION CATALOG ===
     current_stable_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Current stable version identifier",
     )
     current_development_version: ModelSemVer | None = Field(
@@ -114,7 +117,7 @@ class ModelToolManifest(BaseModel):
 
     # === METADATA VALIDATION ===
     schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Tool manifest schema version",
     )
     uuid: str | None = Field(

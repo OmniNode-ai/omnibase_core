@@ -2,7 +2,10 @@ from typing import Any, Generic, Optional
 
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Generic metadata model to replace Dict[str, Any] usage for metadata fields.
@@ -29,7 +32,7 @@ class ModelGenericMetadata(BaseModel):
         description="Generic data dictionary for ProtocolMetadata compliance",
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version information",
     )
     created_at: datetime = Field(

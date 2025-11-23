@@ -19,7 +19,10 @@ from omnibase_core.models.core.model_onex_performance_metrics import (
 )
 from omnibase_core.models.core.model_onex_reply_config import ModelConfig
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 if TYPE_CHECKING:
     from omnibase_core.models.protocols.protocol_onex_validation import (
@@ -86,11 +89,11 @@ class ModelOnexReply(BaseModel):
 
     # === Onex COMPLIANCE ===
     onex_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="ONEX standard version",
     )
     reply_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Reply schema version",
     )
 

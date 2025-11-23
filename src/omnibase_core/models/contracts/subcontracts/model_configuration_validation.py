@@ -10,7 +10,10 @@ Model for configuration validation rules and constraints in the ONEX configurati
 
 from pydantic import BaseModel
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 from .model_environment_validation_rules import ModelEnvironmentValidationRules
 from .model_validation_schema_rule import ModelValidationSchemaRule
@@ -21,7 +24,7 @@ class ModelConfigurationValidation(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Model version (MUST be provided in YAML contract)",
     )
 

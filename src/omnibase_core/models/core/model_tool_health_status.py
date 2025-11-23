@@ -4,7 +4,10 @@ Model for health status information.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelToolHealthStatus(BaseModel):
@@ -14,7 +17,7 @@ class ModelToolHealthStatus(BaseModel):
     timestamp: str = Field(description="Timestamp of health check")
     tool_name: str = Field(description="Name of the tool")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version as SemVer",
     )
     checks: dict[str, bool] = Field(description="Individual health check results")

@@ -2,7 +2,10 @@ from typing import Any, Optional
 
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Event Definition Model - ONEX Standards Compliant.
@@ -40,7 +43,7 @@ class ModelEventDefinition(BaseModel):
     )
 
     schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Schema version for event structure (MUST be provided in YAML contract)",
     )
 

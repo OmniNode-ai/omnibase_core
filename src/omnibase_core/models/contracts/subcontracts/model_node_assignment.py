@@ -15,7 +15,10 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_workflow_coordination import EnumAssignmentStatus
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 from .model_resource_usage_metric import ModelResourceUsageMetric
 
@@ -25,7 +28,7 @@ class ModelNodeAssignment(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Model version (MUST be provided in YAML contract)",
     )
 

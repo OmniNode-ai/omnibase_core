@@ -26,7 +26,10 @@ from typing import Any, ClassVar
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_workflow import ModelWorkflow
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 # Import all individual model components
 
@@ -46,7 +49,7 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Model version (MUST be provided in YAML contract)",
     )
 
@@ -56,7 +59,7 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
     )
 
     subcontract_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the subcontract (MUST be provided in YAML contract)",
     )
 

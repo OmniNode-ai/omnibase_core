@@ -4,7 +4,10 @@ from typing import Generic, Optional, TypeVar, cast
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 "\nEvent Envelope Model\n\nONEX-compliant envelope wrapper for all events in the system.\nProvides standardized event wrapping with metadata, correlation IDs, security context,\nQoS features, distributed tracing, and performance optimization.\n\nPattern: Model<Name> - Pydantic model for event envelope\nNode Type: N/A (Data Model)\n"
 from datetime import datetime
@@ -102,7 +105,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         default=None, description="Trace span identifier (e.g., OpenTelemetry span ID)"
     )
     onex_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="ONEX standard version",
     )
     envelope_version: ModelSemVer = Field(

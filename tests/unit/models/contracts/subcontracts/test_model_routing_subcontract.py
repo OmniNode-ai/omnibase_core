@@ -14,6 +14,7 @@ from omnibase_core.models.contracts.subcontracts.model_routing_subcontract impor
     ModelRoutingSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestRoutingSubcontractValidators:
@@ -27,6 +28,16 @@ class TestRoutingSubcontractValidators:
         assert subcontract.routing_strategy == "service_mesh_aware"
         assert subcontract.routes == []
         assert subcontract.trace_sampling_rate == 0.1
+
+    def test_interface_version_accessible(self):
+        """Test that INTERFACE_VERSION is accessible and correct."""
+        assert hasattr(ModelRoutingSubcontract, "INTERFACE_VERSION")
+        version = ModelRoutingSubcontract.INTERFACE_VERSION
+        assert isinstance(version, ModelSemVer)
+        assert version.major == 1
+        assert version.minor == 0
+        assert version.patch == 0
+        assert str(version) == "1.0.0"
 
     def test_valid_routing_with_unique_priorities(self):
         """Test routing with unique priorities per pattern."""
@@ -168,3 +179,71 @@ class TestRoutingSubcontractValidators:
             subcontract.trace_sampling_rate = 0.8
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+
+class TestRoutingSubcontractEdgeCases:
+    """Test edge cases for routing subcontract."""
+
+    def test_trace_sampling_rate_zero_is_valid(self):
+        """Test that trace_sampling_rate = 0.0 is valid."""
+        subcontract = ModelRoutingSubcontract(trace_sampling_rate=0.0)
+        assert subcontract.trace_sampling_rate == 0.0
+
+    def test_trace_sampling_rate_exactly_max_allowed(self):
+        """Test that trace_sampling_rate at exactly 0.5 is valid."""
+        subcontract = ModelRoutingSubcontract(trace_sampling_rate=0.5)
+        assert subcontract.trace_sampling_rate == 0.5
+
+    def test_empty_routes_list_is_valid(self):
+        """Test that empty routes list is valid (default behavior)."""
+        subcontract = ModelRoutingSubcontract(routes=[])
+        assert subcontract.routes == []
+        assert len(subcontract.routes) == 0
+
+    def test_routing_disabled_with_routes_is_valid(self):
+        """Test that routing can be disabled even with routes defined."""
+        route = ModelRouteDefinition(
+            route_name="route1",
+            route_pattern="/api/v1",
+            priority=1,
+            service_targets=["service1"],
+        )
+        subcontract = ModelRoutingSubcontract(
+            routing_enabled=False,
+            routes=[route],
+        )
+        assert subcontract.routing_enabled is False
+        assert len(subcontract.routes) == 1
+
+    def test_custom_routing_strategy(self):
+        """Test creating subcontract with custom routing strategy."""
+        custom_strategies = ["path_based", "header_based", "weighted_round_robin"]
+        for strategy in custom_strategies:
+            subcontract = ModelRoutingSubcontract(routing_strategy=strategy)
+            assert subcontract.routing_strategy == strategy
+
+    def test_multiple_routes_same_priority_different_patterns(self):
+        """Test that multiple routes can have same priority if patterns differ."""
+        routes = [
+            ModelRouteDefinition(
+                route_name="route1",
+                route_pattern="/api/v1",
+                priority=1,
+                service_targets=["service1"],
+            ),
+            ModelRouteDefinition(
+                route_name="route2",
+                route_pattern="/api/v2",
+                priority=1,
+                service_targets=["service2"],
+            ),
+            ModelRouteDefinition(
+                route_name="route3",
+                route_pattern="/api/v3",
+                priority=1,
+                service_targets=["service3"],
+            ),
+        ]
+        subcontract = ModelRoutingSubcontract(routes=routes)
+        assert len(subcontract.routes) == 3
+        assert all(route.priority == 1 for route in subcontract.routes)

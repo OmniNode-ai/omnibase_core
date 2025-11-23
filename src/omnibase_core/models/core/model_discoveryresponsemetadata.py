@@ -3,7 +3,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelDiscoveryResponseModelMetadata(BaseModel):
@@ -18,7 +21,7 @@ class ModelDiscoveryResponseModelMetadata(BaseModel):
     capabilities: list[str] = Field(default=..., description="Node capabilities")
     node_type: str = Field(default=..., description="Node type classification")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Node version",
     )
     event_channels: list[str] = Field(

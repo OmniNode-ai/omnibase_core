@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
+    default_model_version,
     parse_semver_from_string,
 )
 
@@ -33,7 +34,7 @@ class ModelHealthMetadata(BaseModel):
     )
 
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Health system version",
     )
 

@@ -485,8 +485,8 @@ class TestHealthMonitoringLoop:
         - Task cancelled (CancelledError raised)
 
         Expected:
-        - CancelledError caught and logged
-        - No exception propagated
+        - CancelledError re-raised immediately without logging
+        - No I/O operations during cancellation (prevents closed file errors)
         """
         service_orchestrator._service_running = True
 
@@ -496,12 +496,14 @@ class TestHealthMonitoringLoop:
                 with pytest.raises(asyncio.CancelledError):
                     await service_orchestrator._health_monitor_loop()
 
-        # Check that cancellation was logged
+        # Check that cancellation was NOT logged (to prevent closed file errors)
         cancellation_logged = any(
             "cancelled" in str(call_args).lower()
             for call_args in mock_log_info.call_args_list
         )
-        assert cancellation_logged
+        assert (
+            not cancellation_logged
+        ), "Should not log during cancellation to avoid closed file errors"
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_handles_exceptions(

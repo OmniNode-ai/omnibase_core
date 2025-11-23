@@ -22,7 +22,10 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.node_metadata.model_node_metadata_info import (
     ModelNodeMetadataInfo,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelNodeIntrospectionResponse(BaseModel):
@@ -62,7 +65,7 @@ class ModelNodeIntrospectionResponse(BaseModel):
         description="Event channels this node subscribes to and publishes to",
     )
     introspection_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Introspection format version",
     )
 

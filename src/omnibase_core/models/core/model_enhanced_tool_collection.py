@@ -21,6 +21,7 @@ from pydantic import BaseModel, ValidationInfo, computed_field
 from omnibase_core.models.core.model_performance_summary import ModelPerformanceSummary
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
+    default_model_version,
     parse_semver_from_string,
 )
 
@@ -66,7 +67,7 @@ class ModelToolCollection(BaseModel):
         description="Human-readable collection name",
     )
     collection_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Collection version",
     )
     created_at: datetime = Field(

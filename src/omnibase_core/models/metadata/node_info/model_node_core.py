@@ -3,7 +3,10 @@ from __future__ import annotations
 from pydantic import Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Node Core Model.
@@ -58,7 +61,7 @@ class ModelNodeCore(BaseModel):
         description="Node conceptual complexity level",
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Node version",
     )
 

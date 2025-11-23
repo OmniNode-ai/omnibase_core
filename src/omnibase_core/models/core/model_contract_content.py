@@ -1,6 +1,9 @@
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Model for contract content representation in ONEX NodeBase implementation.
@@ -35,7 +38,7 @@ class ModelContractContent(BaseModel):
 
     # === REQUIRED FIELDS ===
     contract_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Contract version",
     )
     node_name: str = Field(default=..., description="Node name")

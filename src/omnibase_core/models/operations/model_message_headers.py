@@ -2,7 +2,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelMessageHeaders(BaseModel):
@@ -19,7 +22,7 @@ class ModelMessageHeaders(BaseModel):
     )
     reply_to: str = Field(default="", description="Reply destination")
     message_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Message schema version",
     )
     source_system: str = Field(default="", description="Source system identifier")

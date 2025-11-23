@@ -12,14 +12,17 @@ from omnibase_core.models.docker.model_docker_deploy_config import (
 from omnibase_core.models.docker.model_docker_healthcheck_config import (
     ModelDockerHealthcheckConfig,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelDockerService(BaseModel):
     """Docker Compose service definition (Pydantic version)."""
 
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Model version",
     )
     name: str = Field(description="Service name")

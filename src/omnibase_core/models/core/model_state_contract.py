@@ -51,7 +51,10 @@ from omnibase_core.models.metadata.model_metadata_constants import (
     CONTRACT_VERSION_KEY,
     NODE_VERSION_KEY,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 from .model_error_state import ModelErrorState
 from .model_state_schema import ModelStateSchema
@@ -100,7 +103,7 @@ class ModelStateContract(BaseModel):
     )
 
     node_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the node",
         json_schema_extra={"example": "1.0.0"},
     )

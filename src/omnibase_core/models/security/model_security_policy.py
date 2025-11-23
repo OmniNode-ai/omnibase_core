@@ -9,7 +9,10 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, field_serializer
 
 from omnibase_core.models.common.model_typed_mapping import ModelTypedMapping
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 from .model_security_context import ModelSecurityContext
 from .model_security_policy_data import ModelSecurityPolicyData
@@ -28,7 +31,7 @@ class ModelSecurityPolicy(BaseModel):
     policy_id: UUID = Field(default=..., description="Unique policy identifier")
     policy_name: str = Field(default=..., description="Human-readable policy name")
     policy_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Policy version",
     )
     created_at: datetime = Field(

@@ -9,7 +9,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 from omnibase_core.models.security.model_certificate_validation_level import (
     ModelCertificateValidationLevel,
 )
@@ -54,7 +57,7 @@ class ModelTrustPolicy(BaseModel):
     )
     name: str = Field(default=..., description="Policy name", min_length=1)
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Policy version",
         pattern=r"^\d+\.\d+$",
     )

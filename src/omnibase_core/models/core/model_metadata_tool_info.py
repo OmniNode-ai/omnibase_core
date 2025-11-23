@@ -12,6 +12,7 @@ from omnibase_core.enums.enum_metadata_tool_status import EnumMetadataToolStatus
 from omnibase_core.enums.enum_metadata_tool_type import EnumMetadataToolType
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
+    default_model_version,
     parse_semver_from_string,
 )
 
@@ -41,7 +42,7 @@ class ModelMetadataToolInfo(BaseModel):
     documentation: str = Field(default="", description="Detailed documentation")
     author: str = Field(default="Unknown", description="Tool author")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Tool version",
     )
     tags: list[str] = Field(

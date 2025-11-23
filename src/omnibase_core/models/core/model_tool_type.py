@@ -5,7 +5,10 @@ from pydantic import Field
 "\nTool Type Model\n\nReplaces EnumToolType with a proper model that includes metadata,\ndescriptions, and categorization for each tool type.\n"
 from pydantic import BaseModel
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelToolType(BaseModel):
@@ -33,7 +36,7 @@ class ModelToolType(BaseModel):
         default_factory=list, description="Other tools this tool depends on"
     )
     version_compatibility: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version compatibility constraint",
     )
     execution_priority: int = Field(

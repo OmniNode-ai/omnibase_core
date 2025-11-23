@@ -6,7 +6,10 @@ from datetime import datetime
 
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Metadata Node Info Model.
@@ -85,7 +88,7 @@ class ModelMetadataNodeInfo(BaseModel):
         description="Node conceptual complexity level",
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Node version",
     )
 

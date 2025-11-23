@@ -14,7 +14,10 @@ from omnibase_core.models.configuration.model_raw_registry_mode import (
     ModelRawRegistryMode,
 )
 from omnibase_core.models.configuration.model_raw_service import ModelRawService
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelRawConfiguration(BaseModel):
@@ -26,7 +29,7 @@ class ModelRawConfiguration(BaseModel):
     """
 
     configuration_version: ModelSemVer | None = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Configuration schema version",
     )
 

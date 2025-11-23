@@ -1,6 +1,9 @@
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Dynamic Event Type Model.
@@ -33,7 +36,7 @@ class ModelEventType(BaseModel):
     )
     description: str = Field(default=..., description="Human-readable description")
     schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Event schema version",
     )
     payload_schema: dict[str, Any] | None = Field(

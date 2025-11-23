@@ -4,7 +4,10 @@ from typing import Any
 from pydantic import Field
 
 from omnibase_core.models.core.model_workflow import ModelWorkflow
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Workflow Instance Model - ONEX Standards Compliant.
@@ -31,7 +34,7 @@ class ModelWorkflowInstance(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Model version (MUST be provided in YAML contract)",
     )
 
@@ -43,7 +46,7 @@ class ModelWorkflowInstance(BaseModel):
     workflow_name: str = Field(default=..., description="Name of the workflow")
 
     workflow_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the workflow definition (MUST be provided in YAML contract)",
     )
 

@@ -2,7 +2,10 @@ from typing import Any
 
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 "\nModelSignatureMetadata: Metadata for cryptographic signatures.\n\nThis model provides structured metadata for digital signatures\nwith properly typed fields.\n"
 from pydantic import BaseModel
@@ -12,7 +15,7 @@ class ModelSignatureMetadata(BaseModel):
     """Metadata for cryptographic signatures."""
 
     signature_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Signature format version",
     )
     timestamp_source: str | None = Field(

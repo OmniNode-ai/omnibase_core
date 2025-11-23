@@ -3,7 +3,10 @@ from uuid import UUID
 from pydantic import Field
 
 from omnibase_core.constants.event_types import TOOL_DISCOVERY_REQUEST
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Tool Discovery Response Event Model
@@ -30,7 +33,7 @@ class ModelDiscoveredTool(BaseModel):
         default=..., description="Name of the node (e.g. 'node_generator')"
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the node",
     )
 

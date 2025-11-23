@@ -40,19 +40,16 @@ class ModelMixinVersion(BaseModel):
         Raises:
             ModelOnexError: If version string is invalid
         """
-
-        def _raise_invalid_format() -> None:
-            """Raise error for invalid version format."""
+        # Validate format outside try block - split() and len() don't raise ValueError/IndexError
+        parts = version_str.split(".")
+        if len(parts) != 3:
             raise ModelOnexError(
                 message=f"Invalid version format: {version_str}. Expected 'major.minor.patch'",
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
 
+        # Only int() conversions can raise ValueError/IndexError, so isolate in try block
         try:
-            parts = version_str.split(".")
-            if len(parts) != 3:
-                _raise_invalid_format()
-
             return cls(major=int(parts[0]), minor=int(parts[1]), patch=int(parts[2]))
         except (ValueError, IndexError) as e:
             raise ModelOnexError(

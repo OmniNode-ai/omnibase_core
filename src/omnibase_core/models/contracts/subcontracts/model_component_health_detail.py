@@ -10,7 +10,10 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_health_detail_type import EnumHealthDetailType
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelComponentHealthDetail(BaseModel):
@@ -23,7 +26,7 @@ class ModelComponentHealthDetail(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Model version (MUST be provided in YAML contract)",
     )
 

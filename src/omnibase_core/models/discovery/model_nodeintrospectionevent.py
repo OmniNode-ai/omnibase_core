@@ -6,7 +6,10 @@ from pydantic import Field, field_validator
 from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.node_metadata.model_node_capability import ModelNodeCapability
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
@@ -44,7 +47,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         default=..., description="Name of the node (e.g. 'node_generator')"
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the node",
     )
 

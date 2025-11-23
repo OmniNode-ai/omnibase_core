@@ -2,7 +2,10 @@ from typing import Any
 
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Pydantic model for node information.
@@ -18,7 +21,7 @@ class ModelNodeInfo(BaseModel):
 
     name: str = Field(default=..., description="Node name")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Node version",
     )
     description: str = Field(default=..., description="Node description")

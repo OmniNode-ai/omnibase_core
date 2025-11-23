@@ -3,7 +3,10 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """Hub Registration Event model for ONEX Discovery & Integration Event Registry.
 
@@ -23,7 +26,7 @@ class ModelHubRegistrationEvent(BaseModel):
     hub_name: str = Field(default=..., description="Hub name")
     hub_domain: str = Field(default=..., description="Hub domain")
     hub_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Hub version",
     )
 

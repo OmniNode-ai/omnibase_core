@@ -13,7 +13,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.models.contracts.subcontracts.model_component_health import (
     ModelComponentHealth,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelComponentHealthCollection(BaseModel):
@@ -21,7 +24,7 @@ class ModelComponentHealthCollection(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Model version (MUST be provided in YAML contract)",
     )
 

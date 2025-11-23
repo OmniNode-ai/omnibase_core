@@ -15,7 +15,10 @@ from omnibase_core.enums.enum_header_transformation_type import (
 from omnibase_core.models.contracts.subcontracts.model_base_header_transformation import (
     ModelBaseHeaderTransformation,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelHeaderTransformation(ModelBaseHeaderTransformation):
@@ -34,7 +37,7 @@ class ModelHeaderTransformation(ModelBaseHeaderTransformation):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Model version (MUST be provided in YAML contract)",
     )
 

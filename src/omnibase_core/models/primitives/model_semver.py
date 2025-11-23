@@ -117,6 +117,22 @@ class ModelSemVer(BaseModel):
 SemVerField = ModelSemVer
 
 
+def default_model_version() -> ModelSemVer:
+    """
+    Create default ModelSemVer instance (1.0.0).
+
+    This factory function is used as default_factory for version fields across
+    all ONEX models, providing a centralized way to specify the default version.
+
+    Returns:
+        ModelSemVer instance with major=1, minor=0, patch=0
+
+    Example:
+        >>> version: ModelSemVer = Field(default_factory=default_model_version)
+    """
+    return ModelSemVer(major=1, minor=0, patch=0)
+
+
 def parse_semver_from_string(version_str: str) -> ModelSemVer:
     """
     Parse semantic version string into ModelSemVer using ONEX-compliant patterns.

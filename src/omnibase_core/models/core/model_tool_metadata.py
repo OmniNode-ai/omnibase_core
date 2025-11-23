@@ -6,7 +6,10 @@ from omnibase_core.enums.enum_tool_capability_level import EnumToolCapabilityLev
 from omnibase_core.enums.enum_tool_category import EnumToolCategory
 from omnibase_core.enums.enum_tool_compatibility_mode import EnumToolCompatibilityMode
 from omnibase_core.enums.enum_tool_registration_status import EnumToolRegistrationStatus
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 __all__ = [
     "EnumToolCapabilityLevel",
@@ -60,7 +63,7 @@ class ModelToolMetadata(BaseModel):
     )
     description: str = Field(default="", description="Tool description")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Tool version",
     )
     author: str = Field(default="Unknown", description="Tool author")

@@ -3,7 +3,10 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Model for ModelNodeBase representation in ONEX ModelNodeBase implementation.
@@ -37,7 +40,7 @@ class ModelNodeBase(BaseModel):
     )
     node_name: str = Field(default=..., description="Node name from contract")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Node version",
     )
     node_tier: int = Field(default=1, description="Node tier classification")

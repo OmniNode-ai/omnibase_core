@@ -6,7 +6,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelServiceMetadata(BaseModel):
@@ -47,7 +50,7 @@ class ModelServiceMetadata(BaseModel):
     service_interface: str = Field(description="Interface type name")
     service_implementation: str = Field(description="Implementation class name")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Semantic version",
     )
     description: str | None = Field(

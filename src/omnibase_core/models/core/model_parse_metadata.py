@@ -2,7 +2,10 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Parse Metadata Model
@@ -46,7 +49,7 @@ class ModelParseMetadata(BaseModel):
     )
 
     parser_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the parser used",
     )
 

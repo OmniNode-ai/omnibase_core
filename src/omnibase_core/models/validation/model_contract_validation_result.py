@@ -7,7 +7,10 @@ code generation systems.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelContractValidationResult(BaseModel):
@@ -57,6 +60,6 @@ class ModelContractValidationResult(BaseModel):
     )
 
     interface_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="INTERFACE_VERSION used for validation",
     )

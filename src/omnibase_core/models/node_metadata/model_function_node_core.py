@@ -6,7 +6,10 @@ import uuid
 from pydantic import Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Function Node Core Model.
@@ -77,7 +80,7 @@ class ModelFunctionNodeCore(BaseModel):
         description="Function status (active, deprecated, disabled)",
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Function version",
     )
 

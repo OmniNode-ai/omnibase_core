@@ -13,7 +13,10 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 from .model_component_health_detail import ModelComponentHealthDetail
 
@@ -23,7 +26,7 @@ class ModelComponentHealth(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Model version (MUST be provided in YAML contract)",
     )
 

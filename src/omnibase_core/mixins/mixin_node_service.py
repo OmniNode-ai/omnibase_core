@@ -368,8 +368,9 @@ class MixinNodeService:
                 await asyncio.sleep(0.1)  # Small delay to prevent busy waiting
 
         except asyncio.CancelledError:
-            self._log_info("Service event loop cancelled")
-            raise  # Re-raise to properly signal task cancellation
+            # CRITICAL: Do not log here - file handles may be closed during teardown
+            # Re-raise immediately without any I/O operations
+            raise
         except Exception as e:
             self._log_error(f"Service event loop error: {e}")
             raise
@@ -391,8 +392,9 @@ class MixinNodeService:
                 await asyncio.sleep(30)
 
             except asyncio.CancelledError:
-                self._log_info("Health monitor cancelled")
-                raise  # Re-raise to properly signal task cancellation
+                # CRITICAL: Do not log here - file handles may be closed during teardown
+                # Re-raise immediately without any I/O operations
+                raise
             except Exception as e:
                 self._log_error(f"Health monitor error: {e}")
                 break  # Exit loop on exception
