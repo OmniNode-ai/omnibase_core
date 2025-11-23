@@ -83,7 +83,7 @@ def fix_file(filepath: Path) -> int:
 
 def main():
     """Main entry point."""
-    base_path = Path("/Volumes/PRO-G40/Code/omnibase_core/src/omnibase_core/models")
+    base_path = Path(__file__).parent / "src/omnibase_core/models"
 
     total_fixes = 0
     files_fixed = 0
@@ -106,9 +106,7 @@ def main():
 
                     fixes = fix_file(filepath)
                     if fixes > 0:
-                        rel_path = filepath.relative_to(
-                            Path("/Volumes/PRO-G40/Code/omnibase_core")
-                        )
+                        rel_path = filepath.relative_to(Path(__file__).parent)
                         print(f"  ✓ {rel_path}: {fixes} fix(es)")
                         total_fixes += fixes
                         files_fixed += 1
