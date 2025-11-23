@@ -10,5 +10,5 @@ class ModelDockerSecretFile(BaseModel):
     """Docker secret file configuration."""
 
     file: str | None = Field(default=None, description="Path to secret file")
-    external: bool | None = Field(default=False, description="External secret")
+    external: bool = Field(default=False, description="External secret")
     name: str | None = Field(default=None, description="Secret name")

@@ -9,10 +9,11 @@
 # Pattern: ModelXxxSubcontract() → ModelXxxSubcontract(version=ModelSemVer(1, 0, 0))
 #
 # Usage:
-#   bash scripts/fix_version_field_pattern1.sh [--dry-run] [--verbose]
+#   bash scripts/fix_version_field_pattern1.sh [--dry-run] [--verbose] [--no-backup]
 #
 # Safety:
-#   - Backs up files before modification
+#   - Backs up files before modification by default (.bak files)
+#   - Use --no-backup to disable backups (not recommended)
 #   - Use --dry-run to preview changes first
 #   - Easily reversible with git
 #

@@ -77,6 +77,32 @@ class TestModelDockerComposeManifest:
             with pytest.raises((ValidationError, ModelOnexError)):
                 ModelDockerComposeManifest(version=version)
 
+    def test_version_validation_non_string_types(self) -> None:
+        """Test version validation rejects non-string types (int, float, None)."""
+        # Test integer input
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type"
+        ):
+            ModelDockerComposeManifest(version=3)
+
+        # Test float input
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type"
+        ):
+            ModelDockerComposeManifest(version=3.8)
+
+        # Test None input
+        with pytest.raises((ValidationError, ModelOnexError)):
+            ModelDockerComposeManifest(version=None)
+
+        # Test list input
+        with pytest.raises((ValidationError, ModelOnexError)):
+            ModelDockerComposeManifest(version=["3", "8"])
+
+        # Test dict input
+        with pytest.raises((ValidationError, ModelOnexError)):
+            ModelDockerComposeManifest(version={"major": 3, "minor": 8})
+
     def test_get_service_exists(self) -> None:
         """Test getting existing service."""
         service = ModelDockerService(name="api", image="python:3.12")

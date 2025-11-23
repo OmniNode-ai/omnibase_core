@@ -155,10 +155,10 @@ Project Root/
 # Preview
 bash scripts/fix_version_field_pattern1.sh --dry-run -v
 
-# Execute
+# Execute (with backup enabled by default)
 bash scripts/fix_version_field_pattern1.sh -v
 
-# With backup
+# Without backup (not recommended)
 bash scripts/fix_version_field_pattern1.sh --no-backup
 ```
 

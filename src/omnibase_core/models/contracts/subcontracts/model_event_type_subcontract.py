@@ -58,7 +58,7 @@ class ModelEventTypeSubcontract(BaseModel):
     # Model version for instance tracking
     version: ModelSemVer = Field(
         default_factory=default_model_version,
-        description="Model version (MUST be provided in YAML contract)",
+        description="Model version (auto-generated as 1.0.0 if not provided)",
     )
 
     # Primary event configuration

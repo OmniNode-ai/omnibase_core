@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-### Total Test Failures: **~790 tests across 4 test categories**
+### Total Test Failures: **~796 tests across 4 test categories**
 
 | Category | Failed | Passed | Total | Pass Rate |
 |----------|--------|--------|-------|-----------|

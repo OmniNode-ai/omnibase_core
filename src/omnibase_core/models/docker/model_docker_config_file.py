@@ -10,5 +10,5 @@ class ModelDockerConfigFile(BaseModel):
     """Docker config file configuration."""
 
     file: str | None = Field(default=None, description="Path to config file")
-    external: bool | None = Field(default=False, description="External config")
+    external: bool = Field(default=False, description="External config")
     name: str | None = Field(default=None, description="Config name")

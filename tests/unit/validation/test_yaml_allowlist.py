@@ -200,7 +200,7 @@ class TestAllowlistFunctionUsesYamlSafeLoad:
                 continue  # Skip non-existent functions (caught by other test)
 
             file_path, func_node = all_functions[func_name]
-            uses_yaml, yaml_calls = self._function_uses_yaml_safe_load(func_node)
+            uses_yaml, _ = self._function_uses_yaml_safe_load(func_node)
 
             if not uses_yaml:
                 functions_without_yaml.append(

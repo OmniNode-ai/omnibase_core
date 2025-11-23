@@ -15,10 +15,6 @@ from omnibase_core.enums.enum_query_parameter_transformation_type import (
 from omnibase_core.models.contracts.subcontracts.model_base_header_transformation import (
     ModelBaseHeaderTransformation,
 )
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
 
 
 class ModelQueryParameterRule(ModelBaseHeaderTransformation):
@@ -29,17 +25,12 @@ class ModelQueryParameterRule(ModelBaseHeaderTransformation):
     validation and type safety.
 
     Inherits common transformation fields from ModelBaseHeaderTransformation:
+    - version
     - transformation_rule
     - apply_condition
     - case_sensitive
     - priority
     """
-
-    # Model version for instance tracking
-    version: ModelSemVer = Field(
-        default_factory=default_model_version,
-        description="Model version (MUST be provided in YAML contract)",
-    )
 
     parameter_name: str = Field(
         ...,

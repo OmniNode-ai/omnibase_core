@@ -9,6 +9,12 @@ OUTPUT_DIR="test_split_results"
 echo "Starting parallel test execution: $TOTAL_SPLITS splits in batches of $BATCH_SIZE"
 echo "=================================================================="
 
+# Create output directory
+mkdir -p "$OUTPUT_DIR"
+
+# Track failed splits
+failed_splits=()
+
 # Function to run a single split
 run_split() {
     local split_num=$1
@@ -45,10 +51,17 @@ for ((batch_start=1; batch_start<=TOTAL_SPLITS; batch_start+=BATCH_SIZE)); do
         pids+=($!)
     done
 
-    # Wait for all splits in this batch to complete
+    # Wait for all splits in this batch to complete and track failures
     echo "Waiting for batch to complete..."
-    for pid in "${pids[@]}"; do
+    for ((i=0; i<${#pids[@]}; i++)); do
+        pid=${pids[$i]}
+        split_num=$((batch_start + i))
         wait $pid
+        exit_code=$?
+        if [ $exit_code -ne 0 ]; then
+            failed_splits+=($split_num)
+            echo "⚠️  [Split $split_num] FAILED with exit code $exit_code"
+        fi
     done
 
     echo "Batch complete: splits $batch_start to $batch_end"
@@ -58,3 +71,14 @@ echo ""
 echo "==================================================================="
 echo "All splits completed. Results saved to $OUTPUT_DIR/"
 echo "==================================================================="
+
+# Report failures and exit with appropriate code
+if [ ${#failed_splits[@]} -eq 0 ]; then
+    echo "✅ All splits passed!"
+    exit 0
+else
+    echo ""
+    echo "❌ ${#failed_splits[@]} split(s) FAILED: ${failed_splits[*]}"
+    echo "Review logs in $OUTPUT_DIR/ for details"
+    exit 1
+fi
