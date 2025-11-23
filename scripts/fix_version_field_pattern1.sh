@@ -12,10 +12,11 @@
 #   bash scripts/fix_version_field_pattern1.sh [--dry-run] [--verbose] [--no-backup]
 #
 # Safety:
-#   - Backs up files before modification by default (.bak files)
-#   - Use --no-backup to disable backups (not recommended)
-#   - Use --dry-run to preview changes first
-#   - Easily reversible with git
+#   - Backups are created by default: Each modified file gets a .bak copy
+#   - Backups are created BEFORE applying sed replacements (one .bak per file)
+#   - Use --no-backup to skip backup creation (not recommended)
+#   - Use --dry-run to preview changes without modifying files
+#   - All changes are easily reversible with git checkout
 #
 # ==============================================================================
 

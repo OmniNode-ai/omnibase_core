@@ -2,6 +2,7 @@
 """Fix missing default_factory on ModelSemVer fields - Version 2."""
 
 import re
+import sys
 from pathlib import Path
 
 
@@ -105,15 +106,86 @@ def fix_file(filepath: Path) -> int:
     return fixes
 
 
+def find_project_root() -> Path:
+    """Find the project root by looking for pyproject.toml.
+
+    Returns:
+        Path to the project root directory.
+
+    Raises:
+        FileNotFoundError: If project root cannot be found.
+    """
+    current = Path(__file__).resolve()
+
+    # Walk up the directory tree looking for pyproject.toml
+    for parent in [current, *current.parents]:
+        if (parent / "pyproject.toml").exists():
+            return parent
+
+    # If not found, raise a clear error
+    raise FileNotFoundError(
+        f"Could not find project root (pyproject.toml) starting from {current}. "
+        "Ensure this script is run from within the omnibase_core repository."
+    )
+
+
+def resolve_base_path(project_root: Path) -> Path:
+    """Resolve and validate the base path for models.
+
+    Args:
+        project_root: The project root directory.
+
+    Returns:
+        Path to the models directory.
+
+    Raises:
+        FileNotFoundError: If the models directory doesn't exist.
+    """
+    base_path = project_root / "src" / "omnibase_core" / "models"
+
+    if not base_path.exists():
+        raise FileNotFoundError(
+            f"Models directory not found at {base_path}. "
+            f"Expected directory structure: {project_root}/src/omnibase_core/models"
+        )
+
+    if not base_path.is_dir():
+        raise NotADirectoryError(f"Path exists but is not a directory: {base_path}")
+
+    return base_path
+
+
 def main():
     """Main entry point."""
-    base_path = Path(__file__).parent / "src/omnibase_core/models"
+    try:
+        # Find project root
+        project_root = find_project_root()
+        print(f"Project root: {project_root}")
+
+        # Resolve and validate base path
+        base_path = resolve_base_path(project_root)
+        print(f"Models directory: {base_path}")
+
+    except (FileNotFoundError, NotADirectoryError) as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
 
     total_fixes = 0
     files_fixed = 0
 
-    print("Scanning for files with ModelSemVer fields (V2)...")
-    for filepath in base_path.rglob("*.py"):
+    print("\nScanning for files with ModelSemVer fields (V2)...")
+
+    try:
+        python_files = list(base_path.rglob("*.py"))
+        if not python_files:
+            print(f"WARNING: No Python files found in {base_path}", file=sys.stderr)
+            sys.exit(0)
+
+    except Exception as e:
+        print(f"ERROR: Failed to scan directory {base_path}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    for filepath in python_files:
         try:
             content = filepath.read_text(encoding="utf-8")
             # Quick check if file has ModelSemVer and Field
@@ -133,12 +205,18 @@ def main():
                 if needs_fix:
                     fixes = fix_file(filepath)
                     if fixes > 0:
-                        rel_path = filepath.relative_to(Path(__file__).parent)
+                        # Safely compute relative path
+                        try:
+                            rel_path = filepath.relative_to(project_root)
+                        except ValueError:
+                            # If file is not relative to project root, use absolute path
+                            rel_path = filepath
+
                         print(f"  ✓ {rel_path}: {fixes} fix(es)")
                         total_fixes += fixes
                         files_fixed += 1
         except Exception as e:
-            print(f"  ✗ Error processing {filepath}: {e}")
+            print(f"  ✗ Error processing {filepath}: {e}", file=sys.stderr)
 
     print(f"\n✓ Fixed {total_fixes} fields in {files_fixed} files")
 

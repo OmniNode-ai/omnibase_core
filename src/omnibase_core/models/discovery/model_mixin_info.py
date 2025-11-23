@@ -40,9 +40,8 @@ class ModelMixinInfo(BaseModel):
         json_schema_extra={"example": "Event-driven communication capabilities"},
     )
     version: ModelSemVer = Field(
-        ...,
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Semantic version of the mixin",
-        json_schema_extra={"example": {"major": 1, "minor": 0, "patch": 0}},
     )
     category: str = Field(
         ...,

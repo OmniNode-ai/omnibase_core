@@ -19,7 +19,8 @@ class ModelPolicyValidationResult(BaseModel):
         default=..., description="ID of the policy that was evaluated"
     )
     policy_version: ModelSemVer = Field(
-        default=..., description="Version of the policy"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of the policy",
     )
     status: str = Field(
         default=..., description="Validation status: compliant, warning, violated"

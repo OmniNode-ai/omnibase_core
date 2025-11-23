@@ -184,7 +184,7 @@ test_mixin:
 
         with pytest.raises(
             ModelOnexError,
-            match="code_patterns.methods for mixin 'test_mixin' must be a list",
+            match=r"code_patterns\.methods for mixin 'test_mixin' must be a list",
         ):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
@@ -204,7 +204,7 @@ test_mixin:
 
         with pytest.raises(
             ModelOnexError,
-            match="code_patterns.properties for mixin 'test_mixin' must be a list",
+            match=r"code_patterns\.properties for mixin 'test_mixin' must be a list",
         ):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
@@ -284,6 +284,6 @@ test_mixin:
 
         with pytest.raises(
             ModelOnexError,
-            match="performance.typical_use_cases for mixin 'test_mixin' must be a list",
+            match=r"performance\.typical_use_cases for mixin 'test_mixin' must be a list",
         ):
             ModelMixinMetadataCollection.from_yaml(yaml_file)

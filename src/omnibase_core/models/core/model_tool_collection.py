@@ -45,6 +45,9 @@ __all__ = [
     "EnumMetadataToolComplexity",
     "EnumMetadataToolStatus",
     "EnumMetadataToolType",
+    "MetadataToolAnalytics",
+    "MetadataToolInfo",
+    "MetadataToolUsageMetrics",
     # Legacy aliases
     "ToolCollection",
     "MetadataToolCollection",

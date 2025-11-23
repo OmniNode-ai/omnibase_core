@@ -144,10 +144,13 @@ class EmptyDirectoryValidator:
         - Only comments
         - Only docstrings
         - Only whitespace
+        - Only pass statements
+
+        Uses AST parsing for robust detection of actual code vs docstrings/comments.
         """
         try:
             content = init_file.read_text(encoding="utf-8")
-        except Exception:
+        except (OSError, UnicodeDecodeError):
             # If we can't read it, assume it's not trivial
             return False
 
@@ -158,32 +161,35 @@ class EmptyDirectoryValidator:
         if not content:
             return True
 
-        # Check if only contains docstrings/comments
-        lines = content.split("\n")
-        significant_lines = []
-        in_multiline_string = False
-        for line in lines:
-            stripped = line.strip()
+        # Use AST parsing to detect actual code
+        try:
+            import ast
 
-            # Skip empty lines
-            if not stripped:
-                continue
+            tree = ast.parse(content)
 
-            # Skip comments
-            if stripped.startswith("#"):
-                continue
+            # Get all statements in module (ast.parse always returns ast.Module)
+            for stmt in tree.body:
+                # Skip module docstring (first Expr with Constant)
+                # Note: In Python 3.8+, string literals are ast.Constant
+                if isinstance(stmt, ast.Expr):
+                    if isinstance(stmt.value, ast.Constant) and isinstance(
+                        stmt.value.value, str
+                    ):
+                        continue
 
-            # Track multiline strings (docstrings)
-            if '"""' in stripped or "'''" in stripped:
-                in_multiline_string = not in_multiline_string
-                continue
+                # Skip pass statements
+                if isinstance(stmt, ast.Pass):
+                    continue
 
-            # If not in multiline string, this is significant
-            if not in_multiline_string:
-                significant_lines.append(stripped)
+                # Any other statement means it's not trivial
+                return False
 
-        # If no significant lines, it's trivial
-        return len(significant_lines) == 0
+            # Only docstrings and pass statements found
+            return True
+
+        except SyntaxError:
+            # If it doesn't parse, assume it has actual code (not trivial)
+            return False
 
     def generate_report(self) -> str:
         """Generate a validation report."""

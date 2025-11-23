@@ -107,7 +107,7 @@ mixin_test:
         yaml_file.write_text(yaml_content)
 
         with pytest.raises(
-            ModelOnexError, match="code_patterns.methods.*must be a list"
+            ModelOnexError, match=r"code_patterns\.methods.*must be a list"
         ):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
@@ -127,7 +127,7 @@ mixin_test:
         yaml_file.write_text(yaml_content)
 
         with pytest.raises(
-            ModelOnexError, match="code_patterns.properties.*must be a list"
+            ModelOnexError, match=r"code_patterns\.properties.*must be a list"
         ):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
@@ -215,7 +215,7 @@ mixin_test:
         yaml_file.write_text(yaml_content)
 
         with pytest.raises(
-            ModelOnexError, match="performance.typical_use_cases.*must be a list"
+            ModelOnexError, match=r"performance\.typical_use_cases.*must be a list"
         ):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 

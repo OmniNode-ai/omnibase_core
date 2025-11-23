@@ -77,7 +77,7 @@ class ModelFSMTransitionAction(BaseModel):
         if duplicates:
             raise ModelOnexError(
                 message=f"Duplicate parameter names in action_config: {sorted(duplicates)}",
-                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return self
 

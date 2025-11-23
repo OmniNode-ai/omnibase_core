@@ -37,7 +37,8 @@ class ModelToolImplementation(BaseModel):
 
     # Implementation metadata
     version: ModelSemVer = Field(
-        default=..., description="Version of the tool implementation"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of the tool implementation",
     )
     registry_source: str = Field(
         default=...,

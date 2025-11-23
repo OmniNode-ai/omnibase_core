@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Fix missing default_factory on ModelSemVer fields."""
 
+import argparse
 import re
+import sys
 from pathlib import Path
 
 
@@ -18,7 +20,7 @@ def fix_file(filepath: Path) -> int:
         re.MULTILINE,
     )
 
-    def replace1(match):
+    def replace1(match: re.Match[str]) -> str:
         nonlocal fixes
         indent = match.group(1)
         field_name = match.group(2)
@@ -39,7 +41,7 @@ def fix_file(filepath: Path) -> int:
         re.MULTILINE,
     )
 
-    def replace2(match):
+    def replace2(match: re.Match[str]) -> str:
         nonlocal fixes
         indent = match.group(1)
         field_name = match.group(2)
@@ -60,7 +62,7 @@ def fix_file(filepath: Path) -> int:
         re.MULTILINE,
     )
 
-    def replace3(match):
+    def replace3(match: re.Match[str]) -> str:
         nonlocal fixes
         indent = match.group(1)
         field_name = match.group(2)
@@ -81,9 +83,48 @@ def fix_file(filepath: Path) -> int:
     return fixes
 
 
-def main():
+def main() -> int:
     """Main entry point."""
-    base_path = Path(__file__).parent / "src/omnibase_core/models"
+    parser = argparse.ArgumentParser(
+        description="Fix missing default_factory on ModelSemVer fields"
+    )
+    parser.add_argument(
+        "--base-path",
+        type=Path,
+        default=None,
+        help="Base path to scan for Python files (default: auto-detect project root)",
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose output",
+    )
+
+    args = parser.parse_args()
+
+    # Determine base path
+    if args.base_path:
+        base_path = args.base_path.resolve()
+    else:
+        # Auto-detect: Look for src/omnibase_core/models from script location
+        script_dir = Path(__file__).parent
+        # Try project root (assuming script is in scripts/migration/)
+        project_root = script_dir.parent.parent
+        base_path = project_root / "src" / "omnibase_core" / "models"
+
+        # Validate auto-detected path exists
+        if not base_path.exists():
+            print(f"❌ Error: Auto-detected path does not exist: {base_path}")
+            print("Please specify --base-path explicitly")
+            return 1
+
+    if not base_path.exists():
+        print(f"❌ Error: Base path does not exist: {base_path}")
+        return 1
+
+    if args.verbose:
+        print(f"Scanning base path: {base_path}")
 
     total_fixes = 0
     files_fixed = 0
@@ -106,15 +147,21 @@ def main():
 
                     fixes = fix_file(filepath)
                     if fixes > 0:
-                        rel_path = filepath.relative_to(Path(__file__).parent)
+                        try:
+                            rel_path = filepath.relative_to(base_path.parent.parent)
+                        except ValueError:
+                            rel_path = filepath
                         print(f"  ✓ {rel_path}: {fixes} fix(es)")
                         total_fixes += fixes
                         files_fixed += 1
-        except Exception as e:
+        except (OSError, UnicodeDecodeError) as e:
+            print(f"  ✗ Error reading {filepath}: {e}")
+        except (re.error, ValueError) as e:
             print(f"  ✗ Error processing {filepath}: {e}")
 
     print(f"\n✓ Fixed {total_fixes} fields in {files_fixed} files")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

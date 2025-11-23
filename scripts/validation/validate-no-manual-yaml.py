@@ -255,51 +255,71 @@ class ManualYamlValidationDetector:
         current_function = getattr(self, "_current_function", None)
         return current_function is not None and current_function.startswith("from_yaml")
 
-    def _is_in_safe_yaml_loader(self, file_path: Path) -> bool:
-        """Check if file is in the allowlist for YAML utilities."""
-        # Check filename against allowed filenames (handle both old and new format)
-        allowed_filenames_raw = self.config.get("allowed_filenames", [])
-        allowed_filenames = []
-        for entry in allowed_filenames_raw:
-            if isinstance(entry, dict):
-                allowed_filenames.append(entry.get("filename", ""))
-            elif isinstance(entry, str):
-                allowed_filenames.append(entry)
+    def _extract_allowlist_values(self, config_key: str, dict_key: str) -> list[str]:
+        """
+        Extract and normalize allowlist values from config.
 
+        Handles both old format (list of strings) and new format (list of dicts).
+        Empty strings are filtered out as they are meaningless for matching.
+
+        Args:
+            config_key: Top-level config key (e.g., "allowed_files")
+            dict_key: Dictionary key when using new format (e.g., "file")
+
+        Returns:
+            List of non-empty string values
+        """
+        raw_values = self.config.get(config_key, [])
+        extracted_values = []
+
+        for entry in raw_values:
+            if isinstance(entry, dict):
+                # New format: {"file": "path", "reason": "..."}
+                value = entry.get(dict_key, "")
+            elif isinstance(entry, str):
+                # Old format: ["path1", "path2"]
+                value = entry
+            else:
+                # Skip invalid entries
+                continue
+
+            # Filter out empty strings - they cannot match any actual path/filename/function
+            if value:
+                extracted_values.append(value)
+
+        return extracted_values
+
+    def _is_in_safe_yaml_loader(self, file_path: Path) -> bool:
+        """
+        Check if file is in the allowlist for YAML utilities.
+
+        Empty strings are filtered from allowlists as they cannot match real paths.
+        """
+        # Check filename against allowed filenames
+        allowed_filenames = self._extract_allowlist_values(
+            "allowed_filenames", "filename"
+        )
         if file_path.name in allowed_filenames:
             return True
 
-        # Check full path against allowed files (handle both old and new format)
-        allowed_files_raw = self.config.get("allowed_files", [])
-        allowed_files = []
-        for entry in allowed_files_raw:
-            if isinstance(entry, dict):
-                allowed_files.append(entry.get("file", ""))
-            elif isinstance(entry, str):
-                allowed_files.append(entry)
-
+        # Check full path against allowed files
+        allowed_files = self._extract_allowlist_values("allowed_files", "file")
         file_str = str(file_path)
-        return any(
-            file_str.endswith(allowed_path)
-            for allowed_path in allowed_files
-            if allowed_path
-        )
+        return any(file_str.endswith(allowed_path) for allowed_path in allowed_files)
 
     def _is_in_yaml_utility_function(self) -> bool:
-        """Check if we're in a legitimate YAML utility function."""
+        """
+        Check if we're in a legitimate YAML utility function.
+
+        Empty strings are filtered from allowlists as they cannot match real function names.
+        """
         current_function = getattr(self, "_current_function", None)
         if current_function is None:
             return False
 
-        # Handle both old format (list of strings) and new format (list of dicts)
-        allowed_functions_raw = self.config.get("allowed_functions", [])
-        allowed_functions = []
-        for entry in allowed_functions_raw:
-            if isinstance(entry, dict):
-                allowed_functions.append(entry.get("function", ""))
-            elif isinstance(entry, str):
-                allowed_functions.append(entry)
-
+        allowed_functions = self._extract_allowlist_values(
+            "allowed_functions", "function"
+        )
         return current_function in allowed_functions
 
     def _is_in_test_file(self, file_path: Path) -> bool:

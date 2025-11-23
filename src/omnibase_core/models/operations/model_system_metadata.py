@@ -41,7 +41,7 @@ class ModelSystemMetadata(BaseModel):
     )
     system_name: str = Field(default=..., description="System name")
     version: ModelSemVer = Field(
-        default=...,
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="System version in semantic version format",
     )
     deployment_id: UUID | None = Field(
@@ -59,7 +59,7 @@ class ModelSystemMetadata(BaseModel):
 
     # Configuration
     configuration_version: ModelSemVer = Field(
-        default=ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Configuration version in semantic version format",
     )
     feature_flags: dict[str, bool] = Field(

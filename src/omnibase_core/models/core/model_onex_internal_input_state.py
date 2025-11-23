@@ -53,7 +53,7 @@ class ModelOnexInternalInputState(BaseModel):
     # Node identification (required for internal processing)
     node_name: str = Field(default=..., description="Required node name for processing")
     node_version: ModelSemVer = Field(
-        default=...,
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Required node version for processing",
     )
 

@@ -38,7 +38,8 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
     )
     node_name: str = Field(default=..., description="Name of the responding node")
     version: ModelSemVer = Field(
-        default=..., description="Version of the responding node"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of the responding node",
     )
     current_status: EnumNodeCurrentStatus = Field(
         default=..., description="Current operational status of the node"

@@ -760,39 +760,35 @@ class ModelNodeType(BaseModel):
 
     def serialize(self) -> dict[str, Any]:
         """
-                        Serialize the node type to a dictionary.
+        Serialize the node type to a dictionary.
 
-                        Implements the Serializable protocol by converting the instance
-                        to a dictionary representation suitable for JSON serialization,
-                        storage, or transmission.
+        Implements the Serializable protocol by converting the instance
+        to a dictionary representation suitable for JSON serialization,
+        storage, or transmission.
 
-                        Returns:
-                            Dictionary representation of the node type with all fields
-                            including None values, using field aliases if defined.
+        Returns:
+            Dictionary representation of the node type with all fields
+            including None values, using field aliases if defined.
 
-                        Example:
-                            ```python
-                            node = ModelNodeType.CONTRACT_TO_MODEL()
-                            serialized = node.serialize()
+        Example:
+            ```python
+            node = ModelNodeType.CONTRACT_TO_MODEL()
+            serialized = node.serialize()
 
-                            # Contains all fields
-                            assert 'type_name' in serialized
-                            assert 'description' in serialized
-                            assert 'category' in serialized
+            # Contains all fields
+            assert 'type_name' in serialized
+            assert 'description' in serialized
+            assert 'category' in serialized
 
-                            # Can be used for JSON serialization
-                            import json
-                from omnibase_core.models.primitives.model_semver import (
-            ModelSemVer,
-            default_model_version,
-        )
-                            json_str = json.dumps(serialized, default=str)
-                            ```
+            # Can be used for JSON serialization
+            import json
+            json_str = json.dumps(serialized, default=str)
+            ```
 
-                        Note:
-                            This method includes all fields regardless of their value,
-                            including None values. Uses Pydantic's model_dump with
-                            by_alias=True to support field aliases.
+        Note:
+            This method includes all fields regardless of their value,
+            including None values. Uses Pydantic's model_dump with
+            by_alias=True to support field aliases.
         """
         return self.model_dump(exclude_none=False, by_alias=True)
 

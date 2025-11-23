@@ -59,7 +59,6 @@ class ModelTrustPolicy(BaseModel):
     version: ModelSemVer = Field(
         default_factory=default_model_version,
         description="Policy version",
-        pattern=r"^\d+\.\d+$",
     )
     description: str | None = Field(default=None, description="Policy description")
 

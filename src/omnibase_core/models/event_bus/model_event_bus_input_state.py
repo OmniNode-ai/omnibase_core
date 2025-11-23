@@ -31,7 +31,8 @@ class ModelEventBusInputState(BaseModel):
     """
 
     version: ModelSemVer = Field(
-        default=..., description="Schema version for input state (semantic version)"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Schema version for input state (semantic version)",
     )
     input_field: str = Field(
         default=...,

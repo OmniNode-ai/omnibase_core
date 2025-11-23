@@ -27,7 +27,8 @@ run_split() {
         -v \
         2>&1 | tee "$OUTPUT_DIR/split_${split_num}_output.txt"
 
-    local exit_code=$?
+    # Capture pytest exit code from pipeline (not tee's exit code)
+    local exit_code=${PIPESTATUS[0]}
     echo "[Split $split_num/$TOTAL_SPLITS] Completed with exit code: $exit_code"
     return $exit_code
 }

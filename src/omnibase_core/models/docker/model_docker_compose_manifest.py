@@ -76,14 +76,16 @@ class ModelDockerComposeManifest(BaseModel):
 
     @field_validator("version", mode="before")
     @classmethod
-    def validate_version(cls, v: str | ModelSemVer) -> ModelSemVer:
+    def validate_version(cls, v: str | int | float | ModelSemVer) -> ModelSemVer:
         """Validate Docker Compose version format and convert to ModelSemVer.
 
         Docker Compose uses versions like "3.8" or "3" (major.minor format).
         This validator converts them to ModelSemVer by adding patch=0.
 
+        Handles YAML inputs that may parse as int/float (e.g., `version: 3` or `version: 3.8`).
+
         Args:
-            v: Version string or ModelSemVer to validate
+            v: Version string, numeric value, or ModelSemVer to validate
 
         Returns:
             ModelSemVer instance
@@ -95,10 +97,28 @@ class ModelDockerComposeManifest(BaseModel):
         if isinstance(v, ModelSemVer):
             return v
 
-        # Type check: ensure input is string before calling string methods
+        # Handle None explicitly with clear error
+        if v is None:
+            raise ModelOnexError(
+                message="Version cannot be None; expected string, number, or ModelSemVer",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
+        # Handle boolean explicitly (must check before int, as bool is subclass of int)
+        if isinstance(v, bool):
+            raise ModelOnexError(
+                message=f"Invalid version type: bool (value={v}); expected string, number, or ModelSemVer",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
+        # Convert numeric types to string (common YAML pattern: version: 3 or version: 3.8)
+        if isinstance(v, (int, float)):
+            v = str(v)
+
+        # Type check: ensure we now have a string
         if not isinstance(v, str):
             raise ModelOnexError(
-                message=f"Invalid version type: {type(v).__name__}; expected string or ModelSemVer",
+                message=f"Invalid version type: {type(v).__name__}; expected string, number, or ModelSemVer",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 

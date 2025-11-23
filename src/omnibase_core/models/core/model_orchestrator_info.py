@@ -34,7 +34,8 @@ class ModelOrchestratorInfo(BaseModel):
         description="Orchestrator type (kubernetes/swarm/nomad/custom)",
     )
     orchestrator_version: ModelSemVer = Field(
-        default=..., description="Orchestrator version"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Orchestrator version",
     )
 
     # Cluster information

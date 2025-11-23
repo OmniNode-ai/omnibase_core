@@ -4,7 +4,7 @@ This module provides the ModelMixinVersion class for validating and working
 with semantic version numbers in mixin metadata.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -51,6 +51,11 @@ class ModelMixinVersion(BaseModel):
         # Only int() conversions can raise ValueError/IndexError, so isolate in try block
         try:
             return cls(major=int(parts[0]), minor=int(parts[1]), patch=int(parts[2]))
+        except ValidationError as e:
+            raise ModelOnexError(
+                message=f"Invalid version string '{version_str}': Version numbers must be non-negative",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+            ) from e
         except (ValueError, IndexError) as e:
             raise ModelOnexError(
                 message=f"Invalid version string '{version_str}': {e}",

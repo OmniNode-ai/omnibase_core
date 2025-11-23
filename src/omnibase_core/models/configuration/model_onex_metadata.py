@@ -35,13 +35,14 @@ class ModelOnexMetadata(BaseModel):
     """
 
     metadata_version: ModelSemVer = Field(
-        default=...,
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Must be a semver string, e.g., '0.1.0'",
     )
     name: str = Field(default=..., description="Validator/tool name")
     namespace: "Namespace"
     version: ModelSemVer = Field(
-        default=..., description="Semantic version, e.g., 0.1.0"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Semantic version, e.g., 0.1.0",
     )
     entrypoint: str | None = Field(
         default=None,

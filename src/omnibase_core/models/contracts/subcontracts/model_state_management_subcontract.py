@@ -62,16 +62,8 @@ class ModelStateManagementSubcontract(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        description=(
-            "Model instance version - tracks the semantic version of this "
-            "specific ModelStateManagementSubcontract instance (MUST be provided in YAML contract)"
-        ),
-    )
-
-    model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields from YAML contracts
-        use_enum_values=False,  # Keep enum objects, don't convert to strings
-        validate_assignment=True,
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Subcontract version (auto-generated if not provided)",
     )
 
     # Correlation and tracing
@@ -266,3 +258,9 @@ class ModelStateManagementSubcontract(BaseModel):
                     ),
                 )
         return self
+
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from YAML contracts
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,  # Validate on attribute assignment
+    )

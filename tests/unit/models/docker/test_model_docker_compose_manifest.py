@@ -77,23 +77,38 @@ class TestModelDockerComposeManifest:
             with pytest.raises((ValidationError, ModelOnexError)):
                 ModelDockerComposeManifest(version=version)
 
-    def test_version_validation_non_string_types(self) -> None:
-        """Test version validation rejects non-string types (int, float, None)."""
-        # Test integer input
-        with pytest.raises(
-            (ValidationError, ModelOnexError), match="Invalid version type"
-        ):
-            ModelDockerComposeManifest(version=3)
+    def test_version_validation_numeric_types(self) -> None:
+        """Test version validation accepts and converts numeric types (int, float)."""
+        # Test integer input (common YAML pattern: version: 3)
+        manifest = ModelDockerComposeManifest(version=3)
+        assert manifest.version == ModelSemVer(major=3, minor=0, patch=0)
 
-        # Test float input
-        with pytest.raises(
-            (ValidationError, ModelOnexError), match="Invalid version type"
-        ):
-            ModelDockerComposeManifest(version=3.8)
+        # Test float input (common YAML pattern: version: 3.8)
+        manifest = ModelDockerComposeManifest(version=3.8)
+        assert manifest.version == ModelSemVer(major=3, minor=8, patch=0)
 
-        # Test None input
-        with pytest.raises((ValidationError, ModelOnexError)):
+        # Test another float
+        manifest = ModelDockerComposeManifest(version=2.4)
+        assert manifest.version == ModelSemVer(major=2, minor=4, patch=0)
+
+    def test_version_validation_invalid_types(self) -> None:
+        """Test version validation rejects invalid types (None, bool, list, dict)."""
+        # Test None input - explicit error message
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Version cannot be None"
+        ):
             ModelDockerComposeManifest(version=None)
+
+        # Test boolean input - must check before int since bool is subclass of int
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: bool"
+        ):
+            ModelDockerComposeManifest(version=True)
+
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: bool"
+        ):
+            ModelDockerComposeManifest(version=False)
 
         # Test list input
         with pytest.raises((ValidationError, ModelOnexError)):
@@ -283,6 +298,35 @@ volumes:
         assert manifest.services["api"].image == "python:3.12"
         assert "app_network" in manifest.networks
         assert "data" in manifest.volumes
+
+    def test_load_from_yaml_numeric_version(self, tmp_path: Path) -> None:
+        """Test loading docker-compose.yaml with numeric version (YAML parses as int)."""
+        # YAML parsers often parse unquoted numbers as int/float
+        yaml_content = """
+version: 3
+services:
+  api:
+    image: python:3.12
+"""
+        yaml_path = tmp_path / "docker-compose.yaml"
+        yaml_path.write_text(yaml_content)
+
+        # This should work - YAML will parse "3" as int, validator converts to string
+        manifest = ModelDockerComposeManifest.from_yaml(yaml_path)
+        assert manifest.version == ModelSemVer(major=3, minor=0, patch=0)
+
+        # Test with float version
+        yaml_content_float = """
+version: 3.8
+services:
+  api:
+    image: python:3.12
+"""
+        yaml_path_float = tmp_path / "docker-compose-float.yaml"
+        yaml_path_float.write_text(yaml_content_float)
+
+        manifest_float = ModelDockerComposeManifest.from_yaml(yaml_path_float)
+        assert manifest_float.version == ModelSemVer(major=3, minor=8, patch=0)
 
     def test_load_from_yaml_with_configs_and_secrets(self, tmp_path: Path) -> None:
         """Test loading docker-compose.yaml with configs and secrets."""

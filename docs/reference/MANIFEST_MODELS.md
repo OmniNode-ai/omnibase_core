@@ -65,7 +65,7 @@ The `ModelMixinMetadata` system comprises 11 nested models:
 
 | Method | Purpose | Returns |
 |--------|---------|---------|
-| `load_from_yaml(path)` | Load metadata from YAML file | `ModelMixinMetadataCollection` |
+| `from_yaml(path)` | Load metadata from YAML file | `ModelMixinMetadataCollection` |
 | `get_mixin(name)` | Retrieve specific mixin metadata | `ModelMixinMetadata` |
 | `get_mixins_by_category(category)` | Filter by category | `list[ModelMixinMetadata]` |
 | `validate_compatibility(mixins)` | Check mixin compatibility | `tuple[bool, list[str]]` |
@@ -140,7 +140,7 @@ The `ModelDockerComposeManifest` integrates these Docker models:
 
 | Method | Purpose | Returns |
 |--------|---------|---------|
-| `load_from_yaml(path)` | Load from docker-compose.yaml | `ModelDockerComposeManifest` |
+| `from_yaml(path)` | Load from docker-compose.yaml | `ModelDockerComposeManifest` |
 | `save_to_yaml(path)` | Save to docker-compose.yaml | `None` |
 | `get_service(name)` | Retrieve service by name | `ModelDockerService` |
 | `validate_dependencies()` | Check for circular dependencies | `list[str]` (warnings) |

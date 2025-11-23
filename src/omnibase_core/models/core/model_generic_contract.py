@@ -20,11 +20,13 @@ class ModelGenericContract(BaseModel):
 
     # Core contract fields
     contract_version: ModelSemVer = Field(
-        default=..., description="Contract schema version"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Contract schema version",
     )
     node_name: str = Field(default=..., description="Name of the node/tool")
     node_version: ModelSemVer = Field(
-        default=..., description="Version of the node/tool"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of the node/tool",
     )
     description: str | None = Field(
         default=None,

@@ -29,7 +29,7 @@ class ModelEventTransformation(BaseModel):
     # Model version for instance tracking
     version: ModelSemVer = Field(
         default_factory=default_model_version,
-        description="Model version (MUST be provided in YAML contract)",
+        description="Subcontract version (auto-generated if not provided)",
     )
 
     transformation_name: str = Field(
