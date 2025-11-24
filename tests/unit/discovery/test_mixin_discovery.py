@@ -337,13 +337,12 @@ class TestMixinDiscovery:
     def test_metadata_file_missing_required_mixin_fields(self, tmp_path: Path) -> None:
         """Test error handling when mixin metadata is missing required fields."""
         metadata_file = tmp_path / "mixin_metadata.yaml"
-        # Write metadata with missing required fields (no version)
+        # Write metadata with missing truly required field (category)
         metadata_file.write_text(
             """
 MixinInvalid:
   name: MixinInvalid
-  description: Invalid mixin missing version
-  category: testing
+  description: Invalid mixin missing category
 """
         )
 

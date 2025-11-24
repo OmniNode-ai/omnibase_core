@@ -4,7 +4,6 @@ from typing import Generic
 Results module - ONEX result models and related structures
 """
 
-from omnibase_core.models.core.model_orchestrator_info import ModelOrchestratorInfo
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 
 from .model_onex_message import ModelOnexMessage
@@ -20,7 +19,6 @@ __all__ = [
     "ModelOnexMessage",
     "ModelOnexMessageContext",
     "ModelOnexResult",
-    "ModelOrchestratorInfo",
     "ModelOrchestratorMetrics",
     "ModelUnifiedSummary",
     "ModelUnifiedSummaryDetails",
