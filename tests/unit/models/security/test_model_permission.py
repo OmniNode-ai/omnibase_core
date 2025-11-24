@@ -36,6 +36,9 @@ from omnibase_core.models.security.model_permission_evaluation_context import (
     ModelPermissionEvaluationContext,
 )
 
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 
 class TestModelPermissionBasicInitialization:
     """Test basic ModelPermission initialization and field validation."""
@@ -43,6 +46,7 @@ class TestModelPermissionBasicInitialization:
     def test_permission_minimal_required_fields(self):
         """Test permission creation with minimal required fields."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="read_resource",
             resource="projects/test",
             action="read",
@@ -58,6 +62,7 @@ class TestModelPermissionBasicInitialization:
     def test_permission_with_all_fields(self):
         """Test permission creation with all fields populated."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="admin_permission",
             resource="projects/*",
             action="*",
@@ -81,8 +86,12 @@ class TestModelPermissionBasicInitialization:
 
     def test_permission_id_is_unique(self):
         """Test that each permission gets a unique ID."""
-        perm1 = ModelPermission(name="test1", resource="r1", action="read")
-        perm2 = ModelPermission(name="test2", resource="r2", action="read")
+        perm1 = ModelPermission(
+            version=DEFAULT_VERSION, name="test1", resource="r1", action="read"
+        )
+        perm2 = ModelPermission(
+            version=DEFAULT_VERSION, name="test2", resource="r2", action="read"
+        )
 
         assert perm1.permission_id != perm2.permission_id
         assert isinstance(perm1.permission_id, UUID)
@@ -92,6 +101,7 @@ class TestModelPermissionBasicInitialization:
         """Test permission timestamp fields."""
         before = datetime.now(UTC)
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test_perm",
             resource="test",
             action="read",
@@ -104,6 +114,7 @@ class TestModelPermissionBasicInitialization:
     def test_permission_update_timestamp(self):
         """Test permission timestamp update method."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test_perm",
             resource="test",
             action="read",
@@ -132,13 +143,20 @@ class TestModelPermissionFieldValidation:
         ]
 
         for name in valid_names:
-            permission = ModelPermission(name=name, resource="test", action="read")
+            permission = ModelPermission(
+                version=DEFAULT_VERSION, name=name, resource="test", action="read"
+            )
             assert permission.name == name
 
     def test_name_pattern_validation_invalid(self):
         """Test invalid name patterns."""
         with pytest.raises(Exception):  # Pydantic ValidationError
-            ModelPermission(name="123_invalid", resource="test", action="read")
+            ModelPermission(
+                version=DEFAULT_VERSION,
+                name="123_invalid",
+                resource="test",
+                action="read",
+            )
 
     def test_resource_pattern_validation_valid(self):
         """Test valid resource patterns."""
@@ -152,7 +170,9 @@ class TestModelPermissionFieldValidation:
         ]
 
         for resource in valid_resources:
-            permission = ModelPermission(name="test", resource=resource, action="read")
+            permission = ModelPermission(
+                version=DEFAULT_VERSION, name="test", resource=resource, action="read"
+            )
             assert permission.resource == resource
 
     def test_action_pattern_validation_valid(self):
@@ -160,17 +180,27 @@ class TestModelPermissionFieldValidation:
         valid_actions = ["read", "write", "delete", "create", "update", "admin_action"]
 
         for action in valid_actions:
-            permission = ModelPermission(name="test", resource="test", action=action)
+            permission = ModelPermission(
+                version=DEFAULT_VERSION, name="test", resource="test", action=action
+            )
             assert permission.action == action
 
     def test_effect_validation(self):
         """Test effect field validation."""
         # Valid effects
         perm_allow = ModelPermission(
-            name="test", resource="test", action="read", effect="allow"
+            version=DEFAULT_VERSION,
+            name="test",
+            resource="test",
+            action="read",
+            effect="allow",
         )
         perm_deny = ModelPermission(
-            name="test", resource="test", action="read", effect="deny"
+            version=DEFAULT_VERSION,
+            name="test",
+            resource="test",
+            action="read",
+            effect="deny",
         )
 
         assert perm_allow.effect == "allow"
@@ -188,7 +218,11 @@ class TestModelPermissionFieldValidation:
 
         for scope in valid_scopes:
             permission = ModelPermission(
-                name="test", resource="test", action="read", scope_type=scope
+                version=DEFAULT_VERSION,
+                name="test",
+                resource="test",
+                action="read",
+                scope_type=scope,
             )
             assert permission.scope_type == scope
 
@@ -196,10 +230,18 @@ class TestModelPermissionFieldValidation:
         """Test priority value constraints."""
         # Valid priorities
         perm_min = ModelPermission(
-            name="test", resource="test", action="read", priority=0
+            version=DEFAULT_VERSION,
+            name="test",
+            resource="test",
+            action="read",
+            priority=0,
         )
         perm_max = ModelPermission(
-            name="test", resource="test", action="read", priority=100
+            version=DEFAULT_VERSION,
+            name="test",
+            resource="test",
+            action="read",
+            priority=100,
         )
 
         assert perm_min.priority == 0
@@ -211,7 +253,11 @@ class TestModelPermissionFieldValidation:
 
         for risk_level in valid_risk_levels:
             permission = ModelPermission(
-                name="test", resource="test", action="read", risk_level=risk_level
+                version=DEFAULT_VERSION,
+                name="test",
+                resource="test",
+                action="read",
+                risk_level=risk_level,
             )
             assert permission.risk_level == risk_level
 
@@ -224,6 +270,7 @@ class TestModelPermissionListValidators:
         # Valid: 10 levels
         valid_hierarchy = [f"level{i}" for i in range(10)]
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -234,6 +281,7 @@ class TestModelPermissionListValidators:
         # Invalid: 11 levels
         with pytest.raises(ModelOnexError) as exc_info:
             ModelPermission(
+                version=DEFAULT_VERSION,
                 name="test",
                 resource="test",
                 action="read",
@@ -246,6 +294,7 @@ class TestModelPermissionListValidators:
         # Valid: 20 patterns
         valid_patterns = [f"pattern{i}/*" for i in range(20)]
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -256,6 +305,7 @@ class TestModelPermissionListValidators:
         # Invalid: 21 patterns
         with pytest.raises(ModelOnexError) as exc_info:
             ModelPermission(
+                version=DEFAULT_VERSION,
                 name="test",
                 resource="test",
                 action="read",
@@ -268,6 +318,7 @@ class TestModelPermissionListValidators:
         # Valid: 50 conditions
         valid_conditions = [f"condition{i} == true" for i in range(50)]
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -278,6 +329,7 @@ class TestModelPermissionListValidators:
         # Invalid: 51 conditions
         with pytest.raises(ModelOnexError) as exc_info:
             ModelPermission(
+                version=DEFAULT_VERSION,
                 name="test",
                 resource="test",
                 action="read",
@@ -290,13 +342,18 @@ class TestModelPermissionListValidators:
         # Valid: 20 tags
         valid_tags = [f"tag{i}" for i in range(20)]
         permission = ModelPermission(
-            name="test", resource="test", action="read", tags=valid_tags
+            version=DEFAULT_VERSION,
+            name="test",
+            resource="test",
+            action="read",
+            tags=valid_tags,
         )
         assert len(permission.tags) == 20
 
         # Invalid: 21 tags
         with pytest.raises(ModelOnexError) as exc_info:
             ModelPermission(
+                version=DEFAULT_VERSION,
                 name="test",
                 resource="test",
                 action="read",
@@ -308,13 +365,18 @@ class TestModelPermissionListValidators:
         """Test individual tag length validation."""
         # Valid: tag with 50 characters
         permission = ModelPermission(
-            name="test", resource="test", action="read", tags=["a" * 50]
+            version=DEFAULT_VERSION,
+            name="test",
+            resource="test",
+            action="read",
+            tags=["a" * 50],
         )
         assert len(permission.tags[0]) == 50
 
         # Invalid: tag with 51 characters
         with pytest.raises(ModelOnexError) as exc_info:
             ModelPermission(
+                version=DEFAULT_VERSION,
                 name="test",
                 resource="test",
                 action="read",
@@ -327,6 +389,7 @@ class TestModelPermissionListValidators:
         # Valid: 10 approval types
         valid_types = [f"approval{i}" for i in range(10)]
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -337,6 +400,7 @@ class TestModelPermissionListValidators:
         # Invalid: 11 approval types
         with pytest.raises(ModelOnexError) as exc_info:
             ModelPermission(
+                version=DEFAULT_VERSION,
                 name="test",
                 resource="test",
                 action="read",
@@ -349,6 +413,7 @@ class TestModelPermissionListValidators:
         # Valid: 50 countries
         valid_countries = [f"C{i:02d}" for i in range(50)]
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -359,6 +424,7 @@ class TestModelPermissionListValidators:
         # Invalid: 51 countries
         with pytest.raises(ModelOnexError) as exc_info:
             ModelPermission(
+                version=DEFAULT_VERSION,
                 name="test",
                 resource="test",
                 action="read",
@@ -371,6 +437,7 @@ class TestModelPermissionListValidators:
         # Valid: 20 IP ranges
         valid_ranges = [f"192.168.{i}.0/24" for i in range(20)]
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -381,6 +448,7 @@ class TestModelPermissionListValidators:
         # Invalid: 21 IP ranges
         with pytest.raises(ModelOnexError) as exc_info:
             ModelPermission(
+                version=DEFAULT_VERSION,
                 name="test",
                 resource="test",
                 action="read",
@@ -395,7 +463,10 @@ class TestModelPermissionResourceMatching:
     def test_matches_resource_direct_match(self):
         """Test direct resource path matching."""
         permission = ModelPermission(
-            name="test", resource="projects/test/resource", action="read"
+            version=DEFAULT_VERSION,
+            name="test",
+            resource="projects/test/resource",
+            action="read",
         )
 
         assert permission.matches_resource("projects/test/resource") is True
@@ -404,6 +475,7 @@ class TestModelPermissionResourceMatching:
     def test_matches_resource_pattern_matching(self):
         """Test pattern-based resource matching."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -418,6 +490,7 @@ class TestModelPermissionResourceMatching:
     def test_matches_resource_hierarchy_exact(self):
         """Test hierarchy-based matching without subresources."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -431,6 +504,7 @@ class TestModelPermissionResourceMatching:
     def test_matches_resource_hierarchy_with_subresources(self):
         """Test hierarchy-based matching with subresources."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -445,7 +519,9 @@ class TestModelPermissionResourceMatching:
 
     def test_matches_resource_wildcard(self):
         """Test wildcard resource matching."""
-        permission = ModelPermission(name="test", resource="projects/*", action="read")
+        permission = ModelPermission(
+            version=DEFAULT_VERSION, name="test", resource="projects/*", action="read"
+        )
 
         assert permission.matches_resource("projects/test") is True
         assert permission.matches_resource("projects/anything") is True
@@ -458,6 +534,7 @@ class TestModelPermissionTemporalValidation:
     def test_is_temporally_valid_disabled(self):
         """Test temporal validation when disabled."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -470,6 +547,7 @@ class TestModelPermissionTemporalValidation:
         """Test temporal validation with date range."""
         now = datetime.now(UTC)
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -489,6 +567,7 @@ class TestModelPermissionTemporalValidation:
     def test_is_temporally_valid_time_of_day(self):
         """Test temporal validation with time of day constraints."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -509,6 +588,7 @@ class TestModelPermissionTemporalValidation:
         """Test temporal validation with day of week constraints."""
         # Only Monday (0)
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -533,6 +613,7 @@ class TestModelPermissionTemporalValidation:
 
         # Not expired
         perm_active = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -542,6 +623,7 @@ class TestModelPermissionTemporalValidation:
 
         # Expired
         perm_expired = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -550,7 +632,9 @@ class TestModelPermissionTemporalValidation:
         assert perm_expired.is_expired() is True
 
         # No expiration
-        perm_no_expiry = ModelPermission(name="test", resource="test", action="read")
+        perm_no_expiry = ModelPermission(
+            version=DEFAULT_VERSION, name="test", resource="test", action="read"
+        )
         assert perm_no_expiry.is_expired() is False
 
     def test_is_active(self):
@@ -559,6 +643,7 @@ class TestModelPermissionTemporalValidation:
 
         # Active
         perm_active = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -568,6 +653,7 @@ class TestModelPermissionTemporalValidation:
 
         # Not yet active
         perm_future = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -576,7 +662,9 @@ class TestModelPermissionTemporalValidation:
         assert perm_future.is_active() is False
 
         # No activation time
-        perm_no_start = ModelPermission(name="test", resource="test", action="read")
+        perm_no_start = ModelPermission(
+            version=DEFAULT_VERSION, name="test", resource="test", action="read"
+        )
         assert perm_no_start.is_active() is True
 
 
@@ -586,6 +674,7 @@ class TestModelPermissionGeographicValidation:
     def test_is_geographically_valid_disabled(self):
         """Test geographic validation when disabled."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -598,6 +687,7 @@ class TestModelPermissionGeographicValidation:
     def test_is_geographically_valid_country_allowed(self):
         """Test geographic validation with allowed countries."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -612,6 +702,7 @@ class TestModelPermissionGeographicValidation:
     def test_is_geographically_valid_ip_range(self):
         """Test geographic validation with IP ranges."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -629,7 +720,9 @@ class TestModelPermissionConditionEvaluation:
 
     def test_evaluate_conditions_no_conditions(self):
         """Test condition evaluation with no conditions."""
-        permission = ModelPermission(name="test", resource="test", action="read")
+        permission = ModelPermission(
+            version=DEFAULT_VERSION, name="test", resource="test", action="read"
+        )
         context = ModelPermissionEvaluationContext()
 
         assert permission.evaluate_conditions(context) is True
@@ -637,6 +730,7 @@ class TestModelPermissionConditionEvaluation:
     def test_evaluate_conditions_equality_check(self):
         """Test condition evaluation with equality checks."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -656,6 +750,7 @@ class TestModelPermissionConditionEvaluation:
     def test_evaluate_conditions_existence_check(self):
         """Test condition evaluation with existence checks."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -679,6 +774,7 @@ class TestModelPermissionUsageManagement:
     def test_is_usage_allowed_disabled(self):
         """Test usage check when limits disabled."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -691,6 +787,7 @@ class TestModelPermissionUsageManagement:
     def test_is_usage_allowed_total_limit(self):
         """Test usage check with total limit."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -705,6 +802,7 @@ class TestModelPermissionUsageManagement:
     def test_is_usage_allowed_daily_limit(self):
         """Test usage check with daily limit."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -718,6 +816,7 @@ class TestModelPermissionUsageManagement:
     def test_is_usage_allowed_hourly_limit(self):
         """Test usage check with hourly limit."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -731,6 +830,7 @@ class TestModelPermissionUsageManagement:
     def test_get_usage_summary(self):
         """Test usage summary generation."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -755,6 +855,7 @@ class TestModelPermissionUtilityMethods:
     def test_get_qualified_name_with_namespace(self):
         """Test qualified name with namespace."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="read_resource",
             resource="test",
             action="read",
@@ -766,7 +867,10 @@ class TestModelPermissionUtilityMethods:
     def test_get_qualified_name_without_namespace(self):
         """Test qualified name without namespace."""
         permission = ModelPermission(
-            name="read_resource", resource="test", action="read"
+            version=DEFAULT_VERSION,
+            name="read_resource",
+            resource="test",
+            action="read",
         )
 
         assert permission.get_qualified_name() == "read_resource"
@@ -774,7 +878,11 @@ class TestModelPermissionUtilityMethods:
     def test_to_statement(self):
         """Test permission statement generation."""
         permission = ModelPermission(
-            name="test", resource="projects/test", action="read", effect="allow"
+            version=DEFAULT_VERSION,
+            name="test",
+            resource="projects/test",
+            action="read",
+            effect="allow",
         )
 
         assert permission.to_statement() == "allow:projects/test:read"
@@ -782,13 +890,18 @@ class TestModelPermissionUtilityMethods:
     def test_is_more_specific_than_hierarchy(self):
         """Test specificity comparison based on hierarchy."""
         specific = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
             resource_hierarchy=["a", "b", "c"],
         )
         general = ModelPermission(
-            name="test", resource="test", action="read", resource_hierarchy=["a"]
+            version=DEFAULT_VERSION,
+            name="test",
+            resource="test",
+            action="read",
+            resource_hierarchy=["a"],
         )
 
         assert specific.is_more_specific_than(general) is True
@@ -797,13 +910,18 @@ class TestModelPermissionUtilityMethods:
     def test_is_more_specific_than_conditions(self):
         """Test specificity comparison based on conditions."""
         specific = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
             conditions=["a == 1", "b == 2"],
         )
         general = ModelPermission(
-            name="test", resource="test", action="read", conditions=[]
+            version=DEFAULT_VERSION,
+            name="test",
+            resource="test",
+            action="read",
+            conditions=[],
         )
 
         assert specific.is_more_specific_than(general) is True
@@ -811,18 +929,22 @@ class TestModelPermissionUtilityMethods:
     def test_is_more_specific_than_constraints(self):
         """Test specificity comparison based on constraints."""
         temporal = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
             temporal_constraints_enabled=True,
         )
         geographic = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
             geographic_constraints_enabled=True,
         )
-        basic = ModelPermission(name="test", resource="test", action="read")
+        basic = ModelPermission(
+            version=DEFAULT_VERSION, name="test", resource="test", action="read"
+        )
 
         assert temporal.is_more_specific_than(basic) is True
         assert geographic.is_more_specific_than(basic) is True
@@ -831,6 +953,7 @@ class TestModelPermissionUtilityMethods:
         """Test risk score calculation."""
         # Low risk
         low_risk = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -841,6 +964,7 @@ class TestModelPermissionUtilityMethods:
 
         # High risk
         high_risk = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="*",
@@ -852,6 +976,7 @@ class TestModelPermissionUtilityMethods:
 
         # With mitigations
         mitigated = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="*",
@@ -961,6 +1086,7 @@ class TestModelPermissionEdgeCases:
     def test_permission_with_empty_lists(self):
         """Test permission with empty list fields."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -978,6 +1104,7 @@ class TestModelPermissionEdgeCases:
     def test_permission_with_max_values(self):
         """Test permission with maximum allowed values."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -993,6 +1120,7 @@ class TestModelPermissionEdgeCases:
     def test_permission_with_min_values(self):
         """Test permission with minimum allowed values."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1025,6 +1153,7 @@ class TestModelPermissionBranchCoverage:
     def test_is_temporally_valid_with_explicit_current_time(self):
         """Test temporal validation with explicitly provided current_time (line 449)."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1046,6 +1175,7 @@ class TestModelPermissionBranchCoverage:
     def test_evaluate_conditions_with_malformed_equality(self):
         """Test condition evaluation with malformed equality check (lines 517-519)."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1066,6 +1196,7 @@ class TestModelPermissionBranchCoverage:
         # Create a condition that will match neither equality nor existence patterns
         # and will fall through to the default True behavior
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1082,6 +1213,7 @@ class TestModelPermissionBranchCoverage:
     def test_get_usage_summary_with_limits_disabled(self):
         """Test usage summary when limits are disabled (lines 547-548)."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1101,6 +1233,7 @@ class TestModelPermissionBranchCoverage:
     def test_get_usage_summary_with_no_total_limit(self):
         """Test usage summary when max_uses_total is None (line 552)."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1118,6 +1251,7 @@ class TestModelPermissionBranchCoverage:
     def test_get_usage_summary_with_no_daily_limit(self):
         """Test usage summary when max_uses_per_day is None (line 556)."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1135,6 +1269,7 @@ class TestModelPermissionBranchCoverage:
     def test_get_usage_summary_with_no_hourly_limit(self):
         """Test usage summary when max_uses_per_hour is None (line 560)."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1152,6 +1287,7 @@ class TestModelPermissionBranchCoverage:
     def test_get_risk_score_with_deny_effect(self):
         """Test risk score calculation with deny effect (line 608)."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="delete",
@@ -1163,6 +1299,7 @@ class TestModelPermissionBranchCoverage:
 
         # Deny effect should reduce risk score
         allow_permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="delete",
@@ -1177,6 +1314,7 @@ class TestModelPermissionBranchCoverage:
     def test_get_risk_score_with_organizational_scope(self):
         """Test risk score with organizational scope (line 614)."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1188,6 +1326,7 @@ class TestModelPermissionBranchCoverage:
 
         # Compare with resource scope (lower risk)
         resource_permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1204,6 +1343,7 @@ class TestModelPermissionBranchCoverage:
     def test_get_risk_score_with_geographic_constraints(self):
         """Test risk score with geographic constraints (line 620)."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="write",
@@ -1216,6 +1356,7 @@ class TestModelPermissionBranchCoverage:
 
         # Compare without geographic constraints
         no_geo_permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="write",
@@ -1232,6 +1373,7 @@ class TestModelPermissionBranchCoverage:
     def test_get_risk_score_with_usage_limits(self):
         """Test risk score with usage limits enabled (line 622)."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="write",
@@ -1244,6 +1386,7 @@ class TestModelPermissionBranchCoverage:
 
         # Compare without usage limits
         no_limits_permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="write",
@@ -1258,6 +1401,7 @@ class TestModelPermissionBranchCoverage:
     def test_evaluate_simple_condition_with_missing_key(self):
         """Test condition evaluation when key doesn't exist in context (line 669)."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1273,6 +1417,7 @@ class TestModelPermissionBranchCoverage:
     def test_matches_resource_no_hierarchy_match(self):
         """Test resource matching when hierarchy doesn't match."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1285,6 +1430,7 @@ class TestModelPermissionBranchCoverage:
     def test_is_geographically_valid_with_country_but_no_ip(self):
         """Test geographic validation with country code but no IP."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",
@@ -1305,6 +1451,7 @@ class TestModelPermissionBranchCoverage:
     def test_is_geographically_valid_with_ip_but_no_country(self):
         """Test geographic validation with IP but no country code."""
         permission = ModelPermission(
+            version=DEFAULT_VERSION,
             name="test",
             resource="test",
             action="read",

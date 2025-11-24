@@ -31,6 +31,7 @@ class TestModelNodeType:
             type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test node type",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert node_type.type_name == EnumTypeName.CONTRACT_TO_MODEL
@@ -44,6 +45,7 @@ class TestModelNodeType:
             type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Full test node",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             dependencies=["DEP1", "DEP2"],
             execution_priority=75,
             is_generator=True,
@@ -438,6 +440,7 @@ class TestModelNodeTypeEdgeCases:
             type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert node.execution_priority == 50
@@ -449,6 +452,7 @@ class TestModelNodeTypeEdgeCases:
             type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             execution_priority=0,
         )
         assert node_min.execution_priority == 0
@@ -458,6 +462,7 @@ class TestModelNodeTypeEdgeCases:
             type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             execution_priority=100,
         )
         assert node_max.execution_priority == 100
@@ -468,6 +473,7 @@ class TestModelNodeTypeEdgeCases:
             type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert node.is_generator is False
@@ -487,6 +493,7 @@ class TestModelNodeTypeEdgeCases:
             type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             output_type=None,
         )
 
@@ -498,6 +505,7 @@ class TestModelNodeTypeEdgeCases:
             type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Test",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             extra_field="ignored",
         )
 

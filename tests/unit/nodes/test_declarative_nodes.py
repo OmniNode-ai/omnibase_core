@@ -59,12 +59,14 @@ def simple_fsm() -> ModelFSMSubcontract:
         state_machine_name="test_fsm",
         description="Test FSM for declarative nodes",
         state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+        version=ModelSemVer(major=1, minor=0, patch=0),
         initial_state="idle",
         states=[
             ModelFSMStateDefinition(
                 state_name="idle",
                 state_type="operational",
                 description="Initial state",
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 entry_actions=[],
                 exit_actions=[],
             ),
@@ -72,6 +74,7 @@ def simple_fsm() -> ModelFSMSubcontract:
                 state_name="processing",
                 state_type="operational",
                 description="Processing state",
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 entry_actions=["start_processing"],
                 exit_actions=["stop_processing"],
             ),
@@ -79,6 +82,7 @@ def simple_fsm() -> ModelFSMSubcontract:
                 state_name="completed",
                 state_type="terminal",
                 description="Terminal state",
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 is_terminal=True,
             ),
         ],
@@ -88,6 +92,7 @@ def simple_fsm() -> ModelFSMSubcontract:
                 from_state="idle",
                 to_state="processing",
                 trigger="start_event",
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 conditions=[],
                 actions=[],
             ),
@@ -96,6 +101,7 @@ def simple_fsm() -> ModelFSMSubcontract:
                 from_state="processing",
                 to_state="completed",
                 trigger="complete_event",
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 conditions=[],
                 actions=[],
             ),
@@ -115,14 +121,20 @@ def simple_workflow_definition() -> ModelWorkflowDefinition:
         workflow_metadata=ModelWorkflowDefinitionMetadata(
             workflow_name="test_workflow",
             workflow_version=ModelSemVer(major=1, minor=0, patch=0),
+            version=ModelSemVer(major=1, minor=0, patch=0),
             description="Test workflow for declarative nodes",
             execution_mode="sequential",
         ),
-        execution_graph=ModelExecutionGraph(nodes=[]),
+        execution_graph=ModelExecutionGraph(
+            nodes=[],
+            version=ModelSemVer(major=1, minor=0, patch=0),
+        ),
         coordination_rules=ModelCoordinationRules(
             parallel_execution_allowed=False,
             failure_recovery_strategy=EnumFailureRecoveryStrategy.RETRY,
+            version=ModelSemVer(major=1, minor=0, patch=0),
         ),
+        version=ModelSemVer(major=1, minor=0, patch=0),
     )
 
 

@@ -71,6 +71,7 @@ class TestModelProjectMetadataBlock:
         tools = ModelToolCollection(
             version=DEFAULT_VERSION,
             collection_id=uuid4(),
+            collection_version=DEFAULT_VERSION,
             tools={"tool1": {"version": "1.0"}},
         )
 
@@ -354,7 +355,12 @@ class TestModelProjectMetadataBlock:
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
-        tools = ModelToolCollection(collection_id=uuid4(), tools={})
+        tools = ModelToolCollection(
+            version=DEFAULT_VERSION,
+            collection_id=uuid4(),
+            collection_version=DEFAULT_VERSION,
+            tools={},
+        )
 
         metadata = ModelProjectMetadataBlock(
             version=DEFAULT_VERSION,

@@ -25,6 +25,10 @@ from uuid import UUID
 import pytest
 
 from omnibase_core.models.core.model_onex_envelope_v1 import ModelOnexEnvelopeV1
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestSourceNodeIdFunctionality:
@@ -40,6 +44,7 @@ class TestSourceNodeIdFunctionality:
     def test_creation_without_source_node_id(self) -> None:
         """Test envelope creation without source_node_id field."""
         envelope = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -61,6 +66,7 @@ class TestSourceNodeIdFunctionality:
     def test_creation_with_source_node_id(self) -> None:
         """Test envelope creation with source_node_id field."""
         envelope = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -81,6 +87,7 @@ class TestSourceNodeIdFunctionality:
         """Test that source_node_id field is truly optional."""
         # Create without source_node_id - should not raise
         envelope = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -93,6 +100,7 @@ class TestSourceNodeIdFunctionality:
 
         # Explicitly set to None - should also work
         envelope_explicit = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -107,6 +115,7 @@ class TestSourceNodeIdFunctionality:
     def test_serialization_excludes_none_source_node_id(self) -> None:
         """Test that serialization excludes source_node_id when None."""
         envelope = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -124,6 +133,7 @@ class TestSourceNodeIdFunctionality:
     def test_serialization_includes_source_node_id(self) -> None:
         """Test that serialization includes source_node_id when provided."""
         envelope = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -143,6 +153,7 @@ class TestSourceNodeIdFunctionality:
     def test_json_serialization_with_source_node_id(self) -> None:
         """Test JSON serialization includes source_node_id."""
         envelope = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -163,6 +174,7 @@ class TestSourceNodeIdFunctionality:
         """Test deserialization from JSON with source_node_id."""
         # Create envelope with source_node_id
         original = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -184,6 +196,7 @@ class TestSourceNodeIdFunctionality:
         """Test deserialization from JSON without source_node_id."""
         # Create envelope without source_node_id
         original = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -206,6 +219,7 @@ class TestSourceNodeIdFunctionality:
         # Create multiple envelopes with source_node_id
         envelopes = [
             ModelOnexEnvelopeV1(
+                envelope_version=DEFAULT_VERSION,
                 correlation_id=UUID(f"00000000-0000-0000-0000-{i:012d}"),
                 event_id=UUID(f"11111111-1111-1111-1111-{i:012d}"),
                 event_type="TEST_EVENT",
@@ -233,6 +247,7 @@ class TestSourceNodeIdFunctionality:
         # Create envelopes
         envelopes = [
             ModelOnexEnvelopeV1(
+                envelope_version=DEFAULT_VERSION,
                 correlation_id=UUID(f"00000000-0000-0000-0000-{i:012d}"),
                 event_id=UUID(f"11111111-1111-1111-1111-{i:012d}"),
                 event_type="TEST_EVENT",
@@ -260,6 +275,7 @@ class TestSourceNodeIdFunctionality:
         """Test complete round-trip (create → serialize → deserialize)."""
         # Create original
         original = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -284,6 +300,7 @@ class TestSourceNodeIdFunctionality:
     def test_equality_with_source_node_id(self) -> None:
         """Test equality comparison works with source_node_id."""
         envelope1 = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -294,6 +311,7 @@ class TestSourceNodeIdFunctionality:
         )
 
         envelope2 = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -310,6 +328,7 @@ class TestSourceNodeIdFunctionality:
     def test_different_source_node_ids_not_equal(self) -> None:
         """Test envelopes with different source_node_ids are not equal."""
         envelope1 = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",
@@ -321,6 +340,7 @@ class TestSourceNodeIdFunctionality:
 
         different_node_id = UUID("99999999-9999-9999-9999-999999999999")
         envelope2 = ModelOnexEnvelopeV1(
+            envelope_version=DEFAULT_VERSION,
             correlation_id=self.FIXED_CORRELATION_ID,
             event_id=self.FIXED_EVENT_ID,
             event_type="TEST_EVENT",

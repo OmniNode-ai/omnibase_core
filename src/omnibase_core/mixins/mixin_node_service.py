@@ -165,11 +165,8 @@ class MixinNodeService:
             # Emit shutdown event
             await self._emit_shutdown_event()
 
-            # Cancel health monitoring
-            if self._health_task and not self._health_task.done():
-                self._health_task.cancel()
-                with contextlib.suppress(asyncio.CancelledError):
-                    await self._health_task
+            # Cancel health monitoring with robust cleanup
+            await self._cleanup_health_task()
 
             # Wait for active invocations to complete (with timeout)
             await self._wait_for_active_invocations(timeout_ms=30000)
@@ -191,6 +188,21 @@ class MixinNodeService:
         except Exception as e:
             self._log_error(f"Error during service shutdown: {e}")
             self._service_running = False
+
+    async def aclose(self) -> None:
+        """
+        Async cleanup method for proper resource cleanup.
+
+        This method ensures all async resources are properly cleaned up,
+        especially the health monitor task. Can be called directly by tests
+        or used as an async context manager exit.
+        """
+        # Cancel health monitoring task if it exists
+        await self._cleanup_health_task()
+
+        # Stop service if it's running
+        if self._service_running:
+            await self.stop_service_mode()
 
     async def handle_tool_invocation(self, event: ModelToolInvocationEvent) -> None:
         """
@@ -567,6 +579,35 @@ class MixinNodeService:
 
         except Exception as e:
             self._log_error(f"Failed to emit shutdown event: {e}")
+
+    async def _cleanup_health_task(self) -> None:
+        """
+        Cleanup the health monitor task.
+
+        This method ensures the health monitor task is properly cancelled
+        and awaited to prevent "Task was destroyed but it is pending!" warnings.
+        """
+        # Check if the health task attribute exists and has a task
+        if not hasattr(self, "_health_task"):
+            return
+
+        health_task = self._health_task
+        if health_task is None:
+            return
+
+        # Only cancel if not already done
+        if not health_task.done():
+            health_task.cancel()
+
+        # Always await to ensure proper cleanup
+        try:
+            await health_task
+        except asyncio.CancelledError:
+            # Expected when cancelling - this is normal
+            pass
+        except Exception as e:
+            # Log unexpected errors during cleanup
+            self._log_error(f"Unexpected error during health task cleanup: {e}")
 
     async def _wait_for_active_invocations(self, timeout_ms: int = 30000) -> None:
         """Wait for active invocations to complete."""
