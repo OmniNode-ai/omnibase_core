@@ -44,14 +44,20 @@ class TestNodeWithWorkflowMixin(MixinWorkflowExecution):
 def workflow_definition() -> ModelWorkflowDefinition:
     """Create test workflow definition."""
     return ModelWorkflowDefinition(
+        version=ModelSemVer(major=1, minor=0, patch=0),
         workflow_metadata=ModelWorkflowDefinitionMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0),
             workflow_name="test_workflow",
             workflow_version=ModelSemVer(major=1, minor=0, patch=0),
             description="Test workflow for workflow execution mixin",
             execution_mode="sequential",
         ),
-        execution_graph=ModelExecutionGraph(nodes=[]),
+        execution_graph=ModelExecutionGraph(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            nodes=[],
+        ),
         coordination_rules=ModelCoordinationRules(
+            version=ModelSemVer(major=1, minor=0, patch=0),
             parallel_execution_allowed=False,
             failure_recovery_strategy=EnumFailureRecoveryStrategy.RETRY,
         ),
