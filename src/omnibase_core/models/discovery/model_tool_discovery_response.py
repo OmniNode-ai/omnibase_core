@@ -29,7 +29,10 @@ class ModelDiscoveredTool(BaseModel):
     node_name: str = Field(
         default=..., description="Name of the node (e.g. 'node_generator')"
     )
-    version: ModelSemVer = Field(default=..., description="Version of the node")
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Version of the node",
+    )
 
     # Tool capabilities
     actions: list[str] = Field(

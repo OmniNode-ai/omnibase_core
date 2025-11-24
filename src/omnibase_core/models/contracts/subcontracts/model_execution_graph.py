@@ -12,11 +12,19 @@ Model for execution graphs in workflows for the ONEX workflow coordination syste
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 from .model_workflow_node import ModelWorkflowNode
 
 
 class ModelExecutionGraph(BaseModel):
     """Execution graph for a workflow."""
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     nodes: list[ModelWorkflowNode] = Field(
         default_factory=list,

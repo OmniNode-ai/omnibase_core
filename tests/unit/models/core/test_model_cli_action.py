@@ -17,6 +17,10 @@ from pydantic import ValidationError
 from omnibase_core.enums.enum_action_category import EnumActionCategory
 from omnibase_core.models.cli.model_cli_action import ModelCliAction
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelCliAction:

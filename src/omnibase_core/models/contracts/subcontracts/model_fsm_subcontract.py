@@ -59,6 +59,12 @@ class ModelFSMSubcontract(BaseModel):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
+
     # Core FSM identification
     state_machine_name: str = Field(
         default=...,
@@ -67,8 +73,8 @@ class ModelFSMSubcontract(BaseModel):
     )
 
     state_machine_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Version of the state machine definition",
+        ...,  # REQUIRED - specify in contract
+        description="Version of the state machine definition (MUST be provided in YAML contract)",
     )
 
     description: str = Field(

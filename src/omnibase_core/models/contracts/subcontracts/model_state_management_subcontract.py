@@ -60,10 +60,10 @@ class ModelStateManagementSubcontract(BaseModel):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
-    model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields from YAML contracts
-        use_enum_values=False,  # Keep enum objects, don't convert to strings
-        validate_assignment=True,
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Subcontract version (auto-generated if not provided)",
     )
 
     # Correlation and tracing
@@ -90,13 +90,17 @@ class ModelStateManagementSubcontract(BaseModel):
 
     # State persistence configuration
     persistence: ModelStatePersistence = Field(
-        default_factory=ModelStatePersistence,
+        default_factory=lambda: ModelStatePersistence(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="State persistence configuration",
     )
 
     # State validation configuration
     validation: ModelStateValidation = Field(
-        default_factory=ModelStateValidation,
+        default_factory=lambda: ModelStateValidation(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="State validation configuration",
     )
 
@@ -108,8 +112,13 @@ class ModelStateManagementSubcontract(BaseModel):
 
     # State versioning and migration
     versioning: ModelStateVersioning = Field(
-        default_factory=ModelStateVersioning,
-        description="State versioning configuration",
+        default_factory=lambda: ModelStateVersioning(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
+        description=(
+            "State versioning configuration - defines the version tracking "
+            "strategy for managed state data (not the model instance itself)"
+        ),
     )
 
     # State access and concurrency
@@ -249,3 +258,9 @@ class ModelStateManagementSubcontract(BaseModel):
                     ),
                 )
         return self
+
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from YAML contracts
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,  # Validate on attribute assignment
+    )

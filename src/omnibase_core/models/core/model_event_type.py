@@ -33,7 +33,7 @@ class ModelEventType(BaseModel):
     )
     description: str = Field(default=..., description="Human-readable description")
     schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Event schema version",
     )
     payload_schema: dict[str, Any] | None = Field(

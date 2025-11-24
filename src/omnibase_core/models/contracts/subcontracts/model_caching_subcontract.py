@@ -52,6 +52,12 @@ class ModelCachingSubcontract(BaseModel):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
+
     # Core caching configuration
     caching_enabled: bool = Field(
         default=True,
@@ -87,6 +93,7 @@ class ModelCachingSubcontract(BaseModel):
     # Cache key management
     key_strategy: ModelCacheKeyStrategy = Field(
         default_factory=lambda: ModelCacheKeyStrategy(
+            version=ModelSemVer(major=1, minor=0, patch=0),
             key_generation_method="composite_hash",
         ),
         description="Cache key generation strategy",
@@ -95,6 +102,7 @@ class ModelCachingSubcontract(BaseModel):
     # Cache invalidation and expiration
     invalidation_policy: ModelCacheInvalidation = Field(
         default_factory=lambda: ModelCacheInvalidation(
+            version=ModelSemVer(major=1, minor=0, patch=0),
             invalidation_strategy="ttl_based",
         ),
         description="Cache invalidation configuration",
@@ -108,7 +116,9 @@ class ModelCachingSubcontract(BaseModel):
 
     # Performance tuning
     performance_config: ModelCachePerformance = Field(
-        default_factory=ModelCachePerformance,
+        default_factory=lambda: ModelCachePerformance(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Cache performance configuration",
     )
 

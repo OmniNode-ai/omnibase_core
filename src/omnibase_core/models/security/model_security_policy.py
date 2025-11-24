@@ -28,7 +28,7 @@ class ModelSecurityPolicy(BaseModel):
     policy_id: UUID = Field(default=..., description="Unique policy identifier")
     policy_name: str = Field(default=..., description="Human-readable policy name")
     policy_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Policy version",
     )
     created_at: datetime = Field(

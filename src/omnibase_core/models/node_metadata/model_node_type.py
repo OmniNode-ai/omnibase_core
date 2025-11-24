@@ -25,6 +25,9 @@ from omnibase_core.types.constraints import (
     Serializable,
 )
 
+# Default version for factory methods
+_DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 
 class ModelNodeType(BaseModel):
     """
@@ -55,7 +58,7 @@ class ModelNodeType(BaseModel):
         default_factory=list, description="Other node type names this node depends on"
     )
     version_compatibility: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Version compatibility constraint",
     )
     execution_priority: int = Field(
@@ -85,6 +88,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.CONTRACT_TO_MODEL,
             description="Generates Pydantic models from contract.yaml",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             requires_contract=True,
             output_type=EnumReturnType.MODELS,
@@ -97,6 +101,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.MULTI_DOC_MODEL_GENERATOR,
             description="Generates models from multiple YAML documents",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             output_type=EnumReturnType.MODELS,
         )
@@ -108,6 +113,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.GENERATE_ERROR_CODES,
             description="Generates error code enums from contract",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             requires_contract=True,
             output_type=EnumReturnType.ENUMS,
@@ -120,6 +126,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.GENERATE_INTROSPECTION,
             description="Generates introspection metadata",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             output_type=EnumReturnType.METADATA,
         )
@@ -131,6 +138,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.NODE_GENERATOR,
             description="Generates complete node structure from templates",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             execution_priority=90,
             output_type=EnumReturnType.METADATA,
@@ -143,6 +151,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.TEMPLATE_ENGINE,
             description="Processes templates with token replacement",
             category=EnumConfigCategory.TEMPLATE,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             output_type=EnumReturnType.TEXT,
         )
@@ -154,6 +163,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.FILE_GENERATOR,
             description="Generates files from templates",
             category=EnumConfigCategory.TEMPLATE,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             dependencies=["TEMPLATE_ENGINE"],
             output_type=EnumReturnType.FILES,
@@ -166,6 +176,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.TEMPLATE_VALIDATOR,
             description="Validates node templates for consistency",
             category=EnumConfigCategory.VALIDATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_validator=True,
             output_type=EnumReturnType.REPORTS,
         )
@@ -177,6 +188,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.VALIDATION_ENGINE,
             description="Validates node structure and contracts",
             category=EnumConfigCategory.VALIDATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_validator=True,
             requires_contract=True,
             execution_priority=80,
@@ -190,6 +202,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.STANDARDS_COMPLIANCE_FIXER,
             description="Fixes code to comply with ONEX standards",
             category=EnumConfigCategory.MAINTENANCE,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             is_validator=True,
             output_type=EnumReturnType.FILES,
@@ -202,6 +215,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.PARITY_VALIDATOR_WITH_FIXES,
             description="Validates and fixes parity issues",
             category=EnumConfigCategory.VALIDATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_validator=True,
             is_generator=True,
             output_type=EnumReturnType.REPORTS,
@@ -214,6 +228,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.CONTRACT_COMPLIANCE,
             description="Validates contract compliance",
             category=EnumConfigCategory.VALIDATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_validator=True,
             requires_contract=True,
             output_type=EnumReturnType.REPORTS,
@@ -226,6 +241,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.INTROSPECTION_VALIDITY,
             description="Validates introspection data",
             category=EnumConfigCategory.VALIDATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_validator=True,
             output_type=EnumReturnType.REPORTS,
         )
@@ -237,6 +253,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.SCHEMA_CONFORMANCE,
             description="Validates schema conformance",
             category=EnumConfigCategory.VALIDATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_validator=True,
             output_type=EnumReturnType.REPORTS,
         )
@@ -248,6 +265,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.ERROR_CODE_USAGE,
             description="Validates error code usage",
             category=EnumConfigCategory.VALIDATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_validator=True,
             output_type=EnumReturnType.REPORTS,
         )
@@ -259,6 +277,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.CLI_COMMANDS,
             description="Handles CLI command generation",
             category=EnumConfigCategory.CLI,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             output_type=EnumReturnType.TEXT,
         )
@@ -270,6 +289,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.CLI_NODE_PARITY,
             description="Validates CLI and node parity",
             category=EnumConfigCategory.CLI,
+            version_compatibility=_DEFAULT_VERSION,
             is_validator=True,
             output_type=EnumReturnType.REPORTS,
         )
@@ -281,6 +301,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.NODE_DISCOVERY,
             description="Discovers nodes in the codebase",
             category=EnumConfigCategory.DISCOVERY,
+            version_compatibility=_DEFAULT_VERSION,
             execution_priority=95,
             output_type=EnumReturnType.METADATA,
         )
@@ -292,6 +313,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.NODE_VALIDATION,
             description="Validates node implementation",
             category=EnumConfigCategory.VALIDATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_validator=True,
             requires_contract=True,
             output_type=EnumReturnType.REPORTS,
@@ -304,6 +326,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.METADATA_LOADER,
             description="Loads node metadata",
             category=EnumConfigCategory.DISCOVERY,
+            version_compatibility=_DEFAULT_VERSION,
             output_type=EnumReturnType.METADATA,
         )
 
@@ -314,6 +337,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.SCHEMA_GENERATOR,
             description="Generates JSON schemas",
             category=EnumConfigCategory.SCHEMA,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             output_type=EnumReturnType.SCHEMAS,
         )
@@ -325,6 +349,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.SCHEMA_DISCOVERY,
             description="Discovers and parses schemas",
             category=EnumConfigCategory.SCHEMA,
+            version_compatibility=_DEFAULT_VERSION,
             output_type=EnumReturnType.SCHEMAS,
         )
 
@@ -335,6 +360,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.SCHEMA_TO_PYDANTIC,
             description="Converts schemas to Pydantic models",
             category=EnumConfigCategory.SCHEMA,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             dependencies=["SCHEMA_DISCOVERY"],
             output_type=EnumReturnType.MODELS,
@@ -347,6 +373,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.PROTOCOL_GENERATOR,
             description="Generates protocol interfaces",
             category=EnumConfigCategory.GENERATION,
+            version_compatibility=_DEFAULT_VERSION,
             is_generator=True,
             output_type=EnumReturnType.PROTOCOLS,
         )
@@ -358,6 +385,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.BACKEND_SELECTION,
             description="Selects appropriate backend",
             category=EnumConfigCategory.RUNTIME,
+            version_compatibility=_DEFAULT_VERSION,
             output_type=EnumReturnType.BACKEND,
         )
 
@@ -368,6 +396,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.NODE_MANAGER_RUNNER,
             description="Runs node manager operations",
             category=EnumConfigCategory.RUNTIME,
+            version_compatibility=_DEFAULT_VERSION,
             execution_priority=100,
             output_type=EnumReturnType.RESULT,
         )
@@ -379,6 +408,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.MAINTENANCE,
             description="Handles maintenance operations",
             category=EnumConfigCategory.MAINTENANCE,
+            version_compatibility=_DEFAULT_VERSION,
             output_type=EnumReturnType.STATUS,
         )
 
@@ -389,6 +419,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.NODE_LOGGER_EMIT_LOG_EVENT,
             description="Emits structured log events",
             category=EnumConfigCategory.LOGGING,
+            version_compatibility=_DEFAULT_VERSION,
             output_type=EnumReturnType.LOGS,
         )
 
@@ -399,6 +430,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.LOGGING_UTILS,
             description="Logging utility functions",
             category=EnumConfigCategory.LOGGING,
+            version_compatibility=_DEFAULT_VERSION,
             output_type=EnumReturnType.LOGS,
         )
 
@@ -409,6 +441,7 @@ class ModelNodeType(BaseModel):
             type_name=EnumTypeName.SCENARIO_RUNNER,
             description="Runs test scenarios",
             category=EnumConfigCategory.TESTING,
+            version_compatibility=_DEFAULT_VERSION,
             output_type=EnumReturnType.RESULTS,
         )
 
@@ -503,6 +536,7 @@ class ModelNodeType(BaseModel):
                 type_name=enum_value,
                 description=f"Node: {name}",
                 category=EnumConfigCategory.UNKNOWN,
+                version_compatibility=_DEFAULT_VERSION,
             )
         except ValueError:
             raise ModelOnexError(
@@ -757,36 +791,35 @@ class ModelNodeType(BaseModel):
 
     def serialize(self) -> dict[str, Any]:
         """
-                Serialize the node type to a dictionary.
+        Serialize the node type to a dictionary.
 
-                Implements the Serializable protocol by converting the instance
-                to a dictionary representation suitable for JSON serialization,
-                storage, or transmission.
+        Implements the Serializable protocol by converting the instance
+        to a dictionary representation suitable for JSON serialization,
+        storage, or transmission.
 
-                Returns:
-                    Dictionary representation of the node type with all fields
-                    including None values, using field aliases if defined.
+        Returns:
+            Dictionary representation of the node type with all fields
+            including None values, using field aliases if defined.
 
-                Example:
-                    ```python
-                    node = ModelNodeType.CONTRACT_TO_MODEL()
-                    serialized = node.serialize()
+        Example:
+            ```python
+            node = ModelNodeType.CONTRACT_TO_MODEL()
+            serialized = node.serialize()
 
-                    # Contains all fields
-                    assert 'type_name' in serialized
-                    assert 'description' in serialized
-                    assert 'category' in serialized
+            # Contains all fields
+            assert 'type_name' in serialized
+            assert 'description' in serialized
+            assert 'category' in serialized
 
-                    # Can be used for JSON serialization
-                    import json
-        from omnibase_core.models.primitives.model_semver import ModelSemVer
-                    json_str = json.dumps(serialized, default=str)
-                    ```
+            # Can be used for JSON serialization
+            import json
+            json_str = json.dumps(serialized, default=str)
+            ```
 
-                Note:
-                    This method includes all fields regardless of their value,
-                    including None values. Uses Pydantic's model_dump with
-                    by_alias=True to support field aliases.
+        Note:
+            This method includes all fields regardless of their value,
+            including None values. Uses Pydantic's model_dump with
+            by_alias=True to support field aliases.
         """
         return self.model_dump(exclude_none=False, by_alias=True)
 

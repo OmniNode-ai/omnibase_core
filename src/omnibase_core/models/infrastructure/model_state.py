@@ -12,6 +12,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelState(BaseModel):
@@ -22,7 +23,11 @@ class ModelState(BaseModel):
     """
 
     # ProtocolState required fields
-    metadata: ModelGenericMetadata = Field(default_factory=ModelGenericMetadata)
+    metadata: ModelGenericMetadata = Field(
+        default_factory=lambda: ModelGenericMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        )
+    )
     version: int = Field(default=0)
     last_updated: datetime = Field(default_factory=datetime.now)
 

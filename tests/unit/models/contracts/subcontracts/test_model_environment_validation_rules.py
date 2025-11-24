@@ -8,6 +8,11 @@ type safety, field constraints, and environment-specific rule grouping.
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_environment_validation_rule_type import (
     EnumEnvironmentValidationRuleType,
@@ -26,9 +31,11 @@ class TestModelEnvironmentValidationRulesValidation:
     def test_valid_rules_for_development_environment(self) -> None:
         """Test that rules for development environment are valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.DEVELOPMENT,
             validation_rules=[
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="debug_mode",
                     validation_rule="must_be_true",
                 ),
@@ -40,9 +47,11 @@ class TestModelEnvironmentValidationRulesValidation:
     def test_valid_rules_for_production_environment(self) -> None:
         """Test that rules for production environment are valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PRODUCTION,
             validation_rules=[
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="debug_mode",
                     validation_rule="must_be_false",
                 ),
@@ -53,17 +62,21 @@ class TestModelEnvironmentValidationRulesValidation:
     def test_valid_rules_with_multiple_validation_rules(self) -> None:
         """Test that multiple validation rules are valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.STAGING,
             validation_rules=[
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="database_url",
                     validation_rule="must_be_postgresql",
                 ),
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="redis_url",
                     validation_rule="must_be_redis",
                 ),
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="log_level",
                     validation_rule="must_be_info_or_warn",
                 ),
@@ -74,6 +87,7 @@ class TestModelEnvironmentValidationRulesValidation:
     def test_valid_rules_with_empty_validation_rules_list(self) -> None:
         """Test that empty validation rules list is valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.TESTING,
             validation_rules=[],
         )
@@ -82,6 +96,7 @@ class TestModelEnvironmentValidationRulesValidation:
     def test_valid_rules_with_inherit_from_default_true(self) -> None:
         """Test that inherit_from_default=True is valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PRODUCTION,
             inherit_from_default=True,
         )
@@ -90,6 +105,7 @@ class TestModelEnvironmentValidationRulesValidation:
     def test_valid_rules_with_inherit_from_default_false(self) -> None:
         """Test that inherit_from_default=False is valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PRODUCTION,
             inherit_from_default=False,
         )
@@ -98,6 +114,7 @@ class TestModelEnvironmentValidationRulesValidation:
     def test_valid_rules_with_override_default_true(self) -> None:
         """Test that override_default=True is valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PRODUCTION,
             override_default=True,
         )
@@ -106,6 +123,7 @@ class TestModelEnvironmentValidationRulesValidation:
     def test_valid_rules_with_override_default_false(self) -> None:
         """Test that override_default=False is valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PRODUCTION,
             override_default=False,
         )
@@ -121,6 +139,7 @@ class TestModelEnvironmentValidationRulesValidation:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             rules = ModelEnvironmentValidationRules(
+                version=DEFAULT_VERSION,
                 environment=EnumEnvironment.STAGING,
                 inherit_from_default=True,
                 override_default=True,
@@ -139,11 +158,12 @@ class TestModelEnvironmentValidationRulesCreation:
     def test_required_fields(self) -> None:
         """Test that required fields are enforced."""
         with pytest.raises(ValidationError):
-            ModelEnvironmentValidationRules()  # type: ignore[call-arg]
+            ModelEnvironmentValidationRules(version=DEFAULT_VERSION)  # type: ignore[call-arg]
 
     def test_default_values(self) -> None:
         """Test default field values."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.DEVELOPMENT,
         )
         assert rules.validation_rules == []
@@ -153,9 +173,11 @@ class TestModelEnvironmentValidationRulesCreation:
     def test_optional_fields(self) -> None:
         """Test optional field assignment."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PRODUCTION,
             validation_rules=[
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="key1",
                     validation_rule="rule1",
                 ),
@@ -171,6 +193,7 @@ class TestModelEnvironmentValidationRulesCreation:
         """Test that environment accepts all valid enum values."""
         for env in EnumEnvironment:
             rules = ModelEnvironmentValidationRules(
+                version=DEFAULT_VERSION,
                 environment=env,
             )
             assert rules.environment == env
@@ -183,12 +206,14 @@ class TestModelEnvironmentValidationRulesEdgeCases:
         """Test that many validation rules are valid."""
         validation_rules = [
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key=f"key_{i}",
                 validation_rule=f"rule_{i}",
             )
             for i in range(100)
         ]
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PRODUCTION,
             validation_rules=validation_rules,
         )
@@ -197,15 +222,18 @@ class TestModelEnvironmentValidationRulesEdgeCases:
     def test_rules_with_complex_validation_rules(self) -> None:
         """Test that complex validation rules are valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PRODUCTION,
             validation_rules=[
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="api_key",
                     validation_rule="must_match_pattern",
                     rule_type=EnumEnvironmentValidationRuleType.FORMAT,
                     format_pattern=r"^[A-Za-z0-9]{32}$",
                 ),
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="port",
                     validation_rule="must_be_in_range",
                     rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -213,6 +241,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
                     max_value=65535,
                 ),
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="log_level",
                     validation_rule="must_be_in_list",
                     rule_type=EnumEnvironmentValidationRuleType.ALLOWED_VALUES,
@@ -225,13 +254,16 @@ class TestModelEnvironmentValidationRulesEdgeCases:
     def test_rules_with_duplicate_config_keys(self) -> None:
         """Test that duplicate config keys are allowed (no uniqueness constraint)."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.STAGING,
             validation_rules=[
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="database_url",
                     validation_rule="rule1",
                 ),
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="database_url",  # Duplicate key
                     validation_rule="rule2",
                 ),
@@ -242,6 +274,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
     def test_local_environment(self) -> None:
         """Test that LOCAL environment is valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.LOCAL,
         )
         assert rules.environment == EnumEnvironment.LOCAL
@@ -249,6 +282,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
     def test_integration_environment(self) -> None:
         """Test that INTEGRATION environment is valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.INTEGRATION,
         )
         assert rules.environment == EnumEnvironment.INTEGRATION
@@ -256,6 +290,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
     def test_preview_environment(self) -> None:
         """Test that PREVIEW environment is valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PREVIEW,
         )
         assert rules.environment == EnumEnvironment.PREVIEW
@@ -263,6 +298,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
     def test_sandbox_environment(self) -> None:
         """Test that SANDBOX environment is valid."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.SANDBOX,
         )
         assert rules.environment == EnumEnvironment.SANDBOX
@@ -276,6 +312,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
         - Environment rules complement defaults
         """
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.STAGING,
             inherit_from_default=True,
             override_default=False,
@@ -294,6 +331,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
         - Ignore all defaults
         """
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PRODUCTION,
             inherit_from_default=False,
             override_default=True,
@@ -312,6 +350,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
         - Standalone rule set
         """
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.LOCAL,
             inherit_from_default=False,
             override_default=False,
@@ -335,6 +374,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             rules = ModelEnvironmentValidationRules(
+                version=DEFAULT_VERSION,
                 environment=EnumEnvironment.STAGING,
                 inherit_from_default=True,
                 override_default=True,
@@ -351,20 +391,24 @@ class TestModelEnvironmentValidationRulesEdgeCases:
     def test_validation_rules_with_all_rule_types(self) -> None:
         """Test that all rule types can be used in validation_rules."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PRODUCTION,
             validation_rules=[
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="key1",
                     validation_rule="rule1",
                     rule_type=EnumEnvironmentValidationRuleType.VALUE_CHECK,
                 ),
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="key2",
                     validation_rule="rule2",
                     rule_type=EnumEnvironmentValidationRuleType.FORMAT,
                     format_pattern="[a-z]+",
                 ),
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="key3",
                     validation_rule="rule3",
                     rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -372,6 +416,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
                     max_value=100.0,
                 ),
                 ModelEnvironmentValidationRule(
+                    version=DEFAULT_VERSION,
                     config_key="key4",
                     validation_rule="rule4",
                     rule_type=EnumEnvironmentValidationRuleType.ALLOWED_VALUES,
@@ -387,13 +432,16 @@ class TestModelEnvironmentValidationRulesEdgeCases:
         """Test production-like environments with strict validation rules."""
         for env in [EnumEnvironment.PRODUCTION, EnumEnvironment.STAGING]:
             rules = ModelEnvironmentValidationRules(
+                version=DEFAULT_VERSION,
                 environment=env,
                 validation_rules=[
                     ModelEnvironmentValidationRule(
+                        version=DEFAULT_VERSION,
                         config_key="debug_mode",
                         validation_rule="must_be_false",
                     ),
                     ModelEnvironmentValidationRule(
+                        version=DEFAULT_VERSION,
                         config_key="ssl_enabled",
                         validation_rule="must_be_true",
                     ),
@@ -412,9 +460,11 @@ class TestModelEnvironmentValidationRulesEdgeCases:
             EnumEnvironment.SANDBOX,
         ]:
             rules = ModelEnvironmentValidationRules(
+                version=DEFAULT_VERSION,
                 environment=env,
                 validation_rules=[
                     ModelEnvironmentValidationRule(
+                        version=DEFAULT_VERSION,
                         config_key="debug_mode",
                         validation_rule="can_be_any_value",
                     ),
@@ -428,6 +478,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
     def test_empty_rules_with_inheritance(self) -> None:
         """Test empty rules list with inheritance enabled."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.STAGING,
             validation_rules=[],
             inherit_from_default=True,
@@ -438,6 +489,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
     def test_empty_rules_with_override(self) -> None:
         """Test empty rules list with override enabled."""
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.PRODUCTION,
             validation_rules=[],
             override_default=True,
@@ -450,12 +502,14 @@ class TestModelEnvironmentValidationRulesEdgeCases:
         keys = [f"key_{i}" for i in range(20)]
         validation_rules = [
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key=key,
                 validation_rule=f"rule_{key}",
             )
             for key in keys
         ]
         rules = ModelEnvironmentValidationRules(
+            version=DEFAULT_VERSION,
             environment=EnumEnvironment.TESTING,
             validation_rules=validation_rules,
         )
@@ -473,6 +527,7 @@ class TestModelEnvironmentValidationRulesInheritanceModes:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             rules = ModelEnvironmentValidationRules(
+                version=DEFAULT_VERSION,
                 environment=EnumEnvironment.DEVELOPMENT,
                 inherit_from_default=True,
                 override_default=False,
@@ -487,6 +542,7 @@ class TestModelEnvironmentValidationRulesInheritanceModes:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             rules = ModelEnvironmentValidationRules(
+                version=DEFAULT_VERSION,
                 environment=EnumEnvironment.PRODUCTION,
                 inherit_from_default=False,
                 override_default=True,
@@ -501,6 +557,7 @@ class TestModelEnvironmentValidationRulesInheritanceModes:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             rules = ModelEnvironmentValidationRules(
+                version=DEFAULT_VERSION,
                 environment=EnumEnvironment.TESTING,
                 inherit_from_default=False,
                 override_default=False,
@@ -515,6 +572,7 @@ class TestModelEnvironmentValidationRulesInheritanceModes:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             rules = ModelEnvironmentValidationRules(
+                version=DEFAULT_VERSION,
                 environment=EnumEnvironment.STAGING,
                 inherit_from_default=True,
                 override_default=True,
@@ -540,6 +598,7 @@ class TestModelEnvironmentValidationRulesInheritanceModes:
             with warnings.catch_warnings(record=True):
                 warnings.simplefilter("always")
                 rules = ModelEnvironmentValidationRules(
+                    version=DEFAULT_VERSION,
                     environment=EnumEnvironment.STAGING,
                     inherit_from_default=inherit,
                     override_default=override,
@@ -554,6 +613,7 @@ class TestModelEnvironmentValidationRulesInheritanceModes:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             ModelEnvironmentValidationRules(
+                version=DEFAULT_VERSION,
                 environment=EnumEnvironment.PRODUCTION,
                 inherit_from_default=True,
                 override_default=True,
@@ -569,6 +629,7 @@ class TestModelEnvironmentValidationRulesInheritanceModes:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             ModelEnvironmentValidationRules(
+                version=DEFAULT_VERSION,
                 environment=EnumEnvironment.STAGING,
                 inherit_from_default=True,
                 override_default=True,

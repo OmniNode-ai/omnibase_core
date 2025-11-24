@@ -12,6 +12,11 @@ Comprehensive test coverage for log level override model including:
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.models.contracts.subcontracts.model_log_level_override import (
     ModelLogLevelOverride,
@@ -24,6 +29,7 @@ class TestModelLogLevelOverrideBasics:
     def test_minimal_instantiation(self):
         """Test model can be instantiated with minimal required fields."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="my.module",
             log_level=EnumLogLevel.DEBUG,
         )
@@ -37,6 +43,7 @@ class TestModelLogLevelOverrideBasics:
     def test_full_instantiation(self):
         """Test model with all fields specified."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="app.service.auth",
             log_level=EnumLogLevel.WARNING,
             apply_to_children=False,
@@ -53,6 +60,7 @@ class TestModelLogLevelOverrideBasics:
     def test_default_values(self):
         """Test default values are correctly applied."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.INFO,
         )
@@ -70,6 +78,7 @@ class TestModelLogLevelOverrideValidation:
         """Test logger_name is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 log_level=EnumLogLevel.INFO,
             )
 
@@ -81,6 +90,7 @@ class TestModelLogLevelOverrideValidation:
         # Empty string should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name="",
                 log_level=EnumLogLevel.INFO,
             )
@@ -102,6 +112,7 @@ class TestModelLogLevelOverrideValidation:
 
         for name in valid_names:
             override = ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name=name,
                 log_level=EnumLogLevel.DEBUG,
             )
@@ -125,6 +136,7 @@ class TestModelLogLevelOverridePatternValidation:
 
         for name in valid_names:
             override = ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name=name,
                 log_level=EnumLogLevel.DEBUG,
             )
@@ -144,6 +156,7 @@ class TestModelLogLevelOverridePatternValidation:
 
         for name in valid_names:
             override = ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name=name,
                 log_level=EnumLogLevel.DEBUG,
             )
@@ -162,6 +175,7 @@ class TestModelLogLevelOverridePatternValidation:
         for name in invalid_names:
             with pytest.raises(ValidationError) as exc_info:
                 ModelLogLevelOverride(
+                    version=DEFAULT_VERSION,
                     logger_name=name,
                     log_level=EnumLogLevel.INFO,
                 )
@@ -185,6 +199,7 @@ class TestModelLogLevelOverridePatternValidation:
         for name in invalid_names:
             with pytest.raises(ValidationError) as exc_info:
                 ModelLogLevelOverride(
+                    version=DEFAULT_VERSION,
                     logger_name=name,
                     log_level=EnumLogLevel.INFO,
                 )
@@ -202,6 +217,7 @@ class TestModelLogLevelOverridePatternValidation:
         for name in invalid_names:
             with pytest.raises(ValidationError) as exc_info:
                 ModelLogLevelOverride(
+                    version=DEFAULT_VERSION,
                     logger_name=name,
                     log_level=EnumLogLevel.INFO,
                 )
@@ -212,6 +228,7 @@ class TestModelLogLevelOverridePatternValidation:
         """Test pattern rejects names starting with dot."""
         with pytest.raises(ValidationError) as exc_info:
             ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name=".myapp",
                 log_level=EnumLogLevel.INFO,
             )
@@ -222,6 +239,7 @@ class TestModelLogLevelOverridePatternValidation:
         """Test pattern rejects names ending with dot."""
         with pytest.raises(ValidationError) as exc_info:
             ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name="myapp.",
                 log_level=EnumLogLevel.INFO,
             )
@@ -239,6 +257,7 @@ class TestModelLogLevelOverridePatternValidation:
         for name in invalid_names:
             with pytest.raises(ValidationError) as exc_info:
                 ModelLogLevelOverride(
+                    version=DEFAULT_VERSION,
                     logger_name=name,
                     log_level=EnumLogLevel.INFO,
                 )
@@ -256,6 +275,7 @@ class TestModelLogLevelOverridePatternValidation:
         for name in invalid_names:
             with pytest.raises(ValidationError) as exc_info:
                 ModelLogLevelOverride(
+                    version=DEFAULT_VERSION,
                     logger_name=name,
                     log_level=EnumLogLevel.INFO,
                 )
@@ -273,6 +293,7 @@ class TestModelLogLevelOverridePatternValidation:
 
         for name in valid_names:
             override = ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name=name,
                 log_level=EnumLogLevel.DEBUG,
             )
@@ -292,6 +313,7 @@ class TestModelLogLevelOverridePatternValidation:
 
         for name in real_world_names:
             override = ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name=name,
                 log_level=EnumLogLevel.WARNING,
             )
@@ -301,6 +323,7 @@ class TestModelLogLevelOverridePatternValidation:
         """Test log_level is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name="test",
             )
 
@@ -323,6 +346,7 @@ class TestModelLogLevelOverridePatternValidation:
 
         for level in valid_levels:
             override = ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name="test",
                 log_level=level,
             )
@@ -332,6 +356,7 @@ class TestModelLogLevelOverridePatternValidation:
         """Test invalid log level raises validation error."""
         with pytest.raises(ValidationError) as exc_info:
             ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name="test",
                 log_level="invalid_level",  # type: ignore[arg-type]
             )
@@ -343,16 +368,19 @@ class TestModelLogLevelOverridePatternValidation:
         """Test override_priority validates bounds."""
         # Valid values
         ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.INFO,
             override_priority=0,  # Min
         )
         ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.INFO,
             override_priority=500,
         )
         ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.INFO,
             override_priority=1000,  # Max
@@ -361,6 +389,7 @@ class TestModelLogLevelOverridePatternValidation:
         # Below minimum
         with pytest.raises(ValidationError) as exc_info:
             ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name="test",
                 log_level=EnumLogLevel.INFO,
                 override_priority=-1,
@@ -372,6 +401,7 @@ class TestModelLogLevelOverridePatternValidation:
         # Above maximum
         with pytest.raises(ValidationError) as exc_info:
             ModelLogLevelOverride(
+                version=DEFAULT_VERSION,
                 logger_name="test",
                 log_level=EnumLogLevel.INFO,
                 override_priority=1001,
@@ -383,6 +413,7 @@ class TestModelLogLevelOverridePatternValidation:
     def test_apply_to_children_boolean(self):
         """Test apply_to_children accepts boolean values."""
         override_true = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.INFO,
             apply_to_children=True,
@@ -390,6 +421,7 @@ class TestModelLogLevelOverridePatternValidation:
         assert override_true.apply_to_children is True
 
         override_false = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.INFO,
             apply_to_children=False,
@@ -399,6 +431,7 @@ class TestModelLogLevelOverridePatternValidation:
     def test_description_optional(self):
         """Test description is optional."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.INFO,
             description=None,
@@ -406,6 +439,7 @@ class TestModelLogLevelOverridePatternValidation:
         assert override.description is None
 
         override_with_desc = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.INFO,
             description="Test description",
@@ -419,6 +453,7 @@ class TestModelLogLevelOverrideEdgeCases:
     def test_minimum_priority_override(self):
         """Test override with minimum priority."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="low.priority.logger",
             log_level=EnumLogLevel.TRACE,
             override_priority=0,
@@ -429,6 +464,7 @@ class TestModelLogLevelOverrideEdgeCases:
     def test_maximum_priority_override(self):
         """Test override with maximum priority."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="high.priority.logger",
             log_level=EnumLogLevel.FATAL,
             override_priority=1000,
@@ -439,6 +475,7 @@ class TestModelLogLevelOverrideEdgeCases:
     def test_root_logger_override(self):
         """Test override for root logger."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="root",
             log_level=EnumLogLevel.WARNING,
             apply_to_children=True,
@@ -450,6 +487,7 @@ class TestModelLogLevelOverrideEdgeCases:
     def test_deep_hierarchical_logger_name(self):
         """Test override for deeply nested logger."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="app.service.module.submodule.component.feature",
             log_level=EnumLogLevel.DEBUG,
         )
@@ -459,6 +497,7 @@ class TestModelLogLevelOverrideEdgeCases:
     def test_isolated_logger_no_children(self):
         """Test override that doesn't apply to children."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="isolated.logger",
             log_level=EnumLogLevel.ERROR,
             apply_to_children=False,
@@ -470,6 +509,7 @@ class TestModelLogLevelOverrideEdgeCases:
         """Test override with long description."""
         long_desc = "A" * 500
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.INFO,
             description=long_desc,
@@ -481,12 +521,14 @@ class TestModelLogLevelOverrideEdgeCases:
     def test_special_log_levels(self):
         """Test special log levels like SUCCESS and UNKNOWN."""
         success_override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="success.logger",
             log_level=EnumLogLevel.SUCCESS,
         )
         assert success_override.log_level == EnumLogLevel.SUCCESS
 
         unknown_override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="unknown.logger",
             log_level=EnumLogLevel.UNKNOWN,
         )
@@ -495,12 +537,14 @@ class TestModelLogLevelOverrideEdgeCases:
     def test_multiple_overrides_same_logger_different_priorities(self):
         """Test multiple override instances for same logger with different priorities."""
         override1 = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="shared.logger",
             log_level=EnumLogLevel.INFO,
             override_priority=100,
         )
 
         override2 = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="shared.logger",
             log_level=EnumLogLevel.DEBUG,
             override_priority=200,
@@ -516,6 +560,7 @@ class TestModelLogLevelOverrideConfigDict:
     def test_extra_fields_ignored(self):
         """Test extra fields are ignored per ConfigDict."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.INFO,
             unknown_field="should_be_ignored",  # type: ignore[call-arg]
@@ -527,6 +572,7 @@ class TestModelLogLevelOverrideConfigDict:
     def test_validate_assignment(self):
         """Test assignment validation is enabled."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.INFO,
         )
@@ -545,6 +591,7 @@ class TestModelLogLevelOverrideConfigDict:
     def test_enum_values_not_coerced(self):
         """Test use_enum_values is False - enums stay as enum objects."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.DEBUG,
         )
@@ -556,6 +603,7 @@ class TestModelLogLevelOverrideConfigDict:
     def test_model_serialization(self):
         """Test model can be serialized and deserialized."""
         original = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="app.service",
             log_level=EnumLogLevel.WARNING,
             apply_to_children=False,
@@ -578,6 +626,7 @@ class TestModelLogLevelOverrideConfigDict:
     def test_json_serialization(self):
         """Test model can be serialized to JSON."""
         override = ModelLogLevelOverride(
+            version=DEFAULT_VERSION,
             logger_name="test",
             log_level=EnumLogLevel.ERROR,
         )

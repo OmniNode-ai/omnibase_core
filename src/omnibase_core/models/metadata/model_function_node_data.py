@@ -77,7 +77,7 @@ class ModelFunctionNodeData(BaseModel):
         description="Node status",
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Node version",
     )
 
@@ -207,6 +207,7 @@ class ModelFunctionNodeData(BaseModel):
             display_name=display_name,
             description=description,
             tags=tags,
+            version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
     def update_display_name(self, base_name: str) -> None:

@@ -85,7 +85,7 @@ class ModelMetadataNodeInfo(BaseModel):
         description="Node conceptual complexity level",
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Node version",
     )
 
@@ -381,6 +381,7 @@ class ModelMetadataNodeInfo(BaseModel):
             description=structured_description,
             tags=tags,
             node_type=node_type,
+            version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
     @classmethod
@@ -434,6 +435,7 @@ class ModelMetadataNodeInfo(BaseModel):
             tags=tags,
             node_type=EnumMetadataNodeType.FUNCTION,
             complexity=complexity,
+            version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
     @classmethod
@@ -472,6 +474,7 @@ class ModelMetadataNodeInfo(BaseModel):
             node_type=EnumMetadataNodeType.DOCUMENTATION,
             has_documentation=True,
             documentation_quality=EnumValidationLevel.STANDARD,
+            version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
     model_config = {

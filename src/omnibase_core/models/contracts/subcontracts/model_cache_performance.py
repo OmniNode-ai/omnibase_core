@@ -10,6 +10,8 @@ Model for cache performance configuration in the ONEX caching system.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelCachePerformance(BaseModel):
     """
@@ -18,6 +20,12 @@ class ModelCachePerformance(BaseModel):
     Defines performance tuning parameters,
     monitoring, and optimization settings.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     max_memory_mb: int = Field(
         default=1024,

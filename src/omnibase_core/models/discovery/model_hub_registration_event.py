@@ -22,7 +22,10 @@ class ModelHubRegistrationEvent(BaseModel):
     hub_id: UUID = Field(default=..., description="Unique hub identifier")
     hub_name: str = Field(default=..., description="Hub name")
     hub_domain: str = Field(default=..., description="Hub domain")
-    hub_version: ModelSemVer = Field(default=..., description="Hub version")
+    hub_version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Hub version",
+    )
 
     # Consul Registration
     consul_service_name: str = Field(

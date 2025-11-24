@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.infrastructure.model_retry_policy import ModelRetryPolicy
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelEventRouting(BaseModel):
@@ -10,6 +11,12 @@ class ModelEventRouting(BaseModel):
     Defines routing strategies, target groups,
     and distribution policies for event delivery.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     routing_strategy: str = Field(
         default=...,

@@ -17,7 +17,10 @@ if TYPE_CHECKING:
 class ModelToolVersion(BaseModel):
     """Version information for a tool."""
 
-    version: ModelSemVer = Field(description="Semantic version identifier")
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Semantic version identifier",
+    )
     status: "EnumVersionStatus" = Field(description="Version lifecycle status")
     release_date: str = Field(description="Version release date")
     breaking_changes: bool = Field(

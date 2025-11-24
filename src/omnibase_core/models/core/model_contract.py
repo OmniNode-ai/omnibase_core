@@ -26,5 +26,6 @@ class ModelContract(BaseModel):
         description="CLI interface specification",
     )
     protocol_version: ModelSemVer = Field(
-        default=..., description="ONEX protocol version"
+        ...,  # REQUIRED - specify in contract
+        description="ONEX protocol version",
     )

@@ -16,6 +16,10 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.contracts.subcontracts.model_action_config_parameter import (
     ModelActionConfigParameter,
@@ -41,6 +45,7 @@ class TestModelActionConfigParameterBasics:
     def test_minimal_instantiation_string_value(self):
         """Test parameter with string value."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="timeout",
             parameter_value=from_string("30s"),
         )
@@ -55,6 +60,7 @@ class TestModelActionConfigParameterBasics:
     def test_minimal_instantiation_numeric_value(self):
         """Test parameter with numeric value."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="max_retries",
             parameter_value=from_int(5),
         )
@@ -66,6 +72,7 @@ class TestModelActionConfigParameterBasics:
     def test_minimal_instantiation_boolean_value(self):
         """Test parameter with boolean value."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="enabled",
             parameter_value=from_bool(True),
         )
@@ -77,6 +84,7 @@ class TestModelActionConfigParameterBasics:
     def test_full_instantiation(self):
         """Test parameter with all fields specified."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="connection_timeout",
             parameter_value=from_int(30),
             is_required=True,
@@ -93,6 +101,7 @@ class TestModelActionConfigParameterBasics:
     def test_default_is_required(self):
         """Test is_required defaults to False."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="optional_param",
             parameter_value=from_string("default"),
         )
@@ -102,6 +111,7 @@ class TestModelActionConfigParameterBasics:
     def test_default_description_none(self):
         """Test description defaults to None."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="param",
             parameter_value=from_string("value"),
         )
@@ -111,6 +121,7 @@ class TestModelActionConfigParameterBasics:
     def test_default_validation_rule_none(self):
         """Test validation_rule defaults to None."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="param",
             parameter_value=from_string("value"),
         )
@@ -125,6 +136,7 @@ class TestModelActionConfigParameterValidation:
         """Test parameter_name is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelActionConfigParameter(
+                version=DEFAULT_VERSION,
                 parameter_value=from_string("value"),
             )
 
@@ -134,6 +146,7 @@ class TestModelActionConfigParameterValidation:
         """Test parameter_name has minimum length constraint."""
         with pytest.raises(ValidationError) as exc_info:
             ModelActionConfigParameter(
+                version=DEFAULT_VERSION,
                 parameter_name="",
                 parameter_value=from_string("value"),
             )
@@ -143,6 +156,7 @@ class TestModelActionConfigParameterValidation:
     def test_parameter_name_whitespace_accepted(self):
         """Test parameter_name accepts whitespace (no strip validation)."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="   ",
             parameter_value=from_string("value"),
         )
@@ -152,7 +166,7 @@ class TestModelActionConfigParameterValidation:
     def test_parameter_value_required(self):
         """Test parameter_value is required."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelActionConfigParameter(parameter_name="test")
+            ModelActionConfigParameter(version=DEFAULT_VERSION, parameter_name="test")
 
         assert "parameter_value" in str(exc_info.value)
 
@@ -160,6 +174,7 @@ class TestModelActionConfigParameterValidation:
         """Test parameter_name accepts long names."""
         long_name = "very_long_parameter_name_" * 10
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name=long_name,
             parameter_value=from_string("value"),
         )
@@ -170,6 +185,7 @@ class TestModelActionConfigParameterValidation:
         """Test description accepts long text."""
         long_desc = "This is a very detailed description. " * 50
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="param",
             parameter_value=from_string("value"),
             description=long_desc,
@@ -180,6 +196,7 @@ class TestModelActionConfigParameterValidation:
     def test_empty_description_accepted(self):
         """Test empty string description is accepted."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="param",
             parameter_value=from_string("value"),
             description="",
@@ -469,6 +486,7 @@ class TestModelActionConfigParameterEdgeCases:
     def test_required_parameter_with_validation(self):
         """Test required parameter with validation rule."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="port",
             parameter_value=from_int(8080),
             is_required=True,
@@ -481,6 +499,7 @@ class TestModelActionConfigParameterEdgeCases:
     def test_optional_parameter_with_default(self):
         """Test optional parameter with default value."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="timeout",
             parameter_value=from_int(30),
             is_required=False,
@@ -494,6 +513,7 @@ class TestModelActionConfigParameterEdgeCases:
         """Test parameter with complex validation rule."""
         rule = "value in ['DEBUG', 'INFO', 'WARNING', 'ERROR'] and len(value) > 0"
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="log_level",
             parameter_value=from_string("INFO"),
             validation_rule=rule,
@@ -505,6 +525,7 @@ class TestModelActionConfigParameterEdgeCases:
         """Test parameter with JSON string value."""
         json_str = '{"key": "value", "count": 42}'
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="config",
             parameter_value=from_string(json_str),
         )
@@ -514,6 +535,7 @@ class TestModelActionConfigParameterEdgeCases:
     def test_parameter_with_numeric_string(self):
         """Test parameter with numeric string value."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="version",
             parameter_value=from_string("1.2.3"),
         )
@@ -525,6 +547,7 @@ class TestModelActionConfigParameterEdgeCases:
         """Test parameter_name with special characters."""
         special_name = "param-name.with_special:chars"
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name=special_name,
             parameter_value=from_string("value"),
         )
@@ -538,6 +561,7 @@ class TestModelActionConfigParameterConfigDict:
     def test_extra_fields_ignored(self):
         """Test extra fields are ignored per ConfigDict."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="test",
             parameter_value=from_string("value"),
             unknown_field="ignored",  # type: ignore[call-arg]
@@ -549,6 +573,7 @@ class TestModelActionConfigParameterConfigDict:
     def test_validate_assignment(self):
         """Test assignment validation is enabled."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="test",
             parameter_value=from_string("value"),
         )
@@ -564,6 +589,7 @@ class TestModelActionConfigParameterConfigDict:
     def test_use_enum_values_false(self):
         """Test use_enum_values=False in nested models."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="test",
             parameter_value=from_string("value"),
         )
@@ -574,6 +600,7 @@ class TestModelActionConfigParameterConfigDict:
     def test_model_serialization(self):
         """Test parameter model serialization."""
         original = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="max_connections",
             parameter_value=from_int(100),
             is_required=True,
@@ -596,6 +623,7 @@ class TestModelActionConfigParameterConfigDict:
     def test_model_json_serialization(self):
         """Test parameter JSON serialization."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="enabled",
             parameter_value=from_bool(True),
         )
@@ -607,6 +635,7 @@ class TestModelActionConfigParameterConfigDict:
     def test_model_json_deserialization(self):
         """Test parameter JSON deserialization."""
         json_data = """{
+            "version": {"major": 1, "minor": 0, "patch": 0},
             "parameter_name": "timeout",
             "parameter_value": {
                 "value_type": "numeric",
@@ -663,6 +692,7 @@ class TestModelActionConfigParameterUseCases:
     def test_fsm_transition_timeout_parameter(self):
         """Test FSM transition timeout configuration."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="transition_timeout_ms",
             parameter_value=from_int(5000),
             is_required=True,
@@ -676,6 +706,7 @@ class TestModelActionConfigParameterUseCases:
     def test_fsm_action_enabled_flag(self):
         """Test FSM action enabled flag."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="action_enabled",
             parameter_value=from_bool(True),
             is_required=False,
@@ -687,6 +718,7 @@ class TestModelActionConfigParameterUseCases:
     def test_retry_configuration_parameter(self):
         """Test retry configuration."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="max_retry_attempts",
             parameter_value=from_int(3),
             is_required=True,
@@ -699,6 +731,7 @@ class TestModelActionConfigParameterUseCases:
     def test_logging_level_parameter(self):
         """Test logging level configuration."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="log_level",
             parameter_value=from_string("INFO"),
             is_required=False,
@@ -711,6 +744,7 @@ class TestModelActionConfigParameterUseCases:
     def test_rate_limit_parameter(self):
         """Test rate limiting configuration."""
         param = ModelActionConfigParameter(
+            version=DEFAULT_VERSION,
             parameter_name="requests_per_second",
             parameter_value=from_float(10.5),
             is_required=True,

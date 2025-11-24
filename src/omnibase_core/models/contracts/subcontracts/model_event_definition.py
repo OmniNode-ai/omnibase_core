@@ -40,8 +40,8 @@ class ModelEventDefinition(BaseModel):
     )
 
     schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Schema version for event structure",
+        ...,  # REQUIRED - specify in contract
+        description="Schema version for event structure (MUST be provided in YAML contract)",
     )
 
     required_fields: list[str] = Field(

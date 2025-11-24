@@ -42,7 +42,7 @@ class ModelCapability(BaseModel):
     )
 
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Capability version",
     )
 
@@ -147,6 +147,7 @@ class ModelCapability(BaseModel):
         return cls(
             name=name,
             namespace="onex",
+            version=ModelSemVer(major=1, minor=0, patch=0),
             display_name=name.replace("_", " ").title(),
             description=description,
             category="standard",

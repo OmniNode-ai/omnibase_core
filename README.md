@@ -16,7 +16,7 @@
 
 Use ONEX when you need predictable, testable, observable agent tools with consistent error handling across distributed systems.
 
-## Four Node Architecture
+## Four-Node Architecture
 
 ```text
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
@@ -72,10 +72,11 @@ Minimal example:
 ```python
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
 class NodeCalculator(ModelServiceCompute):
-    async def execute_compute(self, input_data):
-        value = input_data.operation_data.get("value", 0)
+    async def execute_compute(self, contract: ModelContractCompute) -> dict:
+        value = contract.input_data.get("value", 0)
         return {"result": value * 2}
 ```
 

@@ -35,13 +35,14 @@ class ModelOnexMetadata(BaseModel):
     """
 
     metadata_version: ModelSemVer = Field(
-        default=...,
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Must be a semver string, e.g., '0.1.0'",
     )
     name: str = Field(default=..., description="Validator/tool name")
     namespace: "Namespace"
     version: ModelSemVer = Field(
-        default=..., description="Semantic version, e.g., 0.1.0"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Semantic version, e.g., 0.1.0",
     )
     entrypoint: str | None = Field(
         default=None,
@@ -86,16 +87,44 @@ class ModelOnexMetadata(BaseModel):
     tools: "ToolCollection | None" = None
     lifecycle: "EnumLifecycle" = Field(default_factory=lambda: EnumLifecycle.ACTIVE)
 
-    @field_validator("metadata_version")
+    @field_validator("metadata_version", mode="before")
     @classmethod
-    def check_metadata_version(cls, v: str) -> str:
+    def check_metadata_version(cls, v: Any) -> ModelSemVer:
+        """Validate metadata_version and convert to ModelSemVer.
+
+        Args:
+            v: Version as ModelSemVer or string (runtime validation)
+
+        Returns:
+            ModelSemVer instance
+
+        Raises:
+            ModelOnexError: If version format is invalid (VALIDATION_ERROR)
+        """
+        # If already ModelSemVer, return as-is
+        if isinstance(v, ModelSemVer):
+            return v
+
+        # Validate string format
+        if not isinstance(v, str):
+            msg = "metadata_version must be a semver string or ModelSemVer"
+            raise ModelOnexError(
+                EnumCoreErrorCode.VALIDATION_ERROR,
+                msg,
+            )
+
         if not re.match(r"^\d+\.\d+\.\d+$", v):
             msg = "metadata_version must be a semver string, e.g., '0.1.0'"
             raise ModelOnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR,
                 msg,
             )
-        return v
+
+        # Parse and return as ModelSemVer
+        parts = v.split(".")
+        return ModelSemVer(
+            major=int(parts[0]), minor=int(parts[1]), patch=int(parts[2])
+        )
 
     @field_validator("name")
     @classmethod
@@ -120,13 +149,38 @@ class ModelOnexMetadata(BaseModel):
             message=msg,
         )
 
-    @field_validator("version")
+    @field_validator("version", mode="before")
     @classmethod
-    def check_version(cls, v: str) -> str:
-        if not re.match(r"^\d+\.\d+\.\d+$", v):
-            msg = f"Invalid version: {v}"
+    def check_version(cls, v: Any) -> ModelSemVer:
+        """Validate version and convert to ModelSemVer.
+
+        Args:
+            v: Version as ModelSemVer or string (runtime validation)
+
+        Returns:
+            ModelSemVer instance
+
+        Raises:
+            ModelOnexError: If version format is invalid (VALIDATION_ERROR)
+        """
+        # If already ModelSemVer, return as-is
+        if isinstance(v, ModelSemVer):
+            return v
+
+        # Validate string format
+        if not isinstance(v, str):
+            msg = f"Invalid version type: {type(v).__name__}; expected semver string or ModelSemVer"
             raise ModelOnexError(EnumCoreErrorCode.VALIDATION_ERROR, msg)
-        return v
+
+        if not re.match(r"^\d+\.\d+\.\d+$", v):
+            msg = f"Invalid version format: {v}; expected semver string, e.g., '0.1.0'"
+            raise ModelOnexError(EnumCoreErrorCode.VALIDATION_ERROR, msg)
+
+        # Parse and return as ModelSemVer
+        parts = v.split(".")
+        return ModelSemVer(
+            major=int(parts[0]), minor=int(parts[1]), patch=int(parts[2])
+        )
 
     @field_validator("protocols_supported", mode="before")
     @classmethod

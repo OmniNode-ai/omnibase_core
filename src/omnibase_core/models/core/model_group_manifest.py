@@ -107,11 +107,11 @@ class ModelGroupManifest(BaseModel):
 
     # === METADATA VALIDATION ===
     blueprint_version: SemVerField = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Tool group blueprint version followed",
     )
     metadata_schema_version: SemVerField = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Metadata schema version",
     )
 

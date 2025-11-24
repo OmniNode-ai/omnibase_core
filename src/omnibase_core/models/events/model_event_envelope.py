@@ -368,6 +368,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         source_node_id: UUID,
         correlation_id: UUID | None = None,
         priority: int = 5,
+        onex_version: ModelSemVer | None = None,
     ) -> "ModelEventEnvelope[T]":
         """
         Create a broadcast envelope (no specific target).
@@ -377,6 +378,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             source_node_id: Source node identifier
             correlation_id: Optional correlation ID
             priority: Event priority (default: 5)
+            onex_version: ONEX version (default: 1.0.0)
 
         Returns:
             New envelope configured for broadcast
@@ -386,6 +388,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             source_tool=str(source_node_id),
             correlation_id=correlation_id,
             priority=priority,
+            onex_version=onex_version or ModelSemVer(major=1, minor=0, patch=0),
         )
 
     @classmethod
@@ -396,6 +399,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         target_node_id: UUID,
         correlation_id: UUID | None = None,
         priority: int = 5,
+        onex_version: ModelSemVer | None = None,
     ) -> "ModelEventEnvelope[T]":
         """
         Create a directed envelope (specific target).
@@ -406,6 +410,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             target_node_id: Target node identifier
             correlation_id: Optional correlation ID
             priority: Event priority (default: 5)
+            onex_version: ONEX version (default: 1.0.0)
 
         Returns:
             New envelope configured for directed communication
@@ -416,4 +421,5 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             target_tool=str(target_node_id),
             correlation_id=correlation_id,
             priority=priority,
+            onex_version=onex_version or ModelSemVer(major=1, minor=0, patch=0),
         )

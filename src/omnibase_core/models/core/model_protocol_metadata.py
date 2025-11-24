@@ -29,7 +29,7 @@ class ModelGenericMetadata(BaseModel):
         description="Generic data dictionary for ProtocolMetadata compliance",
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Version information",
     )
     created_at: datetime = Field(

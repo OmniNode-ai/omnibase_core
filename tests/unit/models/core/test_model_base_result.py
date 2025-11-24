@@ -11,7 +11,11 @@ import pytest
 
 from omnibase_core.models.core.model_base_error import ModelBaseError
 from omnibase_core.models.core.model_base_result import ModelBaseResult
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.results.model_simple_metadata import ModelGenericMetadata
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelBaseResult:
@@ -189,6 +193,7 @@ class TestModelBaseResultEdgeCases:
     def test_model_copy(self):
         """Test model copying."""
         original = ModelBaseResult(
+            version=DEFAULT_VERSION,
             exit_code=1,
             success=False,
             errors=[ModelBaseError(message="Error", code="E001")],
@@ -204,6 +209,7 @@ class TestModelBaseResultEdgeCases:
     def test_model_copy_deep(self):
         """Test deep model copying."""
         original = ModelBaseResult(
+            version=DEFAULT_VERSION,
             exit_code=1,
             success=False,
             errors=[ModelBaseError(message="Error", code="E001")],
@@ -233,6 +239,7 @@ class TestModelBaseResultEdgeCases:
     def test_serialization_deserialization_roundtrip(self):
         """Test roundtrip serialization."""
         original = ModelBaseResult(
+            version=DEFAULT_VERSION,
             exit_code=1,
             success=False,
             errors=[ModelBaseError(message="Error", code="E001")],

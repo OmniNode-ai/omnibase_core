@@ -72,6 +72,38 @@ def service_orchestrator(mock_container):
     return service
 
 
+@pytest.fixture(autouse=True)
+async def cleanup_async_tasks():
+    """Cleanup any lingering async tasks after each test."""
+    yield
+
+    # After test completes, cancel health monitor and service event loop tasks
+    current_task = asyncio.current_task()
+    pending = [
+        t
+        for t in asyncio.all_tasks()
+        if not t.done()
+        and t is not current_task
+        and (
+            "_health_monitor_loop" in str(t.get_coro())
+            or "_service_event_loop" in str(t.get_coro())
+        )
+    ]
+
+    # Cancel health/service tasks
+    for task in pending:
+        task.cancel()
+
+    # Wait for cancellation to complete (with timeout to prevent hanging)
+    if pending:
+        try:
+            await asyncio.wait_for(
+                asyncio.gather(*pending, return_exceptions=True), timeout=1.0
+            )
+        except TimeoutError:
+            pass  # Tasks didn't cancel in time, but we tried
+
+
 @pytest.fixture
 def tool_invocation_event(service_orchestrator):
     """Create a sample tool invocation event for orchestrator."""

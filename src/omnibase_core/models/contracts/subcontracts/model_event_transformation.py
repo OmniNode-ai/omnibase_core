@@ -10,6 +10,8 @@ Model for event transformation specifications in the ONEX event-driven architect
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 from .model_event_mapping_rule import ModelEventMappingRule
 
 
@@ -20,6 +22,12 @@ class ModelEventTransformation(BaseModel):
     Defines transformation rules for event data,
     including filtering, mapping, and enrichment logic.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Subcontract version (auto-generated if not provided)",
+    )
 
     transformation_name: str = Field(
         default=...,

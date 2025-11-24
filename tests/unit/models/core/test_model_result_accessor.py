@@ -9,6 +9,10 @@ from typing import Any
 from pydantic import Field
 
 from omnibase_core.models.core import ModelResultAccessor
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class SampleResultModel(ModelResultAccessor):

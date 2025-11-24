@@ -14,10 +14,14 @@ from omnibase_core.enums.enum_chain_validation_status import EnumChainValidation
 from omnibase_core.enums.enum_compliance_framework import EnumComplianceFramework
 from omnibase_core.enums.enum_node_operation import EnumNodeOperation
 from omnibase_core.enums.enum_trust_level import EnumTrustLevel
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.security.model_chain_metrics import ModelChainMetrics
 from omnibase_core.models.security.model_node_signature import ModelNodeSignature
 from omnibase_core.models.security.model_signature_chain import ModelSignatureChain
 from omnibase_core.models.security.model_signing_policy import ModelSigningPolicy
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelSignatureChainBasic:

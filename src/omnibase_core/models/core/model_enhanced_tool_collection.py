@@ -66,7 +66,7 @@ class ModelToolCollection(BaseModel):
         description="Human-readable collection name",
     )
     collection_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Collection version",
     )
     created_at: datetime = Field(
@@ -456,10 +456,15 @@ ToolRegistrationStatus = EnumToolRegistrationStatus
 
 # Re-export for current standards
 __all__ = [
+    "EnumToolCapabilityLevel",
     "EnumToolCategory",
     "EnumToolCompatibilityMode",
     "EnumToolRegistrationStatus",
+    "ModelToolCollection",
     "ModelToolMetadata",
     "ModelToolPerformanceMetrics",
     "ModelToolValidationResult",
+    "ToolMetadata",
+    "ToolPerformanceMetrics",
+    "ToolValidationResult",
 ]

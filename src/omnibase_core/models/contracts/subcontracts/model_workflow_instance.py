@@ -29,6 +29,12 @@ StructuredData = dict[str, ParameterValue]
 class ModelWorkflowInstance(BaseModel):
     """A workflow execution instance."""
 
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
+
     workflow_id: UUID = Field(
         default_factory=uuid4,
         description="Unique identifier for the workflow instance",
@@ -37,8 +43,8 @@ class ModelWorkflowInstance(BaseModel):
     workflow_name: str = Field(default=..., description="Name of the workflow")
 
     workflow_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Version of the workflow definition",
+        ...,  # REQUIRED - specify in contract
+        description="Version of the workflow definition (MUST be provided in YAML contract)",
     )
 
     created_timestamp: datetime = Field(

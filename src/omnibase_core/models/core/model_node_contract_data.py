@@ -23,7 +23,8 @@ class ModelNodeContractData(BaseModel):
     """
 
     version: ModelSemVer = Field(
-        default=..., description="Required version field for node contract"
+        ...,  # REQUIRED - specify in contract
+        description="Required version field for node contract",
     )
 
     # Allow additional fields since contract data can be flexible

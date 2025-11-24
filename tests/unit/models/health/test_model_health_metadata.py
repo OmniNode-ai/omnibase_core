@@ -11,7 +11,7 @@ class TestModelHealthMetadataBasics:
 
     def test_default_initialization(self):
         """Test default metadata initialization."""
-        metadata = ModelHealthMetadata()
+        metadata = ModelHealthMetadata(version=ModelSemVer(major=1, minor=0, patch=0))
 
         assert metadata.environment == "unknown"
         assert metadata.version == ModelSemVer(major=1, minor=0, patch=0)
@@ -49,37 +49,68 @@ class TestModelHealthMetadataValidation:
     def test_check_interval_validation(self):
         """Test check interval validation."""
         # Valid intervals
-        ModelHealthMetadata(check_interval_seconds=1)
-        ModelHealthMetadata(check_interval_seconds=3600)
+        ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0), check_interval_seconds=1
+        )
+        ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0), check_interval_seconds=3600
+        )
 
         # Invalid intervals
         with pytest.raises(Exception):
-            ModelHealthMetadata(check_interval_seconds=0)
+            ModelHealthMetadata(
+                version=ModelSemVer(major=1, minor=0, patch=0), check_interval_seconds=0
+            )
         with pytest.raises(Exception):
-            ModelHealthMetadata(check_interval_seconds=3601)
+            ModelHealthMetadata(
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                check_interval_seconds=3601,
+            )
 
     def test_retention_days_validation(self):
         """Test issue retention days validation."""
         # Valid days
-        ModelHealthMetadata(max_issue_retention_days=1)
-        ModelHealthMetadata(max_issue_retention_days=365)
+        ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0), max_issue_retention_days=1
+        )
+        ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0), max_issue_retention_days=365
+        )
 
         # Invalid days
         with pytest.raises(Exception):
-            ModelHealthMetadata(max_issue_retention_days=0)
+            ModelHealthMetadata(
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                max_issue_retention_days=0,
+            )
         with pytest.raises(Exception):
-            ModelHealthMetadata(max_issue_retention_days=366)
+            ModelHealthMetadata(
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                max_issue_retention_days=366,
+            )
 
     def test_algorithm_validation(self):
         """Test health score algorithm validation."""
         # Valid algorithms
-        ModelHealthMetadata(health_score_algorithm="simple")
-        ModelHealthMetadata(health_score_algorithm="weighted")
-        ModelHealthMetadata(health_score_algorithm="custom")
+        ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            health_score_algorithm="simple",
+        )
+        ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            health_score_algorithm="weighted",
+        )
+        ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            health_score_algorithm="custom",
+        )
 
         # Invalid algorithm
         with pytest.raises(Exception):
-            ModelHealthMetadata(health_score_algorithm="invalid")
+            ModelHealthMetadata(
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                health_score_algorithm="invalid",
+            )
 
 
 class TestModelHealthMetadataEnvironmentChecking:
@@ -87,27 +118,41 @@ class TestModelHealthMetadataEnvironmentChecking:
 
     def test_is_production_environment(self):
         """Test production environment detection."""
-        metadata = ModelHealthMetadata(environment="production")
+        metadata = ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0), environment="production"
+        )
         assert metadata.is_production_environment() is True
 
-        metadata = ModelHealthMetadata(environment="prod")
+        metadata = ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0), environment="prod"
+        )
         assert metadata.is_production_environment() is True
 
-        metadata = ModelHealthMetadata(environment="development")
+        metadata = ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0), environment="development"
+        )
         assert metadata.is_production_environment() is False
 
     def test_is_development_environment(self):
         """Test development environment detection."""
-        metadata = ModelHealthMetadata(environment="development")
+        metadata = ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0), environment="development"
+        )
         assert metadata.is_development_environment() is True
 
-        metadata = ModelHealthMetadata(environment="dev")
+        metadata = ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0), environment="dev"
+        )
         assert metadata.is_development_environment() is True
 
-        metadata = ModelHealthMetadata(environment="local")
+        metadata = ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0), environment="local"
+        )
         assert metadata.is_development_environment() is True
 
-        metadata = ModelHealthMetadata(environment="production")
+        metadata = ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0), environment="production"
+        )
         assert metadata.is_development_environment() is False
 
 
@@ -117,20 +162,28 @@ class TestModelHealthMetadataAutoHeal:
     def test_should_auto_heal_enabled(self):
         """Test should_auto_heal when enabled."""
         metadata = ModelHealthMetadata(
-            auto_healing_enabled=True, maintenance_mode=False
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            auto_healing_enabled=True,
+            maintenance_mode=False,
         )
         assert metadata.should_auto_heal() is True
 
     def test_should_auto_heal_disabled(self):
         """Test should_auto_heal when disabled."""
         metadata = ModelHealthMetadata(
-            auto_healing_enabled=False, maintenance_mode=False
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            auto_healing_enabled=False,
+            maintenance_mode=False,
         )
         assert metadata.should_auto_heal() is False
 
     def test_should_auto_heal_maintenance(self):
         """Test should_auto_heal during maintenance."""
-        metadata = ModelHealthMetadata(auto_healing_enabled=True, maintenance_mode=True)
+        metadata = ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            auto_healing_enabled=True,
+            maintenance_mode=True,
+        )
         assert metadata.should_auto_heal() is False
 
 
@@ -140,20 +193,28 @@ class TestModelHealthMetadataNotifications:
     def test_should_send_notifications_enabled(self):
         """Test should_send_notifications when enabled."""
         metadata = ModelHealthMetadata(
-            notification_enabled=True, maintenance_mode=False
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            notification_enabled=True,
+            maintenance_mode=False,
         )
         assert metadata.should_send_notifications() is True
 
     def test_should_send_notifications_disabled(self):
         """Test should_send_notifications when disabled."""
         metadata = ModelHealthMetadata(
-            notification_enabled=False, maintenance_mode=False
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            notification_enabled=False,
+            maintenance_mode=False,
         )
         assert metadata.should_send_notifications() is False
 
     def test_should_send_notifications_maintenance(self):
         """Test should_send_notifications during maintenance."""
-        metadata = ModelHealthMetadata(notification_enabled=True, maintenance_mode=True)
+        metadata = ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            notification_enabled=True,
+            maintenance_mode=True,
+        )
         assert metadata.should_send_notifications() is False
 
 
@@ -162,21 +223,21 @@ class TestModelHealthMetadataCustomAttributes:
 
     def test_get_custom_attribute_not_set(self):
         """Test get_custom_attribute when not set."""
-        metadata = ModelHealthMetadata()
+        metadata = ModelHealthMetadata(version=ModelSemVer(major=1, minor=0, patch=0))
 
         result = metadata.get_custom_attribute("nonexistent")
         assert result is None
 
     def test_get_custom_attribute_with_default(self):
         """Test get_custom_attribute with default value."""
-        metadata = ModelHealthMetadata()
+        metadata = ModelHealthMetadata(version=ModelSemVer(major=1, minor=0, patch=0))
 
         result = metadata.get_custom_attribute("nonexistent", "default_value")
         assert result == "default_value"
 
     def test_ensure_custom_attributes(self):
         """Test ensure_custom_attributes creates attributes."""
-        metadata = ModelHealthMetadata()
+        metadata = ModelHealthMetadata(version=ModelSemVer(major=1, minor=0, patch=0))
 
         attrs = metadata.ensure_custom_attributes()
         assert attrs is not None
@@ -189,14 +250,20 @@ class TestModelHealthMetadataCheckInterval:
     def test_get_effective_check_interval_normal(self):
         """Test effective check interval in normal mode."""
         metadata = ModelHealthMetadata(
-            check_interval_seconds=30, maintenance_mode=False
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            check_interval_seconds=30,
+            maintenance_mode=False,
         )
 
         assert metadata.get_effective_check_interval() == 30
 
     def test_get_effective_check_interval_maintenance(self):
         """Test effective check interval in maintenance mode."""
-        metadata = ModelHealthMetadata(check_interval_seconds=30, maintenance_mode=True)
+        metadata = ModelHealthMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            check_interval_seconds=30,
+            maintenance_mode=True,
+        )
 
         # Should be 3x longer in maintenance, up to 300 max
         assert metadata.get_effective_check_interval() == 90
@@ -204,7 +271,9 @@ class TestModelHealthMetadataCheckInterval:
     def test_get_effective_check_interval_maintenance_capped(self):
         """Test effective check interval caps at 300."""
         metadata = ModelHealthMetadata(
-            check_interval_seconds=200, maintenance_mode=True
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            check_interval_seconds=200,
+            maintenance_mode=True,
         )
 
         # Should cap at 300

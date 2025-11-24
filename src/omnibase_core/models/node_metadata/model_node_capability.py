@@ -64,7 +64,7 @@ class ModelNodeCapability(BaseModel):
 
     # Metadata fields
     version_introduced: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="ONEX version when this capability was introduced",
     )
 

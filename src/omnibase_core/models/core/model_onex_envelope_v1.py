@@ -74,7 +74,7 @@ class ModelOnexEnvelopeV1(BaseModel):
 
     # Envelope metadata
     envelope_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Envelope format version",
     )
     correlation_id: UUID = Field(

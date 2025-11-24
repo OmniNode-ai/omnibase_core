@@ -33,7 +33,7 @@ class ModelToolType(BaseModel):
         default_factory=list, description="Other tools this tool depends on"
     )
     version_compatibility: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Version compatibility constraint",
     )
     execution_priority: int = Field(
@@ -63,6 +63,7 @@ class ModelToolType(BaseModel):
             name="CONTRACT_TO_MODEL",
             description="Generates Pydantic models from contract.yaml",
             category="generation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             requires_contract=True,
             output_type="models",
@@ -75,6 +76,7 @@ class ModelToolType(BaseModel):
             name="MULTI_DOC_MODEL_GENERATOR",
             description="Generates models from multiple YAML documents",
             category="generation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             output_type="models",
         )
@@ -86,6 +88,7 @@ class ModelToolType(BaseModel):
             name="GENERATE_ERROR_CODES",
             description="Generates error code enums from contract",
             category="generation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             requires_contract=True,
             output_type="enums",
@@ -98,6 +101,7 @@ class ModelToolType(BaseModel):
             name="GENERATE_INTROSPECTION",
             description="Generates introspection metadata",
             category="generation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             output_type="metadata",
         )
@@ -109,6 +113,7 @@ class ModelToolType(BaseModel):
             name="NODE_GENERATOR",
             description="Generates complete node structure from templates",
             category="generation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             execution_priority=90,
             output_type="node",
@@ -121,6 +126,7 @@ class ModelToolType(BaseModel):
             name="TEMPLATE_ENGINE",
             description="Processes templates with token replacement",
             category="template",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             output_type="text",
         )
@@ -132,6 +138,7 @@ class ModelToolType(BaseModel):
             name="FILE_GENERATOR",
             description="Generates files from templates",
             category="template",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             dependencies=["TEMPLATE_ENGINE"],
             output_type="files",
@@ -144,6 +151,7 @@ class ModelToolType(BaseModel):
             name="TEMPLATE_VALIDATOR",
             description="Validates node templates for consistency",
             category="validation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_validator=True,
             output_type="report",
         )
@@ -155,6 +163,7 @@ class ModelToolType(BaseModel):
             name="VALIDATION_ENGINE",
             description="Validates node structure and contracts",
             category="validation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_validator=True,
             requires_contract=True,
             execution_priority=80,
@@ -168,6 +177,7 @@ class ModelToolType(BaseModel):
             name="STANDARDS_COMPLIANCE_FIXER",
             description="Fixes code to comply with ONEX standards",
             category="maintenance",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             is_validator=True,
             output_type="fixes",
@@ -180,6 +190,7 @@ class ModelToolType(BaseModel):
             name="PARITY_VALIDATOR_WITH_FIXES",
             description="Validates and fixes parity issues",
             category="validation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_validator=True,
             is_generator=True,
             output_type="report_and_fixes",
@@ -192,6 +203,7 @@ class ModelToolType(BaseModel):
             name="CONTRACT_COMPLIANCE",
             description="Validates contract compliance",
             category="validation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_validator=True,
             requires_contract=True,
             output_type="report",
@@ -204,6 +216,7 @@ class ModelToolType(BaseModel):
             name="INTROSPECTION_VALIDITY",
             description="Validates introspection data",
             category="validation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_validator=True,
             output_type="report",
         )
@@ -215,6 +228,7 @@ class ModelToolType(BaseModel):
             name="SCHEMA_CONFORMANCE",
             description="Validates schema conformance",
             category="validation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_validator=True,
             output_type="report",
         )
@@ -226,6 +240,7 @@ class ModelToolType(BaseModel):
             name="ERROR_CODE_USAGE",
             description="Validates error code usage",
             category="validation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_validator=True,
             output_type="report",
         )
@@ -237,6 +252,7 @@ class ModelToolType(BaseModel):
             name="CLI_COMMANDS",
             description="Handles CLI command generation",
             category="cli",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             output_type="commands",
         )
@@ -248,6 +264,7 @@ class ModelToolType(BaseModel):
             name="CLI_NODE_PARITY",
             description="Validates CLI and node parity",
             category="cli",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_validator=True,
             output_type="report",
         )
@@ -259,6 +276,7 @@ class ModelToolType(BaseModel):
             name="NODE_DISCOVERY",
             description="Discovers nodes in the codebase",
             category="discovery",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             execution_priority=95,
             output_type="nodes",
         )
@@ -270,6 +288,7 @@ class ModelToolType(BaseModel):
             name="NODE_VALIDATION",
             description="Validates node implementation",
             category="validation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_validator=True,
             requires_contract=True,
             output_type="report",
@@ -282,6 +301,7 @@ class ModelToolType(BaseModel):
             name="METADATA_LOADER",
             description="Loads node metadata",
             category="discovery",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             output_type="metadata",
         )
 
@@ -292,6 +312,7 @@ class ModelToolType(BaseModel):
             name="SCHEMA_GENERATOR",
             description="Generates JSON schemas",
             category="schema",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             output_type="schemas",
         )
@@ -303,6 +324,7 @@ class ModelToolType(BaseModel):
             name="SCHEMA_DISCOVERY",
             description="Discovers and parses schemas",
             category="schema",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             output_type="schemas",
         )
 
@@ -313,6 +335,7 @@ class ModelToolType(BaseModel):
             name="SCHEMA_TO_PYDANTIC",
             description="Converts schemas to Pydantic models",
             category="schema",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             dependencies=["SCHEMA_DISCOVERY"],
             output_type="models",
@@ -325,6 +348,7 @@ class ModelToolType(BaseModel):
             name="PROTOCOL_GENERATOR",
             description="Generates protocol interfaces",
             category="generation",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             is_generator=True,
             output_type="protocols",
         )
@@ -336,6 +360,7 @@ class ModelToolType(BaseModel):
             name="BACKEND_SELECTION",
             description="Selects appropriate backend",
             category="runtime",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             output_type="backend",
         )
 
@@ -346,6 +371,7 @@ class ModelToolType(BaseModel):
             name="NODE_MANAGER_RUNNER",
             description="Runs node manager operations",
             category="runtime",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             execution_priority=100,
             output_type="result",
         )
@@ -357,6 +383,7 @@ class ModelToolType(BaseModel):
             name="MAINTENANCE",
             description="Handles maintenance operations",
             category="maintenance",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             output_type="status",
         )
 
@@ -367,6 +394,7 @@ class ModelToolType(BaseModel):
             name="tool_logger_emit_log_event",
             description="Emits structured log events",
             category="logging",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             output_type="logs",
         )
 
@@ -377,6 +405,7 @@ class ModelToolType(BaseModel):
             name="LOGGING_UTILS",
             description="Logging utility functions",
             category="logging",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             output_type="logs",
         )
 
@@ -387,6 +416,7 @@ class ModelToolType(BaseModel):
             name="scenario_runner",
             description="Runs test scenarios",
             category="testing",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
             output_type="results",
         )
 
@@ -428,7 +458,12 @@ class ModelToolType(BaseModel):
         factory = factory_map.get(name)
         if factory:
             return factory()
-        return cls(name=name, description=f"Tool: {name}", category="unknown")
+        return cls(
+            name=name,
+            description=f"Tool: {name}",
+            category="unknown",
+            version_compatibility=ModelSemVer(major=1, minor=0, patch=0),
+        )
 
     def __str__(self) -> str:
         """String representation for current standards."""

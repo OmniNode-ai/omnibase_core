@@ -485,6 +485,7 @@ class TestModelContractValidationResult:
         result = ModelContractValidationResult(
             is_valid=True,
             score=0.5,
+            interface_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         assert 0.0 <= result.score <= 1.0
 
@@ -494,6 +495,7 @@ class TestModelContractValidationResult:
             is_valid=False,
             score=0.3,
             violations=["Critical error 1", "Critical error 2"],
+            interface_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert not result.is_valid

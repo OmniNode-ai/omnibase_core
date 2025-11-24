@@ -11,14 +11,19 @@ class ModelMetadata(BaseModel):
 
     meta_type: str = Field(default=..., description="Type of metadata block")
     metadata_version: ModelSemVer = Field(
-        default=..., description="Version of the metadata schema"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of the metadata schema",
     )
     schema_version: ModelSemVer = Field(
-        default=..., description="Version of the content schema"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of the content schema",
     )
     uuid: str = Field(default=..., description="Unique identifier for this file")
     name: str = Field(default=..., description="File name")
-    version: ModelSemVer = Field(default=..., description="File version")
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="File version",
+    )
     author: str = Field(default=..., description="Author of the file")
     created_at: datetime = Field(default=..., description="Creation timestamp")
     last_modified_at: datetime = Field(

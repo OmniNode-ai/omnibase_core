@@ -8,6 +8,8 @@ Model for cache key generation strategies in the ONEX caching system.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelCacheKeyStrategy(BaseModel):
     """
@@ -16,6 +18,12 @@ class ModelCacheKeyStrategy(BaseModel):
     Defines how cache keys are generated,
     including namespacing, hashing, and versioning.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     key_generation_method: str = Field(
         default=...,

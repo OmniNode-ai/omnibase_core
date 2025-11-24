@@ -13,6 +13,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelAggregationPerformance(BaseModel):
     """
@@ -21,6 +23,12 @@ class ModelAggregationPerformance(BaseModel):
     Defines performance tuning, optimization,
     and resource management for aggregation operations.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     parallel_aggregation: bool = Field(
         default=True,

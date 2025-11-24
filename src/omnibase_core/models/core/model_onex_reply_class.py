@@ -86,11 +86,11 @@ class ModelOnexReply(BaseModel):
 
     # === Onex COMPLIANCE ===
     onex_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="ONEX standard version",
     )
     reply_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Reply schema version",
     )
 
@@ -205,6 +205,8 @@ class ModelOnexReply(BaseModel):
             data_type=data_type or str(type(data).__name__),
             metadata=metadata,
             performance=performance_metrics,
+            onex_version=ModelSemVer(major=1, minor=0, patch=0),
+            reply_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
     @classmethod
@@ -244,6 +246,8 @@ class ModelOnexReply(BaseModel):
             success=False,
             error=error_details,
             metadata=metadata,
+            onex_version=ModelSemVer(major=1, minor=0, patch=0),
+            reply_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
     @classmethod
@@ -270,6 +274,8 @@ class ModelOnexReply(BaseModel):
             success=False,
             validation_errors=validation_errors,
             metadata=metadata,
+            onex_version=ModelSemVer(major=1, minor=0, patch=0),
+            reply_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
     def with_metadata(self, metadata: "ModelOnexMetadata") -> "ModelOnexReply":

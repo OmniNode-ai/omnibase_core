@@ -9,7 +9,10 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_resource_unit import EnumResourceUnit
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelResourceUsageMetric(BaseModel):
@@ -19,6 +22,12 @@ class ModelResourceUsageMetric(BaseModel):
     Provides structured resource usage information with proper
     validation and type safety.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     resource_name: str = Field(
         ...,
@@ -64,9 +73,10 @@ class ModelResourceUsageMetric(BaseModel):
     def validate_percentage_range(self) -> "ModelResourceUsageMetric":
         """Validate percentage values are within reasonable range."""
         if self.is_percentage and self.usage_value > 150.0:
-            raise ValueError(
-                f"Percentage usage_value {self.usage_value} exceeds maximum (150%). "
-                "Use is_percentage=False for non-percentage metrics."
+            raise ModelOnexError(
+                message=f"Percentage usage_value {self.usage_value} exceeds maximum (150%). "
+                "Use is_percentage=False for non-percentage metrics.",
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         return self
 

@@ -47,7 +47,7 @@ class ModelServiceMetadata(BaseModel):
     service_interface: str = Field(description="Interface type name")
     service_implementation: str = Field(description="Implementation class name")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Semantic version",
     )
     description: str | None = Field(

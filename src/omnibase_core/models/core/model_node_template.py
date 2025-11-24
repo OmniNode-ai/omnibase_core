@@ -47,6 +47,7 @@ class ModelNodeTemplateConfig(BaseModel):
     """
 
     template_version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
         description="Version of the template system being used",
     )
     node_name: str = Field(description="Name of the node to generate")

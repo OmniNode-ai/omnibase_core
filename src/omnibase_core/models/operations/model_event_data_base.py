@@ -20,7 +20,9 @@ class ModelEventDataBase(BaseModel):
         default=..., description="Event type discriminator"
     )
     context: ModelEventContextInfo = Field(
-        default_factory=lambda: ModelEventContextInfo(),
+        default_factory=lambda: ModelEventContextInfo(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Structured event context information",
     )
     attributes: ModelEventAttributeInfo = Field(

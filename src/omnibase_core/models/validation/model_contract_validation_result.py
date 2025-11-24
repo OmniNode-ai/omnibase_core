@@ -57,6 +57,6 @@ class ModelContractValidationResult(BaseModel):
     )
 
     interface_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="INTERFACE_VERSION used for validation",
     )

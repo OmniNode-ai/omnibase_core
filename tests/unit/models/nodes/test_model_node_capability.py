@@ -29,6 +29,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test_capability",
             description="Test capability description",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert capability.value == "test_capability"
@@ -64,6 +65,7 @@ class TestModelNodeCapability:
             capability_display_name="MY_CAPABILITY",
             value="my_capability",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert capability.capability_name == "MY_CAPABILITY"
@@ -73,6 +75,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="my_capability",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert capability.capability_name.startswith("capability_")
@@ -83,6 +86,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         capability.capability_name = "NEW_NAME"
@@ -189,6 +193,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test_capability",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert str(capability) == "test_capability"
@@ -198,6 +203,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test_capability",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert capability == "test_capability"
@@ -208,6 +214,7 @@ class TestModelNodeCapability:
             capability_display_name="TEST_CAPABILITY",
             value="test_capability",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert capability == "TEST_CAPABILITY"
@@ -231,6 +238,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert capability != 123
@@ -281,6 +289,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         # get_id doesn't check for 'capability_id', only standard ID fields
@@ -294,6 +303,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test description",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         metadata = capability.get_metadata()
@@ -306,6 +316,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Original",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         result = capability.set_metadata({"description": "Updated"})
@@ -317,6 +328,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         # Should not raise, just ignore unknown fields
@@ -329,6 +341,7 @@ class TestModelNodeCapability:
             capability_display_name="TEST",
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         serialized = capability.serialize()
@@ -342,6 +355,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert capability.validate_instance() is True
@@ -352,6 +366,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             extra_field="ignored",
         )
 
@@ -362,6 +377,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         # Should validate new assignments
@@ -373,6 +389,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert capability.dependencies == []
@@ -382,6 +399,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert capability.deprecated is False
@@ -391,6 +409,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         assert capability.example_config is None
@@ -405,6 +424,7 @@ class TestModelNodeCapability:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             dependencies=[dep1, dep2],
         )
 
@@ -442,8 +462,16 @@ class TestModelNodeCapabilityEdgeCases:
 
     def test_capability_name_uniqueness(self):
         """Test that different capabilities have different IDs."""
-        cap1 = ModelNodeCapability(value="test1", description="Test 1")
-        cap2 = ModelNodeCapability(value="test2", description="Test 2")
+        cap1 = ModelNodeCapability(
+            value="test1",
+            description="Test 1",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
+        )
+        cap2 = ModelNodeCapability(
+            value="test2",
+            description="Test 2",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
+        )
 
         assert cap1.capability_id != cap2.capability_id
 
@@ -460,6 +488,7 @@ class TestModelNodeCapabilityEdgeCases:
         capability = ModelNodeCapability(
             value="test",
             description="Test",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         serialized = capability.serialize()

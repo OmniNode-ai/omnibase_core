@@ -25,11 +25,13 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 def test_fsm() -> ModelFSMSubcontract:
     """Create test FSM contract."""
     return ModelFSMSubcontract(
+        version=ModelSemVer(major=1, minor=0, patch=0),
         state_machine_name="test_mixin_fsm",
         state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
         description="Test FSM for mixin",
         states=[
             ModelFSMStateDefinition(
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 state_name="idle",
                 state_type="operational",
                 is_terminal=False,
@@ -37,12 +39,14 @@ def test_fsm() -> ModelFSMSubcontract:
                 description="Initial idle state",
             ),
             ModelFSMStateDefinition(
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 state_name="running",
                 state_type="operational",
                 is_terminal=False,
                 description="Running state",
             ),
             ModelFSMStateDefinition(
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 state_name="completed",
                 state_type="terminal",
                 is_terminal=True,
@@ -54,6 +58,7 @@ def test_fsm() -> ModelFSMSubcontract:
         error_states=[],
         transitions=[
             ModelFSMStateTransition(
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 transition_name="start",
                 from_state="idle",
                 to_state="running",
@@ -61,6 +66,7 @@ def test_fsm() -> ModelFSMSubcontract:
                 priority=1,
             ),
             ModelFSMStateTransition(
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 transition_name="complete",
                 from_state="running",
                 to_state="completed",
@@ -230,6 +236,7 @@ class TestMixinFSMExecution:
             description="Invalid FSM",
             states=[
                 ModelFSMStateDefinition(
+                    version=ModelSemVer(major=1, minor=0, patch=0),
                     state_name="running",
                     state_type="operational",
                     is_terminal=False,
@@ -242,6 +249,7 @@ class TestMixinFSMExecution:
             transitions=[
                 # Add dummy transition to satisfy validation
                 ModelFSMStateTransition(
+                    version=ModelSemVer(major=1, minor=0, patch=0),
                     transition_name="dummy",
                     from_state="running",
                     to_state="running",

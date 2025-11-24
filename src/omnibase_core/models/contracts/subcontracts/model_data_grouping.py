@@ -13,6 +13,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelDataGrouping(BaseModel):
     """
@@ -21,6 +23,12 @@ class ModelDataGrouping(BaseModel):
     Defines grouping strategies, keys, and
     aggregation scope for data processing.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     grouping_enabled: bool = Field(default=True, description="Enable data grouping")
 

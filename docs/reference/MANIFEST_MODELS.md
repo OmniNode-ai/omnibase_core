@@ -28,7 +28,9 @@ from pathlib import Path
 from omnibase_core.models.core.model_mixin_metadata import ModelMixinMetadataCollection
 
 # Load all mixin metadata
-collection = ModelMixinMetadataCollection.load_from_yaml(
+# NOTE: from_yaml() is the canonical API for loading YAML manifests
+# This is NOT a breaking change - it's the standard Pydantic/ONEX pattern
+collection = ModelMixinMetadataCollection.from_yaml(
     Path("src/omnibase_core/mixins/mixin_metadata.yaml")
 )
 
@@ -65,7 +67,7 @@ The `ModelMixinMetadata` system comprises 11 nested models:
 
 | Method | Purpose | Returns |
 |--------|---------|---------|
-| `load_from_yaml(path)` | Load metadata from YAML file | `ModelMixinMetadataCollection` |
+| `from_yaml(path)` | Load metadata from YAML file | `ModelMixinMetadataCollection` |
 | `get_mixin(name)` | Retrieve specific mixin metadata | `ModelMixinMetadata` |
 | `get_mixins_by_category(category)` | Filter by category | `list[ModelMixinMetadata]` |
 | `validate_compatibility(mixins)` | Check mixin compatibility | `tuple[bool, list[str]]` |
@@ -92,7 +94,7 @@ from omnibase_core.models.docker.model_docker_compose_manifest import (
 )
 
 # Load from YAML
-manifest = ModelDockerComposeManifest.load_from_yaml(
+manifest = ModelDockerComposeManifest.from_yaml(
     Path("docker-compose.yaml")
 )
 
@@ -140,7 +142,7 @@ The `ModelDockerComposeManifest` integrates these Docker models:
 
 | Method | Purpose | Returns |
 |--------|---------|---------|
-| `load_from_yaml(path)` | Load from docker-compose.yaml | `ModelDockerComposeManifest` |
+| `from_yaml(path)` | Load from docker-compose.yaml | `ModelDockerComposeManifest` |
 | `save_to_yaml(path)` | Save to docker-compose.yaml | `None` |
 | `get_service(name)` | Retrieve service by name | `ModelDockerService` |
 | `validate_dependencies()` | Check for circular dependencies | `list[str]` (warnings) |
@@ -160,7 +162,7 @@ from omnibase_core.models.docker.model_docker_compose_manifest import (
 )
 
 # Load manifest
-manifest = ModelDockerComposeManifest.load_from_yaml(
+manifest = ModelDockerComposeManifest.from_yaml(
     Path("docker-compose.yaml")
 )
 
@@ -188,7 +190,7 @@ from omnibase_core.models.docker.model_docker_compose_manifest import (
 )
 
 # Load existing manifest
-manifest = ModelDockerComposeManifest.load_from_yaml(
+manifest = ModelDockerComposeManifest.from_yaml(
     Path("docker-compose.yaml")
 )
 
@@ -214,7 +216,7 @@ from omnibase_core.models.core.model_mixin_metadata import (
 )
 
 # Load all available mixins
-collection = ModelMixinMetadataCollection.load_from_yaml(
+collection = ModelMixinMetadataCollection.from_yaml(
     Path("src/omnibase_core/mixins/mixin_metadata.yaml")
 )
 
@@ -257,7 +259,7 @@ class NodeDockerOrchestrator(NodeOrchestrator):
         super().__init__(container)
 
         # Load and validate manifest
-        self.manifest = ModelDockerComposeManifest.load_from_yaml(
+        self.manifest = ModelDockerComposeManifest.from_yaml(
             Path(container.get_config("docker_compose_path"))
         )
 
@@ -313,8 +315,8 @@ async def execute_orchestration(
 
 All manifest models have comprehensive test coverage:
 
-- **Mixin Metadata Tests**: [tests/unit/models/core/test_model_mixin_metadata.py](../../tests/unit/models/core/test_model_mixin_metadata.py) - 39 tests
-- **Docker Compose Manifest Tests**: [tests/unit/models/docker/test_model_docker_compose_manifest.py](../../tests/unit/models/docker/test_model_docker_compose_manifest.py) - 25 tests
+- **Mixin Metadata Tests**: [../../tests/unit/models/core/test_model_mixin_metadata.py](../../tests/unit/models/core/test_model_mixin_metadata.py) - 39 tests
+- **Docker Compose Manifest Tests**: [../../tests/unit/models/docker/test_model_docker_compose_manifest.py](../../tests/unit/models/docker/test_model_docker_compose_manifest.py) - 26 tests
 
 **Example Test Pattern**:
 ```python
@@ -327,7 +329,7 @@ from omnibase_core.models.docker.model_docker_compose_manifest import (
 def test_load_and_validate_manifest():
     """Test loading and validating a docker-compose.yaml file."""
     # Load test fixture
-    manifest = ModelDockerComposeManifest.load_from_yaml(
+    manifest = ModelDockerComposeManifest.from_yaml(
         Path("tests/fixtures/docker-compose.yaml")
     )
 
@@ -346,10 +348,9 @@ def test_load_and_validate_manifest():
 
 ## Related Documentation
 
-- [Mixin System Architecture](../architecture/MIXIN_SYSTEM.md) - Complete mixin system documentation
-- [Docker Integration Guide](../guides/DOCKER.md) - Using Docker models in ONEX workflows
-- [Validation Framework](../guides/VALIDATION.md) - Pydantic validation patterns
-- [Configuration Management](../guides/CONFIGURATION.md) - Managing system configuration
+- [Mixin System Architecture](../architecture/MIXIN_ARCHITECTURE.md) - Complete mixin system documentation
+- [Validation Framework](VALIDATION_FRAMEWORK.md) - Pydantic validation patterns
+- [Configuration Management](../patterns/CONFIGURATION_MANAGEMENT.md) - Managing system configuration
 
 ## Best Practices
 
@@ -357,12 +358,12 @@ def test_load_and_validate_manifest():
 
 ```python
 # ✅ Good: Validate immediately after loading
-manifest = ModelDockerComposeManifest.load_from_yaml(path)
+manifest = ModelDockerComposeManifest.from_yaml(path)
 if warnings := manifest.validate_dependencies():
     logger.warning(f"Validation warnings: {warnings}")
 
 # ❌ Bad: Skip validation
-manifest = ModelDockerComposeManifest.load_from_yaml(path)
+manifest = ModelDockerComposeManifest.from_yaml(path)
 # ... use manifest without validation
 ```
 
@@ -413,7 +414,7 @@ manifest.save_to_yaml(Path("docker-compose.yaml"))
 ```python
 # Solution: Check YAML syntax and schema compatibility
 try:
-    manifest = ModelDockerComposeManifest.load_from_yaml(path)
+    manifest = ModelDockerComposeManifest.from_yaml(path)
 except ValidationError as e:
     print(f"Validation errors: {e.errors()}")
     # Fix YAML structure based on error messages
@@ -452,4 +453,4 @@ Planned improvements for manifest models:
 **See Also**:
 - [Architecture Overview](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 - [Error Handling Best Practices](../conventions/ERROR_HANDLING_BEST_PRACTICES.md)
-- [Testing Guide](../testing/README.md)
+- [Testing Guide](../guides/TESTING_GUIDE.md)

@@ -9,9 +9,12 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment_validation_rule_type import (
     EnumEnvironmentValidationRuleType,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelEnvironmentValidationRule(BaseModel):
@@ -21,6 +24,12 @@ class ModelEnvironmentValidationRule(BaseModel):
     Defines validation rules specific to a configuration key within
     a particular environment.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     config_key: str = Field(
         ...,
@@ -76,20 +85,25 @@ class ModelEnvironmentValidationRule(BaseModel):
         - FORMAT rules have format_pattern set
 
         Raises:
-            ValueError: If required fields are missing for the rule type
+            ModelOnexError: If required fields are missing for the rule type
         """
         if self.rule_type == EnumEnvironmentValidationRuleType.RANGE:
             if self.min_value is None and self.max_value is None:
-                raise ValueError(
-                    "RANGE rule requires at least min_value or max_value to be set"
+                raise ModelOnexError(
+                    message="RANGE rule requires at least min_value or max_value to be set",
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
         elif self.rule_type == EnumEnvironmentValidationRuleType.ALLOWED_VALUES:
             if not self.allowed_values:
-                raise ValueError(
-                    "ALLOWED_VALUES rule requires non-empty allowed_values list"
+                raise ModelOnexError(
+                    message="ALLOWED_VALUES rule requires non-empty allowed_values list",
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
         elif self.rule_type == EnumEnvironmentValidationRuleType.FORMAT:
             if not self.format_pattern:
-                raise ValueError("FORMAT rule requires format_pattern to be set")
+                raise ModelOnexError(
+                    message="FORMAT rule requires format_pattern to be set",
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                )
 
         return self

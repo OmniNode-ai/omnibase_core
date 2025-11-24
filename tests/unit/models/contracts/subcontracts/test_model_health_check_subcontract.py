@@ -11,6 +11,11 @@ from uuid import UUID
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.models.contracts.subcontracts.model_component_health_detail import (
     ModelComponentHealthDetail,
@@ -35,6 +40,7 @@ class TestModelComponentHealth:
         """Test creating a valid component health status."""
         now = datetime.now(UTC)
         component = ModelComponentHealth(
+            version=DEFAULT_VERSION,
             component_name="database_connection",
             status=EnumNodeHealthStatus.HEALTHY,
             message="Database connection is healthy",
@@ -42,9 +48,13 @@ class TestModelComponentHealth:
             check_duration_ms=150,
             details=[
                 ModelComponentHealthDetail(
-                    detail_key="connection_pool", detail_value="5/10"
+                    version=DEFAULT_VERSION,
+                    detail_key="connection_pool",
+                    detail_value="5/10",
                 ),
-                ModelComponentHealthDetail(detail_key="latency_ms", detail_value="25"),
+                ModelComponentHealthDetail(
+                    version=DEFAULT_VERSION, detail_key="latency_ms", detail_value="25"
+                ),
             ],
         )
 
@@ -61,6 +71,7 @@ class TestModelComponentHealth:
         """Test component health with minimal required fields."""
         now = datetime.now(UTC)
         component = ModelComponentHealth(
+            version=DEFAULT_VERSION,
             component_name="cache",
             status=EnumNodeHealthStatus.DEGRADED,
             message="Cache is degraded",
@@ -78,6 +89,7 @@ class TestModelComponentHealth:
 
         with pytest.raises(ValidationError):
             ModelComponentHealth(
+                version=DEFAULT_VERSION,
                 component_name="test",
                 status=EnumNodeHealthStatus.HEALTHY,
                 message="Test",
@@ -89,6 +101,7 @@ class TestModelComponentHealth:
         """Test that enum values are preserved, not converted to strings."""
         now = datetime.now(UTC)
         component = ModelComponentHealth(
+            version=DEFAULT_VERSION,
             component_name="test",
             status=EnumNodeHealthStatus.CRITICAL,
             message="Critical status",
@@ -107,6 +120,7 @@ class TestModelNodeHealthStatus:
         now = datetime.now(UTC)
         test_uuid = UUID("12345678-1234-5678-1234-567812345678")
         node_health = ModelNodeHealthStatus(
+            version=DEFAULT_VERSION,
             status=EnumNodeHealthStatus.HEALTHY,
             message="Node is healthy",
             timestamp=now,
@@ -126,6 +140,7 @@ class TestModelNodeHealthStatus:
         """Test node health status without optional node_id."""
         now = datetime.now(UTC)
         node_health = ModelNodeHealthStatus(
+            version=DEFAULT_VERSION,
             status=EnumNodeHealthStatus.UNHEALTHY,
             message="Node is unhealthy",
             timestamp=now,
@@ -142,6 +157,7 @@ class TestModelNodeHealthStatus:
 
         with pytest.raises(ValidationError):
             ModelNodeHealthStatus(
+                version=DEFAULT_VERSION,
                 status=EnumNodeHealthStatus.HEALTHY,
                 message="Test",
                 timestamp=now,
@@ -158,12 +174,14 @@ class TestModelComponentHealthCollection:
         now = datetime.now(UTC)
         components = [
             ModelComponentHealth(
+                version=DEFAULT_VERSION,
                 component_name="db",
                 status=EnumNodeHealthStatus.HEALTHY,
                 message="Healthy",
                 last_check=now,
             ),
             ModelComponentHealth(
+                version=DEFAULT_VERSION,
                 component_name="cache",
                 status=EnumNodeHealthStatus.DEGRADED,
                 message="Degraded",
@@ -172,6 +190,7 @@ class TestModelComponentHealthCollection:
         ]
 
         collection = ModelComponentHealthCollection(
+            version=DEFAULT_VERSION,
             components=components,
             healthy_count=1,
             degraded_count=1,
@@ -187,7 +206,7 @@ class TestModelComponentHealthCollection:
 
     def test_health_collection_defaults(self):
         """Test health collection defaults."""
-        collection = ModelComponentHealthCollection()
+        collection = ModelComponentHealthCollection(version=DEFAULT_VERSION)
 
         assert collection.components == []
         assert collection.healthy_count == 0
@@ -198,16 +217,16 @@ class TestModelComponentHealthCollection:
     def test_health_collection_negative_counts_validation(self):
         """Test validation of negative counts."""
         with pytest.raises(ValidationError):
-            ModelComponentHealthCollection(healthy_count=-1)
+            ModelComponentHealthCollection(version=DEFAULT_VERSION, healthy_count=-1)
 
         with pytest.raises(ValidationError):
-            ModelComponentHealthCollection(degraded_count=-1)
+            ModelComponentHealthCollection(version=DEFAULT_VERSION, degraded_count=-1)
 
         with pytest.raises(ValidationError):
-            ModelComponentHealthCollection(unhealthy_count=-1)
+            ModelComponentHealthCollection(version=DEFAULT_VERSION, unhealthy_count=-1)
 
         with pytest.raises(ValidationError):
-            ModelComponentHealthCollection(total_components=-1)
+            ModelComponentHealthCollection(version=DEFAULT_VERSION, total_components=-1)
 
 
 class TestModelDependencyHealth:
@@ -217,6 +236,7 @@ class TestModelDependencyHealth:
         """Test creating a valid dependency health status."""
         now = datetime.now(UTC)
         dependency = ModelDependencyHealth(
+            version=DEFAULT_VERSION,
             dependency_name="postgresql",
             dependency_type="database",
             status=EnumNodeHealthStatus.HEALTHY,
@@ -237,6 +257,7 @@ class TestModelDependencyHealth:
         """Test dependency health with unhealthy status and error message."""
         now = datetime.now(UTC)
         dependency = ModelDependencyHealth(
+            version=DEFAULT_VERSION,
             dependency_name="redis",
             dependency_type="cache",
             status=EnumNodeHealthStatus.UNHEALTHY,
@@ -254,6 +275,7 @@ class TestModelDependencyHealth:
         """Test dependency health with minimal required fields."""
         now = datetime.now(UTC)
         dependency = ModelDependencyHealth(
+            version=DEFAULT_VERSION,
             dependency_name="external_api",
             dependency_type="service",
             status=EnumNodeHealthStatus.DEGRADED,
@@ -270,6 +292,7 @@ class TestModelDependencyHealth:
 
         with pytest.raises(ValidationError):
             ModelDependencyHealth(
+                version=DEFAULT_VERSION,
                 dependency_name="test",
                 dependency_type="service",
                 status=EnumNodeHealthStatus.HEALTHY,
@@ -286,6 +309,7 @@ class TestModelHealthCheckSubcontractResult:
         now = datetime.now(UTC)
 
         node_health = ModelNodeHealthStatus(
+            version=DEFAULT_VERSION,
             status=EnumNodeHealthStatus.HEALTHY,
             message="All systems operational",
             timestamp=now,
@@ -295,6 +319,7 @@ class TestModelHealthCheckSubcontractResult:
 
         component_health = [
             ModelComponentHealth(
+                version=DEFAULT_VERSION,
                 component_name="worker",
                 status=EnumNodeHealthStatus.HEALTHY,
                 message="Worker healthy",
@@ -304,6 +329,7 @@ class TestModelHealthCheckSubcontractResult:
 
         dependency_health = [
             ModelDependencyHealth(
+                version=DEFAULT_VERSION,
                 dependency_name="postgres",
                 dependency_type="database",
                 status=EnumNodeHealthStatus.HEALTHY,
@@ -312,6 +338,7 @@ class TestModelHealthCheckSubcontractResult:
         ]
 
         result = ModelHealthCheckSubcontractResult(
+            version=DEFAULT_VERSION,
             node_health=node_health,
             component_health=component_health,
             dependency_health=dependency_health,
@@ -330,6 +357,7 @@ class TestModelHealthCheckSubcontractResult:
         now = datetime.now(UTC)
 
         node_health = ModelNodeHealthStatus(
+            version=DEFAULT_VERSION,
             status=EnumNodeHealthStatus.DEGRADED,
             message="Performance degraded",
             timestamp=now,
@@ -338,6 +366,7 @@ class TestModelHealthCheckSubcontractResult:
         )
 
         result = ModelHealthCheckSubcontractResult(
+            version=DEFAULT_VERSION,
             node_health=node_health,
             health_score=0.75,
         )
@@ -351,6 +380,7 @@ class TestModelHealthCheckSubcontractResult:
         now = datetime.now(UTC)
 
         node_health = ModelNodeHealthStatus(
+            version=DEFAULT_VERSION,
             status=EnumNodeHealthStatus.HEALTHY,
             message="Healthy",
             timestamp=now,
@@ -361,6 +391,7 @@ class TestModelHealthCheckSubcontractResult:
         # Valid scores
         for score in [0.0, 0.5, 1.0]:
             result = ModelHealthCheckSubcontractResult(
+                version=DEFAULT_VERSION,
                 node_health=node_health,
                 health_score=score,
             )
@@ -369,12 +400,14 @@ class TestModelHealthCheckSubcontractResult:
         # Invalid scores
         with pytest.raises(ValidationError):
             ModelHealthCheckSubcontractResult(
+                version=DEFAULT_VERSION,
                 node_health=node_health,
                 health_score=-0.1,  # Too low
             )
 
         with pytest.raises(ValidationError):
             ModelHealthCheckSubcontractResult(
+                version=DEFAULT_VERSION,
                 node_health=node_health,
                 health_score=1.1,  # Too high
             )
@@ -394,7 +427,9 @@ class TestModelHealthCheckSubcontract:
 
     def test_minimal_valid_subcontract(self):
         """Test creating subcontract with defaults."""
-        subcontract = ModelHealthCheckSubcontract()
+        subcontract = ModelHealthCheckSubcontract(
+            version=DEFAULT_VERSION, subcontract_version=DEFAULT_VERSION
+        )
 
         assert subcontract.subcontract_name == "health_check_subcontract"
         assert isinstance(subcontract.subcontract_version, ModelSemVer)
@@ -418,6 +453,7 @@ class TestModelHealthCheckSubcontract:
         custom_version = ModelSemVer(major=2, minor=1, patch=0)
 
         subcontract = ModelHealthCheckSubcontract(
+            version=DEFAULT_VERSION,
             subcontract_name="custom_health_check",
             subcontract_version=custom_version,
             applicable_node_types=["EFFECT", "REDUCER"],
@@ -444,61 +480,111 @@ class TestModelHealthCheckSubcontract:
         """Test check_interval_ms validation constraints."""
         # Valid values (5000 <= x <= 300000)
         for interval in [5000, 30000, 150000, 300000]:
-            subcontract = ModelHealthCheckSubcontract(check_interval_ms=interval)
+            subcontract = ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                check_interval_ms=interval,
+            )
             assert subcontract.check_interval_ms == interval
 
         # Invalid values
         with pytest.raises(ValidationError):
-            ModelHealthCheckSubcontract(check_interval_ms=4999)  # Too low
+            ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                check_interval_ms=4999,
+            )  # Too low
 
         with pytest.raises(ValidationError):
-            ModelHealthCheckSubcontract(check_interval_ms=300001)  # Too high
+            ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                check_interval_ms=300001,
+            )  # Too high
 
     def test_failure_threshold_validation(self):
         """Test failure_threshold validation constraints."""
         # Valid values (1 <= x <= 10)
         for threshold in [1, 3, 7, 10]:
-            subcontract = ModelHealthCheckSubcontract(failure_threshold=threshold)
+            subcontract = ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                failure_threshold=threshold,
+            )
             assert subcontract.failure_threshold == threshold
 
         # Invalid values
         with pytest.raises(ValidationError):
-            ModelHealthCheckSubcontract(failure_threshold=0)  # Too low
+            ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                failure_threshold=0,
+            )  # Too low
 
         with pytest.raises(ValidationError):
-            ModelHealthCheckSubcontract(failure_threshold=11)  # Too high
+            ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                failure_threshold=11,
+            )  # Too high
 
     def test_recovery_threshold_validation(self):
         """Test recovery_threshold validation constraints."""
         # Valid values (1 <= x <= 10)
         for threshold in [1, 2, 5, 10]:
-            subcontract = ModelHealthCheckSubcontract(recovery_threshold=threshold)
+            subcontract = ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                recovery_threshold=threshold,
+            )
             assert subcontract.recovery_threshold == threshold
 
         # Invalid values
         with pytest.raises(ValidationError):
-            ModelHealthCheckSubcontract(recovery_threshold=0)  # Too low
+            ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                recovery_threshold=0,
+            )  # Too low
 
         with pytest.raises(ValidationError):
-            ModelHealthCheckSubcontract(recovery_threshold=11)  # Too high
+            ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                recovery_threshold=11,
+            )  # Too high
 
     def test_timeout_validation(self):
         """Test timeout_ms validation constraints."""
         # Valid values (1000 <= x <= 30000)
         for timeout in [1000, 5000, 15000, 30000]:
-            subcontract = ModelHealthCheckSubcontract(timeout_ms=timeout)
+            subcontract = ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                timeout_ms=timeout,
+            )
             assert subcontract.timeout_ms == timeout
 
         # Invalid values
         with pytest.raises(ValidationError):
-            ModelHealthCheckSubcontract(timeout_ms=999)  # Too low
+            ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                timeout_ms=999,
+            )  # Too low
 
         with pytest.raises(ValidationError):
-            ModelHealthCheckSubcontract(timeout_ms=30001)  # Too high
+            ModelHealthCheckSubcontract(
+                version=DEFAULT_VERSION,
+                subcontract_version=DEFAULT_VERSION,
+                timeout_ms=30001,
+            )  # Too high
 
     def test_subcontract_version_is_modelsemver(self):
         """Test that subcontract_version is ModelSemVer, not string."""
-        subcontract = ModelHealthCheckSubcontract()
+        subcontract = ModelHealthCheckSubcontract(
+            version=DEFAULT_VERSION, subcontract_version=DEFAULT_VERSION
+        )
 
         assert isinstance(subcontract.subcontract_version, ModelSemVer)
         assert not isinstance(subcontract.subcontract_version, str)
@@ -508,7 +594,9 @@ class TestModelHealthCheckSubcontract:
 
     def test_model_config_settings(self):
         """Test that model_config is properly configured."""
-        subcontract = ModelHealthCheckSubcontract()
+        subcontract = ModelHealthCheckSubcontract(
+            version=DEFAULT_VERSION, subcontract_version=DEFAULT_VERSION
+        )
 
         # Model should ignore extra fields
         assert subcontract.model_config.get("extra") == "ignore"
@@ -522,7 +610,9 @@ class TestModelHealthCheckSubcontract:
     def test_applicable_node_types_can_be_customized(self):
         """Test that applicable_node_types can be customized."""
         subcontract = ModelHealthCheckSubcontract(
-            applicable_node_types=["COMPUTE", "EFFECT"]
+            version=DEFAULT_VERSION,
+            subcontract_version=DEFAULT_VERSION,
+            applicable_node_types=["COMPUTE", "EFFECT"],
         )
 
         assert len(subcontract.applicable_node_types) == 2
@@ -533,6 +623,8 @@ class TestModelHealthCheckSubcontract:
     def test_serialization_deserialization(self):
         """Test that subcontract can be serialized and deserialized."""
         original = ModelHealthCheckSubcontract(
+            version=DEFAULT_VERSION,
+            subcontract_version=DEFAULT_VERSION,
             check_interval_ms=45000,
             failure_threshold=4,
             recovery_threshold=3,
@@ -552,10 +644,12 @@ class TestModelHealthCheckSubcontract:
     def test_version_comparison(self):
         """Test ModelSemVer version comparison in subcontract."""
         v1 = ModelHealthCheckSubcontract(
-            subcontract_version=ModelSemVer(major=1, minor=0, patch=0)
+            version=DEFAULT_VERSION,
+            subcontract_version=ModelSemVer(major=1, minor=0, patch=0),
         )
         v2 = ModelHealthCheckSubcontract(
-            subcontract_version=ModelSemVer(major=2, minor=0, patch=0)
+            version=DEFAULT_VERSION,
+            subcontract_version=ModelSemVer(major=2, minor=0, patch=0),
         )
 
         assert v1.subcontract_version < v2.subcontract_version
@@ -565,6 +659,8 @@ class TestModelHealthCheckSubcontract:
         """Test that extra fields are ignored due to model_config."""
         # Should not raise validation error with extra fields
         subcontract = ModelHealthCheckSubcontract(
+            version=DEFAULT_VERSION,
+            subcontract_version=DEFAULT_VERSION,
             extra_field="should be ignored",
             another_field=123,
         )

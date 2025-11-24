@@ -59,6 +59,7 @@ class ModelToolManifest(BaseModel):
 
     # === VERSION CATALOG ===
     current_stable_version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
         description="Current stable version identifier",
     )
     current_development_version: ModelSemVer | None = Field(
@@ -113,7 +114,7 @@ class ModelToolManifest(BaseModel):
 
     # === METADATA VALIDATION ===
     schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Tool manifest schema version",
     )
     uuid: str | None = Field(

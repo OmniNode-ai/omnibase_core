@@ -14,6 +14,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_state_management import EnumVersionScheme
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelStateVersioning(BaseModel):
@@ -23,6 +24,12 @@ class ModelStateVersioning(BaseModel):
     Defines versioning policies, migration strategies,
     and state transition handling.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     versioning_enabled: bool = Field(
         default=True,

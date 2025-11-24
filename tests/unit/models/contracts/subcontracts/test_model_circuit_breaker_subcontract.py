@@ -12,6 +12,11 @@ Comprehensive test coverage for circuit breaker subcontract model including:
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.models.contracts.subcontracts.model_circuit_breaker_subcontract import (
     ModelCircuitBreakerSubcontract,
 )
@@ -24,7 +29,7 @@ class TestModelCircuitBreakerSubcontractBasics:
 
     def test_default_instantiation(self):
         """Test model can be instantiated with defaults."""
-        cb = ModelCircuitBreakerSubcontract()
+        cb = ModelCircuitBreakerSubcontract(version=DEFAULT_VERSION)
 
         assert cb.failure_threshold == 5
         assert cb.success_threshold == 2
@@ -43,6 +48,7 @@ class TestModelCircuitBreakerSubcontractBasics:
     def test_custom_values(self):
         """Test model accepts custom values."""
         cb = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             failure_threshold=10,
             success_threshold=3,
             timeout_seconds=120,
@@ -68,7 +74,7 @@ class TestModelCircuitBreakerSubcontractBasics:
 
     def test_record_exceptions_default(self):
         """Test record_exceptions have sensible defaults."""
-        cb = ModelCircuitBreakerSubcontract()
+        cb = ModelCircuitBreakerSubcontract(version=DEFAULT_VERSION)
 
         assert "timeout" in cb.record_exceptions
         assert "connection_error" in cb.record_exceptions
@@ -77,7 +83,7 @@ class TestModelCircuitBreakerSubcontractBasics:
 
     def test_ignore_exceptions_default(self):
         """Test ignore_exceptions defaults to empty list."""
-        cb = ModelCircuitBreakerSubcontract()
+        cb = ModelCircuitBreakerSubcontract(version=DEFAULT_VERSION)
 
         assert cb.ignore_exceptions == []
 
@@ -89,14 +95,17 @@ class TestModelCircuitBreakerSubcontractValidation:
         """Test failure_threshold validates bounds."""
         # Valid values (must provide minimum_request_threshold >= 2x failure_threshold)
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             failure_threshold=1,
             minimum_request_threshold=2,  # Min: 2x failure_threshold
         )
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             failure_threshold=50,
             minimum_request_threshold=100,  # 2x failure_threshold
         )
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             failure_threshold=100,
             minimum_request_threshold=200,  # Max: 2x failure_threshold
         )
@@ -104,12 +113,14 @@ class TestModelCircuitBreakerSubcontractValidation:
         # Invalid values
         with pytest.raises(ValidationError):
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 failure_threshold=0,
                 minimum_request_threshold=10,
             )
 
         with pytest.raises(ValidationError):
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 failure_threshold=101,
                 minimum_request_threshold=202,
             )
@@ -118,25 +129,30 @@ class TestModelCircuitBreakerSubcontractValidation:
         """Test success_threshold validates bounds."""
         # Valid values (must satisfy: success_threshold <= half_open_max_calls)
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             success_threshold=1,
             half_open_max_calls=1,  # Min, satisfies constraint
         )
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             success_threshold=10,
             half_open_max_calls=10,  # Max effective value (half_open_max_calls max is 10)
         )
 
         # Invalid values - field bounds
         with pytest.raises(ValidationError):
-            ModelCircuitBreakerSubcontract(success_threshold=0)
+            ModelCircuitBreakerSubcontract(version=DEFAULT_VERSION, success_threshold=0)
 
         with pytest.raises(ValidationError):
-            ModelCircuitBreakerSubcontract(success_threshold=21)
+            ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION, success_threshold=21
+            )
 
         # Invalid values - cross-field constraint violation
         # success_threshold=20 exceeds max possible half_open_max_calls (10)
         with pytest.raises(ModelOnexError) as exc_info:
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 success_threshold=20,
                 half_open_max_calls=10,  # Max allowed, but 20 > 10
             )
@@ -146,10 +162,12 @@ class TestModelCircuitBreakerSubcontractValidation:
         """Test success_threshold cannot exceed half_open_max_calls."""
         # Valid: success_threshold <= half_open_max_calls
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             success_threshold=3,
             half_open_max_calls=3,  # Equal
         )
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             success_threshold=2,
             half_open_max_calls=5,  # Less than
         )
@@ -160,6 +178,7 @@ class TestModelCircuitBreakerSubcontractValidation:
         # This is a known limitation, so we'll test the valid cases and document the behavior
         try:
             cb = ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 success_threshold=5,
                 half_open_max_calls=3,
             )
@@ -173,22 +192,26 @@ class TestModelCircuitBreakerSubcontractValidation:
         """Test timeout_seconds validates bounds."""
         # Valid values
         # Note: window_size_seconds must be >= timeout_seconds (cross-field validation)
-        ModelCircuitBreakerSubcontract(timeout_seconds=10)  # Minimum recommended
-        ModelCircuitBreakerSubcontract(timeout_seconds=60)
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, timeout_seconds=10
+        )  # Minimum recommended
+        ModelCircuitBreakerSubcontract(version=DEFAULT_VERSION, timeout_seconds=60)
+        ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             timeout_seconds=300,
             window_size_seconds=300,  # Must be >= timeout_seconds
         )  # Max
 
         # Invalid values - too short
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelCircuitBreakerSubcontract(timeout_seconds=5)
+            ModelCircuitBreakerSubcontract(version=DEFAULT_VERSION, timeout_seconds=5)
 
         assert "too short" in str(exc_info.value)
 
         # Invalid values - too long
         with pytest.raises(ValidationError):
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 timeout_seconds=301,
                 window_size_seconds=301,
             )
@@ -198,14 +221,17 @@ class TestModelCircuitBreakerSubcontractValidation:
         # Valid values
         # Note: success_threshold must be <= half_open_max_calls (cross-field validation)
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             half_open_max_calls=1,
             success_threshold=1,  # Must be <= half_open_max_calls
         )  # Min
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             half_open_max_calls=5,
             success_threshold=2,  # Must be <= half_open_max_calls
         )
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             half_open_max_calls=10,
             success_threshold=2,  # Must be <= half_open_max_calls
         )  # Max
@@ -213,12 +239,14 @@ class TestModelCircuitBreakerSubcontractValidation:
         # Invalid values
         with pytest.raises(ValidationError):
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 half_open_max_calls=0,
                 success_threshold=1,
             )
 
         with pytest.raises(ValidationError):
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 half_open_max_calls=11,
                 success_threshold=2,
             )
@@ -227,14 +255,17 @@ class TestModelCircuitBreakerSubcontractValidation:
         """Test window_size_seconds validates bounds."""
         # Valid values (need to set timeout_seconds to avoid cross-field validation)
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             window_size_seconds=30,
             timeout_seconds=30,  # Set timeout to match window
         )  # Min
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             window_size_seconds=300,
             timeout_seconds=60,
         )
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             window_size_seconds=3600,
             timeout_seconds=300,
         )  # Max
@@ -242,12 +273,14 @@ class TestModelCircuitBreakerSubcontractValidation:
         # Invalid values
         with pytest.raises(ValidationError):
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 window_size_seconds=29,
                 timeout_seconds=10,
             )
 
         with pytest.raises(ValidationError):
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 window_size_seconds=3601,
                 timeout_seconds=300,
             )
@@ -256,10 +289,12 @@ class TestModelCircuitBreakerSubcontractValidation:
         """Test window_size_seconds should be >= timeout_seconds."""
         # Valid: window_size >= timeout
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             timeout_seconds=60,
             window_size_seconds=60,  # Equal
         )
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             timeout_seconds=60,
             window_size_seconds=120,  # Larger
         )
@@ -267,6 +302,7 @@ class TestModelCircuitBreakerSubcontractValidation:
         # Invalid: window_size < timeout
         with pytest.raises(ModelOnexError) as exc_info:
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 timeout_seconds=120,
                 window_size_seconds=60,
             )
@@ -277,43 +313,63 @@ class TestModelCircuitBreakerSubcontractValidation:
         """Test failure_rate_threshold validates bounds."""
         # Valid values
         ModelCircuitBreakerSubcontract(
-            failure_rate_threshold=0.1
+            version=DEFAULT_VERSION, failure_rate_threshold=0.1
         )  # Minimum recommended
-        ModelCircuitBreakerSubcontract(failure_rate_threshold=0.5)
-        ModelCircuitBreakerSubcontract(failure_rate_threshold=1.0)  # Max
+        ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, failure_rate_threshold=0.5
+        )
+        ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, failure_rate_threshold=1.0
+        )  # Max
 
         # Invalid - too aggressive
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelCircuitBreakerSubcontract(failure_rate_threshold=0.05)
+            ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION, failure_rate_threshold=0.05
+            )
 
         assert "very aggressive" in str(exc_info.value)
 
         # Invalid - out of bounds
         with pytest.raises(ValidationError):
-            ModelCircuitBreakerSubcontract(failure_rate_threshold=1.1)
+            ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION, failure_rate_threshold=1.1
+            )
 
     def test_minimum_request_threshold_bounds(self):
         """Test minimum_request_threshold validates bounds."""
         # Valid values
-        ModelCircuitBreakerSubcontract(minimum_request_threshold=10)  # Reasonable
-        ModelCircuitBreakerSubcontract(minimum_request_threshold=100)
-        ModelCircuitBreakerSubcontract(minimum_request_threshold=1000)  # Max
+        ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, minimum_request_threshold=10
+        )  # Reasonable
+        ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, minimum_request_threshold=100
+        )
+        ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, minimum_request_threshold=1000
+        )  # Max
 
         # Invalid values
         with pytest.raises(ValidationError):
-            ModelCircuitBreakerSubcontract(minimum_request_threshold=0)
+            ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION, minimum_request_threshold=0
+            )
 
         with pytest.raises(ValidationError):
-            ModelCircuitBreakerSubcontract(minimum_request_threshold=1001)
+            ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION, minimum_request_threshold=1001
+            )
 
     def test_minimum_request_threshold_vs_failure_threshold(self):
         """Test minimum_request_threshold should be at least 2x failure_threshold."""
         # Valid: minimum >= 2x failure
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             failure_threshold=5,
             minimum_request_threshold=10,  # Exactly 2x
         )
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             failure_threshold=5,
             minimum_request_threshold=20,  # More than 2x
         )
@@ -321,6 +377,7 @@ class TestModelCircuitBreakerSubcontractValidation:
         # Invalid: minimum < 2x failure
         with pytest.raises(ModelOnexError) as exc_info:
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 failure_threshold=10,
                 minimum_request_threshold=15,  # Less than 2x
             )
@@ -330,30 +387,45 @@ class TestModelCircuitBreakerSubcontractValidation:
     def test_slow_call_duration_threshold_bounds(self):
         """Test slow_call_duration_threshold_ms validates bounds when set."""
         # Valid values
-        ModelCircuitBreakerSubcontract(slow_call_duration_threshold_ms=None)  # Disabled
-        ModelCircuitBreakerSubcontract(slow_call_duration_threshold_ms=100)  # Min
-        ModelCircuitBreakerSubcontract(slow_call_duration_threshold_ms=5000)
-        ModelCircuitBreakerSubcontract(slow_call_duration_threshold_ms=60000)  # Max
+        ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, slow_call_duration_threshold_ms=None
+        )  # Disabled
+        ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, slow_call_duration_threshold_ms=100
+        )  # Min
+        ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, slow_call_duration_threshold_ms=5000
+        )
+        ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, slow_call_duration_threshold_ms=60000
+        )  # Max
 
         # Invalid values
         with pytest.raises(ValidationError):
-            ModelCircuitBreakerSubcontract(slow_call_duration_threshold_ms=99)
+            ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION, slow_call_duration_threshold_ms=99
+            )
 
         with pytest.raises(ValidationError):
-            ModelCircuitBreakerSubcontract(slow_call_duration_threshold_ms=60001)
+            ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION, slow_call_duration_threshold_ms=60001
+            )
 
     def test_slow_call_rate_threshold_bounds(self):
         """Test slow_call_rate_threshold validates bounds when set."""
         # Valid values
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             slow_call_duration_threshold_ms=5000,
             slow_call_rate_threshold=0.0,  # Min
         )
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             slow_call_duration_threshold_ms=5000,
             slow_call_rate_threshold=0.5,
         )
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             slow_call_duration_threshold_ms=5000,
             slow_call_rate_threshold=1.0,  # Max
         )
@@ -361,6 +433,7 @@ class TestModelCircuitBreakerSubcontractValidation:
         # Invalid values
         with pytest.raises(ValidationError):
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 slow_call_duration_threshold_ms=5000,
                 slow_call_rate_threshold=1.1,
             )
@@ -369,12 +442,14 @@ class TestModelCircuitBreakerSubcontractValidation:
         """Test slow_call_rate_threshold requires slow_call_duration_threshold_ms."""
         # Valid: both set together
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             slow_call_duration_threshold_ms=5000,
             slow_call_rate_threshold=0.5,
         )
 
         # Valid: both None
         ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             slow_call_duration_threshold_ms=None,
             slow_call_rate_threshold=None,
         )
@@ -382,6 +457,7 @@ class TestModelCircuitBreakerSubcontractValidation:
         # Invalid: rate set without duration
         with pytest.raises(ModelOnexError) as exc_info:
             ModelCircuitBreakerSubcontract(
+                version=DEFAULT_VERSION,
                 slow_call_duration_threshold_ms=None,
                 slow_call_rate_threshold=0.5,
             )
@@ -395,6 +471,7 @@ class TestModelCircuitBreakerSubcontractEdgeCases:
     def test_minimal_configuration(self):
         """Test minimal circuit breaker configuration."""
         cb = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             failure_threshold=1,
             success_threshold=1,
             timeout_seconds=10,
@@ -409,6 +486,7 @@ class TestModelCircuitBreakerSubcontractEdgeCases:
     def test_aggressive_configuration(self):
         """Test aggressive circuit breaker configuration."""
         cb = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             failure_threshold=100,
             success_threshold=10,  # Must be <= half_open_max_calls (was 20)
             timeout_seconds=300,
@@ -425,6 +503,7 @@ class TestModelCircuitBreakerSubcontractEdgeCases:
     def test_fast_fail_configuration(self):
         """Test fast-fail circuit breaker configuration."""
         cb = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             failure_threshold=3,
             success_threshold=2,
             timeout_seconds=30,
@@ -440,6 +519,7 @@ class TestModelCircuitBreakerSubcontractEdgeCases:
     def test_slow_call_detection_enabled(self):
         """Test configuration with slow call detection enabled."""
         cb = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             slow_call_duration_threshold_ms=5000,
             slow_call_rate_threshold=0.7,
         )
@@ -450,6 +530,7 @@ class TestModelCircuitBreakerSubcontractEdgeCases:
     def test_slow_call_detection_disabled(self):
         """Test configuration with slow call detection disabled."""
         cb = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             slow_call_duration_threshold_ms=None,
             slow_call_rate_threshold=None,
         )
@@ -459,13 +540,16 @@ class TestModelCircuitBreakerSubcontractEdgeCases:
 
     def test_fallback_enabled(self):
         """Test circuit breaker with fallback mechanism."""
-        cb = ModelCircuitBreakerSubcontract(fallback_enabled=True)
+        cb = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, fallback_enabled=True
+        )
 
         assert cb.fallback_enabled is True
 
     def test_custom_exception_lists(self):
         """Test custom exception lists."""
         cb = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             ignore_exceptions=["validation_error", "bad_request"],
             record_exceptions=["database_error", "api_timeout"],
         )
@@ -478,6 +562,7 @@ class TestModelCircuitBreakerSubcontractEdgeCases:
     def test_monitoring_disabled(self):
         """Test circuit breaker with monitoring disabled."""
         cb = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             event_logging_enabled=False,
             metrics_tracking_enabled=False,
         )
@@ -487,7 +572,9 @@ class TestModelCircuitBreakerSubcontractEdgeCases:
 
     def test_automatic_transition_disabled(self):
         """Test circuit breaker with manual state transitions."""
-        cb = ModelCircuitBreakerSubcontract(automatic_transition_enabled=False)
+        cb = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION, automatic_transition_enabled=False
+        )
 
         assert cb.automatic_transition_enabled is False
 
@@ -498,6 +585,7 @@ class TestModelCircuitBreakerSubcontractConfigDict:
     def test_extra_fields_ignored(self):
         """Test extra fields are ignored per ConfigDict."""
         cb = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             failure_threshold=5,
             unknown_field="should_be_ignored",
         )
@@ -507,7 +595,7 @@ class TestModelCircuitBreakerSubcontractConfigDict:
 
     def test_validate_assignment(self):
         """Test assignment validation is enabled."""
-        cb = ModelCircuitBreakerSubcontract()
+        cb = ModelCircuitBreakerSubcontract(version=DEFAULT_VERSION)
 
         # Valid assignment
         cb.failure_threshold = 10
@@ -520,6 +608,7 @@ class TestModelCircuitBreakerSubcontractConfigDict:
     def test_model_serialization(self):
         """Test model can be serialized and deserialized."""
         original = ModelCircuitBreakerSubcontract(
+            version=DEFAULT_VERSION,
             failure_threshold=10,
             success_threshold=3,
             timeout_seconds=120,

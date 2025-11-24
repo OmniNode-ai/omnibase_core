@@ -73,7 +73,7 @@ class ModelHealthCheck(BaseModel):
     )
 
     metadata: ModelGenericMetadata | None = Field(
-        default_factory=lambda: ModelGenericMetadata(),
+        default=None,
         description="Additional health check configuration",
     )
 

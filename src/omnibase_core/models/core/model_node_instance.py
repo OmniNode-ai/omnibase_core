@@ -54,7 +54,7 @@ class ModelNodeInstance(BaseModel):
         default=None, description="Connection URL for remote instances"
     )
     protocol_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Protocol version supported",
     )
 

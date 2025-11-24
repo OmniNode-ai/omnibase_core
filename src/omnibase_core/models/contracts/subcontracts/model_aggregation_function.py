@@ -1,7 +1,3 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 Aggregation Function Model - ONEX Standards Compliant.
 
@@ -11,7 +7,11 @@ Part of the Aggregation Subcontract Model family.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_aggregation_parameter import ModelAggregationParameter
 
@@ -23,6 +23,12 @@ class ModelAggregationFunction(BaseModel):
     Defines aggregation functions, parameters,
     and computational requirements for data processing.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     function_name: str = Field(
         default=...,

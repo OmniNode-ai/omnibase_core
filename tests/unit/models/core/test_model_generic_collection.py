@@ -9,6 +9,10 @@ import pytest
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core import ModelGenericCollection
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class MockItem(BaseModel):

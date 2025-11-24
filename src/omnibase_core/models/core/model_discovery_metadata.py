@@ -39,6 +39,6 @@ class ModelDiscoveryMetadata(BaseModel):
         description="When discovery data should be refreshed next",
     )
     discovery_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Version of discovery protocol used",
     )

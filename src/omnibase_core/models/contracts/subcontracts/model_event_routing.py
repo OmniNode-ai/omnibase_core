@@ -17,6 +17,8 @@ Model for event routing configuration in the ONEX event-driven architecture syst
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelRetryPolicy(BaseModel):
     """
@@ -24,6 +26,12 @@ class ModelRetryPolicy(BaseModel):
 
     Replaces dict[str, int | bool] pattern with proper type safety.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     max_attempts: int = Field(
         default=3,

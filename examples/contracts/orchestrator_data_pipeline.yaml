@@ -21,6 +21,9 @@ contract_version: {major: 1, minor: 0, patch: 0}
 
 # Workflow Coordination Subcontract
 workflow_coordination:
+  version: {major: 1, minor: 0, patch: 0}
+  subcontract_version: {major: 1, minor: 0, patch: 0}
+
   # Workflow Definition: Complete workflow specification
   workflow_definition:
     # Workflow Metadata

@@ -106,6 +106,12 @@ def service_effect(mock_container: MagicMock, mock_event_bus: AsyncMock) -> Magi
     service._log_warning = Mock()
     service._log_error = Mock()
 
+    # Bind cleanup health task method
+    async def async_cleanup_health_task():
+        return await MixinNodeService._cleanup_health_task(service)
+
+    service._cleanup_health_task = async_cleanup_health_task
+
     async def async_stop_service_mode():
         return await MixinNodeService.stop_service_mode(service)
 
@@ -445,22 +451,25 @@ class TestHealthMonitoringLoop:
         - Task cancelled (CancelledError raised)
 
         Expected:
-        - CancelledError caught and logged
-        - No exception propagated
+        - CancelledError re-raised immediately without logging
+        - No I/O operations during cancellation (prevents closed file errors)
         """
         service_effect._service_running = True
 
         # Mock sleep to raise CancelledError
         with patch("asyncio.sleep", side_effect=asyncio.CancelledError):
             with patch.object(service_effect, "_log_info") as mock_log_info:
-                await service_effect._health_monitor_loop()
+                with pytest.raises(asyncio.CancelledError):
+                    await service_effect._health_monitor_loop()
 
-        # Check that cancellation was logged
+        # Check that cancellation was NOT logged (to prevent closed file errors)
         cancellation_logged = any(
             "cancelled" in str(call_args).lower()
             for call_args in mock_log_info.call_args_list
         )
-        assert cancellation_logged
+        assert (
+            not cancellation_logged
+        ), "Should not log during cancellation to avoid closed file errors"
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_handles_exceptions(
@@ -1100,10 +1109,12 @@ class TestShutdownIntegration:
         - Health task cancelled
         - No errors
         """
-        # Create mock health task
-        health_task = Mock()
-        health_task.done = Mock(return_value=False)
-        health_task.cancel = Mock()
+
+        # Create a real asyncio task instead of a mock (asyncio tasks must be awaitable)
+        async def long_health_check():
+            await asyncio.sleep(10)
+
+        health_task = asyncio.create_task(long_health_check())
 
         service_effect._service_running = True
         service_effect._health_task = health_task
@@ -1112,8 +1123,11 @@ class TestShutdownIntegration:
 
         await service_effect.stop_service_mode()
 
+        # Give event loop time to process cancellation
+        await asyncio.sleep(0.01)
+
         # Health task should be cancelled
-        assert health_task.cancel.called
+        assert health_task.cancelled()
 
     @pytest.mark.asyncio
     async def test_resource_cleanup(

@@ -13,6 +13,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelFSMTransitionCondition(BaseModel):
     """
@@ -21,6 +23,12 @@ class ModelFSMTransitionCondition(BaseModel):
     Defines condition types, expressions, and validation logic
     for determining valid state transitions.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Subcontract version (auto-generated if not provided)",
+    )
 
     condition_name: str = Field(
         default=...,

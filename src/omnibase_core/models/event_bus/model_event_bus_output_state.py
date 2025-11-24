@@ -39,7 +39,8 @@ class ModelEventBusOutputState(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True, extra="forbid")
     version: ModelSemVer = Field(
-        default=..., description="Schema version for output state (matches input)"
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Schema version for output state (matches input)",
     )
     status: EnumOnexStatus = Field(
         default=..., description="Execution status with business context"

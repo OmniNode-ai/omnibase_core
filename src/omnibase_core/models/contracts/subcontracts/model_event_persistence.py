@@ -8,6 +8,8 @@ Model for event persistence configuration in the ONEX event-driven architecture 
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelEventPersistence(BaseModel):
     """
@@ -16,6 +18,12 @@ class ModelEventPersistence(BaseModel):
     Defines event storage, replay capabilities,
     and historical event management policies.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     persistence_enabled: bool = Field(
         default=True,

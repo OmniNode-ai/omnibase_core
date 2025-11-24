@@ -97,13 +97,10 @@ class ModelNodeMetadataBlock(BaseModel):
         StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),
     ] = Field(default=DEFAULT_SCHEMA_VERSION)
     name: Annotated[str, StringConstraints(min_length=1)]
-    version: ModelSemVer = Field(default=ModelSemVer(major=0, minor=1, patch=0))
-    uuid: Annotated[
-        str,
-        StringConstraints(
-            pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-        ),
-    ]
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version",
+    )
     author: Annotated[str, StringConstraints(min_length=1)]
     created_at: Annotated[str, StringConstraints(min_length=1)]
     last_modified_at: Annotated[str, StringConstraints(min_length=1)] = Field(

@@ -17,11 +17,19 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 from .model_node_progress import ModelNodeProgress
 
 
 class ModelProgressStatus(BaseModel):
     """Overall workflow progress status."""
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     workflow_id: UUID = Field(default_factory=uuid4, description="Workflow identifier")
 

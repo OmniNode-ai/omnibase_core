@@ -7,6 +7,10 @@ This module tests the generic node status model for common use.
 import pytest
 
 from omnibase_core.models.core.model_node_status import ModelNodeStatus
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelNodeStatus:
@@ -14,7 +18,7 @@ class TestModelNodeStatus:
 
     def test_create_node_status(self):
         """Test creating a ModelNodeStatus instance."""
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
         assert status is not None
         assert isinstance(status, ModelNodeStatus)
 
@@ -22,12 +26,12 @@ class TestModelNodeStatus:
         """Test that ModelNodeStatus inherits from BaseModel."""
         from pydantic import BaseModel
 
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
         assert isinstance(status, BaseModel)
 
     def test_node_status_serialization(self):
         """Test ModelNodeStatus serialization."""
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
 
         data = status.model_dump()
         assert isinstance(data, dict)
@@ -41,7 +45,7 @@ class TestModelNodeStatus:
 
     def test_node_status_json_serialization(self):
         """Test ModelNodeStatus JSON serialization."""
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
 
         json_data = status.model_dump_json()
         assert isinstance(json_data, str)
@@ -49,7 +53,7 @@ class TestModelNodeStatus:
 
     def test_node_status_roundtrip(self):
         """Test serialization and deserialization roundtrip."""
-        original_status = ModelNodeStatus()
+        original_status = ModelNodeStatus(version=DEFAULT_VERSION)
 
         # Serialize
         data = original_status.model_dump()
@@ -62,15 +66,15 @@ class TestModelNodeStatus:
 
     def test_node_status_equality(self):
         """Test ModelNodeStatus equality."""
-        status1 = ModelNodeStatus()
-        status2 = ModelNodeStatus()
+        status1 = ModelNodeStatus(version=DEFAULT_VERSION)
+        status2 = ModelNodeStatus(version=DEFAULT_VERSION)
 
         # Empty models should be equal
         assert status1 == status2
 
     def test_node_status_hash(self):
         """Test ModelNodeStatus hashing."""
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
 
         # Pydantic models are not hashable by default
         # Test that we can access the model for hashing purposes
@@ -80,7 +84,7 @@ class TestModelNodeStatus:
 
     def test_node_status_str(self):
         """Test ModelNodeStatus string representation."""
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
 
         str_repr = str(status)
         assert isinstance(str_repr, str)
@@ -89,7 +93,7 @@ class TestModelNodeStatus:
 
     def test_node_status_repr(self):
         """Test ModelNodeStatus repr representation."""
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
 
         repr_str = repr(status)
         assert isinstance(repr_str, str)
@@ -97,7 +101,7 @@ class TestModelNodeStatus:
 
     def test_node_status_attributes(self):
         """Test ModelNodeStatus attributes."""
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
 
         # Should have model_dump method
         assert hasattr(status, "model_dump")
@@ -110,7 +114,7 @@ class TestModelNodeStatus:
     def test_node_status_validation(self):
         """Test ModelNodeStatus validation."""
         # Valid empty model
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
         assert status is not None
 
         # Should accept empty dict
@@ -119,7 +123,7 @@ class TestModelNodeStatus:
 
     def test_node_status_metadata(self):
         """Test ModelNodeStatus metadata."""
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
 
         # Should have model_fields
         assert hasattr(status, "model_fields")
@@ -141,7 +145,7 @@ class TestModelNodeStatus:
 
     def test_node_status_copy(self):
         """Test ModelNodeStatus copying."""
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
 
         # Should be able to create a copy
         copied_status = status.model_copy()
@@ -151,7 +155,7 @@ class TestModelNodeStatus:
 
     def test_node_status_immutability(self):
         """Test ModelNodeStatus immutability."""
-        status = ModelNodeStatus()
+        status = ModelNodeStatus(version=DEFAULT_VERSION)
 
         # Should be immutable by default
         original_data = status.model_dump()

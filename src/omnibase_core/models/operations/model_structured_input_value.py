@@ -34,7 +34,7 @@ class ModelStructuredInputValue(BaseModel):
         description="Structured data with field definitions",
     )
     schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Schema version for the structured data",
     )
     metadata: dict[str, Any] = Field(

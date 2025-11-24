@@ -15,11 +15,17 @@ from pydantic import BaseModel
 class ModelWorkflowDefinitionMetadata(BaseModel):
     """Metadata for a workflow definition."""
 
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
+
     workflow_name: str = Field(default=..., description="Name of the workflow")
 
     workflow_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Version of the workflow",
+        ...,  # REQUIRED - specify in contract
+        description="Version of the workflow (MUST be provided in YAML contract)",
     )
 
     description: str = Field(default=..., description="Description of the workflow")

@@ -13,6 +13,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelStateValidation(BaseModel):
     """
@@ -21,6 +23,12 @@ class ModelStateValidation(BaseModel):
     Defines validation rules, integrity checks,
     and consistency verification for state data.
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     validation_enabled: bool = Field(
         default=True,

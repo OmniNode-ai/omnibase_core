@@ -88,9 +88,8 @@ class ModelStateContract(BaseModel):
 
     # Core contract metadata
     contract_version: ModelSemVer = Field(
-        default=STATE_CONTRACT_SCHEMA_VERSION,
+        ...,  # REQUIRED - specify in contract
         description="Version of the contract schema",
-        json_schema_extra={"example": "1.0.0"},
     )
 
     node_name: str = Field(
@@ -100,7 +99,7 @@ class ModelStateContract(BaseModel):
     )
 
     node_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Version of the node",
         json_schema_extra={"example": "1.0.0"},
     )

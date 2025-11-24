@@ -58,6 +58,6 @@ class ModelBlockPlacementPolicy(BaseModel):
         description="Enforce that the metadata block is at the top (after shebang/license header, if allowed).",
     )
     placement_policy_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Version of the placement policy.",
     )

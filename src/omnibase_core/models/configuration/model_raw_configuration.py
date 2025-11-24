@@ -25,8 +25,8 @@ class ModelRawConfiguration(BaseModel):
     before validation and conversion to service registry configuration.
     """
 
-    configuration_version: ModelSemVer | None = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+    configuration_version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
         description="Configuration schema version",
     )
 

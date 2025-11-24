@@ -15,6 +15,7 @@ from omnibase_core.enums.enum_response_header_transformation_type import (
 from omnibase_core.models.contracts.subcontracts.model_base_header_transformation import (
     ModelBaseHeaderTransformation,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelResponseHeaderRule(ModelBaseHeaderTransformation):
@@ -30,6 +31,12 @@ class ModelResponseHeaderRule(ModelBaseHeaderTransformation):
     - case_sensitive
     - priority
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     header_name: str = Field(
         ...,

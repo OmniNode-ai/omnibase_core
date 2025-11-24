@@ -56,6 +56,12 @@ class ModelRoutingSubcontract(BaseModel):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
+
     # Core routing configuration
     routing_id: UUID = Field(
         default_factory=uuid4,
@@ -85,7 +91,9 @@ class ModelRoutingSubcontract(BaseModel):
 
     # Load balancing configuration
     load_balancing: ModelLoadBalancing = Field(
-        default_factory=ModelLoadBalancing,
+        default_factory=lambda: ModelLoadBalancing(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Load balancing configuration",
     )
 
@@ -97,13 +105,17 @@ class ModelRoutingSubcontract(BaseModel):
 
     # Request/Response transformation
     transformation: ModelRequestTransformation = Field(
-        default_factory=ModelRequestTransformation,
+        default_factory=lambda: ModelRequestTransformation(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Request transformation configuration",
     )
 
     # Routing metrics and monitoring
     metrics: ModelRoutingMetrics = Field(
-        default_factory=ModelRoutingMetrics,
+        default_factory=lambda: ModelRoutingMetrics(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Routing metrics configuration",
     )
 

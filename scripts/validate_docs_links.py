@@ -11,19 +11,19 @@ Checks:
 
 import re
 import sys
-from pathlib import Path
-from typing import Dict, List, Set, Tuple
 from collections import defaultdict
+from pathlib import Path
+from typing import Any
 
 # Base directory
 BASE_DIR = Path(__file__).parent.parent
 DOCS_DIR = BASE_DIR / "docs"
 
 # Markdown link pattern: [text](path) or [text](path#anchor)
-MD_LINK_PATTERN = re.compile(r'\[([^\]]+)\]\(([^)]+\.md[^)]*)\)')
+MD_LINK_PATTERN = re.compile(r"\[([^\]]+)\]\(([^)]+\.md[^)]*)\)")
 
 # Heading anchor pattern (for validating #section-name links)
-HEADING_PATTERN = re.compile(r'^#{1,6}\s+(.+)$', re.MULTILINE)
+HEADING_PATTERN = re.compile(r"^#{1,6}\s+(.+)$", re.MULTILINE)
 
 
 def normalize_anchor(heading: str) -> str:
@@ -34,16 +34,16 @@ def normalize_anchor(heading: str) -> str:
     # 3. Remove special characters except hyphens
     # 4. Remove leading/trailing hyphens
     anchor = heading.lower()
-    anchor = re.sub(r'[^\w\s-]', '', anchor)
-    anchor = re.sub(r'\s+', '-', anchor)
-    anchor = anchor.strip('-')
+    anchor = re.sub(r"[^\w\s-]", "", anchor)
+    anchor = re.sub(r"\s+", "-", anchor)
+    anchor = anchor.strip("-")
     return anchor
 
 
-def extract_headings(file_path: Path) -> Set[str]:
+def extract_headings(file_path: Path) -> set[str]:
     """Extract all heading anchors from a markdown file."""
     try:
-        content = file_path.read_text(encoding='utf-8')
+        content = file_path.read_text(encoding="utf-8")
         headings = HEADING_PATTERN.findall(content)
         return {normalize_anchor(h) for h in headings}
     except Exception as e:
@@ -51,7 +51,7 @@ def extract_headings(file_path: Path) -> Set[str]:
         return set()
 
 
-def find_all_md_files() -> List[Path]:
+def find_all_md_files() -> list[Path]:
     """Find all markdown files in the repository."""
     md_files = []
 
@@ -67,15 +67,15 @@ def find_all_md_files() -> List[Path]:
     return sorted(md_files)
 
 
-def extract_links(file_path: Path) -> List[Tuple[int, str, str]]:
+def extract_links(file_path: Path) -> list[tuple[int, str, str]]:
     """Extract all markdown links from a file.
 
     Returns:
         List of (line_number, link_text, link_path) tuples
     """
     try:
-        content = file_path.read_text(encoding='utf-8')
-        lines = content.split('\n')
+        content = file_path.read_text(encoding="utf-8")
+        lines = content.split("\n")
 
         links = []
         for line_num, line in enumerate(lines, start=1):
@@ -90,26 +90,26 @@ def extract_links(file_path: Path) -> List[Tuple[int, str, str]]:
         return []
 
 
-def resolve_link_path(source_file: Path, link_path: str) -> Tuple[Path, str]:
+def resolve_link_path(source_file: Path, link_path: str) -> tuple[Path, str]:
     """Resolve a link path relative to source file.
 
     Returns:
         (resolved_file_path, anchor)
     """
     # Split anchor if present
-    if '#' in link_path:
-        file_part, anchor = link_path.split('#', 1)
+    if "#" in link_path:
+        file_part, anchor = link_path.split("#", 1)
     else:
         file_part, anchor = link_path, ""
 
     # Skip external links
-    if file_part.startswith(('http://', 'https://', 'mailto:')):
+    if file_part.startswith(("http://", "https://", "mailto:")):
         return None, ""
 
     # Resolve relative path
-    if file_part.startswith('/'):
+    if file_part.startswith("/"):
         # Absolute from repo root
-        resolved = BASE_DIR / file_part.lstrip('/')
+        resolved = BASE_DIR / file_part.lstrip("/")
     else:
         # Relative to source file
         resolved = (source_file.parent / file_part).resolve()
@@ -117,7 +117,7 @@ def resolve_link_path(source_file: Path, link_path: str) -> Tuple[Path, str]:
     return resolved, anchor
 
 
-def validate_links() -> Dict[str, List[Dict]]:
+def validate_links() -> dict[str, list[dict]]:
     """Validate all documentation links.
 
     Returns:
@@ -152,27 +152,35 @@ def validate_links() -> Dict[str, List[Dict]]:
             # Check if target file exists
             if not target_file.exists():
                 broken_links += 1
-                issues['broken_file'].append({
-                    'source': str(source_file.relative_to(BASE_DIR)),
-                    'line': line_num,
-                    'link_text': link_text,
-                    'link_path': link_path,
-                    'target': str(target_file.relative_to(BASE_DIR)) if BASE_DIR in target_file.parents else str(target_file),
-                    'issue': 'File does not exist'
-                })
+                issues["broken_file"].append(
+                    {
+                        "source": str(source_file.relative_to(BASE_DIR)),
+                        "line": line_num,
+                        "link_text": link_text,
+                        "link_path": link_path,
+                        "target": (
+                            str(target_file.relative_to(BASE_DIR))
+                            if BASE_DIR in target_file.parents
+                            else str(target_file)
+                        ),
+                        "issue": "File does not exist",
+                    }
+                )
                 continue
 
             # Check if target is a directory instead of a file
             if target_file.is_dir():
                 broken_links += 1
-                issues['link_to_directory'].append({
-                    'source': str(source_file.relative_to(BASE_DIR)),
-                    'line': line_num,
-                    'link_text': link_text,
-                    'link_path': link_path,
-                    'target': str(target_file.relative_to(BASE_DIR)),
-                    'issue': 'Link points to directory instead of file'
-                })
+                issues["link_to_directory"].append(
+                    {
+                        "source": str(source_file.relative_to(BASE_DIR)),
+                        "line": line_num,
+                        "link_text": link_text,
+                        "link_path": link_path,
+                        "target": str(target_file.relative_to(BASE_DIR)),
+                        "issue": "Link points to directory instead of file",
+                    }
+                )
                 continue
 
             # Check anchor if present
@@ -185,16 +193,20 @@ def validate_links() -> Dict[str, List[Dict]]:
 
                 if anchor not in headings:
                     broken_links += 1
-                    issues['broken_anchor'].append({
-                        'source': str(source_file.relative_to(BASE_DIR)),
-                        'line': line_num,
-                        'link_text': link_text,
-                        'link_path': link_path,
-                        'target': str(target_file.relative_to(BASE_DIR)),
-                        'anchor': anchor,
-                        'issue': f'Anchor #{anchor} not found',
-                        'available_anchors': sorted(headings)[:5]  # Show first 5 available
-                    })
+                    issues["broken_anchor"].append(
+                        {
+                            "source": str(source_file.relative_to(BASE_DIR)),
+                            "line": line_num,
+                            "link_text": link_text,
+                            "link_path": link_path,
+                            "target": str(target_file.relative_to(BASE_DIR)),
+                            "anchor": anchor,
+                            "issue": f"Anchor #{anchor} not found",
+                            "available_anchors": sorted(headings)[
+                                :5
+                            ],  # Show first 5 available
+                        }
+                    )
 
     print(f"✅ Total links checked: {total_links}")
     print(f"{'❌' if broken_links > 0 else '✅'} Broken links: {broken_links}\n")
@@ -202,7 +214,7 @@ def validate_links() -> Dict[str, List[Dict]]:
     return dict(issues)
 
 
-def print_report(issues: Dict[str, List[Dict]]):
+def print_report(issues: dict[str, list[dict]]):
     """Print validation report."""
 
     if not issues:
@@ -215,36 +227,40 @@ def print_report(issues: Dict[str, List[Dict]]):
     print()
 
     # Broken file references
-    if 'broken_file' in issues:
+    if "broken_file" in issues:
         print(f"🔴 BROKEN FILE REFERENCES ({len(issues['broken_file'])})")
         print("-" * 80)
-        for issue in issues['broken_file']:
+        for issue in issues["broken_file"]:
             print(f"\n📄 {issue['source']}:{issue['line']}")
             print(f"   Link: [{issue['link_text']}]({issue['link_path']})")
             print(f"   ❌ {issue['issue']}: {issue['target']}")
         print()
 
     # Links to directories
-    if 'link_to_directory' in issues:
+    if "link_to_directory" in issues:
         print(f"🟡 LINKS TO DIRECTORIES ({len(issues['link_to_directory'])})")
         print("-" * 80)
-        for issue in issues['link_to_directory']:
+        for issue in issues["link_to_directory"]:
             print(f"\n📄 {issue['source']}:{issue['line']}")
             print(f"   Link: [{issue['link_text']}]({issue['link_path']})")
             print(f"   ❌ {issue['issue']}: {issue['target']}")
-            print(f"   💡 Suggestion: Link to a specific file like {issue['target']}/README.md or {issue['target']}/index.md")
+            print(
+                f"   💡 Suggestion: Link to a specific file like {issue['target']}/README.md or {issue['target']}/index.md"
+            )
         print()
 
     # Broken anchor references
-    if 'broken_anchor' in issues:
+    if "broken_anchor" in issues:
         print(f"🟠 BROKEN ANCHOR REFERENCES ({len(issues['broken_anchor'])})")
         print("-" * 80)
-        for issue in issues['broken_anchor']:
+        for issue in issues["broken_anchor"]:
             print(f"\n📄 {issue['source']}:{issue['line']}")
             print(f"   Link: [{issue['link_text']}]({issue['link_path']})")
             print(f"   ❌ {issue['issue']} in {issue['target']}")
-            if issue.get('available_anchors'):
-                print(f"   ℹ️  Available anchors (first 5): {', '.join(issue['available_anchors'])}")
+            if issue.get("available_anchors"):
+                print(
+                    f"   Info: Available anchors (first 5): {', '.join(issue['available_anchors'])}"
+                )
         print()
 
     # Summary

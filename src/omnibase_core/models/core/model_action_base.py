@@ -56,7 +56,7 @@ class ModelActionBase(BaseModel):
 
     # MCP/GraphQL compatibility with strong typing
     mcp_schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="MCP schema version for current standards",
     )
     graphql_compatible: bool = Field(

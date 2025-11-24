@@ -33,7 +33,7 @@ class ModelHealthMetadata(BaseModel):
     )
 
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Health system version",
     )
 
@@ -120,6 +120,9 @@ class ModelHealthMetadata(BaseModel):
     @classmethod
     def create_production(cls, **kwargs: Any) -> "ModelHealthMetadata":
         """Create production health metadata configuration"""
+        # Provide default version if not specified
+        if "version" not in kwargs:
+            kwargs["version"] = ModelSemVer(major=1, minor=0, patch=0)
         return cls(
             environment="production",
             check_interval_seconds=30,
@@ -132,6 +135,9 @@ class ModelHealthMetadata(BaseModel):
     @classmethod
     def create_development(cls, **kwargs: Any) -> "ModelHealthMetadata":
         """Create development health metadata configuration"""
+        # Provide default version if not specified
+        if "version" not in kwargs:
+            kwargs["version"] = ModelSemVer(major=1, minor=0, patch=0)
         return cls(
             environment="development",
             check_interval_seconds=60,
@@ -144,6 +150,9 @@ class ModelHealthMetadata(BaseModel):
     @classmethod
     def create_maintenance_mode(cls, **kwargs: Any) -> "ModelHealthMetadata":
         """Create maintenance mode health metadata configuration"""
+        # Provide default version if not specified
+        if "version" not in kwargs:
+            kwargs["version"] = ModelSemVer(major=1, minor=0, patch=0)
         return cls(
             maintenance_mode=True,
             auto_healing_enabled=False,

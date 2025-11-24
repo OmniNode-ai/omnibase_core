@@ -79,7 +79,11 @@ class ModelWorkflowOutputs(BaseModel):
             value: Output field value
         """
         if self.custom_outputs is None:
-            self.custom_outputs = ModelCustomFields()
+            from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+            self.custom_outputs = ModelCustomFields(
+                schema_version=ModelSemVer(major=1, minor=0, patch=0)
+            )
         self.custom_outputs.set_field(key, value)
 
     def get_output(self, key: str, default: Any = None) -> Any:

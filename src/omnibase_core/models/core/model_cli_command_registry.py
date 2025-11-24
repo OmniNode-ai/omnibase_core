@@ -222,10 +222,13 @@ class ModelCliCommandRegistry(BaseModel):
             node_ref = ModelNodeReference.create_local(node_name=node_name)
 
             # Create event type
+            from omnibase_core.models.primitives.model_semver import ModelSemVer
+
             event_type = ModelEventType(
                 event_name=event_type_name,
                 namespace="onex",
                 description=f"Event for {command_name_str} command",
+                schema_version=ModelSemVer(major=1, minor=0, patch=0),
             )
 
             # Parse arguments (simplified for now)

@@ -60,6 +60,12 @@ class ModelConfigurationSubcontract(BaseModel):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
+
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
@@ -82,8 +88,8 @@ class ModelConfigurationSubcontract(BaseModel):
     )
 
     config_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Version of the configuration schema",
+        ...,  # REQUIRED - specify in contract
+        description="Version of the configuration schema (MUST be provided in YAML contract)",
     )
 
     # Configuration sources
@@ -117,7 +123,9 @@ class ModelConfigurationSubcontract(BaseModel):
 
     # Validation and constraints
     validation_rules: ModelConfigurationValidation = Field(
-        default_factory=ModelConfigurationValidation,
+        default_factory=lambda: ModelConfigurationValidation(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Configuration validation rules and constraints",
     )
 
@@ -382,6 +390,7 @@ class ModelConfigurationSubcontract(BaseModel):
             ModelConfigurationSource instance
         """
         return ModelConfigurationSource(
+            version=ModelSemVer(major=1, minor=0, patch=0),
             source_id=source_id or uuid4(),
             source_type=source_type,
             source_path=source_path,

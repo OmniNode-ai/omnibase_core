@@ -32,7 +32,12 @@ except ImportError:
 T = TypeVar("T", bound=ModelSecureCredentials)
 
 # Exclude T from wildcard imports
-__all__ = ["ModelSecretManager"]
+__all__ = [
+    "ModelSecretManager",
+    "get_secret_manager",
+    "init_secret_manager",
+    "init_secret_manager_from_manager",
+]
 
 
 class ModelSecretManager(BaseModel):

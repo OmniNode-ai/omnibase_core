@@ -9,6 +9,7 @@ Following test plan: MIXIN_NODE_SERVICE_TEST_PLAN.md
 
 import asyncio
 import signal
+import time
 from datetime import datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
@@ -534,7 +535,7 @@ class TestModelServiceEffectHealthMonitoring:
         """Test service health reporting when healthy."""
         # Set service as running
         service_effect._service_running = True
-        service_effect._start_time = asyncio.get_event_loop().time()
+        service_effect._start_time = time.time()  # Use time.time() for non-async tests
         service_effect._total_invocations = 100
         service_effect._successful_invocations = 95
         service_effect._failed_invocations = 5
@@ -553,7 +554,7 @@ class TestModelServiceEffectHealthMonitoring:
         """Test service health reporting when shutdown is requested."""
         service_effect._service_running = True
         service_effect._shutdown_requested = True
-        service_effect._start_time = asyncio.get_event_loop().time()
+        service_effect._start_time = time.time()  # Use time.time() for non-async tests
 
         health = service_effect.get_service_health()
 
@@ -563,7 +564,7 @@ class TestModelServiceEffectHealthMonitoring:
     def test_get_service_health_with_active_invocations(self, service_effect):
         """Test health reporting includes active invocations count."""
         service_effect._service_running = True
-        service_effect._start_time = asyncio.get_event_loop().time()
+        service_effect._start_time = time.time()  # Use time.time() for non-async tests
         service_effect._active_invocations.add(uuid4())
         service_effect._active_invocations.add(uuid4())
 

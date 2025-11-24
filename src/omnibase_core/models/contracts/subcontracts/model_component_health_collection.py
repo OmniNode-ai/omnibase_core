@@ -13,10 +13,17 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.models.contracts.subcontracts.model_component_health import (
     ModelComponentHealth,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelComponentHealthCollection(BaseModel):
     """Collection of component health statuses."""
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     components: list[ModelComponentHealth] = Field(
         default_factory=list, description="List of component health statuses"

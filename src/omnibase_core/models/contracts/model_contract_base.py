@@ -58,7 +58,7 @@ class ModelContractBase(BaseModel, ABC):
     )
 
     version: ModelSemVer = Field(
-        default=...,
+        ...,  # REQUIRED - specify in contract
         description="Semantic version following SemVer specification",
     )
 

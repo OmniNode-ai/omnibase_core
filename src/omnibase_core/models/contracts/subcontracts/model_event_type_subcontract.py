@@ -52,6 +52,12 @@ class ModelEventTypeSubcontract(BaseModel):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (auto-generated as 1.0.0 if not provided)",
+    )
+
     # Primary event configuration
     primary_events: list[str] = Field(
         default=...,

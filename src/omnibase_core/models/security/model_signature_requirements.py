@@ -10,8 +10,9 @@ This model defines the signature requirements evaluated by trust policies.
 
 from pydantic import BaseModel
 
+from omnibase_core.models.core.model_trust_level import ModelTrustLevel
+
 from .model_certificate_validation_level import ModelCertificateValidationLevel
-from .model_trust_level import ModelTrustLevel
 
 
 class ModelSignatureRequirements(BaseModel):
@@ -34,7 +35,11 @@ class ModelSignatureRequirements(BaseModel):
         description="Required compliance tags",
     )
     trust_level: ModelTrustLevel = Field(
-        default_factory=lambda: ModelTrustLevel(level="standard"),
+        default_factory=lambda: ModelTrustLevel(
+            trust_score=0.6,
+            trust_category="medium",
+            display_name="Standard",
+        ),
         description="Required trust level",
     )
     encryption_required: bool = Field(

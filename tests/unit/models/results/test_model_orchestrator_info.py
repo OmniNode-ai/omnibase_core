@@ -68,9 +68,11 @@ class TestModelOrchestratorInfoFieldValidation:
         errors = exc_info.value.errors()
         error_fields = {error["loc"][0] for error in errors}
 
+        # After PR #88: orchestrator_id, orchestrator_type, and orchestrator_version are all required
+        # (default_factory was removed from version fields)
         assert "orchestrator_id" in error_fields
         assert "orchestrator_type" in error_fields
-        assert "orchestrator_version" in error_fields
+        assert "orchestrator_version" in error_fields  # Now required (no default)
 
     def test_orchestrator_id_must_be_uuid(self):
         """Test that orchestrator_id must be a valid UUID."""

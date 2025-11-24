@@ -13,6 +13,10 @@ from pydantic import ValidationError
 
 from omnibase_core.models.core.model_container import ModelContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelContainer:
@@ -320,6 +324,7 @@ class TestModelContainerSerialization:
     def test_json_deserialization(self):
         """Test JSON deserialization."""
         json_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
             "value": ["item1", "item2", "item3"],
             "container_type": "list_container",
             "source": "deserialization_test",

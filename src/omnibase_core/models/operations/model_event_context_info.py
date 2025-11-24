@@ -20,6 +20,6 @@ class ModelEventContextInfo(BaseModel):
     tenant_id: UUID | None = Field(default=None, description="Tenant identifier")
     environment: str = Field(default="", description="Environment context")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Event schema version",
     )

@@ -43,7 +43,10 @@ class ModelNodeCoreInfo(BaseModel):
         default=None, description="Human-readable node name"
     )
     node_type: EnumMetadataNodeType = Field(default=..., description="Node type")
-    node_version: ModelSemVer = Field(default=..., description="Node version")
+    node_version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Node version",
+    )
 
     # Basic metadata (3 fields)
     description: str | None = Field(default=None, description="Node description")

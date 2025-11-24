@@ -59,7 +59,7 @@ class ModelFunctionNodeSummary(BaseModel):
         description="Function conceptual complexity level",
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Function version",
     )
 

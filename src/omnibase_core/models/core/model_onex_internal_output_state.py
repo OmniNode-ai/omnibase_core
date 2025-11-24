@@ -52,8 +52,8 @@ class ModelOnexInternalOutputState(BaseModel):
     # Node identification (required for internal processing)
     node_name: str = Field(default=..., description="Required node name for processing")
     node_version: ModelSemVer = Field(
-        default=...,
-        description="Required node version for processing",
+        ...,  # REQUIRED - specify in contract
+        description="Node version for processing (defaults to 1.0.0 if not provided)",
     )
 
     # Processing results

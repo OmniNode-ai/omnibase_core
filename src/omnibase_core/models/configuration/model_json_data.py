@@ -37,7 +37,7 @@ class ModelJsonData(BaseModel):
 
     # Optional metadata for validation and context
     schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="JSON data schema version",
     )
 

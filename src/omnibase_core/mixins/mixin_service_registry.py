@@ -23,7 +23,9 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 logger = logging.getLogger(__name__)
 
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+if TYPE_CHECKING:
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
 from omnibase_core.models.mixins.model_service_registry_entry import (
     ModelServiceRegistryEntry,
 )
@@ -157,6 +159,8 @@ class MixinServiceRegistry:
 
     def _send_discovery_request(self) -> None:
         """Send a discovery request to find active tools."""
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
         if not hasattr(self, "event_bus") or not self.event_bus:
             return
 
@@ -313,6 +317,8 @@ class MixinServiceRegistry:
 
     def _send_introspection_request(self, node_id: UUID | str) -> None:
         """Send introspection request to a specific node."""
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
         if not hasattr(self, "event_bus") or not self.event_bus:
             return
 
@@ -409,6 +415,8 @@ class MixinServiceRegistry:
 
     def _handle_discovery_request(self, envelope: "ModelEventEnvelope[Any]") -> None:
         """Handle discovery requests from other hubs/services."""
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
         try:
             # Extract event data from envelope (ENVELOPE-ONLY FLOW)
             event_data = (

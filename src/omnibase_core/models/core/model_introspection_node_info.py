@@ -21,7 +21,10 @@ class ModelIntrospectionNodeInfo(BaseModel):
     """Node information for introspection metadata."""
 
     node_name: str = Field(description="Name of the node")
-    node_version: ModelSemVer = Field(description="Version of the node as ModelSemVer")
+    node_version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Version of the node as ModelSemVer",
+    )
     description: str = Field(description="Description of the node")
     author: str = Field(default="ONEX System", description="Author of the node")
     tool_type: str = Field(description="Type of tool")

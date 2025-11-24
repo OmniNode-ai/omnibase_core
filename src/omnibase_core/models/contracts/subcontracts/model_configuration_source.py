@@ -12,9 +12,17 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelConfigurationSource(BaseModel):
     """Configuration source specification with priority and validation."""
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     model_config = {
         "extra": "ignore",

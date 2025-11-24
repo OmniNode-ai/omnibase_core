@@ -53,13 +53,19 @@ class ModelHealthCheckSubcontract(BaseModel):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
+
     subcontract_name: str = Field(
         default="health_check_subcontract", description="Name of the subcontract"
     )
 
     subcontract_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Version of the subcontract",
+        ...,  # REQUIRED - specify in contract
+        description="Version of the subcontract (MUST be provided in YAML contract)",
     )
 
     applicable_node_types: list[str] = Field(

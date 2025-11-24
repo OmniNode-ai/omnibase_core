@@ -39,7 +39,7 @@ class ModelNodeServiceConfig(BaseModel):
         default=..., description="Name of the ONEX node", min_length=1
     )
     node_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Version of the node",
     )
     service_mode: EnumServiceMode = Field(

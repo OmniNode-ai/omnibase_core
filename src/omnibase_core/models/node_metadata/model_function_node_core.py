@@ -77,7 +77,7 @@ class ModelFunctionNodeCore(BaseModel):
         description="Function status (active, deprecated, disabled)",
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Function version",
     )
 
@@ -147,6 +147,7 @@ class ModelFunctionNodeCore(BaseModel):
             function_display_name=name,
             description=description,
             function_type=function_type,
+            version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
     @classmethod
@@ -171,6 +172,7 @@ class ModelFunctionNodeCore(BaseModel):
             description=description,
             parameters=parameters,
             return_type=return_type,
+            version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
     @property

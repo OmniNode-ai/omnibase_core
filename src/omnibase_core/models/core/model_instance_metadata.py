@@ -33,7 +33,7 @@ class ModelInstanceMetadata(BaseModel):
         pattern="^[a-z][a-z0-9-]*$",
     )
     node_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Node software version",
     )
     runtime_version: ModelSemVer | None = Field(

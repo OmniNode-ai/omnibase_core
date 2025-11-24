@@ -5,19 +5,25 @@ from pathlib import Path
 
 import pytest
 import yaml
+from pydantic import ValidationError
 
 from omnibase_core.models.docker.model_docker_compose_manifest import (
     ModelDockerComposeManifest,
-    ModelDockerConfigFile,
-    ModelDockerSecretFile,
-    ModelDockerService,
 )
+from omnibase_core.models.docker.model_docker_config_file import ModelDockerConfigFile
 from omnibase_core.models.docker.model_docker_network_config import (
     ModelDockerNetworkConfig,
 )
+from omnibase_core.models.docker.model_docker_secret_file import ModelDockerSecretFile
+from omnibase_core.models.docker.model_docker_service import ModelDockerService
 from omnibase_core.models.docker.model_docker_volume_config import (
     ModelDockerVolumeConfig,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelDockerComposeManifest:
@@ -27,7 +33,7 @@ class TestModelDockerComposeManifest:
         """Test creating empty manifest with defaults."""
         manifest = ModelDockerComposeManifest()
 
-        assert manifest.version == "3.8"
+        assert manifest.version == ModelSemVer(major=3, minor=8, patch=0)
         assert manifest.services == {}
         assert manifest.networks == {}
         assert manifest.volumes == {}
@@ -42,9 +48,11 @@ class TestModelDockerComposeManifest:
             image="python:3.12",
             ports=["8000:8000"],
             environment={"ENV": "production"},
+            version=DEFAULT_VERSION,
         )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service},
         )
 
@@ -54,23 +62,121 @@ class TestModelDockerComposeManifest:
 
     def test_version_validation_valid(self) -> None:
         """Test version validation with valid versions."""
-        valid_versions = ["3.8", "3", "2.4", "3.9", "2"]
+        valid_versions = [
+            ("3.8", ModelSemVer(major=3, minor=8, patch=0)),
+            ("3", ModelSemVer(major=3, minor=0, patch=0)),
+            ("2.4", ModelSemVer(major=2, minor=4, patch=0)),
+            ("3.9", ModelSemVer(major=3, minor=9, patch=0)),
+            ("2", ModelSemVer(major=2, minor=0, patch=0)),
+        ]
 
-        for version in valid_versions:
-            manifest = ModelDockerComposeManifest(version=version)
-            assert manifest.version == version
+        for version_str, expected_semver in valid_versions:
+            manifest = ModelDockerComposeManifest(version=version_str)
+            assert manifest.version == expected_semver
 
     def test_version_validation_invalid(self) -> None:
         """Test version validation with invalid versions."""
         invalid_versions = ["3.8.1beta", "v3.8", "latest", "3.x"]
 
         for version in invalid_versions:
-            with pytest.raises(ValueError, match="Invalid version format"):
+            with pytest.raises((ValidationError, ModelOnexError)):
                 ModelDockerComposeManifest(version=version)
+
+    def test_version_validation_numeric_types(self) -> None:
+        """Test version validation accepts and converts numeric types (int, float)."""
+        # Test integer input (common YAML pattern: version: 3)
+        manifest = ModelDockerComposeManifest(version=3)
+        assert manifest.version == ModelSemVer(major=3, minor=0, patch=0)
+
+        # Test float input (common YAML pattern: version: 3.8)
+        manifest = ModelDockerComposeManifest(version=3.8)
+        assert manifest.version == ModelSemVer(major=3, minor=8, patch=0)
+
+        # Test another float
+        manifest = ModelDockerComposeManifest(version=2.4)
+        assert manifest.version == ModelSemVer(major=2, minor=4, patch=0)
+
+    def test_version_validation_invalid_types(self) -> None:
+        """Test version validation rejects invalid types (None, bool, list, dict)."""
+        # Test None input - explicit error message
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Version cannot be None"
+        ):
+            ModelDockerComposeManifest(version=None)
+
+        # Test boolean input - must check before int since bool is subclass of int
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: bool"
+        ):
+            ModelDockerComposeManifest(version=True)
+
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: bool"
+        ):
+            ModelDockerComposeManifest(version=False)
+
+        # Test list input
+        with pytest.raises((ValidationError, ModelOnexError)):
+            ModelDockerComposeManifest(version=["3", "8"])
+
+        # Test dict input
+        with pytest.raises((ValidationError, ModelOnexError)):
+            ModelDockerComposeManifest(version={"major": 3, "minor": 8})
+
+        # Test tuple input (sequence type)
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: tuple"
+        ):
+            ModelDockerComposeManifest(version=(3, 8))
+
+        # Test set input (sequence type)
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: set"
+        ):
+            ModelDockerComposeManifest(version={3, 8})
+
+        # Test frozenset input (sequence type)
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: frozenset"
+        ):
+            ModelDockerComposeManifest(version=frozenset([3, 8]))
+
+        # Test bytes input (binary data)
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: bytes"
+        ):
+            ModelDockerComposeManifest(version=b"3.8")
+
+        # Test bytearray input (binary data)
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: bytearray"
+        ):
+            ModelDockerComposeManifest(version=bytearray(b"3.8"))
+
+        # Test complex number input
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: complex"
+        ):
+            ModelDockerComposeManifest(version=complex(3, 8))
+
+        # Test extreme numeric values (out of reasonable range)
+        with pytest.raises(
+            (ValidationError, ModelOnexError),
+            match="version components must be between -1000 and 1000",
+        ):
+            ModelDockerComposeManifest(version=9999)
+
+        with pytest.raises(
+            (ValidationError, ModelOnexError),
+            match="version components must be between -1000 and 1000",
+        ):
+            ModelDockerComposeManifest(version=-9999)
 
     def test_get_service_exists(self) -> None:
         """Test getting existing service."""
-        service = ModelDockerService(name="api", image="python:3.12")
+        service = ModelDockerService(
+            name="api", image="python:3.12", version=DEFAULT_VERSION
+        )
         manifest = ModelDockerComposeManifest(services={"api": service})
 
         retrieved = manifest.get_service("api")
@@ -81,15 +187,20 @@ class TestModelDockerComposeManifest:
         """Test getting non-existent service."""
         manifest = ModelDockerComposeManifest()
 
-        with pytest.raises(KeyError, match="Service 'api' not found"):
+        with pytest.raises(ModelOnexError, match="Service 'api' not found"):
             manifest.get_service("api")
 
     def test_get_all_services(self) -> None:
         """Test getting all services."""
-        service1 = ModelDockerService(name="api", image="python:3.12")
-        service2 = ModelDockerService(name="db", image="postgres:15")
+        service1 = ModelDockerService(
+            name="api", image="python:3.12", version=DEFAULT_VERSION
+        )
+        service2 = ModelDockerService(
+            name="db", image="postgres:15", version=DEFAULT_VERSION
+        )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service1, "db": service2},
         )
 
@@ -104,10 +215,14 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             depends_on={"db": {"condition": "service_healthy"}},
+            version=DEFAULT_VERSION,
         )
-        service2 = ModelDockerService(name="db", image="postgres:15")
+        service2 = ModelDockerService(
+            name="db", image="postgres:15", version=DEFAULT_VERSION
+        )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service1, "db": service2},
         )
 
@@ -120,14 +235,17 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             depends_on={"db": {"condition": "service_started"}},
+            version=DEFAULT_VERSION,
         )
         service2 = ModelDockerService(
             name="db",
             image="postgres:15",
             depends_on={"api": {"condition": "service_started"}},
+            version=DEFAULT_VERSION,
         )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service1, "db": service2},
         )
 
@@ -141,9 +259,12 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             networks=["undefined_network"],
+            version=DEFAULT_VERSION,
         )
 
-        with pytest.raises(ValueError, match="undefined network 'undefined_network'"):
+        with pytest.raises(
+            ModelOnexError, match="undefined network 'undefined_network'"
+        ):
             ModelDockerComposeManifest(services={"api": service})
 
     def test_validate_service_references_valid_network(self) -> None:
@@ -152,10 +273,12 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             networks=["app_network"],
+            version=DEFAULT_VERSION,
         )
         network = ModelDockerNetworkConfig(driver="bridge")
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service},
             networks={"app_network": network},
         )
@@ -168,9 +291,12 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             depends_on={"undefined_service": {"condition": "service_started"}},
+            version=DEFAULT_VERSION,
         )
 
-        with pytest.raises(ValueError, match="undefined service 'undefined_service'"):
+        with pytest.raises(
+            ModelOnexError, match="undefined service 'undefined_service'"
+        ):
             ModelDockerComposeManifest(services={"api": service})
 
     def test_detect_port_conflicts_no_conflicts(self) -> None:
@@ -179,14 +305,17 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             ports=["8000:8000"],
+            version=DEFAULT_VERSION,
         )
         service2 = ModelDockerService(
             name="db",
             image="postgres:15",
             ports=["5432:5432"],
+            version=DEFAULT_VERSION,
         )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service1, "db": service2},
         )
 
@@ -199,14 +328,17 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             ports=["8000:8000"],
+            version=DEFAULT_VERSION,
         )
         service2 = ModelDockerService(
             name="admin",
             image="python:3.12",
             ports=["8000:8080"],
+            version=DEFAULT_VERSION,
         )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service1, "admin": service2},
         )
 
@@ -227,6 +359,10 @@ services:
       - "8000:8000"
     environment:
       ENV: production
+    version:
+      major: 1
+      minor: 0
+      patch: 0
 networks:
   app_network:
     driver: bridge
@@ -237,13 +373,50 @@ volumes:
         yaml_path = tmp_path / "docker-compose.yaml"
         yaml_path.write_text(yaml_content)
 
-        manifest = ModelDockerComposeManifest.load_from_yaml(yaml_path)
+        manifest = ModelDockerComposeManifest.from_yaml(yaml_path)
 
-        assert manifest.version == "3.8"
+        assert manifest.version == ModelSemVer(major=3, minor=8, patch=0)
         assert "api" in manifest.services
         assert manifest.services["api"].image == "python:3.12"
         assert "app_network" in manifest.networks
         assert "data" in manifest.volumes
+
+    def test_load_from_yaml_numeric_version(self, tmp_path: Path) -> None:
+        """Test loading docker-compose.yaml with numeric version (YAML parses as int)."""
+        # YAML parsers often parse unquoted numbers as int/float
+        yaml_content = """
+version: 3
+services:
+  api:
+    image: python:3.12
+    version:
+      major: 1
+      minor: 0
+      patch: 0
+"""
+        yaml_path = tmp_path / "docker-compose.yaml"
+        yaml_path.write_text(yaml_content)
+
+        # This should work - YAML will parse "3" as int, validator converts to string
+        manifest = ModelDockerComposeManifest.from_yaml(yaml_path)
+        assert manifest.version == ModelSemVer(major=3, minor=0, patch=0)
+
+        # Test with float version
+        yaml_content_float = """
+version: 3.8
+services:
+  api:
+    image: python:3.12
+    version:
+      major: 1
+      minor: 0
+      patch: 0
+"""
+        yaml_path_float = tmp_path / "docker-compose-float.yaml"
+        yaml_path_float.write_text(yaml_content_float)
+
+        manifest_float = ModelDockerComposeManifest.from_yaml(yaml_path_float)
+        assert manifest_float.version == ModelSemVer(major=3, minor=8, patch=0)
 
     def test_load_from_yaml_with_configs_and_secrets(self, tmp_path: Path) -> None:
         """Test loading docker-compose.yaml with configs and secrets."""
@@ -252,6 +425,10 @@ version: "3.8"
 services:
   api:
     image: python:3.12
+    version:
+      major: 1
+      minor: 0
+      patch: 0
 configs:
   app_config:
     file: ./config.json
@@ -262,7 +439,7 @@ secrets:
         yaml_path = tmp_path / "docker-compose.yaml"
         yaml_path.write_text(yaml_content)
 
-        manifest = ModelDockerComposeManifest.load_from_yaml(yaml_path)
+        manifest = ModelDockerComposeManifest.from_yaml(yaml_path)
 
         assert "app_config" in manifest.configs
         assert manifest.configs["app_config"].file == "./config.json"
@@ -273,16 +450,25 @@ secrets:
         """Test loading from non-existent file."""
         yaml_path = tmp_path / "nonexistent.yaml"
 
-        with pytest.raises(FileNotFoundError):
-            ModelDockerComposeManifest.load_from_yaml(yaml_path)
+        with pytest.raises(ModelOnexError, match="YAML file not found"):
+            ModelDockerComposeManifest.from_yaml(yaml_path)
 
     def test_load_from_yaml_empty_file(self, tmp_path: Path) -> None:
         """Test loading from empty YAML file."""
         yaml_path = tmp_path / "empty.yaml"
         yaml_path.write_text("")
 
-        with pytest.raises(ValueError, match="Empty or invalid YAML"):
-            ModelDockerComposeManifest.load_from_yaml(yaml_path)
+        with pytest.raises(ModelOnexError, match="Empty or invalid YAML"):
+            ModelDockerComposeManifest.from_yaml(yaml_path)
+
+    def test_load_from_yaml_malformed(self, tmp_path: Path) -> None:
+        """Test loading from malformed YAML file."""
+        yaml_path = tmp_path / "malformed.yaml"
+        # Write invalid YAML syntax (unclosed bracket, invalid structure)
+        yaml_path.write_text("version: 3.8\nservices:\n  api:\n    image: [unclosed")
+
+        with pytest.raises(ModelOnexError, match="Failed to load YAML from"):
+            ModelDockerComposeManifest.from_yaml(yaml_path)
 
     def test_save_to_yaml_basic(self, tmp_path: Path) -> None:
         """Test saving basic manifest to YAML."""
@@ -291,6 +477,7 @@ secrets:
             image="python:3.12",
             ports=["8000:8000"],
             environment={"ENV": "production"},
+            version=DEFAULT_VERSION,
         )
         network = ModelDockerNetworkConfig(driver="bridge")
 
@@ -318,6 +505,7 @@ secrets:
         service = ModelDockerService(
             name="api",
             image="python:3.12",
+            version=DEFAULT_VERSION,
         )
         network = ModelDockerNetworkConfig(driver="bridge")
         volume = ModelDockerVolumeConfig(driver="local")
@@ -360,6 +548,10 @@ services:
       - "8000:8000"
     environment:
       ENV: production
+    version:
+      major: 1
+      minor: 0
+      patch: 0
 networks:
   app_network:
     driver: bridge
@@ -368,14 +560,14 @@ networks:
         yaml_path1.write_text(yaml_content)
 
         # Load
-        manifest1 = ModelDockerComposeManifest.load_from_yaml(yaml_path1)
+        manifest1 = ModelDockerComposeManifest.from_yaml(yaml_path1)
 
         # Save
         yaml_path2 = tmp_path / "output.yaml"
         manifest1.save_to_yaml(yaml_path2)
 
         # Load again
-        manifest2 = ModelDockerComposeManifest.load_from_yaml(yaml_path2)
+        manifest2 = ModelDockerComposeManifest.from_yaml(yaml_path2)
 
         # Compare
         assert manifest1.version == manifest2.version

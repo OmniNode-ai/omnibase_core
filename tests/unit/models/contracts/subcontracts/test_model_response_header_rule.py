@@ -13,6 +13,11 @@ Comprehensive test coverage for response header rule model including:
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.models.contracts.subcontracts.model_response_header_rule import (
     ModelResponseHeaderRule,
 )
@@ -24,6 +29,7 @@ class TestModelResponseHeaderRuleBasics:
     def test_minimal_instantiation(self):
         """Test model can be instantiated with minimal required fields."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Response-Time",
             transformation_rule="{response_time_ms}",
         )
@@ -40,6 +46,7 @@ class TestModelResponseHeaderRuleBasics:
     def test_full_instantiation(self):
         """Test model with all fields specified."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="Cache-Control",
             transformation_rule="max-age=3600, public",
             transformation_type="append",
@@ -62,6 +69,7 @@ class TestModelResponseHeaderRuleBasics:
     def test_default_values(self):
         """Test default values are correctly applied."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
         )
@@ -82,6 +90,7 @@ class TestModelResponseHeaderRuleValidation:
         """Test header_name is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelResponseHeaderRule(
+                version=DEFAULT_VERSION,
                 transformation_rule="value",
             )
 
@@ -93,6 +102,7 @@ class TestModelResponseHeaderRuleValidation:
         # Empty string should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelResponseHeaderRule(
+                version=DEFAULT_VERSION,
                 header_name="",
                 transformation_rule="value",
             )
@@ -115,6 +125,7 @@ class TestModelResponseHeaderRuleValidation:
 
         for name in valid_names:
             rule = ModelResponseHeaderRule(
+                version=DEFAULT_VERSION,
                 header_name=name,
                 transformation_rule="value",
             )
@@ -124,6 +135,7 @@ class TestModelResponseHeaderRuleValidation:
         """Test transformation_rule is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelResponseHeaderRule(
+                version=DEFAULT_VERSION,
                 header_name="X-Custom-Header",
             )
 
@@ -135,6 +147,7 @@ class TestModelResponseHeaderRuleValidation:
         # Empty string should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelResponseHeaderRule(
+                version=DEFAULT_VERSION,
                 header_name="X-Custom-Header",
                 transformation_rule="",
             )
@@ -148,6 +161,7 @@ class TestModelResponseHeaderRuleValidation:
 
         for trans_type in valid_types:
             rule = ModelResponseHeaderRule(
+                version=DEFAULT_VERSION,
                 header_name="X-Custom-Header",
                 transformation_rule="value",
                 transformation_type=trans_type,
@@ -157,6 +171,7 @@ class TestModelResponseHeaderRuleValidation:
     def test_transformation_type_default(self):
         """Test transformation_type defaults to 'set'."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
         )
@@ -167,16 +182,19 @@ class TestModelResponseHeaderRuleValidation:
         """Test priority validates bounds."""
         # Valid values
         ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
             priority=0,  # Min
         )
         ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
             priority=500,
         )
         ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
             priority=1000,  # Max
@@ -185,6 +203,7 @@ class TestModelResponseHeaderRuleValidation:
         # Below minimum
         with pytest.raises(ValidationError) as exc_info:
             ModelResponseHeaderRule(
+                version=DEFAULT_VERSION,
                 header_name="X-Custom-Header",
                 transformation_rule="value",
                 priority=-1,
@@ -196,6 +215,7 @@ class TestModelResponseHeaderRuleValidation:
         # Above maximum
         with pytest.raises(ValidationError) as exc_info:
             ModelResponseHeaderRule(
+                version=DEFAULT_VERSION,
                 header_name="X-Custom-Header",
                 transformation_rule="value",
                 priority=1001,
@@ -207,6 +227,7 @@ class TestModelResponseHeaderRuleValidation:
     def test_case_sensitive_boolean(self):
         """Test case_sensitive accepts boolean values."""
         rule_true = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
             case_sensitive=True,
@@ -214,6 +235,7 @@ class TestModelResponseHeaderRuleValidation:
         assert rule_true.case_sensitive is True
 
         rule_false = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
             case_sensitive=False,
@@ -223,6 +245,7 @@ class TestModelResponseHeaderRuleValidation:
     def test_expose_to_client_boolean(self):
         """Test expose_to_client accepts boolean values."""
         rule_true = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Public-Header",
             transformation_rule="value",
             expose_to_client=True,
@@ -230,6 +253,7 @@ class TestModelResponseHeaderRuleValidation:
         assert rule_true.expose_to_client is True
 
         rule_false = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Internal-Header",
             transformation_rule="value",
             expose_to_client=False,
@@ -239,6 +263,7 @@ class TestModelResponseHeaderRuleValidation:
     def test_cache_control_aware_boolean(self):
         """Test cache_control_aware accepts boolean values."""
         rule_true = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="Cache-Control",
             transformation_rule="max-age=3600",
             cache_control_aware=True,
@@ -246,6 +271,7 @@ class TestModelResponseHeaderRuleValidation:
         assert rule_true.cache_control_aware is True
 
         rule_false = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
             cache_control_aware=False,
@@ -255,6 +281,7 @@ class TestModelResponseHeaderRuleValidation:
     def test_apply_condition_optional(self):
         """Test apply_condition is optional."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
             apply_condition=None,
@@ -262,6 +289,7 @@ class TestModelResponseHeaderRuleValidation:
         assert rule.apply_condition is None
 
         rule_with_condition = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
             apply_condition="response.status == 200",
@@ -275,6 +303,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_minimum_priority_rule(self):
         """Test rule with minimum priority."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Low-Priority",
             transformation_rule="value",
             priority=0,
@@ -285,6 +314,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_maximum_priority_rule(self):
         """Test rule with maximum priority."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-High-Priority",
             transformation_rule="value",
             priority=1000,
@@ -295,6 +325,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_set_transformation(self):
         """Test 'set' transformation type."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="Content-Type",
             transformation_rule="application/json",
             transformation_type="set",
@@ -305,6 +336,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_append_transformation(self):
         """Test 'append' transformation type."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="Cache-Control",
             transformation_rule=", must-revalidate",
             transformation_type="append",
@@ -315,6 +347,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_prefix_transformation(self):
         """Test 'prefix' transformation type."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Value",
             transformation_rule="prefix_",
             transformation_type="prefix",
@@ -325,6 +358,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_suffix_transformation(self):
         """Test 'suffix' transformation type."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Version",
             transformation_rule="_v2",
             transformation_type="suffix",
@@ -335,6 +369,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_remove_transformation(self):
         """Test 'remove' transformation type."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Sensitive-Header",
             transformation_rule="N/A",  # Not used for remove, but required by validation
             transformation_type="remove",
@@ -345,6 +380,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_filter_transformation(self):
         """Test 'filter' transformation type."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="Set-Cookie",
             transformation_rule="filter_pattern",
             transformation_type="filter",
@@ -355,6 +391,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_cache_control_header_transformation(self):
         """Test transformation specifically for Cache-Control header."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="Cache-Control",
             transformation_rule="max-age=3600, public",
             cache_control_aware=True,
@@ -366,6 +403,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_cors_header_transformation(self):
         """Test transformation for CORS headers."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="Access-Control-Allow-Origin",
             transformation_rule="*",
             expose_to_client=True,
@@ -377,6 +415,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_internal_header_not_exposed(self):
         """Test internal header not exposed to client."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Internal-Processing-Time",
             transformation_rule="{internal_time}",
             expose_to_client=False,
@@ -387,6 +426,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_template_transformation_rule(self):
         """Test transformation rule with template variables."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Request-ID",
             transformation_rule="{request.id}",
         )
@@ -397,6 +437,7 @@ class TestModelResponseHeaderRuleEdgeCases:
         """Test complex apply condition."""
         condition = "(response.status >= 200 and response.status < 300) or response.headers.get('X-Force-Transform')"
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Success-Header",
             transformation_rule="success",
             apply_condition=condition,
@@ -407,6 +448,7 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_case_insensitive_header_matching(self):
         """Test case-insensitive header matching configuration."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="content-type",  # Lowercase
             transformation_rule="application/json",
             case_sensitive=False,
@@ -418,14 +460,17 @@ class TestModelResponseHeaderRuleEdgeCases:
         """Test transformation for rate limit headers."""
         rules = [
             ModelResponseHeaderRule(
+                version=DEFAULT_VERSION,
                 header_name="X-RateLimit-Limit",
                 transformation_rule="1000",
             ),
             ModelResponseHeaderRule(
+                version=DEFAULT_VERSION,
                 header_name="X-RateLimit-Remaining",
                 transformation_rule="{remaining}",
             ),
             ModelResponseHeaderRule(
+                version=DEFAULT_VERSION,
                 header_name="X-RateLimit-Reset",
                 transformation_rule="{reset_time}",
             ),
@@ -437,12 +482,14 @@ class TestModelResponseHeaderRuleEdgeCases:
     def test_multiple_rules_same_header_different_priorities(self):
         """Test multiple rules for same header with different priorities."""
         rule1 = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="Cache-Control",
             transformation_rule="no-cache",
             priority=100,
         )
 
         rule2 = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="Cache-Control",
             transformation_rule="max-age=3600",
             priority=200,
@@ -458,6 +505,7 @@ class TestModelResponseHeaderRuleConfigDict:
     def test_extra_fields_ignored(self):
         """Test extra fields are ignored per ConfigDict."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
             unknown_field="should_be_ignored",  # type: ignore[call-arg]
@@ -469,6 +517,7 @@ class TestModelResponseHeaderRuleConfigDict:
     def test_validate_assignment(self):
         """Test assignment validation is enabled."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
         )
@@ -487,6 +536,7 @@ class TestModelResponseHeaderRuleConfigDict:
     def test_model_serialization(self):
         """Test model can be serialized and deserialized."""
         original = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="Cache-Control",
             transformation_rule="max-age=3600, public",
             transformation_type="append",
@@ -515,6 +565,7 @@ class TestModelResponseHeaderRuleConfigDict:
     def test_json_serialization(self):
         """Test model can be serialized to JSON."""
         rule = ModelResponseHeaderRule(
+            version=DEFAULT_VERSION,
             header_name="Content-Type",
             transformation_rule="application/json",
         )

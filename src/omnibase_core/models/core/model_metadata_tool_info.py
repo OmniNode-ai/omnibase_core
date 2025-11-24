@@ -41,7 +41,7 @@ class ModelMetadataToolInfo(BaseModel):
     documentation: str = Field(default="", description="Detailed documentation")
     author: str = Field(default="Unknown", description="Tool author")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Tool version",
     )
     tags: list[str] = Field(

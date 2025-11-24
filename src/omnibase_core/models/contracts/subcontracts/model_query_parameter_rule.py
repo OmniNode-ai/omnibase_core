@@ -25,6 +25,7 @@ class ModelQueryParameterRule(ModelBaseHeaderTransformation):
     validation and type safety.
 
     Inherits common transformation fields from ModelBaseHeaderTransformation:
+    - version
     - transformation_rule
     - apply_condition
     - case_sensitive

@@ -19,7 +19,7 @@ class ModelMessageHeaders(BaseModel):
     )
     reply_to: str = Field(default="", description="Reply destination")
     message_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Message schema version",
     )
     source_system: str = Field(default="", description="Source system identifier")

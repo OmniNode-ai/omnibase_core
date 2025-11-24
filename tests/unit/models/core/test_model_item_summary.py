@@ -11,6 +11,10 @@ import pytest
 
 from omnibase_core.enums.enum_item_type import EnumItemType
 from omnibase_core.models.core.model_item_summary import ModelItemSummary
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelItemSummary:
@@ -18,7 +22,7 @@ class TestModelItemSummary:
 
     def test_initialization_defaults(self):
         """Test initialization with default values."""
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
 
         # Test default UUID is generated
         assert isinstance(item.item_id, UUID)
@@ -43,6 +47,7 @@ class TestModelItemSummary:
         test_uuid = UUID("12345678-1234-5678-1234-567812345678")
 
         item = ModelItemSummary(
+            version=DEFAULT_VERSION,
             item_id=test_uuid,
             item_display_name="Test Item",
             item_type=EnumItemType.COMPONENT,
@@ -89,7 +94,7 @@ class TestModelItemSummary:
 
     def test_has_properties_empty(self):
         """Test has_properties returns False when no properties are set."""
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
         assert item.has_properties() is False
 
     def test_has_properties_with_string_properties(self):
@@ -110,6 +115,7 @@ class TestModelItemSummary:
     def test_has_properties_with_multiple_properties(self):
         """Test has_properties returns True when multiple property types are set."""
         item = ModelItemSummary(
+            version=DEFAULT_VERSION,
             string_properties={"key": "value"},
             numeric_properties={"score": 100.0},
             boolean_properties={"enabled": True},
@@ -118,7 +124,7 @@ class TestModelItemSummary:
 
     def test_configure_protocol_method(self):
         """Test configure method (Configurable protocol)."""
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
 
         result = item.configure(
             item_display_name="New Name",
@@ -133,7 +139,7 @@ class TestModelItemSummary:
 
     def test_configure_with_invalid_fields(self):
         """Test configure with non-existent fields."""
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
 
         # Should succeed but ignore invalid fields
         result = item.configure(
@@ -148,7 +154,7 @@ class TestModelItemSummary:
         """Test configure raises ModelOnexError for invalid input."""
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
 
         # Create a scenario that would cause an exception
         # by trying to set a field with an incompatible type
@@ -159,6 +165,7 @@ class TestModelItemSummary:
         """Test serialize method (Serializable protocol)."""
         now = datetime.now()
         item = ModelItemSummary(
+            version=DEFAULT_VERSION,
             item_display_name="Test",
             priority=10,
             created_at=now,
@@ -175,7 +182,7 @@ class TestModelItemSummary:
 
     def test_serialize_includes_none_values(self):
         """Test serialize includes None values."""
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
 
         serialized = item.serialize()
 
@@ -186,12 +193,13 @@ class TestModelItemSummary:
 
     def test_validate_instance_protocol_method(self):
         """Test validate_instance method (Validatable protocol)."""
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
         assert item.validate_instance() is True
 
     def test_validate_instance_with_data(self):
         """Test validate_instance with populated data."""
         item = ModelItemSummary(
+            version=DEFAULT_VERSION,
             item_display_name="Test",
             item_type=EnumItemType.COMPONENT,
             priority=10,
@@ -200,7 +208,7 @@ class TestModelItemSummary:
 
     def test_get_name_protocol_method(self):
         """Test get_name method (Nameable protocol)."""
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
 
         # Should return default name format
         # ModelItemSummary has a @property name that returns item_display_name or UUID-based fallback
@@ -222,7 +230,7 @@ class TestModelItemSummary:
 
     def test_set_name_protocol_method(self):
         """Test set_name method (Nameable protocol)."""
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
 
         # Try to set name - it will look for common name fields
         # ModelItemSummary has a 'name' property which is read-only,
@@ -269,7 +277,7 @@ class TestModelItemSummary:
 
     def test_string_properties_operations(self):
         """Test string_properties dictionary operations."""
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
 
         item.string_properties["key1"] = "value1"
         item.string_properties["key2"] = "value2"
@@ -280,7 +288,7 @@ class TestModelItemSummary:
 
     def test_numeric_properties_operations(self):
         """Test numeric_properties dictionary operations."""
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
 
         item.numeric_properties["score"] = 95.5
         item.numeric_properties["count"] = 10.0
@@ -291,7 +299,7 @@ class TestModelItemSummary:
 
     def test_boolean_properties_operations(self):
         """Test boolean_properties dictionary operations."""
-        item = ModelItemSummary()
+        item = ModelItemSummary(version=DEFAULT_VERSION)
 
         item.boolean_properties["active"] = True
         item.boolean_properties["verified"] = False
@@ -304,6 +312,7 @@ class TestModelItemSummary:
         """Test that extra fields are ignored per model_config."""
         # Should not raise validation error with extra fields
         item = ModelItemSummary(
+            version=DEFAULT_VERSION,
             item_display_name="Test",
             extra_field="should be ignored",
         )
@@ -330,6 +339,7 @@ class TestModelItemSummary:
         now = datetime.now()
 
         item = ModelItemSummary(
+            version=DEFAULT_VERSION,
             created_at=now,
             updated_at=now,
             accessed_at=now,
@@ -370,8 +380,8 @@ class TestModelItemSummary:
 
     def test_empty_collections_are_mutable(self):
         """Test that default empty collections are mutable and independent."""
-        item1 = ModelItemSummary()
-        item2 = ModelItemSummary()
+        item1 = ModelItemSummary(version=DEFAULT_VERSION)
+        item2 = ModelItemSummary(version=DEFAULT_VERSION)
 
         item1.tags.append("tag1")
         item2.tags.append("tag2")
@@ -386,6 +396,7 @@ class TestModelItemSummary:
         now = datetime.now()
 
         item = ModelItemSummary(
+            version=DEFAULT_VERSION,
             item_display_name="Production Database",
             item_type=EnumItemType.SERVICE,
             description="Main production database server",

@@ -25,6 +25,10 @@ from omnibase_core.models.core.model_cli_command_registry import (
 )
 from omnibase_core.models.core.model_event_type import ModelEventType
 from omnibase_core.models.core.model_node_reference import ModelNodeReference
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelCliCommandRegistryCreation:
@@ -46,6 +50,7 @@ class TestModelCliCommandRegistryCreation:
         """Test registry initialization with provided data."""
         commands = {"test_cmd": self._create_test_command("test_cmd", "test_node")}
         registry = ModelCliCommandRegistry(
+            version=DEFAULT_VERSION,
             commands=commands,
             commands_by_node={"test_node": ["test_cmd"]},
             commands_by_category={"general": ["test_cmd"]},
@@ -63,11 +68,13 @@ class TestModelCliCommandRegistryCreation:
     ) -> ModelCliCommandDefinition:
         """Helper to create test command definition."""
         return ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name=command_name,
             target_node=ModelNodeReference.create_local(node_name),
             action=command_name,
             description=f"Test command {command_name}",
             event_type=ModelEventType(
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test event",
@@ -97,17 +104,22 @@ class TestCommandRegistration:
         """Test command registration creates qualified name mapping."""
         registry = ModelCliCommandRegistry()
         node_ref = ModelNodeReference(
+            version=DEFAULT_VERSION,
             node_name="test_node",
             namespace="third_party",
             node_type="plugin",
         )
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="validate",
             target_node=node_ref,
             action="validate",
             description="Validation command",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                schema_version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -172,11 +184,13 @@ class TestCommandRegistration:
     ) -> ModelCliCommandDefinition:
         """Helper to create test command definition."""
         return ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name=command_name,
             target_node=ModelNodeReference.create_local(node_name),
             action=command_name,
             description=f"Test command {command_name}",
             event_type=ModelEventType(
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test event",
@@ -204,17 +218,22 @@ class TestCommandRetrieval:
         """Test retrieving command by qualified name."""
         registry = ModelCliCommandRegistry()
         node_ref = ModelNodeReference(
+            version=DEFAULT_VERSION,
             node_name="test_node",
             namespace="plugin_ns",
             node_type="plugin",
         )
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="process",
             target_node=node_ref,
             action="process",
             description="Process command",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                schema_version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
         registry.register_command(command)
@@ -311,17 +330,22 @@ class TestCommandRetrieval:
         """Test get_all_commands doesn't return duplicates for qualified names."""
         registry = ModelCliCommandRegistry()
         node_ref = ModelNodeReference(
+            version=DEFAULT_VERSION,
             node_name="test_node",
             namespace="plugin",
             node_type="plugin",
         )
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="action",
             target_node=node_ref,
             action="action",
             description="Test action",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                schema_version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
         registry.register_command(command)
@@ -337,17 +361,22 @@ class TestCommandRetrieval:
         """Test retrieving all command names."""
         registry = ModelCliCommandRegistry()
         node_ref = ModelNodeReference(
+            version=DEFAULT_VERSION,
             node_name="test_node",
             namespace="ns",
             node_type="plugin",
         )
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="cmd",
             target_node=node_ref,
             action="cmd",
             description="Test",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                schema_version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
         registry.register_command(command)
@@ -364,11 +393,13 @@ class TestCommandRetrieval:
     ) -> ModelCliCommandDefinition:
         """Helper to create test command definition."""
         return ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name=command_name,
             target_node=ModelNodeReference.create_local(node_name),
             action=command_name,
             description=f"Test command {command_name}",
             event_type=ModelEventType(
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test event",
@@ -589,12 +620,16 @@ class TestRegistryClear:
         """Test clearing a populated registry."""
         registry = ModelCliCommandRegistry()
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="test",
             target_node=ModelNodeReference.create_local("test_node"),
             action="test",
             description="Test",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                schema_version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
         registry.register_command(command)
@@ -666,12 +701,16 @@ cli_interface:
         # Register a test command
         registry = get_global_command_registry()
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="global_cmd",
             target_node=ModelNodeReference.create_local("test_node"),
             action="global_cmd",
             description="Global command test",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                schema_version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
         registry.register_command(command)

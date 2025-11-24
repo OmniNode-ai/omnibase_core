@@ -5,6 +5,11 @@ Test for ModelValidationSubcontract - Validation subcontract model.
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.models.contracts.subcontracts.model_validation_subcontract import (
     ModelValidationSubcontract,
 )
@@ -17,7 +22,7 @@ class TestModelValidationSubcontract:
 
     def test_valid_subcontract_creation_defaults(self):
         """Test creating a valid subcontract with all defaults."""
-        subcontract = ModelValidationSubcontract()
+        subcontract = ModelValidationSubcontract(version=DEFAULT_VERSION)
 
         assert subcontract.enable_fail_fast is True
         assert subcontract.strict_type_checking is True
@@ -30,6 +35,7 @@ class TestModelValidationSubcontract:
     def test_valid_subcontract_creation_custom_values(self):
         """Test creating a valid subcontract with custom values."""
         subcontract_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
             "enable_fail_fast": False,
             "strict_type_checking": False,
             "enable_range_validation": False,
@@ -59,7 +65,10 @@ class TestModelValidationSubcontract:
 
     def test_max_validation_errors_minimum_constraint(self):
         """Test that max_validation_errors must be at least 1."""
-        subcontract_data = {"max_validation_errors": 0}
+        subcontract_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
+            "max_validation_errors": 0,
+        }
 
         with pytest.raises(ValidationError) as exc_info:
             ModelValidationSubcontract.model_validate(subcontract_data)
@@ -70,7 +79,10 @@ class TestModelValidationSubcontract:
 
     def test_max_validation_errors_maximum_constraint(self):
         """Test that max_validation_errors cannot exceed 1000."""
-        subcontract_data = {"max_validation_errors": 1001}
+        subcontract_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
+            "max_validation_errors": 1001,
+        }
 
         with pytest.raises(ValidationError) as exc_info:
             ModelValidationSubcontract.model_validate(subcontract_data)
@@ -81,7 +93,10 @@ class TestModelValidationSubcontract:
 
     def test_max_validation_errors_custom_validator_too_low(self):
         """Test custom validator for max_validation_errors < 1."""
-        subcontract_data = {"max_validation_errors": -5}
+        subcontract_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
+            "max_validation_errors": -5,
+        }
 
         with pytest.raises(ValidationError) as exc_info:
             ModelValidationSubcontract.model_validate(subcontract_data)
@@ -91,7 +106,10 @@ class TestModelValidationSubcontract:
 
     def test_max_validation_errors_custom_validator_too_high(self):
         """Test custom validator for max_validation_errors > 10000."""
-        subcontract_data = {"max_validation_errors": 15000}
+        subcontract_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
+            "max_validation_errors": 15000,
+        }
 
         # This should fail at pydantic constraint first (le=1000)
         with pytest.raises(ValidationError) as exc_info:
@@ -102,7 +120,10 @@ class TestModelValidationSubcontract:
 
     def test_validation_timeout_minimum_constraint(self):
         """Test that validation_timeout_seconds must be at least 0.1."""
-        subcontract_data = {"validation_timeout_seconds": 0.05}
+        subcontract_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
+            "validation_timeout_seconds": 0.05,
+        }
 
         with pytest.raises(ValidationError) as exc_info:
             ModelValidationSubcontract.model_validate(subcontract_data)
@@ -113,7 +134,10 @@ class TestModelValidationSubcontract:
 
     def test_validation_timeout_maximum_constraint(self):
         """Test that validation_timeout_seconds cannot exceed 60.0."""
-        subcontract_data = {"validation_timeout_seconds": 70.0}
+        subcontract_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
+            "validation_timeout_seconds": 70.0,
+        }
 
         with pytest.raises(ValidationError) as exc_info:
             ModelValidationSubcontract.model_validate(subcontract_data)
@@ -125,7 +149,10 @@ class TestModelValidationSubcontract:
     def test_validation_timeout_custom_validator_zero(self):
         """Test that zero timeout is rejected by pydantic constraint."""
         # Zero values are caught by pydantic ge=0.1 constraint
-        subcontract_data = {"validation_timeout_seconds": 0.0}
+        subcontract_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
+            "validation_timeout_seconds": 0.0,
+        }
 
         with pytest.raises(ValidationError) as exc_info:
             ModelValidationSubcontract.model_validate(subcontract_data)
@@ -137,7 +164,10 @@ class TestModelValidationSubcontract:
     def test_validation_timeout_custom_validator_negative(self):
         """Test custom validator rejects negative timeout."""
         # Negative values should be caught by pydantic ge=0.1 constraint first
-        subcontract_data = {"validation_timeout_seconds": -1.0}
+        subcontract_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
+            "validation_timeout_seconds": -1.0,
+        }
 
         with pytest.raises(ValidationError) as exc_info:
             ModelValidationSubcontract.model_validate(subcontract_data)
@@ -148,6 +178,7 @@ class TestModelValidationSubcontract:
     def test_extra_fields_ignored(self):
         """Test that extra fields are ignored per model config."""
         subcontract_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
             "enable_fail_fast": True,
             "custom_field": "custom_value",
             "unknown_setting": 123,
@@ -161,9 +192,11 @@ class TestModelValidationSubcontract:
 
     def test_boolean_fields_all_combinations(self):
         """Test all boolean field combinations work correctly."""
+        version_data = {"major": 1, "minor": 0, "patch": 0}
         test_cases = [
             # All True
             {
+                "version": version_data,
                 "enable_fail_fast": True,
                 "strict_type_checking": True,
                 "enable_range_validation": True,
@@ -172,6 +205,7 @@ class TestModelValidationSubcontract:
             },
             # All False
             {
+                "version": version_data,
                 "enable_fail_fast": False,
                 "strict_type_checking": False,
                 "enable_range_validation": False,
@@ -180,6 +214,7 @@ class TestModelValidationSubcontract:
             },
             # Mixed
             {
+                "version": version_data,
                 "enable_fail_fast": True,
                 "strict_type_checking": False,
                 "enable_range_validation": True,
@@ -191,31 +226,40 @@ class TestModelValidationSubcontract:
         for case in test_cases:
             subcontract = ModelValidationSubcontract.model_validate(case)
             for field, expected_value in case.items():
-                assert getattr(subcontract, field) == expected_value
+                if field != "version":
+                    assert getattr(subcontract, field) == expected_value
 
     def test_edge_case_max_errors_boundary_values(self):
         """Test boundary values for max_validation_errors."""
         # Minimum valid value
-        subcontract = ModelValidationSubcontract(max_validation_errors=1)
+        subcontract = ModelValidationSubcontract(
+            version=DEFAULT_VERSION, max_validation_errors=1
+        )
         assert subcontract.max_validation_errors == 1
 
         # Maximum valid value
-        subcontract = ModelValidationSubcontract(max_validation_errors=1000)
+        subcontract = ModelValidationSubcontract(
+            version=DEFAULT_VERSION, max_validation_errors=1000
+        )
         assert subcontract.max_validation_errors == 1000
 
     def test_edge_case_timeout_boundary_values(self):
         """Test boundary values for validation_timeout_seconds."""
         # Minimum valid value
-        subcontract = ModelValidationSubcontract(validation_timeout_seconds=0.1)
+        subcontract = ModelValidationSubcontract(
+            version=DEFAULT_VERSION, validation_timeout_seconds=0.1
+        )
         assert subcontract.validation_timeout_seconds == 0.1
 
         # Maximum valid value
-        subcontract = ModelValidationSubcontract(validation_timeout_seconds=60.0)
+        subcontract = ModelValidationSubcontract(
+            version=DEFAULT_VERSION, validation_timeout_seconds=60.0
+        )
         assert subcontract.validation_timeout_seconds == 60.0
 
     def test_validate_assignment_enabled(self):
         """Test that validate_assignment is enabled in model config."""
-        subcontract = ModelValidationSubcontract()
+        subcontract = ModelValidationSubcontract(version=DEFAULT_VERSION)
 
         # Try to assign invalid value after creation
         with pytest.raises(ValidationError):
@@ -224,6 +268,7 @@ class TestModelValidationSubcontract:
     def test_model_serialization_round_trip(self):
         """Test that model can be serialized and deserialized correctly."""
         original = ModelValidationSubcontract(
+            version=DEFAULT_VERSION,
             enable_fail_fast=False,
             max_validation_errors=200,
             validation_timeout_seconds=15.5,
@@ -244,6 +289,7 @@ class TestModelValidationSubcontract:
     def test_model_dump_json_mode(self):
         """Test model_dump with mode='json' for JSON serialization."""
         subcontract = ModelValidationSubcontract(
+            version=DEFAULT_VERSION,
             enable_fail_fast=True,
             max_validation_errors=150,
         )

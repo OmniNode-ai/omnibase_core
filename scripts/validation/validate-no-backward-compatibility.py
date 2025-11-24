@@ -141,9 +141,24 @@ class BackwardCompatibilityDetector:
         file_path: Path,
         errors: list[str],
     ) -> None:
-        """Check for backward compatibility anti-patterns using regex."""
+        """Check for backward compatibility anti-patterns using regex.
+
+        Patterns detected:
+        1. Comments mentioning backward compatibility (excluding negative contexts)
+        2. Method/function names suggesting compatibility (_legacy, _compat, etc.)
+        3. Configuration allowing extra fields (extra='allow') near compatibility mentions
+        4. Protocol* backward compatibility patterns
+
+        Pattern improvements (PR #88):
+        - Added 'compat' shorthand detection (not just 'compatibility')
+        - Added multi-line context detection (3 lines before, 1 line after)
+        - Added negative context exclusion ("No backward compatibility" is OK)
+        - Added ConfigDict pattern detection
+        - Added various spacing variations (extra='allow', extra = 'allow', etc.)
+        """
 
         # Pattern 1: Comments mentioning backward/backwards compatibility
+        # Exclude negative contexts (e.g., "No backward compatibility", "prevent backward compatibility")
         compatibility_comment_patterns = [
             r"backward\s+compatibility",
             r"backwards\s+compatibility",
@@ -156,9 +171,29 @@ class BackwardCompatibilityDetector:
             r"deprecated\s+for\s+compatibility",
         ]
 
+        # Negative patterns that indicate rejection of backward compatibility
+        negative_patterns = [
+            r"no\s+(backward|backwards)\s+compatibility",
+            r"prevent\s+(backward|backwards)\s+compatibility",
+            r"avoid\s+(backward|backwards)\s+compatibility",
+            r"without\s+(backward|backwards)\s+compatibility",
+            r"not\s+(backward|backwards)\s+compatibility",
+            r"reject\s+(backward|backwards)\s+compatibility",
+            r"forbid\s+(backward|backwards)\s+compatibility",
+        ]
+
         lines = content.split("\n")
         for line_num, line in enumerate(lines, 1):
             line_lower = line.lower()
+
+            # Check if line contains negative context first
+            is_negative = any(
+                re.search(neg_pattern, line_lower) for neg_pattern in negative_patterns
+            )
+            if is_negative:
+                continue  # Skip lines that explicitly reject backward compatibility
+
+            # Check for positive backward compatibility mentions
             for pattern in compatibility_comment_patterns:
                 if re.search(pattern, line_lower):
                     errors.append(
@@ -189,7 +224,7 @@ class BackwardCompatibilityDetector:
 
         for pattern in compatibility_method_patterns:
             # ONEX compliance: Use combined flags instead of union
-            flags = re.MULTILINE | re.IGNORECASE | re.DOTALL
+            flags = re.MULTILINE | re.IGNORECASE
             matches = re.finditer(pattern, content, flags)
             for match in matches:
                 line_num = content[: match.start()].count("\n") + 1
@@ -217,14 +252,17 @@ class BackwardCompatibilityDetector:
                 )
 
         # Pattern 3: Configuration allowing extra fields for compatibility
-        extra_allow_patterns = [
-            r'extra\s*=\s*["\']allow["\'].*compatibility',
-            r"Config:.*extra.*allow.*compatibility",
+        # Enhanced patterns to catch all backward compatibility extra='allow' patterns
+        # Detect extra='allow' when near compatibility-related comments (within 3 lines)
+
+        # First, check for explicit same-line patterns
+        extra_allow_same_line_patterns = [
+            r'extra\s*=\s*["\']allow["\']\s*#.*(compat|backward|backwards|legacy|migration)',  # Same line comment after
+            r'#.*(compat|backward|backwards|legacy|migration).*extra\s*=\s*["\']allow["\']',  # Same line comment before
         ]
 
-        for pattern in extra_allow_patterns:
-            # ONEX compliance: Use combined flags instead of union
-            flags = re.MULTILINE | re.IGNORECASE | re.DOTALL
+        for pattern in extra_allow_same_line_patterns:
+            flags = re.MULTILINE | re.IGNORECASE
             matches = re.finditer(pattern, content, flags)
             for match in matches:
                 line_num = content[: match.start()].count("\n") + 1
@@ -232,6 +270,51 @@ class BackwardCompatibilityDetector:
                     f"Line {line_num}: Configuration allowing extra fields for compatibility - "
                     f"remove permissive configuration"
                 )
+
+        # Second, check for multi-line patterns (comment within 3 lines of extra='allow')
+        # Find all extra='allow' statements
+        extra_allow_pattern = r'extra\s*=\s*["\']allow["\']'
+        extra_matches = list(
+            re.finditer(extra_allow_pattern, content, re.MULTILINE | re.IGNORECASE)
+        )
+
+        # Check context around each extra='allow' for compatibility keywords
+        compatibility_keywords = [
+            "backward",
+            "backwards",
+            "compat",
+            "legacy",
+            "migration",
+        ]
+
+        for match in extra_matches:
+            line_num = content[: match.start()].count("\n") + 1
+            lines = content.split("\n")
+
+            # Check 3 lines before and 1 line after for compatibility keywords
+            start_line = max(0, line_num - 4)  # 3 lines before (0-indexed)
+            end_line = min(len(lines), line_num + 1)  # Current line + 1 after
+            context_lines = lines[start_line:end_line]
+            context_text = "\n".join(context_lines).lower()
+
+            # Check if any compatibility keyword appears in context
+            has_compat_keyword = any(
+                keyword in context_text for keyword in compatibility_keywords
+            )
+
+            if has_compat_keyword:
+                # Avoid duplicate reporting (already caught by same-line patterns)
+                already_reported = False
+                for pattern in extra_allow_same_line_patterns:
+                    if re.search(pattern, lines[line_num - 1], re.IGNORECASE):
+                        already_reported = True
+                        break
+
+                if not already_reported:
+                    errors.append(
+                        f"Line {line_num}: Configuration allowing extra fields for compatibility - "
+                        f"remove permissive configuration"
+                    )
 
         # Pattern 4: Protocol* backward compatibility patterns
         # Only match actual backward compatibility code patterns, not imports

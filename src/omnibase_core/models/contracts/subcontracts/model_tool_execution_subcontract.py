@@ -56,6 +56,12 @@ class ModelToolExecutionSubcontract(BaseModel):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
+
     # Core execution configuration
     enabled: bool = Field(
         default=True,
@@ -367,8 +373,9 @@ class ModelToolExecutionSubcontract(BaseModel):
             return self.retry_delay_seconds
 
         # Exponential backoff: delay * (2 ^ (attempt - 1))
-        multiplier = 2 ** (attempt - 1)
-        return min(self.retry_delay_seconds * multiplier, 60.0)
+        multiplier: int = 2 ** (attempt - 1)
+        delay: float = self.retry_delay_seconds * multiplier
+        return min(delay, 60.0)
 
     def should_retry(self, attempt: int, error: Exception | None = None) -> bool:
         """

@@ -16,6 +16,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types
 from omnibase_core.types.constraints import PrimitiveValueType
@@ -26,6 +27,12 @@ StructuredData = dict[str, ParameterValue]
 
 class ModelWorkflowNode(BaseModel):
     """A node definition in a workflow graph."""
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     node_id: UUID = Field(
         default_factory=uuid4,

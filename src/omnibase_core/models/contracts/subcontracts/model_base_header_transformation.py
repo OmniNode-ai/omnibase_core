@@ -9,6 +9,8 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelBaseHeaderTransformation(BaseModel):
     """
@@ -24,6 +26,12 @@ class ModelBaseHeaderTransformation(BaseModel):
     - transformation_type field (with specific enum type)
     - any additional unique fields
     """
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     transformation_rule: str = Field(
         ...,

@@ -50,11 +50,13 @@ from omnibase_core.models.core.model_onex_event_metadata import ModelOnexEventMe
 from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
 )
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
+
+if TYPE_CHECKING:
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -91,6 +93,8 @@ class MixinNodeLifecycle:
 
     def _register_node(self) -> None:
         """Register this node on the event bus using NODE_ANNOUNCE (protocol-pure)."""
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
             return
@@ -219,6 +223,8 @@ class MixinNodeLifecycle:
         """
         Publish NODE_SHUTDOWN_EVENT for graceful deregistration.
         """
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
             return
@@ -284,6 +290,8 @@ class MixinNodeLifecycle:
         Returns:
             UUID: The correlation ID used for the event
         """
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
             # Still generate and return correlation ID even if no event bus
@@ -344,6 +352,8 @@ class MixinNodeLifecycle:
         Returns:
             UUID: The correlation ID used for the event
         """
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
             # Still generate and return correlation ID even if no event bus
@@ -404,6 +414,8 @@ class MixinNodeLifecycle:
         Returns:
             UUID: The correlation ID used for the event
         """
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
             # Still generate and return correlation ID even if no event bus

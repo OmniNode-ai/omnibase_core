@@ -10,9 +10,17 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 
 class ModelSynchronizationPoint(BaseModel):
     """A synchronization point in workflow execution."""
+
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Model version (MUST be provided in YAML contract)",
+    )
 
     point_name: str = Field(
         default=..., description="Name of the synchronization point"

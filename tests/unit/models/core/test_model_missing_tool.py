@@ -15,6 +15,10 @@ from omnibase_core.enums.enum_tool_criticality import EnumToolCriticality
 from omnibase_core.enums.enum_tool_missing_reason import EnumToolMissingReason
 from omnibase_core.enums.enum_tool_status import EnumToolStatus
 from omnibase_core.models.core.model_missing_tool import ModelMissingTool
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelMissingToolBasic:
@@ -23,6 +27,7 @@ class TestModelMissingToolBasic:
     def test_create_missing_tool_basic(self):
         """Test creating a basic missing tool."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="test_tool",
             reason="Tool not found in registry",
             expected_type="TestTool",
@@ -38,6 +43,7 @@ class TestModelMissingToolBasic:
     def test_create_missing_tool_with_all_fields(self):
         """Test creating a missing tool with all fields."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="critical_processor",
             reason="Import error: ModuleNotFoundError",
             expected_type="CriticalProcessor",
@@ -66,13 +72,17 @@ class TestModelMissingToolBasic:
         """Test missing tool validation."""
         # Valid tool
         tool = ModelMissingTool(
-            tool_name="valid_tool", reason="Valid reason", expected_type="ValidType"
+            version=DEFAULT_VERSION,
+            tool_name="valid_tool",
+            reason="Valid reason",
+            expected_type="ValidType",
         )
         assert tool.tool_name == "valid_tool"
 
         # Test required fields
         with pytest.raises(ValueError):
             ModelMissingTool(
+                version=DEFAULT_VERSION,
                 tool_name="",  # Empty name should fail
                 reason="Test reason",
                 expected_type="TestType",
@@ -80,6 +90,7 @@ class TestModelMissingToolBasic:
 
         with pytest.raises(ValueError):
             ModelMissingTool(
+                version=DEFAULT_VERSION,
                 tool_name="test_tool",
                 reason="",  # Empty reason should fail
                 expected_type="TestType",
@@ -87,6 +98,7 @@ class TestModelMissingToolBasic:
 
         with pytest.raises(ValueError):
             ModelMissingTool(
+                version=DEFAULT_VERSION,
                 tool_name="test_tool",
                 reason="Test reason",
                 expected_type="",  # Empty expected_type should fail
@@ -95,6 +107,7 @@ class TestModelMissingToolBasic:
     def test_missing_tool_serialization(self):
         """Test missing tool serialization."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="serialization_test",
             reason="Testing serialization",
             expected_type="SerializationType",
@@ -135,6 +148,7 @@ class TestModelMissingToolEnums:
         """Test different reason categories."""
         for reason in EnumToolMissingReason:
             tool = ModelMissingTool(
+                version=DEFAULT_VERSION,
                 tool_name="test_tool",
                 reason=f"Test reason for {reason.value}",
                 expected_type="TestType",
@@ -146,6 +160,7 @@ class TestModelMissingToolEnums:
         """Test different criticality levels."""
         for criticality in EnumToolCriticality:
             tool = ModelMissingTool(
+                version=DEFAULT_VERSION,
                 tool_name="test_tool",
                 reason="Test reason",
                 expected_type="TestType",
@@ -157,6 +172,7 @@ class TestModelMissingToolEnums:
         """Test different tool categories."""
         for category in EnumToolCategory:
             tool = ModelMissingTool(
+                version=DEFAULT_VERSION,
                 tool_name="test_tool",
                 reason="Test reason",
                 expected_type="TestType",
@@ -167,6 +183,7 @@ class TestModelMissingToolEnums:
     def test_enum_combinations(self):
         """Test various enum combinations."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="complex_tool",
             reason="Complex error scenario",
             expected_type="ComplexType",
@@ -187,7 +204,10 @@ class TestModelMissingToolEdgeCases:
         """Test tool name at maximum length."""
         long_name = "a" * 200  # Maximum length
         tool = ModelMissingTool(
-            tool_name=long_name, reason="Test reason", expected_type="TestType"
+            version=DEFAULT_VERSION,
+            tool_name=long_name,
+            reason="Test reason",
+            expected_type="TestType",
         )
         assert tool.tool_name == long_name
 
@@ -195,7 +215,10 @@ class TestModelMissingToolEdgeCases:
         """Test reason at maximum length."""
         long_reason = "a" * 1000  # Maximum length
         tool = ModelMissingTool(
-            tool_name="test_tool", reason=long_reason, expected_type="TestType"
+            version=DEFAULT_VERSION,
+            tool_name="test_tool",
+            reason=long_reason,
+            expected_type="TestType",
         )
         assert tool.reason == long_reason
 
@@ -203,7 +226,10 @@ class TestModelMissingToolEdgeCases:
         """Test expected_type at maximum length."""
         long_type = "a" * 500  # Maximum length
         tool = ModelMissingTool(
-            tool_name="test_tool", reason="Test reason", expected_type=long_type
+            version=DEFAULT_VERSION,
+            tool_name="test_tool",
+            reason="Test reason",
+            expected_type=long_type,
         )
         assert tool.expected_type == long_type
 
@@ -211,6 +237,7 @@ class TestModelMissingToolEdgeCases:
         """Test expected_interface at maximum length."""
         long_interface = "a" * 300  # Maximum length
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="test_tool",
             reason="Test reason",
             expected_type="TestType",
@@ -222,6 +249,7 @@ class TestModelMissingToolEdgeCases:
         """Test actual_type_found at maximum length."""
         long_type = "a" * 500  # Maximum length
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="test_tool",
             reason="Test reason",
             expected_type="TestType",
@@ -233,6 +261,7 @@ class TestModelMissingToolEdgeCases:
         """Test error_details at maximum length."""
         long_error = "a" * 2000  # Maximum length
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="test_tool",
             reason="Test reason",
             expected_type="TestType",
@@ -243,6 +272,7 @@ class TestModelMissingToolEdgeCases:
     def test_unicode_characters(self):
         """Test with unicode characters."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="unicode_test_tool",
             reason="Unicode测试原因",
             expected_type="Unicode类型",
@@ -254,6 +284,7 @@ class TestModelMissingToolEdgeCases:
     def test_special_characters(self):
         """Test with special characters."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="tool-with-special_chars.123",
             reason="Reason with special chars: !@#$%^&*()",
             expected_type="Type<Generic>",
@@ -269,6 +300,7 @@ class TestModelMissingToolBusinessScenarios:
     def test_import_error_scenario(self):
         """Test import error scenario."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="missing_dependency",
             reason="ImportError: No module named 'missing_dependency'",
             expected_type="MissingDependency",
@@ -285,6 +317,7 @@ class TestModelMissingToolBusinessScenarios:
     def test_type_mismatch_scenario(self):
         """Test type mismatch scenario."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="type_mismatch_tool",
             reason="Type mismatch: expected Processor, got StringProcessor",
             expected_type="Processor",
@@ -302,6 +335,7 @@ class TestModelMissingToolBusinessScenarios:
     def test_security_tool_missing_scenario(self):
         """Test security tool missing scenario."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="security_validator",
             reason="Security tool not found - critical for authentication",
             expected_type="SecurityValidator",
@@ -317,6 +351,7 @@ class TestModelMissingToolBusinessScenarios:
     def test_utility_tool_missing_scenario(self):
         """Test utility tool missing scenario."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="utility_helper",
             reason="Utility tool not found - non-critical",
             expected_type="UtilityHelper",
@@ -345,13 +380,17 @@ class TestModelMissingToolValidation:
 
         for name in valid_names:
             tool = ModelMissingTool(
-                tool_name=name, reason="Test reason", expected_type="TestType"
+                version=DEFAULT_VERSION,
+                tool_name=name,
+                reason="Test reason",
+                expected_type="TestType",
             )
             assert tool.tool_name == name
 
         # Invalid names (too long)
         with pytest.raises(ValueError):
             ModelMissingTool(
+                version=DEFAULT_VERSION,
                 tool_name="a" * 201,  # Too long
                 reason="Test reason",
                 expected_type="TestType",
@@ -369,13 +408,17 @@ class TestModelMissingToolValidation:
 
         for reason in valid_reasons:
             tool = ModelMissingTool(
-                tool_name="test_tool", reason=reason, expected_type="TestType"
+                version=DEFAULT_VERSION,
+                tool_name="test_tool",
+                reason=reason,
+                expected_type="TestType",
             )
             assert tool.reason == reason
 
         # Invalid reasons (too long)
         with pytest.raises(ValueError):
             ModelMissingTool(
+                version=DEFAULT_VERSION,
                 tool_name="test_tool",
                 reason="a" * 1001,  # Too long
                 expected_type="TestType",
@@ -393,13 +436,17 @@ class TestModelMissingToolValidation:
 
         for type_name in valid_types:
             tool = ModelMissingTool(
-                tool_name="test_tool", reason="Test reason", expected_type=type_name
+                version=DEFAULT_VERSION,
+                tool_name="test_tool",
+                reason="Test reason",
+                expected_type=type_name,
             )
             assert tool.expected_type == type_name
 
         # Invalid types (too long)
         with pytest.raises(ValueError):
             ModelMissingTool(
+                version=DEFAULT_VERSION,
                 tool_name="test_tool",
                 reason="Test reason",
                 expected_type="a" * 501,  # Too long
@@ -412,6 +459,7 @@ class TestModelMissingToolSerialization:
     def test_json_serialization(self):
         """Test JSON serialization."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="json_test_tool",
             reason="Testing JSON serialization",
             expected_type="JsonTestType",
@@ -429,6 +477,7 @@ class TestModelMissingToolSerialization:
     def test_roundtrip_serialization(self):
         """Test serialization and deserialization roundtrip."""
         original_tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="roundtrip_tool",
             reason="Testing roundtrip serialization",
             expected_type="RoundtripType",
@@ -460,6 +509,7 @@ class TestModelMissingToolSerialization:
     def test_partial_serialization(self):
         """Test serialization with only required fields."""
         tool = ModelMissingTool(
+            version=DEFAULT_VERSION,
             tool_name="partial_tool",
             reason="Partial serialization test",
             expected_type="PartialType",

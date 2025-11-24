@@ -48,6 +48,12 @@ class ModelSerializationSubcontract(BaseModel):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
+    # Model version for instance tracking
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Subcontract version (auto-generated if not provided)",
+    )
+
     # Serialization format configuration
     serialization_format: str = Field(
         default="yaml",

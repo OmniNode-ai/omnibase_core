@@ -60,7 +60,7 @@ class ModelToolMetadata(BaseModel):
     )
     description: str = Field(default="", description="Tool description")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Tool version",
     )
     author: str = Field(default="Unknown", description="Tool author")

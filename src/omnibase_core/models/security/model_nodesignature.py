@@ -252,7 +252,11 @@ class ModelNodeSignature(BaseModel):
     def ensure_metadata(self) -> ModelSignatureMetadata:
         """Ensure metadata object exists and return it."""
         if self.signature_metadata is None:
-            self.signature_metadata = ModelSignatureMetadata()
+            from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+            self.signature_metadata = ModelSignatureMetadata(
+                signature_version=ModelSemVer(major=1, minor=0, patch=0)
+            )
         return self.signature_metadata
 
     def get_signature_hash(self) -> str:

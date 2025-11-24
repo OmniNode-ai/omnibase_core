@@ -43,7 +43,10 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
     node_name: str = Field(
         default=..., description="Name of the node (e.g. 'node_generator')"
     )
-    version: ModelSemVer = Field(default=..., description="Version of the node")
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Version of the node",
+    )
 
     # ONEX Architecture Classification
     node_type: str = Field(
@@ -111,6 +114,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
                 value=capability_str.lower(),
                 description=f"Node capabilities: {', '.join(actions)}",
                 capability_display_name=capability_str.upper(),
+                version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             )
 
         return cast(ModelNodeCapability, v)
@@ -157,6 +161,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
             value=f"node_{node_name.lower()}_capabilities",
             description=f"Capabilities for {node_name}: {', '.join(actions)}",
             capability_display_name=f"{node_name.upper()}_CAPABILITIES",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         return cls(

@@ -25,6 +25,9 @@ from omnibase_core.models.core.model_tool_collection import ModelToolCollection
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 
 class TestModelProjectMetadataBlock:
     """Test cases for ModelProjectMetadataBlock."""
@@ -32,12 +35,14 @@ class TestModelProjectMetadataBlock:
     def test_minimal_instantiation(self):
         """Test instantiation with minimal required fields."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Test Author",
             name="test-project",
             namespace="test.namespace",
@@ -55,6 +60,7 @@ class TestModelProjectMetadataBlock:
     def test_instantiation_with_all_fields(self):
         """Test instantiation with all fields populated."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=2, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=5, patch=0),
             schema_version=ModelSemVer(major=1, minor=2, patch=0),
@@ -63,10 +69,14 @@ class TestModelProjectMetadataBlock:
         entrypoint = EntrypointBlock(type="python", target="main.py")
 
         tools = ModelToolCollection(
-            collection_id=uuid4(), tools={"tool1": {"version": "1.0"}}
+            version=DEFAULT_VERSION,
+            collection_id=uuid4(),
+            collection_version=DEFAULT_VERSION,
+            tools={"tool1": {"version": "1.0"}},
         )
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Test Author",
             name="full-project",
             namespace="test.full",
@@ -94,12 +104,14 @@ class TestModelProjectMetadataBlock:
     def test_parse_entrypoint_with_uri_string(self):
         """Test _parse_entrypoint with valid URI string."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Test",
             name="test",
             namespace="test",
@@ -117,12 +129,14 @@ class TestModelProjectMetadataBlock:
     def test_parse_entrypoint_with_entrypoint_block(self):
         """Test _parse_entrypoint with EntrypointBlock object."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Test",
             name="test",
             namespace="test",
@@ -137,12 +151,14 @@ class TestModelProjectMetadataBlock:
     def test_parse_entrypoint_invalid_value(self):
         """Test _parse_entrypoint raises error for invalid value."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Test",
             name="test",
             namespace="test",
@@ -187,7 +203,7 @@ class TestModelProjectMetadataBlock:
         assert metadata.entrypoint.type == "python"
         assert metadata.entrypoint.target == "main.py"
         assert metadata.versions.metadata_version == ModelSemVer(
-            major=1, minor=0, patch=0
+            version=DEFAULT_VERSION, major=1, minor=0, patch=0
         )
 
     def test_from_dict_with_entrypoint_block(self):
@@ -249,13 +265,13 @@ class TestModelProjectMetadataBlock:
         metadata = ModelProjectMetadataBlock.from_dict(data)
 
         assert metadata.versions.metadata_version == ModelSemVer(
-            major=2, minor=5, patch=0
+            version=DEFAULT_VERSION, major=2, minor=5, patch=0
         )
         assert metadata.versions.protocol_version == ModelSemVer(
-            major=1, minor=8, patch=0
+            version=DEFAULT_VERSION, major=1, minor=8, patch=0
         )
         assert metadata.versions.schema_version == ModelSemVer(
-            major=3, minor=0, patch=0
+            version=DEFAULT_VERSION, major=3, minor=0, patch=0
         )
         # Ensure version fields were popped from original dict
         assert "metadata_version" not in metadata.model_dump()
@@ -280,6 +296,7 @@ class TestModelProjectMetadataBlock:
     def test_to_serializable_dict_basic(self):
         """Test to_serializable_dict converts entrypoint to URI string."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -288,6 +305,7 @@ class TestModelProjectMetadataBlock:
         entrypoint = EntrypointBlock(type="python", target="main.py")
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Test Author",
             name="test-project",
             namespace="test.namespace",
@@ -305,12 +323,14 @@ class TestModelProjectMetadataBlock:
     def test_to_serializable_dict_excludes_none_values(self):
         """Test to_serializable_dict excludes None and empty values."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Test Author",
             name="test-project",
             namespace="test.namespace",
@@ -329,14 +349,21 @@ class TestModelProjectMetadataBlock:
     def test_to_serializable_dict_preserves_tools(self):
         """Test to_serializable_dict preserves tools even if empty."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
-        tools = ModelToolCollection(collection_id=uuid4(), tools={})
+        tools = ModelToolCollection(
+            version=DEFAULT_VERSION,
+            collection_id=uuid4(),
+            collection_version=DEFAULT_VERSION,
+            tools={},
+        )
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Test Author",
             name="test-project",
             namespace="test.namespace",
@@ -357,12 +384,14 @@ class TestModelProjectMetadataBlockEdgeCases:
     def test_empty_namespace(self):
         """Test with empty namespace."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Test",
             name="test",
             namespace="",  # Empty but valid
@@ -375,12 +404,14 @@ class TestModelProjectMetadataBlockEdgeCases:
     def test_unicode_in_fields(self):
         """Test unicode characters in string fields."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Tëst Âuthör 🚀",
             name="test-project",
             namespace="test.namespace",
@@ -396,6 +427,7 @@ class TestModelProjectMetadataBlockEdgeCases:
     def test_very_long_strings(self):
         """Test with very long string values."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -404,6 +436,7 @@ class TestModelProjectMetadataBlockEdgeCases:
         long_desc = "a" * 10000
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Test",
             name="test",
             namespace="test",
@@ -417,6 +450,7 @@ class TestModelProjectMetadataBlockEdgeCases:
     def test_lifecycle_enum_values(self):
         """Test all lifecycle enum values."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -428,6 +462,7 @@ class TestModelProjectMetadataBlockEdgeCases:
             EnumLifecycle.ARCHIVED,
         ]:
             metadata = ModelProjectMetadataBlock(
+                version=DEFAULT_VERSION,
                 author="Test",
                 name="test",
                 namespace="test",
@@ -440,12 +475,14 @@ class TestModelProjectMetadataBlockEdgeCases:
     def test_extra_fields_allowed(self):
         """Test that extra fields are allowed via model_config."""
         versions = ModelOnexVersionInfo(
+            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         metadata = ModelProjectMetadataBlock(
+            version=DEFAULT_VERSION,
             author="Test",
             name="test",
             namespace="test",

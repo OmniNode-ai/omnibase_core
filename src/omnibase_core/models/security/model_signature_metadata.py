@@ -12,7 +12,7 @@ class ModelSignatureMetadata(BaseModel):
     """Metadata for cryptographic signatures."""
 
     signature_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Signature format version",
     )
     timestamp_source: str | None = Field(

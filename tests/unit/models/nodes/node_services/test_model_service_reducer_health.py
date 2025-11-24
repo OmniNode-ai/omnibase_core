@@ -424,12 +424,15 @@ class TestServiceReducerHealthMonitoring:
 
         # Act
         with patch("asyncio.sleep", mock_sleep):
-            await service_reducer._health_monitor_loop()
+            with pytest.raises(asyncio.CancelledError):
+                await service_reducer._health_monitor_loop()
 
-        # Assert
+        # Assert - CancelledError should be re-raised immediately without logging
+        # to prevent "I/O operation on closed file" errors during teardown
         cancel_logs = [msg for msg in log_messages if "cancelled" in msg.lower()]
-        assert len(cancel_logs) == 1
-        assert "Health monitor cancelled" in cancel_logs[0]
+        assert (
+            len(cancel_logs) == 0
+        ), "Should not log during cancellation to avoid closed file errors"
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_handles_exceptions(self, service_reducer):

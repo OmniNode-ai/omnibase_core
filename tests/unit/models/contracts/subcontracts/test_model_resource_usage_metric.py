@@ -8,10 +8,16 @@ percentage range validation.
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.enums.enum_resource_unit import EnumResourceUnit
 from omnibase_core.models.contracts.subcontracts.model_resource_usage_metric import (
     ModelResourceUsageMetric,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelResourceUsageMetricValidation:
@@ -21,6 +27,7 @@ class TestModelResourceUsageMetricValidation:
         """Test that percentage values <= 150 are valid."""
         # Test at boundary
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="cpu",
             usage_value=150.0,
             is_percentage=True,
@@ -30,6 +37,7 @@ class TestModelResourceUsageMetricValidation:
 
         # Test well within range
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="memory",
             usage_value=85.5,
             is_percentage=True,
@@ -38,6 +46,7 @@ class TestModelResourceUsageMetricValidation:
 
         # Test at zero
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="disk",
             usage_value=0.0,
             is_percentage=True,
@@ -45,9 +54,10 @@ class TestModelResourceUsageMetricValidation:
         assert metric.usage_value == 0.0
 
     def test_invalid_percentage_exceeds_maximum(self) -> None:
-        """Test that percentage values > 150 raise ValueError."""
-        with pytest.raises(ValidationError) as exc_info:
+        """Test that percentage values > 150 raise ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelResourceUsageMetric(
+                version=DEFAULT_VERSION,
                 resource_name="cpu",
                 usage_value=151.0,
                 is_percentage=True,
@@ -59,9 +69,10 @@ class TestModelResourceUsageMetricValidation:
         assert "is_percentage=False" in error_msg
 
     def test_invalid_percentage_far_exceeds_maximum(self) -> None:
-        """Test that percentage values far above 150 raise ValueError."""
-        with pytest.raises(ValidationError) as exc_info:
+        """Test that percentage values far above 150 raise ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelResourceUsageMetric(
+                version=DEFAULT_VERSION,
                 resource_name="memory",
                 usage_value=999.9,
                 is_percentage=True,
@@ -75,6 +86,7 @@ class TestModelResourceUsageMetricValidation:
         """Test that non-percentage metrics can have values > 150."""
         # High byte count
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="memory",
             usage_value=8589934592.0,  # 8GB in bytes
             usage_unit=EnumResourceUnit.BYTES,
@@ -85,6 +97,7 @@ class TestModelResourceUsageMetricValidation:
 
         # High IOPS count
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="disk",
             usage_value=10000.0,
             usage_unit=EnumResourceUnit.IOPS,
@@ -95,6 +108,7 @@ class TestModelResourceUsageMetricValidation:
     def test_non_percentage_with_high_value_and_percentage_flag_false(self) -> None:
         """Test that is_percentage=False allows any high value."""
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="network",
             usage_value=1000000.0,
             usage_unit=EnumResourceUnit.MBPS,
@@ -110,17 +124,22 @@ class TestModelResourceUsageMetricCreation:
     def test_required_fields(self) -> None:
         """Test that required fields are enforced."""
         with pytest.raises(ValidationError):
-            ModelResourceUsageMetric()  # type: ignore[call-arg]
+            ModelResourceUsageMetric(version=DEFAULT_VERSION)  # type: ignore[call-arg]
 
         with pytest.raises(ValidationError):
-            ModelResourceUsageMetric(resource_name="cpu")  # Missing usage_value
+            ModelResourceUsageMetric(
+                version=DEFAULT_VERSION, resource_name="cpu"
+            )  # Missing usage_value
 
         with pytest.raises(ValidationError):
-            ModelResourceUsageMetric(usage_value=50.0)  # Missing resource_name
+            ModelResourceUsageMetric(
+                version=DEFAULT_VERSION, usage_value=50.0
+            )  # Missing resource_name
 
     def test_default_values(self) -> None:
         """Test default field values."""
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="cpu",
             usage_value=75.0,
         )
@@ -133,6 +152,7 @@ class TestModelResourceUsageMetricCreation:
     def test_optional_fields(self) -> None:
         """Test optional field assignment."""
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="memory",
             usage_value=8192.0,
             usage_unit=EnumResourceUnit.BYTES,
@@ -151,6 +171,7 @@ class TestModelResourceUsageMetricCreation:
         """Test string field minimum length constraints."""
         with pytest.raises(ValidationError):
             ModelResourceUsageMetric(
+                version=DEFAULT_VERSION,
                 resource_name="",  # Empty string not allowed
                 usage_value=50.0,
             )
@@ -159,12 +180,14 @@ class TestModelResourceUsageMetricCreation:
         """Test numeric field constraints (non-negative values)."""
         with pytest.raises(ValidationError):
             ModelResourceUsageMetric(
+                version=DEFAULT_VERSION,
                 resource_name="cpu",
                 usage_value=-10.0,  # Must be >= 0
             )
 
         with pytest.raises(ValidationError):
             ModelResourceUsageMetric(
+                version=DEFAULT_VERSION,
                 resource_name="cpu",
                 usage_value=50.0,
                 max_value=-100.0,  # Must be >= 0
@@ -172,6 +195,7 @@ class TestModelResourceUsageMetricCreation:
 
         with pytest.raises(ValidationError):
             ModelResourceUsageMetric(
+                version=DEFAULT_VERSION,
                 resource_name="cpu",
                 usage_value=50.0,
                 threshold_warning=-50.0,  # Must be >= 0
@@ -181,6 +205,7 @@ class TestModelResourceUsageMetricCreation:
         """Test that usage_unit accepts all valid enum values."""
         for unit in EnumResourceUnit:
             metric = ModelResourceUsageMetric(
+                version=DEFAULT_VERSION,
                 resource_name="test_resource",
                 usage_value=100.0,
                 usage_unit=unit,
@@ -195,6 +220,7 @@ class TestModelResourceUsageMetricEdgeCases:
     def test_percentage_at_exactly_150(self) -> None:
         """Test that exactly 150.0 is allowed for percentages."""
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="cpu",
             usage_value=150.0,
             is_percentage=True,
@@ -203,8 +229,9 @@ class TestModelResourceUsageMetricEdgeCases:
 
     def test_percentage_just_above_150(self) -> None:
         """Test that 150.01 is rejected for percentages."""
-        with pytest.raises(ValidationError):
+        with pytest.raises(ModelOnexError):
             ModelResourceUsageMetric(
+                version=DEFAULT_VERSION,
                 resource_name="cpu",
                 usage_value=150.01,
                 is_percentage=True,
@@ -214,6 +241,7 @@ class TestModelResourceUsageMetricEdgeCases:
         """Test that high values are allowed when is_percentage=False."""
         # Even with PERCENTAGE unit, if is_percentage=False, allow high values
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="custom_metric",
             usage_value=500.0,
             usage_unit=EnumResourceUnit.PERCENTAGE,
@@ -225,6 +253,7 @@ class TestModelResourceUsageMetricEdgeCases:
     def test_zero_usage_value(self) -> None:
         """Test that zero usage values are valid."""
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="idle_cpu",
             usage_value=0.0,
             is_percentage=True,
@@ -234,6 +263,7 @@ class TestModelResourceUsageMetricEdgeCases:
     def test_fractional_percentage_values(self) -> None:
         """Test that fractional percentage values are valid."""
         metric = ModelResourceUsageMetric(
+            version=DEFAULT_VERSION,
             resource_name="cpu",
             usage_value=99.999,
             is_percentage=True,

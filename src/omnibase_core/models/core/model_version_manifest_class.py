@@ -94,7 +94,7 @@ class ModelVersionManifest(BaseModel):
 
     # === VALIDATION METADATA ===
     schema_version: SemVerField = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Version manifest schema version",
     )
     checksum: str | None = Field(
@@ -108,7 +108,7 @@ class ModelVersionManifest(BaseModel):
 
     # === BLUEPRINT COMPLIANCE ===
     blueprint_version: SemVerField = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Tool group blueprint version followed",
     )
     blueprint_compliant: bool = Field(

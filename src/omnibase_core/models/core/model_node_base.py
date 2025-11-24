@@ -36,7 +36,10 @@ class ModelNodeBase(BaseModel):
         description="Container reference metadata",
     )
     node_name: str = Field(default=..., description="Node name from contract")
-    version: ModelSemVer = Field(default=..., description="Node version")
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED - specify in contract
+        description="Node version",
+    )
     node_tier: int = Field(default=1, description="Node tier classification")
     node_classification: str = Field(
         default=..., description="Node classification type"

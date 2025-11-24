@@ -725,15 +725,6 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                         {"node_name": self.get_node_name()},
                     )
                     return cast(InputStateT, result)
-                if data is not None and hasattr(data, "dict"):
-                    dict_data = data.dict()
-                    result = input_state_class(**dict_data)
-                    emit_log_event(
-                        LogLevel.DEBUG,
-                        "✅ EVENT_TO_INPUT_STATE: Created input state from dict method",
-                        {"node_name": self.get_node_name()},
-                    )
-                    return cast(InputStateT, result)
                 result = input_state_class(data=data)
                 emit_log_event(
                     LogLevel.DEBUG,
@@ -939,13 +930,6 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 emit_log_event(
                     LogLevel.DEBUG,
                     "✅ PUBLISH_COMPLETION: Added output state via model_dump",
-                    {"node_name": self.get_node_name()},
-                )
-            elif hasattr(output_state, "dict"):
-                completion_data["result"] = output_state.dict()
-                emit_log_event(
-                    LogLevel.DEBUG,
-                    "✅ PUBLISH_COMPLETION: Added output state via dict method",
                     {"node_name": self.get_node_name()},
                 )
             else:

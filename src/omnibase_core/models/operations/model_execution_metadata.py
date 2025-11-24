@@ -66,7 +66,7 @@ class ModelExecutionMetadata(BaseModel):
         description="Execution environment",
     )
     version: ModelSemVer = Field(
-        default=ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="System version in semantic version format",
     )
     node_id: UUID | None = Field(
