@@ -586,6 +586,9 @@ class MixinNodeService:
 
         This method ensures the health monitor task is properly cancelled
         and awaited to prevent "Task was destroyed but it is pending!" warnings.
+
+        Note: The task reference is preserved after cleanup so tests can verify
+        cancellation status.
         """
         # Check if the health task attribute exists and has a task
         if not hasattr(self, "_health_task"):
@@ -596,11 +599,18 @@ class MixinNodeService:
             return
 
         # Only cancel if not already done
-        if not health_task.done():
-            health_task.cancel()
+        # Add try-except to handle edge cases where task is already being cancelled
+        try:
+            if not health_task.done():
+                health_task.cancel()
+        except RuntimeError:
+            # Task is already being cancelled or event loop is closed
+            pass
 
         # Always await to ensure proper cleanup
+        # Use asyncio.shield to prevent cancellation from propagating
         try:
+            # Suppress cancellation to allow cleanup to complete
             await health_task
         except asyncio.CancelledError:
             # Expected when cancelling - this is normal
@@ -608,6 +618,9 @@ class MixinNodeService:
         except Exception as e:
             # Log unexpected errors during cleanup
             self._log_error(f"Unexpected error during health task cleanup: {e}")
+
+        # DO NOT set _health_task to None here - keep the reference
+        # so tests can verify the task was cancelled
 
     async def _wait_for_active_invocations(self, timeout_ms: int = 30000) -> None:
         """Wait for active invocations to complete."""

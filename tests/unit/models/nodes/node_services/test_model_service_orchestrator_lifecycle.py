@@ -10,6 +10,7 @@ Section 6.4: ModelServiceOrchestrator Integration
 
 import asyncio
 import signal
+import time
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
 from uuid import UUID, uuid4
@@ -708,7 +709,9 @@ class TestModelServiceOrchestratorHealthMonitoring:
         """
         # Set service as running
         service_orchestrator._service_running = True
-        service_orchestrator._start_time = asyncio.get_event_loop().time()
+        service_orchestrator._start_time = (
+            time.time()
+        )  # Use time.time() for non-async tests
         service_orchestrator._total_invocations = 100
         service_orchestrator._successful_invocations = 95
         service_orchestrator._failed_invocations = 5
@@ -739,7 +742,9 @@ class TestModelServiceOrchestratorHealthMonitoring:
         """
         service_orchestrator._service_running = True
         service_orchestrator._shutdown_requested = True
-        service_orchestrator._start_time = asyncio.get_event_loop().time()
+        service_orchestrator._start_time = (
+            time.time()
+        )  # Use time.time() for non-async tests
 
         health = service_orchestrator.get_service_health()
 
@@ -758,7 +763,9 @@ class TestModelServiceOrchestratorHealthMonitoring:
         - active_invocations count matches actual
         """
         service_orchestrator._service_running = True
-        service_orchestrator._start_time = asyncio.get_event_loop().time()
+        service_orchestrator._start_time = (
+            time.time()
+        )  # Use time.time() for non-async tests
         service_orchestrator._active_invocations.add(uuid4())
         service_orchestrator._active_invocations.add(uuid4())
 

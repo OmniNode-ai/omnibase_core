@@ -116,6 +116,12 @@ def service_orchestrator(
     service._log_warning = Mock()
     service._log_error = Mock()
 
+    # Bind cleanup health task method
+    async def async_cleanup_health_task():
+        return await MixinNodeService._cleanup_health_task(service)
+
+    service._cleanup_health_task = async_cleanup_health_task
+
     async def async_stop_service_mode():
         return await MixinNodeService.stop_service_mode(service)
 
@@ -1143,10 +1149,12 @@ class TestShutdownIntegration:
         - Health task cancelled
         - No errors
         """
-        # Create mock health task
-        health_task = Mock()
-        health_task.done = Mock(return_value=False)
-        health_task.cancel = Mock()
+
+        # Create a real asyncio task instead of a mock (asyncio tasks must be awaitable)
+        async def long_health_check():
+            await asyncio.sleep(10)
+
+        health_task = asyncio.create_task(long_health_check())
 
         service_orchestrator._service_running = True
         service_orchestrator._health_task = health_task
@@ -1155,8 +1163,11 @@ class TestShutdownIntegration:
 
         await service_orchestrator.stop_service_mode()
 
+        # Give event loop time to process cancellation
+        await asyncio.sleep(0.01)
+
         # Health task should be cancelled
-        assert health_task.cancel.called
+        assert health_task.cancelled()
 
     @pytest.mark.asyncio
     async def test_resource_cleanup(
