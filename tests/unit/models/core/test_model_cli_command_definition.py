@@ -35,7 +35,7 @@ class TestModelCliCommandDefinitionCreation:
             action="test_action",
             description="Test command",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test event",
@@ -80,7 +80,7 @@ class TestModelCliCommandDefinitionCreation:
             required_args=[required_arg],
             optional_args=[optional_arg],
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="DATA_PROCESS",
                 namespace="onex",
                 description="Data processing event",
@@ -112,7 +112,7 @@ class TestModelCliCommandDefinitionCreation:
                 action="test",
                 description="Test",
                 event_type=ModelEventType(
-                    version=DEFAULT_VERSION,
+                    schema_version=DEFAULT_VERSION,
                     event_name="NODE_START",
                     namespace="onex",
                     description="Test",
@@ -131,7 +131,7 @@ class TestModelCliCommandDefinitionCreation:
                 action="test",
                 description="Test",
                 event_type=ModelEventType(
-                    version=DEFAULT_VERSION,
+                    schema_version=DEFAULT_VERSION,
                     event_name="NODE_START",
                     namespace="onex",
                     description="Test",
@@ -147,7 +147,7 @@ class TestModelCliCommandDefinitionCreation:
             action="test",
             description="Test",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -166,7 +166,7 @@ class TestModelCliCommandDefinitionCreation:
                 action="test",
                 description="Test",
                 event_type=ModelEventType(
-                    version=DEFAULT_VERSION,
+                    schema_version=DEFAULT_VERSION,
                     event_name="NODE_START",
                     namespace="onex",
                     description="Test",
@@ -183,7 +183,7 @@ class TestModelCliCommandDefinitionCreation:
             action="test",
             description="Test",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -206,7 +206,7 @@ class TestQualifiedName:
             action="build",
             description="Build command",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -232,7 +232,7 @@ class TestQualifiedName:
             action="validate",
             description="Validation command",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -258,7 +258,7 @@ class TestQualifiedName:
             action="test",
             description="Test",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -282,7 +282,7 @@ class TestHelpTextGeneration:
             action="simple",
             description="A simple command",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -313,7 +313,7 @@ class TestHelpTextGeneration:
             description="Process files",
             required_args=[required_arg],
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -344,7 +344,7 @@ class TestHelpTextGeneration:
             description="Run task",
             optional_args=[optional_arg],
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -367,7 +367,7 @@ class TestHelpTextGeneration:
             action="deploy",
             description="Deploy application",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -393,7 +393,7 @@ class TestHelpTextGeneration:
             action="old",
             description="Old command functionality",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -420,7 +420,7 @@ class TestHelpTextGeneration:
             action="legacy",
             description="Legacy command",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -459,7 +459,7 @@ class TestHelpTextGeneration:
             required_args=[required_arg],
             optional_args=[optional_arg],
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -498,7 +498,7 @@ class TestCommandMatching:
             action="test",
             description="Test",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -523,7 +523,7 @@ class TestCommandMatching:
             action="validate",
             description="Validate",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -543,7 +543,7 @@ class TestCommandMatching:
             action="test",
             description="Test",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -591,7 +591,7 @@ class TestCommandDefinitionIntegration:
             description="Convert files",
             required_args=args,
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -632,7 +632,7 @@ class TestCommandDefinitionIntegration:
             description="Execute task",
             optional_args=args,
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -653,7 +653,7 @@ class TestCommandDefinitionIntegration:
             action="test",
             description="Serialization test",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",

@@ -74,7 +74,7 @@ class TestModelCliCommandRegistryCreation:
             action=command_name,
             description=f"Test command {command_name}",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test event",
@@ -116,7 +116,7 @@ class TestCommandRegistration:
             action="validate",
             description="Validation command",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -190,7 +190,7 @@ class TestCommandRegistration:
             action=command_name,
             description=f"Test command {command_name}",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test event",
@@ -230,7 +230,7 @@ class TestCommandRetrieval:
             action="process",
             description="Process command",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -342,7 +342,7 @@ class TestCommandRetrieval:
             action="action",
             description="Test action",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -373,7 +373,7 @@ class TestCommandRetrieval:
             action="cmd",
             description="Test",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -399,7 +399,7 @@ class TestCommandRetrieval:
             action=command_name,
             description=f"Test command {command_name}",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test event",
@@ -626,7 +626,7 @@ class TestRegistryClear:
             action="test",
             description="Test",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
@@ -707,7 +707,7 @@ cli_interface:
             action="global_cmd",
             description="Global command test",
             event_type=ModelEventType(
-                version=DEFAULT_VERSION,
+                schema_version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test",
