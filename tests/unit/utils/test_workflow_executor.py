@@ -43,14 +43,20 @@ def simple_workflow_definition() -> ModelWorkflowDefinition:
         workflow_metadata=ModelWorkflowDefinitionMetadata(
             workflow_name="test_workflow",
             workflow_version=ModelSemVer(major=1, minor=0, patch=0),
+            version=ModelSemVer(major=1, minor=0, patch=0),
             description="Test workflow for unit tests",
             execution_mode="sequential",
         ),
-        execution_graph=ModelExecutionGraph(nodes=[]),
+        execution_graph=ModelExecutionGraph(
+            nodes=[],
+            version=ModelSemVer(major=1, minor=0, patch=0),
+        ),
         coordination_rules=ModelCoordinationRules(
             parallel_execution_allowed=False,
             failure_recovery_strategy=EnumFailureRecoveryStrategy.RETRY,
+            version=ModelSemVer(major=1, minor=0, patch=0),
         ),
+        version=ModelSemVer(major=1, minor=0, patch=0),
     )
 
 
