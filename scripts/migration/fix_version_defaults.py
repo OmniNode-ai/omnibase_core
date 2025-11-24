@@ -83,6 +83,34 @@ def fix_file(filepath: Path) -> int:
     return fixes
 
 
+def find_project_root(start_path: Path) -> Path | None:
+    """Find project root by looking for pyproject.toml or src/ directory.
+
+    Args:
+        start_path: Starting directory (usually script location)
+
+    Returns:
+        Project root path or None if not found
+    """
+    current = start_path.resolve()
+
+    # Walk up directory tree (max 10 levels to avoid infinite loops)
+    for _ in range(10):
+        # Check for project markers
+        if (current / "pyproject.toml").exists():
+            return current
+        if (current / "src" / "omnibase_core").exists():
+            return current
+
+        # Move up one level
+        parent = current.parent
+        if parent == current:  # Reached filesystem root
+            break
+        current = parent
+
+    return None
+
+
 def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -107,16 +135,23 @@ def main() -> int:
     if args.base_path:
         base_path = args.base_path.resolve()
     else:
-        # Auto-detect: Look for src/omnibase_core/models from script location
+        # Auto-detect: Find project root from script location
         script_dir = Path(__file__).parent
-        # Try project root (assuming script is in scripts/migration/)
-        project_root = script_dir.parent.parent
+        project_root = find_project_root(script_dir)
+
+        if project_root is None:
+            print("❌ Error: Could not auto-detect project root")
+            print("   Looked for: pyproject.toml or src/omnibase_core directory")
+            print("   Please specify --base-path explicitly")
+            return 1
+
         base_path = project_root / "src" / "omnibase_core" / "models"
 
         # Validate auto-detected path exists
         if not base_path.exists():
             print(f"❌ Error: Auto-detected path does not exist: {base_path}")
-            print("Please specify --base-path explicitly")
+            print(f"   Project root found: {project_root}")
+            print("   Please specify --base-path explicitly")
             return 1
 
     if not base_path.exists():
@@ -133,31 +168,44 @@ def main() -> int:
     for filepath in base_path.rglob("*.py"):
         try:
             content = filepath.read_text(encoding="utf-8")
-            # Quick check if file has ModelSemVer and Field
-            if ": ModelSemVer = Field(" in content:
-                # Check if it's missing default_factory
-                if (
-                    ": ModelSemVer = Field(default=..." in content
-                    or ": ModelSemVer = Field(\n        description=" in content
-                    or (
-                        ": ModelSemVer = Field(description=" in content
-                        and "default_factory" not in content
-                    )
-                ):
-
-                    fixes = fix_file(filepath)
-                    if fixes > 0:
-                        try:
-                            rel_path = filepath.relative_to(base_path.parent.parent)
-                        except ValueError:
-                            rel_path = filepath
-                        print(f"  ✓ {rel_path}: {fixes} fix(es)")
-                        total_fixes += fixes
-                        files_fixed += 1
-        except (OSError, UnicodeDecodeError) as e:
+        except (OSError, PermissionError) as e:
             print(f"  ✗ Error reading {filepath}: {e}")
-        except (re.error, ValueError) as e:
-            print(f"  ✗ Error processing {filepath}: {e}")
+            continue
+        except UnicodeDecodeError as e:
+            print(f"  ✗ Error decoding {filepath} (not UTF-8): {e}")
+            continue
+
+        try:
+            # Check if file has ModelSemVer fields that might need fixing
+            if ": ModelSemVer = Field(" in content:
+                # Always try to fix - the fix_file() function will detect which
+                # specific fields need fixing via regex patterns. This avoids
+                # the over-restrictive check where if ANY field has default_factory,
+                # we skip ALL fields in the file.
+                fixes = fix_file(filepath)
+                if fixes > 0:
+                    try:
+                        rel_path = filepath.relative_to(base_path.parent.parent)
+                    except ValueError:
+                        # If relative path fails, use absolute path
+                        rel_path = filepath
+                    print(f"  ✓ {rel_path}: {fixes} fix(es)")
+                    total_fixes += fixes
+                    files_fixed += 1
+        except re.error as e:
+            print(f"  ✗ Regex error in {filepath}: {e}")
+            continue
+        except OSError as e:
+            # File operation errors during fix_file()
+            print(f"  ✗ File operation error in {filepath}: {e}")
+            continue
+        except ValueError as e:
+            print(f"  ✗ Value error in {filepath}: {e}")
+            continue
+        except RuntimeError as e:
+            # Unexpected processing errors
+            print(f"  ✗ Runtime error processing {filepath}: {e}")
+            continue
 
     print(f"\n✓ Fixed {total_fixes} fields in {files_fixed} files")
     return 0

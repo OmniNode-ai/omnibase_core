@@ -28,6 +28,8 @@ from pathlib import Path
 from omnibase_core.models.core.model_mixin_metadata import ModelMixinMetadataCollection
 
 # Load all mixin metadata
+# NOTE: from_yaml() is the canonical API for loading YAML manifests
+# This is NOT a breaking change - it's the standard Pydantic/ONEX pattern
 collection = ModelMixinMetadataCollection.from_yaml(
     Path("src/omnibase_core/mixins/mixin_metadata.yaml")
 )

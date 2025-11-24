@@ -88,7 +88,7 @@ mixin_test:
         yaml_file = tmp_path / "test_invalid_code_patterns_type.yaml"
         yaml_file.write_text(yaml_content)
 
-        with pytest.raises(ModelOnexError, match="code_patterns.*must be a mapping"):
+        with pytest.raises(ModelOnexError, match=r"code_patterns\b.*must be a mapping"):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
     def test_invalid_methods_type_raises_error(self, tmp_path: Path) -> None:
@@ -196,7 +196,7 @@ mixin_test:
         yaml_file = tmp_path / "test_invalid_performance_type.yaml"
         yaml_file.write_text(yaml_content)
 
-        with pytest.raises(ModelOnexError, match="performance.*must be a mapping"):
+        with pytest.raises(ModelOnexError, match=r"performance\b.*must be a mapping"):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
     def test_invalid_use_cases_type_raises_error(self, tmp_path: Path) -> None:

@@ -7,11 +7,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     default_model_version,
+    parse_semver_from_string,
 )
 from omnibase_core.models.security.model_certificate_validation_level import (
     ModelCertificateValidationLevel,
@@ -184,6 +186,32 @@ class ModelTrustPolicy(BaseModel):
     )
     expires_at: datetime | None = Field(default=None, description="When policy expires")
     auto_renewal: bool = Field(default=False, description="Automatically renew policy")
+
+    @field_validator("version", mode="before")
+    @classmethod
+    def parse_input_version(cls, v: Any) -> Any:
+        """Parse version from string, dict, or ModelSemVer.
+
+        Args:
+            v: Version as ModelSemVer, string, or dict
+
+        Returns:
+            ModelSemVer instance
+
+        Raises:
+            ModelOnexError: If version format is invalid
+        """
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, str):
+            return parse_semver_from_string(v)
+        if isinstance(v, dict):
+            return ModelSemVer(**v)
+
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+            message="version must be a string, dict, or ModelSemVer",
+        )
 
     @field_validator("global_minimum_signatures")
     @classmethod

@@ -29,7 +29,7 @@ class ModelEventTransformation(BaseModel):
     # Model version for instance tracking
     version: ModelSemVer = Field(
         default_factory=default_model_version,
-        description="Subcontract version (auto-generated if not provided)",
+        description="Subcontract version (auto-generated via default_model_version)",
     )
 
     transformation_name: str = Field(

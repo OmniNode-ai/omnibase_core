@@ -91,7 +91,7 @@ class ModelStateContract(BaseModel):
 
     # Core contract metadata
     contract_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the contract schema",
     )
 

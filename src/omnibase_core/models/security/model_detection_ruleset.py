@@ -22,7 +22,10 @@ class ModelDetectionRuleSet(BaseModel):
 
     ruleset_id: UUID = Field(description="Unique identifier for this ruleset")
     ruleset_name: str = Field(description="Human-readable name for this ruleset")
-    version: ModelSemVer = Field(description="Version of this ruleset")
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Version of this ruleset",
+    )
     patterns: list[ModelDetectionPattern] = Field(
         default_factory=list, description="Detection patterns in this ruleset"
     )

@@ -53,7 +53,7 @@ class ModelOnexInternalOutputState(BaseModel):
     node_name: str = Field(default=..., description="Required node name for processing")
     node_version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
-        description="Required node version for processing",
+        description="Optional node version for processing (defaults to 1.0.0 if not provided)",
     )
 
     # Processing results

@@ -12,11 +12,13 @@
 #   bash scripts/fix_version_field_pattern1.sh [--dry-run] [--verbose] [--no-backup]
 #
 # Safety:
-#   - Backups are created by default: Each modified file gets a .bak copy
-#   - Backups are created BEFORE applying sed replacements (one .bak per file)
-#   - Use --no-backup to skip backup creation (not recommended)
+#   - Backups created by default: <filename>.py → <filename>.py.bak (one per file)
+#   - Backups created BEFORE applying sed replacements
+#   - Use --no-backup to skip backup creation (not recommended for live runs)
 #   - Use --dry-run to preview changes without modifying files
-#   - All changes are easily reversible with git checkout
+#   - All changes are easily reversible:
+#     * Restore individual file: mv file.py.bak file.py
+#     * Restore all files: git checkout tests/unit/models/contracts/subcontracts/
 #
 # ==============================================================================
 
@@ -234,13 +236,24 @@ files_modified=0
 for model in "${MODELS[@]}"; do
   # Find test file for this model
   # Convert ModelActionConfigParameter → test_model_action_config_parameter.py
+  #
+  # BSD/macOS sed compatibility notes:
+  #   - sed 's/Model//g'           - Remove "Model" prefix (portable)
+  #   - sed 's/\([A-Z]\)/_\1/g'    - Insert underscore before capitals (portable)
+  #   - sed 's/^_//'               - Remove leading underscore (portable)
+  #   - tr '[A-Z]' '[a-z]'         - Lowercase conversion (avoids GNU \L extension)
+  #
+  # This pipeline is fully portable across GNU and BSD sed implementations.
   test_name=$(echo "$model" | sed 's/Model//g' | \
-    sed 's/\([A-Z]\)/_\L\1/g' | sed 's/^_//' | tr '[A-Z]' '[a-z]')
+    sed 's/\([A-Z]\)/_\1/g' | sed 's/^_//' | tr '[A-Z]' '[a-z]')
   test_file="$TEST_DIR/test_model_${test_name}.py"
 
   if [ -f "$test_file" ]; then
     # Count instances before
-    before=$(grep -c "${model}()" "$test_file" 2>/dev/null || echo "0")
+    # Note: grep -c outputs "0" on no match, so no need for || echo "0"
+    before=$(grep -c "${model}()" "$test_file" 2>/dev/null || true)
+    # Handle empty/error case by defaulting to 0
+    before=${before:-0}
 
     if [ "$before" -gt 0 ]; then
       if [ "$DRY_RUN" = true ]; then
@@ -263,7 +276,9 @@ for model in "${MODELS[@]}"; do
         sed -i '' "s/${model}()/${model}(version=ModelSemVer(1, 0, 0))/g" "$test_file"
 
         # Count after
-        after=$(grep -c "${model}()" "$test_file" 2>/dev/null || echo "0")
+        # Note: grep -c outputs "0" on no match, so no need for || echo "0"
+        after=$(grep -c "${model}()" "$test_file" 2>/dev/null || true)
+        after=${after:-0}
 
         files_modified=$((files_modified + 1))
         fixed=$((before - after))

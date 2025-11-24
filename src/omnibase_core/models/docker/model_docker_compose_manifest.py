@@ -76,7 +76,7 @@ class ModelDockerComposeManifest(BaseModel):
 
     @field_validator("version", mode="before")
     @classmethod
-    def validate_version(cls, v: str | int | float | ModelSemVer) -> ModelSemVer:
+    def validate_version(cls, v: Any) -> ModelSemVer:
         """Validate Docker Compose version format and convert to ModelSemVer.
 
         Docker Compose uses versions like "3.8" or "3" (major.minor format).
@@ -108,6 +108,20 @@ class ModelDockerComposeManifest(BaseModel):
         if isinstance(v, bool):
             raise ModelOnexError(
                 message=f"Invalid version type: bool (value={v}); expected string, number, or ModelSemVer",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
+        # Handle list input (e.g., version: [3, 8] from malformed YAML)
+        if isinstance(v, list):
+            raise ModelOnexError(
+                message=f"Invalid version type: list (value={v}); expected string, number, or ModelSemVer (not a list)",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
+        # Handle dict input (e.g., version: {major: 3, minor: 8} from malformed YAML)
+        if isinstance(v, dict):
+            raise ModelOnexError(
+                message=f"Invalid version type: dict (keys={list(v.keys())}); expected string, number, or ModelSemVer (not a dict)",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 

@@ -17,6 +17,7 @@ This enforces clean directory structure across the ONEX framework.
 import argparse
 import sys
 from pathlib import Path
+from typing import ClassVar
 
 
 class EmptyDirectoryViolation:
@@ -37,7 +38,7 @@ class EmptyDirectoryValidator:
     """Validates that no directories are empty or contain only __init__.py."""
 
     # Directories to exclude from checks
-    EXCLUDED_DIRS = {
+    EXCLUDED_DIRS: ClassVar[set[str]] = {
         "__pycache__",
         ".git",
         ".pytest_cache",
@@ -57,7 +58,7 @@ class EmptyDirectoryValidator:
     }
 
     # Patterns to exclude (directories containing these strings)
-    EXCLUDED_PATTERNS = {
+    EXCLUDED_PATTERNS: ClassVar[set[str]] = {
         "__pycache__",
         ".egg-info",
         "archived",
@@ -66,7 +67,7 @@ class EmptyDirectoryValidator:
 
     # Metadata files to ignore when checking if directory is empty
     # These are system/tool-generated files that don't indicate real content
-    METADATA_FILES = {
+    METADATA_FILES: ClassVar[set[str]] = {
         ".DS_Store",  # macOS metadata
         "Thumbs.db",  # Windows thumbnail cache
         "desktop.ini",  # Windows folder settings

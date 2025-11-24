@@ -2,7 +2,10 @@ import json
 
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 """
 Model for tool implementation references.
@@ -37,7 +40,7 @@ class ModelToolImplementation(BaseModel):
 
     # Implementation metadata
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the tool implementation",
     )
     registry_source: str = Field(
