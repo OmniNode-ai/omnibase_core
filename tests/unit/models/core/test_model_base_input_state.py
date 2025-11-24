@@ -7,6 +7,10 @@ from datetime import datetime
 import pytest
 
 from omnibase_core.models.core.model_base_input_state import ModelBaseInputState
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelBaseInputState:
@@ -14,7 +18,7 @@ class TestModelBaseInputState:
 
     def test_model_base_input_state_creation_default(self):
         """Test creating ModelBaseInputState with default values."""
-        state = ModelBaseInputState()
+        state = ModelBaseInputState(version=DEFAULT_VERSION)
 
         assert isinstance(state.metadata, dict)
         assert len(state.metadata) == 0
@@ -191,7 +195,7 @@ class TestModelBaseInputState:
 
         # Test with different metadata
         state3 = ModelBaseInputState(
-            metadata={"different": "data"}, timestamp=timestamp
+            version=DEFAULT_VERSION, metadata={"different": "data"}, timestamp=timestamp
         )
         assert state1 != state3
 
@@ -231,8 +235,8 @@ class TestModelBaseInputState:
     def test_model_base_input_state_default_factory(self):
         """Test ModelBaseInputState default factory behavior."""
         # Test that metadata defaults to empty dict
-        state1 = ModelBaseInputState()
-        state2 = ModelBaseInputState()
+        state1 = ModelBaseInputState(version=DEFAULT_VERSION)
+        state2 = ModelBaseInputState(version=DEFAULT_VERSION)
 
         # Both should have empty metadata
         assert state1.metadata == {}
@@ -249,7 +253,7 @@ class TestModelBaseInputState:
         """Test ModelBaseInputState timestamp default factory behavior."""
         # Test that timestamp defaults to current time
         before = datetime.now()
-        state = ModelBaseInputState()
+        state = ModelBaseInputState(version=DEFAULT_VERSION)
         after = datetime.now()
 
         assert before <= state.timestamp <= after

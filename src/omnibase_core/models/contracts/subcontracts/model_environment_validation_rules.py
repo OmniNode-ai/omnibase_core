@@ -43,10 +43,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_environment import EnumEnvironment
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_environment_validation_rule import ModelEnvironmentValidationRule
 
@@ -75,7 +72,7 @@ class ModelEnvironmentValidationRules(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Model version (MUST be provided in YAML contract)",
     )
 

@@ -9,6 +9,10 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.models.core.model_cli_discovery_stats import ModelCliDiscoveryStats
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelCliDiscoveryStatsCreation:
@@ -16,7 +20,7 @@ class TestModelCliDiscoveryStatsCreation:
 
     def test_stats_creation_defaults(self):
         """Test stats initializes with default values."""
-        stats = ModelCliDiscoveryStats()
+        stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
         assert stats.total_tools_discovered == 0
         assert stats.healthy_tools_count == 0
@@ -35,6 +39,7 @@ class TestModelCliDiscoveryStatsCreation:
     def test_stats_creation_with_values(self):
         """Test stats creation with provided values."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=50,
             healthy_tools_count=45,
             unhealthy_tools_count=5,
@@ -71,6 +76,7 @@ class TestHealthPercentageProperty:
     def test_health_percentage_all_healthy(self):
         """Test health percentage when all tools are healthy."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=100,
             healthy_tools_count=100,
             unhealthy_tools_count=0,
@@ -81,6 +87,7 @@ class TestHealthPercentageProperty:
     def test_health_percentage_partial_healthy(self):
         """Test health percentage with partially healthy tools."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=100,
             healthy_tools_count=75,
             unhealthy_tools_count=25,
@@ -91,6 +98,7 @@ class TestHealthPercentageProperty:
     def test_health_percentage_none_healthy(self):
         """Test health percentage when no tools are healthy."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=50,
             healthy_tools_count=0,
             unhealthy_tools_count=50,
@@ -101,6 +109,7 @@ class TestHealthPercentageProperty:
     def test_health_percentage_zero_total(self):
         """Test health percentage returns 100% when no tools discovered."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=0,
             healthy_tools_count=0,
             unhealthy_tools_count=0,
@@ -111,6 +120,7 @@ class TestHealthPercentageProperty:
     def test_health_percentage_decimal_precision(self):
         """Test health percentage with decimal precision."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=3,
             healthy_tools_count=2,
             unhealthy_tools_count=1,
@@ -122,6 +132,7 @@ class TestHealthPercentageProperty:
     def test_health_percentage_single_tool_healthy(self):
         """Test health percentage with single healthy tool."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=1,
             healthy_tools_count=1,
         )
@@ -131,6 +142,7 @@ class TestHealthPercentageProperty:
     def test_health_percentage_single_tool_unhealthy(self):
         """Test health percentage with single unhealthy tool."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=1,
             healthy_tools_count=0,
             unhealthy_tools_count=1,
@@ -145,6 +157,7 @@ class TestRegistryHealthPercentageProperty:
     def test_registry_health_percentage_all_online(self):
         """Test registry health when all registries are online."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             registries_online=5,
             registries_total=5,
         )
@@ -154,6 +167,7 @@ class TestRegistryHealthPercentageProperty:
     def test_registry_health_percentage_partial_online(self):
         """Test registry health with partially online registries."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             registries_online=3,
             registries_total=5,
         )
@@ -163,6 +177,7 @@ class TestRegistryHealthPercentageProperty:
     def test_registry_health_percentage_none_online(self):
         """Test registry health when no registries are online."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             registries_online=0,
             registries_total=10,
         )
@@ -172,6 +187,7 @@ class TestRegistryHealthPercentageProperty:
     def test_registry_health_percentage_zero_total(self):
         """Test registry health returns 100% when no registries configured."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             registries_online=0,
             registries_total=0,
         )
@@ -181,6 +197,7 @@ class TestRegistryHealthPercentageProperty:
     def test_registry_health_percentage_decimal_precision(self):
         """Test registry health percentage with decimal precision."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             registries_online=2,
             registries_total=3,
         )
@@ -194,7 +211,7 @@ class TestToSummaryDict:
 
     def test_to_summary_dict_default_values(self):
         """Test summary dict with default values."""
-        stats = ModelCliDiscoveryStats()
+        stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
         summary = stats.to_summary_dict()
 
@@ -208,6 +225,7 @@ class TestToSummaryDict:
     def test_to_summary_dict_with_values(self):
         """Test summary dict with populated values."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=100,
             healthy_tools_count=95,
             discovery_cache_size=200,
@@ -228,6 +246,7 @@ class TestToSummaryDict:
     def test_to_summary_dict_rounds_health_percentage(self):
         """Test summary dict rounds health percentage to 1 decimal."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=3,
             healthy_tools_count=2,
         )
@@ -240,6 +259,7 @@ class TestToSummaryDict:
     def test_to_summary_dict_format_registries(self):
         """Test summary dict formats registry status correctly."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             registries_online=7,
             registries_total=10,
         )
@@ -250,7 +270,7 @@ class TestToSummaryDict:
 
     def test_to_summary_dict_returns_dict(self):
         """Test summary dict returns a dictionary."""
-        stats = ModelCliDiscoveryStats()
+        stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
         summary = stats.to_summary_dict()
 
@@ -258,7 +278,7 @@ class TestToSummaryDict:
 
     def test_to_summary_dict_has_expected_keys(self):
         """Test summary dict contains expected keys."""
-        stats = ModelCliDiscoveryStats()
+        stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
         summary = stats.to_summary_dict()
 
@@ -279,6 +299,7 @@ class TestDiscoveryStatsEdgeCases:
     def test_stats_with_large_numbers(self):
         """Test stats handles large numbers correctly."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=1_000_000,
             healthy_tools_count=999_999,
             discovery_cache_size=5_000_000,
@@ -292,6 +313,7 @@ class TestDiscoveryStatsEdgeCases:
     def test_stats_with_zero_values(self):
         """Test stats with all zero values."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=0,
             healthy_tools_count=0,
             unhealthy_tools_count=0,
@@ -308,6 +330,7 @@ class TestDiscoveryStatsEdgeCases:
         """Test stats allows negative duration values (for testing)."""
         # Pydantic doesn't enforce non-negative by default for floats
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             last_discovery_duration_ms=-10.0,
         )
 
@@ -316,6 +339,7 @@ class TestDiscoveryStatsEdgeCases:
     def test_stats_with_cache_hit_rate_100(self):
         """Test stats with 100% cache hit rate."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             cache_hit_rate=100.0,
         )
 
@@ -324,6 +348,7 @@ class TestDiscoveryStatsEdgeCases:
     def test_stats_with_cache_hit_rate_0(self):
         """Test stats with 0% cache hit rate."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             cache_hit_rate=0.0,
         )
 
@@ -333,6 +358,7 @@ class TestDiscoveryStatsEdgeCases:
         """Test stats handles very long error messages."""
         long_message = "Error: " + "A" * 10000
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             last_error_message=long_message,
         )
 
@@ -346,6 +372,7 @@ class TestDiscoveryStatsTimestamps:
     def test_stats_with_iso_timestamps(self):
         """Test stats with ISO format timestamps."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             last_refresh_timestamp="2024-01-15T10:30:00Z",
             last_health_check_timestamp="2024-01-15T10:35:00.123456Z",
         )
@@ -356,6 +383,7 @@ class TestDiscoveryStatsTimestamps:
     def test_stats_with_different_timestamp_formats(self):
         """Test stats accepts different timestamp string formats."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             last_refresh_timestamp="2024-01-15 10:30:00",
         )
 
@@ -363,7 +391,7 @@ class TestDiscoveryStatsTimestamps:
 
     def test_stats_timestamp_none_by_default(self):
         """Test timestamps are None by default."""
-        stats = ModelCliDiscoveryStats()
+        stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
         assert stats.last_refresh_timestamp is None
         assert stats.last_health_check_timestamp is None
@@ -375,6 +403,7 @@ class TestDiscoveryStatsPerformanceMetrics:
     def test_stats_with_performance_metrics(self):
         """Test stats with performance metrics."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             last_discovery_duration_ms=125.5,
             average_discovery_duration_ms=150.0,
             cache_hit_rate=85.5,
@@ -386,20 +415,21 @@ class TestDiscoveryStatsPerformanceMetrics:
 
     def test_stats_duration_none_by_default(self):
         """Test duration metrics are None by default."""
-        stats = ModelCliDiscoveryStats()
+        stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
         assert stats.last_discovery_duration_ms is None
         assert stats.average_discovery_duration_ms is None
 
     def test_stats_cache_hit_rate_none_by_default(self):
         """Test cache hit rate is None by default."""
-        stats = ModelCliDiscoveryStats()
+        stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
         assert stats.cache_hit_rate is None
 
     def test_stats_with_zero_duration(self):
         """Test stats with zero duration."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             last_discovery_duration_ms=0.0,
             average_discovery_duration_ms=0.0,
         )
@@ -414,6 +444,7 @@ class TestDiscoveryStatsErrorTracking:
     def test_stats_with_errors(self):
         """Test stats with error information."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             discovery_errors_count=5,
             last_error_message="Connection timeout to registry",
         )
@@ -423,19 +454,20 @@ class TestDiscoveryStatsErrorTracking:
 
     def test_stats_error_count_default_zero(self):
         """Test error count defaults to zero."""
-        stats = ModelCliDiscoveryStats()
+        stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
         assert stats.discovery_errors_count == 0
 
     def test_stats_error_message_default_none(self):
         """Test error message defaults to None."""
-        stats = ModelCliDiscoveryStats()
+        stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
         assert stats.last_error_message is None
 
     def test_stats_with_multiple_errors(self):
         """Test stats tracks error count correctly."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             discovery_errors_count=100,
         )
 
@@ -448,6 +480,7 @@ class TestDiscoveryStatsIntegration:
     def test_stats_complete_scenario(self):
         """Test complete discovery stats scenario."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=150,
             healthy_tools_count=140,
             unhealthy_tools_count=10,
@@ -476,6 +509,7 @@ class TestDiscoveryStatsIntegration:
     def test_stats_serialization_deserialization(self):
         """Test stats can be serialized and deserialized."""
         original = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=100,
             healthy_tools_count=95,
             cache_hit_rate=85.0,
@@ -496,6 +530,7 @@ class TestDiscoveryStatsIntegration:
     def test_stats_immutability_of_calculations(self):
         """Test that calculated properties don't change with mutations."""
         stats = ModelCliDiscoveryStats(
+            version=DEFAULT_VERSION,
             total_tools_discovered=100,
             healthy_tools_count=80,
         )
@@ -513,7 +548,7 @@ class TestDiscoveryStatsIntegration:
 
     def test_stats_update_scenario(self):
         """Test updating stats over time."""
-        stats = ModelCliDiscoveryStats()
+        stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
         # Initial discovery
         stats.total_tools_discovered = 50

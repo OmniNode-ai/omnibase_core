@@ -13,10 +13,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from pydantic import BaseModel
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_header_transformation import ModelHeaderTransformation
 from .model_query_parameter_rule import ModelQueryParameterRule
@@ -33,7 +30,7 @@ class ModelRequestTransformation(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Model version (MUST be provided in YAML contract)",
     )
 

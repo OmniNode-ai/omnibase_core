@@ -5,6 +5,7 @@ from pydantic import Field, field_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_service_type_category import EnumServiceTypeCategory
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Service Type Model for ONEX Configuration-Driven Registry System.
@@ -68,7 +69,9 @@ class ModelServiceType(BaseModel):
     )
 
     metadata: ModelGenericMetadata | None = Field(
-        default_factory=lambda: ModelGenericMetadata(),
+        default_factory=lambda: ModelGenericMetadata(
+            version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Additional service type configuration",
     )
 

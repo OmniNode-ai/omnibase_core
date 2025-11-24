@@ -13,6 +13,10 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.models.examples.model_namespace_config import ModelNamespaceConfig
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelNamespaceConfig:

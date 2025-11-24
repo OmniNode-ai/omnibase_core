@@ -14,10 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.security.model_permission_custom_fields import (
     ModelPermissionCustomFields,
 )
@@ -122,7 +119,7 @@ class ModelPermission(BaseModel):
     )
 
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Permission definition version",
     )
 
@@ -689,6 +686,7 @@ class ModelPermission(BaseModel):
             namespace=namespace,
             description=description or f"Read access to {resource}",
             risk_level="low",
+            version=ModelSemVer(major=1, minor=0, patch=0),
             max_uses_total=None,
             max_uses_per_day=None,
             max_uses_per_hour=None,
@@ -718,6 +716,7 @@ class ModelPermission(BaseModel):
             description=description or f"Write access to {resource}",
             risk_level="medium",
             audit_detail_level="detailed",
+            version=ModelSemVer(major=1, minor=0, patch=0),
             max_uses_total=None,
             max_uses_per_day=None,
             max_uses_per_hour=None,
@@ -749,6 +748,7 @@ class ModelPermission(BaseModel):
             audit_detail_level="comprehensive",
             approval_required=True,
             require_mfa=True,
+            version=ModelSemVer(major=1, minor=0, patch=0),
             max_uses_total=None,
             max_uses_per_day=None,
             max_uses_per_hour=None,
@@ -779,6 +779,7 @@ class ModelPermission(BaseModel):
             description=description or f"Deny {action} access to {resource}",
             priority=100,  # High priority for deny rules
             audit_detail_level="comprehensive",
+            version=ModelSemVer(major=1, minor=0, patch=0),
             max_uses_total=None,
             max_uses_per_day=None,
             max_uses_per_hour=None,
@@ -810,6 +811,7 @@ class ModelPermission(BaseModel):
             max_uses_total=1,
             audit_detail_level="comprehensive",
             require_mfa=True,
+            version=ModelSemVer(major=1, minor=0, patch=0),
             custom_fields=ModelPermissionCustomFields(
                 boolean_fields={"break_glass": True, "emergency_only": True}
             ),
@@ -850,6 +852,7 @@ class ModelPermission(BaseModel):
             valid_from=datetime.now(UTC),
             valid_until=valid_until,
             audit_detail_level="detailed",
+            version=ModelSemVer(major=1, minor=0, patch=0),
             max_uses_total=None,
             max_uses_per_day=None,
             max_uses_per_hour=None,

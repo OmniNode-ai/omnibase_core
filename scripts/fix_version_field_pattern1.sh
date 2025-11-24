@@ -12,7 +12,8 @@
 #   bash scripts/fix_version_field_pattern1.sh [--dry-run] [--verbose] [--no-backup]
 #
 # Safety:
-#   - Backups created by default: <filename>.py → <filename>.py.bak (one per file)
+#   - Backups created by default: <filename>.py → <filename>.py.bak
+#   - WARNING: Subsequent runs OVERWRITE existing .bak files (not cumulative)
 #   - Backups created BEFORE applying sed replacements
 #   - Use --no-backup to skip backup creation (not recommended for live runs)
 #   - Use --dry-run to preview changes without modifying files

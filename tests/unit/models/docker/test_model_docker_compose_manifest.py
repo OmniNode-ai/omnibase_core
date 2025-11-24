@@ -22,6 +22,9 @@ from omnibase_core.models.docker.model_docker_volume_config import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 
 class TestModelDockerComposeManifest:
     """Test suite for ModelDockerComposeManifest."""
@@ -45,9 +48,11 @@ class TestModelDockerComposeManifest:
             image="python:3.12",
             ports=["8000:8000"],
             environment={"ENV": "production"},
+            version=DEFAULT_VERSION,
         )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service},
         )
 
@@ -118,9 +123,60 @@ class TestModelDockerComposeManifest:
         with pytest.raises((ValidationError, ModelOnexError)):
             ModelDockerComposeManifest(version={"major": 3, "minor": 8})
 
+        # Test tuple input (sequence type)
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: tuple"
+        ):
+            ModelDockerComposeManifest(version=(3, 8))
+
+        # Test set input (sequence type)
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: set"
+        ):
+            ModelDockerComposeManifest(version={3, 8})
+
+        # Test frozenset input (sequence type)
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: frozenset"
+        ):
+            ModelDockerComposeManifest(version=frozenset([3, 8]))
+
+        # Test bytes input (binary data)
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: bytes"
+        ):
+            ModelDockerComposeManifest(version=b"3.8")
+
+        # Test bytearray input (binary data)
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: bytearray"
+        ):
+            ModelDockerComposeManifest(version=bytearray(b"3.8"))
+
+        # Test complex number input
+        with pytest.raises(
+            (ValidationError, ModelOnexError), match="Invalid version type: complex"
+        ):
+            ModelDockerComposeManifest(version=complex(3, 8))
+
+        # Test extreme numeric values (out of reasonable range)
+        with pytest.raises(
+            (ValidationError, ModelOnexError),
+            match="version components must be between -1000 and 1000",
+        ):
+            ModelDockerComposeManifest(version=9999)
+
+        with pytest.raises(
+            (ValidationError, ModelOnexError),
+            match="version components must be between -1000 and 1000",
+        ):
+            ModelDockerComposeManifest(version=-9999)
+
     def test_get_service_exists(self) -> None:
         """Test getting existing service."""
-        service = ModelDockerService(name="api", image="python:3.12")
+        service = ModelDockerService(
+            name="api", image="python:3.12", version=DEFAULT_VERSION
+        )
         manifest = ModelDockerComposeManifest(services={"api": service})
 
         retrieved = manifest.get_service("api")
@@ -136,10 +192,15 @@ class TestModelDockerComposeManifest:
 
     def test_get_all_services(self) -> None:
         """Test getting all services."""
-        service1 = ModelDockerService(name="api", image="python:3.12")
-        service2 = ModelDockerService(name="db", image="postgres:15")
+        service1 = ModelDockerService(
+            name="api", image="python:3.12", version=DEFAULT_VERSION
+        )
+        service2 = ModelDockerService(
+            name="db", image="postgres:15", version=DEFAULT_VERSION
+        )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service1, "db": service2},
         )
 
@@ -154,10 +215,14 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             depends_on={"db": {"condition": "service_healthy"}},
+            version=DEFAULT_VERSION,
         )
-        service2 = ModelDockerService(name="db", image="postgres:15")
+        service2 = ModelDockerService(
+            name="db", image="postgres:15", version=DEFAULT_VERSION
+        )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service1, "db": service2},
         )
 
@@ -170,14 +235,17 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             depends_on={"db": {"condition": "service_started"}},
+            version=DEFAULT_VERSION,
         )
         service2 = ModelDockerService(
             name="db",
             image="postgres:15",
             depends_on={"api": {"condition": "service_started"}},
+            version=DEFAULT_VERSION,
         )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service1, "db": service2},
         )
 
@@ -191,6 +259,7 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             networks=["undefined_network"],
+            version=DEFAULT_VERSION,
         )
 
         with pytest.raises(
@@ -204,10 +273,12 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             networks=["app_network"],
+            version=DEFAULT_VERSION,
         )
         network = ModelDockerNetworkConfig(driver="bridge")
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service},
             networks={"app_network": network},
         )
@@ -220,6 +291,7 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             depends_on={"undefined_service": {"condition": "service_started"}},
+            version=DEFAULT_VERSION,
         )
 
         with pytest.raises(
@@ -233,14 +305,17 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             ports=["8000:8000"],
+            version=DEFAULT_VERSION,
         )
         service2 = ModelDockerService(
             name="db",
             image="postgres:15",
             ports=["5432:5432"],
+            version=DEFAULT_VERSION,
         )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service1, "db": service2},
         )
 
@@ -253,14 +328,17 @@ class TestModelDockerComposeManifest:
             name="api",
             image="python:3.12",
             ports=["8000:8000"],
+            version=DEFAULT_VERSION,
         )
         service2 = ModelDockerService(
             name="admin",
             image="python:3.12",
             ports=["8000:8080"],
+            version=DEFAULT_VERSION,
         )
 
         manifest = ModelDockerComposeManifest(
+            version=DEFAULT_VERSION,
             services={"api": service1, "admin": service2},
         )
 
@@ -281,6 +359,10 @@ services:
       - "8000:8000"
     environment:
       ENV: production
+    version:
+      major: 1
+      minor: 0
+      patch: 0
 networks:
   app_network:
     driver: bridge
@@ -307,6 +389,10 @@ version: 3
 services:
   api:
     image: python:3.12
+    version:
+      major: 1
+      minor: 0
+      patch: 0
 """
         yaml_path = tmp_path / "docker-compose.yaml"
         yaml_path.write_text(yaml_content)
@@ -321,6 +407,10 @@ version: 3.8
 services:
   api:
     image: python:3.12
+    version:
+      major: 1
+      minor: 0
+      patch: 0
 """
         yaml_path_float = tmp_path / "docker-compose-float.yaml"
         yaml_path_float.write_text(yaml_content_float)
@@ -335,6 +425,10 @@ version: "3.8"
 services:
   api:
     image: python:3.12
+    version:
+      major: 1
+      minor: 0
+      patch: 0
 configs:
   app_config:
     file: ./config.json
@@ -383,6 +477,7 @@ secrets:
             image="python:3.12",
             ports=["8000:8000"],
             environment={"ENV": "production"},
+            version=DEFAULT_VERSION,
         )
         network = ModelDockerNetworkConfig(driver="bridge")
 
@@ -410,6 +505,7 @@ secrets:
         service = ModelDockerService(
             name="api",
             image="python:3.12",
+            version=DEFAULT_VERSION,
         )
         network = ModelDockerNetworkConfig(driver="bridge")
         volume = ModelDockerVolumeConfig(driver="local")
@@ -452,6 +548,10 @@ services:
       - "8000:8000"
     environment:
       ENV: production
+    version:
+      major: 1
+      minor: 0
+      patch: 0
 networks:
   app_network:
     driver: bridge

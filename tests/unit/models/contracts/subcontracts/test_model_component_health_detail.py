@@ -15,6 +15,11 @@ import time
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.enums.enum_health_detail_type import EnumHealthDetailType
 from omnibase_core.models.contracts.subcontracts.model_component_health_detail import (
     ModelComponentHealthDetail,
@@ -27,6 +32,7 @@ class TestModelComponentHealthDetailBasics:
     def test_minimal_instantiation(self):
         """Test model can be instantiated with minimal required fields."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="memory_usage",
             detail_value="75%",
         )
@@ -42,6 +48,7 @@ class TestModelComponentHealthDetailBasics:
         timestamp = int(time.time() * 1000)
 
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="cpu_usage",
             detail_value="95%",
             detail_type=EnumHealthDetailType.WARNING,
@@ -58,6 +65,7 @@ class TestModelComponentHealthDetailBasics:
     def test_default_detail_type(self):
         """Test detail_type defaults to INFO."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="status",
             detail_value="running",
         )
@@ -67,6 +75,7 @@ class TestModelComponentHealthDetailBasics:
     def test_default_is_critical(self):
         """Test is_critical defaults to False."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="status",
             detail_value="running",
         )
@@ -76,6 +85,7 @@ class TestModelComponentHealthDetailBasics:
     def test_default_timestamp(self):
         """Test timestamp_ms defaults to None."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="status",
             detail_value="running",
         )
@@ -89,7 +99,7 @@ class TestModelComponentHealthDetailValidation:
     def test_detail_key_required(self):
         """Test detail_key is required."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelComponentHealthDetail(detail_value="test")
+            ModelComponentHealthDetail(version=DEFAULT_VERSION, detail_value="test")
 
         assert "detail_key" in str(exc_info.value)
 
@@ -97,6 +107,7 @@ class TestModelComponentHealthDetailValidation:
         """Test detail_key has minimum length constraint."""
         with pytest.raises(ValidationError) as exc_info:
             ModelComponentHealthDetail(
+                version=DEFAULT_VERSION,
                 detail_key="",
                 detail_value="test",
             )
@@ -106,6 +117,7 @@ class TestModelComponentHealthDetailValidation:
     def test_detail_key_whitespace_accepted(self):
         """Test detail_key accepts whitespace (no strip validation)."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="   ",
             detail_value="test",
         )
@@ -115,13 +127,14 @@ class TestModelComponentHealthDetailValidation:
     def test_detail_value_required(self):
         """Test detail_value is required."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelComponentHealthDetail(detail_key="test")
+            ModelComponentHealthDetail(version=DEFAULT_VERSION, detail_key="test")
 
         assert "detail_value" in str(exc_info.value)
 
     def test_detail_value_accepts_empty_string(self):
         """Test detail_value accepts empty string (no min_length constraint)."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="status",
             detail_value="",
         )
@@ -132,6 +145,7 @@ class TestModelComponentHealthDetailValidation:
         """Test detail_type accepts all enum values."""
         for detail_type in EnumHealthDetailType:
             detail = ModelComponentHealthDetail(
+                version=DEFAULT_VERSION,
                 detail_key="test",
                 detail_value="value",
                 detail_type=detail_type,
@@ -142,6 +156,7 @@ class TestModelComponentHealthDetailValidation:
         """Test detail_type rejects invalid values."""
         with pytest.raises(ValidationError):
             ModelComponentHealthDetail(
+                version=DEFAULT_VERSION,
                 detail_key="test",
                 detail_value="value",
                 detail_type="invalid_type",  # type: ignore[arg-type]
@@ -151,6 +166,7 @@ class TestModelComponentHealthDetailValidation:
         """Test timestamp_ms must be non-negative."""
         # Valid zero
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="test",
             detail_value="value",
             timestamp_ms=0,
@@ -159,6 +175,7 @@ class TestModelComponentHealthDetailValidation:
 
         # Valid positive
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="test",
             detail_value="value",
             timestamp_ms=1000000,
@@ -168,6 +185,7 @@ class TestModelComponentHealthDetailValidation:
         # Invalid negative
         with pytest.raises(ValidationError) as exc_info:
             ModelComponentHealthDetail(
+                version=DEFAULT_VERSION,
                 detail_key="test",
                 detail_value="value",
                 timestamp_ms=-1,
@@ -179,6 +197,7 @@ class TestModelComponentHealthDetailValidation:
         """Test timestamp_ms accepts large timestamp values."""
         large_timestamp = 9999999999999  # Far future timestamp
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="test",
             detail_value="value",
             timestamp_ms=large_timestamp,
@@ -189,6 +208,7 @@ class TestModelComponentHealthDetailValidation:
     def test_is_critical_boolean(self):
         """Test is_critical accepts boolean values."""
         detail_true = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="test",
             detail_value="value",
             is_critical=True,
@@ -196,6 +216,7 @@ class TestModelComponentHealthDetailValidation:
         assert detail_true.is_critical is True
 
         detail_false = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="test",
             detail_value="value",
             is_critical=False,
@@ -209,6 +230,7 @@ class TestModelComponentHealthDetailEdgeCases:
     def test_info_detail_non_critical(self):
         """Test typical INFO level detail."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="service_version",
             detail_value="1.2.3",
             detail_type=EnumHealthDetailType.INFO,
@@ -221,6 +243,7 @@ class TestModelComponentHealthDetailEdgeCases:
     def test_metric_detail(self):
         """Test METRIC type detail."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="response_time_ms",
             detail_value="150",
             detail_type=EnumHealthDetailType.METRIC,
@@ -233,6 +256,7 @@ class TestModelComponentHealthDetailEdgeCases:
     def test_warning_detail_non_critical(self):
         """Test WARNING level detail that's not critical."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="memory_usage",
             detail_value="80%",
             detail_type=EnumHealthDetailType.WARNING,
@@ -245,6 +269,7 @@ class TestModelComponentHealthDetailEdgeCases:
     def test_error_detail_critical(self):
         """Test ERROR level detail marked as critical."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="database_connection",
             detail_value="connection_failed",
             detail_type=EnumHealthDetailType.ERROR,
@@ -257,6 +282,7 @@ class TestModelComponentHealthDetailEdgeCases:
     def test_diagnostic_detail(self):
         """Test DIAGNOSTIC type detail."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="thread_count",
             detail_value="42",
             detail_type=EnumHealthDetailType.DIAGNOSTIC,
@@ -269,6 +295,7 @@ class TestModelComponentHealthDetailEdgeCases:
         """Test with current timestamp."""
         before = int(time.time() * 1000)
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="status_check",
             detail_value="healthy",
             timestamp_ms=before,
@@ -281,6 +308,7 @@ class TestModelComponentHealthDetailEdgeCases:
         """Test with very long detail key."""
         long_key = "a" * 1000
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key=long_key,
             detail_value="value",
         )
@@ -291,6 +319,7 @@ class TestModelComponentHealthDetailEdgeCases:
         """Test with very long detail value."""
         long_value = "x" * 10000
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="stacktrace",
             detail_value=long_value,
         )
@@ -301,6 +330,7 @@ class TestModelComponentHealthDetailEdgeCases:
         """Test detail_key with special characters."""
         special_key = "metric.http.response_time.p99"
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key=special_key,
             detail_value="250ms",
         )
@@ -311,6 +341,7 @@ class TestModelComponentHealthDetailEdgeCases:
         """Test detail_value containing JSON-like string."""
         json_value = '{"status": "ok", "count": 42}'
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="config",
             detail_value=json_value,
         )
@@ -321,6 +352,7 @@ class TestModelComponentHealthDetailEdgeCases:
         """Test detail_value with multiline text."""
         multiline_value = "Line 1\nLine 2\nLine 3"
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="error_trace",
             detail_value=multiline_value,
         )
@@ -334,6 +366,7 @@ class TestModelComponentHealthDetailConfigDict:
     def test_extra_fields_ignored(self):
         """Test extra fields are ignored per ConfigDict."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="test",
             detail_value="value",
             unknown_field="should_be_ignored",  # type: ignore[call-arg]
@@ -345,6 +378,7 @@ class TestModelComponentHealthDetailConfigDict:
     def test_validate_assignment(self):
         """Test assignment validation is enabled."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="test",
             detail_value="value",
         )
@@ -360,6 +394,7 @@ class TestModelComponentHealthDetailConfigDict:
     def test_use_enum_values_false(self):
         """Test use_enum_values=False preserves enum objects."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="test",
             detail_value="value",
             detail_type=EnumHealthDetailType.WARNING,
@@ -374,6 +409,7 @@ class TestModelComponentHealthDetailConfigDict:
         """Test model can be serialized and deserialized."""
         timestamp = int(time.time() * 1000)
         original = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="cpu_usage",
             detail_value="85%",
             detail_type=EnumHealthDetailType.WARNING,
@@ -396,6 +432,7 @@ class TestModelComponentHealthDetailConfigDict:
     def test_model_json_serialization(self):
         """Test model JSON serialization."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="status",
             detail_value="healthy",
             detail_type=EnumHealthDetailType.INFO,
@@ -409,6 +446,7 @@ class TestModelComponentHealthDetailConfigDict:
     def test_model_json_deserialization(self):
         """Test model JSON deserialization."""
         json_data = """{
+            "version": {"major": 1, "minor": 0, "patch": 0},
             "detail_key": "memory",
             "detail_value": "1024MB",
             "detail_type": "metric",
@@ -466,6 +504,7 @@ class TestModelComponentHealthDetailUseCases:
     def test_database_health_metric(self):
         """Test database connection pool metric."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="db.connection_pool.active",
             detail_value="15",
             detail_type=EnumHealthDetailType.METRIC,
@@ -478,6 +517,7 @@ class TestModelComponentHealthDetailUseCases:
     def test_api_health_error(self):
         """Test API health check error."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="api.health_check",
             detail_value="Connection timeout after 5s",
             detail_type=EnumHealthDetailType.ERROR,
@@ -491,6 +531,7 @@ class TestModelComponentHealthDetailUseCases:
     def test_memory_warning(self):
         """Test memory usage warning."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="system.memory.usage_percent",
             detail_value="85.5",
             detail_type=EnumHealthDetailType.WARNING,
@@ -504,6 +545,7 @@ class TestModelComponentHealthDetailUseCases:
     def test_service_version_info(self):
         """Test service version information."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="service.version",
             detail_value="2.5.0",
             detail_type=EnumHealthDetailType.INFO,
@@ -515,6 +557,7 @@ class TestModelComponentHealthDetailUseCases:
     def test_diagnostic_thread_dump(self):
         """Test diagnostic thread information."""
         detail = ModelComponentHealthDetail(
+            version=DEFAULT_VERSION,
             detail_key="jvm.thread.dump",
             detail_value="Thread pool: 25 active, 50 max",
             detail_type=EnumHealthDetailType.DIAGNOSTIC,

@@ -17,6 +17,10 @@ from omnibase_core.models.core.model_cli_command_definition import (
 )
 from omnibase_core.models.core.model_event_type import ModelEventType
 from omnibase_core.models.core.model_node_reference import ModelNodeReference
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelCliCommandDefinitionCreation:
@@ -25,11 +29,13 @@ class TestModelCliCommandDefinitionCreation:
     def test_command_definition_creation_minimal(self):
         """Test creating command definition with minimal required fields."""
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="test",
             target_node=ModelNodeReference.create_local("test_node"),
             action="test_action",
             description="Test command",
             event_type=ModelEventType(
+                version=DEFAULT_VERSION,
                 event_name="NODE_START",
                 namespace="onex",
                 description="Test event",
@@ -50,12 +56,14 @@ class TestModelCliCommandDefinitionCreation:
     def test_command_definition_creation_full(self):
         """Test creating command definition with all fields."""
         required_arg = ModelArgumentDescription(
+            version=DEFAULT_VERSION,
             name="input",
             description="Input file",
             type=EnumArgumentType.STRING,
             required=True,
         )
         optional_arg = ModelArgumentDescription(
+            version=DEFAULT_VERSION,
             name="output",
             description="Output file",
             type=EnumArgumentType.STRING,
@@ -64,6 +72,7 @@ class TestModelCliCommandDefinitionCreation:
         )
 
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="process",
             target_node=ModelNodeReference.create_local("processor_node"),
             action="process_data",
@@ -71,6 +80,7 @@ class TestModelCliCommandDefinitionCreation:
             required_args=[required_arg],
             optional_args=[optional_arg],
             event_type=ModelEventType(
+                version=DEFAULT_VERSION,
                 event_name="DATA_PROCESS",
                 namespace="onex",
                 description="Data processing event",
@@ -96,12 +106,16 @@ class TestModelCliCommandDefinitionCreation:
         """Test command name must start with lowercase letter."""
         with pytest.raises(ValidationError) as exc_info:
             ModelCliCommandDefinition(
+                version=DEFAULT_VERSION,
                 command_name="Test",  # Invalid - starts with uppercase
                 target_node=ModelNodeReference.create_local("test_node"),
                 action="test",
                 description="Test",
                 event_type=ModelEventType(
-                    event_name="NODE_START", namespace="onex", description="Test"
+                    version=DEFAULT_VERSION,
+                    event_name="NODE_START",
+                    namespace="onex",
+                    description="Test",
                 ),
             )
 
@@ -111,24 +125,32 @@ class TestModelCliCommandDefinitionCreation:
         """Test command name pattern validation."""
         with pytest.raises(ValidationError):
             ModelCliCommandDefinition(
+                version=DEFAULT_VERSION,
                 command_name="test command",  # Invalid - contains space
                 target_node=ModelNodeReference.create_local("test_node"),
                 action="test",
                 description="Test",
                 event_type=ModelEventType(
-                    event_name="NODE_START", namespace="onex", description="Test"
+                    version=DEFAULT_VERSION,
+                    event_name="NODE_START",
+                    namespace="onex",
+                    description="Test",
                 ),
             )
 
     def test_command_name_allows_hyphens_and_underscores(self):
         """Test command name allows hyphens and underscores."""
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="test-command_name",
             target_node=ModelNodeReference.create_local("test_node"),
             action="test",
             description="Test",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -138,12 +160,16 @@ class TestModelCliCommandDefinitionCreation:
         """Test category pattern validation."""
         with pytest.raises(ValidationError):
             ModelCliCommandDefinition(
+                version=DEFAULT_VERSION,
                 command_name="test",
                 target_node=ModelNodeReference.create_local("test_node"),
                 action="test",
                 description="Test",
                 event_type=ModelEventType(
-                    event_name="NODE_START", namespace="onex", description="Test"
+                    version=DEFAULT_VERSION,
+                    event_name="NODE_START",
+                    namespace="onex",
+                    description="Test",
                 ),
                 category="Invalid Category",  # Invalid - contains space and uppercase
             )
@@ -151,12 +177,16 @@ class TestModelCliCommandDefinitionCreation:
     def test_category_allows_underscores(self):
         """Test category allows underscores."""
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="test",
             target_node=ModelNodeReference.create_local("test_node"),
             action="test",
             description="Test",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
             category="test_category",
         )
@@ -170,12 +200,16 @@ class TestQualifiedName:
     def test_get_qualified_name_local_node(self):
         """Test qualified name for local node without namespace."""
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="build",
             target_node=ModelNodeReference.create_local("builder_node"),
             action="build",
             description="Build command",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -186,17 +220,22 @@ class TestQualifiedName:
     def test_get_qualified_name_with_namespace(self):
         """Test qualified name includes namespace."""
         node_ref = ModelNodeReference(
+            version=DEFAULT_VERSION,
             node_name="validator_node",
             namespace="third_party",
             node_type="plugin",
         )
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="validate",
             target_node=node_ref,
             action="validate",
             description="Validation command",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -207,17 +246,22 @@ class TestQualifiedName:
     def test_get_qualified_name_empty_namespace(self):
         """Test qualified name when namespace is empty string."""
         node_ref = ModelNodeReference(
+            version=DEFAULT_VERSION,
             node_name="test_node",
             namespace="",
             node_type="local",
         )
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="test",
             target_node=node_ref,
             action="test",
             description="Test",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -232,12 +276,16 @@ class TestHelpTextGeneration:
     def test_get_help_text_basic(self):
         """Test basic help text generation."""
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="simple",
             target_node=ModelNodeReference.create_local("test_node"),
             action="simple",
             description="A simple command",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -251,19 +299,24 @@ class TestHelpTextGeneration:
     def test_get_help_text_with_required_args(self):
         """Test help text includes required arguments."""
         required_arg = ModelArgumentDescription(
+            version=DEFAULT_VERSION,
             name="input_file",
             description="Path to input file",
             type=EnumArgumentType.STRING,
             required=True,
         )
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="process",
             target_node=ModelNodeReference.create_local("processor"),
             action="process",
             description="Process files",
             required_args=[required_arg],
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -276,6 +329,7 @@ class TestHelpTextGeneration:
     def test_get_help_text_with_optional_args(self):
         """Test help text includes optional arguments."""
         optional_arg = ModelArgumentDescription(
+            version=DEFAULT_VERSION,
             name="verbose",
             description="Enable verbose output",
             type=EnumArgumentType.BOOLEAN,
@@ -283,13 +337,17 @@ class TestHelpTextGeneration:
             default_value=False,
         )
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="run",
             target_node=ModelNodeReference.create_local("runner"),
             action="run",
             description="Run task",
             optional_args=[optional_arg],
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -303,12 +361,16 @@ class TestHelpTextGeneration:
     def test_get_help_text_with_examples(self):
         """Test help text includes examples."""
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="deploy",
             target_node=ModelNodeReference.create_local("deployer"),
             action="deploy",
             description="Deploy application",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
             examples=[
                 "deploy --env production",
@@ -325,12 +387,16 @@ class TestHelpTextGeneration:
     def test_get_help_text_deprecated_command(self):
         """Test help text for deprecated command."""
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="old_command",
             target_node=ModelNodeReference.create_local("test_node"),
             action="old",
             description="Old command functionality",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
             deprecated=True,
             deprecation_message="Please use 'new_command' instead",
@@ -348,12 +414,16 @@ class TestHelpTextGeneration:
     def test_get_help_text_deprecated_without_message(self):
         """Test help text for deprecated command without custom message."""
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="legacy",
             target_node=ModelNodeReference.create_local("test_node"),
             action="legacy",
             description="Legacy command",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
             deprecated=True,
         )
@@ -366,12 +436,14 @@ class TestHelpTextGeneration:
     def test_get_help_text_comprehensive(self):
         """Test comprehensive help text with all elements."""
         required_arg = ModelArgumentDescription(
+            version=DEFAULT_VERSION,
             name="source",
             description="Source path",
             type=EnumArgumentType.STRING,
             required=True,
         )
         optional_arg = ModelArgumentDescription(
+            version=DEFAULT_VERSION,
             name="destination",
             description="Destination path",
             type=EnumArgumentType.STRING,
@@ -379,6 +451,7 @@ class TestHelpTextGeneration:
             default_value="./output",
         )
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="copy",
             target_node=ModelNodeReference.create_local("copier"),
             action="copy",
@@ -386,7 +459,10 @@ class TestHelpTextGeneration:
             required_args=[required_arg],
             optional_args=[optional_arg],
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
             examples=[
                 "copy --source /data",
@@ -416,12 +492,16 @@ class TestCommandMatching:
     def test_matches_command_simple_name(self):
         """Test matching by simple command name."""
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="test",
             target_node=ModelNodeReference.create_local("test_node"),
             action="test",
             description="Test",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -431,17 +511,22 @@ class TestCommandMatching:
     def test_matches_command_qualified_name(self):
         """Test matching by qualified name."""
         node_ref = ModelNodeReference(
+            version=DEFAULT_VERSION,
             node_name="validator",
             namespace="plugin",
             node_type="plugin",
         )
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="validate",
             target_node=node_ref,
             action="validate",
             description="Validate",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -452,12 +537,16 @@ class TestCommandMatching:
     def test_matches_command_case_sensitive(self):
         """Test command matching is case sensitive."""
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="test",
             target_node=ModelNodeReference.create_local("test_node"),
             action="test",
             description="Test",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -473,18 +562,21 @@ class TestCommandDefinitionIntegration:
         """Test command with multiple required arguments."""
         args = [
             ModelArgumentDescription(
+                version=DEFAULT_VERSION,
                 name="input",
                 description="Input",
                 type=EnumArgumentType.STRING,
                 required=True,
             ),
             ModelArgumentDescription(
+                version=DEFAULT_VERSION,
                 name="config",
                 description="Config",
                 type=EnumArgumentType.STRING,
                 required=True,
             ),
             ModelArgumentDescription(
+                version=DEFAULT_VERSION,
                 name="format",
                 description="Format",
                 type=EnumArgumentType.STRING,
@@ -492,13 +584,17 @@ class TestCommandDefinitionIntegration:
             ),
         ]
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="convert",
             target_node=ModelNodeReference.create_local("converter"),
             action="convert",
             description="Convert files",
             required_args=args,
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -512,6 +608,7 @@ class TestCommandDefinitionIntegration:
         """Test command with multiple optional arguments."""
         args = [
             ModelArgumentDescription(
+                version=DEFAULT_VERSION,
                 name="verbose",
                 description="Verbose",
                 type=EnumArgumentType.BOOLEAN,
@@ -519,6 +616,7 @@ class TestCommandDefinitionIntegration:
                 default_value=False,
             ),
             ModelArgumentDescription(
+                version=DEFAULT_VERSION,
                 name="timeout",
                 description="Timeout",
                 type=EnumArgumentType.INTEGER,
@@ -527,13 +625,17 @@ class TestCommandDefinitionIntegration:
             ),
         ]
         command = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="execute",
             target_node=ModelNodeReference.create_local("executor"),
             action="execute",
             description="Execute task",
             optional_args=args,
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
         )
 
@@ -545,12 +647,16 @@ class TestCommandDefinitionIntegration:
     def test_command_serialization_deserialization(self):
         """Test command can be serialized and deserialized."""
         original = ModelCliCommandDefinition(
+            version=DEFAULT_VERSION,
             command_name="serialize_test",
             target_node=ModelNodeReference.create_local("test_node"),
             action="test",
             description="Serialization test",
             event_type=ModelEventType(
-                event_name="NODE_START", namespace="onex", description="Test"
+                version=DEFAULT_VERSION,
+                event_name="NODE_START",
+                namespace="onex",
+                description="Test",
             ),
             category="testing",
             examples=["serialize_test --help"],

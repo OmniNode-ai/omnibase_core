@@ -165,6 +165,8 @@ class ModelEventTypeRegistry:
 
     def bootstrap_core_event_types(self) -> None:
         """Bootstrap core ONEX event types for current standards."""
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
+
         core_event_types = [
             ("NODE_START", "Node startup event", "lifecycle"),
             ("NODE_SUCCESS", "Node success event", "lifecycle"),
@@ -184,6 +186,7 @@ class ModelEventTypeRegistry:
                     event_name=event_name,
                     namespace="onex",
                     description=description,
+                    schema_version=ModelSemVer(major=1, minor=0, patch=0),
                     category=category,
                 )
                 self.register_event_type(event_type)

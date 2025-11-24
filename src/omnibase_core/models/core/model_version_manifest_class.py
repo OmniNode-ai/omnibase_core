@@ -26,11 +26,7 @@ from omnibase_core.models.core.model_version_manifest_class_config import ModelC
 from omnibase_core.models.core.model_version_security import ModelVersionSecurity
 from omnibase_core.models.core.model_version_testing import ModelVersionTesting
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    SemVerField,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer, SemVerField
 
 
 class ModelVersionManifest(BaseModel):
@@ -98,7 +94,7 @@ class ModelVersionManifest(BaseModel):
 
     # === VALIDATION METADATA ===
     schema_version: SemVerField = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Version manifest schema version",
     )
     checksum: str | None = Field(
@@ -112,7 +108,7 @@ class ModelVersionManifest(BaseModel):
 
     # === BLUEPRINT COMPLIANCE ===
     blueprint_version: SemVerField = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Tool group blueprint version followed",
     )
     blueprint_compliant: bool = Field(

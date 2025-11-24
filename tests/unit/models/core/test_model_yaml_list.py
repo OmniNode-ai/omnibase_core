@@ -10,6 +10,10 @@ from typing import Any
 import pytest
 
 from omnibase_core.models.core.model_yaml_list import ModelYamlList
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelYamlList:
@@ -17,7 +21,7 @@ class TestModelYamlList:
 
     def test_initialization_empty(self):
         """Test initialization with no arguments."""
-        model = ModelYamlList()
+        model = ModelYamlList(version=DEFAULT_VERSION)
 
         assert model.root_list == []
         assert isinstance(model.root_list, list)

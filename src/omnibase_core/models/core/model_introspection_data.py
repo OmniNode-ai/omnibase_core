@@ -10,10 +10,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.validation.model_schema import ModelSchema
 
 
@@ -26,7 +23,7 @@ class ModelIntrospectionData(BaseModel):
     # Core introspection fields
     node_name: str = Field(default=..., description="Node name")
     node_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Node version",
     )
     node_type: str = Field(default=..., description="Node type/category")

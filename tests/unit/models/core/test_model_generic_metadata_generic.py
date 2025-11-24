@@ -8,6 +8,10 @@ of the ModelGenericMetadata implementation.
 import pytest
 
 from omnibase_core.models.metadata.model_generic_metadata import ModelGenericMetadata
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelGenericMetadataGeneric:

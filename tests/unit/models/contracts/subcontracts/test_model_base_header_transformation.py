@@ -12,6 +12,11 @@ Comprehensive test coverage for base transformation model including:
 import pytest
 from pydantic import Field, ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.models.contracts.subcontracts.model_base_header_transformation import (
     ModelBaseHeaderTransformation,
 )
@@ -30,6 +35,7 @@ class TestBaseHeaderTransformationBasics:
     def test_minimal_instantiation_via_subclass(self):
         """Test base class fields can be instantiated via subclass."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="test-rule",
         )
@@ -43,6 +49,7 @@ class TestBaseHeaderTransformationBasics:
     def test_full_instantiation_via_subclass(self):
         """Test base class with all fields specified via subclass."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="test-rule",
             apply_condition="condition",
@@ -59,6 +66,7 @@ class TestBaseHeaderTransformationBasics:
     def test_default_values(self):
         """Test default values are correctly applied."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="test-rule",
         )
@@ -76,6 +84,7 @@ class TestBaseHeaderTransformationValidation:
         """Test transformation_rule is required."""
         with pytest.raises(ValidationError) as exc_info:
             ConcreteTransformation(
+                version=DEFAULT_VERSION,
                 name="test-name",
             )
 
@@ -87,6 +96,7 @@ class TestBaseHeaderTransformationValidation:
         # Empty string should fail
         with pytest.raises(ValidationError) as exc_info:
             ConcreteTransformation(
+                version=DEFAULT_VERSION,
                 name="test-name",
                 transformation_rule="",
             )
@@ -98,16 +108,19 @@ class TestBaseHeaderTransformationValidation:
         """Test priority validates bounds."""
         # Valid values
         ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
             priority=0,  # Min
         )
         ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
             priority=500,
         )
         ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
             priority=1000,  # Max
@@ -116,6 +129,7 @@ class TestBaseHeaderTransformationValidation:
         # Below minimum
         with pytest.raises(ValidationError) as exc_info:
             ConcreteTransformation(
+                version=DEFAULT_VERSION,
                 name="test-name",
                 transformation_rule="rule",
                 priority=-1,
@@ -127,6 +141,7 @@ class TestBaseHeaderTransformationValidation:
         # Above maximum
         with pytest.raises(ValidationError) as exc_info:
             ConcreteTransformation(
+                version=DEFAULT_VERSION,
                 name="test-name",
                 transformation_rule="rule",
                 priority=1001,
@@ -138,6 +153,7 @@ class TestBaseHeaderTransformationValidation:
     def test_case_sensitive_boolean(self):
         """Test case_sensitive accepts boolean values."""
         transform_true = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
             case_sensitive=True,
@@ -145,6 +161,7 @@ class TestBaseHeaderTransformationValidation:
         assert transform_true.case_sensitive is True
 
         transform_false = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
             case_sensitive=False,
@@ -154,6 +171,7 @@ class TestBaseHeaderTransformationValidation:
     def test_apply_condition_optional(self):
         """Test apply_condition is optional."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
             apply_condition=None,
@@ -161,6 +179,7 @@ class TestBaseHeaderTransformationValidation:
         assert transform.apply_condition is None
 
         transform_with_condition = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
             apply_condition="condition",
@@ -174,6 +193,7 @@ class TestBaseHeaderTransformationEdgeCases:
     def test_minimum_priority(self):
         """Test transformation with minimum priority."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="low-priority",
             transformation_rule="rule",
             priority=0,
@@ -184,6 +204,7 @@ class TestBaseHeaderTransformationEdgeCases:
     def test_maximum_priority(self):
         """Test transformation with maximum priority."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="high-priority",
             transformation_rule="rule",
             priority=1000,
@@ -194,6 +215,7 @@ class TestBaseHeaderTransformationEdgeCases:
     def test_template_transformation_rule(self):
         """Test transformation rule with template variables."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="Bearer {token}",
         )
@@ -204,6 +226,7 @@ class TestBaseHeaderTransformationEdgeCases:
         """Test complex apply condition."""
         condition = "(request.path == '/api' and request.method == 'POST')"
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
             apply_condition=condition,
@@ -214,6 +237,7 @@ class TestBaseHeaderTransformationEdgeCases:
     def test_case_insensitive_matching(self):
         """Test case-insensitive matching configuration."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
             case_sensitive=False,
@@ -228,6 +252,7 @@ class TestBaseHeaderTransformationConfigDict:
     def test_extra_fields_ignored(self):
         """Test extra fields are ignored per ConfigDict."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
             unknown_field="should_be_ignored",  # type: ignore[call-arg]
@@ -239,6 +264,7 @@ class TestBaseHeaderTransformationConfigDict:
     def test_validate_assignment(self):
         """Test assignment validation is enabled."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
         )
@@ -257,6 +283,7 @@ class TestBaseHeaderTransformationConfigDict:
     def test_model_serialization(self):
         """Test model can be serialized and deserialized."""
         original = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="Bearer {token}",
             apply_condition="request.path.startswith('/secure')",
@@ -279,6 +306,7 @@ class TestBaseHeaderTransformationConfigDict:
     def test_json_serialization(self):
         """Test model can be serialized to JSON."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="test-rule",
         )
@@ -294,6 +322,7 @@ class TestBaseHeaderTransformationInheritance:
     def test_subclass_inherits_fields(self):
         """Test subclass properly inherits base class fields."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
         )
@@ -307,6 +336,7 @@ class TestBaseHeaderTransformationInheritance:
     def test_subclass_can_override_defaults(self):
         """Test subclass can override base class defaults."""
         transform = ConcreteTransformation(
+            version=DEFAULT_VERSION,
             name="test-name",
             transformation_rule="rule",
             priority=999,
@@ -319,6 +349,7 @@ class TestBaseHeaderTransformationInheritance:
         # Priority out of bounds should fail
         with pytest.raises(ValidationError):
             ConcreteTransformation(
+                version=DEFAULT_VERSION,
                 name="test-name",
                 transformation_rule="rule",
                 priority=2000,
@@ -327,6 +358,7 @@ class TestBaseHeaderTransformationInheritance:
         # Empty transformation_rule should fail
         with pytest.raises(ValidationError):
             ConcreteTransformation(
+                version=DEFAULT_VERSION,
                 name="test-name",
                 transformation_rule="",
             )

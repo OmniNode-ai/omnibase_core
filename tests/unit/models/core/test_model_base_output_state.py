@@ -7,6 +7,10 @@ from datetime import datetime
 import pytest
 
 from omnibase_core.models.core.model_base_output_state import ModelBaseOutputState
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelBaseOutputState:
@@ -14,7 +18,7 @@ class TestModelBaseOutputState:
 
     def test_model_base_output_state_creation_default(self):
         """Test creating ModelBaseOutputState with default values."""
-        state = ModelBaseOutputState()
+        state = ModelBaseOutputState(version=DEFAULT_VERSION)
 
         assert isinstance(state.metadata, dict)
         assert len(state.metadata) == 0
@@ -56,6 +60,7 @@ class TestModelBaseOutputState:
         processing_time = 250.75
 
         state = ModelBaseOutputState(
+            version=DEFAULT_VERSION,
             metadata=metadata,
             timestamp=custom_timestamp,
             processing_time_ms=processing_time,
@@ -96,7 +101,7 @@ class TestModelBaseOutputState:
         assert state.processing_time_ms == 999999.99
 
         # Test with None (default)
-        state = ModelBaseOutputState()
+        state = ModelBaseOutputState(version=DEFAULT_VERSION)
         assert state.processing_time_ms is None
 
     def test_model_base_output_state_metadata_types(self):
@@ -175,6 +180,7 @@ class TestModelBaseOutputState:
         processing_time = 150.5
 
         state = ModelBaseOutputState(
+            version=DEFAULT_VERSION,
             metadata=metadata,
             timestamp=custom_timestamp,
             processing_time_ms=processing_time,
@@ -257,16 +263,23 @@ class TestModelBaseOutputState:
         processing_time = 150.5
 
         state1 = ModelBaseOutputState(
-            metadata=metadata, timestamp=timestamp, processing_time_ms=processing_time
+            version=DEFAULT_VERSION,
+            metadata=metadata,
+            timestamp=timestamp,
+            processing_time_ms=processing_time,
         )
         state2 = ModelBaseOutputState(
-            metadata=metadata, timestamp=timestamp, processing_time_ms=processing_time
+            version=DEFAULT_VERSION,
+            metadata=metadata,
+            timestamp=timestamp,
+            processing_time_ms=processing_time,
         )
 
         assert state1 == state2
 
         # Test with different metadata
         state3 = ModelBaseOutputState(
+            version=DEFAULT_VERSION,
             metadata={"different": "data"},
             timestamp=timestamp,
             processing_time_ms=processing_time,
@@ -275,6 +288,7 @@ class TestModelBaseOutputState:
 
         # Test with different timestamp
         state4 = ModelBaseOutputState(
+            version=DEFAULT_VERSION,
             metadata=metadata,
             timestamp=datetime.now(),
             processing_time_ms=processing_time,
@@ -283,7 +297,10 @@ class TestModelBaseOutputState:
 
         # Test with different processing time
         state5 = ModelBaseOutputState(
-            metadata=metadata, timestamp=timestamp, processing_time_ms=200.0
+            version=DEFAULT_VERSION,
+            metadata=metadata,
+            timestamp=timestamp,
+            processing_time_ms=200.0,
         )
         assert state1 != state5
 
@@ -328,8 +345,8 @@ class TestModelBaseOutputState:
     def test_model_base_output_state_default_factory(self):
         """Test ModelBaseOutputState default factory behavior."""
         # Test that metadata defaults to empty dict
-        state1 = ModelBaseOutputState()
-        state2 = ModelBaseOutputState()
+        state1 = ModelBaseOutputState(version=DEFAULT_VERSION)
+        state2 = ModelBaseOutputState(version=DEFAULT_VERSION)
 
         # Both should have empty metadata
         assert state1.metadata == {}
@@ -346,7 +363,7 @@ class TestModelBaseOutputState:
         """Test ModelBaseOutputState timestamp default factory behavior."""
         # Test that timestamp defaults to current time
         before = datetime.now()
-        state = ModelBaseOutputState()
+        state = ModelBaseOutputState(version=DEFAULT_VERSION)
         after = datetime.now()
 
         assert before <= state.timestamp <= after

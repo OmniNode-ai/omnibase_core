@@ -17,10 +17,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_node_progress import ModelNodeProgress
 
@@ -30,7 +27,7 @@ class ModelProgressStatus(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Model version (MUST be provided in YAML contract)",
     )
 

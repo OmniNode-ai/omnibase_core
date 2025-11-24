@@ -17,10 +17,7 @@ from omnibase_core.enums.enum_state_management import (
     EnumConflictResolution,
     EnumConsistencyLevel,
 )
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelStateSynchronization(BaseModel):
@@ -33,7 +30,7 @@ class ModelStateSynchronization(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Subcontract version (auto-generated if not provided)",
     )
 

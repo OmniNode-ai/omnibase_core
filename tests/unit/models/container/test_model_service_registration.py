@@ -9,6 +9,7 @@ from omnibase_core.models.container.model_service_metadata import ModelServiceMe
 from omnibase_core.models.container.model_service_registration import (
     ModelServiceRegistration,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 @pytest.fixture
@@ -19,6 +20,7 @@ def sample_metadata():
         service_name="test_service",
         service_interface="TestProtocol",
         service_implementation="TestImpl",
+        version=ModelSemVer(major=1, minor=0, patch=0),
         description="Test service",
         tags=["test"],
     )

@@ -14,10 +14,7 @@ from omnibase_core.enums.enum_environment_validation_rule_type import (
     EnumEnvironmentValidationRuleType,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelEnvironmentValidationRule(BaseModel):
@@ -30,7 +27,7 @@ class ModelEnvironmentValidationRule(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Model version (MUST be provided in YAML contract)",
     )
 

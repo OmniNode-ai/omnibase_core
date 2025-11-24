@@ -10,10 +10,7 @@ Model for event transformation specifications in the ONEX event-driven architect
 
 from pydantic import BaseModel
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_event_mapping_rule import ModelEventMappingRule
 
@@ -28,8 +25,8 @@ class ModelEventTransformation(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
-        description="Subcontract version (auto-generated via default_model_version)",
+        ...,  # REQUIRED - specify in contract
+        description="Subcontract version (auto-generated if not provided)",
     )
 
     transformation_name: str = Field(

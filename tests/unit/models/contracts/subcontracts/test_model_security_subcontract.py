@@ -7,6 +7,11 @@ Comprehensive tests for security subcontract configuration and validation.
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.models.contracts.subcontracts.model_security_subcontract import (
     ModelSecuritySubcontract,
 )
@@ -19,7 +24,7 @@ class TestModelSecuritySubcontractInitialization:
 
     def test_create_default_security_subcontract(self):
         """Test creating security subcontract with default values."""
-        security = ModelSecuritySubcontract()
+        security = ModelSecuritySubcontract(version=DEFAULT_VERSION)
         assert security is not None
         assert isinstance(security, ModelSecuritySubcontract)
         assert security.enable_redaction is True
@@ -32,6 +37,7 @@ class TestModelSecuritySubcontractInitialization:
     def test_security_subcontract_with_custom_values(self):
         """Test creating security subcontract with custom values."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_redaction=False,
             enable_encryption=True,
             encryption_algorithm="chacha20-poly1305",
@@ -50,7 +56,7 @@ class TestModelSecuritySubcontractInitialization:
         """Test that ModelSecuritySubcontract inherits from BaseModel."""
         from pydantic import BaseModel
 
-        security = ModelSecuritySubcontract()
+        security = ModelSecuritySubcontract(version=DEFAULT_VERSION)
         assert isinstance(security, BaseModel)
 
     def test_interface_version_present(self):
@@ -67,7 +73,7 @@ class TestModelSecuritySubcontractPatternValidation:
 
     def test_default_patterns_normalized(self):
         """Test that default patterns are normalized to lowercase."""
-        security = ModelSecuritySubcontract()
+        security = ModelSecuritySubcontract(version=DEFAULT_VERSION)
         patterns = security.sensitive_field_patterns
         assert all(p == p.lower() for p in patterns)
         assert "password" in patterns
@@ -79,7 +85,8 @@ class TestModelSecuritySubcontractPatternValidation:
     def test_custom_patterns_normalized(self):
         """Test that custom patterns are normalized to lowercase."""
         security = ModelSecuritySubcontract(
-            sensitive_field_patterns=["API_KEY", "Auth_Token", "SECRET_value"]
+            version=DEFAULT_VERSION,
+            sensitive_field_patterns=["API_KEY", "Auth_Token", "SECRET_value"],
         )
         assert "api_key" in security.sensitive_field_patterns
         assert "auth_token" in security.sensitive_field_patterns
@@ -89,6 +96,7 @@ class TestModelSecuritySubcontractPatternValidation:
         """Test that empty patterns are allowed when redaction is disabled."""
         # This should work when redaction is disabled
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_redaction=False,
             sensitive_field_patterns=[],
         )
@@ -99,6 +107,7 @@ class TestModelSecuritySubcontractPatternValidation:
         """Test that empty patterns fail when redaction is enabled."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelSecuritySubcontract(
+                version=DEFAULT_VERSION,
                 enable_redaction=True,
                 sensitive_field_patterns=[],
             )
@@ -108,13 +117,16 @@ class TestModelSecuritySubcontractPatternValidation:
         """Test that duplicate patterns after normalization raise error."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelSecuritySubcontract(
-                sensitive_field_patterns=["password", "PASSWORD", "Password"]
+                version=DEFAULT_VERSION,
+                sensitive_field_patterns=["password", "PASSWORD", "Password"],
             )
         assert "duplicate patterns" in str(exc_info.value)
 
     def test_single_pattern(self):
         """Test that a single pattern is valid."""
-        security = ModelSecuritySubcontract(sensitive_field_patterns=["secret"])
+        security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION, sensitive_field_patterns=["secret"]
+        )
         assert security.sensitive_field_patterns == ["secret"]
 
 
@@ -123,29 +135,38 @@ class TestModelSecuritySubcontractEncryptionValidation:
 
     def test_encryption_algorithm_aes_256_gcm(self):
         """Test encryption_algorithm accepts aes-256-gcm."""
-        security = ModelSecuritySubcontract(encryption_algorithm="aes-256-gcm")
+        security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION, encryption_algorithm="aes-256-gcm"
+        )
         assert security.encryption_algorithm == "aes-256-gcm"
 
     def test_encryption_algorithm_aes_128_gcm(self):
         """Test encryption_algorithm accepts aes-128-gcm."""
-        security = ModelSecuritySubcontract(encryption_algorithm="aes-128-gcm")
+        security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION, encryption_algorithm="aes-128-gcm"
+        )
         assert security.encryption_algorithm == "aes-128-gcm"
 
     def test_encryption_algorithm_chacha20_poly1305(self):
         """Test encryption_algorithm accepts chacha20-poly1305."""
-        security = ModelSecuritySubcontract(encryption_algorithm="chacha20-poly1305")
+        security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION, encryption_algorithm="chacha20-poly1305"
+        )
         assert security.encryption_algorithm == "chacha20-poly1305"
 
     def test_encryption_algorithm_invalid(self):
         """Test encryption_algorithm rejects invalid values."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelSecuritySubcontract(encryption_algorithm="invalid_algorithm")
+            ModelSecuritySubcontract(
+                version=DEFAULT_VERSION, encryption_algorithm="invalid_algorithm"
+            )
         assert "must be one of" in str(exc_info.value)
 
     def test_encryption_at_rest_without_encryption_fails(self):
         """Test that encryption_at_rest requires encryption to be enabled."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelSecuritySubcontract(
+                version=DEFAULT_VERSION,
                 enable_encryption=False,
                 enable_encryption_at_rest=True,
             )
@@ -154,6 +175,7 @@ class TestModelSecuritySubcontractEncryptionValidation:
     def test_encryption_at_rest_with_encryption_enabled(self):
         """Test that encryption_at_rest works when encryption is enabled."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_encryption=True,
             enable_encryption_at_rest=True,
         )
@@ -166,28 +188,34 @@ class TestModelSecuritySubcontractFieldValidation:
 
     def test_max_field_length_minimum(self):
         """Test max_field_length minimum constraint."""
-        security = ModelSecuritySubcontract(max_field_length=100)
+        security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION, max_field_length=100
+        )
         assert security.max_field_length == 100
 
         with pytest.raises(ValidationError):
-            ModelSecuritySubcontract(max_field_length=99)
+            ModelSecuritySubcontract(version=DEFAULT_VERSION, max_field_length=99)
 
     def test_max_field_length_maximum(self):
         """Test max_field_length maximum constraint."""
-        security = ModelSecuritySubcontract(max_field_length=1000000)
+        security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION, max_field_length=1000000
+        )
         assert security.max_field_length == 1000000
 
         with pytest.raises(ValidationError):
-            ModelSecuritySubcontract(max_field_length=1000001)
+            ModelSecuritySubcontract(version=DEFAULT_VERSION, max_field_length=1000001)
 
     def test_redaction_placeholder_not_empty(self):
         """Test that redaction_placeholder cannot be empty."""
         with pytest.raises(ValidationError):
-            ModelSecuritySubcontract(redaction_placeholder="")
+            ModelSecuritySubcontract(version=DEFAULT_VERSION, redaction_placeholder="")
 
     def test_custom_redaction_placeholder(self):
         """Test custom redaction placeholder."""
-        security = ModelSecuritySubcontract(redaction_placeholder="***HIDDEN***")
+        security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION, redaction_placeholder="***HIDDEN***"
+        )
         assert security.redaction_placeholder == "***HIDDEN***"
 
 
@@ -197,6 +225,7 @@ class TestModelSecuritySubcontractSerialization:
     def test_security_subcontract_serialization(self):
         """Test security subcontract model_dump."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_encryption=True,
             encryption_algorithm="chacha20-poly1305",
             max_field_length=5000,
@@ -210,6 +239,7 @@ class TestModelSecuritySubcontractSerialization:
     def test_security_subcontract_deserialization(self):
         """Test security subcontract model_validate."""
         data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
             "enable_redaction": False,
             "enable_encryption": True,
             "encryption_algorithm": "aes-128-gcm",
@@ -223,7 +253,7 @@ class TestModelSecuritySubcontractSerialization:
 
     def test_security_subcontract_json_serialization(self):
         """Test security subcontract JSON serialization."""
-        security = ModelSecuritySubcontract()
+        security = ModelSecuritySubcontract(version=DEFAULT_VERSION)
         json_data = security.model_dump_json()
         assert isinstance(json_data, str)
         assert "enable_redaction" in json_data
@@ -232,6 +262,7 @@ class TestModelSecuritySubcontractSerialization:
     def test_security_subcontract_roundtrip(self):
         """Test serialization and deserialization roundtrip."""
         original = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_redaction=True,
             sensitive_field_patterns=["custom_secret"],
             enable_encryption=True,
@@ -253,6 +284,7 @@ class TestModelSecuritySubcontractAuditLogging:
     def test_all_audit_features_enabled(self):
         """Test enabling all audit features."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_audit_logging=True,
             audit_sensitive_operations=True,
             audit_access_attempts=True,
@@ -264,6 +296,7 @@ class TestModelSecuritySubcontractAuditLogging:
     def test_audit_logging_disabled(self):
         """Test disabling audit logging."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_audit_logging=False,
             audit_sensitive_operations=False,
             audit_access_attempts=False,
@@ -279,6 +312,7 @@ class TestModelSecuritySubcontractAccessControl:
     def test_all_access_control_enabled(self):
         """Test enabling all access control features."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_access_control=True,
             require_authentication=True,
             require_authorization=True,
@@ -290,6 +324,7 @@ class TestModelSecuritySubcontractAccessControl:
     def test_access_control_disabled(self):
         """Test disabling access control."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_access_control=False,
             require_authentication=False,
             require_authorization=False,
@@ -305,6 +340,7 @@ class TestModelSecuritySubcontractInputValidation:
     def test_all_input_validation_enabled(self):
         """Test enabling all input validation features."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_input_validation=True,
             enable_sql_injection_protection=True,
             enable_xss_protection=True,
@@ -316,6 +352,7 @@ class TestModelSecuritySubcontractInputValidation:
     def test_input_validation_disabled(self):
         """Test disabling input validation."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_input_validation=False,
             enable_sql_injection_protection=False,
             enable_xss_protection=False,
@@ -331,6 +368,7 @@ class TestModelSecuritySubcontractOutputSanitization:
     def test_all_sanitization_enabled(self):
         """Test enabling all output sanitization features."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_output_sanitization=True,
             sanitize_html=True,
             sanitize_scripts=True,
@@ -342,6 +380,7 @@ class TestModelSecuritySubcontractOutputSanitization:
     def test_sanitization_disabled(self):
         """Test disabling output sanitization."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_output_sanitization=False,
             sanitize_html=False,
             sanitize_scripts=False,
@@ -357,6 +396,7 @@ class TestModelSecuritySubcontractSecurityPolicies:
     def test_all_security_policies_enabled(self):
         """Test enabling all security policies."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enforce_https=True,
             enable_rate_limiting=True,
             enable_csrf_protection=True,
@@ -368,6 +408,7 @@ class TestModelSecuritySubcontractSecurityPolicies:
     def test_security_policies_disabled(self):
         """Test disabling security policies."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enforce_https=False,
             enable_rate_limiting=False,
             enable_csrf_protection=False,
@@ -383,6 +424,7 @@ class TestModelSecuritySubcontractEdgeCases:
     def test_minimal_security_configuration(self):
         """Test minimal security configuration."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_redaction=False,
             enable_encryption=False,
             enable_audit_logging=False,
@@ -398,6 +440,7 @@ class TestModelSecuritySubcontractEdgeCases:
     def test_maximal_security_configuration(self):
         """Test maximal security configuration."""
         security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION,
             enable_redaction=True,
             enable_encryption=True,
             enable_encryption_at_rest=True,
@@ -427,7 +470,7 @@ class TestModelSecuritySubcontractAttributes:
 
     def test_security_subcontract_attributes(self):
         """Test that security subcontract has expected attributes."""
-        security = ModelSecuritySubcontract()
+        security = ModelSecuritySubcontract(version=DEFAULT_VERSION)
         assert hasattr(security, "model_dump")
         assert callable(security.model_dump)
         assert hasattr(ModelSecuritySubcontract, "model_validate")
@@ -451,7 +494,9 @@ class TestModelSecuritySubcontractAttributes:
 
     def test_security_subcontract_copy(self):
         """Test security subcontract copying."""
-        security = ModelSecuritySubcontract(max_field_length=5000)
+        security = ModelSecuritySubcontract(
+            version=DEFAULT_VERSION, max_field_length=5000
+        )
         copied = security.model_copy()
         assert copied is not None
         assert copied.max_field_length == 5000
@@ -464,6 +509,7 @@ class TestModelSecuritySubcontractConfigDict:
     def test_extra_fields_ignored(self):
         """Test that extra fields are ignored."""
         data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
             "enable_redaction": True,
             "extra_field": "should_be_ignored",
             "another_extra": 123,
@@ -475,7 +521,7 @@ class TestModelSecuritySubcontractConfigDict:
 
     def test_validate_assignment_enabled(self):
         """Test that assignment validation is enabled."""
-        security = ModelSecuritySubcontract()
+        security = ModelSecuritySubcontract(version=DEFAULT_VERSION)
 
         # This should trigger validation
         with pytest.raises(ValidationError):

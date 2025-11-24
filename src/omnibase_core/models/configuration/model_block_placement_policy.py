@@ -24,10 +24,7 @@
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelBlockPlacementPolicy(BaseModel):
@@ -61,6 +58,6 @@ class ModelBlockPlacementPolicy(BaseModel):
         description="Enforce that the metadata block is at the top (after shebang/license header, if allowed).",
     )
     placement_policy_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Version of the placement policy.",
     )

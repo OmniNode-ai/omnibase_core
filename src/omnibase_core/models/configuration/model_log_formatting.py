@@ -3,6 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 
 
@@ -54,7 +55,9 @@ class ModelLogFormatting(BaseModel):
         le=8,
     )
     custom_fields: ModelCustomFields = Field(
-        default_factory=ModelCustomFields,
+        default_factory=lambda: ModelCustomFields(
+            schema_version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Additional custom fields to include",
     )
     truncate_long_messages: bool = Field(

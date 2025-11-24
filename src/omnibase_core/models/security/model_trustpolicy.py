@@ -12,7 +12,6 @@ from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
-    default_model_version,
     parse_semver_from_string,
 )
 from omnibase_core.models.security.model_certificate_validation_level import (
@@ -59,7 +58,7 @@ class ModelTrustPolicy(BaseModel):
     )
     name: str = Field(default=..., description="Policy name", min_length=1)
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Policy version",
     )
     description: str | None = Field(default=None, description="Policy description")

@@ -18,13 +18,16 @@ from omnibase_core.models.contracts.subcontracts.model_event_handling_subcontrac
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 
 class TestModelEventHandlingSubcontractBasics:
     """Test basic functionality of ModelEventHandlingSubcontract."""
 
     def test_default_values(self) -> None:
         """Test default values are set correctly."""
-        subcontract = ModelEventHandlingSubcontract()
+        subcontract = ModelEventHandlingSubcontract(version=DEFAULT_VERSION)
 
         assert subcontract.enabled is True
         assert subcontract.subscribed_events == [
@@ -58,6 +61,7 @@ class TestModelEventHandlingSubcontractBasics:
     def test_minimal_instantiation(self) -> None:
         """Test minimal valid instantiation."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             enabled=True,
             subscribed_events=["NODE_INTROSPECTION_REQUEST"],
         )
@@ -68,6 +72,7 @@ class TestModelEventHandlingSubcontractBasics:
     def test_full_instantiation(self) -> None:
         """Test full instantiation with all fields."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             enabled=True,
             subscribed_events=["NODE_INTROSPECTION_REQUEST", "CUSTOM_EVENT"],
             auto_subscribe_on_init=True,
@@ -108,6 +113,7 @@ class TestModelEventHandlingSubcontractSubscribedEvents:
         """Test that subscribed_events cannot be empty list."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelEventHandlingSubcontract(
+                version=DEFAULT_VERSION,
                 enabled=True,
                 subscribed_events=[],
             )
@@ -118,6 +124,7 @@ class TestModelEventHandlingSubcontractSubscribedEvents:
     def test_subscribed_events_with_wildcards(self) -> None:
         """Test subscribed_events with wildcard patterns."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             subscribed_events=["*.discovery.*", "core.introspection.*"],
         )
 
@@ -127,6 +134,7 @@ class TestModelEventHandlingSubcontractSubscribedEvents:
     def test_subscribed_events_single_event(self) -> None:
         """Test subscribed_events with single event."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             subscribed_events=["CUSTOM_EVENT"],
         )
 
@@ -147,6 +155,7 @@ class TestModelEventHandlingSubcontractDeadLetterChannel:
 
         for name in valid_names:
             subcontract = ModelEventHandlingSubcontract(
+                version=DEFAULT_VERSION,
                 dead_letter_channel=name,
             )
             assert subcontract.dead_letter_channel == name
@@ -162,6 +171,7 @@ class TestModelEventHandlingSubcontractDeadLetterChannel:
         for name in invalid_names:
             with pytest.raises(ModelOnexError) as exc_info:
                 ModelEventHandlingSubcontract(
+                    version=DEFAULT_VERSION,
                     dead_letter_channel=name,
                 )
 
@@ -170,6 +180,7 @@ class TestModelEventHandlingSubcontractDeadLetterChannel:
     def test_dead_letter_channel_none(self) -> None:
         """Test dead_letter_channel can be None."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             dead_letter_channel=None,
         )
 
@@ -185,6 +196,7 @@ class TestModelEventHandlingSubcontractOverflowStrategy:
 
         for strategy in valid_strategies:
             subcontract = ModelEventHandlingSubcontract(
+                version=DEFAULT_VERSION,
                 dead_letter_overflow_strategy=strategy,
             )
             assert subcontract.dead_letter_overflow_strategy == strategy
@@ -193,6 +205,7 @@ class TestModelEventHandlingSubcontractOverflowStrategy:
         """Test invalid overflow strategy value."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelEventHandlingSubcontract(
+                version=DEFAULT_VERSION,
                 dead_letter_overflow_strategy="invalid_strategy",
             )
 
@@ -210,6 +223,7 @@ class TestModelEventHandlingSubcontractRetryConfiguration:
         # Pydantic field constraint catches this before model validator
         with pytest.raises(ValidationError) as exc_info:
             ModelEventHandlingSubcontract(
+                version=DEFAULT_VERSION,
                 max_retries=3,
                 retry_delay_seconds=0.0,
             )
@@ -220,6 +234,7 @@ class TestModelEventHandlingSubcontractRetryConfiguration:
         """Test retry_delay_seconds can be 0 when max_retries = 0."""
         # This should pass validation since max_retries is 0
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             max_retries=0,
             retry_delay_seconds=0.1,  # Min value from Field constraint
         )
@@ -229,20 +244,27 @@ class TestModelEventHandlingSubcontractRetryConfiguration:
     def test_max_retries_range(self) -> None:
         """Test max_retries respects range constraints."""
         # Valid range
-        subcontract = ModelEventHandlingSubcontract(max_retries=5)
+        subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION, max_retries=5
+        )
         assert subcontract.max_retries == 5
 
         # Upper bound
-        subcontract = ModelEventHandlingSubcontract(max_retries=10)
+        subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION, max_retries=10
+        )
         assert subcontract.max_retries == 10
 
         # Lower bound
-        subcontract = ModelEventHandlingSubcontract(max_retries=0)
+        subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION, max_retries=0
+        )
         assert subcontract.max_retries == 0
 
     def test_exponential_backoff_configuration(self) -> None:
         """Test exponential backoff configuration."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             max_retries=5,
             retry_delay_seconds=1.0,
             retry_exponential_backoff=True,
@@ -262,6 +284,7 @@ class TestModelEventHandlingSubcontractHandlerTimeout:
         # Pydantic field constraint catches this before model validator
         with pytest.raises(ValidationError) as exc_info:
             ModelEventHandlingSubcontract(
+                version=DEFAULT_VERSION,
                 handler_timeout_seconds=0.5,
             )
 
@@ -273,6 +296,7 @@ class TestModelEventHandlingSubcontractHandlerTimeout:
 
         for timeout in valid_timeouts:
             subcontract = ModelEventHandlingSubcontract(
+                version=DEFAULT_VERSION,
                 handler_timeout_seconds=timeout,
             )
             assert subcontract.handler_timeout_seconds == timeout
@@ -280,6 +304,7 @@ class TestModelEventHandlingSubcontractHandlerTimeout:
     def test_handler_timeout_none(self) -> None:
         """Test handler_timeout_seconds can be None."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             handler_timeout_seconds=None,
         )
 
@@ -293,6 +318,7 @@ class TestModelEventHandlingSubcontractDLQMaxEvents:
         """Test warning when dead_letter_max_events exceeds 5000."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelEventHandlingSubcontract(
+                version=DEFAULT_VERSION,
                 dead_letter_max_events=6000,
             )
 
@@ -305,6 +331,7 @@ class TestModelEventHandlingSubcontractDLQMaxEvents:
 
         for value in valid_values:
             subcontract = ModelEventHandlingSubcontract(
+                version=DEFAULT_VERSION,
                 dead_letter_max_events=value,
             )
             assert subcontract.dead_letter_max_events == value
@@ -317,6 +344,7 @@ class TestModelEventHandlingSubcontractAsyncSyncConfiguration:
         """Test that at least one of async or sync must be enabled."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelEventHandlingSubcontract(
+                version=DEFAULT_VERSION,
                 async_event_bus_support=False,
                 sync_event_bus_fallback=False,
             )
@@ -327,6 +355,7 @@ class TestModelEventHandlingSubcontractAsyncSyncConfiguration:
     def test_async_only_configuration(self) -> None:
         """Test async-only configuration."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             async_event_bus_support=True,
             sync_event_bus_fallback=False,
         )
@@ -337,6 +366,7 @@ class TestModelEventHandlingSubcontractAsyncSyncConfiguration:
     def test_sync_only_configuration(self) -> None:
         """Test sync-only configuration."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             async_event_bus_support=False,
             sync_event_bus_fallback=True,
         )
@@ -346,7 +376,7 @@ class TestModelEventHandlingSubcontractAsyncSyncConfiguration:
 
     def test_both_async_and_sync_enabled(self) -> None:
         """Test both async and sync enabled (default)."""
-        subcontract = ModelEventHandlingSubcontract()
+        subcontract = ModelEventHandlingSubcontract(version=DEFAULT_VERSION)
 
         assert subcontract.async_event_bus_support is True
         assert subcontract.sync_event_bus_fallback is True
@@ -358,6 +388,7 @@ class TestModelEventHandlingSubcontractEventFilters:
     def test_event_filters_empty_dict(self) -> None:
         """Test event_filters with empty dict."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             event_filters={},
         )
 
@@ -366,6 +397,7 @@ class TestModelEventHandlingSubcontractEventFilters:
     def test_event_filters_with_node_id(self) -> None:
         """Test event_filters with node_id pattern."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             event_filters={"node_id": "compute*"},
         )
 
@@ -374,6 +406,7 @@ class TestModelEventHandlingSubcontractEventFilters:
     def test_event_filters_with_node_name(self) -> None:
         """Test event_filters with node_name pattern."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             event_filters={"node_name": "node_*_effect"},
         )
 
@@ -382,6 +415,7 @@ class TestModelEventHandlingSubcontractEventFilters:
     def test_event_filters_with_custom_fields(self) -> None:
         """Test event_filters with custom fields."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             event_filters={
                 "node_id": "compute*",
                 "event_source": "external",
@@ -399,6 +433,7 @@ class TestModelEventHandlingSubcontractConfigDict:
     def test_extra_fields_ignored(self) -> None:
         """Test that extra fields are ignored."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             enabled=True,
             unknown_field="should_be_ignored",  # type: ignore[call-arg]
         )
@@ -408,7 +443,7 @@ class TestModelEventHandlingSubcontractConfigDict:
 
     def test_validate_assignment(self) -> None:
         """Test that assignment validation is enabled."""
-        subcontract = ModelEventHandlingSubcontract()
+        subcontract = ModelEventHandlingSubcontract(version=DEFAULT_VERSION)
 
         # Valid assignment
         subcontract.max_retries = 5
@@ -421,6 +456,7 @@ class TestModelEventHandlingSubcontractSerialization:
     def test_model_dump(self) -> None:
         """Test model serialization."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             enabled=True,
             subscribed_events=["CUSTOM_EVENT"],
             max_retries=5,
@@ -435,6 +471,7 @@ class TestModelEventHandlingSubcontractSerialization:
     def test_model_dump_json(self) -> None:
         """Test JSON serialization."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             enabled=True,
             dead_letter_channel="dlq.events",
         )
@@ -447,6 +484,7 @@ class TestModelEventHandlingSubcontractSerialization:
     def test_model_validate(self) -> None:
         """Test model deserialization."""
         data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
             "enabled": True,
             "subscribed_events": ["NODE_INTROSPECTION_REQUEST"],
             "max_retries": 3,
@@ -465,17 +503,22 @@ class TestModelEventHandlingSubcontractEdgeCases:
     def test_max_retries_boundary_values(self) -> None:
         """Test max_retries at boundary values."""
         # Lower bound
-        subcontract = ModelEventHandlingSubcontract(max_retries=0)
+        subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION, max_retries=0
+        )
         assert subcontract.max_retries == 0
 
         # Upper bound
-        subcontract = ModelEventHandlingSubcontract(max_retries=10)
+        subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION, max_retries=10
+        )
         assert subcontract.max_retries == 10
 
     def test_retry_delay_boundary_values(self) -> None:
         """Test retry_delay_seconds at boundary values."""
         # Lower bound
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             max_retries=0,  # Required to pass validation
             retry_delay_seconds=0.1,
         )
@@ -483,6 +526,7 @@ class TestModelEventHandlingSubcontractEdgeCases:
 
         # Upper bound
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             retry_delay_seconds=60.0,
         )
         assert subcontract.retry_delay_seconds == 60.0
@@ -490,6 +534,7 @@ class TestModelEventHandlingSubcontractEdgeCases:
     def test_disabled_event_handling(self) -> None:
         """Test event handling can be disabled."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             enabled=False,
         )
 
@@ -498,6 +543,7 @@ class TestModelEventHandlingSubcontractEdgeCases:
     def test_all_features_disabled(self) -> None:
         """Test configuration with most features disabled."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             enabled=False,
             auto_subscribe_on_init=False,
             handle_introspection_requests=False,
@@ -522,6 +568,7 @@ class TestModelEventHandlingSubcontractUseCases:
     def test_minimal_event_handler_configuration(self) -> None:
         """Test minimal event handler configuration."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             enabled=True,
             subscribed_events=["NODE_INTROSPECTION_REQUEST"],
             max_retries=0,
@@ -533,6 +580,7 @@ class TestModelEventHandlingSubcontractUseCases:
     def test_production_event_handler_configuration(self) -> None:
         """Test production-grade event handler configuration."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             enabled=True,
             subscribed_events=["NODE_INTROSPECTION_REQUEST", "NODE_DISCOVERY_REQUEST"],
             event_filters={"node_id": "prod-*"},
@@ -552,6 +600,7 @@ class TestModelEventHandlingSubcontractUseCases:
     def test_high_throughput_configuration(self) -> None:
         """Test high-throughput event handler configuration."""
         subcontract = ModelEventHandlingSubcontract(
+            version=DEFAULT_VERSION,
             enabled=True,
             subscribed_events=["*.events.*"],
             max_retries=1,  # Fast fail for high throughput

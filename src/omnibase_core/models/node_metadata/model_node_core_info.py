@@ -19,10 +19,7 @@ from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.typed_dict_core_summary import TypedDictCoreSummary
 
 
@@ -47,7 +44,7 @@ class ModelNodeCoreInfo(BaseModel):
     )
     node_type: EnumMetadataNodeType = Field(default=..., description="Node type")
     node_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Node version",
     )
 

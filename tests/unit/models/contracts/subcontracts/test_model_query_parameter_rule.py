@@ -13,6 +13,11 @@ Comprehensive test coverage for query parameter rule model including:
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.models.contracts.subcontracts.model_query_parameter_rule import (
     ModelQueryParameterRule,
 )
@@ -24,6 +29,7 @@ class TestModelQueryParameterRuleBasics:
     def test_minimal_instantiation(self):
         """Test model can be instantiated with minimal required fields."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="user_id",
             transformation_rule="12345",
         )
@@ -39,6 +45,7 @@ class TestModelQueryParameterRuleBasics:
     def test_full_instantiation(self):
         """Test model with all fields specified."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="api_key",
             transformation_rule="{user.api_key}",
             transformation_type="prefix",
@@ -59,6 +66,7 @@ class TestModelQueryParameterRuleBasics:
     def test_default_values(self):
         """Test default values are correctly applied."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="test_value",
         )
@@ -78,6 +86,7 @@ class TestModelQueryParameterRuleValidation:
         """Test parameter_name is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelQueryParameterRule(
+                version=DEFAULT_VERSION,
                 transformation_rule="value",
             )
 
@@ -89,6 +98,7 @@ class TestModelQueryParameterRuleValidation:
         # Empty string should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelQueryParameterRule(
+                version=DEFAULT_VERSION,
                 parameter_name="",
                 transformation_rule="value",
             )
@@ -111,6 +121,7 @@ class TestModelQueryParameterRuleValidation:
 
         for name in valid_names:
             rule = ModelQueryParameterRule(
+                version=DEFAULT_VERSION,
                 parameter_name=name,
                 transformation_rule="value",
             )
@@ -120,6 +131,7 @@ class TestModelQueryParameterRuleValidation:
         """Test transformation_rule is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelQueryParameterRule(
+                version=DEFAULT_VERSION,
                 parameter_name="test_param",
             )
 
@@ -131,6 +143,7 @@ class TestModelQueryParameterRuleValidation:
         # Empty string should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelQueryParameterRule(
+                version=DEFAULT_VERSION,
                 parameter_name="test_param",
                 transformation_rule="",
             )
@@ -144,6 +157,7 @@ class TestModelQueryParameterRuleValidation:
 
         for trans_type in valid_types:
             rule = ModelQueryParameterRule(
+                version=DEFAULT_VERSION,
                 parameter_name="test_param",
                 transformation_rule="value",
                 transformation_type=trans_type,
@@ -153,6 +167,7 @@ class TestModelQueryParameterRuleValidation:
     def test_transformation_type_default(self):
         """Test transformation_type defaults to 'set'."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value",
         )
@@ -163,16 +178,19 @@ class TestModelQueryParameterRuleValidation:
         """Test priority validates bounds."""
         # Valid values
         ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value",
             priority=0,  # Min
         )
         ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value",
             priority=500,
         )
         ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value",
             priority=1000,  # Max
@@ -181,6 +199,7 @@ class TestModelQueryParameterRuleValidation:
         # Below minimum
         with pytest.raises(ValidationError) as exc_info:
             ModelQueryParameterRule(
+                version=DEFAULT_VERSION,
                 parameter_name="test_param",
                 transformation_rule="value",
                 priority=-1,
@@ -192,6 +211,7 @@ class TestModelQueryParameterRuleValidation:
         # Above maximum
         with pytest.raises(ValidationError) as exc_info:
             ModelQueryParameterRule(
+                version=DEFAULT_VERSION,
                 parameter_name="test_param",
                 transformation_rule="value",
                 priority=1001,
@@ -203,6 +223,7 @@ class TestModelQueryParameterRuleValidation:
     def test_case_sensitive_boolean(self):
         """Test case_sensitive accepts boolean values."""
         rule_true = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value",
             case_sensitive=True,
@@ -210,6 +231,7 @@ class TestModelQueryParameterRuleValidation:
         assert rule_true.case_sensitive is True
 
         rule_false = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value",
             case_sensitive=False,
@@ -219,6 +241,7 @@ class TestModelQueryParameterRuleValidation:
     def test_url_encode_boolean(self):
         """Test url_encode accepts boolean values."""
         rule_true = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value with spaces",
             url_encode=True,
@@ -226,6 +249,7 @@ class TestModelQueryParameterRuleValidation:
         assert rule_true.url_encode is True
 
         rule_false = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value",
             url_encode=False,
@@ -235,6 +259,7 @@ class TestModelQueryParameterRuleValidation:
     def test_apply_condition_optional(self):
         """Test apply_condition is optional."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value",
             apply_condition=None,
@@ -242,6 +267,7 @@ class TestModelQueryParameterRuleValidation:
         assert rule.apply_condition is None
 
         rule_with_condition = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value",
             apply_condition="request.method == 'GET'",
@@ -255,6 +281,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_minimum_priority_rule(self):
         """Test rule with minimum priority."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="low_priority_param",
             transformation_rule="value",
             priority=0,
@@ -265,6 +292,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_maximum_priority_rule(self):
         """Test rule with maximum priority."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="high_priority_param",
             transformation_rule="value",
             priority=1000,
@@ -275,6 +303,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_set_transformation(self):
         """Test 'set' transformation type."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="status",
             transformation_rule="active",
             transformation_type="set",
@@ -285,6 +314,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_append_transformation(self):
         """Test 'append' transformation type."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="tags",
             transformation_rule=",new_tag",
             transformation_type="append",
@@ -295,6 +325,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_prefix_transformation(self):
         """Test 'prefix' transformation type."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="search",
             transformation_rule="prefix_",
             transformation_type="prefix",
@@ -305,6 +336,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_suffix_transformation(self):
         """Test 'suffix' transformation type."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="version",
             transformation_rule="_latest",
             transformation_type="suffix",
@@ -315,6 +347,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_remove_transformation(self):
         """Test 'remove' transformation type."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="sensitive_param",
             transformation_rule="N/A",  # Not used for remove, but required by validation
             transformation_type="remove",
@@ -325,6 +358,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_encode_transformation(self):
         """Test 'encode' transformation type."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="query",
             transformation_rule="search term with spaces",
             transformation_type="encode",
@@ -335,6 +369,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_template_transformation_rule(self):
         """Test transformation rule with template variables."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="user",
             transformation_rule="{user.username}",
         )
@@ -344,6 +379,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_special_characters_in_transformation_rule(self):
         """Test transformation rule with special characters requiring encoding."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="query",
             transformation_rule="hello world & foo=bar",
             url_encode=True,
@@ -355,6 +391,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_url_encoding_disabled(self):
         """Test URL encoding can be disabled."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="raw_value",
             transformation_rule="already%20encoded",
             url_encode=False,
@@ -366,6 +403,7 @@ class TestModelQueryParameterRuleEdgeCases:
         """Test complex apply condition."""
         condition = "(request.path == '/search' and 'query' in request.params) or request.headers.get('X-Force-Transform')"
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="search_param",
             transformation_rule="value",
             apply_condition=condition,
@@ -376,6 +414,7 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_case_insensitive_parameter_matching(self):
         """Test case-insensitive parameter matching configuration."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="userid",  # Lowercase
             transformation_rule="12345",
             case_sensitive=False,
@@ -386,12 +425,14 @@ class TestModelQueryParameterRuleEdgeCases:
     def test_multiple_rules_same_parameter_different_priorities(self):
         """Test multiple rules for same parameter with different priorities."""
         rule1 = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="page",
             transformation_rule="1",
             priority=100,
         )
 
         rule2 = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="page",
             transformation_rule="10",
             priority=200,
@@ -407,6 +448,7 @@ class TestModelQueryParameterRuleConfigDict:
     def test_extra_fields_ignored(self):
         """Test extra fields are ignored per ConfigDict."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value",
             unknown_field="should_be_ignored",  # type: ignore[call-arg]
@@ -418,6 +460,7 @@ class TestModelQueryParameterRuleConfigDict:
     def test_validate_assignment(self):
         """Test assignment validation is enabled."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="test_param",
             transformation_rule="value",
         )
@@ -436,6 +479,7 @@ class TestModelQueryParameterRuleConfigDict:
     def test_model_serialization(self):
         """Test model can be serialized and deserialized."""
         original = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="api_key",
             transformation_rule="{user.api_key}",
             transformation_type="prefix",
@@ -462,6 +506,7 @@ class TestModelQueryParameterRuleConfigDict:
     def test_json_serialization(self):
         """Test model can be serialized to JSON."""
         rule = ModelQueryParameterRule(
+            version=DEFAULT_VERSION,
             parameter_name="user_id",
             transformation_rule="12345",
         )

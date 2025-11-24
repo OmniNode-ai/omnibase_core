@@ -5,10 +5,7 @@ from typing import Optional
 from pydantic import Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Node Capability Model
@@ -67,7 +64,7 @@ class ModelNodeCapability(BaseModel):
 
     # Metadata fields
     version_introduced: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="ONEX version when this capability was introduced",
     )
 

@@ -12,6 +12,11 @@ Comprehensive test coverage for header transformation model including:
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.models.contracts.subcontracts.model_header_transformation import (
     ModelHeaderTransformation,
 )
@@ -23,6 +28,7 @@ class TestModelHeaderTransformationBasics:
     def test_minimal_instantiation(self):
         """Test model can be instantiated with minimal required fields."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value123",
         )
@@ -37,6 +43,7 @@ class TestModelHeaderTransformationBasics:
     def test_full_instantiation(self):
         """Test model with all fields specified."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Authorization",
             transformation_rule="Bearer {token}",
             transformation_type="prefix",
@@ -55,6 +62,7 @@ class TestModelHeaderTransformationBasics:
     def test_default_values(self):
         """Test default values are correctly applied."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Test-Header",
             transformation_rule="test-value",
         )
@@ -73,6 +81,7 @@ class TestModelHeaderTransformationValidation:
         """Test header_name is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelHeaderTransformation(
+                version=DEFAULT_VERSION,
                 transformation_rule="value",
             )
 
@@ -84,6 +93,7 @@ class TestModelHeaderTransformationValidation:
         # Empty string should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelHeaderTransformation(
+                version=DEFAULT_VERSION,
                 header_name="",
                 transformation_rule="value",
             )
@@ -105,6 +115,7 @@ class TestModelHeaderTransformationValidation:
 
         for name in valid_names:
             transform = ModelHeaderTransformation(
+                version=DEFAULT_VERSION,
                 header_name=name,
                 transformation_rule="value",
             )
@@ -114,6 +125,7 @@ class TestModelHeaderTransformationValidation:
         """Test transformation_rule is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelHeaderTransformation(
+                version=DEFAULT_VERSION,
                 header_name="Test-Header",
             )
 
@@ -125,6 +137,7 @@ class TestModelHeaderTransformationValidation:
         # Empty string should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelHeaderTransformation(
+                version=DEFAULT_VERSION,
                 header_name="Test-Header",
                 transformation_rule="",
             )
@@ -138,6 +151,7 @@ class TestModelHeaderTransformationValidation:
 
         for trans_type in valid_types:
             transform = ModelHeaderTransformation(
+                version=DEFAULT_VERSION,
                 header_name="Test-Header",
                 transformation_rule="value",
                 transformation_type=trans_type,
@@ -147,6 +161,7 @@ class TestModelHeaderTransformationValidation:
     def test_transformation_type_default(self):
         """Test transformation_type defaults to 'set'."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Test-Header",
             transformation_rule="value",
         )
@@ -157,16 +172,19 @@ class TestModelHeaderTransformationValidation:
         """Test priority validates bounds."""
         # Valid values
         ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Test-Header",
             transformation_rule="value",
             priority=0,  # Min
         )
         ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Test-Header",
             transformation_rule="value",
             priority=500,
         )
         ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Test-Header",
             transformation_rule="value",
             priority=1000,  # Max
@@ -175,6 +193,7 @@ class TestModelHeaderTransformationValidation:
         # Below minimum
         with pytest.raises(ValidationError) as exc_info:
             ModelHeaderTransformation(
+                version=DEFAULT_VERSION,
                 header_name="Test-Header",
                 transformation_rule="value",
                 priority=-1,
@@ -186,6 +205,7 @@ class TestModelHeaderTransformationValidation:
         # Above maximum
         with pytest.raises(ValidationError) as exc_info:
             ModelHeaderTransformation(
+                version=DEFAULT_VERSION,
                 header_name="Test-Header",
                 transformation_rule="value",
                 priority=1001,
@@ -197,6 +217,7 @@ class TestModelHeaderTransformationValidation:
     def test_case_sensitive_boolean(self):
         """Test case_sensitive accepts boolean values."""
         transform_true = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Test-Header",
             transformation_rule="value",
             case_sensitive=True,
@@ -204,6 +225,7 @@ class TestModelHeaderTransformationValidation:
         assert transform_true.case_sensitive is True
 
         transform_false = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Test-Header",
             transformation_rule="value",
             case_sensitive=False,
@@ -213,6 +235,7 @@ class TestModelHeaderTransformationValidation:
     def test_apply_condition_optional(self):
         """Test apply_condition is optional."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Test-Header",
             transformation_rule="value",
             apply_condition=None,
@@ -220,6 +243,7 @@ class TestModelHeaderTransformationValidation:
         assert transform.apply_condition is None
 
         transform_with_condition = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Test-Header",
             transformation_rule="value",
             apply_condition="request.method == 'GET'",
@@ -233,6 +257,7 @@ class TestModelHeaderTransformationEdgeCases:
     def test_minimum_priority_transform(self):
         """Test transformation with minimum priority."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Low-Priority-Header",
             transformation_rule="value",
             priority=0,
@@ -243,6 +268,7 @@ class TestModelHeaderTransformationEdgeCases:
     def test_maximum_priority_transform(self):
         """Test transformation with maximum priority."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="High-Priority-Header",
             transformation_rule="value",
             priority=1000,
@@ -253,6 +279,7 @@ class TestModelHeaderTransformationEdgeCases:
     def test_set_transformation(self):
         """Test 'set' transformation type."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Content-Type",
             transformation_rule="application/json",
             transformation_type="set",
@@ -263,6 +290,7 @@ class TestModelHeaderTransformationEdgeCases:
     def test_append_transformation(self):
         """Test 'append' transformation type."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="; extra=value",
             transformation_type="append",
@@ -273,6 +301,7 @@ class TestModelHeaderTransformationEdgeCases:
     def test_prefix_transformation(self):
         """Test 'prefix' transformation type."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Authorization",
             transformation_rule="Bearer ",
             transformation_type="prefix",
@@ -283,6 +312,7 @@ class TestModelHeaderTransformationEdgeCases:
     def test_suffix_transformation(self):
         """Test 'suffix' transformation type."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="User-Agent",
             transformation_rule=" (Custom)",
             transformation_type="suffix",
@@ -293,6 +323,7 @@ class TestModelHeaderTransformationEdgeCases:
     def test_remove_transformation(self):
         """Test 'remove' transformation type."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="X-Sensitive-Header",
             transformation_rule="N/A",  # Not used for remove, but required by validation
             transformation_type="remove",
@@ -303,6 +334,7 @@ class TestModelHeaderTransformationEdgeCases:
     def test_template_transformation_rule(self):
         """Test transformation rule with template variables."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Authorization",
             transformation_rule="Bearer {jwt_token}",
         )
@@ -313,6 +345,7 @@ class TestModelHeaderTransformationEdgeCases:
         """Test complex apply condition."""
         condition = "(request.path.startswith('/api') and request.method == 'POST') or request.headers.get('X-Force-Transform')"
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value",
             apply_condition=condition,
@@ -323,6 +356,7 @@ class TestModelHeaderTransformationEdgeCases:
     def test_case_insensitive_header_matching(self):
         """Test case-insensitive header matching configuration."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="content-type",  # Lowercase
             transformation_rule="application/json",
             case_sensitive=False,
@@ -333,12 +367,14 @@ class TestModelHeaderTransformationEdgeCases:
     def test_multiple_transforms_same_header_different_priorities(self):
         """Test multiple transforms for same header with different priorities."""
         transform1 = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value1",
             priority=100,
         )
 
         transform2 = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="X-Custom-Header",
             transformation_rule="value2",
             priority=200,
@@ -354,6 +390,7 @@ class TestModelHeaderTransformationConfigDict:
     def test_extra_fields_ignored(self):
         """Test extra fields are ignored per ConfigDict."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Test-Header",
             transformation_rule="value",
             unknown_field="should_be_ignored",  # type: ignore[call-arg]
@@ -365,6 +402,7 @@ class TestModelHeaderTransformationConfigDict:
     def test_validate_assignment(self):
         """Test assignment validation is enabled."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Test-Header",
             transformation_rule="value",
         )
@@ -383,6 +421,7 @@ class TestModelHeaderTransformationConfigDict:
     def test_model_serialization(self):
         """Test model can be serialized and deserialized."""
         original = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Authorization",
             transformation_rule="Bearer {token}",
             transformation_type="prefix",
@@ -407,6 +446,7 @@ class TestModelHeaderTransformationConfigDict:
     def test_json_serialization(self):
         """Test model can be serialized to JSON."""
         transform = ModelHeaderTransformation(
+            version=DEFAULT_VERSION,
             header_name="Content-Type",
             transformation_rule="application/json",
         )

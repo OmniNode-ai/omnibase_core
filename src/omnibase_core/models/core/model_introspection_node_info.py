@@ -22,7 +22,7 @@ class ModelIntrospectionNodeInfo(BaseModel):
 
     node_name: str = Field(description="Name of the node")
     node_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Version of the node as ModelSemVer",
     )
     description: str = Field(description="Description of the node")

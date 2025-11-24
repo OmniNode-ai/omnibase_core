@@ -29,6 +29,7 @@ from omnibase_core.models.core.model_mixin_performance_use_case import (
     ModelMixinPerformanceUseCase,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # =============================================================================
 # ModelMixinVersion Tests

@@ -151,11 +151,14 @@ class ServiceRegistry:
             )
 
             # Create metadata
+            from omnibase_core.models.primitives.model_semver import ModelSemVer
+
             metadata = ModelServiceMetadata(
                 service_id=registration_id,
                 service_name=impl_name,
                 service_interface=interface_name,
                 service_implementation=impl_name,
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 tags=["core"],
                 configuration=configuration or {},
             )
@@ -237,11 +240,14 @@ class ServiceRegistry:
             instance_type = type(instance).__name__
 
             # Create metadata
+            from omnibase_core.models.primitives.model_semver import ModelSemVer
+
             service_metadata = ModelServiceMetadata(
                 service_id=registration_id,
                 service_name=instance_type,
                 service_interface=interface_name,
                 service_implementation=instance_type,
+                version=ModelSemVer(major=1, minor=0, patch=0),
                 tags=["instance"],
                 configuration=metadata or {},
             )

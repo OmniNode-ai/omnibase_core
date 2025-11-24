@@ -101,8 +101,20 @@ class EmptyDirectoryValidator:
             return True
 
         # Exclude hidden directories (starting with .)
-        if any(part.startswith(".") for part in dir_path.parts):
-            return True
+        # Only check parts relative to repo root to avoid false positives
+        # when repo itself is in a hidden directory
+        try:
+            relative_path = dir_path.relative_to(self.repo_path)
+            # Check if any part of the relative path is a hidden directory
+            # Exclude special directory markers '.' and '..'
+            for part in relative_path.parts:
+                if part.startswith(".") and part not in (".", ".."):
+                    return True
+        except ValueError:
+            # dir_path is not relative to repo_path (shouldn't happen in normal use)
+            # Fall back to checking the directory name itself
+            if dir_path.name.startswith(".") and dir_path.name not in (".", ".."):
+                return True
 
         return False
 

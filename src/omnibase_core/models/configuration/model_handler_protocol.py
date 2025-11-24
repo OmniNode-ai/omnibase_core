@@ -3,10 +3,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_handler_source import EnumHandlerSource
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_can_handle_result import ModelCanHandleResult
 from .model_serialized_block import ModelSerializedBlock
@@ -22,7 +19,7 @@ class ModelHandlerMetadata(BaseModel):
 
     handler_name: str = Field(default=..., description="Handler name.")
     handler_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Handler version.",
     )
     handler_author: str = Field(default=..., description="Handler author.")

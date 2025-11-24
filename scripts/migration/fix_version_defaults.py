@@ -15,8 +15,10 @@ def fix_file(filepath: Path) -> int:
 
     # Pattern 1: version: ModelSemVer = Field(\n        description=...
     # This pattern matches multi-line Field definitions without default_factory
+    # Match ONLY 'version' as exact field name (with optional leading underscore)
+    # to avoid false positives like 'api_version', 'subversion', etc.
     pattern1 = re.compile(
-        r'(\s+)(\w*version\w*): ModelSemVer = Field\(\s*\n\s+description=("[^"]+"|\'[^\']+\')',
+        r'(\s+)(_?version): ModelSemVer = Field\(\s*\n\s+description=("[^"]+"|\'[^\']+\')',
         re.MULTILINE,
     )
 
@@ -36,8 +38,9 @@ def fix_file(filepath: Path) -> int:
 
     # Pattern 2: version: ModelSemVer = Field(default=..., description=...)
     # Replace default=... with default_factory
+    # Match ONLY 'version' as exact field name (with optional leading underscore)
     pattern2 = re.compile(
-        r'(\s+)(\w*version\w*): ModelSemVer = Field\(default=\.\.\., description=("[^"]+"|\'[^\']+\')\)',
+        r'(\s+)(_?version): ModelSemVer = Field\(default=\.\.\., description=("[^"]+"|\'[^\']+\')\)',
         re.MULTILINE,
     )
 
@@ -57,8 +60,9 @@ def fix_file(filepath: Path) -> int:
     content = pattern2.sub(replace2, content)
 
     # Pattern 3: version: ModelSemVer = Field(description=...) - single line
+    # Match ONLY 'version' as exact field name (with optional leading underscore)
     pattern3 = re.compile(
-        r'(\s+)(\w*version\w*): ModelSemVer = Field\(description=("[^"]+"|\'[^\']+\')\)',
+        r'(\s+)(_?version): ModelSemVer = Field\(description=("[^"]+"|\'[^\']+\')\)',
         re.MULTILINE,
     )
 

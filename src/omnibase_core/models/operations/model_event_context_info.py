@@ -2,10 +2,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelEventContextInfo(BaseModel):
@@ -23,6 +20,6 @@ class ModelEventContextInfo(BaseModel):
     tenant_id: UUID | None = Field(default=None, description="Tenant identifier")
     environment: str = Field(default="", description="Environment context")
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Event schema version",
     )

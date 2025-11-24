@@ -3,10 +3,7 @@ from __future__ import annotations
 from pydantic import Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Structured Tags Model.
@@ -79,7 +76,7 @@ class ModelStructuredTags(BaseModel):
 
     # Tag metadata
     tag_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Version of the tag schema",
     )
 
@@ -262,6 +259,7 @@ class ModelStructuredTags(BaseModel):
         structured = cls(
             tags_id=uuid_from_string("_".join(sorted(tags[:3])), "tags"),
             primary_category=primary_category,
+            tag_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         for tag in tags:
@@ -297,6 +295,7 @@ class ModelStructuredTags(BaseModel):
             standard_tags=standard_tags,
             primary_category=EnumStandardCategory.DATA_PROCESSING,
             custom_tags=custom_tags or [],
+            tag_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         structured.validate_tags()
@@ -320,6 +319,7 @@ class ModelStructuredTags(BaseModel):
             standard_tags=standard_tags,
             primary_category=function_category or EnumStandardCategory.BUSINESS_LOGIC,
             custom_tags=custom_tags or [],
+            tag_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         structured.validate_tags()
@@ -342,6 +342,7 @@ class ModelStructuredTags(BaseModel):
             standard_tags=standard_tags,
             primary_category=EnumStandardCategory.ANALYTICS,
             custom_tags=custom_tags or [],
+            tag_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         structured.validate_tags()

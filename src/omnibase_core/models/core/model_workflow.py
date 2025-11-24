@@ -3,10 +3,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Core Workflow Model - ONEX Standards Compliant.
@@ -41,7 +38,7 @@ class ModelWorkflow(BaseModel):
     )
 
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Semantic version of this workflow",
     )
 

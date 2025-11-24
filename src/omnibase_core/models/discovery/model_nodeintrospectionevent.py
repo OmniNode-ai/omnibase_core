@@ -6,10 +6,7 @@ from pydantic import Field, field_validator
 from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.node_metadata.model_node_capability import ModelNodeCapability
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
@@ -47,7 +44,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         default=..., description="Name of the node (e.g. 'node_generator')"
     )
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Version of the node",
     )
 
@@ -117,6 +114,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
                 value=capability_str.lower(),
                 description=f"Node capabilities: {', '.join(actions)}",
                 capability_display_name=capability_str.upper(),
+                version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             )
 
         return cast(ModelNodeCapability, v)
@@ -163,6 +161,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
             value=f"node_{node_name.lower()}_capabilities",
             description=f"Capabilities for {node_name}: {', '.join(actions)}",
             capability_display_name=f"{node_name.upper()}_CAPABILITIES",
+            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
         )
 
         return cls(

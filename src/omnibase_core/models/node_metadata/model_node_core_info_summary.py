@@ -5,10 +5,7 @@ import uuid
 from pydantic import Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Node core information summary model.
@@ -42,7 +39,7 @@ class ModelNodeCoreInfoSummary(BaseModel):
     node_name: str = Field(description="Node name")
     node_type: EnumMetadataNodeType = Field(description="Node type value")
     node_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Node version",
     )
     status: EnumStatus = Field(description="Node status value")

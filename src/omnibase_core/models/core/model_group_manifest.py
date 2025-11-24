@@ -22,11 +22,7 @@ from omnibase_core.models.core.model_group_service_configuration import (
 )
 from omnibase_core.models.core.model_group_tool import ModelGroupTool
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    SemVerField,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer, SemVerField
 
 
 class ModelGroupManifest(BaseModel):
@@ -111,11 +107,11 @@ class ModelGroupManifest(BaseModel):
 
     # === METADATA VALIDATION ===
     blueprint_version: SemVerField = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Tool group blueprint version followed",
     )
     metadata_schema_version: SemVerField = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Metadata schema version",
     )
 

@@ -1,9 +1,6 @@
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Contract model for node introspection.
@@ -29,6 +26,6 @@ class ModelContract(BaseModel):
         description="CLI interface specification",
     )
     protocol_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="ONEX protocol version",
     )

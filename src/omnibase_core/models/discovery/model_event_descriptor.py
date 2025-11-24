@@ -6,10 +6,7 @@ from pydantic import Field
 from omnibase_core.enums.enum_discovery_phase import EnumDiscoveryPhase
 from omnibase_core.enums.enum_event_type import EnumEventType
 from omnibase_core.enums.enum_service_status import EnumServiceStatus
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 __all__ = [
     "EnumDiscoveryPhase",
@@ -119,7 +116,7 @@ class ModelEventDescriptor(BaseModel):
         default=..., description="Service name for Consul registration"
     )
     service_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Service version",
     )
     node_id: UUID | None = Field(
@@ -204,7 +201,7 @@ class ModelEventDescriptor(BaseModel):
         description="Whether event requires validation",
     )
     event_schema_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="EventDescriptor schema version",
     )
 

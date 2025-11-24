@@ -6,6 +6,11 @@ Tests validator conversion from @field_validator to @model_validator(mode="after
 
 import pytest
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.subcontracts.model_route_definition import (
     ModelRouteDefinition,
@@ -22,7 +27,7 @@ class TestRoutingSubcontractValidators:
 
     def test_valid_routing_subcontract_default(self):
         """Test creating routing subcontract with defaults."""
-        subcontract = ModelRoutingSubcontract()
+        subcontract = ModelRoutingSubcontract(version=DEFAULT_VERSION)
 
         assert subcontract.routing_enabled is True
         assert subcontract.routing_strategy == "service_mesh_aware"
@@ -42,19 +47,23 @@ class TestRoutingSubcontractValidators:
     def test_valid_routing_with_unique_priorities(self):
         """Test routing with unique priorities per pattern."""
         route1 = ModelRouteDefinition(
+            version=DEFAULT_VERSION,
             route_name="route1",
             route_pattern="/api/v1",
             priority=1,
             service_targets=["service1"],
         )
         route2 = ModelRouteDefinition(
+            version=DEFAULT_VERSION,
             route_name="route2",
             route_pattern="/api/v1",
             priority=2,
             service_targets=["service2"],
         )
 
-        subcontract = ModelRoutingSubcontract(routes=[route1, route2])
+        subcontract = ModelRoutingSubcontract(
+            version=DEFAULT_VERSION, routes=[route1, route2]
+        )
 
         assert len(subcontract.routes) == 2
         assert subcontract.routes[0].priority == 1
@@ -63,12 +72,14 @@ class TestRoutingSubcontractValidators:
     def test_duplicate_priority_same_pattern_raises_error(self):
         """Test that duplicate priorities in same pattern raise validation error."""
         route1 = ModelRouteDefinition(
+            version=DEFAULT_VERSION,
             route_name="route1",
             route_pattern="/api/v1",
             priority=1,
             service_targets=["service1"],
         )
         route2 = ModelRouteDefinition(
+            version=DEFAULT_VERSION,
             route_name="route2",
             route_pattern="/api/v1",
             priority=1,  # Duplicate priority
@@ -76,7 +87,7 @@ class TestRoutingSubcontractValidators:
         )
 
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelRoutingSubcontract(routes=[route1, route2])
+            ModelRoutingSubcontract(version=DEFAULT_VERSION, routes=[route1, route2])
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Duplicate priority" in exc_info.value.message
@@ -86,19 +97,23 @@ class TestRoutingSubcontractValidators:
     def test_same_priority_different_patterns_allowed(self):
         """Test that same priority across different patterns is allowed."""
         route1 = ModelRouteDefinition(
+            version=DEFAULT_VERSION,
             route_name="route1",
             route_pattern="/api/v1",
             priority=1,
             service_targets=["service1"],
         )
         route2 = ModelRouteDefinition(
+            version=DEFAULT_VERSION,
             route_name="route2",
             route_pattern="/api/v2",
             priority=1,  # Same priority but different pattern
             service_targets=["service2"],
         )
 
-        subcontract = ModelRoutingSubcontract(routes=[route1, route2])
+        subcontract = ModelRoutingSubcontract(
+            version=DEFAULT_VERSION, routes=[route1, route2]
+        )
 
         assert len(subcontract.routes) == 2
         assert subcontract.routes[0].priority == 1
@@ -109,20 +124,24 @@ class TestRoutingSubcontractValidators:
 
     def test_valid_trace_sampling_rate_low(self):
         """Test valid low trace sampling rate."""
-        subcontract = ModelRoutingSubcontract(trace_sampling_rate=0.1)
+        subcontract = ModelRoutingSubcontract(
+            version=DEFAULT_VERSION, trace_sampling_rate=0.1
+        )
 
         assert subcontract.trace_sampling_rate == 0.1
 
     def test_valid_trace_sampling_rate_max_allowed(self):
         """Test valid trace sampling rate at maximum allowed (0.5)."""
-        subcontract = ModelRoutingSubcontract(trace_sampling_rate=0.5)
+        subcontract = ModelRoutingSubcontract(
+            version=DEFAULT_VERSION, trace_sampling_rate=0.5
+        )
 
         assert subcontract.trace_sampling_rate == 0.5
 
     def test_trace_sampling_rate_above_threshold_raises_error(self):
         """Test that trace sampling rate above 50% raises validation error."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelRoutingSubcontract(trace_sampling_rate=0.6)
+            ModelRoutingSubcontract(version=DEFAULT_VERSION, trace_sampling_rate=0.6)
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "sampling rate above 50%" in exc_info.value.message.lower()
@@ -132,7 +151,7 @@ class TestRoutingSubcontractValidators:
     def test_trace_sampling_rate_at_100_percent_raises_error(self):
         """Test that 100% trace sampling rate raises validation error."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelRoutingSubcontract(trace_sampling_rate=1.0)
+            ModelRoutingSubcontract(version=DEFAULT_VERSION, trace_sampling_rate=1.0)
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "sampling rate above 50%" in exc_info.value.message.lower()
@@ -141,18 +160,21 @@ class TestRoutingSubcontractValidators:
         """Test complex routing scenario with multiple routes."""
         routes = [
             ModelRouteDefinition(
+                version=DEFAULT_VERSION,
                 route_name="route1",
                 route_pattern="/api/v1/users",
                 priority=1,
                 service_targets=["user_service"],
             ),
             ModelRouteDefinition(
+                version=DEFAULT_VERSION,
                 route_name="route2",
                 route_pattern="/api/v1/users",
                 priority=2,
                 service_targets=["user_service_backup"],
             ),
             ModelRouteDefinition(
+                version=DEFAULT_VERSION,
                 route_name="route3",
                 route_pattern="/api/v1/orders",
                 priority=1,
@@ -161,6 +183,7 @@ class TestRoutingSubcontractValidators:
         ]
 
         subcontract = ModelRoutingSubcontract(
+            version=DEFAULT_VERSION,
             routes=routes,
             trace_sampling_rate=0.3,
             routing_strategy="path_based",
@@ -172,7 +195,9 @@ class TestRoutingSubcontractValidators:
 
     def test_validator_runs_on_model_update(self):
         """Test that validators run when model is updated (validate_assignment=True)."""
-        subcontract = ModelRoutingSubcontract(trace_sampling_rate=0.1)
+        subcontract = ModelRoutingSubcontract(
+            version=DEFAULT_VERSION, trace_sampling_rate=0.1
+        )
 
         # This should raise validation error due to validate_assignment=True
         with pytest.raises(ModelOnexError) as exc_info:
@@ -186,29 +211,35 @@ class TestRoutingSubcontractEdgeCases:
 
     def test_trace_sampling_rate_zero_is_valid(self):
         """Test that trace_sampling_rate = 0.0 is valid."""
-        subcontract = ModelRoutingSubcontract(trace_sampling_rate=0.0)
+        subcontract = ModelRoutingSubcontract(
+            version=DEFAULT_VERSION, trace_sampling_rate=0.0
+        )
         assert subcontract.trace_sampling_rate == 0.0
 
     def test_trace_sampling_rate_exactly_max_allowed(self):
         """Test that trace_sampling_rate at exactly 0.5 is valid."""
-        subcontract = ModelRoutingSubcontract(trace_sampling_rate=0.5)
+        subcontract = ModelRoutingSubcontract(
+            version=DEFAULT_VERSION, trace_sampling_rate=0.5
+        )
         assert subcontract.trace_sampling_rate == 0.5
 
     def test_empty_routes_list_is_valid(self):
         """Test that empty routes list is valid (default behavior)."""
-        subcontract = ModelRoutingSubcontract(routes=[])
+        subcontract = ModelRoutingSubcontract(version=DEFAULT_VERSION, routes=[])
         assert subcontract.routes == []
         assert len(subcontract.routes) == 0
 
     def test_routing_disabled_with_routes_is_valid(self):
         """Test that routing can be disabled even with routes defined."""
         route = ModelRouteDefinition(
+            version=DEFAULT_VERSION,
             route_name="route1",
             route_pattern="/api/v1",
             priority=1,
             service_targets=["service1"],
         )
         subcontract = ModelRoutingSubcontract(
+            version=DEFAULT_VERSION,
             routing_enabled=False,
             routes=[route],
         )
@@ -219,31 +250,36 @@ class TestRoutingSubcontractEdgeCases:
         """Test creating subcontract with custom routing strategy."""
         custom_strategies = ["path_based", "header_based", "weighted_round_robin"]
         for strategy in custom_strategies:
-            subcontract = ModelRoutingSubcontract(routing_strategy=strategy)
+            subcontract = ModelRoutingSubcontract(
+                version=DEFAULT_VERSION, routing_strategy=strategy
+            )
             assert subcontract.routing_strategy == strategy
 
     def test_multiple_routes_same_priority_different_patterns(self):
         """Test that multiple routes can have same priority if patterns differ."""
         routes = [
             ModelRouteDefinition(
+                version=DEFAULT_VERSION,
                 route_name="route1",
                 route_pattern="/api/v1",
                 priority=1,
                 service_targets=["service1"],
             ),
             ModelRouteDefinition(
+                version=DEFAULT_VERSION,
                 route_name="route2",
                 route_pattern="/api/v2",
                 priority=1,
                 service_targets=["service2"],
             ),
             ModelRouteDefinition(
+                version=DEFAULT_VERSION,
                 route_name="route3",
                 route_pattern="/api/v3",
                 priority=1,
                 service_targets=["service3"],
             ),
         ]
-        subcontract = ModelRoutingSubcontract(routes=routes)
+        subcontract = ModelRoutingSubcontract(version=DEFAULT_VERSION, routes=routes)
         assert len(subcontract.routes) == 3
         assert all(route.priority == 1 for route in subcontract.routes)

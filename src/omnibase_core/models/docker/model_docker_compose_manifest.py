@@ -111,10 +111,12 @@ class ModelDockerComposeManifest(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
-        # Handle list input (e.g., version: [3, 8] from malformed YAML)
-        if isinstance(v, list):
+        # Handle sequence types (list, tuple, set, frozenset)
+        if isinstance(v, (list, tuple, set, frozenset)):
+            type_name = type(v).__name__
+            value_preview = str(v)[:100]  # Limit preview length
             raise ModelOnexError(
-                message=f"Invalid version type: list (value={v}); expected string, number, or ModelSemVer (not a list)",
+                message=f"Invalid version type: {type_name} (value={value_preview}); expected string, number, or ModelSemVer (not a sequence)",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
@@ -125,8 +127,29 @@ class ModelDockerComposeManifest(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
+        # Handle bytes input (e.g., from binary data or malformed encoding)
+        if isinstance(v, (bytes, bytearray)):
+            type_name = type(v).__name__
+            raise ModelOnexError(
+                message=f"Invalid version type: {type_name}; expected string, number, or ModelSemVer (not binary data)",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
+        # Handle complex numbers (unlikely but possible programmatically)
+        if isinstance(v, complex):
+            raise ModelOnexError(
+                message=f"Invalid version type: complex (value={v}); expected string, number, or ModelSemVer (not complex number)",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
         # Convert numeric types to string (common YAML pattern: version: 3 or version: 3.8)
         if isinstance(v, (int, float)):
+            # Validate numeric range is reasonable for version numbers
+            if not (-1000 <= v <= 1000):
+                raise ModelOnexError(
+                    message=f"Invalid version number: {v}; version components must be between -1000 and 1000",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                )
             v = str(v)
 
         # Type check: ensure we now have a string
@@ -386,6 +409,12 @@ class ModelDockerComposeManifest(BaseModel):
             for service_name, service in self.services.items():
                 # Convert dataclass to dict, exclude None values
                 service_dict: dict[str, Any] = {}
+                # Include version (required field)
+                service_dict["version"] = {
+                    "major": service.version.major,
+                    "minor": service.version.minor,
+                    "patch": service.version.patch,
+                }
                 if service.image:
                     service_dict["image"] = service.image
                 if service.build:

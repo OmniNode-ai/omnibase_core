@@ -6,10 +6,7 @@ from pydantic import Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Strongly-typed system metadata structure.
@@ -44,7 +41,7 @@ class ModelSystemMetadata(BaseModel):
     )
     system_name: str = Field(default=..., description="System name")
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="System version in semantic version format",
     )
     deployment_id: UUID | None = Field(
@@ -62,7 +59,7 @@ class ModelSystemMetadata(BaseModel):
 
     # Configuration
     configuration_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Configuration version in semantic version format",
     )
     feature_flags: dict[str, bool] = Field(

@@ -8,6 +8,11 @@ uniqueness constraints on parameter names.
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.models.contracts.subcontracts.model_action_config_parameter import (
     ModelActionConfigParameter,
 )
@@ -24,14 +29,17 @@ class TestModelFSMTransitionActionValidation:
     def test_valid_action_with_unique_parameters(self) -> None:
         """Test that actions with unique parameter names are valid."""
         action = ModelFSMTransitionAction(
+            version=DEFAULT_VERSION,
             action_name="log_transition",
             action_type="log",
             action_config=[
                 ModelActionConfigParameter(
+                    version=DEFAULT_VERSION,
                     parameter_name="level",
                     parameter_value=from_string("info"),
                 ),
                 ModelActionConfigParameter(
+                    version=DEFAULT_VERSION,
                     parameter_name="message",
                     parameter_value=from_string("State transition occurred"),
                 ),
@@ -44,14 +52,17 @@ class TestModelFSMTransitionActionValidation:
         """Test that actions with duplicate parameter names raise ModelOnexError."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelFSMTransitionAction(
+                version=DEFAULT_VERSION,
                 action_name="invalid_action",
                 action_type="validate",
                 action_config=[
                     ModelActionConfigParameter(
+                        version=DEFAULT_VERSION,
                         parameter_name="threshold",
                         parameter_value=from_int(100),
                     ),
                     ModelActionConfigParameter(
+                        version=DEFAULT_VERSION,
                         parameter_name="threshold",  # Duplicate!
                         parameter_value=from_int(200),
                     ),
@@ -67,22 +78,27 @@ class TestModelFSMTransitionActionValidation:
         """Test that multiple duplicate parameter names are all reported."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelFSMTransitionAction(
+                version=DEFAULT_VERSION,
                 action_name="invalid_action",
                 action_type="validate",
                 action_config=[
                     ModelActionConfigParameter(
+                        version=DEFAULT_VERSION,
                         parameter_name="param_a",
                         parameter_value=from_string("value1"),
                     ),
                     ModelActionConfigParameter(
+                        version=DEFAULT_VERSION,
                         parameter_name="param_a",  # Duplicate!
                         parameter_value=from_string("value2"),
                     ),
                     ModelActionConfigParameter(
+                        version=DEFAULT_VERSION,
                         parameter_name="param_b",
                         parameter_value=from_string("value3"),
                     ),
                     ModelActionConfigParameter(
+                        version=DEFAULT_VERSION,
                         parameter_name="param_b",  # Duplicate!
                         parameter_value=from_string("value4"),
                     ),
@@ -96,6 +112,7 @@ class TestModelFSMTransitionActionValidation:
     def test_valid_action_with_empty_config(self) -> None:
         """Test that actions with empty config are valid."""
         action = ModelFSMTransitionAction(
+            version=DEFAULT_VERSION,
             action_name="simple_action",
             action_type="event",
             action_config=[],  # Empty is valid
@@ -106,10 +123,12 @@ class TestModelFSMTransitionActionValidation:
     def test_valid_action_with_single_parameter(self) -> None:
         """Test that actions with a single parameter are valid."""
         action = ModelFSMTransitionAction(
+            version=DEFAULT_VERSION,
             action_name="single_param_action",
             action_type="modify",
             action_config=[
                 ModelActionConfigParameter(
+                    version=DEFAULT_VERSION,
                     parameter_name="target",
                     parameter_value=from_string("state_field"),
                 ),
@@ -125,11 +144,12 @@ class TestModelFSMTransitionActionCreation:
     def test_required_fields(self) -> None:
         """Test that required fields are enforced."""
         with pytest.raises(ValidationError):
-            ModelFSMTransitionAction()  # type: ignore[call-arg]
+            ModelFSMTransitionAction(version=DEFAULT_VERSION)  # type: ignore[call-arg]
 
     def test_default_values(self) -> None:
         """Test default field values."""
         action = ModelFSMTransitionAction(
+            version=DEFAULT_VERSION,
             action_name="test_action",
             action_type="log",
         )
@@ -142,6 +162,7 @@ class TestModelFSMTransitionActionCreation:
     def test_optional_fields(self) -> None:
         """Test optional field assignment."""
         action = ModelFSMTransitionAction(
+            version=DEFAULT_VERSION,
             action_name="test_action",
             action_type="log",
             execution_order=5,
@@ -158,12 +179,14 @@ class TestModelFSMTransitionActionCreation:
         """Test string field minimum length constraints."""
         with pytest.raises(ValidationError):
             ModelFSMTransitionAction(
+                version=DEFAULT_VERSION,
                 action_name="",  # Empty string not allowed
                 action_type="log",
             )
 
         with pytest.raises(ValidationError):
             ModelFSMTransitionAction(
+                version=DEFAULT_VERSION,
                 action_name="test",
                 action_type="",  # Empty string not allowed
             )
@@ -172,6 +195,7 @@ class TestModelFSMTransitionActionCreation:
         """Test numeric field constraints."""
         with pytest.raises(ValidationError):
             ModelFSMTransitionAction(
+                version=DEFAULT_VERSION,
                 action_name="test",
                 action_type="log",
                 execution_order=0,  # Must be >= 1
@@ -179,6 +203,7 @@ class TestModelFSMTransitionActionCreation:
 
         with pytest.raises(ValidationError):
             ModelFSMTransitionAction(
+                version=DEFAULT_VERSION,
                 action_name="test",
                 action_type="log",
                 timeout_ms=0,  # Must be >= 1

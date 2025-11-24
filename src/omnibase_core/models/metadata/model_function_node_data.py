@@ -5,10 +5,7 @@ import uuid
 from pydantic import Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Function node data model.
@@ -80,7 +77,7 @@ class ModelFunctionNodeData(BaseModel):
         description="Node status",
     )
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Node version",
     )
 
@@ -210,6 +207,7 @@ class ModelFunctionNodeData(BaseModel):
             display_name=display_name,
             description=description,
             tags=tags,
+            version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
     def update_display_name(self, base_name: str) -> None:

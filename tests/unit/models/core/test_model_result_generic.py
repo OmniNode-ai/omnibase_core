@@ -16,6 +16,7 @@ from omnibase_core.models.infrastructure.model_result import (
     ok,
     try_result,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestResultGeneric:

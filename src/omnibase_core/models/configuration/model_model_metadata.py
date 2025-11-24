@@ -3,10 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelMetadata(BaseModel):
@@ -24,7 +21,7 @@ class ModelMetadata(BaseModel):
     uuid: str = Field(default=..., description="Unique identifier for this file")
     name: str = Field(default=..., description="File name")
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="File version",
     )
     author: str = Field(default=..., description="Author of the file")

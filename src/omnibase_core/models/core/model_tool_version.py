@@ -1,7 +1,4 @@
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Tool Version Model.
@@ -21,7 +18,7 @@ class ModelToolVersion(BaseModel):
     """Version information for a tool."""
 
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Semantic version identifier",
     )
     status: "EnumVersionStatus" = Field(description="Version lifecycle status")

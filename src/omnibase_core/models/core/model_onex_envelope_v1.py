@@ -29,10 +29,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelOnexEnvelopeV1(BaseModel):
@@ -77,7 +74,7 @@ class ModelOnexEnvelopeV1(BaseModel):
 
     # Envelope metadata
     envelope_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Envelope format version",
     )
     correlation_id: UUID = Field(

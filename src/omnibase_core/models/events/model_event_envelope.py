@@ -4,10 +4,7 @@ from typing import Generic, Optional, TypeVar, cast
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 "\nEvent Envelope Model\n\nONEX-compliant envelope wrapper for all events in the system.\nProvides standardized event wrapping with metadata, correlation IDs, security context,\nQoS features, distributed tracing, and performance optimization.\n\nPattern: Model<Name> - Pydantic model for event envelope\nNode Type: N/A (Data Model)\n"
 from datetime import datetime
@@ -105,7 +102,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         default=None, description="Trace span identifier (e.g., OpenTelemetry span ID)"
     )
     onex_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="ONEX standard version",
     )
     envelope_version: ModelSemVer = Field(
@@ -371,6 +368,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         source_node_id: UUID,
         correlation_id: UUID | None = None,
         priority: int = 5,
+        onex_version: ModelSemVer | None = None,
     ) -> "ModelEventEnvelope[T]":
         """
         Create a broadcast envelope (no specific target).
@@ -380,6 +378,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             source_node_id: Source node identifier
             correlation_id: Optional correlation ID
             priority: Event priority (default: 5)
+            onex_version: ONEX version (default: 1.0.0)
 
         Returns:
             New envelope configured for broadcast
@@ -389,6 +388,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             source_tool=str(source_node_id),
             correlation_id=correlation_id,
             priority=priority,
+            onex_version=onex_version or ModelSemVer(major=1, minor=0, patch=0),
         )
 
     @classmethod
@@ -399,6 +399,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         target_node_id: UUID,
         correlation_id: UUID | None = None,
         priority: int = 5,
+        onex_version: ModelSemVer | None = None,
     ) -> "ModelEventEnvelope[T]":
         """
         Create a directed envelope (specific target).
@@ -409,6 +410,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             target_node_id: Target node identifier
             correlation_id: Optional correlation ID
             priority: Event priority (default: 5)
+            onex_version: ONEX version (default: 1.0.0)
 
         Returns:
             New envelope configured for directed communication
@@ -419,4 +421,5 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
             target_tool=str(target_node_id),
             correlation_id=correlation_id,
             priority=priority,
+            onex_version=onex_version or ModelSemVer(major=1, minor=0, patch=0),
         )

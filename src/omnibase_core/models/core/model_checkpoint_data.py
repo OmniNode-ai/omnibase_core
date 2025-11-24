@@ -14,10 +14,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_checkpoint_status import EnumCheckpointStatus
 from omnibase_core.enums.enum_checkpoint_type import EnumCheckpointType
 from omnibase_core.models.core.model_checkpoint_data_config import ModelConfig
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelCheckpointData(BaseModel):
@@ -62,7 +59,7 @@ class ModelCheckpointData(BaseModel):
     )
 
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Checkpoint data format version",
     )
 

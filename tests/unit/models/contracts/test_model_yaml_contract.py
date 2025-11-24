@@ -41,16 +41,15 @@ class TestModelYamlContract:
         assert contract.node_type == EnumNodeType.COMPUTE
 
     def test_missing_contract_version_fails(self):
-        """Test that missing contract_version uses default value (1.0.0)."""
+        """Test that contracts require explicit contract_version."""
         contract_data = {"node_type": "COMPUTE"}
 
-        # contract_version now has a default_factory, so no validation error
-        contract = ModelYamlContract.model_validate(contract_data)
+        with pytest.raises(ValidationError) as exc_info:
+            ModelYamlContract.model_validate(contract_data)
 
-        # Verify default version is applied (1.0.0)
-        assert contract.contract_version.major == 1
-        assert contract.contract_version.minor == 0
-        assert contract.contract_version.patch == 0
+        # Verify error mentions contract_version field
+        error_string = str(exc_info.value)
+        assert "contract_version" in error_string
 
     def test_missing_node_type_fails(self):
         """Test that missing node_type causes validation error."""

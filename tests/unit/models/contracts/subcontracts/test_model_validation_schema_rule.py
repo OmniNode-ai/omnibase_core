@@ -8,6 +8,11 @@ format validation for different rule types (regex, json_schema, range, enum).
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.enums.enum_validation_rule_type import EnumValidationRuleType
 from omnibase_core.models.contracts.subcontracts.model_validation_schema_rule import (
     ModelValidationSchemaRule,
@@ -21,6 +26,7 @@ class TestModelValidationSchemaRuleBasicCreation:
     def test_valid_rule_creation_with_defaults(self) -> None:
         """Test creating a valid rule with default values."""
         rule = ModelValidationSchemaRule(
+            version=DEFAULT_VERSION,
             key_name="email",
             validation_rule=r"^[\w\.-]+@[\w\.-]+\.\w+$",
         )
@@ -33,6 +39,7 @@ class TestModelValidationSchemaRuleBasicCreation:
     def test_valid_rule_creation_with_custom_values(self) -> None:
         """Test creating a valid rule with all custom values."""
         rule = ModelValidationSchemaRule(
+            version=DEFAULT_VERSION,
             key_name="port",
             validation_rule="1..65535",
             rule_type=EnumValidationRuleType.RANGE,
@@ -48,15 +55,16 @@ class TestModelValidationSchemaRuleBasicCreation:
     def test_required_fields(self) -> None:
         """Test that required fields are enforced."""
         with pytest.raises(ValidationError):
-            ModelValidationSchemaRule()  # type: ignore[call-arg]
+            ModelValidationSchemaRule(version=DEFAULT_VERSION)  # type: ignore[call-arg]
 
         with pytest.raises(ValidationError):
-            ModelValidationSchemaRule(key_name="test")  # type: ignore[call-arg]
+            ModelValidationSchemaRule(version=DEFAULT_VERSION, key_name="test")  # type: ignore[call-arg]
 
     def test_key_name_min_length(self) -> None:
         """Test that key_name must have minimum length of 1."""
         with pytest.raises(ValidationError) as exc_info:
             ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="",  # Empty string not allowed
                 validation_rule=".*",
             )
@@ -67,6 +75,7 @@ class TestModelValidationSchemaRuleBasicCreation:
         """Test that validation_rule must have minimum length of 1."""
         with pytest.raises(ValidationError) as exc_info:
             ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test",
                 validation_rule="",  # Empty string not allowed
             )
@@ -91,6 +100,7 @@ class TestModelValidationSchemaRuleRegexValidation:
 
         for pattern in valid_patterns:
             rule = ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test_field",
                 validation_rule=pattern,
                 rule_type=EnumValidationRuleType.REGEX,
@@ -111,6 +121,7 @@ class TestModelValidationSchemaRuleRegexValidation:
         for pattern in invalid_patterns:
             with pytest.raises(ModelOnexError) as exc_info:
                 ModelValidationSchemaRule(
+                    version=DEFAULT_VERSION,
                     key_name="test_field",
                     validation_rule=pattern,
                     rule_type=EnumValidationRuleType.REGEX,
@@ -130,6 +141,7 @@ class TestModelValidationSchemaRuleRegexValidation:
 
         for pattern in special_patterns:
             rule = ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test_field",
                 validation_rule=pattern,
                 rule_type=EnumValidationRuleType.REGEX,
@@ -153,6 +165,7 @@ class TestModelValidationSchemaRuleJSONSchemaValidation:
 
         for schema in valid_schemas:
             rule = ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test_field",
                 validation_rule=schema,
                 rule_type=EnumValidationRuleType.JSON_SCHEMA,
@@ -172,6 +185,7 @@ class TestModelValidationSchemaRuleJSONSchemaValidation:
         for schema in invalid_schemas:
             with pytest.raises(ModelOnexError) as exc_info:
                 ModelValidationSchemaRule(
+                    version=DEFAULT_VERSION,
                     key_name="test_field",
                     validation_rule=schema,
                     rule_type=EnumValidationRuleType.JSON_SCHEMA,
@@ -194,6 +208,7 @@ class TestModelValidationSchemaRuleJSONSchemaValidation:
         for json_str in malformed_jsons:
             with pytest.raises(ModelOnexError) as exc_info:
                 ModelValidationSchemaRule(
+                    version=DEFAULT_VERSION,
                     key_name="test_field",
                     validation_rule=json_str,
                     rule_type=EnumValidationRuleType.JSON_SCHEMA,
@@ -228,6 +243,7 @@ class TestModelValidationSchemaRuleJSONSchemaValidation:
         }"""
 
         rule = ModelValidationSchemaRule(
+            version=DEFAULT_VERSION,
             key_name="user",
             validation_rule=complex_schema,
             rule_type=EnumValidationRuleType.JSON_SCHEMA,
@@ -252,6 +268,7 @@ class TestModelValidationSchemaRuleRangeValidation:
 
         for range_expr in valid_ranges:
             rule = ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test_field",
                 validation_rule=range_expr,
                 rule_type=EnumValidationRuleType.RANGE,
@@ -271,6 +288,7 @@ class TestModelValidationSchemaRuleRangeValidation:
         for range_expr in invalid_ranges:
             with pytest.raises(ModelOnexError) as exc_info:
                 ModelValidationSchemaRule(
+                    version=DEFAULT_VERSION,
                     key_name="test_field",
                     validation_rule=range_expr,
                     rule_type=EnumValidationRuleType.RANGE,
@@ -290,6 +308,7 @@ class TestModelValidationSchemaRuleRangeValidation:
         for range_expr in invalid_ranges:
             with pytest.raises(ModelOnexError) as exc_info:
                 ModelValidationSchemaRule(
+                    version=DEFAULT_VERSION,
                     key_name="test_field",
                     validation_rule=range_expr,
                     rule_type=EnumValidationRuleType.RANGE,
@@ -302,6 +321,7 @@ class TestModelValidationSchemaRuleRangeValidation:
         """Test that ranges with no bounds are rejected."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test_field",
                 validation_rule="..",
                 rule_type=EnumValidationRuleType.RANGE,
@@ -314,6 +334,7 @@ class TestModelValidationSchemaRuleRangeValidation:
         """Test that ranges with multiple separators are rejected."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test_field",
                 validation_rule="1..10..20",
                 rule_type=EnumValidationRuleType.RANGE,
@@ -337,6 +358,7 @@ class TestModelValidationSchemaRuleEnumValidation:
 
         for enum_expr in valid_enums:
             rule = ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test_field",
                 validation_rule=enum_expr,
                 rule_type=EnumValidationRuleType.ENUM,
@@ -354,6 +376,7 @@ class TestModelValidationSchemaRuleEnumValidation:
         for enum_expr in invalid_enums:
             with pytest.raises(ModelOnexError) as exc_info:
                 ModelValidationSchemaRule(
+                    version=DEFAULT_VERSION,
                     key_name="test_field",
                     validation_rule=enum_expr,
                     rule_type=EnumValidationRuleType.ENUM,
@@ -373,6 +396,7 @@ class TestModelValidationSchemaRuleEnumValidation:
         for enum_expr in invalid_enums:
             with pytest.raises(ModelOnexError) as exc_info:
                 ModelValidationSchemaRule(
+                    version=DEFAULT_VERSION,
                     key_name="test_field",
                     validation_rule=enum_expr,
                     rule_type=EnumValidationRuleType.ENUM,
@@ -384,6 +408,7 @@ class TestModelValidationSchemaRuleEnumValidation:
     def test_enum_whitespace_handling(self) -> None:
         """Test that whitespace is properly handled in enum values."""
         rule = ModelValidationSchemaRule(
+            version=DEFAULT_VERSION,
             key_name="test_field",
             validation_rule="  red  ,  green  ,  blue  ",
             rule_type=EnumValidationRuleType.ENUM,
@@ -398,6 +423,7 @@ class TestModelValidationSchemaRuleEdgeCases:
     def test_validate_assignment_enabled(self) -> None:
         """Test that validate_assignment is enabled in model config."""
         rule = ModelValidationSchemaRule(
+            version=DEFAULT_VERSION,
             key_name="test",
             validation_rule="valid,values",
             rule_type=EnumValidationRuleType.ENUM,
@@ -410,6 +436,7 @@ class TestModelValidationSchemaRuleEdgeCases:
     def test_extra_fields_ignored(self) -> None:
         """Test that extra fields are ignored per model config."""
         rule_data = {
+            "version": {"major": 1, "minor": 0, "patch": 0},
             "key_name": "test",
             "validation_rule": ".*",
             "custom_field": "custom_value",
@@ -425,6 +452,7 @@ class TestModelValidationSchemaRuleEdgeCases:
     def test_model_serialization_round_trip(self) -> None:
         """Test that model can be serialized and deserialized correctly."""
         original = ModelValidationSchemaRule(
+            version=DEFAULT_VERSION,
             key_name="email",
             validation_rule=r"^[\w\.-]+@[\w\.-]+\.\w+$",
             rule_type=EnumValidationRuleType.REGEX,
@@ -449,6 +477,7 @@ class TestModelValidationSchemaRuleEdgeCases:
         # Test that comma-separated values fail as RANGE
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test",
                 validation_rule="red,green,blue",  # Valid enum, invalid range
                 rule_type=EnumValidationRuleType.RANGE,
@@ -457,6 +486,7 @@ class TestModelValidationSchemaRuleEdgeCases:
 
         # But succeed as ENUM (valid enum values)
         rule = ModelValidationSchemaRule(
+            version=DEFAULT_VERSION,
             key_name="test",
             validation_rule="red,green,blue",
             rule_type=EnumValidationRuleType.ENUM,
@@ -466,6 +496,7 @@ class TestModelValidationSchemaRuleEdgeCases:
     def test_rule_type_enum_values_preserved(self) -> None:
         """Test that enum values are preserved (use_enum_values=False)."""
         rule = ModelValidationSchemaRule(
+            version=DEFAULT_VERSION,
             key_name="test",
             validation_rule=".*",
             rule_type=EnumValidationRuleType.REGEX,
@@ -486,6 +517,7 @@ class TestModelValidationSchemaRuleEdgeCases:
 
         for rule_type, validation_rule in test_cases:
             rule = ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test_field",
                 validation_rule=validation_rule,
                 rule_type=rule_type,
@@ -498,6 +530,7 @@ class TestModelValidationSchemaRuleEdgeCases:
         # Range format used with REGEX type (invalid regex with "..")
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test",
                 validation_rule="[",  # Clearly invalid regex
                 rule_type=EnumValidationRuleType.REGEX,
@@ -507,6 +540,7 @@ class TestModelValidationSchemaRuleEdgeCases:
         # Range format used with JSON_SCHEMA type
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test",
                 validation_rule="1..10",
                 rule_type=EnumValidationRuleType.JSON_SCHEMA,
@@ -516,6 +550,7 @@ class TestModelValidationSchemaRuleEdgeCases:
         # Enum format used with RANGE type
         with pytest.raises(ModelOnexError) as exc_info:
             ModelValidationSchemaRule(
+                version=DEFAULT_VERSION,
                 key_name="test",
                 validation_rule="a,b,c",
                 rule_type=EnumValidationRuleType.RANGE,

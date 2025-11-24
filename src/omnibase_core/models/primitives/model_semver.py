@@ -156,7 +156,9 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
     import re
 
     # Basic SemVer regex pattern for major.minor.patch
-    pattern = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
+    # Allows prerelease/metadata suffix (e.g., "1.2.3-alpha" or "1.2.3+build")
+    # But ensures version ends after patch or has valid separator (-, +)
+    pattern = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:[-+].*)?$"
 
     match = re.match(pattern, version_str)
     if not match:

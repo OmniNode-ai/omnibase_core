@@ -3,10 +3,7 @@ from __future__ import annotations
 from pydantic import Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Function node summary model.
@@ -62,7 +59,7 @@ class ModelFunctionNodeSummary(BaseModel):
         description="Function conceptual complexity level",
     )
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Function version",
     )
 

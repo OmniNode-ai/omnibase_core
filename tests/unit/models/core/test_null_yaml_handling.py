@@ -12,6 +12,7 @@ See: src/omnibase_core/models/core/model_mixin_metadata_collection.py
 Lines: ~90-103 (code_patterns), ~111-127 (performance)
 """
 
+import re
 from pathlib import Path
 
 import pytest
@@ -88,7 +89,9 @@ mixin_test:
         yaml_file = tmp_path / "test_invalid_code_patterns_type.yaml"
         yaml_file.write_text(yaml_content)
 
-        with pytest.raises(ModelOnexError, match=r"code_patterns\b.*must be a mapping"):
+        with pytest.raises(
+            ModelOnexError, match=f"code_patterns.*{re.escape('must be a mapping')}"
+        ):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
     def test_invalid_methods_type_raises_error(self, tmp_path: Path) -> None:
@@ -107,7 +110,8 @@ mixin_test:
         yaml_file.write_text(yaml_content)
 
         with pytest.raises(
-            ModelOnexError, match=r"code_patterns\.methods.*must be a list"
+            ModelOnexError,
+            match=f"{re.escape('code_patterns.methods')}.*{re.escape('must be a list')}",
         ):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
@@ -127,7 +131,8 @@ mixin_test:
         yaml_file.write_text(yaml_content)
 
         with pytest.raises(
-            ModelOnexError, match=r"code_patterns\.properties.*must be a list"
+            ModelOnexError,
+            match=f"{re.escape('code_patterns.properties')}.*{re.escape('must be a list')}",
         ):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
@@ -196,7 +201,9 @@ mixin_test:
         yaml_file = tmp_path / "test_invalid_performance_type.yaml"
         yaml_file.write_text(yaml_content)
 
-        with pytest.raises(ModelOnexError, match=r"performance\b.*must be a mapping"):
+        with pytest.raises(
+            ModelOnexError, match=f"performance.*{re.escape('must be a mapping')}"
+        ):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
     def test_invalid_use_cases_type_raises_error(self, tmp_path: Path) -> None:
@@ -215,7 +222,8 @@ mixin_test:
         yaml_file.write_text(yaml_content)
 
         with pytest.raises(
-            ModelOnexError, match=r"performance\.typical_use_cases.*must be a list"
+            ModelOnexError,
+            match=f"{re.escape('performance.typical_use_cases')}.*{re.escape('must be a list')}",
         ):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
@@ -411,6 +419,7 @@ mixin_mixed:
         assert mixin2 is not None
         assert mixin2.code_patterns is not None
         assert len(mixin2.code_patterns.methods) == 1
+        assert mixin2.performance is not None
         assert len(mixin2.performance.typical_use_cases) == 1
         assert len(mixin2.config_schema) == 1
         assert len(mixin2.presets) == 1

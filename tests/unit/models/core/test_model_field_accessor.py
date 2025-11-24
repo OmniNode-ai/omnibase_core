@@ -16,6 +16,7 @@ from omnibase_core.models.core import (
     ModelResultAccessor,
     ModelTypedAccessor,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelFieldAccessor:

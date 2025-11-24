@@ -43,7 +43,7 @@ class ModelYamlContract(BaseModel):
 
     # Required fields for contract validation
     contract_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,
         description="Contract semantic version specification",
     )
 

@@ -10,6 +10,10 @@ from typing import Any
 import pytest
 
 from omnibase_core.models.core.model_typed_configuration import ModelTypedConfiguration
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelTypedConfiguration:

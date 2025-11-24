@@ -2,10 +2,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Parse Metadata Model
@@ -49,7 +46,7 @@ class ModelParseMetadata(BaseModel):
     )
 
     parser_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Version of the parser used",
     )
 
@@ -175,6 +172,7 @@ class ModelParseMetadata(BaseModel):
         """Create metadata for a command parsing operation."""
         return cls(
             source_command=source_command,
+            parser_version=ModelSemVer(major=1, minor=0, patch=0),
             raw_args=raw_args,
             command_definition_id=command_definition_id,
             contract_source=contract_source,

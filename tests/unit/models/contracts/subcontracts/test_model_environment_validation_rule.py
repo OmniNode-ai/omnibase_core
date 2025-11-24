@@ -8,6 +8,11 @@ type safety, field constraints, and environment validation rule types.
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.enums.enum_environment_validation_rule_type import (
     EnumEnvironmentValidationRuleType,
 )
@@ -23,6 +28,7 @@ class TestModelEnvironmentValidationRuleValidation:
     def test_valid_rule_with_value_check_type(self) -> None:
         """Test that rules with value_check type are valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="database_url",
             validation_rule="must_be_postgresql",
             rule_type=EnumEnvironmentValidationRuleType.VALUE_CHECK,
@@ -33,6 +39,7 @@ class TestModelEnvironmentValidationRuleValidation:
     def test_valid_rule_with_format_type(self) -> None:
         """Test that rules with format type are valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="api_key",
             validation_rule="must_match_pattern",
             rule_type=EnumEnvironmentValidationRuleType.FORMAT,
@@ -44,6 +51,7 @@ class TestModelEnvironmentValidationRuleValidation:
     def test_valid_rule_with_range_type(self) -> None:
         """Test that rules with range type are valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="port",
             validation_rule="must_be_in_range",
             rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -57,6 +65,7 @@ class TestModelEnvironmentValidationRuleValidation:
     def test_valid_rule_with_allowed_values_type(self) -> None:
         """Test that rules with allowed_values type are valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="log_level",
             validation_rule="must_be_in_list",
             rule_type=EnumEnvironmentValidationRuleType.ALLOWED_VALUES,
@@ -68,6 +77,7 @@ class TestModelEnvironmentValidationRuleValidation:
     def test_valid_rule_with_all_optional_fields(self) -> None:
         """Test that rules with all optional fields are valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="timeout",
             validation_rule="must_be_valid_timeout",
             rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -84,6 +94,7 @@ class TestModelEnvironmentValidationRuleValidation:
     def test_valid_rule_with_empty_allowed_values(self) -> None:
         """Test that rules with empty allowed_values list are valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="field",
             validation_rule="check",
             allowed_values=[],
@@ -97,7 +108,7 @@ class TestModelEnvironmentValidationRuleCreation:
     def test_required_fields(self) -> None:
         """Test that required fields are enforced."""
         with pytest.raises(ValidationError):
-            ModelEnvironmentValidationRule()  # type: ignore[call-arg]
+            ModelEnvironmentValidationRule(version=DEFAULT_VERSION)  # type: ignore[call-arg]
 
         with pytest.raises(ValidationError):
             ModelEnvironmentValidationRule(  # type: ignore[call-arg]  # Missing validation_rule
@@ -112,6 +123,7 @@ class TestModelEnvironmentValidationRuleCreation:
     def test_default_values(self) -> None:
         """Test default field values."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="test_key",
             validation_rule="test_rule",
         )
@@ -124,6 +136,7 @@ class TestModelEnvironmentValidationRuleCreation:
     def test_optional_fields(self) -> None:
         """Test optional field assignment."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="test_key",
             validation_rule="test_rule",
             rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -142,12 +155,14 @@ class TestModelEnvironmentValidationRuleCreation:
         """Test string field minimum length constraints."""
         with pytest.raises(ValidationError):
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="",  # Empty string not allowed
                 validation_rule="rule",
             )
 
         with pytest.raises(ValidationError):
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="key",
                 validation_rule="",  # Empty string not allowed
             )
@@ -168,6 +183,7 @@ class TestModelEnvironmentValidationRuleCreation:
 
         for rule_type, extra_fields in rule_configs.items():
             rule = ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="test_key",
                 validation_rule="test_rule",
                 rule_type=rule_type,
@@ -193,6 +209,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
         ]
         for key in special_keys:
             rule = ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key=key,
                 validation_rule="rule",
             )
@@ -201,6 +218,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
     def test_config_key_with_unicode(self) -> None:
         """Test that config keys with unicode characters are valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="配置键",
             validation_rule="rule",
         )
@@ -217,6 +235,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
         ]
         for rule_text in special_rules:
             rule = ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="key",
                 validation_rule=rule_text,
             )
@@ -237,6 +256,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
             "special@chars!",
         ]
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule="rule",
             allowed_values=values,
@@ -247,6 +267,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
     def test_allowed_values_with_unicode(self) -> None:
         """Test that allowed_values accepts unicode strings."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule="rule",
             allowed_values=["值1", "值2", "値3"],
@@ -256,6 +277,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
     def test_allowed_values_with_duplicates(self) -> None:
         """Test that allowed_values accepts duplicate values (no deduplication)."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule="rule",
             allowed_values=["value1", "value1", "value2"],
@@ -265,6 +287,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
     def test_min_and_max_value_as_numeric_values(self) -> None:
         """Test that min_value and max_value accept numeric values."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule="rule",
             min_value=0,
@@ -276,6 +299,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
     def test_min_and_max_value_as_negative_numbers(self) -> None:
         """Test that min_value and max_value accept negative numbers."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule="rule",
             min_value=-100,
@@ -287,6 +311,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
     def test_min_and_max_value_as_floating_point(self) -> None:
         """Test that min_value and max_value accept floating point values."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule="rule",
             min_value=0.0,
@@ -298,6 +323,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
     def test_min_and_max_value_as_timestamps(self) -> None:
         """Test that min_value and max_value accept Unix timestamps."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule="rule",
             min_value=1672531200,  # 2023-01-01 00:00:00 UTC
@@ -317,6 +343,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
         ]
         for pattern in complex_patterns:
             rule = ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="key",
                 validation_rule="rule",
                 format_pattern=pattern,
@@ -327,6 +354,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
         """Test that very long config keys are valid."""
         long_key = "very_long_config_key_" * 50
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key=long_key,
             validation_rule="rule",
         )
@@ -336,6 +364,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
         """Test that very long validation rules are valid."""
         long_rule = "very_long_validation_rule_" * 50
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule=long_rule,
         )
@@ -345,6 +374,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
         """Test that very long allowed_values lists are valid."""
         long_list = [f"value_{i}" for i in range(1000)]
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule="rule",
             allowed_values=long_list,
@@ -354,6 +384,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
     def test_only_min_value_provided(self) -> None:
         """Test that only min_value can be provided without max_value."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule="rule",
             min_value=10,
@@ -365,6 +396,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
     def test_only_max_value_provided(self) -> None:
         """Test that only max_value can be provided without min_value."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule="rule",
             min_value=None,
@@ -377,6 +409,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
         """Test that range type requires at least one of min_value or max_value."""
         with pytest.raises(ModelOnexError, match="RANGE rule requires at least"):
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="key",
                 validation_rule="rule",
                 rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -386,6 +419,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
         """Test that format type requires format_pattern to be set."""
         with pytest.raises(ModelOnexError, match="FORMAT rule requires format_pattern"):
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="key",
                 validation_rule="rule",
                 rule_type=EnumEnvironmentValidationRuleType.FORMAT,
@@ -397,6 +431,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
             ModelOnexError, match="ALLOWED_VALUES rule requires non-empty"
         ):
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="key",
                 validation_rule="rule",
                 rule_type=EnumEnvironmentValidationRuleType.ALLOWED_VALUES,
@@ -410,6 +445,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_range_type_with_only_min_value_is_valid(self) -> None:
         """Test that RANGE rule with only min_value is valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="port",
             validation_rule="must_be_above_minimum",
             rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -422,6 +458,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_range_type_with_only_max_value_is_valid(self) -> None:
         """Test that RANGE rule with only max_value is valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="timeout",
             validation_rule="must_be_below_maximum",
             rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -434,6 +471,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_range_type_with_both_min_and_max_is_valid(self) -> None:
         """Test that RANGE rule with both min_value and max_value is valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="port",
             validation_rule="must_be_in_range",
             rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -450,6 +488,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
             ModelOnexError, match="RANGE rule requires at least min_value or max_value"
         ):
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="value",
                 validation_rule="must_be_in_range",
                 rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -458,6 +497,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_format_type_with_format_pattern_is_valid(self) -> None:
         """Test that FORMAT rule with format_pattern is valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="api_key",
             validation_rule="must_match_pattern",
             rule_type=EnumEnvironmentValidationRuleType.FORMAT,
@@ -472,6 +512,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
             ModelOnexError, match="FORMAT rule requires format_pattern to be set"
         ):
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="email",
                 validation_rule="must_match_format",
                 rule_type=EnumEnvironmentValidationRuleType.FORMAT,
@@ -483,6 +524,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
             ModelOnexError, match="FORMAT rule requires format_pattern to be set"
         ):
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="email",
                 validation_rule="must_match_format",
                 rule_type=EnumEnvironmentValidationRuleType.FORMAT,
@@ -492,6 +534,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_allowed_values_type_with_single_value_is_valid(self) -> None:
         """Test that ALLOWED_VALUES rule with single value is valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="env",
             validation_rule="must_be_production",
             rule_type=EnumEnvironmentValidationRuleType.ALLOWED_VALUES,
@@ -503,6 +546,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_allowed_values_type_with_multiple_values_is_valid(self) -> None:
         """Test that ALLOWED_VALUES rule with multiple values is valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="log_level",
             validation_rule="must_be_valid_level",
             rule_type=EnumEnvironmentValidationRuleType.ALLOWED_VALUES,
@@ -518,6 +562,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
             match="ALLOWED_VALUES rule requires non-empty allowed_values list",
         ):
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="status",
                 validation_rule="must_be_in_list",
                 rule_type=EnumEnvironmentValidationRuleType.ALLOWED_VALUES,
@@ -531,6 +576,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
             match="ALLOWED_VALUES rule requires non-empty allowed_values list",
         ):
             ModelEnvironmentValidationRule(
+                version=DEFAULT_VERSION,
                 config_key="status",
                 validation_rule="must_be_in_list",
                 rule_type=EnumEnvironmentValidationRuleType.ALLOWED_VALUES,
@@ -539,6 +585,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_value_check_type_without_special_fields_is_valid(self) -> None:
         """Test that VALUE_CHECK rule without special fields is valid."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="database_url",
             validation_rule="must_be_valid_url",
             rule_type=EnumEnvironmentValidationRuleType.VALUE_CHECK,
@@ -552,6 +599,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_value_check_type_with_extra_fields_is_valid(self) -> None:
         """Test that VALUE_CHECK rule with extra fields is valid (no validation)."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="config",
             validation_rule="check_value",
             rule_type=EnumEnvironmentValidationRuleType.VALUE_CHECK,
@@ -566,6 +614,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_range_type_with_zero_as_min_value(self) -> None:
         """Test that RANGE rule accepts zero as min_value."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="offset",
             validation_rule="must_be_non_negative",
             rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -576,6 +625,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_range_type_with_negative_bounds(self) -> None:
         """Test that RANGE rule accepts negative bounds."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="temperature",
             validation_rule="must_be_in_celsius_range",
             rule_type=EnumEnvironmentValidationRuleType.RANGE,
@@ -589,6 +639,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
         """Test that FORMAT rule accepts complex regex patterns."""
         pattern = r"^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$"
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="password",
             validation_rule="must_be_strong",
             rule_type=EnumEnvironmentValidationRuleType.FORMAT,
@@ -599,6 +650,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_allowed_values_with_duplicates_is_valid(self) -> None:
         """Test that ALLOWED_VALUES rule with duplicates is valid (no deduplication)."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="status",
             validation_rule="must_be_in_list",
             rule_type=EnumEnvironmentValidationRuleType.ALLOWED_VALUES,
@@ -609,6 +661,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     def test_allowed_values_with_unicode_strings(self) -> None:
         """Test that ALLOWED_VALUES rule accepts unicode strings."""
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="locale",
             validation_rule="must_be_supported",
             rule_type=EnumEnvironmentValidationRuleType.ALLOWED_VALUES,
@@ -620,6 +673,7 @@ class TestModelEnvironmentValidationRuleFieldCombinationValidation:
         """Test that validator runs when rule_type is changed after creation."""
         # Start with VALUE_CHECK (no requirements)
         rule = ModelEnvironmentValidationRule(
+            version=DEFAULT_VERSION,
             config_key="key",
             validation_rule="rule",
             rule_type=EnumEnvironmentValidationRuleType.VALUE_CHECK,

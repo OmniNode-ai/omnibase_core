@@ -14,6 +14,11 @@ Comprehensive test coverage for event mapping rule model including:
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
 from omnibase_core.enums.enum_mapping_type import EnumMappingType
 from omnibase_core.models.contracts.subcontracts.model_event_mapping_rule import (
     ModelEventMappingRule,
@@ -26,6 +31,7 @@ class TestModelEventMappingRuleBasics:
     def test_minimal_instantiation(self):
         """Test model can be instantiated with minimal required fields."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="user_id",
             target_field="userId",
         )
@@ -42,6 +48,7 @@ class TestModelEventMappingRuleBasics:
     def test_full_instantiation(self):
         """Test model with all fields specified."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="timestamp",
             target_field="created_at",
             mapping_type=EnumMappingType.TRANSFORM,
@@ -64,6 +71,7 @@ class TestModelEventMappingRuleBasics:
     def test_default_mapping_type(self):
         """Test mapping_type defaults to DIRECT."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="name",
             target_field="full_name",
         )
@@ -73,6 +81,7 @@ class TestModelEventMappingRuleBasics:
     def test_default_priority(self):
         """Test priority defaults to 100."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="id",
             target_field="identifier",
         )
@@ -82,6 +91,7 @@ class TestModelEventMappingRuleBasics:
     def test_default_is_required(self):
         """Test is_required defaults to False."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="optional_field",
             target_field="target",
         )
@@ -95,7 +105,7 @@ class TestModelEventMappingRuleValidation:
     def test_source_field_required(self):
         """Test source_field is required."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelEventMappingRule(target_field="target")
+            ModelEventMappingRule(version=DEFAULT_VERSION, target_field="target")
 
         assert "source_field" in str(exc_info.value)
 
@@ -103,6 +113,7 @@ class TestModelEventMappingRuleValidation:
         """Test source_field has minimum length constraint."""
         with pytest.raises(ValidationError) as exc_info:
             ModelEventMappingRule(
+                version=DEFAULT_VERSION,
                 source_field="",
                 target_field="target",
             )
@@ -112,6 +123,7 @@ class TestModelEventMappingRuleValidation:
     def test_source_field_whitespace_accepted(self):
         """Test source_field accepts whitespace (no strip validation)."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="   ",
             target_field="target",
         )
@@ -121,7 +133,7 @@ class TestModelEventMappingRuleValidation:
     def test_target_field_required(self):
         """Test target_field is required."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelEventMappingRule(source_field="source")
+            ModelEventMappingRule(version=DEFAULT_VERSION, source_field="source")
 
         assert "target_field" in str(exc_info.value)
 
@@ -129,6 +141,7 @@ class TestModelEventMappingRuleValidation:
         """Test target_field has minimum length constraint."""
         with pytest.raises(ValidationError) as exc_info:
             ModelEventMappingRule(
+                version=DEFAULT_VERSION,
                 source_field="source",
                 target_field="",
             )
@@ -138,6 +151,7 @@ class TestModelEventMappingRuleValidation:
     def test_target_field_whitespace_accepted(self):
         """Test target_field accepts whitespace (no strip validation)."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="source",
             target_field="   ",
         )
@@ -148,6 +162,7 @@ class TestModelEventMappingRuleValidation:
         """Test mapping_type accepts all enum values."""
         for mapping_type in EnumMappingType:
             rule = ModelEventMappingRule(
+                version=DEFAULT_VERSION,
                 source_field="source",
                 target_field="target",
                 mapping_type=mapping_type,
@@ -158,6 +173,7 @@ class TestModelEventMappingRuleValidation:
         """Test mapping_type rejects invalid values."""
         with pytest.raises(ValidationError):
             ModelEventMappingRule(
+                version=DEFAULT_VERSION,
                 source_field="source",
                 target_field="target",
                 mapping_type="invalid_type",  # type: ignore[arg-type]
@@ -167,6 +183,7 @@ class TestModelEventMappingRuleValidation:
         """Test priority minimum bound (0)."""
         # Valid minimum
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="source",
             target_field="target",
             priority=0,
@@ -176,6 +193,7 @@ class TestModelEventMappingRuleValidation:
         # Invalid negative
         with pytest.raises(ValidationError) as exc_info:
             ModelEventMappingRule(
+                version=DEFAULT_VERSION,
                 source_field="source",
                 target_field="target",
                 priority=-1,
@@ -187,6 +205,7 @@ class TestModelEventMappingRuleValidation:
         """Test priority maximum bound (1000)."""
         # Valid maximum
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="source",
             target_field="target",
             priority=1000,
@@ -196,6 +215,7 @@ class TestModelEventMappingRuleValidation:
         # Invalid exceeds maximum
         with pytest.raises(ValidationError) as exc_info:
             ModelEventMappingRule(
+                version=DEFAULT_VERSION,
                 source_field="source",
                 target_field="target",
                 priority=1001,
@@ -207,6 +227,7 @@ class TestModelEventMappingRuleValidation:
         """Test priority accepts mid-range values."""
         for priority in [1, 50, 100, 250, 500, 750, 999]:
             rule = ModelEventMappingRule(
+                version=DEFAULT_VERSION,
                 source_field="source",
                 target_field="target",
                 priority=priority,
@@ -216,6 +237,7 @@ class TestModelEventMappingRuleValidation:
     def test_optional_fields_none_accepted(self):
         """Test optional fields accept None values."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="source",
             target_field="target",
             transformation_expression=None,
@@ -234,6 +256,7 @@ class TestModelEventMappingRuleEdgeCases:
     def test_direct_mapping_no_transformation(self):
         """Test DIRECT mapping type without transformation."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="email",
             target_field="email_address",
             mapping_type=EnumMappingType.DIRECT,
@@ -245,6 +268,7 @@ class TestModelEventMappingRuleEdgeCases:
     def test_transform_mapping_with_expression(self):
         """Test TRANSFORM mapping with transformation expression."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="price",
             target_field="price_usd",
             mapping_type=EnumMappingType.TRANSFORM,
@@ -257,6 +281,7 @@ class TestModelEventMappingRuleEdgeCases:
     def test_conditional_mapping_with_condition(self):
         """Test CONDITIONAL mapping with apply condition."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="discount",
             target_field="final_discount",
             mapping_type=EnumMappingType.CONDITIONAL,
@@ -271,6 +296,7 @@ class TestModelEventMappingRuleEdgeCases:
     def test_composite_mapping(self):
         """Test COMPOSITE mapping type."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="first_name,last_name",
             target_field="full_name",
             mapping_type=EnumMappingType.COMPOSITE,
@@ -283,6 +309,7 @@ class TestModelEventMappingRuleEdgeCases:
     def test_required_field_with_default(self):
         """Test required field can have default value."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="status",
             target_field="order_status",
             is_required=True,
@@ -295,6 +322,7 @@ class TestModelEventMappingRuleEdgeCases:
     def test_high_priority_mapping(self):
         """Test high priority mapping rule."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="id",
             target_field="primary_id",
             priority=1000,
@@ -305,6 +333,7 @@ class TestModelEventMappingRuleEdgeCases:
     def test_low_priority_mapping(self):
         """Test low priority mapping rule."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="metadata",
             target_field="extra_data",
             priority=0,
@@ -318,6 +347,7 @@ class TestModelEventMappingRuleEdgeCases:
         long_target = "extremely_long_target_field_name_after_transformation"
 
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field=long_source,
             target_field=long_target,
         )
@@ -328,6 +358,7 @@ class TestModelEventMappingRuleEdgeCases:
     def test_dotted_field_notation(self):
         """Test field names with dot notation."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="user.profile.email",
             target_field="contact.email",
         )
@@ -338,6 +369,7 @@ class TestModelEventMappingRuleEdgeCases:
     def test_array_index_notation(self):
         """Test field names with array index notation."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="items[0].price",
             target_field="first_item_price",
         )
@@ -355,6 +387,7 @@ class TestModelEventMappingRuleEdgeCases:
         """.strip()
 
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="age",
             target_field="age_category",
             mapping_type=EnumMappingType.TRANSFORM,
@@ -366,6 +399,7 @@ class TestModelEventMappingRuleEdgeCases:
     def test_json_path_transformation(self):
         """Test transformation expression with JSON path."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="response",
             target_field="status_code",
             mapping_type=EnumMappingType.TRANSFORM,
@@ -381,6 +415,7 @@ class TestModelEventMappingRuleEdgeCases:
         )
 
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="discount_rate",
             target_field="applied_discount",
             mapping_type=EnumMappingType.CONDITIONAL,
@@ -392,6 +427,7 @@ class TestModelEventMappingRuleEdgeCases:
     def test_empty_default_value(self):
         """Test empty string as default value."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="optional",
             target_field="target",
             default_value="",
@@ -404,6 +440,7 @@ class TestModelEventMappingRuleEdgeCases:
         json_default = '{"status": "unknown", "code": 0}'
 
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="response",
             target_field="parsed_response",
             default_value=json_default,
@@ -418,6 +455,7 @@ class TestModelEventMappingRuleConfigDict:
     def test_extra_fields_ignored(self):
         """Test extra fields are ignored per ConfigDict."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="source",
             target_field="target",
             unknown_field="should_be_ignored",  # type: ignore[call-arg]
@@ -429,6 +467,7 @@ class TestModelEventMappingRuleConfigDict:
     def test_validate_assignment(self):
         """Test assignment validation is enabled."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="source",
             target_field="target",
         )
@@ -444,6 +483,7 @@ class TestModelEventMappingRuleConfigDict:
     def test_use_enum_values_false(self):
         """Test use_enum_values=False preserves enum objects."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="source",
             target_field="target",
             mapping_type=EnumMappingType.TRANSFORM,
@@ -457,6 +497,7 @@ class TestModelEventMappingRuleConfigDict:
     def test_model_serialization(self):
         """Test model can be serialized and deserialized."""
         original = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="input",
             target_field="output",
             mapping_type=EnumMappingType.CONDITIONAL,
@@ -485,6 +526,7 @@ class TestModelEventMappingRuleConfigDict:
     def test_model_json_serialization(self):
         """Test model JSON serialization."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="field1",
             target_field="field2",
             mapping_type=EnumMappingType.DIRECT,
@@ -498,6 +540,7 @@ class TestModelEventMappingRuleConfigDict:
     def test_model_json_deserialization(self):
         """Test model JSON deserialization."""
         json_data = """{
+            "version": {"major": 1, "minor": 0, "patch": 0},
             "source_field": "user_email",
             "target_field": "email",
             "mapping_type": "direct",
@@ -558,6 +601,7 @@ class TestModelEventMappingRuleUseCases:
     def test_simple_field_rename(self):
         """Test simple field rename operation."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="userId",
             target_field="user_id",
             mapping_type=EnumMappingType.DIRECT,
@@ -569,6 +613,7 @@ class TestModelEventMappingRuleUseCases:
     def test_timestamp_conversion(self):
         """Test timestamp format conversion."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="created_timestamp",
             target_field="created_at",
             mapping_type=EnumMappingType.TRANSFORM,
@@ -582,6 +627,7 @@ class TestModelEventMappingRuleUseCases:
     def test_conditional_premium_discount(self):
         """Test conditional premium user discount."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="user_discount",
             target_field="final_discount",
             mapping_type=EnumMappingType.CONDITIONAL,
@@ -597,6 +643,7 @@ class TestModelEventMappingRuleUseCases:
     def test_composite_full_name(self):
         """Test composite full name generation."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="first_name,last_name",
             target_field="full_name",
             mapping_type=EnumMappingType.COMPOSITE,
@@ -611,6 +658,7 @@ class TestModelEventMappingRuleUseCases:
     def test_currency_conversion(self):
         """Test currency conversion mapping."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="price_eur",
             target_field="price_usd",
             mapping_type=EnumMappingType.TRANSFORM,
@@ -624,6 +672,7 @@ class TestModelEventMappingRuleUseCases:
     def test_priority_ordering_critical_field(self):
         """Test high priority for critical field mapping."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="transaction_id",
             target_field="txn_id",
             mapping_type=EnumMappingType.DIRECT,
@@ -637,6 +686,7 @@ class TestModelEventMappingRuleUseCases:
     def test_priority_ordering_optional_metadata(self):
         """Test low priority for optional metadata."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="extra_metadata",
             target_field="metadata",
             mapping_type=EnumMappingType.DIRECT,
@@ -654,6 +704,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_string(self):
         """Test default_value with string type."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="status",
             target_field="order_status",
             default_value="pending",
@@ -665,6 +716,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_integer(self):
         """Test default_value with integer type."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="count",
             target_field="item_count",
             default_value=0,
@@ -676,6 +728,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_integer_positive(self):
         """Test default_value with positive integer."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="quantity",
             target_field="product_quantity",
             default_value=100,
@@ -687,6 +740,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_integer_negative(self):
         """Test default_value with negative integer."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="balance",
             target_field="account_balance",
             default_value=-50,
@@ -698,6 +752,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_float(self):
         """Test default_value with float type."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="price",
             target_field="product_price",
             default_value=0.0,
@@ -709,6 +764,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_float_positive(self):
         """Test default_value with positive float."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="discount",
             target_field="discount_rate",
             default_value=15.5,
@@ -720,6 +776,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_float_negative(self):
         """Test default_value with negative float."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="adjustment",
             target_field="price_adjustment",
             default_value=-9.99,
@@ -731,6 +788,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_float_scientific_notation(self):
         """Test default_value with scientific notation float."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="epsilon",
             target_field="threshold",
             default_value=1e-6,
@@ -742,6 +800,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_boolean_true(self):
         """Test default_value with boolean True."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="is_active",
             target_field="active_status",
             default_value=True,
@@ -753,6 +812,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_boolean_false(self):
         """Test default_value with boolean False."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="is_deleted",
             target_field="deleted_flag",
             default_value=False,
@@ -764,6 +824,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_none(self):
         """Test default_value with None."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="optional",
             target_field="optional_field",
             default_value=None,
@@ -774,6 +835,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_empty_string(self):
         """Test default_value with empty string (backwards compatibility)."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="description",
             target_field="item_description",
             default_value="",
@@ -785,6 +847,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_zero_integer(self):
         """Test default_value with zero integer."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="errors",
             target_field="error_count",
             default_value=0,
@@ -798,6 +861,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_zero_float(self):
         """Test default_value with zero float."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="tax",
             target_field="tax_amount",
             default_value=0.0,
@@ -819,6 +883,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
 
         for source_field, default_value, expected_value, expected_type in test_cases:
             original = ModelEventMappingRule(
+                version=DEFAULT_VERSION,
                 source_field=source_field,
                 target_field=f"target_{source_field}",
                 default_value=default_value,
@@ -838,6 +903,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
         """Test JSON serialization preserves type information."""
         # Integer
         rule_int = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="count",
             target_field="total_count",
             default_value=100,
@@ -849,6 +915,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
 
         # Float
         rule_float = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="rate",
             target_field="conversion_rate",
             default_value=0.95,
@@ -860,6 +927,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
 
         # Boolean
         rule_bool = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="enabled",
             target_field="is_enabled",
             default_value=True,
@@ -885,6 +953,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
 
         for default_value in test_cases:
             rule = ModelEventMappingRule(
+                version=DEFAULT_VERSION,
                 source_field="test_field",
                 target_field="target_field",
                 default_value=default_value,
@@ -896,6 +965,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_use_case_counter(self):
         """Test use case: counter with integer default."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="retry_count",
             target_field="attempts",
             default_value=0,
@@ -908,6 +978,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_use_case_percentage(self):
         """Test use case: percentage with float default."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="completion",
             target_field="completion_percentage",
             default_value=0.0,
@@ -920,6 +991,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
     def test_default_value_use_case_feature_flag(self):
         """Test use case: feature flag with boolean default."""
         rule = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="experimental_feature",
             target_field="enable_experimental",
             default_value=False,
@@ -933,6 +1005,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
         """Test that numeric types maintain precision."""
         # Float precision
         rule_precision = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="pi",
             target_field="pi_value",
             default_value=3.14159265359,
@@ -943,6 +1016,7 @@ class TestModelEventMappingRuleDefaultValueTypes:
 
         # Large integer
         rule_large_int = ModelEventMappingRule(
+            version=DEFAULT_VERSION,
             source_field="timestamp_ms",
             target_field="timestamp",
             default_value=1704067200000,  # 2024-01-01 in milliseconds

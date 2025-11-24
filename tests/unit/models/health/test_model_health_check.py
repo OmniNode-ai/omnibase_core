@@ -346,8 +346,9 @@ class TestModelHealthCheckConfiguration:
         from omnibase_core.models.core.model_protocol_metadata import (
             ModelGenericMetadata,
         )
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-        metadata = ModelGenericMetadata()
+        metadata = ModelGenericMetadata(version=ModelSemVer(major=1, minor=0, patch=0))
         check = ModelHealthCheck(
             check_type=EnumHealthCheckType.HTTP_GET,
             endpoint_path="/health",

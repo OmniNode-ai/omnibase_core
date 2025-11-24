@@ -15,10 +15,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelActionBase(BaseModel):
@@ -59,7 +56,7 @@ class ModelActionBase(BaseModel):
 
     # MCP/GraphQL compatibility with strong typing
     mcp_schema_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="MCP schema version for current standards",
     )
     graphql_compatible: bool = Field(

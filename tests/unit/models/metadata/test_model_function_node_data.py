@@ -19,7 +19,7 @@ class TestModelFunctionNodeData:
 
     def test_create_default_instance(self):
         """Test creating a default instance."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
 
         assert isinstance(node.node_id, UUID)
         assert node.node_type == EnumNodeType.FUNCTION
@@ -50,7 +50,7 @@ class TestModelFunctionNodeData:
 
     def test_add_string_property(self):
         """Test adding string properties."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
 
         node.add_string_property(
             name="api_key",
@@ -67,7 +67,7 @@ class TestModelFunctionNodeData:
 
     def test_add_numeric_property(self):
         """Test adding numeric properties."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
 
         node.add_numeric_property(
             name="timeout", value=30.5, unit="seconds", description="Request timeout"
@@ -81,7 +81,7 @@ class TestModelFunctionNodeData:
 
     def test_add_boolean_property(self):
         """Test adding boolean properties."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
 
         node.add_boolean_property(
             name="enabled",
@@ -98,7 +98,7 @@ class TestModelFunctionNodeData:
 
     def test_add_configuration(self):
         """Test adding configuration objects."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
         config_id = uuid4()
 
         settings = {
@@ -121,7 +121,7 @@ class TestModelFunctionNodeData:
 
     def test_update_display_name(self):
         """Test updating display name."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
         original_name = node.display_name.display_name
 
         node.update_display_name("new_function_name")
@@ -131,7 +131,7 @@ class TestModelFunctionNodeData:
 
     def test_update_description_purpose(self):
         """Test updating description purpose."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
         original_purpose = node.description.purpose
 
         node.update_description_purpose("New purpose description")
@@ -141,7 +141,7 @@ class TestModelFunctionNodeData:
 
     def test_add_tag(self):
         """Test adding tags."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
 
         # Add custom tag
         result = node.add_tag("custom_tag")
@@ -155,7 +155,7 @@ class TestModelFunctionNodeData:
 
     def test_remove_tag(self):
         """Test removing tags."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
 
         # Add a tag first
         node.add_tag("test_tag")
@@ -168,7 +168,7 @@ class TestModelFunctionNodeData:
 
     def test_has_tag(self):
         """Test checking for tag presence."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
 
         # Initially no custom tags
         assert not node.has_tag("nonexistent_tag")
@@ -179,7 +179,7 @@ class TestModelFunctionNodeData:
 
     def test_get_metadata(self):
         """Test getting metadata."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
         metadata = node.get_metadata()
 
         assert isinstance(metadata, dict)
@@ -188,7 +188,7 @@ class TestModelFunctionNodeData:
 
     def test_set_metadata(self):
         """Test setting metadata."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
 
         metadata = {
             "status": EnumFunctionStatus.ACTIVE,
@@ -202,7 +202,7 @@ class TestModelFunctionNodeData:
 
     def test_serialize(self):
         """Test serialization."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
         serialized = node.serialize()
 
         assert isinstance(serialized, dict)
@@ -213,7 +213,7 @@ class TestModelFunctionNodeData:
 
     def test_validate_instance(self):
         """Test instance validation."""
-        node = ModelFunctionNodeData()
+        node = ModelFunctionNodeData(version=ModelSemVer(major=1, minor=0, patch=0))
         result = node.validate_instance()
 
         assert result is True

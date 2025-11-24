@@ -26,10 +26,7 @@ from omnibase_core.models.contracts.subcontracts.model_node_health_status import
     ModelNodeHealthStatus,
 )
 from omnibase_core.models.core.model_health_check_result import ModelHealthCheckResult
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelHealthCheckSubcontractResult(BaseModel):
@@ -48,7 +45,7 @@ class ModelHealthCheckSubcontractResult(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Subcontract version (auto-generated if not provided)",
     )
 

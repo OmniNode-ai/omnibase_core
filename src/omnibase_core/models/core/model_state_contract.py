@@ -51,10 +51,7 @@ from omnibase_core.models.metadata.model_metadata_constants import (
     CONTRACT_VERSION_KEY,
     NODE_VERSION_KEY,
 )
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_error_state import ModelErrorState
 from .model_state_schema import ModelStateSchema
@@ -91,7 +88,7 @@ class ModelStateContract(BaseModel):
 
     # Core contract metadata
     contract_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Version of the contract schema",
     )
 
@@ -102,7 +99,7 @@ class ModelStateContract(BaseModel):
     )
 
     node_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Version of the node",
         json_schema_extra={"example": "1.0.0"},
     )

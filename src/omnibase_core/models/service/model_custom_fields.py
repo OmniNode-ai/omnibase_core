@@ -4,10 +4,7 @@ from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Custom fields model to replace dictionary usage for custom/extensible fields.
@@ -53,7 +50,7 @@ class ModelCustomFields(BaseModel):
 
     # Metadata
     schema_version: ModelSemVer = Field(
-        default_factory=default_model_version,
+        ...,  # REQUIRED - specify in contract
         description="Schema version",
     )
     last_modified: datetime = Field(

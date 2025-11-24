@@ -70,7 +70,9 @@ class ModelMessagePayload(BaseModel):
         default=..., description="Message-specific content with discriminated union"
     )
     headers: ModelMessageHeaders = Field(
-        default_factory=ModelMessageHeaders,
+        default_factory=lambda: ModelMessageHeaders(
+            message_version=ModelSemVer(major=1, minor=0, patch=0)
+        ),
         description="Structured message headers",
     )
     metadata: ModelEventMetadata = Field(

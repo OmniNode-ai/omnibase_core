@@ -62,7 +62,7 @@ class ModelStateManagementSubcontract(BaseModel):
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        ...,  # REQUIRED - specify in contract
         description="Subcontract version (auto-generated if not provided)",
     )
 
