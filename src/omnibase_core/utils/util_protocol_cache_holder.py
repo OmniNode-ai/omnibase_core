@@ -7,10 +7,17 @@ with TTL-based expiration.
 
 Thread Safety:
     All methods use internal locking for thread-safe access.
+
+BOUNDARY_LAYER_EXCEPTION:
+    Uses Any for formatter/output_handler types because the actual protocol
+    types (ProtocolSmartLogFormatter, ProtocolContextAwareOutputHandler) are
+    planned infrastructure not yet implemented. The logging system gracefully
+    handles their absence with fallback behavior.
 """
 
 import threading
 import time
+from typing import Any
 
 
 class _ProtocolCacheHolder:
@@ -22,16 +29,20 @@ class _ProtocolCacheHolder:
 
     Thread Safety:
         All public methods are thread-safe using internal locking.
+
+    BOUNDARY_LAYER_EXCEPTION:
+        Uses Any for cached services because protocol types are not yet defined.
     """
 
-    _formatter: object | None = None
-    _output_handler: object | None = None
+    # BOUNDARY_LAYER_EXCEPTION: Any required - protocol types not yet implemented
+    _formatter: Any = None
+    _output_handler: Any = None
     _timestamp: float = 0.0
     _ttl: float = 300.0  # 5 minutes TTL
     _lock: threading.Lock = threading.Lock()
 
     @classmethod
-    def get_formatter(cls) -> object | None:
+    def get_formatter(cls) -> Any:
         """Get cached formatter (thread-safe)."""
         with cls._lock:
             if cls._is_expired():
@@ -39,13 +50,13 @@ class _ProtocolCacheHolder:
             return cls._formatter
 
     @classmethod
-    def set_formatter(cls, formatter: object | None) -> None:
+    def set_formatter(cls, formatter: Any) -> None:
         """Set cached formatter (thread-safe)."""
         with cls._lock:
             cls._formatter = formatter
 
     @classmethod
-    def get_output_handler(cls) -> object | None:
+    def get_output_handler(cls) -> Any:
         """Get cached output handler (thread-safe)."""
         with cls._lock:
             if cls._is_expired():
@@ -53,7 +64,7 @@ class _ProtocolCacheHolder:
             return cls._output_handler
 
     @classmethod
-    def set_output_handler(cls, handler: object | None) -> None:
+    def set_output_handler(cls, handler: Any) -> None:
         """Set cached output handler (thread-safe)."""
         with cls._lock:
             cls._output_handler = handler
