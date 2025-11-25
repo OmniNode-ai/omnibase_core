@@ -18,10 +18,18 @@ class _LoggerCache:
 
     @classmethod
     def get(cls) -> Any | None:
-        """Get cached logger instance."""
-        return cls._instance
+        """Get cached logger instance.
+
+        Thread-safe access to the cached logger.
+        """
+        with cls._lock:
+            return cls._instance
 
     @classmethod
     def set(cls, logger: Any) -> None:
-        """Set cached logger instance."""
-        cls._instance = logger
+        """Set cached logger instance.
+
+        Thread-safe modification of the cached logger.
+        """
+        with cls._lock:
+            cls._instance = logger

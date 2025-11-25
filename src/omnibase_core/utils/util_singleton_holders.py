@@ -17,11 +17,11 @@ from omnibase_core.utils.util_simple_fallback_logger import _SimpleFallbackLogge
 
 __all__ = [
     "_ActionRegistryHolder",
-    "_EventTypeRegistryHolder",
     "_CommandRegistryHolder",
-    "_SecretManagerHolder",
     "_ContainerHolder",
-    "_ProtocolCacheHolder",
+    "_EventTypeRegistryHolder",
     "_LoggerCache",
+    "_ProtocolCacheHolder",
+    "_SecretManagerHolder",
     "_SimpleFallbackLogger",
 ]

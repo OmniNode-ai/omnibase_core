@@ -153,6 +153,8 @@ class ModelContractCompute(ModelContractBase):
             tags = []
 
         # Compute-specific required field with type validation
+        # Extract, validate, and put back into data_dict so it passes through **kwargs
+        # (avoids mypy call-arg error when passing child class fields to super().__init__)
         algorithm = data_dict.pop("algorithm", None)
         if algorithm is not None and not isinstance(algorithm, ModelAlgorithmConfig):
             # Allow dict conversion for YAML loading
@@ -171,6 +173,8 @@ class ModelContractCompute(ModelContractBase):
                         },
                     ),
                 )
+        # Put validated algorithm back into data_dict for passing through **kwargs
+        data_dict["algorithm"] = algorithm
 
         # Call parent constructor with extracted and validated parameters
         # Pass remaining data_dict fields for child class fields (algorithm, etc.)
@@ -190,8 +194,7 @@ class ModelContractCompute(ModelContractBase):
             author=author,
             documentation_url=documentation_url,
             tags=tags or [],
-            algorithm=algorithm,  # type: ignore[call-arg]  # Pydantic handles child class fields
-            **data_dict,  # Pass remaining kwargs for other child class fields
+            **data_dict,  # Pass remaining kwargs including algorithm (child class fields)
         )
 
     # Override parent node_type with architecture-specific type

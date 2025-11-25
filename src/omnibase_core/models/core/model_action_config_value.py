@@ -9,7 +9,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from __future__ import annotations
 
-from typing import Any, Union
+from typing import Union
 
 from pydantic import Discriminator
 
@@ -25,7 +25,7 @@ from omnibase_core.models.core.model_action_config_string_value import (
 )
 
 
-def get_action_config_discriminator_value(v: Any) -> str:
+def get_action_config_discriminator_value(v: object) -> str:
     """Extract discriminator value for action configuration values."""
     if isinstance(v, dict):
         value_type = v.get("value_type", "string")
