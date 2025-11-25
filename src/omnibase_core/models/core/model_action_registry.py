@@ -1,4 +1,4 @@
-from typing import Any, Generic, cast
+from typing import cast
 
 """
 Action Registry for Dynamic CLI Action Discovery.
@@ -260,14 +260,15 @@ def get_action_registry() -> ModelActionRegistry:
         Exception
     ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
         # Fallback to singleton holder for edge cases
-        registry = _ActionRegistryHolder.get()
-        if registry is None:
-            registry = ModelActionRegistry()
-            registry.bootstrap_core_actions()
-            _ActionRegistryHolder.set(registry)
-            return registry
-        # Type narrowing: registry is now guaranteed to be ModelActionRegistry
-        return cast(ModelActionRegistry, registry)
+        # Use different variable names to avoid type conflict with 'registry' from try block
+        existing = _ActionRegistryHolder.get()
+        if existing is None:
+            new_registry = ModelActionRegistry()
+            new_registry.bootstrap_core_actions()
+            _ActionRegistryHolder.set(new_registry)
+            return new_registry
+        # Type narrowing: existing is now guaranteed to be ModelActionRegistry
+        return existing
 
 
 def reset_action_registry() -> None:

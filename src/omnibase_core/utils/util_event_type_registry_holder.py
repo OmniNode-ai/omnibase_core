@@ -52,12 +52,13 @@ class _EventTypeRegistryHolder:
             return cls._instance
 
     @classmethod
-    def set(cls, registry: ModelEventTypeRegistry) -> None:
+    def set(cls, registry: ModelEventTypeRegistry | None) -> None:
         """
-        Set the event type registry instance.
+        Set or reset the event type registry instance.
 
         Args:
-            registry: The event type registry instance to store.
+            registry: The event type registry instance to store, or None to reset
+                the singleton (useful for testing).
 
         Thread Safety:
             This method acquires the class lock before writing.

@@ -50,12 +50,13 @@ class _ActionRegistryHolder:
             return cls._instance
 
     @classmethod
-    def set(cls, registry: ModelActionRegistry) -> None:
+    def set(cls, registry: ModelActionRegistry | None) -> None:
         """
-        Set the action registry instance.
+        Set or reset the action registry instance.
 
         Args:
-            registry: The action registry instance to store.
+            registry: The action registry instance to store, or None to reset
+                the singleton (useful for testing).
 
         Thread Safety:
             This method acquires the class lock before writing.
