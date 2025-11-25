@@ -54,6 +54,7 @@ class _ProtocolCacheHolder:
         """Set cached formatter (thread-safe)."""
         with cls._lock:
             cls._formatter = formatter
+            cls._timestamp = time.time()
 
     @classmethod
     def get_output_handler(cls) -> Any:
@@ -68,6 +69,7 @@ class _ProtocolCacheHolder:
         """Set cached output handler (thread-safe)."""
         with cls._lock:
             cls._output_handler = handler
+            cls._timestamp = time.time()
 
     @classmethod
     def get_timestamp(cls) -> float:
@@ -83,8 +85,9 @@ class _ProtocolCacheHolder:
 
     @classmethod
     def get_ttl(cls) -> float:
-        """Get cache TTL."""
-        return cls._ttl
+        """Get cache TTL (thread-safe)."""
+        with cls._lock:
+            return cls._ttl
 
     @classmethod
     def _is_expired(cls) -> bool:
