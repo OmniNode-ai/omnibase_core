@@ -483,17 +483,21 @@ class TestModelContractBase:
 
     # =================== MODEL CONFIGURATION TESTS ===================
 
-    def test_model_config_extra_fields_ignored(self):
-        """Test that extra fields are ignored per model configuration."""
+    def test_model_config_extra_fields_rejected(self):
+        """Test that extra fields are rejected per ZERO TOLERANCE model configuration."""
         data_with_extra = {
             **self.minimal_valid_data,
-            "extra_unknown_field": "should_be_ignored",
+            "extra_unknown_field": "should_be_rejected",
             "another_extra_field": 12345,
         }
 
-        contract = TestableContractModel(**data_with_extra)
-        assert contract.name == "test_contract"
-        # Extra fields should be ignored, not cause errors
+        with pytest.raises(ValidationError) as exc_info:
+            TestableContractModel(**data_with_extra)
+
+        # Verify both extra fields are reported in the error
+        error_str = str(exc_info.value)
+        assert "extra_unknown_field" in error_str
+        assert "another_extra_field" in error_str
 
     def test_model_config_enum_values_preservation(self):
         """Test that enum objects are preserved, not converted to strings."""

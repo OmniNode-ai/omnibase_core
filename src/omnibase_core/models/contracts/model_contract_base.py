@@ -590,7 +590,7 @@ class ModelContractBase(BaseModel, ABC):
             )
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields from YAML contracts (forward compatibility)
+        extra="forbid",  # Strict typing - reject unknown fields (ZERO TOLERANCE)
         use_enum_values=False,  # Keep enum objects, don't convert to strings
         validate_assignment=True,
         str_strip_whitespace=True,
