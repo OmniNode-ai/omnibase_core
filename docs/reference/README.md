@@ -21,10 +21,10 @@ The API documentation provides comprehensive reference for all public interfaces
 
 ## Related Documentation
 
-- **Templates**: Node implementation templates moved to [guides/templates/](../guides/templates/)
-- **Architecture Research**: Design research moved to [architecture/architecture-research/](../architecture/architecture-research/)
-- **Patterns**: Design patterns moved to [patterns/](../patterns/)
-- **Performance Guides**: Performance documentation moved to [guides/](../guides/)
+- **Templates**: Node implementation templates moved to [guides/templates/](../guides/templates/COMPUTE_NODE_TEMPLATE.md)
+- **Architecture Research**: Design research moved to [architecture/architecture-research/](../architecture/architecture-research/RESEARCH_REPORT_4_NODE_ARCHITECTURE.md)
+- **Patterns**: Design patterns moved to [patterns/](../patterns/CIRCUIT_BREAKER_PATTERN.md)
+- **Performance Guides**: Performance documentation moved to [guides/](../guides/PERFORMANCE_BENCHMARKS.md)
 
 ## Quick Reference
 

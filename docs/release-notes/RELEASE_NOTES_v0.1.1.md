@@ -316,7 +316,7 @@ pip install git+https://github.com/OmniNode-ai/omnibase_core.git@v0.1.1
 ### Updated Documentation
 - [ONEX Four-Node Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - Added Mermaid diagrams
 - [Quick Start Guide](../getting-started/QUICK_START.md) - Added production patterns
-- [Node Building Guides](../guides/node-building/) - Enhanced with FSM patterns
+- [Node Building Guides](../guides/node-building/README.md) - Enhanced with FSM patterns
 - [Mixin Architecture](../architecture/MIXIN_ARCHITECTURE.md) - Added glossary
 
 ### Essential Reading

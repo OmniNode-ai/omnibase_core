@@ -152,7 +152,28 @@ class ModelContractCompute(ModelContractBase):
         if tags is not None and not isinstance(tags, list):
             tags = []
 
+        # Compute-specific required field with type validation
+        algorithm = data_dict.pop("algorithm", None)
+        if algorithm is not None and not isinstance(algorithm, ModelAlgorithmConfig):
+            # Allow dict conversion for YAML loading
+            if isinstance(algorithm, dict):
+                algorithm = ModelAlgorithmConfig.model_validate(algorithm)
+            else:
+                raise ModelOnexError(
+                    message=f"algorithm must be ModelAlgorithmConfig, got {type(algorithm)}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("typeerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation",
+                            ),
+                        },
+                    ),
+                )
+
         # Call parent constructor with extracted and validated parameters
+        # Pass remaining data_dict fields for child class fields (algorithm, etc.)
         super().__init__(
             name=name,
             version=version,
@@ -169,6 +190,8 @@ class ModelContractCompute(ModelContractBase):
             author=author,
             documentation_url=documentation_url,
             tags=tags or [],
+            algorithm=algorithm,  # type: ignore[call-arg]  # Pydantic handles child class fields
+            **data_dict,  # Pass remaining kwargs for other child class fields
         )
 
     # Override parent node_type with architecture-specific type

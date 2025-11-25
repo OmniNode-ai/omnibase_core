@@ -13,7 +13,7 @@
 → **Start here**: [Node Building Guide](guides/node-building/README.md) ← **RECOMMENDED**
 
 ### Need Reference?
-→ **Templates**: [Node Templates](guides/templates/)
+→ **Templates**: [Node Templates](guides/templates/COMPUTE_NODE_TEMPLATE.md)
 → **Architecture**: [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 
 ## 📚 Documentation Structure
@@ -222,7 +222,7 @@ omnibase_core/docs/
 | **Build my first node** | [Node Building Guide](guides/node-building/README.md) → [COMPUTE Tutorial](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) |
 | **Understand node types** | [Node Types](guides/node-building/02_NODE_TYPES.md) |
 | **Choose the right base class** | [Node Class Hierarchy](architecture/NODE_CLASS_HIERARCHY.md) |
-| **Use a production template** | [Node Templates](guides/templates/) |
+| **Use a production template** | [Node Templates](guides/templates/COMPUTE_NODE_TEMPLATE.md) |
 | **Handle errors properly** | [Error Handling Best Practices](conventions/ERROR_HANDLING_BEST_PRACTICES.md) |
 | **Secure my code** | [Security Validators](../scripts/validation/README.md) |
 | **Make nodes thread-safe** | [Threading Guide](guides/THREADING.md) |
@@ -244,7 +244,7 @@ omnibase_core/docs/
 
 - **[Node Building Guide](guides/node-building/README.md)** - Structured, parseable, step-by-step
 - **[Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md)** - Copy-paste ready templates (coming soon)
-- **[Node Templates](guides/templates/)** - Production-ready reference implementations
+- **[Node Templates](guides/templates/COMPUTE_NODE_TEMPLATE.md)** - Production-ready reference implementations
 
 ### Agent Workflow
 
@@ -305,7 +305,7 @@ omnibase_core/docs/
 1. [Node Building Guide](guides/node-building/README.md) → Choose tutorial → Build
 
 **Architect**:
-1. [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) → [Architecture Research](architecture/architecture-research/)
+1. [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) → [Architecture Research](architecture/architecture-research/RESEARCH_REPORT_4_NODE_ARCHITECTURE.md)
 
 **AI Agent**:
 1. [Node Building Guide](guides/node-building/README.md) → [Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md)

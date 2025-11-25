@@ -1095,7 +1095,7 @@ class MyNode(NodeCompute, MixinCaching):
 - [Node Building Guide](./node-building/README.md)
 - [Migration Guide: Declarative Nodes](./MIGRATING_TO_DECLARATIVE_NODES.md)
 - [Mixin Metadata](../../src/omnibase_core/mixins/mixin_metadata.yaml)
-- [Subcontract Reference](../../src/omnibase_core/models/contracts/subcontracts/)
+- [Subcontract Reference](../../src/omnibase_core/models/contracts/subcontracts/__init__.py)
 
 ---
 

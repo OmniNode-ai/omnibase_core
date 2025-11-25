@@ -1553,4 +1553,4 @@ async def test_with_factory_data(test_data):
 - [Node Building Guide](README.md) - Complete implementation tutorials
 - [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Comprehensive testing strategies
 - [Error Handling](../../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error handling patterns
-- [API Reference](../../reference/api/) - Complete API documentation
+- [API Reference](../../reference/api/nodes.md) - Complete API documentation

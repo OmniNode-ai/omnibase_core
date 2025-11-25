@@ -1,129 +1,28 @@
 """
-Action Configuration Value Model - ONEX Standards Compliant.
+Action Configuration Value Model - Discriminated union and factory functions.
 
-Strongly-typed configuration value for FSM transition actions and similar use cases.
-Provides discriminated union support for type-safe action configurations.
+This module provides the ModelActionConfigValue discriminated union type,
+discriminator function, and factory functions for creating typed config values.
 
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from __future__ import annotations
 
-from typing import Any, Literal, Union
+from typing import Any, Union
 
-from pydantic import BaseModel, Discriminator, Field
+from pydantic import Discriminator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-
-class ModelActionConfigStringValue(BaseModel):
-    """String action configuration value with discriminated union support."""
-
-    value_type: Literal["string"] = Field(
-        default="string",
-        description="Type discriminator for string values",
-    )
-
-    value: str = Field(
-        ...,
-        description="String configuration value",
-    )
-
-    def to_python_value(self) -> str:
-        """Get the underlying Python value."""
-        return self.value
-
-    def as_string(self) -> str:
-        """Get configuration value as string."""
-        return self.value
-
-    def as_int(self) -> int:
-        """Get configuration value as integer (convert from string)."""
-        try:
-            return int(self.value)
-        except ValueError as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Cannot convert string '{self.value}' to int",
-                details={"value": self.value, "target_type": "int"},
-                cause=e,
-            ) from e
-
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-
-class ModelActionConfigNumericValue(BaseModel):
-    """Numeric action configuration value with discriminated union support."""
-
-    value_type: Literal["numeric"] = Field(
-        default="numeric",
-        description="Type discriminator for numeric values",
-    )
-
-    value: ModelNumericValue = Field(
-        ...,
-        description="Numeric configuration value",
-    )
-
-    def to_python_value(self) -> int | float:
-        """Get the underlying Python value."""
-        return self.value.to_python_value()
-
-    def as_int(self) -> int:
-        """Get configuration value as integer."""
-        return self.value.as_int()
-
-    def as_float(self) -> float:
-        """Get configuration value as float."""
-        return self.value.as_float()
-
-    def as_string(self) -> str:
-        """Get configuration value as string."""
-        return str(self.value.to_python_value())
-
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
-
-
-class ModelActionConfigBooleanValue(BaseModel):
-    """Boolean action configuration value with discriminated union support."""
-
-    value_type: Literal["boolean"] = Field(
-        default="boolean",
-        description="Type discriminator for boolean values",
-    )
-
-    value: bool = Field(
-        ...,
-        description="Boolean configuration value",
-    )
-
-    def to_python_value(self) -> bool:
-        """Get the underlying Python value."""
-        return self.value
-
-    def as_bool(self) -> bool:
-        """Get configuration value as boolean."""
-        return self.value
-
-    def as_string(self) -> str:
-        """Get configuration value as string."""
-        return str(self.value).lower()
-
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+from omnibase_core.models.core.model_action_config_boolean_value import (
+    ModelActionConfigBooleanValue,
+)
+from omnibase_core.models.core.model_action_config_numeric_value import (
+    ModelActionConfigNumericValue,
+)
+from omnibase_core.models.core.model_action_config_string_value import (
+    ModelActionConfigStringValue,
+)
 
 
 def get_action_config_discriminator_value(v: Any) -> str:
