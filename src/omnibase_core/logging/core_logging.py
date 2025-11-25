@@ -100,12 +100,14 @@ def _get_registry_logger() -> Any:
     cached = _LoggerCache.get()
     if cached is None:
         with _LoggerCache._lock:
-            cached = _LoggerCache.get()
+            # NOTE: Access _instance directly to avoid deadlock
+            # (the get()/set() methods try to acquire the same non-reentrant lock)
+            cached = _LoggerCache._instance
             if cached is None:
                 # Use simple fallback logger to avoid circular dependencies
                 # The logging module is foundational and should not depend on the container
                 logger = _SimpleFallbackLogger()
-                _LoggerCache.set(logger)
+                _LoggerCache._instance = logger
                 cached = logger
 
     return cached

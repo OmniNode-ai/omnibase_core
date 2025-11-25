@@ -324,4 +324,4 @@ async def test_process(node):
 - [Contract System](CONTRACT_SYSTEM.md) - Model contracts
 - [Type System](TYPE_SYSTEM.md) - Typing patterns
 - [Node Building Guide](../guides/node-building/README.md) - Implementation tutorials
-- [API Reference](../reference/api/) - Complete API documentation
+- [API Reference](../reference/api/nodes.md) - Complete API documentation

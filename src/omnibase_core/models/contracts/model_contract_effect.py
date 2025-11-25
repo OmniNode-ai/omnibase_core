@@ -425,7 +425,7 @@ class ModelContractEffect(ModelContractBase):
         return v
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields from YAML contracts
+        extra="forbid",  # Strict validation - reject unknown fields
         use_enum_values=False,  # Keep enum objects, don't convert to strings
         validate_assignment=True,
     )

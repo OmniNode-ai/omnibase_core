@@ -736,15 +736,17 @@ def _route_to_logger_node(
         if formatter is None or output_handler is None or cache_expired:
             with _ProtocolCache._lock:
                 # Double-check after acquiring lock
+                # NOTE: Access class attributes directly to avoid deadlock
+                # (the get_* methods try to acquire the same non-reentrant lock)
                 current_time = time.time()
                 cache_expired = (
-                    current_time - _ProtocolCache.get_timestamp()
-                ) > _ProtocolCache.get_ttl()
+                    current_time - _ProtocolCache._timestamp
+                ) > _ProtocolCache._ttl
 
                 # Re-check after lock acquisition (may have changed)
                 if (
-                    _ProtocolCache.get_formatter() is None
-                    or _ProtocolCache.get_output_handler() is None
+                    _ProtocolCache._formatter is None
+                    or _ProtocolCache._output_handler is None
                     or cache_expired
                 ):
                     from omnibase_core.models.container.model_onex_container import (
@@ -760,21 +762,21 @@ def _route_to_logger_node(
                     # Try to get logger components from container
                     try:
                         container = ModelONEXContainer()
-                        _ProtocolCache.set_formatter(
-                            container.get_service(ProtocolSmartLogFormatter)
+                        _ProtocolCache._formatter = container.get_service(
+                            ProtocolSmartLogFormatter
                         )
-                        _ProtocolCache.set_output_handler(
-                            container.get_service(ProtocolContextAwareOutputHandler)
+                        _ProtocolCache._output_handler = container.get_service(
+                            ProtocolContextAwareOutputHandler
                         )
-                        _ProtocolCache.set_timestamp(current_time)
+                        _ProtocolCache._timestamp = current_time
                     except Exception:
                         # If container fails, use None to trigger fallback logging
-                        _ProtocolCache.set_formatter(None)
-                        _ProtocolCache.set_output_handler(None)
-                        _ProtocolCache.set_timestamp(current_time)
+                        _ProtocolCache._formatter = None
+                        _ProtocolCache._output_handler = None
+                        _ProtocolCache._timestamp = current_time
 
-                formatter = _ProtocolCache.get_formatter()
-                output_handler = _ProtocolCache.get_output_handler()
+                formatter = _ProtocolCache._formatter
+                output_handler = _ProtocolCache._output_handler
 
         if formatter and output_handler:
             # Format the log event using protocol

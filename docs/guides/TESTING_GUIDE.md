@@ -883,5 +883,5 @@ See `.github/workflows/test.yml` for complete configuration. Key features:
 
 - [Node Building Guide](node-building/README.md) - Implementation tutorials
 - [Error Handling](../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error handling patterns
-- [API Reference](../reference/api/) - Complete API documentation
+- [API Reference](../reference/api/nodes.md) - Complete API documentation
 - [Architecture Overview](../architecture/overview.md) - System design

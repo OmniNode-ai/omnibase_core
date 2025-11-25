@@ -657,11 +657,11 @@ class MyNode(NodeCoreBase, MixinDiscoveryResponder):
 
 | For... | Start Here | Time |
 |--------|-----------|------|
-| **New Developers** | [Getting Started Guide](docs/getting-started/) | 15 min |
+| **New Developers** | [Getting Started Guide](docs/getting-started/QUICK_START.md) | 15 min |
 | **Building Nodes** | [Node Building Guide](docs/guides/node-building/README.md) ⭐ | 30-60 min |
 | **Choosing Base Classes** | [Node Class Hierarchy](docs/architecture/NODE_CLASS_HIERARCHY.md) ⭐ | 20 min |
 | **Understanding Architecture** | [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | 30 min |
-| **Reference & Templates** | [Node Templates](docs/reference/templates/) | - |
+| **Reference & Templates** | [Node Templates](docs/reference/templates/COMPUTE_NODE_TEMPLATE.md) | - |
 | **Error Handling** | [Error Handling Best Practices](docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md) | 20 min |
 | **Thread Safety** | [Threading Guide](docs/guides/THREADING.md) | 15 min |
 
