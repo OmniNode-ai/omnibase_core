@@ -26,6 +26,7 @@ health monitor loop).
 """
 
 import asyncio
+import os
 import time
 from typing import Any
 from uuid import uuid4
@@ -33,6 +34,27 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.mixins.mixin_node_service import MixinNodeService
+
+
+def get_timing_threshold() -> float:
+    """Get appropriate timing threshold based on environment.
+
+    Returns tighter threshold (0.6s) locally for faster feedback,
+    looser threshold (2.0s) in CI to handle scheduler delays.
+
+    Note: Local threshold is 0.6s (not 0.5s) to accommodate tests that
+    explicitly wait 0.5s for timeouts while still catching slow operations.
+    """
+    # CI environment detection (GitHub Actions, GitLab CI, Jenkins, etc.)
+    is_ci = any(
+        [
+            os.environ.get("CI"),
+            os.environ.get("GITHUB_ACTIONS"),
+            os.environ.get("GITLAB_CI"),
+            os.environ.get("JENKINS_URL"),
+        ]
+    )
+    return 2.0 if is_ci else 0.6
 
 
 class MinimalServiceNode(MixinNodeService):
@@ -96,12 +118,17 @@ class TestShutdownTiming:
         # Wait for task to complete
         await task
 
-        # Verify immediate wakeup (should be < 2 seconds, not 30 seconds)
-        # Using 2s threshold to account for CI scheduler delays under heavy load
+        # Verify immediate wakeup (should be < threshold, not 30 seconds)
+        # Threshold varies: 0.5s locally for fast feedback, 2.0s in CI for stability
         elapsed = time.time() - start_time
+        threshold = get_timing_threshold()
         assert task_woke_up, "Task should have woken up"
-        assert elapsed < 2.0, f"Expected immediate wakeup (<2s), got {elapsed:.2f}s"
-        assert wake_time < 2.0, f"Task wait time should be <2s, got {wake_time:.2f}s"
+        assert (
+            elapsed < threshold
+        ), f"Expected immediate wakeup (<{threshold}s), got {elapsed:.2f}s"
+        assert (
+            wake_time < threshold
+        ), f"Task wait time should be <{threshold}s, got {wake_time:.2f}s"
 
     @pytest.mark.asyncio
     async def test_shutdown_event_not_set_waits_for_timeout(self) -> None:
@@ -115,8 +142,11 @@ class TestShutdownTiming:
         elapsed = time.time() - start
 
         # Should have waited approximately the timeout duration
-        # Using 2s upper bound to account for CI scheduler delays
-        assert 0.4 < elapsed < 2.0, f"Expected ~0.5s wait, got {elapsed:.2f}s"
+        # Upper bound varies: 0.5s locally, 2.0s in CI for scheduler delays
+        threshold = get_timing_threshold()
+        assert (
+            0.4 < elapsed < threshold
+        ), f"Expected ~0.5s wait (<{threshold}s), got {elapsed:.2f}s"
 
     @pytest.mark.asyncio
     async def test_mixin_health_monitor_immediate_wakeup(self) -> None:
@@ -183,10 +213,11 @@ class TestShutdownTiming:
                 pass
 
         # Verify immediate wakeup (should be << 30 seconds)
-        # Using 2s threshold to account for CI scheduler delays under heavy load
+        # Threshold varies: 0.5s locally for fast feedback, 2.0s in CI for stability
+        threshold = get_timing_threshold()
         assert (
-            elapsed < 2.0
-        ), f"Health loop should respond to shutdown immediately (<2s), got {elapsed:.2f}s"
+            elapsed < threshold
+        ), f"Health loop should respond to shutdown immediately (<{threshold}s), got {elapsed:.2f}s"
 
     @pytest.mark.asyncio
     async def test_mixin_aclose_triggers_immediate_wakeup(self) -> None:
@@ -203,12 +234,15 @@ class TestShutdownTiming:
         node._shutdown_requested = False
         node._health_task = None  # No actual health task for this test
 
+        # Capture event in local variable for type narrowing in nested function
+        shutdown_event = node._shutdown_event
+
         # Start a task that simulates waiting on the shutdown event
         wait_completed = asyncio.Event()
 
         async def wait_for_shutdown() -> None:
             try:
-                await asyncio.wait_for(node._shutdown_event.wait(), timeout=30)
+                await asyncio.wait_for(shutdown_event.wait(), timeout=30)
                 wait_completed.set()
             except TimeoutError:
                 pass
@@ -244,10 +278,11 @@ class TestShutdownTiming:
                 pass
 
         # Verify the shutdown event was set quickly
-        # Using 2s threshold to account for CI scheduler delays under heavy load
+        # Threshold varies: 0.5s locally for fast feedback, 2.0s in CI for stability
+        threshold = get_timing_threshold()
         assert (
-            elapsed < 2.0
-        ), f"aclose() should complete quickly (<2s), got {elapsed:.2f}s"
+            elapsed < threshold
+        ), f"aclose() should complete quickly (<{threshold}s), got {elapsed:.2f}s"
         assert wait_completed.is_set(), "Waiting task should have completed"
 
     @pytest.mark.asyncio
@@ -295,10 +330,11 @@ class TestShutdownTiming:
         # Verify behavior
         assert loop_exited, "Service loop should have exited"
         assert loop_iterations >= 1, "Service loop should have run at least once"
-        # Using 2s threshold to account for CI scheduler delays under heavy load
+        # Threshold varies: 0.5s locally for fast feedback, 2.0s in CI for stability
+        threshold = get_timing_threshold()
         assert (
-            elapsed < 2.0
-        ), f"Should exit within one loop iteration (<2s), got {elapsed:.2f}s"
+            elapsed < threshold
+        ), f"Should exit within one loop iteration (<{threshold}s), got {elapsed:.2f}s"
 
 
 class TestShutdownEventIntegration:

@@ -699,9 +699,15 @@ class MixinNodeService:
                 )
                 self._shutdown_requested = True
                 # Signal shutdown event to wake up any sleeping tasks immediately
-                # This provides symmetry with explicit shutdown (stop_service_mode/aclose)
+                # Use call_soon_threadsafe since signal handlers run in main thread
+                # but asyncio.Event.set() should be called from the event loop thread
                 if self._shutdown_event is not None:
-                    self._shutdown_event.set()
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.call_soon_threadsafe(self._shutdown_event.set)
+                    except RuntimeError:
+                        # No running loop - set directly (may be during shutdown)
+                        self._shutdown_event.set()
 
             signal.signal(signal.SIGTERM, signal_handler)
             signal.signal(signal.SIGINT, signal_handler)
