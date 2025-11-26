@@ -69,6 +69,12 @@ class MixinNodeService:
     - Emit TOOL_RESPONSE events with results
     - Provide health monitoring and graceful shutdown
     - Support asyncio event loop for concurrent operations
+
+    Thread Safety:
+        All service instances must run within the same asyncio event loop.
+        The _shutdown_event (asyncio.Event) is only safe for coordination within
+        a single event loop. For multi-threaded scenarios with separate event
+        loops, use threading.Event instead.
     """
 
     # Type annotations for attributes set via object.__setattr__()
@@ -172,7 +178,7 @@ class MixinNodeService:
         # Signal shutdown event to wake up any sleeping tasks immediately
         # This allows health monitor loop to respond to cancellation without
         # waiting for the full sleep interval (30 seconds)
-        if hasattr(self, "_shutdown_event") and self._shutdown_event is not None:
+        if self._shutdown_event is not None:
             self._shutdown_event.set()
 
         try:
@@ -212,7 +218,7 @@ class MixinNodeService:
         or used as an async context manager exit.
         """
         # Signal shutdown event to wake up any sleeping tasks immediately
-        if hasattr(self, "_shutdown_event") and self._shutdown_event is not None:
+        if self._shutdown_event is not None:
             self._shutdown_event.set()
 
         # Cancel health monitoring task if it exists
@@ -396,10 +402,9 @@ class MixinNodeService:
             while self._service_running and not self._shutdown_requested:
                 # Process any pending events (depending on event bus implementation)
                 # Use shutdown event for interruptible sleep to allow immediate shutdown
-                shutdown_event = getattr(self, "_shutdown_event", None)
-                if shutdown_event is not None:
+                if self._shutdown_event is not None:
                     try:
-                        await asyncio.wait_for(shutdown_event.wait(), timeout=0.1)
+                        await asyncio.wait_for(self._shutdown_event.wait(), timeout=0.1)
                         # If we get here, shutdown was signaled
                         break
                     except TimeoutError:
@@ -432,11 +437,10 @@ class MixinNodeService:
                 # Wait before next health check, but allow immediate wakeup on shutdown
                 # This prevents the "Task was destroyed but it is pending!" warning
                 # by responding immediately to shutdown signals instead of sleeping
-                shutdown_event = getattr(self, "_shutdown_event", None)
-                if shutdown_event is not None:
+                if self._shutdown_event is not None:
                     try:
                         # Wait for shutdown event with timeout (health check interval)
-                        await asyncio.wait_for(shutdown_event.wait(), timeout=30)
+                        await asyncio.wait_for(self._shutdown_event.wait(), timeout=30)
                         # If we get here, shutdown was signaled
                         break
                     except TimeoutError:
