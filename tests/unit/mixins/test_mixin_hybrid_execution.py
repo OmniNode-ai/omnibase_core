@@ -114,9 +114,25 @@ class TestMixinInitialization:
             tool = MockTool()
 
             # Should emit initialization log
-            assert mock_log.called
-            call_args = mock_log.call_args_list[0]
-            assert "MIXIN_INIT" in str(call_args)
+            # Check that emit_log_event was called at least once
+            assert (
+                mock_log.call_count > 0
+            ), f"emit_log_event was not called. Call count: {mock_log.call_count}"
+
+            # Check that MIXIN_INIT message was logged
+            # The function is called with (level, message, context_dict)
+            mixin_init_found = False
+            for call in mock_log.call_args_list:
+                args, kwargs = call
+                # Message is the second positional argument
+                if len(args) >= 2 and "MIXIN_INIT" in str(args[1]):
+                    mixin_init_found = True
+                    break
+
+            assert mixin_init_found, (
+                f"MIXIN_INIT not found in log calls. "
+                f"Actual calls: {mock_log.call_args_list}"
+            )
 
 
 class TestDetermineExecutionMode:

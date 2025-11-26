@@ -38,7 +38,12 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
-from omnibase_core.utils.util_singleton_holders import _ContainerHolder
+
+# Import context-based container management
+from omnibase_core.context.application_context import (
+    get_current_container,
+    set_current_container,
+)
 
 # Optional performance enhancements
 try:
@@ -720,15 +725,63 @@ async def create_model_onex_container(
 
 
 async def get_model_onex_container() -> ModelONEXContainer:
-    """Get or create global enhanced container instance."""
-    container = _ContainerHolder.get()
+    """Get or create container instance from current context.
+
+    This function retrieves the container from the current execution context
+    using contextvars. If no container exists in the context, it creates
+    a new one and sets it in the context.
+
+    The context-based approach provides proper isolation between:
+    - Different asyncio tasks
+    - Different threads
+    - Nested contexts (via token-based reset)
+
+    Returns:
+        ModelONEXContainer: The container instance for the current context
+
+    Example:
+        # Using context manager (recommended for new code):
+        from omnibase_core.context import run_with_container
+
+        container = await create_model_onex_container()
+        async with run_with_container(container):
+            # Container is now available via get_model_onex_container()
+            current = await get_model_onex_container()
+
+        # Legacy usage (still works):
+        container = await get_model_onex_container()  # Creates if needed
+    """
+    container = get_current_container()
     if container is None:
         container = await create_model_onex_container()
-        _ContainerHolder.set(container)
-    result: ModelONEXContainer = cast(ModelONEXContainer, container)
-    return result
+        set_current_container(container)
+    return container
 
 
 def get_model_onex_container_sync() -> ModelONEXContainer:
-    """Get enhanced container synchronously."""
-    return asyncio.run(get_model_onex_container())
+    """Get container synchronously from current context.
+
+    This function checks for a container in the current context
+    (via contextvars). If no container exists, it creates a new one
+    and sets it in the context.
+
+    Note: This creates a new event loop for each call when no container
+    is available. Prefer using get_model_onex_container() in async code.
+
+    Returns:
+        ModelONEXContainer: The container instance for the current context
+    """
+    # Check contextvar for existing container
+    container = get_current_container()
+    if container is not None:
+        return container
+
+    # No container exists - create one
+    # asyncio.run creates a new context, so the container set inside
+    # won't propagate back. We need to capture and set it here.
+    container = asyncio.run(create_model_onex_container())
+
+    # Set in context for future access
+    set_current_container(container)
+
+    return container

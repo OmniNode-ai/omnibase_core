@@ -12,11 +12,11 @@ This module provides the simplest possible logging interface:
 
 import asyncio
 import threading
+from functools import lru_cache
 from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.utils.util_singleton_holders import _LoggerCache
 
 # Thread-local correlation ID context
 _context = threading.local()
@@ -94,23 +94,36 @@ def _get_correlation_id() -> UUID:
     return correlation_id
 
 
+@lru_cache(maxsize=1)
+def _get_cached_logger() -> Any:
+    """Get cached logger instance.
+
+    Uses lru_cache for single-instance caching without global state.
+    Falls back to SimpleFallbackLogger if container unavailable.
+    """
+    try:
+        from omnibase_core.models.container.model_onex_container import (
+            get_model_onex_container_sync,
+        )
+
+        container = get_model_onex_container_sync()
+        # Try to get logger from container registry
+        try:
+            return container.get_service("ProtocolLogger")  # type: ignore[arg-type]
+        except Exception:  # fallback-ok: logger init must never fail
+            return _SimpleFallbackLogger()
+    except Exception:  # fallback-ok: logger init must never fail
+        return _SimpleFallbackLogger()
+
+
+def clear_logger_cache() -> None:
+    """Clear the logger cache (for testing)."""
+    _get_cached_logger.cache_clear()
+
+
 def _get_registry_logger() -> Any:
     """Get logger from registry with caching for performance."""
-    # Double-checked locking pattern for thread safety
-    cached = _LoggerCache.get()
-    if cached is None:
-        with _LoggerCache._lock:
-            # NOTE: Access _instance directly to avoid deadlock
-            # (the get()/set() methods try to acquire the same non-reentrant lock)
-            cached = _LoggerCache._instance
-            if cached is None:
-                # Use simple fallback logger to avoid circular dependencies
-                # The logging module is foundational and should not depend on the container
-                logger = _SimpleFallbackLogger()
-                _LoggerCache._instance = logger
-                cached = logger
-
-    return cached
+    return _get_cached_logger()
 
 
 async def _async_emit_via_logger(

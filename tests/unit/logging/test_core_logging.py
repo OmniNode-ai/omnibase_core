@@ -98,13 +98,12 @@ class TestCorrelationIdManagement:
 
         assert get_correlation_id() == test_id
 
-    def test_get_correlation_id_returns_none_when_not_set(self):
+    def test_get_correlation_id_returns_none_when_not_set(
+        self, isolated_correlation_context
+    ):
         """Test getting correlation ID when not set."""
-        from omnibase_core.logging import core_logging
-
-        # Clear correlation ID
-        if hasattr(core_logging._context, "correlation_id"):
-            del core_logging._context.correlation_id
+        # The isolated_correlation_context fixture ensures no correlation ID
+        # is set at the start of this test (proper isolation from other tests)
 
         # Should return None
         assert get_correlation_id() is None

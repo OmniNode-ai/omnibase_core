@@ -1,8 +1,3 @@
-from typing import Any, Generic
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Event Type Registry for Dynamic Event Type Discovery.
 
@@ -12,9 +7,10 @@ enabling third-party plugins to register their own event types dynamically.
 
 from pathlib import Path
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
-from omnibase_core.utils.util_singleton_holders import _EventTypeRegistryHolder
 
 from .model_event_type import ModelEventType
 
@@ -207,34 +203,46 @@ class ModelEventTypeRegistry:
 
 
 def get_event_type_registry() -> ModelEventTypeRegistry:
-    """Get the global event type registry instance (now via DI container)."""
-    # Try to get from container first
-    try:
-        from omnibase_core.models.container.model_onex_container import (
-            get_model_onex_container_sync,
-        )
+    """Get the event type registry from DI container.
 
+    Raises:
+        ModelOnexError: If DI container is not initialized
+    """
+    from omnibase_core.models.container.model_onex_container import (
+        get_model_onex_container_sync,
+    )
+
+    try:
         container = get_model_onex_container_sync()
         registry: ModelEventTypeRegistry = container.event_type_registry()
 
-        # Ensure core event types are bootstrapped (idempotent)
+        # Auto-bootstrap if empty
         if len(registry.get_all_event_types()) == 0:
             registry.bootstrap_core_event_types()
 
         return registry
-    except (
-        Exception
-    ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
-        # Fallback to singleton holder for edge cases
-        registry_result = _EventTypeRegistryHolder.get()
-        if registry_result is None:
-            registry_result = ModelEventTypeRegistry()
-            registry_result.bootstrap_core_event_types()
-            _EventTypeRegistryHolder.set(registry_result)
-        final_registry: ModelEventTypeRegistry = registry_result
-        return final_registry
+    except Exception as e:
+        raise ModelOnexError(
+            message="DI container not initialized - cannot get event type registry. "
+            "Initialize the container first.",
+            error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+        ) from e
 
 
 def reset_event_type_registry() -> None:
-    """Reset the global event type registry (for testing)."""
-    _EventTypeRegistryHolder.set(None)
+    """Reset the global event type registry (for testing).
+
+    Clears the registry obtained from the DI container.
+    Does nothing if container is not initialized.
+    """
+    from omnibase_core.models.container.model_onex_container import (
+        get_model_onex_container_sync,
+    )
+
+    try:
+        container = get_model_onex_container_sync()
+        registry: ModelEventTypeRegistry = container.event_type_registry()
+        registry.clear()
+    except Exception:
+        # Container not initialized, nothing to reset
+        pass

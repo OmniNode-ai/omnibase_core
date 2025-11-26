@@ -1,27 +1,49 @@
+"""Singleton holder utilities.
+
+DEPRECATED: All singleton holders have been removed in favor of:
+- ApplicationContext for container management (contextvars-based)
+- functools.lru_cache for caching
+
+For container management, use the ApplicationContext:
+    from omnibase_core.context import (
+        get_current_container,
+        set_current_container,
+        reset_container,
+        run_with_container,
+        ApplicationContext,
+    )
+
+Migration from legacy patterns:
+    # Old pattern (no longer available):
+    # from omnibase_core.utils.util_singleton_holders import _ContainerHolder
+    # container = _ContainerHolder.get()
+    # _ContainerHolder.set(container)
+
+    # New pattern:
+    from omnibase_core.context import get_current_container, set_current_container
+    container = get_current_container()
+    token = set_current_container(container)
+    # ... use container ...
+    reset_container(token)
+
+    # Or use context manager:
+    from omnibase_core.context import ApplicationContext
+    with ApplicationContext(container):
+        # container is available via get_current_container()
+        pass
+
+Removed holders (all migrated):
+- _ContainerHolder -> omnibase_core.context.ApplicationContext
+- _ActionRegistryHolder -> container.action_registry()
+- _CommandRegistryHolder -> container.command_registry()
+- _EventTypeRegistryHolder -> container.event_type_registry()
+- _SecretManagerHolder -> container.secret_manager()
+- _LoggerCache -> core_logging._get_cached_logger()
+- _ProtocolCacheHolder -> emit.get_protocol_services()
+- _SimpleFallbackLogger -> core_logging._get_cached_logger()
+
+This module exports nothing as all patterns have been migrated.
 """
-Singleton Holders - Centralized re-exports for DI container infrastructure.
 
-This module provides centralized access to all singleton holder classes,
-supporting the DI container pattern with fallback mechanisms for bootstrap
-and circular dependency scenarios.
-"""
-
-from omnibase_core.utils.util_action_registry_holder import _ActionRegistryHolder
-from omnibase_core.utils.util_command_registry_holder import _CommandRegistryHolder
-from omnibase_core.utils.util_container_holder import _ContainerHolder
-from omnibase_core.utils.util_event_type_registry_holder import _EventTypeRegistryHolder
-from omnibase_core.utils.util_logger_cache import _LoggerCache
-from omnibase_core.utils.util_protocol_cache_holder import _ProtocolCacheHolder
-from omnibase_core.utils.util_secret_manager_holder import _SecretManagerHolder
-from omnibase_core.utils.util_simple_fallback_logger import _SimpleFallbackLogger
-
-__all__ = [
-    "_ActionRegistryHolder",
-    "_CommandRegistryHolder",
-    "_ContainerHolder",
-    "_EventTypeRegistryHolder",
-    "_LoggerCache",
-    "_ProtocolCacheHolder",
-    "_SecretManagerHolder",
-    "_SimpleFallbackLogger",
-]
+# No exports - all singletons removed
+__all__: list[str] = []

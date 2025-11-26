@@ -641,27 +641,53 @@ class TestRegistryClear:
         assert len(registry.commands_by_category) == 0
 
 
+@pytest.mark.serial
 class TestGlobalRegistry:
-    """Test global registry singleton pattern."""
+    """Test global registry singleton pattern.
+
+    These tests manipulate the global container context and MUST
+    run serially to avoid race conditions with parallel test execution.
+
+    The command registry is now accessed through the DI container only.
+    """
+
+    @pytest.fixture(autouse=True)
+    def reset_global_registry(self):
+        """Reset global registry state before and after each test.
+
+        The new pattern uses ApplicationContext (contextvars), so we reset
+        the context variable to ensure a fresh container is created for each test.
+        """
+        from omnibase_core.context.application_context import _current_container
+
+        # Reset context variable to None (clear any existing container)
+        # This ensures a fresh container will be created
+        context_token = _current_container.set(None)
+
+        yield
+
+        # Restore original context variable state
+        _current_container.reset(context_token)
 
     def test_get_global_command_registry_creates_instance(self):
-        """Test global registry is created on first access."""
-        # Clear any existing global instance
-        import omnibase_core.models.core.model_cli_command_registry as registry_module
+        """Test global registry is created on first access via container."""
+        from omnibase_core.context.application_context import get_current_container
 
-        registry_module._global_command_registry = None
+        # Container should be None after fixture reset
+        assert get_current_container() is None
 
+        # Getting the global registry will create a container
         registry = get_global_command_registry()
 
         assert registry is not None
         assert isinstance(registry, ModelCliCommandRegistry)
 
+        # Container should now be set in context
+        assert get_current_container() is not None
+
     def test_get_global_command_registry_returns_same_instance(self):
         """Test global registry returns same instance on subsequent calls."""
-        import omnibase_core.models.core.model_cli_command_registry as registry_module
-
-        registry_module._global_command_registry = None
-
+        # Get registry twice - should return same instance
         registry1 = get_global_command_registry()
         registry2 = get_global_command_registry()
 
@@ -669,10 +695,7 @@ class TestGlobalRegistry:
 
     def test_discover_commands_from_contracts_uses_global_registry(self, tmp_path):
         """Test module-level discovery function uses global registry."""
-        import omnibase_core.models.core.model_cli_command_registry as registry_module
-
-        registry_module._global_command_registry = None
-
+        # Global registry is already reset by the autouse fixture
         # Create test contract
         contract_content = """
 cli_interface:
@@ -694,10 +717,7 @@ cli_interface:
 
     def test_get_command_definition_uses_global_registry(self):
         """Test module-level get command function uses global registry."""
-        import omnibase_core.models.core.model_cli_command_registry as registry_module
-
-        registry_module._global_command_registry = None
-
+        # Global registry is already reset by the autouse fixture
         # Register a test command
         registry = get_global_command_registry()
         command = ModelCliCommandDefinition(

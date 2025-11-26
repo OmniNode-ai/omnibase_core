@@ -207,19 +207,69 @@ def pytest_configure(config: pytest.Config) -> None:
         "memory_intensive: mark test as memory intensive (may need sequential execution)",
     )
 
+    # Register isolation markers for test state management
+    config.addinivalue_line(
+        "markers",
+        "isolated: mark test as requiring fresh module state (isolated from other tests)",
+    )
+    config.addinivalue_line(
+        "markers",
+        "no_shared_state: mark test as sensitive to global state pollution",
+    )
+    config.addinivalue_line(
+        "markers",
+        "singleton_sensitive: mark test as touching specific singletons that need isolation",
+    )
+    config.addinivalue_line(
+        "markers",
+        "fresh_event_loop: mark test as requiring isolated asyncio event loop",
+    )
+    config.addinivalue_line(
+        "markers",
+        "serial: mark test to run serially after parallel tests complete (single worker)",
+    )
+
 
 def pytest_collection_modifyitems(
     config: pytest.Config, items: list[pytest.Item]
 ) -> None:
     """
-    Modify test collection to optimize memory usage.
+    Modify test collection to optimize memory usage and execution order.
+
+    This hook performs two key optimizations:
+    1. Groups related tests together (better cache locality)
+    2. Moves serial-marked tests to run last (after parallel tests complete)
+
+    Serial Test Ordering:
+    ---------------------
+    Tests marked with @pytest.mark.serial will be collected last, ensuring they
+    run after all parallelizable tests complete. This is critical for tests that:
+    - Require fresh singleton state
+    - Are sensitive to global state pollution from parallel execution
+    - Need exclusive access to shared resources
 
     Args:
         config: pytest configuration object
         items: list of collected test items
     """
-    # Sort tests to group related tests together (better cache locality)
-    items.sort(key=lambda item: (item.module.__name__, item.name))
+    # Separate serial tests from normal tests
+    serial_tests: list[pytest.Item] = []
+    normal_tests: list[pytest.Item] = []
+
+    for item in items:
+        if item.get_closest_marker("serial"):
+            serial_tests.append(item)
+        else:
+            normal_tests.append(item)
+
+    # Sort normal tests to group related tests together (better cache locality)
+    normal_tests.sort(key=lambda item: (item.module.__name__, item.name))
+
+    # Sort serial tests for consistent ordering
+    serial_tests.sort(key=lambda item: (item.module.__name__, item.name))
+
+    # Reorder: normal tests first (parallelized), then serial at end
+    items[:] = normal_tests + serial_tests
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -449,3 +499,19 @@ def detect_event_loop_mocking_issues(request: pytest.FixtureRequest) -> None:
 
     # This fixture serves primarily as documentation and a reminder
     # to use mock_event_loop when testing workflow/async patterns
+
+
+# =============================================================================
+# Test Isolation Fixtures (for parallel test execution)
+# =============================================================================
+
+# Import isolation fixtures to make them available globally
+# These fixtures enable proper state isolation for parallel test execution
+from tests.fixtures.isolation import (
+    clear_caches_fixture,
+    fresh_asyncio_loop,
+    isolated_correlation_context,
+    reset_all_singletons,
+    reset_container_singleton,
+    reset_registries,
+)

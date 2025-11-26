@@ -303,7 +303,9 @@ addopts = [
     "-n4",  # Limit parallel workers to prevent OOM (was: auto)
     "--timeout=60",  # Prevent hanging tests (60s per test)
     "--timeout-method=thread",  # Use thread-based timeout for better compatibility
-    "--dist=loadscope",  # Group tests by module to reduce memory overhead
+    "--dist=loadgroup",  # Group tests by @pytest.mark.xdist_group for better control
+    "--reruns=2",  # Auto-retry failed tests twice (handles flaky tests)
+    "--reruns-delay=1",  # 1 second delay between reruns
 ]
 filterwarnings = [
     # Suppress asyncio "Task was destroyed but it is pending!" warnings

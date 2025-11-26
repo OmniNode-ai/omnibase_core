@@ -262,12 +262,22 @@ class TestEnumScenarioStatusEdgeCases:
 
     def test_enum_pickling(self):
         """Test that enum members can be pickled and unpickled."""
+        import importlib
         import pickle
 
-        for member in EnumScenarioStatus:
+        # Re-import the enum module to ensure consistent class reference
+        # This fixes pickle issues in pytest-xdist where module caching
+        # can cause enum identity mismatches across worker processes
+        enum_module = importlib.import_module(
+            "omnibase_core.enums.enum_scenario_status"
+        )
+        EnumClass = enum_module.EnumScenarioStatus
+
+        for member in EnumClass:
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
+            # Identity check - enum members should be singletons
             assert unpickled is member
 
     def test_enum_workflow_transitions(self):

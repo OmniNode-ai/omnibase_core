@@ -13,6 +13,8 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )
@@ -20,7 +22,6 @@ from omnibase_core.models.core.model_event_type import ModelEventType
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_node_reference import ModelNodeReference
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
-from omnibase_core.utils.util_singleton_holders import _CommandRegistryHolder
 
 
 class ModelCliCommandRegistry(BaseModel):
@@ -267,7 +268,11 @@ class ModelCliCommandRegistry(BaseModel):
 
 
 def get_global_command_registry() -> ModelCliCommandRegistry:
-    """Get the global command registry instance (now via DI container)."""
+    """Get the CLI command registry from DI container.
+
+    Raises:
+        ModelOnexError: If DI container is not initialized
+    """
     from omnibase_core.models.container.model_onex_container import (
         get_model_onex_container_sync,
     )
@@ -276,16 +281,12 @@ def get_global_command_registry() -> ModelCliCommandRegistry:
         container = get_model_onex_container_sync()
         registry: ModelCliCommandRegistry = container.command_registry()
         return registry
-    except (
-        Exception
-    ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
-        # Fallback to singleton holder
-        registry_result = _CommandRegistryHolder.get()
-        if registry_result is None:
-            registry_result = ModelCliCommandRegistry()
-            _CommandRegistryHolder.set(registry_result)
-        final_registry: ModelCliCommandRegistry = registry_result
-        return final_registry
+    except Exception as e:
+        raise ModelOnexError(
+            message="DI container not initialized - cannot get command registry. "
+            "Initialize the container first.",
+            error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+        ) from e
 
 
 def discover_commands_from_contracts(base_path: Path | None = None) -> int:
