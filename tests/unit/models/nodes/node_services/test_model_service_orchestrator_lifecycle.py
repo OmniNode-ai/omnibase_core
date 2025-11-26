@@ -53,8 +53,11 @@ def mock_event_bus():
 
 
 @pytest.fixture
-def service_orchestrator(mock_container, mock_event_bus):
-    """Create ModelServiceOrchestrator instance with mocked dependencies."""
+def service_orchestrator(mock_container, mock_event_bus, service_cleanup):
+    """Create ModelServiceOrchestrator instance with mocked dependencies.
+
+    Automatic cleanup is registered to prevent async task warnings.
+    """
     node_id = uuid4()
 
     # Mock metadata loader
@@ -93,6 +96,8 @@ def service_orchestrator(mock_container, mock_event_bus):
     # Shutdown handling
     object.__setattr__(service, "_shutdown_requested", False)
     object.__setattr__(service, "_shutdown_callbacks", [])
+    # Shutdown event for immediate task cancellation (can be None or actual Event)
+    object.__setattr__(service, "_shutdown_event", None)
 
     # Mock introspection methods
     object.__setattr__(service, "_publish_introspection_event", MagicMock())
@@ -107,6 +112,9 @@ def service_orchestrator(mock_container, mock_event_bus):
     object.__setattr__(
         service, "get_subnode_health", MagicMock(return_value={"status": "healthy"})
     )
+
+    # Register for automatic cleanup
+    service_cleanup.register(service)
 
     return service
 
@@ -273,15 +281,28 @@ class TestModelServiceOrchestratorStartup:
         with patch.object(
             service_orchestrator, "_service_event_loop", new_callable=AsyncMock
         ):
-            with patch("asyncio.create_task") as mock_create_task:
-                # Mock the health monitor loop
-                mock_task = AsyncMock()
-                mock_create_task.return_value = mock_task
+            # Track coroutines passed to create_task so we can close them
+            captured_coros = []
 
+            def mock_create_task_impl(coro):
+                """Mock create_task that captures and closes coroutines."""
+                captured_coros.append(coro)
+                mock_task = Mock()
+                mock_task.done = Mock(return_value=False)
+                mock_task.cancel = Mock()
+                return mock_task
+
+            with patch(
+                "asyncio.create_task", side_effect=mock_create_task_impl
+            ) as mock_create_task:
                 await service_orchestrator.start_service_mode()
 
                 # Verify health monitoring task was created
                 assert mock_create_task.called
+
+            # Close any captured coroutines to prevent RuntimeWarning
+            for coro in captured_coros:
+                coro.close()
 
     @pytest.mark.asyncio
     async def test_start_service_mode_registers_signal_handlers(
@@ -467,11 +488,12 @@ class TestModelServiceOrchestratorShutdown:
         mock_health_task.done.return_value = False
         mock_health_task.cancel = MagicMock()
 
-        # Make the task awaitable
-        async def mock_task_await():
-            pass
+        # Make the task awaitable using a generator-based approach
+        # This avoids creating an unawaited coroutine that triggers warnings
+        def mock_await_iter():
+            return iter([])
 
-        mock_health_task.__await__ = mock_task_await().__await__
+        mock_health_task.__await__ = mock_await_iter
 
         object.__setattr__(service_orchestrator, "_health_task", mock_health_task)
 

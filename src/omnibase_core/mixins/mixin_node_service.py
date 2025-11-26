@@ -69,6 +69,12 @@ class MixinNodeService:
     - Emit TOOL_RESPONSE events with results
     - Provide health monitoring and graceful shutdown
     - Support asyncio event loop for concurrent operations
+
+    Thread Safety:
+        All service instances must run within the same asyncio event loop.
+        The _shutdown_event (asyncio.Event) is only safe for coordination within
+        a single event loop. For multi-threaded scenarios with separate event
+        loops, use threading.Event instead.
     """
 
     # Type annotations for attributes set via object.__setattr__()
@@ -82,6 +88,7 @@ class MixinNodeService:
     _start_time: float | None
     _shutdown_requested: bool
     _shutdown_callbacks: list[Callable[[], None]]
+    _shutdown_event: asyncio.Event | None
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the service mixin."""
@@ -104,6 +111,8 @@ class MixinNodeService:
         # Shutdown handling
         object.__setattr__(self, "_shutdown_requested", False)
         object.__setattr__(self, "_shutdown_callbacks", [])
+        # Shutdown event for immediate task cancellation (created lazily in start_service_mode)
+        object.__setattr__(self, "_shutdown_event", None)
 
     async def start_service_mode(self) -> None:
         """
@@ -122,6 +131,11 @@ class MixinNodeService:
         try:
             self._service_running = True
             self._start_time = time.time()
+
+            # Create shutdown event for immediate task cancellation
+            # This allows health monitor and service loops to wake up immediately
+            # when shutdown is requested instead of waiting for sleep to complete
+            self._shutdown_event = asyncio.Event()
 
             # Publish introspection for service discovery
             self._publish_introspection_event()
@@ -161,6 +175,12 @@ class MixinNodeService:
         self._log_info("Stopping service mode...")
         self._shutdown_requested = True
 
+        # Signal shutdown event to wake up any sleeping tasks immediately
+        # This allows health monitor loop to respond to cancellation without
+        # waiting for the full sleep interval (30 seconds)
+        if self._shutdown_event is not None:
+            self._shutdown_event.set()
+
         try:
             # Emit shutdown event
             await self._emit_shutdown_event()
@@ -197,6 +217,10 @@ class MixinNodeService:
         especially the health monitor task. Can be called directly by tests
         or used as an async context manager exit.
         """
+        # Signal shutdown event to wake up any sleeping tasks immediately
+        if self._shutdown_event is not None:
+            self._shutdown_event.set()
+
         # Cancel health monitoring task if it exists
         await self._cleanup_health_task()
 
@@ -377,7 +401,17 @@ class MixinNodeService:
         try:
             while self._service_running and not self._shutdown_requested:
                 # Process any pending events (depending on event bus implementation)
-                await asyncio.sleep(0.1)  # Small delay to prevent busy waiting
+                # Use shutdown event for interruptible sleep to allow immediate shutdown
+                if self._shutdown_event is not None:
+                    try:
+                        await asyncio.wait_for(self._shutdown_event.wait(), timeout=0.1)
+                        # If we get here, shutdown was signaled
+                        break
+                    except TimeoutError:
+                        # Normal timeout - continue event loop
+                        pass
+                else:
+                    await asyncio.sleep(0.1)  # Small delay to prevent busy waiting
 
         except asyncio.CancelledError:
             # CRITICAL: Do not log here - file handles may be closed during teardown
@@ -400,8 +434,21 @@ class MixinNodeService:
                         f"Health: {health['active_invocations']} active, {health['success_rate']:.2%} success rate",
                     )
 
-                # Wait before next health check
-                await asyncio.sleep(30)
+                # Wait before next health check, but allow immediate wakeup on shutdown
+                # This prevents the "Task was destroyed but it is pending!" warning
+                # by responding immediately to shutdown signals instead of sleeping
+                if self._shutdown_event is not None:
+                    try:
+                        # Wait for shutdown event with timeout (health check interval)
+                        await asyncio.wait_for(self._shutdown_event.wait(), timeout=30)
+                        # If we get here, shutdown was signaled
+                        break
+                    except TimeoutError:
+                        # Normal timeout - continue health monitoring
+                        pass
+                else:
+                    # Fallback to simple sleep if no shutdown event (shouldn't happen)
+                    await asyncio.sleep(30)
 
             except asyncio.CancelledError:
                 # CRITICAL: Do not log here - file handles may be closed during teardown
@@ -651,6 +698,16 @@ class MixinNodeService:
                     f"Received signal {signum}, initiating graceful shutdown",
                 )
                 self._shutdown_requested = True
+                # Signal shutdown event to wake up any sleeping tasks immediately
+                # Use call_soon_threadsafe since signal handlers run in main thread
+                # but asyncio.Event.set() should be called from the event loop thread
+                if self._shutdown_event is not None:
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.call_soon_threadsafe(self._shutdown_event.set)
+                    except RuntimeError:
+                        # No running loop - set directly (may be during shutdown)
+                        self._shutdown_event.set()
 
             signal.signal(signal.SIGTERM, signal_handler)
             signal.signal(signal.SIGINT, signal_handler)

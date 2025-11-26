@@ -73,6 +73,9 @@ def service_effect(mock_container: MagicMock, mock_event_bus: AsyncMock) -> Magi
     service._active_invocations = set()
     service._shutdown_requested = False
     service._shutdown_callbacks = []
+    # Initialize shutdown event as None (like before start_service_mode is called)
+    # This allows stop_service_mode to work without errors
+    service._shutdown_event = None
 
     # Initialize performance tracking
     service._total_invocations = 0

@@ -11,6 +11,38 @@ Asyncio warnings are configured in pyproject.toml [tool.pytest.ini_options]:
 - "coroutine was never awaited" warnings are NOT suppressed (indicate real bugs)
 
 See pyproject.toml filterwarnings configuration for details.
+
+Global Patching Side Effects:
+-----------------------------
+WARNING: This conftest applies GLOBAL patches to asyncio exception handling.
+
+The `event_loop_cleanup` and `cleanup_service_tasks` fixtures temporarily set
+`loop.set_exception_handler(lambda loop, context: None)` during teardown. This
+affects ALL tests in the suite when these fixtures are active.
+
+What is patched:
+- The asyncio event loop's exception handler is set to a no-op lambda
+- This occurs during the teardown phase of each test
+- The original handler is restored after cleanup completes
+
+Side Effects:
+- All asyncio exceptions during test teardown are silently swallowed
+- "Task was destroyed but it is pending!" warnings are suppressed (intentional)
+- Any CancelledError or other exceptions raised during task cancellation are hidden
+- Tests cannot rely on the exception handler being called during teardown
+- If cleanup fails, no error messages will be logged
+
+Why This Exists:
+- Health monitor tasks and service loops may have long sleep intervals
+- Cancelling these tasks during teardown generates noisy but harmless warnings
+- These warnings obscure real test failures in CI output
+- The patching is scoped to teardown only, not during test execution
+
+Mitigation:
+- Tests that need to verify exception handler behavior should mock it explicitly
+- Use explicit task cancellation and await BEFORE test teardown if verification needed
+- Consider using `pytest.mark.filterwarnings` for test-specific exception handling
+- The `mock_event_loop` fixture provides isolated event loop testing without global effects
 """
 
 import asyncio

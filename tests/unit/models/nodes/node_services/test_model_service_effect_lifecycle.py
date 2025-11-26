@@ -94,6 +94,7 @@ def service_effect(request, mock_container, mock_event_bus, service_cleanup):
     object.__setattr__(service, "_start_time", None)
     object.__setattr__(service, "_shutdown_requested", False)
     object.__setattr__(service, "_shutdown_callbacks", [])
+    object.__setattr__(service, "_shutdown_event", None)
 
     # Event bus mixin attributes
     object.__setattr__(service, "event_bus", mock_event_bus)
@@ -244,15 +245,28 @@ class TestModelServiceEffectStartup:
         with patch.object(
             service_effect, "_service_event_loop", new_callable=AsyncMock
         ):
-            with patch("asyncio.create_task") as mock_create_task:
-                # Mock the health monitor loop
-                mock_task = AsyncMock()
-                mock_create_task.return_value = mock_task
+            # Track coroutines passed to create_task so we can close them
+            captured_coros = []
 
+            def mock_create_task_impl(coro):
+                """Mock create_task that captures and closes coroutines."""
+                captured_coros.append(coro)
+                mock_task = Mock()
+                mock_task.done = Mock(return_value=False)
+                mock_task.cancel = Mock()
+                return mock_task
+
+            with patch(
+                "asyncio.create_task", side_effect=mock_create_task_impl
+            ) as mock_create_task:
                 await service_effect.start_service_mode()
 
                 # Verify health monitoring task was created
                 assert mock_create_task.called
+
+            # Close any captured coroutines to prevent RuntimeWarning
+            for coro in captured_coros:
+                coro.close()
 
     @pytest.mark.asyncio
     async def test_start_service_mode_registers_signal_handlers(self, service_effect):

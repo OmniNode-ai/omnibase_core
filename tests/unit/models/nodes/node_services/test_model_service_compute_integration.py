@@ -103,8 +103,11 @@ class TestModelServiceComputeIntegration:
         """Create ModelServiceCompute instance for testing."""
         node_id = uuid4()
         service = ComputeNodeForIntegrationTest(mock_container, node_id, mock_event_bus)
-        # Mock the _update_specialized_metrics method
-        service._update_specialized_metrics = AsyncMock()
+        # Mock the metrics methods:
+        # - _update_specialized_metrics is sync (def), so use Mock()
+        # - _update_processing_metrics is async (async def), so use AsyncMock()
+        # Using wrong mock type causes either 'can't await' errors or unawaited coroutine warnings
+        service._update_specialized_metrics = Mock()
         service._update_processing_metrics = AsyncMock()
         return service
 
