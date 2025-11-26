@@ -84,6 +84,9 @@ def service_orchestrator(
     service._failed_invocations = 0
     service._start_time = None
 
+    # Initialize shutdown event for event-based shutdown (new in fix/health-monitor-loop-shutdown-signal)
+    service._shutdown_event = asyncio.Event()
+
     # Initialize orchestrator-specific attributes
     service.active_workflows = {}
     service.workflow_states = {}
@@ -157,7 +160,11 @@ def service_orchestrator(
 
     service.get_workflow_state_health = get_workflow_state_health
 
-    return service
+    yield service
+
+    # Cleanup: signal shutdown to wake any pending tasks
+    if service._shutdown_event is not None:
+        service._shutdown_event.set()
 
 
 @pytest.fixture
@@ -383,9 +390,15 @@ class TestHealthMonitoringLoop:
         Expected:
         - get_service_health called during monitoring
         - Loop continues while service running
+        - Loop exits when shutdown event is set
+
+        Note: The implementation uses asyncio.wait_for(shutdown_event.wait(), timeout=30)
+        for interruptible shutdown instead of asyncio.sleep(30).
         """
         service_orchestrator._service_running = True
         service_orchestrator._shutdown_requested = False
+        # Create a fresh shutdown event for this test
+        service_orchestrator._shutdown_event = asyncio.Event()
 
         # Mock get_service_health to track calls
         original_get_health = service_orchestrator.get_service_health
@@ -395,18 +408,30 @@ class TestHealthMonitoringLoop:
             nonlocal call_count
             call_count += 1
             if call_count >= 2:
-                # Stop after 2 calls to prevent infinite loop
-                service_orchestrator._shutdown_requested = True
+                # Stop after 2 calls by setting shutdown event
+                service_orchestrator._shutdown_event.set()
             return original_get_health()
 
         service_orchestrator.get_service_health = mock_get_health
 
-        # Run health monitor loop with mocked sleep
-        with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        # Patch asyncio.wait_for to immediately timeout (simulate health check interval)
+        # This allows the loop to iterate quickly for testing
+        original_wait_for = asyncio.wait_for
+
+        async def mock_wait_for(coro, timeout):
+            try:
+                # Check if shutdown event is set - if so, return immediately
+                if service_orchestrator._shutdown_event.is_set():
+                    return await coro
+                # Otherwise, use a very short timeout to keep test fast
+                return await original_wait_for(coro, timeout=0.01)
+            except TimeoutError:
+                raise
+
+        with patch("asyncio.wait_for", side_effect=mock_wait_for):
             await service_orchestrator._health_monitor_loop()
 
-        assert call_count >= 2
-        assert mock_sleep.called
+        assert call_count >= 2, f"Expected at least 2 health checks, got {call_count}"
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_logs_periodically(
@@ -426,6 +451,8 @@ class TestHealthMonitoringLoop:
         service_orchestrator._service_running = True
         service_orchestrator._shutdown_requested = False
         service_orchestrator._total_invocations = 100
+        # Create a fresh shutdown event for this test
+        service_orchestrator._shutdown_event = asyncio.Event()
 
         # Mock _log_info to track calls
         with patch.object(service_orchestrator, "_log_info") as mock_log_info:
@@ -433,13 +460,13 @@ class TestHealthMonitoringLoop:
             original_get_health = service_orchestrator.get_service_health
 
             def mock_get_health():
-                service_orchestrator._shutdown_requested = True
+                # Set the shutdown event to exit the loop immediately
+                service_orchestrator._shutdown_event.set()
                 return original_get_health()
 
             service_orchestrator.get_service_health = mock_get_health
 
-            with patch("asyncio.sleep", new_callable=AsyncMock):
-                await service_orchestrator._health_monitor_loop()
+            await service_orchestrator._health_monitor_loop()
 
         # Check that health was logged
         logged_health = any(
@@ -452,32 +479,42 @@ class TestHealthMonitoringLoop:
         self, service_orchestrator: ModelServiceOrchestrator
     ) -> None:
         """
-        Test sleep interval between health checks.
+        Test wait interval between health checks.
 
         Scenario:
         - Health monitoring loop running
-        - Sleep called between iterations
+        - Event-based wait with timeout between iterations
 
         Expected:
-        - Sleep called with 30 second interval
+        - asyncio.wait_for called with 30 second timeout
+
+        Note: The implementation uses asyncio.wait_for(shutdown_event.wait(), timeout=30)
+        for interruptible shutdown instead of asyncio.sleep(30).
         """
         service_orchestrator._service_running = True
         service_orchestrator._shutdown_requested = False
+        # Create a fresh shutdown event for this test
+        service_orchestrator._shutdown_event = asyncio.Event()
 
-        # Stop after first iteration
-        iteration_count = 0
+        # Track the timeout value used in wait_for
+        captured_timeout = None
 
-        async def mock_sleep(seconds: float) -> None:
-            nonlocal iteration_count
-            iteration_count += 1
-            if iteration_count >= 1:
-                service_orchestrator._shutdown_requested = True
+        async def mock_wait_for(coro, timeout):
+            nonlocal captured_timeout
+            captured_timeout = timeout
+            # Close the coroutine to prevent RuntimeWarning about unawaited coroutine
+            coro.close()
+            # Signal shutdown to exit loop after first iteration
+            service_orchestrator._shutdown_event.set()
+            # Return immediately as if shutdown was signaled
 
-        with patch("asyncio.sleep", side_effect=mock_sleep) as mock_sleep_call:
+        with patch("asyncio.wait_for", side_effect=mock_wait_for):
             await service_orchestrator._health_monitor_loop()
 
-        # Check that sleep was called with 30 seconds
-        mock_sleep_call.assert_called_with(30)
+        # Check that wait_for was called with 30 second timeout
+        assert (
+            captured_timeout == 30
+        ), f"Expected 30 second timeout, got {captured_timeout}"
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_handles_cancellation(
@@ -488,16 +525,27 @@ class TestHealthMonitoringLoop:
 
         Scenario:
         - Health monitoring loop running
-        - Task cancelled (CancelledError raised)
+        - Task cancelled (CancelledError raised during wait)
 
         Expected:
         - CancelledError re-raised immediately without logging
         - No I/O operations during cancellation (prevents closed file errors)
+
+        Note: The implementation uses asyncio.wait_for(shutdown_event.wait(), timeout=30)
+        which can still raise CancelledError when the task is cancelled externally.
         """
         service_orchestrator._service_running = True
+        service_orchestrator._shutdown_requested = False
+        # Create a fresh shutdown event for this test
+        service_orchestrator._shutdown_event = asyncio.Event()
 
-        # Mock sleep to raise CancelledError
-        with patch("asyncio.sleep", side_effect=asyncio.CancelledError):
+        # Mock wait_for to raise CancelledError (simulates external task cancellation)
+        async def mock_wait_for_cancelled(coro, timeout):
+            # Close the coroutine to prevent RuntimeWarning about unawaited coroutine
+            coro.close()
+            raise asyncio.CancelledError
+
+        with patch("asyncio.wait_for", side_effect=mock_wait_for_cancelled):
             with patch.object(service_orchestrator, "_log_info") as mock_log_info:
                 with pytest.raises(asyncio.CancelledError):
                     await service_orchestrator._health_monitor_loop()
@@ -525,21 +573,23 @@ class TestHealthMonitoringLoop:
 
         Expected:
         - Exception caught and logged
+        - Loop exits after exception (break statement)
         - No exception propagated
         """
         service_orchestrator._service_running = True
         service_orchestrator._shutdown_requested = False
+        # Create a fresh shutdown event for this test
+        service_orchestrator._shutdown_event = asyncio.Event()
 
         # Mock get_service_health to raise exception
         def mock_get_health():
-            service_orchestrator._shutdown_requested = True
             raise RuntimeError("Health check failed")
 
         service_orchestrator.get_service_health = mock_get_health
 
         with patch.object(service_orchestrator, "_log_error") as mock_log_error:
-            with patch("asyncio.sleep", new_callable=AsyncMock):
-                await service_orchestrator._health_monitor_loop()
+            # Loop should exit after exception is caught and logged
+            await service_orchestrator._health_monitor_loop()
 
         # Check that error was logged
         assert mock_log_error.called
@@ -558,20 +608,23 @@ class TestHealthMonitoringLoop:
 
         Scenario:
         - Health monitoring loop running
-        - Shutdown requested
+        - Shutdown requested (flag already True)
 
         Expected:
-        - Loop terminates gracefully
+        - Loop terminates immediately without entering
+        - No wait_for or sleep called
         """
         service_orchestrator._service_running = True
         service_orchestrator._shutdown_requested = True
+        # Create a fresh shutdown event for this test
+        service_orchestrator._shutdown_event = asyncio.Event()
 
-        # Health monitor should exit immediately
-        with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        # Health monitor should exit immediately without entering the loop
+        with patch("asyncio.wait_for", new_callable=AsyncMock) as mock_wait_for:
             await service_orchestrator._health_monitor_loop()
 
-        # Should not sleep if shutdown already requested
-        assert not mock_sleep.called
+        # Should not wait if shutdown already requested (loop doesn't enter)
+        assert not mock_wait_for.called
 
 
 # ============================================================================
