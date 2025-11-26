@@ -698,6 +698,10 @@ class MixinNodeService:
                     f"Received signal {signum}, initiating graceful shutdown",
                 )
                 self._shutdown_requested = True
+                # Signal shutdown event to wake up any sleeping tasks immediately
+                # This provides symmetry with explicit shutdown (stop_service_mode/aclose)
+                if self._shutdown_event is not None:
+                    self._shutdown_event.set()
 
             signal.signal(signal.SIGTERM, signal_handler)
             signal.signal(signal.SIGINT, signal_handler)
