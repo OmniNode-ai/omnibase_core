@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -41,6 +41,8 @@ class ModelServiceMetadata(BaseModel):
         )
         ```
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     service_id: UUID = Field(description="Unique service identifier")
     service_name: str = Field(description="Human-readable service name")
