@@ -558,9 +558,13 @@ poetry run pytest tests/ \
 
 ### Custom Monitoring Scripts
 
-**Create `scripts/monitor_ci.sh`**:
-```
+**Example script (create locally if needed)**:
+
+The following is an example monitoring script you can create locally. It is not included in the repository as it depends on local `gh` CLI configuration.
+
+```bash
 #!/bin/bash
+# Example: scripts/monitor_ci.sh (create locally if needed)
 # Monitor CI performance across recent runs
 
 RUNS=10

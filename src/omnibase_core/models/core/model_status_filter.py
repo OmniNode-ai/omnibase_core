@@ -1,5 +1,3 @@
-from typing import Any
-
 """Status-based custom filter model."""
 
 from pydantic import Field

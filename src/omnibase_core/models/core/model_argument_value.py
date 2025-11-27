@@ -5,8 +5,6 @@ Type-safe argument value wrapper replacing Any usage
 with structured argument value handling.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 # Define allowed argument value types

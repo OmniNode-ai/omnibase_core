@@ -1,5 +1,3 @@
-from typing import Any, Optional
-
 from pydantic import Field
 
 from omnibase_core.enums.enum_tool_capability_level import EnumToolCapabilityLevel
@@ -18,7 +16,6 @@ __all__ = [
 
 "\nTool metadata model.\n"
 from datetime import datetime
-from enum import Enum
 
 from pydantic import BaseModel
 

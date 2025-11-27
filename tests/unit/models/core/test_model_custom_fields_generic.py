@@ -12,7 +12,6 @@ import pytest
 from omnibase_core.models.core.model_custom_fields_accessor import (
     ModelCustomFieldsAccessor,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelCustomFieldsAccessorGeneric:

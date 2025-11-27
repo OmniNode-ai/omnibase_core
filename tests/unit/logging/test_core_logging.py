@@ -13,7 +13,7 @@ Tests cover:
 
 import asyncio
 import threading
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from uuid import UUID, uuid4
 
 import pytest

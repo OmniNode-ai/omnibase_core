@@ -7,8 +7,7 @@ connection management, and operational insights for ONEX registry services.
 
 import re
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator

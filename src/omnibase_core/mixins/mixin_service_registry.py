@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from typing import Optional
 from uuid import UUID
 
 """
@@ -13,7 +12,6 @@ and their capabilities.
 import logging
 import time
 import traceback
-from collections.abc import Callable as CallableABC
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 

@@ -56,7 +56,7 @@ class ModelSecurityContext(BaseModel):
         """Create from dictionary for easy migration."""
         if data is None:
             return None
-        from typing import Optional, cast
+        from typing import cast
 
         return cls.model_validate(cast(dict[str, Any], data))
 

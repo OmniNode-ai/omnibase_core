@@ -6,7 +6,6 @@ Additional Fields Model for ONEX Configuration System.
 Strongly typed model for additional metadata fields.
 """
 
-from typing import Optional
 
 from pydantic import BaseModel
 

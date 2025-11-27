@@ -2,7 +2,6 @@
 
 import pytest
 
-from omnibase_core.enums.enum_numeric_type import EnumNumericType
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.metadata.model_field_validation_rules import (
     ModelFieldValidationRules,

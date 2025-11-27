@@ -11,9 +11,6 @@ Tests cover:
 - Redaction value customization
 """
 
-from typing import Any
-
-import pytest
 from pydantic import BaseModel
 
 from omnibase_core.mixins.mixin_redaction import MixinSensitiveFieldRedaction

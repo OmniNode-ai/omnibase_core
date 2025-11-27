@@ -4,8 +4,6 @@ Tests for infrastructure_bases module.
 Validates that infrastructure base imports are accessible and properly exposed.
 """
 
-import pytest
-
 
 def test_can_import_infrastructure_bases():
     """Test that infrastructure_bases module imports successfully."""

@@ -1,8 +1,6 @@
 """Tests for model_policy_value.py - SECURITY-CRITICAL"""
 
 import json
-import math
-from typing import Any
 
 import pytest
 

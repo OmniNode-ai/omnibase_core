@@ -1,4 +1,4 @@
-from typing import Any, Generic
+from typing import Any
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -15,7 +15,7 @@ Author: ONEX Framework Team
 """
 
 import hashlib
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml

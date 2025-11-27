@@ -24,7 +24,6 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.contracts import (
     MAX_FILE_SIZE,
-    VALIDATION_TIMEOUT,
     load_and_validate_yaml_model,
     timeout_handler,
     validate_contracts_cli,
@@ -32,9 +31,6 @@ from omnibase_core.validation.contracts import (
     validate_no_manual_yaml,
     validate_yaml_file,
 )
-
-if TYPE_CHECKING:
-    from _pytest.capture import CaptureFixture
 
 
 class TestLoadAndValidateYamlModel:
@@ -453,7 +449,6 @@ operations: []
         yaml_file.write_text("test content")
 
         # Make file unreadable (Unix only)
-        import os
         import platform
 
         if platform.system() != "Windows":
@@ -842,7 +837,7 @@ class TestValidateYamlFileErrors:
 
     def test_validate_yaml_file_stat_error(self, tmp_path: Path) -> None:
         """Test handling of stat errors."""
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import patch
 
         yaml_file = tmp_path / "test.yaml"
         yaml_file.write_text("version: '1.0'\ncontract_id: test\noperations: []")
@@ -902,7 +897,7 @@ operations: []
 
     def test_validate_yaml_file_read_exception(self, tmp_path: Path) -> None:
         """Test handling of file read exceptions."""
-        from unittest.mock import Mock, patch
+        from unittest.mock import patch
 
         yaml_file = tmp_path / "test.yaml"
         yaml_file.write_text("version: '1.0'\ncontract_id: test\noperations: []")

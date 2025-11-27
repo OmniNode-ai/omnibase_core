@@ -4,7 +4,6 @@ Tests for LoadBalancer class.
 Validates load balancing functionality for workflow operation distribution.
 """
 
-import asyncio
 import uuid
 
 import pytest

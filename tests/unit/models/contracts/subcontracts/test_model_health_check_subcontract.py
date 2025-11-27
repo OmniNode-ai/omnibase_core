@@ -5,7 +5,7 @@ Tests health check subcontract including component health, node health,
 dependency health, and health check configuration validation.
 """
 
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest

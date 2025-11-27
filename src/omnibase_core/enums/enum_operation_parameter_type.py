@@ -1,5 +1,3 @@
-from typing import Any
-
 """
 Operation parameter type enumeration.
 

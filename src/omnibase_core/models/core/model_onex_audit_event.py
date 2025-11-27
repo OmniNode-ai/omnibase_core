@@ -9,8 +9,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_onex_audit_event_config import ModelConfig
-
 
 class ModelOnexAuditEvent(BaseModel):
     """Audit event information."""

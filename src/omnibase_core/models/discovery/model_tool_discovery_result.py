@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field
 
 """Tool discovery result model with validation details."""

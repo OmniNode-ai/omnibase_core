@@ -1,8 +1,6 @@
 """Tests for UUID utilities."""
 
-from uuid import UUID, uuid4
-
-import pytest
+from uuid import UUID
 
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 

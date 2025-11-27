@@ -1,8 +1,5 @@
-import uuid
-from collections.abc import Callable
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, TypeVar, cast
 
-from pydantic import BaseModel
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -20,16 +17,12 @@ import asyncio
 import os
 import tempfile
 import time
-from collections.abc import Callable as CallableABC
 from datetime import datetime
 from pathlib import Path
 
 # Import needed for type annotations
-from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from dependency_injector import containers, providers
-from omnibase_spi import ProtocolLogger
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -60,12 +53,8 @@ except ImportError:
     # container can function without monitoring capabilities
     PerformanceMonitor = None
 
-# TODO: These imports require omnibase-spi protocols that may not be available yet
-# from omnibase_core.protocols.protocol_database_connection import ProtocolDatabaseConnection
-# from omnibase_core.protocols.protocol_service_discovery import ProtocolServiceDiscovery
-# from omnibase_core.services.protocol_service_resolver import get_service_resolver
-
-# Type aliases for unavailable protocols (until omnibase-spi is fully integrated)
+# Type aliases for protocols not yet implemented in omnibase_core
+# Future: import from omnibase_core.protocols once implemented
 ProtocolDatabaseConnection = Any
 ProtocolServiceDiscovery = Any
 
@@ -309,7 +298,7 @@ class ModelONEXContainer:
             start_time = datetime.now()
 
             # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
-            # Note: ProtocolServiceResolver added in omnibase_spi v0.1.2
+            # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
             # Use protocol service resolver for external dependencies
             if protocol_name in [
                 "ProtocolServiceDiscovery",
@@ -537,7 +526,7 @@ class ModelONEXContainer:
     async def get_external_services_health(self) -> dict[str, object]:
         """Get health status for all external services."""
         # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
-        # Note: ProtocolServiceResolver added in omnibase_spi v0.1.2
+        # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
         # service_resolver = get_service_resolver()
         # return await service_resolver.get_all_service_health()
         return {
@@ -548,7 +537,7 @@ class ModelONEXContainer:
     async def refresh_external_services(self) -> None:
         """Force refresh all external service connections."""
         # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
-        # Note: ProtocolServiceResolver added in omnibase_spi v0.1.2
+        # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
         # service_resolver = get_service_resolver()
 
         # Refresh service discovery if cached

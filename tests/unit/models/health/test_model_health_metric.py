@@ -1,7 +1,5 @@
 """Tests for ModelHealthMetric."""
 
-from datetime import UTC, datetime
-
 import pytest
 
 from omnibase_core.models.health.model_health_metric import ModelHealthMetric

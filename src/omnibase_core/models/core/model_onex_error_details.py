@@ -4,12 +4,9 @@ ONEX Error Details Model.
 Detailed error information for ONEX replies with context and resolution suggestions.
 """
 
-from typing import TYPE_CHECKING, Any
-from uuid import UUID
+from typing import Any
 
 from pydantic import BaseModel, Field
-
-from omnibase_core.errors.model_onex_error_details_config import ModelConfig
 
 
 class ModelOnexErrorDetails(BaseModel):

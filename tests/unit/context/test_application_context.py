@@ -9,8 +9,7 @@ from __future__ import annotations
 import asyncio
 import contextvars
 import threading
-from concurrent.futures import ThreadPoolExecutor
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 

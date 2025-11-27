@@ -4,8 +4,6 @@ State Transition Condition Model.
 Condition that must be met for a transition to apply.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 

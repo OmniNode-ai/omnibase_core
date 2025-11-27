@@ -2,8 +2,6 @@
 Test suite for TypedDictValidationMetadataType.
 """
 
-import pytest
-
 from omnibase_core.types.typed_dict_validation_metadata_type import (
     TypedDictValidationMetadataType,
 )

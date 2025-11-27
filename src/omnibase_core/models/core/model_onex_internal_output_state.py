@@ -1,5 +1,3 @@
-import uuid
-
 from pydantic import Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -13,7 +11,6 @@ logic throughout the internal processing pipeline.
 """
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel

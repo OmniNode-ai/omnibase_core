@@ -12,7 +12,6 @@ EnumLifecycle management configuration for node initialization and cleanup provi
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

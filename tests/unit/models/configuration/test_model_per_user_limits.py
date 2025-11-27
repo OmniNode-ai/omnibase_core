@@ -2,8 +2,6 @@
 
 from uuid import uuid4
 
-import pytest
-
 from omnibase_core.models.configuration.model_per_user_limits import ModelPerUserLimits
 
 

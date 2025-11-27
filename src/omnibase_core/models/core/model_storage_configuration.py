@@ -8,8 +8,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from .model_storage_configuration_config import ModelConfig
-
 
 class ModelStorageConfiguration(BaseModel):
     """

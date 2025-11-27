@@ -4,8 +4,6 @@ Discovery Timeout Error Model
 Exception raised when discovery requests timeout with partial results support.
 """
 
-from typing import Any
-
 from omnibase_core.models.discovery.model_tool_discovery_response import (
     ModelDiscoveredTool,
 )

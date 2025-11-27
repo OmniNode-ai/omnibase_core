@@ -12,7 +12,6 @@ for agent-generated tools.
 """
 
 import functools
-from collections.abc import Callable as CallableABC
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 

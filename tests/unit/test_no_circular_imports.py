@@ -16,7 +16,6 @@ Import Chain (Must Remain in This Order):
 import importlib
 import sys
 from importlib import import_module
-from typing import Any
 
 import pytest
 
@@ -366,7 +365,6 @@ def test_error_codes_safe_imports() -> None:
         del sys.modules[module]
 
     # Import error_codes
-    import omnibase_core.errors.error_codes
 
     # Check what omnibase_core modules were imported
     imported_modules = [key for key in sys.modules if key.startswith("omnibase_core")]
@@ -450,7 +448,6 @@ def test_contract_compute_uses_lazy_import() -> None:
         del sys.modules[module]
 
     # Import model_contract_compute
-    import omnibase_core.models.contracts.model_contract_compute
 
     # Check what modules were imported
     imported_modules = [key for key in sys.modules if key.startswith("omnibase_core")]

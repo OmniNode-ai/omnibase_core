@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.discovery.model_node_introspection_event import (

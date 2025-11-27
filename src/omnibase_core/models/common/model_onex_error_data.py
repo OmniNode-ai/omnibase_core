@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-import json
-import uuid
 from datetime import datetime
-from typing import Optional
 
 from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 Internal Pydantic model for ONEX error serialization and validation.

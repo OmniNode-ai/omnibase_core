@@ -5,8 +5,6 @@ Test suite for TypedDictSecurityContext.
 from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
-import pytest
-
 from omnibase_core.types.typed_dict_security_context import TypedDictSecurityContext
 
 

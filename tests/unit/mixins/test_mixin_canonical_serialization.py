@@ -4,12 +4,7 @@ Test suite for MixinCanonicalYAMLSerializer.
 Tests canonical YAML serialization, normalization, and hash computation.
 """
 
-from unittest.mock import Mock, patch
-
-import pytest
-
 from omnibase_core.enums import EnumNodeMetadataField
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.mixins.mixin_canonical_serialization import (
     MixinCanonicalYAMLSerializer,
     _strip_comment_prefix,
@@ -17,9 +12,6 @@ from omnibase_core.mixins.mixin_canonical_serialization import (
     normalize_body,
     strip_block_delimiters_and_assert,
 )
-from omnibase_core.models.core.model_entrypoint import EntrypointBlock
-from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestMixinCanonicalYAMLSerializer:

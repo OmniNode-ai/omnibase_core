@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import uuid
-
 from pydantic import Field
 
 """
@@ -12,7 +10,6 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
 
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel

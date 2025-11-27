@@ -10,8 +10,6 @@ from typing import Generic
 
 from pydantic import BaseModel, Field
 
-from .model_usage_example_config import ModelConfig
-
 # Type variables for input and output types
 InputT = TypeVar("InputT")
 OutputT = TypeVar("OutputT")

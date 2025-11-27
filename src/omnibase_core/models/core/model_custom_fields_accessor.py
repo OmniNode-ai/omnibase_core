@@ -4,8 +4,6 @@ from typing import Generic, TypeVar
 
 from pydantic import model_validator
 
-from omnibase_core.models.service.model_custom_fields import ModelCustomFields
-
 """
 Generic custom fields accessor with comprehensive field management.
 

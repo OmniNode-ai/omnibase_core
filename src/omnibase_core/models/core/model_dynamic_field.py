@@ -1,5 +1,3 @@
-from typing import Any
-
 """Dynamic field model for flexible data without using Any type."""
 
 from pydantic import BaseModel, Field

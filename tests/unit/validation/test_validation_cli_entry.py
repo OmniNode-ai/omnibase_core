@@ -5,8 +5,6 @@ Tests that the validation module can be run as a script
 and properly invokes the CLI.
 """
 
-import subprocess
-import sys
 from pathlib import Path
 from unittest.mock import patch
 

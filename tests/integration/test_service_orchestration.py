@@ -6,7 +6,7 @@ Tests real-world scenarios with actual service instances, no mocking.
 Validates service health monitoring, lifecycle management, and multi-service coordination.
 """
 
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
@@ -15,7 +15,6 @@ from omnibase_core.enums.enum_service_health_status import EnumServiceHealthStat
 from omnibase_core.enums.enum_service_type import EnumServiceType
 from omnibase_core.errors import EnumCoreErrorCode, OnexError
 from omnibase_core.models.container.model_service import ModelService
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.service.model_service_health import ModelServiceHealth
 
 

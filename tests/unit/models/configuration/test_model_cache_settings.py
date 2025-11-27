@@ -4,8 +4,6 @@ Tests for ModelCacheSettings.
 Comprehensive tests for cache configuration and settings.
 """
 
-import pytest
-
 from omnibase_core.models.configuration.model_cache_settings import ModelCacheSettings
 
 

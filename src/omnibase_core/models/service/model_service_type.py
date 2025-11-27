@@ -1,4 +1,4 @@
-from typing import Any, Generic
+from typing import Any
 
 from pydantic import Field, field_validator
 
@@ -16,7 +16,6 @@ Extracted from model_service_configuration.py for modular architecture complianc
 Author: OmniNode Team
 """
 
-from enum import Enum
 
 from pydantic import BaseModel
 

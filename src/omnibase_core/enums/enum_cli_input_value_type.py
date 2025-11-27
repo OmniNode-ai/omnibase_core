@@ -1,5 +1,3 @@
-import uuid
-
 """
 CLI input data value type enumeration.
 

@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field
 
 from omnibase_core.enums.enum_tree_sync_status import EnumTreeSyncStatus
@@ -32,7 +30,6 @@ from omnibase_core.enums.enum_tree_sync_status import EnumTreeSyncStatus
 Model for .tree and filesystem sync validation results.
 """
 
-from enum import Enum
 from pathlib import Path
 
 from pydantic import BaseModel

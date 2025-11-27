@@ -68,7 +68,6 @@ class TestRetryCountTracking:
     @pytest.mark.asyncio
     async def test_retry_count_tracks_actual_retries(self, service_effect):
         """Test that retry_count correctly tracks the number of retries performed."""
-        import asyncio
 
         # Track call count
         call_count = 0

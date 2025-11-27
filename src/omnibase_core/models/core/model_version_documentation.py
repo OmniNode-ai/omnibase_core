@@ -4,8 +4,6 @@ Version Documentation Model - Tier 3 Metadata.
 Pydantic model for version documentation information.
 """
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_version_file import ModelVersionFile

@@ -26,7 +26,7 @@ This document provides a comprehensive index of all documentation related to tes
 
 ### 1. Primary Testing Guide
 
-**File**: `docs/guides/node-building/09-testing-intent-publisher.md`
+**File**: `docs/guides/node-building/09_TESTING_INTENT_PUBLISHER.md`
 
 **Content**:
 - Comprehensive testing patterns for MixinIntentPublisher

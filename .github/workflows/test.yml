@@ -231,7 +231,7 @@ jobs:
 
       - name: Validate documentation links
         run: |
-          python3 scripts/validate-doc-links.py --fix-case
+          python3 scripts/validation/validate-doc-links.py --fix-case
 
       - name: Documentation validation summary
         if: always()

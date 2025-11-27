@@ -2,8 +2,6 @@
 
 import ast
 
-import pytest
-
 from omnibase_core.validation.patterns import (
     GenericPatternChecker,
     NamingConventionChecker,

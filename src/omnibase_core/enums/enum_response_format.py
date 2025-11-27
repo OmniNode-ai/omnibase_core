@@ -1,5 +1,3 @@
-import json
-
 """
 Response format enum for LLM tools.
 

@@ -19,10 +19,7 @@ from uuid import UUID
 from pydantic import BaseModel, ValidationInfo, computed_field
 
 from omnibase_core.models.core.model_performance_summary import ModelPerformanceSummary
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    parse_semver_from_string,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_tool_metadata import (
     EnumToolCapabilityLevel,

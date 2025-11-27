@@ -1,6 +1,5 @@
-import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -54,9 +53,6 @@ from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
-
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem

@@ -1,5 +1,4 @@
-import uuid
-from typing import Any, Optional
+from typing import Any
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

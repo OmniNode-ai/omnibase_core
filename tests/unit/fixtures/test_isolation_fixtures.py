@@ -1,7 +1,5 @@
 """Tests for isolation fixtures."""
 
-import pytest
-
 from omnibase_core.context.application_context import (
     _current_container,
     get_current_container,

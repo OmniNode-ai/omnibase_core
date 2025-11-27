@@ -229,11 +229,13 @@ sed -i '' 's/ModelCachingSubcontract()/ModelCachingSubcontract(version=ModelSemV
 
 ### Step 4: Batch Automation Script
 
+**Note**: The scripts referenced below (`scripts/fix_version_field_pattern1.sh` and `scripts/fix_version_field_pattern2.py`) were one-time migration scripts that have been removed after the migration was completed successfully. The code examples below are preserved for historical reference only.
+
 To run all safe sed replacements at once:
 
 ```bash
 #!/bin/bash
-# scripts/fix_version_field_pattern1.sh
+# scripts/fix_version_field_pattern1.sh (REMOVED - one-time migration script)
 # Automates Pattern 1 (empty instantiation) fixes
 
 set -e
@@ -324,7 +326,9 @@ The Python AST script handles:
 - Nested calls
 - Complex expressions
 
-### Script: `scripts/fix_version_field_pattern2.py`
+### Script: `scripts/fix_version_field_pattern2.py` (REMOVED)
+
+**Note**: This script was a one-time migration tool and has been removed after the migration was completed. The code is preserved below for historical reference only.
 
 ```python
 #!/usr/bin/env python3
@@ -556,17 +560,19 @@ if __name__ == "__main__":
     main()
 ```
 
-### Usage
+### Usage (Historical Reference)
+
+**Note**: These commands reference the now-removed migration script. They are preserved for historical reference only.
 
 ```bash
-# Dry run (preview changes)
-poetry run python scripts/fix_version_field_pattern2.py --dry-run -v
+# Dry run (preview changes) - SCRIPT REMOVED
+# poetry run python scripts/fix_version_field_pattern2.py --dry-run -v
 
-# Apply changes
-poetry run python scripts/fix_version_field_pattern2.py
+# Apply changes - SCRIPT REMOVED
+# poetry run python scripts/fix_version_field_pattern2.py
 
-# Verbose output
-poetry run python scripts/fix_version_field_pattern2.py -v
+# Verbose output - SCRIPT REMOVED
+# poetry run python scripts/fix_version_field_pattern2.py -v
 ```
 
 ### Important Notes
@@ -652,27 +658,31 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 done
 ```
 
-### Step 2: Run Pattern 1 Automation (30 minutes)
+### Step 2: Run Pattern 1 Automation (30 minutes) - COMPLETED
+
+**Note**: The migration scripts have been removed after successful completion. The commands below are for historical reference only.
 
 ```bash
-# Test first
-bash scripts/fix_version_field_pattern1.sh --dry-run
+# Test first - SCRIPT REMOVED
+# bash scripts/fix_version_field_pattern1.sh --dry-run
 
-# Apply
-bash scripts/fix_version_field_pattern1.sh
+# Apply - SCRIPT REMOVED
+# bash scripts/fix_version_field_pattern1.sh
 
 # Verify tests pass
 poetry run pytest tests/unit/models/contracts/subcontracts/ -x --tb=short
 ```
 
-### Step 3: Run Pattern 2 Automation (30 minutes)
+### Step 3: Run Pattern 2 Automation (30 minutes) - COMPLETED
+
+**Note**: The migration scripts have been removed after successful completion. The commands below are for historical reference only.
 
 ```bash
-# Dry run
-poetry run python scripts/fix_version_field_pattern2.py --dry-run -v | head -100
+# Dry run - SCRIPT REMOVED
+# poetry run python scripts/fix_version_field_pattern2.py --dry-run -v | head -100
 
-# Apply
-poetry run python scripts/fix_version_field_pattern2.py
+# Apply - SCRIPT REMOVED
+# poetry run python scripts/fix_version_field_pattern2.py
 
 # Verify tests pass
 poetry run pytest tests/unit/models/contracts/subcontracts/ -x --tb=short

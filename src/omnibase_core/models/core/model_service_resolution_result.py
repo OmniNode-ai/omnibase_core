@@ -7,7 +7,6 @@ Pydantic model for service resolution operation results.
 from pydantic import BaseModel, Field
 
 from .model_service import ModelService
-from .model_service_resolution_result_config import ModelConfig
 
 
 class ModelServiceResolutionResult(BaseModel):

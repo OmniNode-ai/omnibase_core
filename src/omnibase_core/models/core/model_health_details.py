@@ -7,7 +7,6 @@ Structured model for health check details, replacing Dict[str, Any]
 with proper typing for health details.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

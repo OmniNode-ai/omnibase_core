@@ -1,8 +1,6 @@
 """Test ModelNestedConfiguration."""
 
-from uuid import UUID, uuid4
-
-import pytest
+from uuid import uuid4
 
 from omnibase_core.enums.enum_config_type import EnumConfigType
 from omnibase_core.models.infrastructure.model_value import ModelValue

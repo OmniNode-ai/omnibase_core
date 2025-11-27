@@ -3,7 +3,6 @@ from __future__ import annotations
 from pydantic import Field, field_validator
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 
 """
 CLI advanced parameters model.

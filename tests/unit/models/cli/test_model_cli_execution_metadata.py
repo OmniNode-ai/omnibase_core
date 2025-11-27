@@ -5,8 +5,6 @@ Validates CLI execution metadata model functionality including
 tag management, custom context handling, and factory methods.
 """
 
-import pytest
-
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.models.cli.model_cli_execution_context import (

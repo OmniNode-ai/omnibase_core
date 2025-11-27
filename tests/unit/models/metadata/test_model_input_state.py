@@ -1,7 +1,5 @@
 """Test model_input_state module."""
 
-import pytest
-
 
 class TestModelInputStateModule:
     """Test the model_input_state module."""

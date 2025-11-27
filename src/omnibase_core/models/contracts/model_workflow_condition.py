@@ -1,6 +1,5 @@
 from pydantic import Field, ValidationInfo, field_validator
 
-from omnibase_core.models.core.model_workflow import ModelWorkflow
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
@@ -12,7 +11,7 @@ string-based condition support and enforces structured condition evaluation.
 ZERO TOLERANCE: No string conditions or Any types allowed.
 """
 
-from typing import Any, cast
+from typing import cast
 
 from pydantic import BaseModel, ConfigDict
 

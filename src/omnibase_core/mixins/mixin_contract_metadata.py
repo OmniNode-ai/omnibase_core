@@ -1,4 +1,4 @@
-from typing import Any, Generic
+from typing import Any
 
 """
 Contract Metadata Mixin for ONEX Tool Nodes.

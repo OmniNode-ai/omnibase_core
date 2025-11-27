@@ -4,8 +4,6 @@ Tests for MixinCaching - Result caching mixin.
 Coverage target: 60%+ (stub implementation with straightforward testing)
 """
 
-import json
-
 import pytest
 
 from omnibase_core.mixins.mixin_caching import MixinCaching

@@ -1,4 +1,4 @@
-from typing import Any, Generic
+from typing import Any
 
 from pydantic import Field, field_validator
 
@@ -18,7 +18,6 @@ Provides scalable health check patterns instead of weak string typing.
 Author: OmniNode Team
 """
 
-from enum import Enum
 
 from pydantic import BaseModel, HttpUrl
 

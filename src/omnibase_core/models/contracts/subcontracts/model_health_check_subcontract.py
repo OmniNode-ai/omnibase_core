@@ -22,21 +22,6 @@ from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.models.contracts.subcontracts.model_component_health import (
-    ModelComponentHealth,
-)
-from omnibase_core.models.contracts.subcontracts.model_component_health_collection import (
-    ModelComponentHealthCollection,
-)
-from omnibase_core.models.contracts.subcontracts.model_dependency_health import (
-    ModelDependencyHealth,
-)
-from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract_result import (
-    ModelHealthCheckSubcontractResult,
-)
-from omnibase_core.models.contracts.subcontracts.model_node_health_status import (
-    ModelNodeHealthStatus,
-)
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 

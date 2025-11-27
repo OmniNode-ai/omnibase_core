@@ -17,9 +17,6 @@ from omnibase_core.models.primitives.model_semver import (
 from omnibase_core.models.security.model_certificate_validation_level import (
     ModelCertificateValidationLevel,
 )
-from omnibase_core.models.security.model_encryption_requirement import (
-    ModelEncryptionRequirement,
-)
 from omnibase_core.models.security.model_policy_rule import ModelPolicyRule
 from omnibase_core.models.security.model_policy_severity import ModelPolicySeverity
 from omnibase_core.models.security.model_policy_validation_result import (

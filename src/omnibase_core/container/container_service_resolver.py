@@ -1,4 +1,3 @@
-import uuid
 from collections.abc import Callable
 from typing import TypeVar
 from uuid import UUID
@@ -14,8 +13,6 @@ Handles the get_service method functionality that gets lost during
 dependency-injector DynamicContainer transformation.
 """
 
-from collections.abc import Callable as CallableABC
-from typing import Any
 from uuid import NAMESPACE_DNS, uuid5
 
 # DELETED: not needed import create_hybrid_event_bus

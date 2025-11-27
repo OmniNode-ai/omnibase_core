@@ -1,5 +1,3 @@
-from typing import Any
-
 """
 ONEX-compliant device type enumeration.
 

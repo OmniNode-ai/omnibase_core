@@ -1,4 +1,3 @@
-import json
 from uuid import UUID, uuid4
 
 from pydantic import Field

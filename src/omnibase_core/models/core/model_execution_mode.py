@@ -7,7 +7,6 @@ Replaces EnumExecutionMode with a proper model that includes all properties
 as fields instead of methods.
 """
 
-from typing import Optional
 
 from pydantic import BaseModel
 

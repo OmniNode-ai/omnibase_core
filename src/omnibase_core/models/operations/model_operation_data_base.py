@@ -7,8 +7,6 @@ Base operation data with discriminator.
 """
 
 
-from typing import Any
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_node_type import EnumNodeType

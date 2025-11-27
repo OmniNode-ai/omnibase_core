@@ -17,8 +17,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts" / "valida
 
 from check_error_raising import ErrorRaisingDetector, check_file
 
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 
 class TestErrorRaisingDetector:
     """Test suite for ErrorRaisingDetector."""
@@ -441,7 +439,6 @@ def process():
     def test_skips_test_files(self):
         """Test that test files in tests/ directory are skipped."""
         # Create a temp directory that includes "tests/" in the path
-        import os
 
         temp_dir = tempfile.mkdtemp()
         tests_dir = Path(temp_dir) / "tests"

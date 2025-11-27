@@ -7,7 +7,6 @@ metrics tracking, and callback invocation in realistic scenarios.
 
 import asyncio
 from pathlib import Path
-from uuid import uuid4
 
 import pytest
 

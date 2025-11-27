@@ -4,7 +4,6 @@ from pydantic import Field
 MaskedConnectionProperties model.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

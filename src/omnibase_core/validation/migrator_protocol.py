@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import TypedDict, Union
-
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
@@ -13,9 +11,6 @@ from pathlib import Path
 from typing import cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.common.model_validation_metadata import (
-    ModelValidationMetadata,
-)
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )

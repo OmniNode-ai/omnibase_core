@@ -1,5 +1,3 @@
-from typing import Any
-
 """
 System Information Result Model.
 

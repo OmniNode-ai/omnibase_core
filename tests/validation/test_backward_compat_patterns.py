@@ -13,8 +13,6 @@ import sys
 import tempfile
 from pathlib import Path
 
-import pytest
-
 SCRIPT_PATH = (
     Path(__file__).parent.parent.parent
     / "scripts"

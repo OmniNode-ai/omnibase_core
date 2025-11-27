@@ -17,7 +17,6 @@ from omnibase_core.errors.model_onex_error_details import ModelOnexErrorDetails
 from omnibase_core.models.core.model_onex_performance_metrics import (
     ModelOnexPerformanceMetrics,
 )
-from omnibase_core.models.core.model_onex_reply_config import ModelConfig
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

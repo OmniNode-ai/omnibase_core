@@ -2,8 +2,6 @@
 Test suite for TypedDictNodeResourceSummaryType.
 """
 
-import pytest
-
 from omnibase_core.types.typed_dict_node_resource_summary_type import (
     TypedDictNodeResourceSummaryType,
 )

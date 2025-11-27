@@ -21,11 +21,10 @@ providing clean separation between node logic and workflow coordination behavior
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_workflow import ModelWorkflow
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Import all individual model components

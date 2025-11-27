@@ -3,9 +3,7 @@ Test suite for ModelRouteHop.
 """
 
 from datetime import datetime
-from uuid import UUID, uuid4
-
-import pytest
+from uuid import uuid4
 
 from omnibase_core.models.core.model_route_hop import ModelRouteHop
 from omnibase_core.models.primitives.model_semver import ModelSemVer

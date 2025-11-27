@@ -6,9 +6,7 @@ for the ModelServiceReducer service wrapper with reducer semantics.
 """
 
 import asyncio
-import signal
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
 import pytest

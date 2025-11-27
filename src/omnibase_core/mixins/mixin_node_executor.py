@@ -1,11 +1,9 @@
-import uuid
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
-from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -14,7 +12,6 @@ import asyncio
 import contextlib
 import signal
 import time
-from collections.abc import Callable as CallableABC
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING

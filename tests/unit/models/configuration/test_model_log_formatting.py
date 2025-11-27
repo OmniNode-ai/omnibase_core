@@ -1,7 +1,5 @@
 """Tests for ModelLogFormatting."""
 
-import pytest
-
 from omnibase_core.models.configuration.model_log_formatting import ModelLogFormatting
 
 

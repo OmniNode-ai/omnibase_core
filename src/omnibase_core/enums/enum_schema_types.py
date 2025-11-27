@@ -5,7 +5,6 @@ Provides standardized mapping between JSON schema types and Python types.
 """
 
 from enum import Enum
-from typing import Any
 
 
 class EnumSchemaTypes(str, Enum):

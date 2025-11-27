@@ -9,12 +9,9 @@ Tests the integration of MixinNodeService with NodeCompute and supporting mixins
 Tests Method Resolution Order (MRO) correctness and mixin interaction patterns.
 """
 
-import asyncio
 import inspect
-import time
-from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
-from uuid import UUID, uuid4
+from unittest.mock import AsyncMock, Mock
+from uuid import uuid4
 
 import pytest
 

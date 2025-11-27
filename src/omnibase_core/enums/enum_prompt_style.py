@@ -1,5 +1,3 @@
-import json
-
 """
 Prompt style enum for prompt builder tool.
 

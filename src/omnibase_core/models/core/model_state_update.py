@@ -1,7 +1,7 @@
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 

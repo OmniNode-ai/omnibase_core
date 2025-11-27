@@ -1,5 +1,3 @@
-from typing import Any, Optional
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_core_metadata import ModelMetadata

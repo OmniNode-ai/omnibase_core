@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field
 
 "\nSecurity policy model with structured data fields.\n"

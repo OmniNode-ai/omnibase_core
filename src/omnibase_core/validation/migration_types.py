@@ -1,5 +1,3 @@
-from typing import TypedDict
-
 """
 Migration type definitions for protocol migration operations.
 """

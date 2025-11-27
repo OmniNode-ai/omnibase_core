@@ -20,9 +20,6 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
 
-if TYPE_CHECKING:
-    from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 
 class ModelNumericValue(BaseModel):
     """

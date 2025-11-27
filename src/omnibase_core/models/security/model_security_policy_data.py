@@ -1,4 +1,4 @@
-from typing import Any, Union, cast
+from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
@@ -9,10 +9,7 @@ This model represents the serialized data structure for security policies.
 Now uses strongly-typed values instead of Union types for better type safety.
 """
 
-from omnibase_core.models.common.model_typed_value import (
-    ModelTypedMapping,
-    ModelValueContainer,
-)
+from omnibase_core.models.common.model_typed_value import ModelTypedMapping
 
 
 class ModelSecurityPolicyData(BaseModel):

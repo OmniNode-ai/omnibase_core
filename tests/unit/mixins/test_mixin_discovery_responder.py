@@ -12,8 +12,6 @@ Tests cover:
 """
 
 import json
-import time
-from typing import Any
 from unittest.mock import AsyncMock, Mock
 from uuid import UUID, uuid4
 
@@ -25,8 +23,6 @@ from omnibase_core.mixins.mixin_discovery_responder import MixinDiscoveryRespond
 from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,
 )
-from omnibase_core.models.core.model_event_type import create_event_type_from_registry
-from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

@@ -1,5 +1,3 @@
-import uuid
-
 """
 Simple, clean ONEX logging - just emit_log_event(level, message).
 

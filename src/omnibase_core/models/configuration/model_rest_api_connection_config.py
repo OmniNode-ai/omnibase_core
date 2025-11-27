@@ -1,4 +1,3 @@
-import json
 import os
 from typing import Any
 from urllib.parse import urljoin, urlparse

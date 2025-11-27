@@ -1,7 +1,6 @@
 """Tests for ModelEventTypeSubcontract - ONEX compliant validators."""
 
 import pytest
-from pydantic import ValidationError
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

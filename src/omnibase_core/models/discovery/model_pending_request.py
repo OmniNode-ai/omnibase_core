@@ -1,5 +1,3 @@
-import uuid
-
 from pydantic import Field
 
 """Pending request tracking model for event-driven discovery."""

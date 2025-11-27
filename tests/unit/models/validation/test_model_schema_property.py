@@ -6,11 +6,6 @@ This test suite covers ModelSchemaProperty with all its fields and nested struct
 
 from __future__ import annotations
 
-from typing import Any
-
-import pytest
-from pydantic import ValidationError
-
 from omnibase_core.models.validation.model_schema_property import ModelSchemaProperty
 
 

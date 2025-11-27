@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-import uuid
-from typing import Union
-
 from pydantic import Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nStrongly-typed effect parameter value model.\n\nRepresents discriminated union for effect parameter values.\nFollows ONEX strong typing principles and one-model-per-file architecture.\n"
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel

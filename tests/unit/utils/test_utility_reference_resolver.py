@@ -6,8 +6,6 @@ Provides comprehensive tests for JSON Schema reference resolution.
 
 from unittest.mock import MagicMock, Mock
 
-import pytest
-
 from omnibase_core.utils.generation.utility_reference_resolver import (
     ModelRefInfo,
     UtilityReferenceResolver,

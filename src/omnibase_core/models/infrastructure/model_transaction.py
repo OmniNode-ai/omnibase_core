@@ -1,9 +1,7 @@
 """Transaction model for side effect management with rollback support."""
 
 import asyncio
-import uuid
 from collections.abc import Callable
-from collections.abc import Callable as CallableABC
 from datetime import datetime
 from typing import Any
 from uuid import UUID

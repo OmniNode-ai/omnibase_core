@@ -18,8 +18,7 @@ Specialized contract model for NodeOrchestrator implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-import uuid
-from typing import Any, ClassVar
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field, field_validator
@@ -41,7 +40,6 @@ from omnibase_core.models.contracts.model_event_subscription import (
     ModelEventSubscription,
 )
 from omnibase_core.models.contracts.model_workflow_config import ModelWorkflowConfig
-from omnibase_core.models.core.model_workflow import ModelWorkflow
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer

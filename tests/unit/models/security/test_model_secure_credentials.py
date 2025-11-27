@@ -23,7 +23,6 @@ from unittest.mock import patch
 import pytest
 from pydantic import SecretStr
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.security.model_audit_data import ModelAuditData
 from omnibase_core.models.security.model_credential_validation_result import (
     ModelCredentialValidationResult,

@@ -8,7 +8,6 @@ GitHub Label Model
 Type-safe GitHub label that replaces Dict[str, Any] usage.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

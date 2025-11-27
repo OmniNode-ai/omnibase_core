@@ -5,7 +5,7 @@ This module tests the intent publish result model used for coordination I/O.
 Validates field types, constraints, serialization, and Pydantic behavior.
 """
 
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest

@@ -1,7 +1,5 @@
 """Tests for model_typed_mapping.py"""
 
-from typing import Any
-
 import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

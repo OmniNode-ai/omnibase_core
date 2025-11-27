@@ -1,5 +1,3 @@
-from typing import Any
-
 """
 KV Operation Type Enum.
 

@@ -1,5 +1,3 @@
-import uuid
-
 """
 Request Introspection Event Model
 
@@ -7,7 +5,7 @@ Event sent to request real-time introspection from all connected nodes.
 Enables on-demand discovery of currently available nodes with their current status.
 """
 
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import Field

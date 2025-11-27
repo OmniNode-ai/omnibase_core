@@ -16,8 +16,6 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from omnibase_core.constants.event_types import NODE_HEALTH_EVENT
-from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_custom_metrics import ModelCustomMetrics
 
 from .model_nodehealthevent import ModelNodeHealthEvent

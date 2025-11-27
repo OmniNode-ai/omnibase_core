@@ -5,8 +5,6 @@ Test suite for TypedDictConnectionInfo.
 from datetime import datetime
 from uuid import UUID, uuid4
 
-import pytest
-
 from omnibase_core.types.typed_dict_connection_info import TypedDictConnectionInfo
 
 

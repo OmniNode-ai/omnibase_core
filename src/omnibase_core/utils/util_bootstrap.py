@@ -14,7 +14,6 @@ registry-centric architecture pattern.
 from typing import Any, cast
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.utils.util_tool_logger_code_block import ToolLoggerCodeBlock
 
 # Type variable for protocol types
 T = TypeVar("T")

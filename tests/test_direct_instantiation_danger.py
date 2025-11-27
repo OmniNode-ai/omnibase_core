@@ -12,7 +12,7 @@ This is a REAL RISK in autonomous agent systems where agents might:
 
 from typing import Generic, TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 T = TypeVar("T")
 

@@ -1,7 +1,5 @@
 """Tests for ModelBurstConfig."""
 
-import pytest
-
 from omnibase_core.models.configuration.model_burst_config import ModelBurstConfig
 
 

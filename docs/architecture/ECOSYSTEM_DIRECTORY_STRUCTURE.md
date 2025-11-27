@@ -1,6 +1,6 @@
 # ONEX Ecosystem Directory Structure
 
-**Status**: Current as of 2025-01-30  
+**Status**: Current as of 2025-11-27  
 **Purpose**: Document the actual directory structure and manifest patterns across the ONEX ecosystem  
 
 ## Overview
@@ -27,7 +27,6 @@ omnibase_core/
 │       ├── discovery/           # Service discovery
 │       ├── enums/              # Core enumerations (310 files)
 │       ├── errors/             # Error handling
-│       ├── events/             # Event system
 │       ├── infrastructure/     # Infrastructure components
 │       ├── logging/            # Structured logging
 │       ├── mixins/             # Reusable mixins (49 files)
@@ -39,15 +38,15 @@ omnibase_core/
 │       │   ├── mixin_node_service.py
 │       │   └── ... (43 more mixins)
 │       ├── models/             # Data models (60 directories)
-│       │   ├── nodes/
-│       │   │   └── node_services/  # Service wrapper classes
-│       │   │       ├── model_service_compute.py
-│       │   │       ├── model_service_effect.py
-│       │   │       ├── model_service_reducer.py
-│       │   │       └── model_service_orchestrator.py
+│       │   ├── service/        # Service wrapper classes
+│       │   │   ├── model_service_compute.py
+│       │   │   ├── model_service_effect.py
+│       │   │   ├── model_service_reducer.py
+│       │   │   └── model_service_orchestrator.py
+│       │   ├── events/         # Event models
+│       │   ├── primitives/     # Primitive type models
 │       │   └── ... (other model categories)
 │       ├── nodes/              # Base node classes
-│       ├── primitives/         # Core primitives
 │       ├── types/              # Type definitions (93 files)
 │       ├── utils/              # Utility functions
 │       ├── validation/         # Validation framework
@@ -261,7 +260,7 @@ omnibase_core (core framework)
 
 ### 1. Service Wrapper Pattern (Recommended)
 
-**Location**: `omnibase_core/src/omnibase_core/models/nodes/node_services/`
+**Location**: `omnibase_core/src/omnibase_core/models/service/`
 
 ```
 from omnibase_core.models.service import ModelServiceCompute
@@ -391,6 +390,6 @@ tests/
 
 ---
 
-**Last Updated**: 2025-01-30  
+**Last Updated**: 2025-11-27  
 **Maintainer**: OmniNode Development Team  
 **Next Review**: After migration plan implementation

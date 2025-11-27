@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 ModelWorkflowFactory
 

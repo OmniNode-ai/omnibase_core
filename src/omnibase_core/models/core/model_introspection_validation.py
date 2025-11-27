@@ -6,10 +6,6 @@ Model for validation information in introspection metadata.
 
 from pydantic import BaseModel
 
-from omnibase_core.models.core.model_introspection_validation_config import (
-    ModelIntrospectionValidationConfig,
-)
-
 
 class ModelIntrospectionValidation(BaseModel):
     """Validation information for introspection metadata."""

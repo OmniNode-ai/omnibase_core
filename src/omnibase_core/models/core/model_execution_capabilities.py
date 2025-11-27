@@ -7,7 +7,6 @@ Type-safe execution capabilities and constraints for nodes,
 replacing Dict[str, Any] with structured configuration.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

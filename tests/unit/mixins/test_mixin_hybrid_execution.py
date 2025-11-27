@@ -20,10 +20,8 @@ Note on Event Loop Mocking:
     See conftest.py for the generic mock_event_loop fixture used by other tests.
 """
 
-import json
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
-from uuid import uuid4
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from pydantic import BaseModel, Field

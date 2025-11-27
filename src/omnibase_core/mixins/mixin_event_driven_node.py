@@ -35,7 +35,7 @@ Usage:
             super().__init__(node_id=node_id, event_bus=event_bus, ...)
 """
 
-from typing import Any, Protocol
+from typing import Any
 from uuid import UUID
 
 from omnibase_spi.protocols.event_bus import ProtocolEventBus

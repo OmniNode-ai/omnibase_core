@@ -656,18 +656,21 @@ class ModelMySubcontract(BaseModel):
 
 ### Pre-commit Validation
 
-**Automated checks** (future enhancement):
+**Automated checks** (proposed - not yet implemented):
 
 ```bash
+# Proposed validation script examples (not yet implemented):
 # Check for missing INTERFACE_VERSION
-poetry run python scripts/validate_versions.py --check-interface-version
+# poetry run python scripts/validate_versions.py --check-interface-version
 
 # Check for missing version field
-poetry run python scripts/validate_versions.py --check-instance-version
+# poetry run python scripts/validate_versions.py --check-instance-version
 
 # Validate version consistency
-poetry run python scripts/validate_versions.py --check-consistency
+# poetry run python scripts/validate_versions.py --check-consistency
 ```
+
+**Note**: These validation scripts are proposed enhancements. Currently, version field compliance is enforced through code review and type checking (mypy strict mode).
 
 ---
 

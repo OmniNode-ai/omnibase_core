@@ -1,4 +1,3 @@
-import json
 from typing import Optional, Union
 
 from pydantic import Field
@@ -15,8 +14,6 @@ by providing a structured representation of schema data.
 from typing import Any
 
 from pydantic import BaseModel
-
-from omnibase_core.models.core.model_json_schema_config import ModelJsonSchemaConfig
 
 
 class ModelJsonSchema(BaseModel):

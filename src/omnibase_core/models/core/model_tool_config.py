@@ -1,5 +1,3 @@
-from typing import Any
-
 """Model for tool configuration settings."""
 
 from pydantic import BaseModel, Field

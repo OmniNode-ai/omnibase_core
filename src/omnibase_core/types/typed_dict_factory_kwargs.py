@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import TypedDict
-
 from omnibase_core.types.typed_dict_execution_params import TypedDictExecutionParams
 from omnibase_core.types.typed_dict_message_params import TypedDictMessageParams
 from omnibase_core.types.typed_dict_metadata_params import TypedDictMetadataParams

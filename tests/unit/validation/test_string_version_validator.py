@@ -19,8 +19,6 @@ import importlib.util
 import sys
 from pathlib import Path
 
-import pytest
-
 # Load the validator module directly from its file path
 _scripts_path = Path(__file__).parent.parent.parent.parent / "scripts" / "validation"
 _validator_path = _scripts_path / "validate-string-versions.py"

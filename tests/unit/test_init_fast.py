@@ -4,10 +4,6 @@ Unit tests for __init___fast.py lazy loading functions.
 Tests lazy loading of validation tools to prevent import-time penalties.
 """
 
-from collections.abc import Callable
-
-import pytest
-
 
 class TestLazyValidationLoading:
     """Test suite for lazy validation loading functions."""
@@ -53,7 +49,6 @@ class TestLazyValidationLoading:
             del sys.modules[mod]
 
         # Import just the main module
-        import omnibase_core.__init___fast as omnibase_core
 
         # Validation modules should NOT be imported yet
         validation_modules = [

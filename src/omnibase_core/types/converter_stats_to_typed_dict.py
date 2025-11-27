@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 """
 Convert legacy stats dict[str, Any] to TypedDict.
 """
 
-from typing import Any, TypedDict
 
 from .typed_dict_execution_stats import TypedDictExecutionStats
 from .typed_dict_legacy_stats import TypedDictLegacyStats

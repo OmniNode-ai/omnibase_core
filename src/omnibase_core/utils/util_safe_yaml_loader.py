@@ -1,5 +1,4 @@
-import json
-from typing import Optional, TypeVar
+from typing import TypeVar
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 

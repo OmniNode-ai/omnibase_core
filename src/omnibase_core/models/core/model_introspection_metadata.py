@@ -9,9 +9,6 @@ from pydantic import BaseModel
 from omnibase_core.models.core.model_introspection_contract_info import (
     ModelIntrospectionContractInfo,
 )
-from omnibase_core.models.core.model_introspection_metadata_config import (
-    ModelIntrospectionMetadataConfig,
-)
 from omnibase_core.models.core.model_introspection_node_info import (
     ModelIntrospectionNodeInfo,
 )

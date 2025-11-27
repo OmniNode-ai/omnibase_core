@@ -1,6 +1,4 @@
-import uuid
 from datetime import datetime
-from typing import Optional
 
 """
 Structured Logging for ONEX Core
@@ -12,10 +10,6 @@ import json
 import logging
 from datetime import UTC
 from typing import Any
-from uuid import UUID
-
-from omnibase_spi.protocols.types import ProtocolLogContext
-from pydantic import BaseModel
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.pydantic_json_encoder import PydanticJSONEncoder

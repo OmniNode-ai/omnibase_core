@@ -1,11 +1,5 @@
-import json
-import uuid
 from datetime import datetime
-from typing import Any, Optional
-
-from pydantic import Field
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from typing import Any
 
 """
 ONEX Error Base Class
@@ -36,16 +30,11 @@ Import Chain:
 Breaking this chain (e.g., adding runtime import from models.*) will cause circular import!
 """
 
-import re
 from datetime import UTC
-from enum import Enum
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict
-
 # Import required enums from the same package
-from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_onex_error_code import EnumOnexErrorCode
 
 # Safe runtime imports - no circular dependency risk
@@ -57,10 +46,6 @@ from omnibase_core.types.core_types import TypedDictBasicErrorContext
 
 # Type-only imports - protected by TYPE_CHECKING to prevent circular imports
 # _ModelOnexErrorData moved here to break circular import chain
-if TYPE_CHECKING:
-    from omnibase_core.models.common.model_error_context import ModelErrorContext
-    from omnibase_core.models.common.model_onex_error_data import _ModelOnexErrorData
-    from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelOnexError(Exception):

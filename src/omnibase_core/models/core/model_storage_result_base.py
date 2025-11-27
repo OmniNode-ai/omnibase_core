@@ -11,8 +11,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_checkpoint_data import ModelCheckpointData
 
-from .model_storage_result_config import ModelConfig
-
 
 class ModelStorageResult(BaseModel):
     """

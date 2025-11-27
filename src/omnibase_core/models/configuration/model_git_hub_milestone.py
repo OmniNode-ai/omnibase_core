@@ -9,7 +9,6 @@ Type-safe GitHub milestone that replaces Dict[str, Any] usage.
 """
 
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel
 

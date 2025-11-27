@@ -29,10 +29,7 @@ from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-
 # Safe runtime import - error_codes only imports from types.core_types
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_example import ModelExample
 from omnibase_core.models.examples.model_example_metadata import ModelExampleMetadata
 

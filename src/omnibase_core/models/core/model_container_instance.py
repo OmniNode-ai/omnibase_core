@@ -5,7 +5,6 @@ Container Instance Model - ONEX Standards Compliant.
 Strongly-typed model for ONEX container instances used in service resolution.
 """
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -13,7 +12,6 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.container.model_service_registration import (
     ModelServiceRegistration,
 )
-from omnibase_core.models.core.model_container_instance_config import ModelConfig
 from omnibase_core.models.core.model_protocol_registration import (
     ModelProtocolRegistration,
 )

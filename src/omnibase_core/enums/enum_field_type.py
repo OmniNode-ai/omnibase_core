@@ -1,11 +1,5 @@
 from __future__ import annotations
 
-import json
-from datetime import datetime
-from typing import Any, Optional
-
-from pydantic import Field
-
 """
 Field type enumeration for metadata field information.
 

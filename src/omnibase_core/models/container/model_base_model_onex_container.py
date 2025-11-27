@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
-
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Base dependency injection container.
 """

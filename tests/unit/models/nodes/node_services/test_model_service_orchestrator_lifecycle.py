@@ -11,9 +11,8 @@ Section 6.4: ModelServiceOrchestrator Integration
 import asyncio
 import signal
 import time
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
-from uuid import UUID, uuid4
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from uuid import uuid4
 
 import pytest
 

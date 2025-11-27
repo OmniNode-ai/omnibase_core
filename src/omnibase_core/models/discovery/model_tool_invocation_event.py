@@ -1,5 +1,4 @@
-import uuid
-from typing import Any, Optional
+from typing import Any
 
 "\nTool Invocation Event Model\n\nEvent sent to invoke a tool on a specific node through the persistent service pattern.\nEnables distributed tool execution through event-driven routing.\n"
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5

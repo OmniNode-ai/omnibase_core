@@ -11,8 +11,6 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from .model_storage_health_status_config import ModelConfig
-
 
 class ModelStorageHealthStatus(BaseModel):
     """

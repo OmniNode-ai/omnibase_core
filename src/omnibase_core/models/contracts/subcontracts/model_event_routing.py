@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field
 
 from .model_eventrouting import ModelEventRouting

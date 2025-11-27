@@ -3,7 +3,6 @@ Model for Docker healthcheck test configuration.
 """
 
 import shlex
-from typing import Any
 
 from pydantic import BaseModel, Field
 

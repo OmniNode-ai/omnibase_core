@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 from pydantic import Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

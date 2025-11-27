@@ -4,12 +4,9 @@ Storage Credentials Model - ONEX Standards Compliant.
 Strongly-typed model for storage backend authentication credentials.
 """
 
-import json
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field, SecretStr
-
-from .model_storage_credentials_config import ModelConfig
 
 
 class ModelStorageCredentials(BaseModel):

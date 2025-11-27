@@ -6,9 +6,6 @@ initialization through NodeCompute execution, validating that
 configuration propagates correctly and impacts runtime behavior.
 """
 
-import asyncio
-import time
-
 import pytest
 
 from omnibase_core.enums.enum_cache_eviction_policy import EnumCacheEvictionPolicy
@@ -16,7 +13,6 @@ from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
 from omnibase_core.models.container.model_onex_container import (
-    ModelONEXContainer,
     create_model_onex_container,
 )
 from omnibase_core.models.model_compute_input import ModelComputeInput

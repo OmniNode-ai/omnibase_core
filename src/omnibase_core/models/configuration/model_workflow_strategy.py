@@ -1,12 +1,9 @@
 from pydantic import Field
 
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Workflow strategy model.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

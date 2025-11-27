@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field
 
 "\nPermission Session Info Model\n\nType-safe session information for permission validation.\n"

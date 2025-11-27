@@ -1,7 +1,7 @@
 import contextlib
 import os
 from datetime import UTC, datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator

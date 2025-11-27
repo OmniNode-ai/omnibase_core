@@ -7,14 +7,13 @@ result serialization, and error handling.
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, Mock, patch
-from uuid import UUID, uuid4
+from unittest.mock import AsyncMock, Mock
+from uuid import uuid4
 
 import pytest
 from pydantic import BaseModel
 
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )

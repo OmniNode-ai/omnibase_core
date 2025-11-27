@@ -6,7 +6,6 @@ Represents the highest level of organization for ONEX tool groups.
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -22,7 +21,7 @@ from omnibase_core.models.core.model_group_service_configuration import (
 )
 from omnibase_core.models.core.model_group_tool import ModelGroupTool
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer, SemVerField
+from omnibase_core.models.primitives.model_semver import SemVerField
 
 
 class ModelGroupManifest(BaseModel):

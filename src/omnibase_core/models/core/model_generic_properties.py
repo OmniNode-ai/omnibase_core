@@ -1,4 +1,4 @@
-from typing import Generic, Optional
+from typing import Optional
 
 from pydantic import Field
 
@@ -6,7 +6,6 @@ from pydantic import Field
 Generic properties model to replace Dict[str, Any] usage for properties fields.
 """
 
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 

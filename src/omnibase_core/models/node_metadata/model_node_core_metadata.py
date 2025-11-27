@@ -17,11 +17,6 @@ from omnibase_core.models.node_metadata.model_node_status_error import (
 from omnibase_core.models.node_metadata.model_node_status_maintenance import (
     ModelNodeStatusMaintenance,
 )
-from omnibase_core.models.node_metadata.model_node_status_types import (
-    NodeStatusDiscriminator,
-    NodeStatusUnion,
-    get_node_status_discriminator,
-)
 
 __all__ = [
     "ModelNodeCoreMetadata",

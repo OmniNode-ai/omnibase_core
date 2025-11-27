@@ -1,6 +1,3 @@
-import uuid
-from typing import Optional
-
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -32,7 +29,7 @@ Contains the result of the tool execution or error information if execution fail
 """
 
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from pydantic import Field
 

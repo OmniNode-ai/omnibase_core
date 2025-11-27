@@ -1,10 +1,6 @@
-from typing import Any
-
 """Tool arguments model for protocol tool."""
 
 from pydantic import BaseModel, Field
-
-from .model_tool_arguments_config import ModelConfig
 
 
 class ModelToolArguments(BaseModel):

@@ -123,7 +123,7 @@ poetry run mypy src/omnibase_core  # Strict mode: 0 errors across 1865 files
 **Trigger**: All pushes and PRs
 **Configuration**:
 ```
-python3 scripts/validate-doc-links.py --fix-case
+python3 scripts/validation/validate-doc-links.py --fix-case
 ```
 
 #### Why validate docs in CI?

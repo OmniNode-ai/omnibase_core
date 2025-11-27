@@ -7,7 +7,7 @@ Strongly-typed model that can parse both AI and Generation hub formats.
 
 import hashlib
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator

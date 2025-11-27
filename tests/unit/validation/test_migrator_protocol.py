@@ -29,9 +29,6 @@ from omnibase_core.models.validation.model_migration_result import ModelMigratio
 from omnibase_core.validation.migrator_protocol import ProtocolMigrator
 from omnibase_core.validation.validation_utils import ModelProtocolInfo
 
-if TYPE_CHECKING:
-    from _pytest.capture import CaptureFixture
-
 
 class TestProtocolMigratorInitialization:
     """Test ProtocolMigrator initialization."""

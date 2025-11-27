@@ -8,8 +8,7 @@ for compute nodes running in persistent service mode.
 import asyncio
 import signal
 import time
-from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import uuid4
 
 import pytest

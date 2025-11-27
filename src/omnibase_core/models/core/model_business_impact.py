@@ -14,7 +14,6 @@ Business impact model to replace dictionary usage for business metrics.
 """
 
 from datetime import datetime
-from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 

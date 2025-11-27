@@ -11,12 +11,10 @@ Tests all aspects of the function node model including:
 """
 
 import pytest
-from pydantic import ValidationError
 
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_function_type import EnumFunctionType
-from omnibase_core.enums.enum_operational_complexity import EnumOperationalComplexity
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.node_metadata.model_function_node import ModelFunctionNode

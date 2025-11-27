@@ -2,10 +2,6 @@
 Logging configuration model.
 """
 
-from typing import Any
-
-from pydantic import BaseModel, Field
-
 from omnibase_core.enums.enum_log_format import EnumLogFormat
 
 from .model_loggingconfig import ModelLoggingConfig

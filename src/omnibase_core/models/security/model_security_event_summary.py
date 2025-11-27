@@ -9,11 +9,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from omnibase_core.models.security.model_security_summary import (
-        ModelSecuritySummary,
-    )
-
 
 class ModelSecurityEventSummary(BaseModel):
     """Security event summary."""

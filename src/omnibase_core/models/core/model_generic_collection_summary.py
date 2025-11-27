@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import uuid
-from typing import Generic
-
 from pydantic import Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

@@ -8,12 +8,8 @@ and proper handling of CLI command options with type safety.
 import uuid
 from uuid import UUID
 
-import pytest
-
 from omnibase_core.enums.enum_cli_option_value_type import EnumCliOptionValueType
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.cli.model_cli_command_option import ModelCliCommandOption
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class TestModelCliCommandOptionBasic:

@@ -5,7 +5,6 @@ Strongly-typed output data for computation operations with discriminated unions.
 """
 
 from typing import TYPE_CHECKING, Annotated, Any, Union
-from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypedDict, TypeVar
+from typing import TypeVar
 
 from pydantic import Field
 

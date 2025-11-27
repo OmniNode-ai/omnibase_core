@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Generic, Optional, TypeVar, Union
-
-from pydantic import Field
+from typing import Any, Optional, TypeVar
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 

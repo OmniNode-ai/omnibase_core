@@ -16,8 +16,6 @@ import ast
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import pytest
-
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.validation.types import (
     ModelUnionPattern,
@@ -25,9 +23,6 @@ from omnibase_core.validation.types import (
     validate_union_usage_directory,
     validate_union_usage_file,
 )
-
-if TYPE_CHECKING:
-    from _pytest.capture import CaptureFixture
 
 
 class TestModelUnionPattern:

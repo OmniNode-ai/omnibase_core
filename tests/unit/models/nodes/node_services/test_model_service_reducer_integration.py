@@ -10,11 +10,9 @@ Tests Method Resolution Order (MRO) correctness and mixin interaction patterns.
 Focuses on reducer-specific patterns: aggregation, state management, cache invalidation.
 """
 
-import asyncio
 import inspect
-from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
-from uuid import UUID, uuid4
+from unittest.mock import AsyncMock, Mock, patch
+from uuid import uuid4
 
 import pytest
 
@@ -23,8 +21,6 @@ from omnibase_core.models.contracts.model_contract_reducer import ModelContractR
 from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
-from omnibase_core.models.model_reducer_input import ModelReducerInput
-from omnibase_core.models.model_reducer_output import ModelReducerOutput
 from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
 
 

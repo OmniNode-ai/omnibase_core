@@ -3,7 +3,6 @@
 Metadata for encrypted envelope payloads.
 """
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field

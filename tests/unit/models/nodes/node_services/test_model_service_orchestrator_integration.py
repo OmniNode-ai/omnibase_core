@@ -18,7 +18,7 @@ Tests the integration of MixinNodeService with NodeOrchestrator and all mixins:
 
 import asyncio
 import inspect
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -29,9 +29,6 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
-from omnibase_core.mixins.mixin_event_bus import MixinEventBus
-from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
-from omnibase_core.mixins.mixin_metrics import MixinMetrics
 from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.discovery.model_tool_invocation_event import (
@@ -162,7 +159,6 @@ class TestMROCorrectness:
             )
 
         # Verify NodeCoreBase comes early (due to NodeOrchestrator inheritance)
-        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 
         nodecorebase_index = next(
             i for i, cls in enumerate(mro) if cls.__name__ == "NodeCoreBase"

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import uuid
 from datetime import datetime
 
 from pydantic import Field
@@ -286,9 +285,6 @@ class ModelMetadataNodeInfo(BaseModel):
     def to_summary(self) -> ModelNodeInfoSummary:
         """Get node summary with clean typing."""
         # Convert enum types to match ModelNodeInfoSummary expectations
-        from omnibase_core.enums.enum_conceptual_complexity import (
-            EnumConceptualComplexity,
-        )
         from omnibase_core.enums.enum_documentation_quality import (
             EnumDocumentationQuality,
         )

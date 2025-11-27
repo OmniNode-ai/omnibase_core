@@ -5,7 +5,6 @@ Hub Service Configuration Model - ONEX Standards Compliant.
 Strongly-typed model for service configuration in hubs.
 """
 
-from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 

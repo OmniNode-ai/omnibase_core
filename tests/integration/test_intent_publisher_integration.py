@@ -17,7 +17,7 @@ import asyncio
 import json
 from datetime import UTC, datetime
 from typing import Any
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
 import pytest

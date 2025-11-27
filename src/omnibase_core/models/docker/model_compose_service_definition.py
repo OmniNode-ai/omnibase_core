@@ -4,7 +4,7 @@ Complete service definition for Docker Compose.
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from omnibase_core.models.docker.model_docker_build_config import (

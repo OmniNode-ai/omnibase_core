@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pydantic import Field
-
 """
 Base field accessor pattern for replacing dict[str, Any]-like interfaces.
 

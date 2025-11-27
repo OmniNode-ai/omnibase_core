@@ -8,8 +8,6 @@ to improve overall branch coverage from 24.4% toward 75%+ target.
 from unittest.mock import MagicMock, Mock, patch
 from uuid import UUID, uuid4
 
-import pytest
-
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.emit import (
     _detect_node_id_from_context,

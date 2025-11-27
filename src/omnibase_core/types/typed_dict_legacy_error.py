@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 """
 Legacy error input structure for converter functions.
 """

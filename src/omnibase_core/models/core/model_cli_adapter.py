@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 """
 Base CLI adapter class that provides consistent exit code handling.
 
@@ -11,7 +9,6 @@ exit code mapping functionality.
 
 
 import sys
-from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus

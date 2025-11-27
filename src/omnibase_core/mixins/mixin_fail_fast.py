@@ -8,19 +8,12 @@ Ensures tools crash early with clear error messages rather than continuing in in
 import sys
 import traceback
 from collections.abc import Callable
-from collections.abc import Callable as CallableABC
 from datetime import UTC, datetime
 from functools import wraps
 from typing import Any, TypeVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.errors.exception_contract_violation import (
-    ExceptionContractViolationError,
-)
-from omnibase_core.errors.exception_dependency_failed import (
-    ExceptionDependencyFailedError,
-)
 
 # Import extracted error classes
 from omnibase_core.errors.exception_fail_fast import ExceptionFailFastError

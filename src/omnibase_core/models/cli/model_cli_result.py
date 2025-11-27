@@ -12,7 +12,6 @@ outcome of CLI command execution with proper typing.
 """
 
 
-import json
 from datetime import UTC
 from typing import Any
 from uuid import uuid4

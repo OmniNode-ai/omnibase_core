@@ -1,7 +1,5 @@
 """Tests for EnumDiscriminatedValueType."""
 
-import pytest
-
 from omnibase_core.enums.enum_discriminated_value_type import EnumDiscriminatedValueType
 
 

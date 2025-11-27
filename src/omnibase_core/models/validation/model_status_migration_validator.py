@@ -55,7 +55,6 @@ class ModelEnumStatusMigrationValidator:
             migrator = ModelEnumStatusMigrator()
 
             if old_enum_name.lower() == "enumstatus":
-                from omnibase_core.enums.enum_general_status import EnumGeneralStatus
 
                 general_migrated = migrator.migrate_general_status(old_value)
                 result["success"] = True
@@ -73,9 +72,6 @@ class ModelEnumStatusMigrationValidator:
                     )
 
             if old_enum_name.lower() == "enumexecutionstatus":
-                from omnibase_core.enums.enum_execution_status_v2 import (
-                    EnumExecutionStatusV2,
-                )
 
                 execution_migrated = migrator.migrate_execution_status(old_value)
                 result["success"] = True
@@ -93,9 +89,6 @@ class ModelEnumStatusMigrationValidator:
                     )
 
             if old_enum_name.lower() == "enumscenariostatus":
-                from omnibase_core.enums.enum_scenario_status_v2 import (
-                    EnumScenarioStatusV2,
-                )
 
                 scenario_migrated = migrator.migrate_scenario_status(old_value)
                 result["success"] = True
@@ -116,9 +109,6 @@ class ModelEnumStatusMigrationValidator:
                 "enumfunctionstatus",
                 "enummetadatanodestatus",
             ]:
-                from omnibase_core.enums.enum_function_lifecycle_status import (
-                    EnumFunctionLifecycleStatus,
-                )
 
                 function_migrated = migrator.migrate_function_status(old_value)
                 result["success"] = True

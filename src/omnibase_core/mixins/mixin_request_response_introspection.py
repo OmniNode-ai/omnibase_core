@@ -1,10 +1,7 @@
-from typing import Any, Optional
+from typing import Any
 from uuid import uuid4
 
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    parse_semver_from_string,
-)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 Request-Response Introspection Mixin
@@ -692,7 +689,7 @@ class MixinRequestResponseIntrospection:
         """
         # Create the additional info model
         # Convert startup_time from float timestamp to datetime
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         startup_datetime = datetime.fromtimestamp(self._startup_time, tz=UTC)
         additional_info = ModelIntrospectionAdditionalInfo(

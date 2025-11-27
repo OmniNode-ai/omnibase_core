@@ -1,7 +1,5 @@
 from pydantic import Field
 
-from omnibase_core.constants.event_types import TOOL_DISCOVERY_REQUEST
-
 """
 Tool Discovery Request Event Model
 
@@ -10,8 +8,6 @@ The registry responds with a TOOL_DISCOVERY_RESPONSE event.
 """
 
 from pydantic import BaseModel
-
-from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 
 class ModelDiscoveryFilters(BaseModel):

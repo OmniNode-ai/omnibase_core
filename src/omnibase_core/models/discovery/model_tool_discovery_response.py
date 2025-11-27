@@ -2,7 +2,6 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.constants.event_types import TOOL_DISCOVERY_REQUEST
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
@@ -16,9 +15,6 @@ from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel
-
-from omnibase_core.constants.event_types import TOOL_DISCOVERY_RESPONSE
-from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 
 class ModelDiscoveredTool(BaseModel):

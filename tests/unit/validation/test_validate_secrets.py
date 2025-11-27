@@ -11,11 +11,8 @@ Tests secret detection for:
 import importlib.util
 
 # Import the validator classes
-import sys
 import tempfile
 from pathlib import Path
-
-import pytest
 
 # Load the validator module dynamically (script uses hyphens in filename)
 _validator_path = (

@@ -32,9 +32,6 @@ including template metadata, file mappings, and generation options.
 
 from pydantic import BaseModel
 
-from omnibase_core.models.core.model_node_template_config import (
-    ModelNodeTemplateConfigConfig,
-)
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 

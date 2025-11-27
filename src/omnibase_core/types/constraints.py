@@ -33,7 +33,7 @@ Critical Rules:
 - All imports from omnibase_core MUST be TYPE_CHECKING or lazy (inside functions/__getattr__)
 """
 
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 # Import protocols from omnibase_spi (following ONEX SPI separation)
 from omnibase_spi.protocols.types import ProtocolConfigurable as Configurable
