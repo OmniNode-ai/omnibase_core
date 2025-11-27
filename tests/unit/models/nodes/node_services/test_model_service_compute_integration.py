@@ -29,9 +29,7 @@ from omnibase_core.models.discovery.model_tool_invocation_event import (
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
 from omnibase_core.models.model_compute_input import ModelComputeInput
 from omnibase_core.models.model_compute_output import ModelComputeOutput
-from omnibase_core.models.nodes.node_services.model_service_compute import (
-    ModelServiceCompute,
-)
+from omnibase_core.models.service.model_service_compute import ModelServiceCompute
 
 
 class ComputeNodeForIntegrationTest(ModelServiceCompute):

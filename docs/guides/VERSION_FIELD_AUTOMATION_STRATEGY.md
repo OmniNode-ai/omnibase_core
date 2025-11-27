@@ -158,7 +158,7 @@ state = ModelFSMStateDefinition(
 Before running sed, ensure `ModelSemVer` is imported:
 
 ```bash
-grep -r "from omnibase_core.primitives.model_semver import ModelSemVer" \
+grep -r "from omnibase_core.models.primitives.model_semver import ModelSemVer" \
   tests/unit/models/contracts/subcontracts/test_*.py | wc -l
 ```
 
@@ -174,10 +174,10 @@ done
 
 # Add import to files that need it (safe - adds at top if not present)
 for file in tests/unit/models/contracts/subcontracts/test_model_*.py; do
-  if ! grep -q "from omnibase_core.primitives.model_semver import ModelSemVer" "$file"; then
+  if ! grep -q "from omnibase_core.models.primitives.model_semver import ModelSemVer" "$file"; then
     # Add after other imports
     sed -i '' '/^from omnibase_core\./a\
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 ' "$file" 2>/dev/null || true
   fi
 done
@@ -644,9 +644,9 @@ git checkout -b chore/fix-version-field
 
 # Add ModelSemVer import to all test files
 for file in tests/unit/models/contracts/subcontracts/test_model_*.py; do
-  if ! grep -q "from omnibase_core.primitives.model_semver import ModelSemVer" "$file"; then
+  if ! grep -q "from omnibase_core.models.primitives.model_semver import ModelSemVer" "$file"; then
     sed -i '' '/^from omnibase_core\./a\
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 ' "$file" 2>/dev/null || echo "Warning: Could not add import to $file"
   fi
 done

@@ -9,7 +9,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
-from omnibase_core.models.discovery.model_metric_value import ModelMetricValue
+from omnibase_core.models.discovery.model_metric_value import (
+    AnyMetricValue,
+    ModelMetricValue,
+)
 
 # Compatibility alias
 MetricValue = ModelMetricValue
@@ -85,7 +88,7 @@ class ModelMonitoringMetrics(BaseModel):
     )
 
     # Custom metrics (for extensibility)
-    custom_metrics: dict[str, ModelMetricValue] | None = Field(
+    custom_metrics: dict[str, AnyMetricValue] | None = Field(
         default_factory=dict,
         description="Custom metrics with values",
     )

@@ -191,7 +191,7 @@ for file in "$TEST_DIR"/test_model_*.py; do
   if [ -f "$file" ]; then
     files_checked=$((files_checked + 1))
 
-    if ! grep -q "from omnibase_core.primitives.model_semver import ModelSemVer" "$file"; then
+    if ! grep -q "from omnibase_core.models.primitives.model_semver import ModelSemVer" "$file"; then
       files_need_import=$((files_need_import + 1))
 
       if [ "$VERBOSE" = true ]; then
@@ -213,10 +213,10 @@ if [ $files_need_import -gt 0 ]; then
   else
     for file in "$TEST_DIR"/test_model_*.py; do
       if [ -f "$file" ]; then
-        if ! grep -q "from omnibase_core.primitives.model_semver import ModelSemVer" "$file"; then
+        if ! grep -q "from omnibase_core.models.primitives.model_semver import ModelSemVer" "$file"; then
           # Find the first import line and add ModelSemVer after omnibase_core imports
           sed -i '' '/^from omnibase_core\./a\
-from omnibase_core.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 ' "$file" 2>/dev/null || true
 
           [ "$VERBOSE" = true ] && print_success "Added import to $(basename $file)"

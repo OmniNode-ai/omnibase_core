@@ -427,14 +427,17 @@ class ModelRegistryHealthReport(BaseModel):
 
     def get_monitoring_metrics(self) -> ModelMonitoringMetrics:
         """Get comprehensive metrics for monitoring systems."""
-        from omnibase_core.models.discovery.model_metric_value import ModelMetricValue
+        from omnibase_core.models.discovery.model_metric_value import (
+            AnyMetricValue,
+            ModelMetricValue,
+        )
 
         # Calculate averages
         self.get_average_tool_response_time()
         self.get_average_service_response_time()
 
-        # Build custom metrics
-        custom_metrics = {
+        # Build custom metrics with explicit type annotation for mypy
+        custom_metrics: dict[str, AnyMetricValue] = {
             "registry_status": ModelMetricValue(
                 name="registry_status",
                 value=self.status.value,

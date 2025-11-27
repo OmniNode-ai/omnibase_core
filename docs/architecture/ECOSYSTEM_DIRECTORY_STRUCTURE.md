@@ -264,7 +264,7 @@ omnibase_core (core framework)
 **Location**: `omnibase_core/src/omnibase_core/models/nodes/node_services/`
 
 ```
-from omnibase_core.models.nodes.node_services import ModelServiceCompute
+from omnibase_core.models.service import ModelServiceCompute
 
 class MyComputeNode(ModelServiceCompute):
     """Production-ready compute node with all capabilities."""

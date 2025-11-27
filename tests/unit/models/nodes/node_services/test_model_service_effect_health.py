@@ -27,9 +27,7 @@ from omnibase_core.models.contracts.model_contract_effect import ModelContractEf
 from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
 )
-from omnibase_core.models.nodes.node_services.model_service_effect import (
-    ModelServiceEffect,
-)
+from omnibase_core.models.service.model_service_effect import ModelServiceEffect
 
 # ============================================================================
 # Fixtures

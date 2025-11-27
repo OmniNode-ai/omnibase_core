@@ -25,9 +25,7 @@ from omnibase_core.models.discovery.model_tool_invocation_event import (
 )
 from omnibase_core.models.model_reducer_input import ModelReducerInput
 from omnibase_core.models.model_reducer_output import ModelReducerOutput
-from omnibase_core.models.nodes.node_services.model_service_reducer import (
-    ModelServiceReducer,
-)
+from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
 
 
 class ReducerNodeForIntegrationTest(ModelServiceReducer):

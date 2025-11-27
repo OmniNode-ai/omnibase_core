@@ -902,12 +902,10 @@ flowchart TD
 
 ```
 # RECOMMENDED: Use service wrappers for production
-from omnibase_core.models.nodes.node_services import (
-    ModelServiceEffect,
-    ModelServiceCompute,
-    ModelServiceReducer,
-    ModelServiceOrchestrator
-)
+from omnibase_core.models.service.model_service_effect import ModelServiceEffect
+from omnibase_core.models.service.model_service_compute import ModelServiceCompute
+from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
+from omnibase_core.models.service.model_service_orchestrator import ModelServiceOrchestrator
 
 class MyProductionService(ModelServiceCompute):
     """Production-ready COMPUTE node with standard mixins."""
