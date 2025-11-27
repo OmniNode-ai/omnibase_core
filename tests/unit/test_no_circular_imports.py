@@ -383,16 +383,9 @@ def test_error_codes_safe_imports() -> None:
             msg = f"error_codes has runtime import of {forbidden} - this will cause circular import!"
             raise AssertionError(msg)
 
-    # error_codes SHOULD import enums (but NOT types.core_types - that import was removed to break circular dependencies)
-    # See line 82 of error_codes.py: "# Removed unused import that caused circular dependency:"
-    required_imports = [
-        "omnibase_core.enums.enum_onex_status",
-    ]
-
-    for required in required_imports:
-        if required not in imported_modules:
-            msg = f"error_codes should import {required}"
-            raise AssertionError(msg)
+    # Note: Previously checked for required imports like enum_onex_status,
+    # but these were removed as unused during tech debt cleanup.
+    # The important check is that forbidden imports are not present.
 
 
 def test_contracts_no_circular_imports() -> None:
