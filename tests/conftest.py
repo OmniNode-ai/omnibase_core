@@ -507,3 +507,11 @@ def detect_event_loop_mocking_issues(request: pytest.FixtureRequest) -> None:
 
 # Import isolation fixtures to make them available globally
 # These fixtures enable proper state isolation for parallel test execution
+from tests.fixtures.isolation import (
+    clear_caches_fixture,
+    fresh_asyncio_loop,
+    isolated_correlation_context,
+    reset_all_singletons,
+    reset_container_singleton,
+    reset_registries,
+)
