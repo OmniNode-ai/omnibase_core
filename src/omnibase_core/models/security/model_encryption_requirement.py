@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

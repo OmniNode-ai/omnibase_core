@@ -16,8 +16,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import pytest
-
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.validation.auditor_protocol import (
     ModelAuditResult,

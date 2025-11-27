@@ -3,7 +3,6 @@ Canonical model for specifying a regeneration target (artifact or directory).
 """
 
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel
 

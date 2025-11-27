@@ -5,22 +5,13 @@ Tests protocol compliance for various omnibase_core models and validates
 that protocols work correctly with real model implementations.
 """
 
-import pytest
 from pydantic import BaseModel, Field
 
 from omnibase_core.types.constraints import (
-    Configurable,
-    Executable,
-    Identifiable,
-    Nameable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
     is_configurable,
     is_executable,
     is_identifiable,
     is_metadata_provider,
-    is_nameable,
     is_serializable,
     is_validatable,
 )

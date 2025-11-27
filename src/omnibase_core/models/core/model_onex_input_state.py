@@ -2,12 +2,10 @@
 ONEX input state base model.
 """
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-
-from omnibase_core.models.core.model_onex_input_state_config import ModelConfig
 
 
 class ModelOnexInputState(BaseModel):

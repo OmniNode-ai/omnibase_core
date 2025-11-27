@@ -5,10 +5,6 @@ Introspection Contract Info Configuration - ONEX Standards Compliant.
 Strongly-typed configuration class for introspection contract info.
 """
 
-from omnibase_core.models.core.model_introspection_contract_info import (
-    ModelIntrospectionContractInfo,
-)
-
 
 class ModelConfig:
     """Pydantic model configuration for ONEX compliance."""

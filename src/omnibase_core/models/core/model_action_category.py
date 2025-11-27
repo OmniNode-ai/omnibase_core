@@ -9,7 +9,7 @@ Action Category Model.
 Defines the categories of node actions as a proper Pydantic model.
 """
 
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from pydantic import BaseModel
 

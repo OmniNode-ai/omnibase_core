@@ -3,8 +3,7 @@ Pydantic models and validators for OmniNode metadata block schema and validation
 """
 
 import re
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 

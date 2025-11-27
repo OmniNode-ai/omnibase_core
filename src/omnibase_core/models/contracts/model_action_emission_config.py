@@ -9,7 +9,6 @@ execution strategies for workflow coordination.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

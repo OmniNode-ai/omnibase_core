@@ -12,7 +12,7 @@ Rich action type model that replaces EnumNodeActionType with full metadata suppo
 Self-contained action definitions with built-in categorization and validation.
 """
 
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from pydantic import BaseModel
 

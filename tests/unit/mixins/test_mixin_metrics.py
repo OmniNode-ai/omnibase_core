@@ -4,8 +4,6 @@ Tests for MixinMetrics - Performance metrics collection mixin.
 Coverage target: 60%+ (stub implementation with defensive attribute handling)
 """
 
-import pytest
-
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 
 

@@ -1,13 +1,9 @@
-from pydantic import Field
-
 """
 TypedDict for field values.
 
 This supports the field accessor pattern by providing strong typing
 for field values without resorting to Any type usage.
 """
-
-from typing import Any
 
 from typing_extensions import TypedDict
 

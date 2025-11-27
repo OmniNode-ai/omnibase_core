@@ -6,7 +6,6 @@ Represents specific version implementations with contract compliance and validat
 """
 
 from datetime import datetime
-from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -22,11 +21,10 @@ from omnibase_core.models.core.model_version_file import ModelVersionFile
 from omnibase_core.models.core.model_version_implementation import (
     ModelVersionImplementation,
 )
-from omnibase_core.models.core.model_version_manifest_class_config import ModelConfig
 from omnibase_core.models.core.model_version_security import ModelVersionSecurity
 from omnibase_core.models.core.model_version_testing import ModelVersionTesting
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer, SemVerField
+from omnibase_core.models.primitives.model_semver import SemVerField
 
 
 class ModelVersionManifest(BaseModel):
@@ -186,7 +184,6 @@ class ModelVersionManifest(BaseModel):
 
     def get_file_by_type(self, file_type: str) -> list[ModelVersionFile]:
         """Get all files of specified type."""
-        from omnibase_core.models.core.model_version_file import ModelVersionFile
 
         all_files = (
             self.implementation.model_files

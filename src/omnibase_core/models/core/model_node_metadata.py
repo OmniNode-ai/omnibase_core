@@ -38,7 +38,6 @@ If you change how the hash is computed, how fields are normalized, or the struct
 This policy is enforced for all ONEX metadata blocks.
 """
 
-import enum
 from pathlib import Path
 
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
@@ -57,12 +56,9 @@ from omnibase_core.models.examples.model_data_handling_declaration import (
 )
 
 from .model_extension_value import ModelExtensionValue
-from .model_logging_config import EnumLogFormat, ModelLogFormat, ModelLoggingConfig
+from .model_logging_config import EnumLogFormat, ModelLoggingConfig
 from .model_namespace import ModelNamespace
-from .model_node_metadata_block import (
-    ModelNodeMetadataBlock,
-    strip_volatile_fields_from_dict,
-)
+from .model_node_metadata_block import ModelNodeMetadataBlock
 
 # Import separated models
 from .model_signature_contract import ModelSignatureContract

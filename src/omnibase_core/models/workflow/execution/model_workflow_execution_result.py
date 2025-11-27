@@ -1,9 +1,4 @@
-import uuid
-from typing import Any
-
 from pydantic import Field
-
-from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 """
 Simple Workflow Execution Result Model - ONEX Standards Compliant.

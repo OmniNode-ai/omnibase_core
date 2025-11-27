@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pydantic import Field
-
 """
 Log data model for structured logging in event bus operations.
 """

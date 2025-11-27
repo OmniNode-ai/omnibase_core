@@ -4,7 +4,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_workflow import ModelWorkflow
 from omnibase_core.models.operations.model_workflow_parameters import (
     ModelWorkflowParameters,
 )

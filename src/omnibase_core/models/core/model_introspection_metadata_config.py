@@ -1,6 +1,3 @@
-import json
-
-
 class ModelIntrospectionMetadataConfig:
     json_schema_extra = {
         "example": {

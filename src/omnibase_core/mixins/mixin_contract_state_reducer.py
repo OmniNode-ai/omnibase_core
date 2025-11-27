@@ -1,4 +1,4 @@
-from typing import Any, Generic
+from typing import Any
 
 from omnibase_core.enums.enum_transition_type import EnumTransitionType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

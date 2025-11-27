@@ -1,5 +1,3 @@
-from typing import cast
-
 """
 Action Registry for Dynamic CLI Action Discovery.
 
@@ -8,11 +6,11 @@ enabling third-party nodes to register their own actions dynamically.
 """
 
 from pathlib import Path
+from typing import cast
 
 from omnibase_core.models.cli.model_cli_action import ModelCliAction
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
-from omnibase_core.utils.util_singleton_holders import _ActionRegistryHolder
 
 
 class ModelActionRegistry:
@@ -241,36 +239,48 @@ class ModelActionRegistry:
 
 
 def get_action_registry() -> ModelActionRegistry:
-    """Get the global action registry instance (now via DI container)."""
-    # Try to get from container first
-    try:
-        from omnibase_core.models.container.model_onex_container import (
-            get_model_onex_container_sync,
-        )
+    """Get the action registry from DI container.
 
+    Raises:
+        ModelOnexError: If DI container is not initialized
+    """
+    from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+    from omnibase_core.models.container.model_onex_container import (
+        get_model_onex_container_sync,
+    )
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+    try:
         container = get_model_onex_container_sync()
         registry = cast(ModelActionRegistry, container.action_registry())
 
-        # Ensure core actions are bootstrapped (idempotent)
+        # Auto-bootstrap if empty
         if len(registry.get_all_actions()) == 0:
             registry.bootstrap_core_actions()
 
         return registry
-    except (
-        Exception
-    ):  # fallback-ok: DI container unavailable during bootstrap or circular dependency scenarios
-        # Fallback to singleton holder for edge cases
-        # Use different variable names to avoid type conflict with 'registry' from try block
-        existing = _ActionRegistryHolder.get()
-        if existing is None:
-            new_registry = ModelActionRegistry()
-            new_registry.bootstrap_core_actions()
-            _ActionRegistryHolder.set(new_registry)
-            return new_registry
-        # Type narrowing: existing is now guaranteed to be ModelActionRegistry
-        return existing
+    except Exception as e:
+        raise ModelOnexError(
+            message="DI container not initialized - cannot get action registry. "
+            "Initialize the container first.",
+            error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+        ) from e
 
 
 def reset_action_registry() -> None:
-    """Reset the global action registry (for testing)."""
-    _ActionRegistryHolder.set(None)
+    """Reset the action registry by clearing all registered actions (for testing).
+
+    This clears the registry obtained from the DI container.
+    If the container is not initialized, this is a no-op.
+    """
+    from omnibase_core.models.container.model_onex_container import (
+        get_model_onex_container_sync,
+    )
+
+    try:
+        container = get_model_onex_container_sync()
+        registry = cast(ModelActionRegistry, container.action_registry())
+        registry.clear()
+    except Exception:
+        # If container is not initialized, nothing to reset
+        pass

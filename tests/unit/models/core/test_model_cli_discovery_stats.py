@@ -5,9 +5,6 @@ This module tests discovery statistics tracking, health metrics calculation,
 and performance monitoring for CLI tool discovery operations.
 """
 
-import pytest
-from pydantic import ValidationError
-
 from omnibase_core.models.core.model_cli_discovery_stats import ModelCliDiscoveryStats
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

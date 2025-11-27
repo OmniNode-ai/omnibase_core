@@ -1,5 +1,3 @@
-from typing import Generic, Optional
-
 from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -14,7 +12,6 @@ error analysis, and operational insights for ONEX registry validation systems.
 
 import re
 from datetime import datetime
-from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel
@@ -24,8 +21,6 @@ from omnibase_core.enums.enum_tool_criticality import EnumToolCriticality
 from omnibase_core.enums.enum_tool_missing_reason import EnumToolMissingReason
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-from .model_monitoring_metrics import ModelMonitoringMetrics
 
 
 class ModelMissingTool(BaseModel):

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import TypeVar
 
-from pydantic import Field
-
 """
 Environment field accessor with type coercion.
 

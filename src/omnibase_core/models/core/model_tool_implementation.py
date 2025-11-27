@@ -1,5 +1,3 @@
-import json
-
 from pydantic import Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -12,8 +10,6 @@ enabling protocol-based tool execution while maintaining type safety.
 """
 
 from pydantic import BaseModel
-
-from .model_tool_implementation_config import ModelConfig
 
 
 class ModelToolImplementation(BaseModel):

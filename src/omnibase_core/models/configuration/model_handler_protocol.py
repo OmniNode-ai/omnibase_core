@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_handler_source import EnumHandlerSource

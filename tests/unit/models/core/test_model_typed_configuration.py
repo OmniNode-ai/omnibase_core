@@ -7,8 +7,6 @@ validation, protocol implementations, and custom properties.
 
 from typing import Any
 
-import pytest
-
 from omnibase_core.models.core.model_typed_configuration import ModelTypedConfiguration
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -377,7 +375,6 @@ class TestModelTypedConfigurationBranchCoverage:
 
     def test_merge_configuration_none_name_branch(self):
         """Test merge when other.name is None (False branch)."""
-        from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         config1 = ModelTypedConfiguration[dict[str, Any]](
             name="original_name", description="original"

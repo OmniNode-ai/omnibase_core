@@ -13,7 +13,6 @@ from pydantic import ValidationError
 from omnibase_core.models.core.model_generic_collection_summary import (
     ModelGenericCollectionSummary,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class TestModelGenericCollectionSummary:

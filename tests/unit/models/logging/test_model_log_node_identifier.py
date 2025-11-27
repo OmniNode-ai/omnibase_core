@@ -8,7 +8,6 @@ including both UUID and string-based identifiers.
 from uuid import UUID, uuid4
 
 import pytest
-from pydantic import ValidationError
 
 from omnibase_core.models.logging.model_log_node_identifier import (
     ModelLogNodeIdentifier,

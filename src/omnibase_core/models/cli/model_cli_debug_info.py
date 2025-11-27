@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Generic
 
 from pydantic import Field, field_validator
 

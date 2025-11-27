@@ -12,9 +12,6 @@ Tests cover:
 - Memory efficiency
 """
 
-from typing import Any
-from unittest.mock import MagicMock
-
 import pytest
 from pydantic import BaseModel
 

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-
 """
 Mixin for models that need validation capabilities.
 

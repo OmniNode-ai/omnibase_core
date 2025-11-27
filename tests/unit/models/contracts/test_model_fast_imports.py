@@ -4,9 +4,7 @@ Unit tests for model_fast_imports.py fast import factory.
 Tests zero-import-time loading, caching, and factory pattern for contract models.
 """
 
-import importlib
 import sys
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -468,7 +466,6 @@ class TestZeroImportTimeLoading:
             del sys.modules[mod]
 
         # Import the fast imports module
-        from omnibase_core.models.contracts import model_fast_imports
 
         # Verify no contract modules were imported
         contract_modules = [

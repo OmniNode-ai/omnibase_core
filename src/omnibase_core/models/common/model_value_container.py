@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-from typing import Generic, Optional, Union
 
 from pydantic import Field, field_validator
 
@@ -25,15 +24,9 @@ Safe Runtime Imports (OK to import at module level):
 """
 
 import json
-from typing import Any, ClassVar
+from typing import Any
 
 # Import protocols from omnibase_spi
-from omnibase_spi.protocols.types import (
-    ProtocolModelJsonSerializable as ModelProtocolJsonSerializable,
-)
-from omnibase_spi.protocols.types import (
-    ProtocolModelValidatable as ModelProtocolValidatable,
-)
 from pydantic import BaseModel
 
 # Import standard type alias from ONEX common types

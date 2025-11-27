@@ -5,11 +5,8 @@ This module tests the CLI adapter's exit code mapping, status handling,
 and error reporting functionality.
 """
 
-import sys
-from unittest.mock import Mock, call, patch
+from unittest.mock import patch
 from uuid import uuid4
-
-import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel

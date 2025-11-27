@@ -1,12 +1,10 @@
 from collections.abc import Callable
-from typing import Generic, Optional
 
 """
 ONEX Pattern Exclusion Decorators.
 Provides fine-grained control over ONEX zero tolerance standards enforcement.
 """
 
-from collections.abc import Callable as CallableABC
 from typing import Any
 
 # Self-exclusion: This module contains example code and infrastructure

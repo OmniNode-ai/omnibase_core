@@ -1,5 +1,3 @@
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -33,11 +31,8 @@ This module now imports from separated model files for better organization
 and compliance with one-model-per-file naming conventions.
 """
 
-from omnibase_core.enums.enum_github_action_event import (
-    EnumGithubActionEvent,
-    GitHubActionEvent,
-)
-from omnibase_core.enums.enum_github_runner_os import EnumGithubRunnerOs, GitHubRunnerOS
+from omnibase_core.enums.enum_github_action_event import EnumGithubActionEvent
+from omnibase_core.enums.enum_github_runner_os import EnumGithubRunnerOs
 
 from .model_git_hub_actions_workflow import ModelGitHubActionsWorkflow
 from .model_job import ModelJob

@@ -22,7 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

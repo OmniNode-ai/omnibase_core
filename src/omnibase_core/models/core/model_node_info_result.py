@@ -1,5 +1,3 @@
-from typing import Any
-
 """
 Node Information Result Model.
 

@@ -6,7 +6,6 @@ Provides authentication, authorization, and audit capabilities.
 """
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
@@ -16,7 +15,6 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_security_profile import EnumSecurityProfile
 from omnibase_core.models.core.model_onex_audit_event import ModelOnexAuditEvent
-from omnibase_core.models.core.model_onex_security_context_config import ModelConfig
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 

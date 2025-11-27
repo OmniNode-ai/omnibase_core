@@ -3,7 +3,6 @@ from typing import Literal
 from pydantic import Field
 
 from omnibase_core.enums.enum_message_type import EnumMessageType
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.operations.model_message_content_base import (
     ModelMessageContentBase,
 )

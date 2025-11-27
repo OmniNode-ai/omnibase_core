@@ -13,7 +13,6 @@ import hashlib
 import json
 import logging
 from datetime import UTC, datetime, timedelta
-from enum import Enum
 
 from pydantic import BaseModel, field_validator
 
@@ -363,7 +362,6 @@ class ModelSignatureChain(BaseModel):
         compliance_frameworks: list[EnumComplianceFramework] | None = None,
     ) -> "ModelSignatureChain":
         """Create a new signature chain for an envelope."""
-        import uuid
 
         return cls(
             chain_id=uuid4(),

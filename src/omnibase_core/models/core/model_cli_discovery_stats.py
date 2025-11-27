@@ -9,8 +9,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_cli_discovery_config import ModelConfig
-
 
 class ModelCliDiscoveryStats(BaseModel):
     """

@@ -6,7 +6,6 @@ from .model_onex_batch_result import ModelOnexBatchResult
 from .model_onex_message import ModelOnexMessage
 
 # Import separated models
-from .model_onex_message_context import ModelOnexMessageContext
 from .model_onex_result import ModelOnexResult
 from .model_onex_result_metadata import ModelOnexResultMetadata
 from .model_unified_run_metadata import ModelUnifiedRunMetadata

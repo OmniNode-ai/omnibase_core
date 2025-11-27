@@ -1,5 +1,3 @@
-from typing import Generic
-
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai

@@ -7,8 +7,7 @@ performance monitoring, and operational insights for ONEX registry tools.
 
 import re
 from datetime import UTC, datetime
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, Field, field_validator
 

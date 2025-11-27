@@ -3,8 +3,6 @@
 Pydantic configuration for ModelMaskedData.
 """
 
-from pydantic import ConfigDict
-
 
 class ModelConfig:
     """Pydantic configuration."""

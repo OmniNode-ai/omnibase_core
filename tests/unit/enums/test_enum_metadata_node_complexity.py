@@ -1,6 +1,6 @@
 """Tests for enum_metadata_node_complexity.py"""
 
-from enum import Enum, unique
+from enum import Enum
 
 import pytest
 

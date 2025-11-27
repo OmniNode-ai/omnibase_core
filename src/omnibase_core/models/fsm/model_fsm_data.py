@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 """
 Strongly-typed FSM (Finite State Machine) data models.
 

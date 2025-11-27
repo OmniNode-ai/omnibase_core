@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -12,8 +10,7 @@ Unified severity model with strong typing and immutable constructor patterns.
 Phase 3I remediation: Eliminated all factory methods and conversion anti-patterns.
 """
 
-from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 from pydantic import BaseModel, field_validator
 from pydantic_core.core_schema import ValidationInfo

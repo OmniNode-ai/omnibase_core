@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from typing import Generic, Optional, TypeVar, Union
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Type validation tools for ONEX compliance.
 
@@ -18,9 +14,7 @@ import argparse
 import ast
 import sys
 from pathlib import Path
-from typing import Any
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )

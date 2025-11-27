@@ -15,8 +15,6 @@ Target: 85%+ coverage for decorators/pattern_exclusions.py
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from omnibase_core.decorators.pattern_exclusions import (
     ONEXPatternExclusion,
     allow_any_type,

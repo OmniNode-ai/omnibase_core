@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field
 
 """
@@ -17,7 +15,6 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.core.model_contract_content import ModelContractContent
-from omnibase_core.models.types import EnvValue
 
 
 class ModelContractCache(BaseModel):

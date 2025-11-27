@@ -17,8 +17,7 @@ Specialized contract model for NodeEffect implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-import uuid
-from typing import Any, ClassVar
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field, field_validator
@@ -33,7 +32,6 @@ StructuredData = dict[str, ParameterValue]
 StructuredDataList = list[StructuredData]
 
 from omnibase_core.enums import EnumNodeType
-from omnibase_core.enums.enum_auth_type import EnumAuthType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
 from omnibase_core.models.common.model_error_context import ModelErrorContext

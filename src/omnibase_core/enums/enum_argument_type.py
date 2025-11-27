@@ -1,6 +1,3 @@
-import json
-from typing import Any
-
 """
 Enum for CLI argument types.
 

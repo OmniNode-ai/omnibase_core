@@ -8,7 +8,6 @@ Used sparingly and only for duck typing utility functions.
 """
 
 from collections.abc import Callable
-from collections.abc import Callable as CallableABC
 
 F = TypeVar("F", bound=Callable[..., Any])
 

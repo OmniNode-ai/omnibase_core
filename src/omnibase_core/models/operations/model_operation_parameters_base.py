@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Union
-
 from pydantic import Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

@@ -4,8 +4,8 @@ Test suite for MixinIntrospectionPublisher.
 Tests introspection data gathering, event publishing, and capability extraction.
 """
 
-from unittest.mock import MagicMock, Mock, patch
-from uuid import UUID, uuid4
+from unittest.mock import Mock, patch
+from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError

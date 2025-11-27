@@ -26,11 +26,9 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
-from pydantic import BaseModel, Field, ValidationError
-
-from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+from pydantic import BaseModel, ValidationError
 
 # Import current implementation directly
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue

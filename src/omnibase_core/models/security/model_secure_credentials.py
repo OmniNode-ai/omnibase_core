@@ -4,7 +4,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, TypeVar
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, SecretStr
 
 from .model_audit_data import ModelAuditData
 from .model_credential_validation_result import ModelCredentialValidationResult

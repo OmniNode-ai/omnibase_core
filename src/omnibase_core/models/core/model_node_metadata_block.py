@@ -3,10 +3,7 @@ Node metadata block model.
 """
 
 import enum
-import json
-import uuid
-from pathlib import Path
-from typing import Annotated, Any, ClassVar, Optional, TypeAlias, cast
+from typing import Annotated, Any, ClassVar
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
@@ -20,15 +17,12 @@ from omnibase_core.models.core.model_canonicalization_policy import (
 )
 from omnibase_core.models.core.model_dependency_block import ModelDependencyBlock
 from omnibase_core.models.core.model_entrypoint import EntrypointBlock
-from omnibase_core.models.core.model_function_tool import ModelFunctionTool
-from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_io_block import ModelIOBlock
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
 from omnibase_core.models.core.model_serializable_dict import ModelSerializableDict
 from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.models.core.model_tool_collection import ModelToolCollection
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.metadata.model_metadata_constants import get_namespace_prefix
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Default version constants - overridden at serialization time by get_canonical_versions()

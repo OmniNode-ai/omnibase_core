@@ -5,8 +5,6 @@ This module now imports from separated model files for better organization
 and compliance with one-model-per-file naming conventions.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from .model_matrix_strategy import ModelMatrixStrategy

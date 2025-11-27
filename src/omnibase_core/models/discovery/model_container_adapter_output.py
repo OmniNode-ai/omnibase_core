@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import Field
 
 """Container Adapter Output model for ONEX Discovery & Integration Event Registry.

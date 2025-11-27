@@ -1,9 +1,6 @@
-import uuid
 from typing import Literal
 
 from pydantic import Field
-
-from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 """
 Workflow Step Model - ONEX Standards Compliant.
@@ -14,7 +11,6 @@ with proper Pydantic validation and type safety.
 ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 """
 
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel

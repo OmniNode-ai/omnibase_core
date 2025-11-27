@@ -5,8 +5,6 @@ This provides type-safe parameters for capability factory pattern
 without circular import dependencies.
 """
 
-from typing import Any
-
 from typing_extensions import TypedDict
 
 

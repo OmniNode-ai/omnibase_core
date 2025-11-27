@@ -1,8 +1,6 @@
 """Tests for model_value_union.py"""
 
 import json
-import math
-from typing import Any
 
 import pytest
 

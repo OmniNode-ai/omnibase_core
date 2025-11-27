@@ -1,8 +1,5 @@
 from pydantic import Field
 
-from omnibase_core.constants.event_types import NODE_INTROSPECTION_EVENT
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 __all__ = [
     "ModelNodeCapabilities",
     "ModelNodeIntrospectionEvent",
@@ -18,8 +15,6 @@ This enables pure event-driven service discovery.
 from typing import Any
 
 from pydantic import BaseModel
-
-from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 
 from .model_nodeintrospectionevent import ModelNodeIntrospectionEvent
 

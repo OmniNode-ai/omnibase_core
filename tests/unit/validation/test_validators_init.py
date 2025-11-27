@@ -5,8 +5,6 @@ Tests that all validators and related models are properly exported
 and accessible from the package level.
 """
 
-import pytest
-
 
 class TestValidationPackageExports:
     """Test validation package exports."""

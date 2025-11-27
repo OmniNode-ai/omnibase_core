@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TypeVar
 
-from pydantic import Field, ValidationInfo, field_validator
+from pydantic import Field
 
 """
 Typed property model for environment properties.

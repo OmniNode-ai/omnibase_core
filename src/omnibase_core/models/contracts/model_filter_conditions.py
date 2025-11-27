@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime
 from typing import Literal
 
@@ -16,7 +15,6 @@ ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 """
 
 from datetime import UTC
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel

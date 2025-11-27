@@ -1,7 +1,5 @@
 """Unit tests for EnumCacheEvictionPolicy."""
 
-import pytest
-
 from omnibase_core.enums.enum_cache_eviction_policy import EnumCacheEvictionPolicy
 
 

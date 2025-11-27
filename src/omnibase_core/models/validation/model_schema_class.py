@@ -6,8 +6,6 @@ Includes canonical fields and is extensible for M1+.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.validation.model_required_fields_model import (

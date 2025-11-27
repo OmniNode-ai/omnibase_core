@@ -1,6 +1,6 @@
 """Tests for enum_metric_type.py"""
 
-from enum import Enum, unique
+from enum import Enum
 
 import pytest
 

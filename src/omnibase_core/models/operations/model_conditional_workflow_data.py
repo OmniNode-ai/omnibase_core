@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from omnibase_core.enums.enum_workflow_type import EnumWorkflowType
 

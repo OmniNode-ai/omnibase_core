@@ -1,5 +1,3 @@
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 GitHub Actions workflow model.
 """
@@ -8,10 +6,6 @@ from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel
-
-from omnibase_core.models.configuration.model_workflow_configuration import (
-    WorkflowPermissions,
-)
 
 from .model_job import ModelJob
 from .model_workflow_triggers import ModelWorkflowTriggers

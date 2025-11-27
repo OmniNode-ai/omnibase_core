@@ -1,5 +1,3 @@
-from enum import Enum
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_log_format import EnumLogFormat

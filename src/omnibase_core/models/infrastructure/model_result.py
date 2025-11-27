@@ -15,7 +15,6 @@ success/error handling with proper MyPy compliance.
 """
 
 
-from collections.abc import Callable as CallableABC
 from typing import Any, cast
 
 from pydantic import BaseModel, field_serializer

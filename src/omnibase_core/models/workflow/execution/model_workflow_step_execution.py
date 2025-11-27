@@ -1,9 +1,6 @@
-import uuid
 from collections.abc import Callable
 
 from pydantic import Field
-
-from omnibase_core.models.core.model_workflow import ModelWorkflow
 
 """
 Workflow Step Execution Model - ONEX Standards Compliant.
@@ -14,7 +11,6 @@ Different from ModelWorkflowStep (configuration) - this tracks execution state.
 Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
 """
 
-from collections.abc import Callable as CallableABC
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4

@@ -1,5 +1,4 @@
 import os
-import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
@@ -15,15 +14,6 @@ from omnibase_core.models.configuration.model_connection_parse_result import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Moved to TYPE_CHECKING import
-
-if TYPE_CHECKING:
-    from omnibase_core.models.core.model_performance_profile import (
-        ModelPerformanceProfile,
-    )
-    from omnibase_core.models.core.model_security_assessment import (
-        ModelSecurityAssessment,
-    )
-
 from omnibase_core.models.security.model_secure_credentials import (
     ModelSecureCredentials,
 )

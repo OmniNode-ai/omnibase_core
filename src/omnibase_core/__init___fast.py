@@ -43,7 +43,6 @@ import-time penalties. This reduces package import time from 453ms to <5ms.
 # NO PACKAGE-LEVEL IMPORTS - This is the key fix!
 # All validation imports moved to lazy functions to eliminate import cascade
 
-from collections.abc import Callable as CallableABC
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

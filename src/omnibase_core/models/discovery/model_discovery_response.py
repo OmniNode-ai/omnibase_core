@@ -5,7 +5,6 @@ Model for discovery client responses with proper typing and validation
 following ONEX canonical patterns.
 """
 
-import json
 from datetime import datetime
 from typing import Any
 from uuid import UUID

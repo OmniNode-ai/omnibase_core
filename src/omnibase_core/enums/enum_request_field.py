@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """Request field names in Claude API."""
 
 from enum import Enum

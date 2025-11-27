@@ -18,7 +18,6 @@ from omnibase_core.models.core.model_core_performance_metrics import (
 )
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.security.model_security_context import ModelSecurityContext
 
 

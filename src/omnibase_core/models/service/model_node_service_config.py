@@ -8,7 +8,6 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 "\nONEX Node Service Configuration Model.\n\nThis module provides a comprehensive Pydantic schema for ONEX node service configuration,\nsupporting Docker, Kubernetes, and compose file generation from contracts.\n\nAuthor: OmniNode Team\n"
 import os
-from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel

@@ -4,11 +4,7 @@ Unit tests for model_lazy_imports.py lazy import loader.
 Tests lazy loading with caching, singleton pattern, and performance optimization.
 """
 
-import functools
 import sys
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 
 class TestModelLazyContractLoader:
@@ -375,7 +371,6 @@ class TestLazyLoadingBehavior:
             del sys.modules[mod]
 
         # Import the lazy imports module
-        from omnibase_core.models.contracts import model_lazy_imports
 
         # Verify no contract modules were imported
         contract_modules = [
@@ -455,7 +450,6 @@ class TestPerformanceOptimization:
 
         # Import lazy imports module - should be fast
         start = time.perf_counter()
-        from omnibase_core.models.contracts.model_lazy_imports import get_contract_base
 
         import_time = (time.perf_counter() - start) * 1000
 

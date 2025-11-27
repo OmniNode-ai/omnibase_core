@@ -1,5 +1,3 @@
-import json
-
 """
 Model configuration for ModelNodeIntrospectionResponse.
 """

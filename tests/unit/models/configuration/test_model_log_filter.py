@@ -1,7 +1,5 @@
 """Tests for ModelLogFilter."""
 
-import pytest
-
 from omnibase_core.models.configuration.model_log_filter import ModelLogFilter
 from omnibase_core.models.configuration.model_log_filter_config import (
     ModelLogFilterConfig,

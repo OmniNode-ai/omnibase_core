@@ -2,8 +2,6 @@ from typing import TypeVar
 
 from pydantic import Field
 
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Canonical Workflow Parameter Model
 
@@ -14,8 +12,6 @@ Replaces all duplicate ModelWorkflowParameter definitions across the codebase.
 from typing import Generic
 
 from pydantic import BaseModel
-
-from .model_workflow_parameter_config import ModelConfig
 
 T = TypeVar("T")
 

@@ -5,10 +5,6 @@ Validates CLI execution configuration model functionality including
 validation, serialization, and edge cases.
 """
 
-from pathlib import Path
-
-import pytest
-
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.models.cli.model_cli_execution_config import ModelCliExecutionConfig
 from omnibase_core.models.cli.model_cli_execution_input_data import (

@@ -376,7 +376,7 @@ Now that you understand what nodes are, learn about the **four node types** and 
 
 ```
 # Preferred: production-ready compute via service wrapper
-from omnibase_core.models.nodes.node_services import ModelServiceCompute
+from omnibase_core.models.service.model_service_compute import ModelServiceCompute
 
 class MyComputeService(ModelServiceCompute):
     pass

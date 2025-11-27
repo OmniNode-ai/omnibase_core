@@ -1,28 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
-
 """
 Data models for protocol audit operations.
 """
 
 
 import logging
-from collections import defaultdict
 from dataclasses import dataclass
-from pathlib import Path
-
-from omnibase_core.errors.exceptions import (
-    ExceptionConfigurationError,
-    ExceptionInputValidationError,
-)
-from omnibase_core.validation.validation_utils import (
-    ModelDuplicationInfo,
-    ModelProtocolInfo,
-    determine_repository_name,
-    extract_protocols_from_directory,
-    validate_directory_path,
-)
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)

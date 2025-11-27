@@ -13,7 +13,6 @@ Test Coverage:
     - Schema retrieval
 """
 
-import os
 from typing import Any
 
 import pytest

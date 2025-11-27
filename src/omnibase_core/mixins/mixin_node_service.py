@@ -26,7 +26,6 @@ tool-as-a-service functionality for MCP, GraphQL, and other integrations.
 """
 
 import asyncio
-import contextlib
 import signal
 import time
 from collections.abc import Callable

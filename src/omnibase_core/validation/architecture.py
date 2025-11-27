@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
-
 """
 ONEX ModelArchitecture validation tools.
 
@@ -15,7 +13,6 @@ import argparse
 import ast
 import sys
 from pathlib import Path
-from typing import TypedDict
 
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,

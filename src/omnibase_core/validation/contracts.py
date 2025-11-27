@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Generic
-
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """

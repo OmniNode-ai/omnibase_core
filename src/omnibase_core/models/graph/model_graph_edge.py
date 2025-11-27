@@ -9,7 +9,6 @@ Type-safe graph edge that replaces Dict[str, Any] usage
 in orchestrator graphs.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import uuid
-
 """
 TypedDict for event information.
 """

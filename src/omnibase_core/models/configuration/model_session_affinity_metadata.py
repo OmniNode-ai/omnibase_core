@@ -1,9 +1,6 @@
-import uuid
-
 from pydantic import Field
 
 "\nModelSessionAffinityMetadata - Session affinity configuration for load balancing\n\nSession affinity model for configuring sticky sessions and client-to-node\nrouting persistence in load balancing systems.\n"
-from typing import Any
 
 from pydantic import BaseModel
 

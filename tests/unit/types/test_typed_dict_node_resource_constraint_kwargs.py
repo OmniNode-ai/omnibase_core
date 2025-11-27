@@ -2,8 +2,6 @@
 Test suite for TypedDictNodeResourceConstraintKwargs.
 """
 
-import pytest
-
 from omnibase_core.types.typed_dict_node_resource_constraint_kwargs import (
     TypedDictNodeResourceConstraintKwargs,
 )

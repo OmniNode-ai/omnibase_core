@@ -9,8 +9,6 @@ Tests cover:
 - normalize_legacy_event_type function behavior
 """
 
-import pytest
-
 
 class TestEventTypeConstants:
     """Test event type constant definitions."""

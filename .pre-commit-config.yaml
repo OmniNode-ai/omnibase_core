@@ -324,7 +324,7 @@ repos:
       # Documentation link validation - prevents broken links in CI
       - id: validate-doc-links
         name: ONEX Documentation Link Validation
-        entry: poetry run python scripts/validate-doc-links.py
+        entry: poetry run python scripts/validation/validate-doc-links.py
         args: [--fix-case]
         language: system
         pass_filenames: false

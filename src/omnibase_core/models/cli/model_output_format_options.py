@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import json
 from collections.abc import Callable
-from typing import TypedDict, TypeVar
+from typing import TypeVar
 
 from pydantic import Field
 
@@ -15,7 +14,6 @@ Structured replacement for dict[str, str] output format options with proper typi
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from collections.abc import Callable as CallableABC
 from typing import Any, cast
 
 from pydantic import BaseModel

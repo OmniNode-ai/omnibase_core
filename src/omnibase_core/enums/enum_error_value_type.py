@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Union
-
 """
 Error Value Type Enum.
 

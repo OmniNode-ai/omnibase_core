@@ -9,8 +9,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from .model_service_discovery_config import ModelConfig
-
 
 class ModelServiceDiscoveryManager(BaseModel):
     """

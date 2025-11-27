@@ -4,8 +4,6 @@ Test suite for TypedDictExecutionStats.
 
 from datetime import datetime
 
-import pytest
-
 from omnibase_core.types.typed_dict_execution_stats import TypedDictExecutionStats
 
 

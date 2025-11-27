@@ -10,8 +10,6 @@ Tests cover:
 
 from __future__ import annotations
 
-import pytest
-
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )

@@ -15,7 +15,6 @@ collections of typed properties with validation and helper methods.
 """
 
 
-from collections.abc import Callable as CallableABC
 from typing import Any
 
 from pydantic import BaseModel

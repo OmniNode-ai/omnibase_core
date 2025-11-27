@@ -4,8 +4,6 @@ Unit tests for FSM execution utilities.
 Tests the pure functions in utils/fsm_executor.py for FSM transition execution.
 """
 
-from uuid import uuid4
-
 import pytest
 
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (

@@ -1,7 +1,5 @@
 """Configuration for ModelSecureEventEnvelope."""
 
-from datetime import datetime
-
 from pydantic import ConfigDict
 
 

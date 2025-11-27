@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-
 """
 Data format enumeration for specifying data format types.
 

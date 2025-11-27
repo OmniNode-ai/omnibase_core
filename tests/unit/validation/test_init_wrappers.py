@@ -16,8 +16,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.validation import (
     validate_all,

@@ -21,12 +21,10 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-import json
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any, Union
 
 from omnibase_spi.protocols.core import ProtocolCanonicalSerializer
 from omnibase_spi.protocols.types.protocol_core_types import ContextValue
-from pydantic import Field
 
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -128,7 +126,6 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             except (pydantic.ValidationError, TypeError) as e:
                 # Provide defaults for missing required fields to allow incomplete dicts
                 import uuid as uuid_lib
-                from datetime import datetime, timezone
 
                 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

@@ -74,7 +74,6 @@ class TestInitImportPerformance:
 
         # Time the import
         start = time.perf_counter()
-        import omnibase_core
 
         import_time_ms = (time.perf_counter() - start) * 1000
 

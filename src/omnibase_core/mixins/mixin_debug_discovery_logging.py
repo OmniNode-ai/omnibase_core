@@ -60,7 +60,6 @@ class MixinDebugDiscoveryLogging:
             )
 
             # Replace with debug version (explicit type for MyPy)
-            from collections.abc import Callable
             from typing import Any
 
             def debug_handler(envelope_or_event: Any) -> None:

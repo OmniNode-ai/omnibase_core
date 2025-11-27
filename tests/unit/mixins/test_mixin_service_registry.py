@@ -5,10 +5,8 @@ Tests service discovery, registration, and lifecycle management.
 """
 
 import time
-from unittest.mock import MagicMock, Mock, patch
-from uuid import UUID, uuid4
-
-import pytest
+from unittest.mock import Mock
+from uuid import uuid4
 
 from omnibase_core.mixins.mixin_service_registry import MixinServiceRegistry
 from omnibase_core.models.mixins.model_service_registry_entry import (

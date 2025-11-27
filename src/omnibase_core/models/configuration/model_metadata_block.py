@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import Field, field_validator
 
@@ -10,7 +10,6 @@ MetadataBlock model.
 """
 
 import re
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 

@@ -18,11 +18,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
-if TYPE_CHECKING:
-    from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-
 
 class ModelSchemaValue(BaseModel):
     """

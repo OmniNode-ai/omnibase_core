@@ -21,14 +21,12 @@ Test Plan Reference:
 import asyncio
 import signal
 import time
-from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
-from uuid import UUID, uuid4
+from unittest.mock import AsyncMock, Mock, patch
+from uuid import uuid4
 
 import pytest
 
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
 )
@@ -36,9 +34,7 @@ from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
-from omnibase_core.models.nodes.node_services.model_service_reducer import (
-    ModelServiceReducer,
-)
+from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
 
 # ============================================================================
 # Test Node Implementation

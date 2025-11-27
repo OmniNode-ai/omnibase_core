@@ -1,5 +1,3 @@
-from typing import Any
-
 """
 Operation type enumeration for ONEX CLI operations.
 

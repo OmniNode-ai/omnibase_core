@@ -7,8 +7,6 @@ and handling of various data types and edge cases.
 
 import json
 
-import pytest
-
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
 from omnibase_core.models.cli.model_cli_output_data import ModelCliOutputData
 from omnibase_core.models.cli.model_cli_result_formatter import ModelCliResultFormatter

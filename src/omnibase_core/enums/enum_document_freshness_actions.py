@@ -1,5 +1,3 @@
-import json
-
 """
 Document Freshness Actions enum for type-safe action resolution.
 

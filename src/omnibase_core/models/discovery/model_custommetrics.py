@@ -1,12 +1,15 @@
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.discovery.model_metric_value import ModelMetricValue
+from omnibase_core.models.discovery.model_metric_value import (
+    AnyMetricValue,
+    ModelMetricValue,
+)
 
 
 class ModelCustomMetrics(BaseModel):
     """Custom metrics container with strong typing."""
 
-    metrics: list[ModelMetricValue] = Field(
+    metrics: list[AnyMetricValue] = Field(
         default_factory=list,
         description="List of typed custom metrics",
     )
@@ -21,7 +24,7 @@ class ModelCustomMetrics(BaseModel):
         metrics_dict: dict[str, str | int | float | bool],
     ) -> "ModelCustomMetrics":
         """Create from dictionary with type inference."""
-        metrics = []
+        metrics: list[AnyMetricValue] = []
         for name, value in metrics_dict.items():
             # Check bool before int since bool is a subclass of int in Python
             if isinstance(value, bool):

@@ -1,4 +1,3 @@
-import uuid
 from collections.abc import Callable
 from datetime import datetime
 from typing import TypeVar
@@ -15,7 +14,6 @@ Python's logging module to maintain architectural purity and centralized process
 
 import inspect
 import os
-from collections.abc import Callable as CallableABC
 from datetime import UTC
 from typing import Any
 from uuid import UUID, uuid4
@@ -443,10 +441,49 @@ import re
 
 # Global cache for protocol services to reduce lookup overhead
 import time
+from functools import lru_cache
 
-from omnibase_core.utils.util_singleton_holders import (
-    _ProtocolCacheHolder as _ProtocolCache,
-)
+_PROTOCOL_CACHE_TTL = 300.0
+# Use list to hold mutable timestamp without global statement
+_protocol_cache_state: list[float] = [0.0]
+
+
+@lru_cache(maxsize=1)
+def _get_protocol_services_cached() -> tuple[Any, Any]:
+    """Get formatter and output handler with caching."""
+    _protocol_cache_state[0] = time.time()
+
+    try:
+        from omnibase_core.models.container.model_onex_container import (
+            ModelONEXContainer,
+        )
+        from omnibase_core.nodes.node_logger.protocols.protocol_context_aware_output_handler import (
+            ProtocolContextAwareOutputHandler,
+        )
+        from omnibase_core.nodes.node_logger.protocols.protocol_smart_log_formatter import (
+            ProtocolSmartLogFormatter,
+        )
+
+        container = ModelONEXContainer()
+        formatter = container.get_service(ProtocolSmartLogFormatter)
+        output_handler = container.get_service(ProtocolContextAwareOutputHandler)
+        return (formatter, output_handler)
+    except Exception:  # fallback-ok: protocol services init must never fail
+        return (None, None)
+
+
+def get_protocol_services() -> tuple[Any, Any]:
+    """Get protocol services with TTL refresh."""
+    if time.time() - _protocol_cache_state[0] > _PROTOCOL_CACHE_TTL:
+        _get_protocol_services_cached.cache_clear()
+    return _get_protocol_services_cached()
+
+
+def clear_protocol_cache() -> None:
+    """Clear protocol cache (for testing)."""
+    _protocol_cache_state[0] = 0.0
+    _get_protocol_services_cached.cache_clear()
+
 
 _SENSITIVE_PATTERNS = [
     (re.compile(r"\b[A-Za-z0-9+/]{20,}={0,2}\b"), "[REDACTED_TOKEN]"),  # Base64 tokens
@@ -723,60 +760,8 @@ def _route_to_logger_node(
         node_id: Validated UUID or None (validated via _validate_node_id).
     """
     try:
-        # Check cache with TTL validation
-        current_time = time.time()
-        cache_expired = (
-            current_time - _ProtocolCache.get_timestamp()
-        ) > _ProtocolCache.get_ttl()
-
-        formatter = _ProtocolCache.get_formatter()
-        output_handler = _ProtocolCache.get_output_handler()
-
-        # If not cached or cache expired, perform lookup with locking
-        if formatter is None or output_handler is None or cache_expired:
-            with _ProtocolCache._lock:
-                # Double-check after acquiring lock
-                # NOTE: Access class attributes directly to avoid deadlock
-                # (the get_* methods try to acquire the same non-reentrant lock)
-                current_time = time.time()
-                cache_expired = (
-                    current_time - _ProtocolCache._timestamp
-                ) > _ProtocolCache._ttl
-
-                # Re-check after lock acquisition (may have changed)
-                if (
-                    _ProtocolCache._formatter is None
-                    or _ProtocolCache._output_handler is None
-                    or cache_expired
-                ):
-                    from omnibase_core.models.container.model_onex_container import (
-                        ModelONEXContainer,
-                    )
-                    from omnibase_core.nodes.node_logger.protocols.protocol_context_aware_output_handler import (
-                        ProtocolContextAwareOutputHandler,
-                    )
-                    from omnibase_core.nodes.node_logger.protocols.protocol_smart_log_formatter import (
-                        ProtocolSmartLogFormatter,
-                    )
-
-                    # Try to get logger components from container
-                    try:
-                        container = ModelONEXContainer()
-                        _ProtocolCache._formatter = container.get_service(
-                            ProtocolSmartLogFormatter
-                        )
-                        _ProtocolCache._output_handler = container.get_service(
-                            ProtocolContextAwareOutputHandler
-                        )
-                        _ProtocolCache._timestamp = current_time
-                    except Exception:
-                        # If container fails, use None to trigger fallback logging
-                        _ProtocolCache._formatter = None
-                        _ProtocolCache._output_handler = None
-                        _ProtocolCache._timestamp = current_time
-
-                formatter = _ProtocolCache._formatter
-                output_handler = _ProtocolCache._output_handler
+        # Get cached protocol services with TTL refresh
+        formatter, output_handler = get_protocol_services()
 
         if formatter and output_handler:
             # Format the log event using protocol

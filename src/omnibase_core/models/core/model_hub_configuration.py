@@ -6,10 +6,10 @@ Strongly-typed model for unified hub configuration supporting both contract form
 """
 
 import hashlib
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_coordination_mode import EnumCoordinationMode
 from omnibase_core.enums.enum_hub_capability import EnumHubCapability

@@ -4,8 +4,6 @@ This module provides the ModelMixinMetadata class, which aggregates all
 mixin metadata components for validation and discovery.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

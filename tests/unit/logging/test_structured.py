@@ -14,10 +14,8 @@ Tests cover:
 import json
 import logging
 from datetime import datetime
-from unittest.mock import MagicMock, patch
 from uuid import UUID, uuid4
 
-import pytest
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel

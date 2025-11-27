@@ -6,7 +6,6 @@ and factory methods for CLI execution resources.
 """
 
 import uuid
-from uuid import UUID
 
 import pytest
 

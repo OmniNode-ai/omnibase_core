@@ -5,7 +5,6 @@ from typing import Any, Union
 from pydantic import BaseModel, Field
 
 from .model_complex_filter import ModelComplexFilter
-from .model_custom_filter_base import ModelCustomFilterBase
 from .model_datetime_filter import ModelDateTimeFilter
 from .model_list_filter import ModelListFilter
 from .model_metadata_filter import ModelMetadataFilter

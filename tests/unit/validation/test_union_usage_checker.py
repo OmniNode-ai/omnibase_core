@@ -6,9 +6,6 @@ union patterns, modern union syntax (|), and various AST node types.
 """
 
 import ast
-from pathlib import Path
-
-import pytest
 
 from omnibase_core.models.validation.model_union_pattern import ModelUnionPattern
 from omnibase_core.validation.union_usage_checker import UnionUsageChecker

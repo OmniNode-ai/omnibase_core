@@ -1,7 +1,5 @@
 from pydantic import Field
 
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Model for workflow metrics details.
 
@@ -9,7 +7,6 @@ Structured model for workflow metrics details, replacing Dict[str, Any]
 with proper typing for workflow metrics.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

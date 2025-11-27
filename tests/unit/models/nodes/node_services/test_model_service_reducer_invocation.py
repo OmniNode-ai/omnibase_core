@@ -25,7 +25,7 @@ Reference: MIXIN_NODE_SERVICE_TEST_PLAN.md Section 6.3
 import asyncio
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -39,11 +39,8 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
-from omnibase_core.models.model_reducer_input import ModelReducerInput
 from omnibase_core.models.model_reducer_output import ModelReducerOutput
-from omnibase_core.models.nodes.node_services.model_service_reducer import (
-    ModelServiceReducer,
-)
+from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
 
 
 class ConcreteReducerService(ModelServiceReducer):

@@ -52,7 +52,6 @@ from omnibase_core.models.core.model_validation_action_payload import (
     ModelValidationActionPayload,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 def make_action(name: str, category: ModelActionCategory) -> ModelNodeActionType:

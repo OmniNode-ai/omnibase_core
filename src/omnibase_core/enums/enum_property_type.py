@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import uuid
-from datetime import datetime
-
 """
 Property type enum for environment properties.
 

@@ -5,7 +5,6 @@ Pydantic model for contract file information and validation status.
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 

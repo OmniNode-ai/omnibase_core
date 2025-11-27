@@ -15,7 +15,7 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.primitives import (
+from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     SemVerField,
     parse_input_state_version,

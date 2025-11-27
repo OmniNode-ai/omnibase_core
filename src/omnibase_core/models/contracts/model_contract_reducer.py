@@ -18,13 +18,11 @@ Specialized contract model for NodeReducer implementations providing:
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-import uuid
-from typing import Any, ClassVar
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field
 
-from omnibase_core.models.core.model_workflow import ModelWorkflow
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type aliases for structured data - ZERO TOLERANCE for Any types

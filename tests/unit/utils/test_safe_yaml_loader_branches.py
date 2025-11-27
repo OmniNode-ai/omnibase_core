@@ -6,10 +6,10 @@ Focus on exception handling branches and edge cases.
 
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, mock_open, patch
+from unittest.mock import patch
 
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -321,7 +321,6 @@ class TestDumpYamlContentErrorHandling:
 
     def test_dump_yaml_content_carriage_return_error(self):
         """Test carriage return validation error (line 237)."""
-        import yaml
 
         # Create a custom string class that keeps \r after replacements
         class PersistentCarriageReturnString(str):

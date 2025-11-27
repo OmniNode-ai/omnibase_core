@@ -1,5 +1,3 @@
-from typing import Any
-
 """
 CLI value type enumeration.
 

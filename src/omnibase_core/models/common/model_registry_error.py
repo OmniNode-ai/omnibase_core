@@ -8,8 +8,6 @@ Use this for all structured registry error reporting.
 
 from typing import Any
 
-from pydantic import Field
-
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.enums.enum_registry_error_code import EnumRegistryErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

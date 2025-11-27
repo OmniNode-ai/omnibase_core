@@ -4,10 +4,8 @@ Tests for MixinUtils - Utility functions for metadata canonicalization.
 Coverage target: 100% (single function with simple behavior)
 """
 
-import pytest
 from pydantic import BaseModel
 
-from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.mixins.mixin_utils import canonicalize_metadata_block
 
 

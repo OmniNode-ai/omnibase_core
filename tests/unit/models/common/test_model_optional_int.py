@@ -1,10 +1,6 @@
 """Comprehensive tests for ModelOptionalInt."""
 
-import math
-from typing import Any
-
 import pytest
-from pydantic import ValidationError
 
 from omnibase_core.models.common.model_optional_int import (
     EnumCoercionMode,

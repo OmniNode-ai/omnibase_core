@@ -130,7 +130,7 @@ assert mock_kafka.get_message_count() == 1
 - Testing event publishing coordination without real Kafka
 - Verifying intent structure, correlation IDs, priorities
 
-**Complete Guide**: See [Testing Intent Publisher](../../docs/guides/node-building/09-testing-intent-publisher.md)
+**Complete Guide**: See [Testing Intent Publisher](../../docs/guides/node-building/09_TESTING_INTENT_PUBLISHER.md)
 
 ## Examples
 

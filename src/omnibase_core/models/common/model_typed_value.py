@@ -1,5 +1,4 @@
-import json
-from typing import Generic, TypeVar, Union
+from typing import TypeVar
 
 __all__ = [
     "ModelTypedMapping",
@@ -17,12 +16,8 @@ This replaces patterns like Union[str, int, float, bool, dict[str, Any], list[An
 type-safe generic containers that preserve exact type information.
 """
 
-from typing import Any
 
 # Import protocols from omnibase_spi (centralized location)
-from omnibase_spi.protocols.types import (
-    ProtocolModelJsonSerializable as ModelProtocolJsonSerializable,
-)
 from omnibase_spi.protocols.types import (
     ProtocolModelValidatable as ModelProtocolValidatable,
 )

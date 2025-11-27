@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import ClassVar, Generic
-
 from pydantic import Field
 
 """
@@ -12,10 +10,6 @@ providing a flexible but still typed structure.
 """
 
 from pydantic import BaseModel, ConfigDict
-
-from omnibase_core.models.configuration.model_generic_connection_config_config import (
-    ModelConfig,
-)
 
 
 class ModelGenericConnectionConfig(BaseModel):

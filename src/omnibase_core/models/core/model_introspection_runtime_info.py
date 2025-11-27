@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field
 
 """
@@ -7,10 +5,6 @@ Model for runtime information in introspection metadata.
 """
 
 from pydantic import BaseModel
-
-from omnibase_core.models.core.model_introspection_runtime_info_config import (
-    ModelIntrospectionRuntimeInfoConfig,
-)
 
 
 class ModelIntrospectionRuntimeInfo(BaseModel):

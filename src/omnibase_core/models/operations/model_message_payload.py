@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_message_type import EnumMessageType
 from omnibase_core.errors import EnumCoreErrorCode, ModelOnexError
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.operations.model_command_message_content import (
     ModelCommandMessageContent,
 )
@@ -16,9 +14,6 @@ from omnibase_core.models.operations.model_data_message_content import (
     ModelDataMessageContent,
 )
 from omnibase_core.models.operations.model_event_metadata import ModelEventMetadata
-from omnibase_core.models.operations.model_message_content_base import (
-    ModelMessageContentBase,
-)
 from omnibase_core.models.operations.model_message_headers import ModelMessageHeaders
 from omnibase_core.models.operations.model_notification_message_content import (
     ModelNotificationMessageContent,

@@ -2,8 +2,6 @@
 Error JSON schema model for ONEX core.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 

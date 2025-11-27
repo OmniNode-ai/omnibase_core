@@ -4,8 +4,6 @@ Test suite for ModelBaseInputState.
 
 from datetime import datetime
 
-import pytest
-
 from omnibase_core.models.core.model_base_input_state import ModelBaseInputState
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

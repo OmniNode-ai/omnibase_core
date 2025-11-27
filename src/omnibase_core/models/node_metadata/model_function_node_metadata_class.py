@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from hashlib import md5
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -19,9 +19,6 @@ from omnibase_core.models.core.model_custom_properties import ModelCustomPropert
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.typed_dict_deprecation_summary import (
-    TypedDictDeprecationSummary,
-)
 from omnibase_core.types.typed_dict_documentation_summary_filtered import (
     TypedDictDocumentationSummaryFiltered,
 )

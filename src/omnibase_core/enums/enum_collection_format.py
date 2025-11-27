@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-
 """
 Collection format enumeration.
 

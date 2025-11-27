@@ -8,8 +8,6 @@ Author: ONEX Framework Team
 Version: 1.0.0
 """
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field
 
 

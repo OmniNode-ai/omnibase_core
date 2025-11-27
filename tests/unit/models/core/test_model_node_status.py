@@ -4,8 +4,6 @@ Tests for ModelNodeStatus.
 This module tests the generic node status model for common use.
 """
 
-import pytest
-
 from omnibase_core.models.core.model_node_status import ModelNodeStatus
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

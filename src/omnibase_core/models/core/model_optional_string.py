@@ -1,7 +1,6 @@
 """Model for optional string values."""
 
 from collections.abc import Callable
-from typing import Optional
 
 from pydantic import BaseModel, Field
 

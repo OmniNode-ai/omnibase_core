@@ -1,5 +1,3 @@
-import json
-
 from pydantic import Field, field_validator
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

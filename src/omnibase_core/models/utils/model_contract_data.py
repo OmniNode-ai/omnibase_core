@@ -3,7 +3,7 @@
 Discriminated union for contract data to replace Union patterns.
 """
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import cast
 
 from pydantic import BaseModel, Field
 

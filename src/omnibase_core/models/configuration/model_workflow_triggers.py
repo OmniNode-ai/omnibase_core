@@ -1,5 +1,3 @@
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Workflow triggers model.
 """

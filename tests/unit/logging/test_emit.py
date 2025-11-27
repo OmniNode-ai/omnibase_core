@@ -12,7 +12,7 @@ Tests cover:
 """
 
 from datetime import datetime
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 from uuid import UUID, uuid4
 
 import pytest

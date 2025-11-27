@@ -7,9 +7,7 @@ import pytest
 from omnibase_core.enums.enum_effect_types import EnumEffectType
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.model_effect_input import ModelEffectInput
-from omnibase_core.models.nodes.node_services.model_service_effect import (
-    ModelServiceEffect,
-)
+from omnibase_core.models.service.model_service_effect import ModelServiceEffect
 
 
 class RetryTestError(Exception):
@@ -70,7 +68,6 @@ class TestRetryCountTracking:
     @pytest.mark.asyncio
     async def test_retry_count_tracks_actual_retries(self, service_effect):
         """Test that retry_count correctly tracks the number of retries performed."""
-        import asyncio
 
         # Track call count
         call_count = 0

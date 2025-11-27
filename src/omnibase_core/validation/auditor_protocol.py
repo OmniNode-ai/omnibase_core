@@ -10,11 +10,7 @@ Implements ProtocolQualityValidator for SPI compliance.
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
-
-from omnibase_spi.protocols.validation.protocol_quality_validator import (
-    ProtocolQualityValidator,
-)
+from typing import TYPE_CHECKING
 
 from omnibase_core.errors.exceptions import (
     ExceptionConfigurationError,

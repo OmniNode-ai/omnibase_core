@@ -4,12 +4,11 @@ ONEX Performance Metrics Model.
 Performance metrics for ONEX replies including timing and resource usage data.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.core.model_onex_performance_metrics_config import ModelConfig
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 

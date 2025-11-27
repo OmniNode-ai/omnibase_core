@@ -1,5 +1,3 @@
-from typing import Optional
-
 """
 Node Action Validator Model.
 

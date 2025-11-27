@@ -9,7 +9,6 @@ with TTL, size limits, and eviction policies.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import json
-from typing import Generic
-
 from pydantic import Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer

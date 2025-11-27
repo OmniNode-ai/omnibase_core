@@ -17,10 +17,8 @@ Total: 115+ tests
 """
 
 import json
-import math
 
 import pytest
-from pydantic import ValidationError
 
 from omnibase_core.enums.enum_numeric_value_type import EnumNumericValueType
 from omnibase_core.models.common.model_coercion_mode import EnumCoercionMode

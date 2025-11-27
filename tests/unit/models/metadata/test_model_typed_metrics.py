@@ -1,8 +1,6 @@
 """Tests for ModelTypedMetrics."""
 
-from uuid import UUID, uuid4
-
-import pytest
+from uuid import uuid4
 
 from omnibase_core.models.metadata.model_typed_metrics import ModelTypedMetrics
 

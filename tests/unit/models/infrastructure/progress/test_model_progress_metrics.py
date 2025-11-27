@@ -1,13 +1,10 @@
 """Tests for ModelProgressMetrics."""
 
-from datetime import UTC, datetime
-
-import pytest
+from datetime import datetime
 
 from omnibase_core.models.infrastructure.progress.model_progress_metrics import (
     ModelProgressMetrics,
 )
-from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 
 
 class TestModelProgressMetricsInstantiation:

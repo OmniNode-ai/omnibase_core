@@ -18,7 +18,7 @@ Tests the integration of MixinNodeService with NodeEffect and all mixins:
 
 import asyncio
 import inspect
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -41,9 +41,7 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.models.model_effect_input import ModelEffectInput
-from omnibase_core.models.nodes.node_services.model_service_effect import (
-    ModelServiceEffect,
-)
+from omnibase_core.models.service.model_service_effect import ModelServiceEffect
 from omnibase_core.nodes.node_effect import NodeEffect
 
 

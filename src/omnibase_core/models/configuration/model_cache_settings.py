@@ -4,7 +4,6 @@ from pydantic import Field
 Cache settings model.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

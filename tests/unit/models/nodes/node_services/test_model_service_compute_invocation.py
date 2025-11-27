@@ -17,8 +17,8 @@ Tests compute-specific tool invocation patterns including:
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
-from uuid import UUID, uuid4
+from unittest.mock import AsyncMock, Mock, patch
+from uuid import uuid4
 
 import pytest
 
@@ -30,9 +30,7 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
-from omnibase_core.models.nodes.node_services.model_service_compute import (
-    ModelServiceCompute,
-)
+from omnibase_core.models.service.model_service_compute import ModelServiceCompute
 
 
 @pytest.fixture

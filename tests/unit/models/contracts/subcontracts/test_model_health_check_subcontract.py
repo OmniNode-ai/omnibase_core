@@ -5,7 +5,7 @@ Tests health check subcontract including component health, node health,
 dependency health, and health check configuration validation.
 """
 
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
@@ -17,18 +17,26 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.models.contracts.subcontracts.model_component_health import (
+    ModelComponentHealth,
+)
+from omnibase_core.models.contracts.subcontracts.model_component_health_collection import (
+    ModelComponentHealthCollection,
+)
 from omnibase_core.models.contracts.subcontracts.model_component_health_detail import (
     ModelComponentHealthDetail,
 )
-from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract import (
-    ModelComponentHealth,
-    ModelComponentHealthCollection,
+from omnibase_core.models.contracts.subcontracts.model_dependency_health import (
     ModelDependencyHealth,
+)
+from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract import (
     ModelHealthCheckSubcontract,
-    ModelNodeHealthStatus,
 )
 from omnibase_core.models.contracts.subcontracts.model_health_check_subcontract_result import (
     ModelHealthCheckSubcontractResult,
+)
+from omnibase_core.models.contracts.subcontracts.model_node_health_status import (
+    ModelNodeHealthStatus,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

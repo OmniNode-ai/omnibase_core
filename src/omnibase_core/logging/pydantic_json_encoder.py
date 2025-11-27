@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import uuid
-
 """
 Custom JSON encoder for ONEX structured logging.
 

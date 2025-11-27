@@ -1,4 +1,3 @@
-from typing import Any
 from uuid import UUID
 
 from pydantic import Field
@@ -14,7 +13,6 @@ strongly typed registry configuration.
 Author: ONEX Framework Team
 """
 
-from enum import Enum
 from pathlib import Path
 
 from pydantic import BaseModel

@@ -10,7 +10,6 @@ This prevents the allowlist from becoming stale as the codebase evolves.
 """
 
 import ast
-import inspect
 from pathlib import Path
 from typing import Any
 

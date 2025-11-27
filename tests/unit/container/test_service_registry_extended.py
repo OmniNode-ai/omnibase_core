@@ -6,7 +6,6 @@ import pytest
 
 from omnibase_core.container.service_registry import ServiceRegistry
 from omnibase_core.models.container.model_registry_config import (
-    ModelServiceRegistryConfig,
     create_default_registry_config,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

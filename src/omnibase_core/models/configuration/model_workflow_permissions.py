@@ -1,10 +1,7 @@
 from pydantic import Field
 
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 "\nWorkflow permissions model.\n"
 from typing import Any
-from uuid import UUID
 
 from pydantic import BaseModel
 

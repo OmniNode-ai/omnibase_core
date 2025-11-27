@@ -7,7 +7,6 @@ Load balancing algorithm model for defining how traffic should be distributed
 across multiple nodes with algorithm-specific parameters and behavior.
 """
 
-from typing import Any
 
 from pydantic import BaseModel
 

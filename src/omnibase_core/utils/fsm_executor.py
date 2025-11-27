@@ -10,7 +10,6 @@ Context dictionaries use dict[str, Any] as they contain dynamic execution data.
 
 from datetime import datetime
 from typing import Any
-from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (

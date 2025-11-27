@@ -5,10 +5,6 @@ Comprehensive tests for base result model including metadata handling,
 serialization, and error tracking.
 """
 
-from typing import Any
-
-import pytest
-
 from omnibase_core.models.core.model_base_error import ModelBaseError
 from omnibase_core.models.core.model_base_result import ModelBaseResult
 from omnibase_core.models.primitives.model_semver import ModelSemVer

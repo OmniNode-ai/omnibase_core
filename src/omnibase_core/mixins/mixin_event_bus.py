@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 
 from pydantic import Field
 
@@ -19,10 +19,8 @@ Provides comprehensive event bus capabilities including:
 This mixin replaces and unifies MixinEventListener and MixinEventBusCompletion.
 """
 
-import inspect
 import threading
-from collections.abc import Callable as CallableABC
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, StrictStr, ValidationError
 

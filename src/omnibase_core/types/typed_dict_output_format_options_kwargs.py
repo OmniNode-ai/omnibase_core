@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
+from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 """
 TypedDict for output format options constructor arguments.

@@ -20,9 +20,8 @@ providing clean separation between node logic and configuration behavior.
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
-import uuid
 from pathlib import Path
-from typing import Any, ClassVar, Optional
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, model_validator

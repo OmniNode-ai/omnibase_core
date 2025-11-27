@@ -4,11 +4,9 @@ Tests for ModelResultFactory.
 Comprehensive tests for result factory pattern including success/error builders.
 """
 
-import pytest
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_result_factory import ModelResultFactory
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 # Test models

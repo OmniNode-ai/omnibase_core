@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import uuid
-from typing import Optional
-
 from pydantic import Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -18,12 +15,6 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.constraints import (
-    Identifiable,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-)
 
 # Default version for factory methods
 _DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)

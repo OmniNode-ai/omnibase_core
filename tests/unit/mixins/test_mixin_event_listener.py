@@ -4,11 +4,9 @@ Test suite for MixinEventListener.
 Tests event-driven execution, event handling, and lifecycle management.
 """
 
-import threading
 import time
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
-from uuid import UUID, uuid4
+from unittest.mock import Mock, patch
+from uuid import uuid4
 
 import pytest
 

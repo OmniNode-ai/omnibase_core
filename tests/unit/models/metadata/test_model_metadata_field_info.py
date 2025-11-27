@@ -2,8 +2,6 @@
 
 from uuid import uuid4
 
-import pytest
-
 from omnibase_core.enums.enum_field_type import EnumFieldType
 from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.metadata.model_field_identity import ModelFieldIdentity
