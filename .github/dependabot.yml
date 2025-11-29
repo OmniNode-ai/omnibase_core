@@ -1,6 +1,6 @@
 version: 2
 updates:
-  - package-ecosystem: "poetry"
+  - package-ecosystem: "pip"
     directory: "/" # Root directory where your pyproject.toml lives
     schedule:
       interval: "weekly"
