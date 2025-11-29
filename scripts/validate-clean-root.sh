@@ -11,6 +11,22 @@
 #   0 - Project root is clean
 #   1 - Violations found (artifacts in root)
 #
+# PORTABILITY:
+#   This script auto-detects the project root from its location.
+#   It works with any ONEX repository - no configuration needed.
+#
+#   The script assumes it's located in the `scripts/` directory:
+#     project_root/
+#       scripts/
+#         validate-clean-root.sh  <-- this script
+#       src/
+#       ...
+#
+# USAGE:
+#   ./scripts/validate-clean-root.sh
+#   # Or from anywhere:
+#   /path/to/project/scripts/validate-clean-root.sh
+#
 
 set -euo pipefail
 

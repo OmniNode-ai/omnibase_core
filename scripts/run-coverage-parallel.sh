@@ -3,6 +3,15 @@
 # IMPORTANT: This script adds resource constraints for local execution
 # CI runs 12 splits on separate isolated runners (no resource limits needed)
 # Local runs 12 splits on one machine (needs concurrency + worker limits)
+#
+# PORTABILITY:
+#   This script auto-detects the source directory from the project structure.
+#   Override with ONEX_SRC_DIR environment variable:
+#     ONEX_SRC_DIR="src/my_package" ./scripts/run-coverage-parallel.sh
+#
+# USAGE:
+#   ./scripts/run-coverage-parallel.sh           # Auto-detect package
+#   ONEX_SRC_DIR="lib/custom" ./scripts/run-coverage-parallel.sh
 
 set -e
 
@@ -12,6 +21,27 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
+
+# Get project root (script can run from anywhere)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Auto-detect source directory if not set
+if [ -z "${ONEX_SRC_DIR:-}" ]; then
+    # Standard ONEX layout: src/<package_name>/
+    if [ -d "$PROJECT_ROOT/src" ]; then
+        PACKAGE_DIR=$(find "$PROJECT_ROOT/src" -maxdepth 1 -type d ! -name "src" ! -name "__pycache__" ! -name ".*" | head -1)
+        if [ -n "$PACKAGE_DIR" ]; then
+            ONEX_SRC_DIR="src/$(basename "$PACKAGE_DIR")"
+        else
+            echo -e "${RED}ERROR: No package directory found under src/${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${RED}ERROR: No src/ directory found${NC}"
+        exit 1
+    fi
+fi
 
 # Resource configuration for local execution
 # ============================================
@@ -33,7 +63,8 @@ WORKERS_PER_SPLIT=${WORKERS_PER_SPLIT:-4}
 MAX_FAILURES=${MAX_FAILURES:-10}
 
 echo -e "${BLUE}🧪 Running parallel coverage tests (12 splits)${NC}"
-echo -e "${BLUE}📊 Resource Configuration:${NC}"
+echo -e "${BLUE}📊 Configuration:${NC}"
+echo -e "   • Source directory: ${ONEX_SRC_DIR}"
 echo -e "   • Concurrent splits: ${MAX_CONCURRENT_SPLITS}"
 echo -e "   • Workers per split: ${WORKERS_PER_SPLIT}"
 echo -e "   • Total concurrent workers: $((MAX_CONCURRENT_SPLITS * WORKERS_PER_SPLIT))"
@@ -72,7 +103,7 @@ run_split() {
   COVERAGE_FILE=.coverage.$split_num poetry run pytest tests/ \
     --splits 12 \
     --group $split_num \
-    --cov=src/omnibase_core \
+    --cov="$ONEX_SRC_DIR" \
     --cov-report= \
     -n $WORKERS_PER_SPLIT \
     --maxfail=$MAX_FAILURES \
