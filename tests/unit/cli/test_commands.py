@@ -59,14 +59,26 @@ class TestGetVersion:
                 assert version == "1.2.3"
 
     def test_get_version_returns_unknown_on_all_failures(self) -> None:
-        """Test that get_version returns 'unknown' when all methods fail."""
+        """Test that get_version returns 'unknown' when all version retrieval methods fail.
+
+        This test verifies the complete fallback chain in get_version():
+        1. importlib.metadata.version() raises an exception
+        2. from omnibase_core import __version__ fails (no __version__ attribute)
+        3. Function returns "unknown" as the final fallback
+
+        We use MagicMock(spec=[]) to create a module mock without any attributes,
+        which causes the 'from omnibase_core import __version__' to fail with ImportError.
+        """
+        # Create a mock module without __version__ attribute - spec=[] means no attributes
+        mock_module = MagicMock(spec=[])
+
         with patch("importlib.metadata.version", side_effect=Exception("Not found")):
-            # Patch the import to fail
-            with patch.dict(sys.modules, {"omnibase_core": None}):
+            # Replace omnibase_core in sys.modules with our mock that has no __version__
+            with patch.dict(sys.modules, {"omnibase_core": mock_module}):
                 version = get_version()
-                # May return actual version if omnibase_core is importable
-                # or "unknown" if both fail
-                assert isinstance(version, str)
+                assert (
+                    version == "unknown"
+                ), f"Expected 'unknown' when all version methods fail, but got '{version}'"
 
 
 class TestPrintVersion:
@@ -85,9 +97,8 @@ class TestPrintVersion:
         ctx.resilient_parsing = False
         param = MagicMock()
 
-        # Should return None without exiting
-        result = print_version(ctx, param, False)
-        assert result is None
+        # Should return early without calling ctx.exit()
+        print_version(ctx, param, False)
         ctx.exit.assert_not_called()
 
     def test_print_version_callback_returns_early_during_resilient_parsing(
@@ -98,8 +109,8 @@ class TestPrintVersion:
         ctx.resilient_parsing = True
         param = MagicMock()
 
-        result = print_version(ctx, param, True)
-        assert result is None
+        # Should return early without calling ctx.exit() during resilient parsing
+        print_version(ctx, param, True)
         ctx.exit.assert_not_called()
 
 

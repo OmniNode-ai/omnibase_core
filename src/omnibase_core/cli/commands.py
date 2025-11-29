@@ -278,8 +278,13 @@ def info(ctx: click.Context) -> None:
                 click.echo("\nInstalled ONEX packages:")
                 for pkg in onex_packages:
                     click.echo(f"  - {pkg.metadata['Name']} {pkg.version}")
-        except Exception:
-            pass
+        except Exception as e:
+            # Show error in verbose mode for debugging (this block only runs when verbose=True)
+            click.echo(
+                click.style(
+                    f"\nWarning: Could not list ONEX packages: {e}", fg="yellow"
+                )
+            )
 
 
 @cli.command()
