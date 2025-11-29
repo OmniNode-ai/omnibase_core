@@ -307,10 +307,26 @@ def health(ctx: click.Context, component: str | None) -> None:
         ("Error handling", _check_error_handling),
     ]
 
+    # Store available component names for error messages
+    available_components = [name for name, _ in checks]
+
     if component:
         checks = [
             (name, func) for name, func in checks if component.lower() in name.lower()
         ]
+        if not checks:
+            click.echo(
+                click.style(
+                    f"No health checks match component filter: '{component}'", fg="red"
+                )
+            )
+            click.echo("\nAvailable components:")
+            for comp_name in available_components:
+                click.echo(f"  - {comp_name}")
+            click.echo(
+                "\nHint: Use a partial match, e.g., 'onex health --component core'"
+            )
+            sys.exit(EnumCLIExitCode.ERROR)
 
     all_healthy = True
     for check_name, check_func in checks:
