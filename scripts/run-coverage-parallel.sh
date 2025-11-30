@@ -37,13 +37,13 @@ else
     # Standard ONEX layout: src/<package_name>/
     if [ -d "$PROJECT_ROOT/src" ]; then
         # Count packages under src/ (excluding src itself, __pycache__, and hidden dirs)
-        PACKAGE_COUNT=$(find "$PROJECT_ROOT/src" -maxdepth 1 -type d ! -name "src" ! -name "__pycache__" ! -name ".*" | wc -l | tr -d ' ')
+        PACKAGE_COUNT=$(find "$PROJECT_ROOT/src" -maxdepth 1 -type d ! -name "src" ! -name "__pycache__" ! -name '.*' | wc -l | tr -d ' ')
 
         if [ "$PACKAGE_COUNT" -gt 1 ]; then
             echo -e "${YELLOW}WARNING: Multiple packages found under src/ ($PACKAGE_COUNT). Using first one. Set ONEX_SRC_DIR explicitly for specific package.${NC}"
         fi
 
-        PACKAGE_DIR=$(find "$PROJECT_ROOT/src" -maxdepth 1 -type d ! -name "src" ! -name "__pycache__" ! -name ".*" | sort | head -1)
+        PACKAGE_DIR=$(find "$PROJECT_ROOT/src" -maxdepth 1 -type d ! -name "src" ! -name "__pycache__" ! -name '.*' | sort | head -1)
         if [ -n "$PACKAGE_DIR" ]; then
             ONEX_SRC_DIR="src/$(basename "$PACKAGE_DIR")"
         else

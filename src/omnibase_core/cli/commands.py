@@ -27,6 +27,9 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 if TYPE_CHECKING:
     from omnibase_core.validation.validation_utils import ModelValidationResult
 
+# Display configuration constants
+MAX_ERRORS_DISPLAYED = 5  # Maximum errors shown before truncation in validation output
+
 
 def get_version() -> str:
     """Get the package version with graceful fallback chain.
@@ -102,11 +105,19 @@ def cli(ctx: click.Context, verbose: bool) -> None:
     validation, and development workflows.
 
     \b
+    Verbose Mode (-v, --verbose):
+        Enables detailed output. Supported by:
+        - validate: Shows file counts and error details
+        - info: Shows Python path, working directory, installed ONEX packages
+        - health: Shows detailed status messages for each check
+
+    \b
     Examples:
         onex --help
         onex --version
         onex validate src/
         onex info
+        onex --verbose health
     """
     ctx.ensure_object(dict)
     ctx.obj["verbose"] = verbose
@@ -219,7 +230,11 @@ def validate(
             {"error_code": str(e.error_code), "message": e.message},
         )
         raise click.ClickException(str(e)) from e
-    except Exception as e:
+    except Exception as e:  # CLI catch-all for user-friendly error messages
+        # Catch-all for unexpected errors in validation pipeline
+        # Examples: FileNotFoundError (missing files), PermissionError (access denied),
+        # OSError (disk issues), RuntimeError (validation logic bugs)
+        # All other exceptions are converted to user-friendly ClickException
         emit_log_event_sync(
             EnumLogLevel.ERROR,
             "Unexpected error during validation",
@@ -260,10 +275,12 @@ def _display_validation_result(
             error_count = len(result.errors)
             click.echo(f"       Issues: {error_count}")
             if verbose:
-                for error in result.errors[:5]:
+                for error in result.errors[:MAX_ERRORS_DISPLAYED]:
                     click.echo(f"         - {error}")
-                if error_count > 5:
-                    click.echo(f"         ... and {error_count - 5} more")
+                if error_count > MAX_ERRORS_DISPLAYED:
+                    click.echo(
+                        f"         ... and {error_count - MAX_ERRORS_DISPLAYED} more"
+                    )
 
 
 @cli.command()
@@ -376,7 +393,11 @@ def health(ctx: click.Context, component: str | None) -> None:
                 click.echo(f"       {message}")
             if not is_healthy:
                 all_healthy = False
-        except Exception as e:
+        except Exception as e:  # Health checks must not crash CLI
+            # Catch-all ensures CLI stability even if health check functions fail
+            # Examples: ImportError (missing modules), AttributeError (API changes),
+            # RuntimeError (check logic bugs), OSError (system resource issues)
+            # All failures are reported gracefully without crashing the CLI
             click.echo(f"  [{click.style('FAIL', fg='red')}] {check_name}")
             click.echo(f"       Error: {e}")
             all_healthy = False
