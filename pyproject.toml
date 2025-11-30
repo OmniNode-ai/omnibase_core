@@ -57,6 +57,9 @@ repository = "https://github.com/OmniNode-ai/omnibase_core"
 documentation = "https://github.com/OmniNode-ai/omnibase_core/tree/main/docs"
 
 [project.scripts]
+# NOTE: Entry point renamed from 'omni-agent' to 'onex' in v0.3.0 (breaking change)
+# For backward compatibility during migration, users may create an alias:
+#   alias omni-agent='onex'
 onex = "omnibase_core.cli.commands:cli"
 
 [project.optional-dependencies]

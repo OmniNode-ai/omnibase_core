@@ -49,7 +49,11 @@ class TestGetVersion:
         version = get_version()
         assert isinstance(version, str)
         # Version should not be "unknown" when package is installed
-        # It should either be a semver or at least non-empty
+        assert (
+            version != "unknown"
+        ), "Version should not be 'unknown' when package is installed"
+        # Version should be non-empty
+        assert len(version) > 0, "Version string should have non-zero length"
 
     def test_get_version_fallback_to_init(self) -> None:
         """Test fallback to __init__.__version__ when metadata fails."""

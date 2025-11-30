@@ -198,7 +198,7 @@ def validate(
             else:
                 click.echo(click.style("Validation failures detected.", fg="red"))
 
-        sys.exit(EnumCLIExitCode.SUCCESS if overall_success else EnumCLIExitCode.ERROR)
+        ctx.exit(EnumCLIExitCode.SUCCESS if overall_success else EnumCLIExitCode.ERROR)
 
     except ModelOnexError as e:
         emit_log_event_sync(
@@ -275,7 +275,9 @@ def info(ctx: click.Context) -> None:
             from importlib.metadata import distributions
 
             onex_packages = [
-                d for d in distributions() if d.metadata["Name"].startswith("omnibase")
+                d
+                for d in distributions()
+                if d.metadata.get("Name", "").startswith("omnibase")
             ]
             if onex_packages:
                 click.echo("\nInstalled ONEX packages:")
@@ -338,7 +340,7 @@ def health(ctx: click.Context, component: str | None) -> None:
             click.echo(
                 "\nHint: Use a partial match, e.g., 'onex health --component core'"
             )
-            sys.exit(EnumCLIExitCode.ERROR)
+            ctx.exit(EnumCLIExitCode.ERROR)
 
     all_healthy = True
     for check_name, check_func in checks:
@@ -362,10 +364,10 @@ def health(ctx: click.Context, component: str | None) -> None:
     click.echo("-" * 40)
     if all_healthy:
         click.echo(click.style("All health checks passed!", fg="green"))
-        sys.exit(EnumCLIExitCode.SUCCESS)
+        ctx.exit(EnumCLIExitCode.SUCCESS)
     else:
         click.echo(click.style("Some health checks failed.", fg="red"))
-        sys.exit(EnumCLIExitCode.ERROR)
+        ctx.exit(EnumCLIExitCode.ERROR)
 
 
 def _check_core_imports() -> tuple[bool, str]:

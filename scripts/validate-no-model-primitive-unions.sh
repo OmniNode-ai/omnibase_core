@@ -49,7 +49,7 @@ if [ -z "${ONEX_SRC_DIR:-}" ]; then
     # Standard ONEX layout: src/<package_name>/
     if [ -d "$PROJECT_ROOT/src" ]; then
         # Find the first directory under src/ (excluding __pycache__, hidden dirs)
-        PACKAGE_DIR=$(find "$PROJECT_ROOT/src" -maxdepth 1 -type d ! -name "src" ! -name "__pycache__" ! -name ".*" | head -1)
+        PACKAGE_DIR=$(find "$PROJECT_ROOT/src" -maxdepth 1 -type d ! -name "src" ! -name "__pycache__" -not -path "*/.*" | head -1)
         if [ -n "$PACKAGE_DIR" ]; then
             # Make path relative to project root
             SRC_DIR="src/$(basename "$PACKAGE_DIR")"
