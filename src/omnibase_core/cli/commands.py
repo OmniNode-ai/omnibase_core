@@ -34,16 +34,19 @@ def get_version() -> str:
         The version string from pyproject.toml or __init__.py.
     """
     try:
-        from importlib.metadata import version
+        from importlib.metadata import PackageNotFoundError, version
 
         return version("omnibase_core")
-    except Exception:
+    except (ImportError, PackageNotFoundError):
         # Fallback to __init__.py version
         try:
             from omnibase_core import __version__
 
             return __version__
-        except Exception:  # fallback-ok: version getter must never crash
+        except (
+            ImportError,
+            AttributeError,
+        ):  # fallback-ok: version getter must never crash
             return "unknown"
 
 
@@ -278,8 +281,12 @@ def info(ctx: click.Context) -> None:
                 click.echo("\nInstalled ONEX packages:")
                 for pkg in onex_packages:
                     click.echo(f"  - {pkg.metadata['Name']} {pkg.version}")
-        except Exception as e:
+        except (ImportError, KeyError, AttributeError, TypeError) as e:
             # Show error in verbose mode for debugging (this block only runs when verbose=True)
+            # ImportError: metadata module not available
+            # KeyError: metadata field missing (e.g., "Name")
+            # AttributeError: malformed package object missing .version
+            # TypeError: iteration/comparison issues with malformed metadata
             click.echo(
                 click.style(
                     f"\nWarning: Could not list ONEX packages: {e}", fg="yellow"
@@ -394,7 +401,10 @@ def _check_validation_system() -> tuple[bool, str]:
         return True, f"Validation suite loaded with {validator_count} validators"
     except ImportError as e:
         return False, f"Import error: {e}"
-    except Exception as e:  # fallback-ok: health check returns status, not raises
+    except (AttributeError, TypeError, ValueError) as e:
+        # AttributeError: suite missing .validators attribute
+        # TypeError: validators not iterable
+        # ValueError: validation configuration error
         return False, f"Error: {e}"
 
 
@@ -418,7 +428,10 @@ def _check_error_handling() -> tuple[bool, str]:
             pass
 
         return True, "Error handling system operational"
-    except Exception as e:  # fallback-ok: health check returns status, not raises
+    except (ImportError, AttributeError, TypeError) as e:
+        # ImportError: module not available
+        # AttributeError: missing expected enum value or class attribute
+        # TypeError: error class instantiation failure
         return False, f"Error: {e}"
 
 

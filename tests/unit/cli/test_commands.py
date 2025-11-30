@@ -53,7 +53,12 @@ class TestGetVersion:
 
     def test_get_version_fallback_to_init(self) -> None:
         """Test fallback to __init__.__version__ when metadata fails."""
-        with patch("importlib.metadata.version", side_effect=Exception("Not found")):
+        from importlib.metadata import PackageNotFoundError
+
+        with patch(
+            "importlib.metadata.version",
+            side_effect=PackageNotFoundError("omnibase_core"),
+        ):
             with patch("omnibase_core.__version__", "1.2.3"):
                 version = get_version()
                 assert version == "1.2.3"
@@ -62,17 +67,22 @@ class TestGetVersion:
         """Test that get_version returns 'unknown' when all version retrieval methods fail.
 
         This test verifies the complete fallback chain in get_version():
-        1. importlib.metadata.version() raises an exception
+        1. importlib.metadata.version() raises PackageNotFoundError
         2. from omnibase_core import __version__ fails (no __version__ attribute)
         3. Function returns "unknown" as the final fallback
 
         We use MagicMock(spec=[]) to create a module mock without any attributes,
         which causes the 'from omnibase_core import __version__' to fail with ImportError.
         """
+        from importlib.metadata import PackageNotFoundError
+
         # Create a mock module without __version__ attribute - spec=[] means no attributes
         mock_module = MagicMock(spec=[])
 
-        with patch("importlib.metadata.version", side_effect=Exception("Not found")):
+        with patch(
+            "importlib.metadata.version",
+            side_effect=PackageNotFoundError("omnibase_core"),
+        ):
             # Replace omnibase_core in sys.modules with our mock that has no __version__
             with patch.dict(sys.modules, {"omnibase_core": mock_module}):
                 version = get_version()
@@ -326,12 +336,17 @@ class TestHealthCommand:
         # Note: They might still appear if "core" partially matches
 
     def test_health_with_nonexistent_component(self) -> None:
-        """Test health with --component that matches nothing."""
+        """Test health with --component that matches nothing returns error."""
         runner = CliRunner()
         result = runner.invoke(cli, ["health", "--component", "nonexistent_xyz"])
         assert "ONEX Health Check" in result.output
-        # No checks should match
-        # Should still show header and footer
+        # Should show error message about no matching checks
+        assert "No health checks match component filter" in result.output
+        assert "nonexistent_xyz" in result.output
+        # Should show available components
+        assert "Available components" in result.output
+        # Should exit with ERROR code
+        assert result.exit_code == EnumCLIExitCode.ERROR
 
     def test_health_verbose_output(self) -> None:
         """Test health with verbose flag shows more details."""
