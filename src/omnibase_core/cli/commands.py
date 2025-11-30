@@ -29,10 +29,19 @@ if TYPE_CHECKING:
 
 
 def get_version() -> str:
-    """Get the package version.
+    """Get the package version with graceful fallback chain.
+
+    Version Resolution Order:
+        1. importlib.metadata.version("omnibase_core") - Reads from installed package metadata
+        2. omnibase_core.__version__ - Falls back to module-level __version__ attribute
+        3. "unknown" - Final fallback if all methods fail (never raises)
 
     Returns:
-        The version string from pyproject.toml or __init__.py.
+        The version string, or "unknown" if version cannot be determined.
+
+    Note:
+        This function is designed to never raise exceptions, ensuring
+        CLI --version flag always works even in degraded environments.
     """
     try:
         from importlib.metadata import PackageNotFoundError, version

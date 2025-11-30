@@ -43,7 +43,7 @@ else
             echo -e "${YELLOW}WARNING: Multiple packages found under src/ ($PACKAGE_COUNT). Using first one. Set ONEX_SRC_DIR explicitly for specific package.${NC}"
         fi
 
-        PACKAGE_DIR=$(find "$PROJECT_ROOT/src" -maxdepth 1 -type d ! -name "src" ! -name "__pycache__" ! -name ".*" | head -1)
+        PACKAGE_DIR=$(find "$PROJECT_ROOT/src" -maxdepth 1 -type d ! -name "src" ! -name "__pycache__" ! -name ".*" | sort | head -1)
         if [ -n "$PACKAGE_DIR" ]; then
             ONEX_SRC_DIR="src/$(basename "$PACKAGE_DIR")"
         else
