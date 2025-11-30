@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import click
-import pytest  # noqa: TC002
+import pytest
 from click.testing import CliRunner
 
 from omnibase_core.cli.commands import (
@@ -38,6 +38,9 @@ from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 
 if TYPE_CHECKING:
     from omnibase_core.validation.validation_utils import ModelValidationResult
+
+# Mark all tests in this module as unit tests
+pytestmark = pytest.mark.unit
 
 
 class TestGetVersion:
@@ -416,7 +419,7 @@ class TestHealthCheckHelpers:
     def test_check_error_handling_creates_and_catches_test_error(self) -> None:
         """Test that _check_error_handling properly tests error creation."""
         # This tests the internal behavior - it should raise and catch
-        is_healthy, message = _check_error_handling()
+        is_healthy, _ = _check_error_handling()
         assert is_healthy is True
 
 
