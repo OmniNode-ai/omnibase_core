@@ -355,6 +355,30 @@ class TestHealthCommand:
         # Should exit with ERROR code
         assert result.exit_code == EnumCLIExitCode.ERROR
 
+    def test_health_with_partial_match_suggestions(self) -> None:
+        """Test health shows partial match suggestions for similar component names."""
+        runner = CliRunner()
+        # Use a filter that doesn't match but shares substrings with "Validation system"
+        result = runner.invoke(cli, ["health", "--component", "validaton"])
+        assert "ONEX Health Check" in result.output
+        assert "No health checks match component filter" in result.output
+        # Should show "Did you mean:" suggestions for partial matches
+        assert "Did you mean" in result.output
+        assert "Validation system" in result.output
+        # Should still show available components
+        assert "Available components" in result.output
+        assert result.exit_code == EnumCLIExitCode.ERROR
+
+    def test_health_with_partial_match_core(self) -> None:
+        """Test health shows partial match for 'cor' suggesting 'Core imports'."""
+        runner = CliRunner()
+        # "cor" should match "Core imports" via substring
+        result = runner.invoke(cli, ["health", "--component", "cor"])
+        # "cor" is in "core" so it should actually match via the existing filter
+        # This test verifies the existing partial match still works
+        assert "ONEX Health Check" in result.output
+        assert "Core imports" in result.output
+
     def test_health_verbose_output(self) -> None:
         """Test health with verbose flag shows more details."""
         runner = CliRunner()
@@ -421,6 +445,57 @@ class TestHealthCheckHelpers:
         # This tests the internal behavior - it should raise and catch
         is_healthy, _ = _check_error_handling()
         assert is_healthy is True
+
+    def test_find_partial_matches_substring_match(self) -> None:
+        """Test _find_partial_matches finds components with common substrings."""
+        from omnibase_core.cli.commands import _find_partial_matches
+
+        components = ["Core imports", "Validation system", "Error handling"]
+
+        # "validaton" (typo) should match "Validation system" via substring
+        matches = _find_partial_matches("validaton", components)
+        assert "Validation system" in matches
+
+    def test_find_partial_matches_word_match(self) -> None:
+        """Test _find_partial_matches finds components with matching words."""
+        from omnibase_core.cli.commands import _find_partial_matches
+
+        components = ["Core imports", "Validation system", "Error handling"]
+
+        # "error_check" should match "Error handling" via word match
+        matches = _find_partial_matches("error_check", components)
+        assert "Error handling" in matches
+
+    def test_find_partial_matches_no_match(self) -> None:
+        """Test _find_partial_matches returns empty for completely unrelated filter."""
+        from omnibase_core.cli.commands import _find_partial_matches
+
+        components = ["Core imports", "Validation system", "Error handling"]
+
+        # "xyz" should not match anything (no 3-char substring overlap)
+        matches = _find_partial_matches("xyz", components)
+        assert matches == []
+
+    def test_find_partial_matches_multiple_matches(self) -> None:
+        """Test _find_partial_matches can return multiple suggestions."""
+        from omnibase_core.cli.commands import _find_partial_matches
+
+        components = ["Core imports", "Core exports", "Error handling"]
+
+        # "cor" should match both Core components
+        matches = _find_partial_matches("core_test", components)
+        assert "Core imports" in matches
+        assert "Core exports" in matches
+
+    def test_find_partial_matches_case_insensitive(self) -> None:
+        """Test _find_partial_matches is case insensitive."""
+        from omnibase_core.cli.commands import _find_partial_matches
+
+        components = ["Core imports", "Validation system", "Error handling"]
+
+        # "VALID" should match "Validation system"
+        matches = _find_partial_matches("VALID", components)
+        assert "Validation system" in matches
 
 
 class TestDisplayValidationResult:

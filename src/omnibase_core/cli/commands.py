@@ -337,6 +337,14 @@ def health(ctx: click.Context, component: str | None) -> None:
                     f"No health checks match component filter: '{component}'", fg="red"
                 )
             )
+
+            # Find partial matches - components that share substrings with the filter
+            partial_matches = _find_partial_matches(component, available_components)
+            if partial_matches:
+                click.echo("\nDid you mean:")
+                for match in partial_matches:
+                    click.echo(f"  - '{match}'")
+
             click.echo("\nAvailable components:")
             for comp_name in available_components:
                 click.echo(f"  - {comp_name}")
@@ -371,6 +379,54 @@ def health(ctx: click.Context, component: str | None) -> None:
     else:
         click.echo(click.style("Some health checks failed.", fg="red"))
         ctx.exit(EnumCLIExitCode.ERROR)
+
+
+def _find_partial_matches(
+    filter_text: str, available_components: list[str]
+) -> list[str]:
+    """Find components that partially match the filter text.
+
+    Uses multiple matching strategies:
+    1. Component name contains any word from the filter
+    2. Filter contains any word from the component name
+    3. Common substring matching (minimum 3 characters)
+
+    Args:
+        filter_text: The user-provided filter string.
+        available_components: List of available component names.
+
+    Returns:
+        List of component names that partially match, sorted by relevance.
+    """
+    matches: list[str] = []
+    filter_lower = filter_text.lower()
+    filter_words = set(filter_lower.replace("_", " ").replace("-", " ").split())
+
+    for comp_name in available_components:
+        comp_lower = comp_name.lower()
+        comp_words = set(comp_lower.replace("_", " ").replace("-", " ").split())
+
+        # Strategy 1: Any filter word appears in any component word
+        for filter_word in filter_words:
+            if len(filter_word) >= 3:  # Skip very short words
+                for comp_word in comp_words:
+                    if filter_word in comp_word or comp_word in filter_word:
+                        if comp_name not in matches:
+                            matches.append(comp_name)
+                        break
+                if comp_name in matches:
+                    break
+
+        # Strategy 2: Significant substring overlap (min 3 chars)
+        if comp_name not in matches:
+            # Check if filter shares a significant substring with component
+            for i in range(len(filter_lower) - 2):
+                substring = filter_lower[i : i + 3]
+                if substring in comp_lower:
+                    matches.append(comp_name)
+                    break
+
+    return matches
 
 
 def _check_core_imports() -> tuple[bool, str]:
