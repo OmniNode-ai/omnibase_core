@@ -11,6 +11,7 @@ Usage:
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -146,18 +147,20 @@ def validate(
     """
     verbose = ctx.obj.get("verbose", False)
 
-    # Default to src/ if no directories specified
+    # Default to ONEX_SRC_DIR or src/ if no directories specified
     if not directories:
-        default_path = Path("src/")
+        env_src_dir = os.environ.get("ONEX_SRC_DIR")
+        default_path = Path(env_src_dir) if env_src_dir else Path("src/")
         if default_path.exists():
             directories = (default_path,)
         else:
+            message = f"No directories specified and default '{default_path}' not found"
             emit_log_event_sync(
                 EnumLogLevel.ERROR,
-                "No directories specified and default 'src/' not found",
-                {"cwd": str(Path.cwd())},
+                "No directories specified and no default source directory found",
+                {"cwd": str(Path.cwd()), "onex_src_dir": env_src_dir},
             )
-            raise click.ClickException("No directories specified and 'src/' not found")
+            raise click.ClickException(message)
 
     if verbose and not quiet:
         emit_log_event_sync(

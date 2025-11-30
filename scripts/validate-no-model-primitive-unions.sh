@@ -68,7 +68,14 @@ else
 fi
 
 # Make SRC_DIR an absolute path for grep
-SRC_DIR_ABS="$PROJECT_ROOT/$SRC_DIR"
+# Handle both relative and absolute ONEX_SRC_DIR paths
+if [[ "$SRC_DIR" = /* ]]; then
+    # Absolute path - use as-is
+    SRC_DIR_ABS="$SRC_DIR"
+else
+    # Relative path - prepend PROJECT_ROOT
+    SRC_DIR_ABS="$PROJECT_ROOT/$SRC_DIR"
+fi
 
 # Verify source directory exists
 if [ ! -d "$SRC_DIR_ABS" ]; then
