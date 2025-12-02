@@ -69,6 +69,16 @@ repos:
         exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
         stages: [commit]
 
+      # Cleanup: Clear tmp/ directory before commits
+      # Prevents accumulation of temporary files from custom commands
+      - id: clean-tmp-directory
+        name: Clean tmp directory
+        entry: bash -c "rm -rf tmp/* 2>/dev/null || true"
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [commit]
+
   # ONEX Framework Validation (from shared templates)
   - repo: local
     hooks:

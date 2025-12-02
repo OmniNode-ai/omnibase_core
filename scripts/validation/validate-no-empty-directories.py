@@ -55,6 +55,7 @@ class EmptyDirectoryValidator:
         ".coverage",
         ".hypothesis",
         "src",  # Top-level src directory (contains package folders only)
+        "tmp",  # Workspace for custom commands (intentionally empty)
     }
 
     # Patterns to exclude (directories containing these strings)

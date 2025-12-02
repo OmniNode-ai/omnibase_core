@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "omnibase_core"
-version = "0.3.4"
+version = "0.3.5"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode Team", email = "team@omninode.ai"}
@@ -57,6 +57,8 @@ repository = "https://github.com/OmniNode-ai/omnibase_core"
 documentation = "https://github.com/OmniNode-ai/omnibase_core/tree/main/docs"
 
 [project.scripts]
+onex = "omnibase_core.cli.commands:cli"
+# Backward-compatibility alias (renamed from 'omni-agent' to 'onex' in v0.3.0)
 omni-agent = "omnibase_core.cli.commands:cli"
 
 [project.optional-dependencies]

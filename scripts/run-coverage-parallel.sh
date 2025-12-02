@@ -1,8 +1,17 @@
 #!/bin/bash
-# Run tests in 12 splits with coverage, then combine results
+# Run tests in 20 splits with coverage, then combine results
 # IMPORTANT: This script adds resource constraints for local execution
-# CI runs 12 splits on separate isolated runners (no resource limits needed)
-# Local runs 12 splits on one machine (needs concurrency + worker limits)
+# CI runs 20 splits on separate isolated runners (no resource limits needed)
+# Local runs 20 splits on one machine (needs concurrency + worker limits)
+#
+# PORTABILITY:
+#   This script auto-detects the source directory from the project structure.
+#   Override with ONEX_SRC_DIR environment variable:
+#     ONEX_SRC_DIR="src/my_package" ./scripts/run-coverage-parallel.sh
+#
+# USAGE:
+#   ./scripts/run-coverage-parallel.sh           # Auto-detect package
+#   ONEX_SRC_DIR="lib/custom" ./scripts/run-coverage-parallel.sh
 
 set -e
 
@@ -12,6 +21,40 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
+
+# Get project root (script can run from anywhere)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Auto-detect source directory if not set, with validation
+if [ -n "${ONEX_SRC_DIR:-}" ]; then
+    # ONEX_SRC_DIR was provided externally - validate it exists
+    if [ ! -d "$PROJECT_ROOT/$ONEX_SRC_DIR" ]; then
+        echo -e "${RED}ERROR: ONEX_SRC_DIR '$ONEX_SRC_DIR' does not exist at '$PROJECT_ROOT/$ONEX_SRC_DIR'${NC}"
+        exit 1
+    fi
+else
+    # Standard ONEX layout: src/<package_name>/
+    if [ -d "$PROJECT_ROOT/src" ]; then
+        # Count packages under src/ (excluding src itself, __pycache__, and hidden dirs)
+        PACKAGE_COUNT=$(find "$PROJECT_ROOT/src" -maxdepth 1 -type d ! -name "src" ! -name "__pycache__" ! -name '.*' | wc -l | tr -d ' ')
+
+        if [ "$PACKAGE_COUNT" -gt 1 ]; then
+            echo -e "${YELLOW}WARNING: Multiple packages found under src/ ($PACKAGE_COUNT). Using first one. Set ONEX_SRC_DIR explicitly for specific package.${NC}"
+        fi
+
+        PACKAGE_DIR=$(find "$PROJECT_ROOT/src" -maxdepth 1 -type d ! -name "src" ! -name "__pycache__" ! -name '.*' | sort | head -1)
+        if [ -n "$PACKAGE_DIR" ]; then
+            ONEX_SRC_DIR="src/$(basename "$PACKAGE_DIR")"
+        else
+            echo -e "${RED}ERROR: No package directory found under src/${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${RED}ERROR: No src/ directory found${NC}"
+        exit 1
+    fi
+fi
 
 # Resource configuration for local execution
 # ============================================
@@ -32,23 +75,27 @@ WORKERS_PER_SPLIT=${WORKERS_PER_SPLIT:-4}
 #   - Saves resources and time
 MAX_FAILURES=${MAX_FAILURES:-10}
 
-echo -e "${BLUE}🧪 Running parallel coverage tests (12 splits)${NC}"
-echo -e "${BLUE}📊 Resource Configuration:${NC}"
+echo -e "${BLUE}🧪 Running parallel coverage tests (20 splits)${NC}"
+echo -e "${BLUE}📊 Configuration:${NC}"
+echo -e "   • Source directory: ${ONEX_SRC_DIR}"
 echo -e "   • Concurrent splits: ${MAX_CONCURRENT_SPLITS}"
 echo -e "   • Workers per split: ${WORKERS_PER_SPLIT}"
 echo -e "   • Total concurrent workers: $((MAX_CONCURRENT_SPLITS * WORKERS_PER_SPLIT))"
 echo -e "   • Max failures before abort: ${MAX_FAILURES}"
 echo ""
 
-# Detect CPU count and warn if configuration is too aggressive
-CPU_COUNT=$(sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo "unknown")
-TOTAL_WORKERS=$((MAX_CONCURRENT_SPLITS * WORKERS_PER_SPLIT))
-if [[ "$CPU_COUNT" != "unknown" ]] && [[ $TOTAL_WORKERS -gt $((CPU_COUNT * 2)) ]]; then
-  echo -e "${YELLOW}⚠️  WARNING: Total workers ($TOTAL_WORKERS) exceeds 2× CPU cores ($CPU_COUNT)${NC}"
-  echo -e "${YELLOW}   This may cause resource exhaustion. Consider reducing:${NC}"
-  echo -e "${YELLOW}   export MAX_CONCURRENT_SPLITS=2${NC}"
-  echo -e "${YELLOW}   export WORKERS_PER_SPLIT=4${NC}"
-  echo ""
+# Detect CPU count and warn if configuration is too aggressive (skip in CI)
+# CI environments: GitHub Actions (CI=true), GitLab CI (CI=true), etc.
+if [ -z "${CI:-}" ]; then
+  CPU_COUNT=$(sysctl -n hw.ncpu 2>/dev/null || nproc 2>/dev/null || echo "unknown")
+  TOTAL_WORKERS=$((MAX_CONCURRENT_SPLITS * WORKERS_PER_SPLIT))
+  if [[ "$CPU_COUNT" != "unknown" ]] && [[ $TOTAL_WORKERS -gt $((CPU_COUNT * 2)) ]]; then
+    echo -e "${YELLOW}⚠️  WARNING: Total workers ($TOTAL_WORKERS) exceeds 2× CPU cores ($CPU_COUNT)${NC}"
+    echo -e "${YELLOW}   This may cause resource exhaustion. Consider reducing:${NC}"
+    echo -e "${YELLOW}   export MAX_CONCURRENT_SPLITS=2${NC}"
+    echo -e "${YELLOW}   export WORKERS_PER_SPLIT=4${NC}"
+    echo ""
+  fi
 fi
 
 # Clean previous coverage data
@@ -68,11 +115,11 @@ echo -e "${YELLOW}🚀 Launching test splits (batches of ${MAX_CONCURRENT_SPLITS
 # Function to run a single split
 run_split() {
   local split_num=$1
-  echo "[Split $split_num/12] Starting..."
+  echo "[Split $split_num/20] Starting..."
   COVERAGE_FILE=.coverage.$split_num poetry run pytest tests/ \
-    --splits 12 \
+    --splits 20 \
     --group $split_num \
-    --cov=src/omnibase_core \
+    --cov="$ONEX_SRC_DIR" \
     --cov-report= \
     -n $WORKERS_PER_SPLIT \
     --maxfail=$MAX_FAILURES \
@@ -80,9 +127,9 @@ run_split() {
     -q 2>&1 | sed "s/^/[Split $split_num] /"
   local exit_code=$?
   if [ $exit_code -eq 0 ]; then
-    echo "[Split $split_num/12] ✓ Complete"
+    echo "[Split $split_num/20] ✓ Complete"
   else
-    echo -e "${RED}[Split $split_num/12] ✗ Failed (exit code: $exit_code)${NC}"
+    echo -e "${RED}[Split $split_num/20] ✗ Failed (exit code: $exit_code)${NC}"
   fi
   return $exit_code
 }
@@ -92,7 +139,7 @@ run_split() {
 split_pids=()
 failed_splits=0
 
-for i in {1..12}; do
+for i in {1..20}; do
   # Launch split in background
   run_split $i &
   split_pids+=($!)
