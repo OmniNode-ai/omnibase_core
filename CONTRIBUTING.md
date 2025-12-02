@@ -1,6 +1,6 @@
 # Contributing to omnibase_core
 
-Thank you for your interest in contributing to omnibase_core! This document provides guidelines for contributing to the ONEX core framework.
+Thank you for your interest in contributing to omnibase_core! This document provides guidelines for contributing to the ONEX (OmniNode Execution System) core framework.
 
 ## Table of Contents
 
@@ -78,6 +78,10 @@ pre-commit install
   - Prevents committing temporary/build artifacts
   - Checks for: `.coverage`, `htmlcov/`, `.pytest_cache`, audit reports, etc.
   - Can bypass with `git push --no-verify` (not recommended)
+
+**Temporary Files**:
+
+The `tmp/` directory is treated as ephemeral. A pre-commit hook automatically clears its contents on every commit. Do not store important files there.
 
 ### 4. Verify Setup
 
