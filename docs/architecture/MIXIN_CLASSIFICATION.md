@@ -7,6 +7,8 @@
 
 ## R/H/D Classification System
 
+**Quick Reference**: R = Runtime, H = Handler, D = Domain
+
 All 40 mixins in omnibase_core are classified into three categories based on their responsibilities:
 
 ### Runtime (R) - Infrastructure Concerns
@@ -51,9 +53,9 @@ Pure computation with no side effects or runtime dependencies.
 
 | Classification | Count | Percentage |
 |----------------|-------|------------|
-| **Runtime (R)** | 22 | 55% |
-| **Handler (H)** | 4 | 10% |
-| **Domain (D)** | 14 | 35% |
+| **Runtime (R)** | 21 | 52.5% |
+| **Handler (H)** | 3 | 7.5% |
+| **Domain (D)** | 16 | 40% |
 | **Total** | 40 | 100% |
 
 ---
@@ -107,7 +109,7 @@ Pure computation with no side effects or runtime dependencies.
 
 ## Mixins by Classification
 
-### Runtime (R) - 22 Mixins
+### Runtime (R) - 21 Mixins
 
 | Mixin | Target |
 |-------|--------|
@@ -133,7 +135,7 @@ Pure computation with no side effects or runtime dependencies.
 | `MixinToolExecution` | `NodeRuntime.tool_executor` |
 | `MixinWorkflowExecution` | `NodeRuntime.workflow_executor` |
 
-### Handler (H) - 4 Mixins
+### Handler (H) - 3 Mixins
 
 | Mixin | Target |
 |-------|--------|
@@ -141,7 +143,7 @@ Pure computation with no side effects or runtime dependencies.
 | `MixinCLIHandler` | `omnibase_infra/handlers/cli_handler.py` |
 | `MixinServiceRegistry` | `omnibase_infra/handlers/service_registry_handler.py` |
 
-### Domain (D) - 14 Mixins
+### Domain (D) - 16 Mixins
 
 | Mixin | Target |
 |-------|--------|

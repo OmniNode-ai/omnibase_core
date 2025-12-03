@@ -1381,7 +1381,7 @@ In v0.4.0, declarative nodes become the default implementation. Legacy imperativ
 
 **Deprecation Timeline**: Legacy nodes deprecated in v0.4.0, removed in v1.0.0.
 
-See [PROJECT_REFACTORING_PLAN.md](../../docs/PROJECT_REFACTORING_PLAN.md) for full migration details.
+See [MVP_PLAN.md](../MVP_PLAN.md) for full migration details.
 
 ---
 

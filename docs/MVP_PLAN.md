@@ -37,6 +37,7 @@
 - [ ] `SIMULATE_LEGACY_REMOVAL=true` runs cleanly
 
 ### High-Risk Items (Schedule Pressure)
+
 | Item | Risk | Mitigation |
 |------|------|------------|
 | Contract validation engine | Complex logic, many edge cases | Start early, fuzz testing |
@@ -45,6 +46,7 @@
 | Cross-repo synchronization | External dependencies | Explicit sync points |
 
 ### Priority Visual Legend
+
 | Priority | Meaning |
 |----------|---------|
 | Urgent (1) | Release blocker, do first |
@@ -121,8 +123,11 @@ This document outlines proposed issues for the MVP milestone, derived from the a
 | X1 | Core v0.4.0 releases before infra v0.1.0 | Release gate |
 | X2 | Handler protocols defined in SPI only | Single source of truth |
 | X3 | No infra imports in core | Dependency direction |
+| X4 | Core MUST NOT import SPI | Dependency direction |
 
 ### INV-6: NodeRuntime Constraints
+
+> **Definition**: `NodeRuntime` refers to the planned pure orchestrator class in `omnibase_core` that coordinates node execution without owning an event loop. It is distinct from `RuntimeHostProcess` in `omnibase_infra` which provides scheduling and I/O. See Glossary for full definition.
 
 | ID | Rule | Rationale |
 |----|------|-----------|
@@ -167,19 +172,23 @@ This document outlines proposed issues for the MVP milestone, derived from the a
 
 | Rule | Description |
 |------|-------------|
-| Core MAY import SPI | Protocols only, never implementations |
+| SPI imports Core | `omnibase_spi` imports `omnibase_core` models at runtime |
+| Core MUST NOT import SPI | No imports from `omnibase_spi` anywhere in `omnibase_core` |
 | Core MUST NOT import omnibase_infra | No I/O dependencies in core |
+| SPI MUST NOT define Pydantic models | All `BaseModel` definitions live in `omnibase_core` |
 | Core MUST NOT include I/O handler implementations | All handlers live in infra |
 | Declarative nodes MUST accept handler-protocol injections | Via constructor or method parameters |
 | Legacy nodes MAY contain direct I/O | Until removal in v1.0.0 |
+| Infra uses SPI + Core | `omnibase_infra` implements handlers using SPI protocols and Core models |
 
 **Dependency Direction**:
 ```
-omnibase_infra (handlers, RuntimeHostProcess)
-       ↓ implements
-omnibase_spi (protocols only)
-       ↓ uses types from
-omnibase_core (models, NodeRuntime, pure logic)
+omnibase_infra  ──implements──►  omnibase_spi  ──imports──►  omnibase_core
+     │                                │                            │
+     │ (handlers, RuntimeHostProcess) │ (protocols only)           │ (models, NodeRuntime, pure logic)
+     │                                │                            │
+     └────────────────────────────────┴────────────────────────────┘
+                    Infra uses both SPI protocols AND Core models
 ```
 
 ### Protocol Alignment with Runtime Host
@@ -639,7 +648,7 @@ Interface is frozen but purity guarantees are not. Protect architecture when con
 
 **Acceptance Criteria**:
 - [ ] Purity tests verify no declarative node calls to: networking libs, filesystem, subprocess, threading
-- [ ] Use `ast` inspection to flag imports of anything outside core or SPI
+- [ ] Use `ast` inspection to flag imports of anything outside core (note: core MUST NOT import SPI)
 - [ ] CI rule blocks PRs that add I/O to core
 - [ ] Test coverage for all pure computation paths
 - [ ] Documentation of purity guarantees
@@ -678,7 +687,7 @@ Nodes are being reorganized but the meta-model they adhere to is not defined. Wi
 **Related docs**: `PROJECT_REFACTORING_PLAN.md`, `ARCHITECTURE_EVOLUTION_OVERVIEW.md`
 
 > **Scope Boundary**: Mixin classification (R/H/D) and migration of mixins to NodeRuntime/infra are **post-v0.4.0** work tracked under Future issues F.1-F.4. Phase 1 only moves existing node implementations to `legacy/` namespace.
-
+>
 > **Behavioral Guarantee**: Through v0.4.0, **legacy and declarative nodes MUST remain behaviorally equivalent** for all supported contracts. This is the primary acceptance bar for PR review.
 
 ### Epic: Move Legacy Nodes to Legacy Namespace
@@ -807,6 +816,8 @@ Rename existing declarative nodes, create new declarative implementations, and e
 
 ### Declarative Node Examples
 
+> These examples illustrate the purity rules defined in [INV-1: Core Purity Rules](#inv-1-core-purity-rules). For complete node implementation guidance, see [Node Building Guide](guides/node-building/README.md) and [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md).
+
 #### GOOD: Pure Compute Node
 
 ```python
@@ -851,6 +862,7 @@ class BadNode(NodeCoreBase, SomeMixin):  # P4: No extra inheritance
 ```
 
 **Violation Summary**:
+
 | Code | Violation | Rule |
 |------|-----------|------|
 | `import logging` | Logging in declarative node | INV-1 P1 |
@@ -962,10 +974,14 @@ Update `nodes/__init__.py` to export declarative nodes as default, add `__getatt
 
 **Implementation**:
 ```python
-# Compatibility mapping
+# Compatibility mapping: maps deprecated names (pre-v0.4.0) to current names (v0.4.0+)
+# - "NodeReducerDeclarative" was the v0.3.x name, now simply "NodeReducer"
+# - "NodeOrchestratorDeclarative" was the v0.3.x name, now simply "NodeOrchestrator"
+# Note: "NodeComputeLegacy" and "NodeEffectLegacy" are the v0.4.0 names for
+# deprecated mixin-based implementations (see Phase 1 issues 1.2-1.5)
 _LEGACY_ALIASES = {
-    "NodeReducerDeclarative": "NodeReducer",
-    "NodeOrchestratorDeclarative": "NodeOrchestrator",
+    "NodeReducerDeclarative": "NodeReducer",      # v0.3.x -> v0.4.0
+    "NodeOrchestratorDeclarative": "NodeOrchestrator",  # v0.3.x -> v0.4.0
 }
 
 def __getattr__(name: str):
@@ -1103,7 +1119,7 @@ Create adapter that validates and transforms Compute contracts for pure computat
 - [ ] Adapter class created for compute contracts
 - [ ] Validates input/output type shapes
 - [ ] Enforces pure computation (no I/O references in contract)
-- [ ] Adapter MUST NOT call handlers directly
+- [ ] Adapter MUST NOT call handlers directly (compute nodes have no handlers, but this constraint ensures adapters remain pure transformation layers consistent with effect/reducer/orchestrator adapters)
 - [ ] Adapter MUST NOT perform capability inference
 - [ ] Adapter MUST NOT perform data transformation beyond structural mapping
 - [ ] mypy --strict passes
@@ -1919,7 +1935,16 @@ Create documentation explaining how to interpret and fix CI purity failures. Pre
 
 ## Future Phases (Post v0.4.0)
 
-> **IMPORTANT**: The Minimal Runtime Host MVP work (Issues F.5-F.10) has been **moved to the dedicated `omnibase_infra` v0.1.0 plan**. These issues are retained here as legacy planning context only. **Do not implement these in `omnibase_core`**; see the Runtime Host planning document for canonical implementation.
+> **IMPORTANT - Repository Boundaries**:
+>
+> - **Issues F.1-F.4 (Mixin Migration)**: Remain in `omnibase_core` scope - these are internal refactoring tasks
+> - **Issues F.5-F.10 (Runtime Host MVP)**: **DEPRECATED** - Moved to `omnibase_infra` v0.1.0 plan. These are retained here as legacy planning context only. **Do not implement these in `omnibase_core`**
+> - **Issues F.11-F.13 (Developer Tooling)**: Remain in `omnibase_core` scope - CLI tools for core development
+>
+> **Repository Scope Distinction**:
+> - `omnibase_core`: Foundational models, protocols, base classes, and core utilities (no infrastructure dependencies)
+> - `omnibase_spi`: Protocol definitions and interfaces (pure abstractions)
+> - `omnibase_infra`: Infrastructure implementations - Runtime Host, Kafka/Redis handlers, database adapters, deployment tooling
 
 The following issues are lower priority and should be addressed after the core v0.4.0 refactoring is complete.
 
@@ -1976,12 +2001,15 @@ Move `MixinDiscovery`, `MixinServiceRegistry`, `MixinCLIHandler` implementations
 
 ---
 
-### Epic: Minimal Runtime Host MVP
+### Epic: Minimal Runtime Host MVP [DEPRECATED - See omnibase_infra]
 
-**Priority**: LOW
+> **NOTE**: This entire epic has been moved to `omnibase_infra` v0.1.0. Issues F.5-F.10 below are retained for historical context only and should NOT be implemented in `omnibase_core`.
+
+**Priority**: LOW (DEPRECATED)
 **Dependencies**: Mixin Migration complete
+**Canonical Location**: `omnibase_infra/docs/RUNTIME_HOST_PLAN.md`
 
-#### Issue F.5: Add EnumNodeKind.RUNTIME_HOST enum 🔗 core+spi+infra
+#### Issue F.5: Add EnumNodeKind.RUNTIME_HOST enum 🔗 core+spi+infra [DEPRECATED]
 
 **Title**: Add RUNTIME_HOST to EnumNodeKind enum
 **Type**: Feature
@@ -1990,7 +2018,7 @@ Move `MixinDiscovery`, `MixinServiceRegistry`, `MixinCLIHandler` implementations
 
 ---
 
-#### Issue F.6: Create RuntimeHostContract model 🔗 core+spi+infra
+#### Issue F.6: Create RuntimeHostContract model 🔗 core+spi+infra [DEPRECATED]
 
 **Title**: Implement RuntimeHostContract Pydantic model
 **Type**: Feature
@@ -1999,7 +2027,7 @@ Move `MixinDiscovery`, `MixinServiceRegistry`, `MixinCLIHandler` implementations
 
 ---
 
-#### Issue F.7: Implement NodeInstance class 🔗 core+spi+infra
+#### Issue F.7: Implement NodeInstance class 🔗 core+spi+infra [DEPRECATED]
 
 **Title**: Create NodeInstance execution wrapper
 **Type**: Feature
@@ -2008,7 +2036,7 @@ Move `MixinDiscovery`, `MixinServiceRegistry`, `MixinCLIHandler` implementations
 
 ---
 
-#### Issue F.8: Implement NodeRuntime class 🔗 core+spi+infra
+#### Issue F.8: Implement NodeRuntime class 🔗 core+spi+infra [DEPRECATED]
 
 **Title**: Create NodeRuntime event loop coordinator
 **Type**: Feature
@@ -2017,7 +2045,7 @@ Move `MixinDiscovery`, `MixinServiceRegistry`, `MixinCLIHandler` implementations
 
 ---
 
-#### Issue F.9: Create file-based contract registry 🔗 core+spi+infra
+#### Issue F.9: Create file-based contract registry 🔗 core+spi+infra [DEPRECATED]
 
 **Title**: Implement FileRegistry for MVP
 **Type**: Feature
@@ -2026,7 +2054,7 @@ Move `MixinDiscovery`, `MixinServiceRegistry`, `MixinCLIHandler` implementations
 
 ---
 
-#### Issue F.10: Create CLI entry point for runtime host 🔗 core+spi+infra
+#### Issue F.10: Create CLI entry point for runtime host 🔗 core+spi+infra [DEPRECATED]
 
 **Title**: Add omninode-runtime-host CLI command
 **Type**: Feature
@@ -2340,7 +2368,7 @@ Declarative nodes depend on:
 - INV-2: Legacy vs Declarative Separation (4 rules with IDs S1-S4)
 - INV-3: Adapter Boundaries (4 rules with IDs A1-A4)
 - INV-4: Contract Stability (4 rules with IDs C1-C4)
-- INV-5: Cross-Repo Constraints (3 rules with IDs X1-X3)
+- INV-5: Cross-Repo Constraints (4 rules with IDs X1-X4)
 - INV-6: NodeRuntime Constraints (3 rules with IDs R1-R3)
 
 **Behavior Equivalence Rules**:

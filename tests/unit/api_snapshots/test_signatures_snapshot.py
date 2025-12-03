@@ -67,9 +67,9 @@ class TestNodeComputeSignatureSnapshot:
 
         sig = inspect.signature(NodeCompute.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(None), (
-            f"NodeCompute.__init__ should return None, got {sig.return_annotation}"
-        )
+        assert sig.return_annotation is None or sig.return_annotation is type(
+            None
+        ), f"NodeCompute.__init__ should return None, got {sig.return_annotation}"
 
     @pytest.mark.unit
     def test_node_compute_init_container_type_annotation(self) -> None:
@@ -151,9 +151,9 @@ class TestNodeEffectSignatureSnapshot:
 
         sig = inspect.signature(NodeEffect.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(None), (
-            f"NodeEffect.__init__ should return None, got {sig.return_annotation}"
-        )
+        assert sig.return_annotation is None or sig.return_annotation is type(
+            None
+        ), f"NodeEffect.__init__ should return None, got {sig.return_annotation}"
 
     @pytest.mark.unit
     def test_node_effect_init_container_type_annotation(self) -> None:
@@ -218,9 +218,9 @@ class TestNodeReducerSignatureSnapshot:
 
         sig = inspect.signature(NodeReducer.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(None), (
-            f"NodeReducer.__init__ should return None, got {sig.return_annotation}"
-        )
+        assert sig.return_annotation is None or sig.return_annotation is type(
+            None
+        ), f"NodeReducer.__init__ should return None, got {sig.return_annotation}"
 
     @pytest.mark.unit
     def test_node_reducer_init_container_type_annotation(self) -> None:
@@ -285,9 +285,9 @@ class TestNodeOrchestratorSignatureSnapshot:
 
         sig = inspect.signature(NodeOrchestrator.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(None), (
-            f"NodeOrchestrator.__init__ should return None, got {sig.return_annotation}"
-        )
+        assert sig.return_annotation is None or sig.return_annotation is type(
+            None
+        ), f"NodeOrchestrator.__init__ should return None, got {sig.return_annotation}"
 
     @pytest.mark.unit
     def test_node_orchestrator_init_container_type_annotation(self) -> None:
@@ -358,9 +358,9 @@ class TestNodeCoreBaseSignatureSnapshot:
 
         # Handle both actual type and stringified annotation (PEP 563)
         valid_none_annotations = (None, type(None), "None")
-        assert sig.return_annotation in valid_none_annotations, (
-            f"NodeCoreBase.__init__ should return None, got {sig.return_annotation}"
-        )
+        assert (
+            sig.return_annotation in valid_none_annotations
+        ), f"NodeCoreBase.__init__ should return None, got {sig.return_annotation}"
 
 
 class TestNodeBaseSignatureSnapshot:
@@ -521,9 +521,9 @@ class TestNodeBaseSignatureSnapshot:
 
         # Handle both actual type and stringified annotation (PEP 563)
         valid_none_annotations = (None, type(None), "None")
-        assert sig.return_annotation in valid_none_annotations, (
-            f"NodeBase.__init__ should return None, got {sig.return_annotation}"
-        )
+        assert (
+            sig.return_annotation in valid_none_annotations
+        ), f"NodeBase.__init__ should return None, got {sig.return_annotation}"
 
     @pytest.mark.unit
     def test_node_base_init_contract_path_type_annotation(self) -> None:
@@ -571,9 +571,9 @@ class TestSignatureComprehensiveSummary:
 
         for node_class in node_classes:
             sig = inspect.signature(node_class.__init__)
-            assert "container" in sig.parameters, (
-                f"{node_class.__name__}.__init__ must have 'container' parameter"
-            )
+            assert (
+                "container" in sig.parameters
+            ), f"{node_class.__name__}.__init__ must have 'container' parameter"
 
     @pytest.mark.unit
     def test_four_node_container_param_first_after_self(self) -> None:
@@ -594,12 +594,12 @@ class TestSignatureComprehensiveSummary:
             sig = inspect.signature(node_class.__init__)
             params = list(sig.parameters.keys())
 
-            assert len(params) >= 2, (
-                f"{node_class.__name__}.__init__ must have at least self and container"
-            )
-            assert params[0] == "self", (
-                f"{node_class.__name__}.__init__ first param must be 'self'"
-            )
+            assert (
+                len(params) >= 2
+            ), f"{node_class.__name__}.__init__ must have at least self and container"
+            assert (
+                params[0] == "self"
+            ), f"{node_class.__name__}.__init__ first param must be 'self'"
             assert params[1] == "container", (
                 f"{node_class.__name__}.__init__ second param must be 'container', "
                 f"got '{params[1]}'"
@@ -620,9 +620,9 @@ class TestSignatureComprehensiveSummary:
 
         # NodeEffect should have on_rollback_failure
         effect_sig = inspect.signature(NodeEffect.__init__)
-        assert "on_rollback_failure" in effect_sig.parameters, (
-            "NodeEffect.__init__ must have 'on_rollback_failure' parameter"
-        )
+        assert (
+            "on_rollback_failure" in effect_sig.parameters
+        ), "NodeEffect.__init__ must have 'on_rollback_failure' parameter"
 
         # Other nodes should NOT have it
         other_classes = [NodeCompute, NodeOrchestrator, NodeReducer]

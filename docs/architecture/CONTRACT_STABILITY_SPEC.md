@@ -106,11 +106,13 @@ def normalize_contract(contract: dict) -> str:
 
 ### Format
 
-```
+```text
 <semver>:<sha256-first-12-hex-chars>
 ```
 
 **Example**: `0.4.0:8fa1e2b4c9d1`
+
+**Format Rationale**: The `semver:hash` format provides both human-readable version context and cryptographic integrity verification in a single compact identifier. The colon separator ensures unambiguous parsing since colons cannot appear in semver or hex strings.
 
 ### Computation
 
@@ -133,6 +135,15 @@ def compute_fingerprint(contract: dict) -> str:
 | Same contract -> same fingerprint | Across Python minor versions (3.10, 3.11, 3.12) |
 | Same contract -> same fingerprint | Across OS platforms |
 | Normalization is idempotent | `normalize(normalize(c)) == normalize(c)` |
+
+### Collision Analysis
+
+The fingerprint uses 12 hexadecimal characters (48 bits) from SHA-256:
+
+- **Unique combinations**: 2^48 = 281,474,976,710,656 (~281 trillion)
+- **Birthday paradox threshold**: ~17 million contracts before 50% collision probability
+- **Practical safety**: For typical deployments with <100,000 contracts, collision probability is negligible (<0.000002%)
+- **Mitigation**: Version prefix ensures collisions only matter within same semver, further reducing practical risk
 
 ### Fingerprint Location
 
@@ -170,11 +181,13 @@ class ContractHashRegistry:
 
 ### Use Cases
 
+```text
 | Use Case | Method |
 |----------|--------|
-| Migration debugging | `detect_drift()` |
-| Contract loading | `verify()` |
-| Registration | `register()` |
+| Migration debugging | detect_drift() |
+| Contract loading | verify() |
+| Registration | register() |
+```
 
 ---
 
@@ -210,12 +223,12 @@ Contract validation MUST proceed in this order:
 
 All validation errors MUST use this format:
 
-```
+```text
 ERR_CODE: message (path.to.field)
 ```
 
 **Examples**:
-```
+```text
 CONTRACT_INVALID_TYPE: Expected string (input.name)
 CONTRACT_MISSING_FIELD: Required field missing (output.result)
 CONTRACT_UNSUPPORTED_CAPABILITY: Capability not available (capabilities[0])
@@ -260,5 +273,5 @@ CONTRACT_UNSUPPORTED_CAPABILITY: Capability not available (capabilities[0])
 
 ## References
 
-- [MVP Proposed Work Issues](../MVP_PROPOSED_WORK_ISSUES.md) - Phase 0 (Issues 0.6, 0.7) and Phase 3 (Issue 3.7)
+- [MVP Plan](../MVP_PLAN.md) - Comprehensive refactoring plan including contract stability work
 - [ONEX Four-Node Architecture](./ONEX_FOUR_NODE_ARCHITECTURE.md)

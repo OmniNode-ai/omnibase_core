@@ -300,8 +300,8 @@ class TestCircularImportPrevention:
 
     def test_no_circular_imports_nodes_then_infrastructure(self) -> None:
         """Verify importing nodes then infrastructure doesn't cause issues."""
-        from omnibase_core.infrastructure import NodeBase, NodeCoreBase
         from omnibase_core.nodes import NodeCompute, NodeEffect
+        from omnibase_core.infrastructure import NodeBase, NodeCoreBase
 
         # If we get here without ImportError, circular imports are prevented
         assert NodeCompute is not None
