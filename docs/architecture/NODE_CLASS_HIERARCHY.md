@@ -19,12 +19,25 @@
 8. [Migration Paths](#migration-paths)
 9. [Common Scenarios](#common-scenarios)
 10. [When to Use Which Tier](#when-to-use-which-tier)
+11. [Naming Convention Migration (v0.4.0)](#naming-convention-migration-v040)
 
 ---
 
 ## Overview
 
 omnibase_core provides **three tiers** of node base classes, each optimized for different use cases and levels of control. Understanding which tier to use is critical for building maintainable, production-ready ONEX nodes.
+
+### Abbreviations Used in This Guide
+
+| Abbreviation | Meaning |
+|--------------|---------|
+| **DI** | Dependency Injection |
+| **FSM** | Finite State Machine |
+| **MCP** | Model Context Protocol (for AI tool invocation) |
+| **MRO** | Method Resolution Order (Python's class inheritance order) |
+| **I/O** | Input/Output operations |
+| **SLA** | Service Level Agreement |
+| **TTL** | Time To Live (cache expiration) |
 
 ### The Hierarchy
 
@@ -803,7 +816,7 @@ class NodeCustomValidator(NodeCoreBase):
 
 ### Adding Features to NodeCoreBase
 
-To add features, **compose with mixins manually**:
+To add features, **compose with mixins manually**. This pattern forms the foundation for ONEX's upcoming declarative node architecture (v0.4.0), where nodes define their behavior through configuration rather than inheritance. See [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md#declarative-patterns) for the declarative approach.
 
 ```
 """NodeCoreBase with manual mixin composition."""
@@ -1114,6 +1127,8 @@ class NodeMcpCalculatorCompute(ModelServiceCompute):
 - ✅ Caching for expensive calculations
 - ✅ Zero boilerplate
 
+**Note on COMPUTE Constraints**: COMPUTE nodes in MCP server mode must remain stateless and side-effect-free. The `MixinNodeService` provides tool invocation handlers that expect deterministic responses. This constraint ensures that cached results remain valid and that parallel tool invocations don't interfere with each other. For stateful operations or side effects, use `ModelServiceEffect` instead.
+
 ---
 
 ### Scenario 2: High-Performance API Client
@@ -1342,6 +1357,8 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 
 ## Related Documentation
 
+### In This Repository
+
 - **[Node Building Guide](../guides/node-building/README.md)** - Step-by-step tutorials for building nodes
 - **[COMPUTE Node Tutorial](../guides/node-building/03_COMPUTE_NODE_TUTORIAL.md)** - Practical COMPUTE node example
 - **[EFFECT Node Tutorial](../guides/node-building/04_EFFECT_NODE_TUTORIAL.md)** - Practical EFFECT node example
@@ -1351,6 +1368,15 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 - **[Error Handling Best Practices](../conventions/ERROR_HANDLING_BEST_PRACTICES.md)** - Structured error handling
 - **[Threading Guide](../guides/THREADING.md)** - Thread safety considerations
 
+### Cross-Repository References
+
+The node class hierarchy is used across the ONEX ecosystem:
+
+- **omnibase_spi** - Protocol definitions that nodes implement (`ProtocolNode`, `ProtocolService`)
+- **omniintelligence** - AI/ML nodes using `ModelServiceCompute` for inference pipelines
+- **omniagent** - Agent nodes using `ModelServiceOrchestrator` for multi-step workflows
+- **omnimcp** - MCP server implementations using `ModelServiceEffect` for tool invocation
+
 ---
 
 **Ready to build?** → [Node Building Guide](../guides/node-building/README.md) ⭐
@@ -1359,6 +1385,40 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 
 ---
 
+## Naming Convention Migration (v0.4.0)
+
+In v0.4.0, declarative nodes become the default implementation. Legacy imperative nodes move to `nodes/legacy/` with a `Legacy` suffix.
+
+### Migration Table
+
+The table below shows the transition from current (pre-v0.4.0) naming to the new (v0.4.0+) naming convention:
+
+| Status | Current Name (pre-v0.4.0) | New Name (v0.4.0+) | Location After Refactoring |
+|--------|---------------------------|--------------------|-----------------------------|
+| Rename | `NodeCompute` | `NodeComputeLegacy` | `nodes/legacy/node_compute_legacy.py` |
+| Rename | `NodeEffect` | `NodeEffectLegacy` | `nodes/legacy/node_effect_legacy.py` |
+| Rename | `NodeReducer` | `NodeReducerLegacy` | `nodes/legacy/node_reducer_legacy.py` |
+| Rename | `NodeOrchestrator` | `NodeOrchestratorLegacy` | `nodes/legacy/node_orchestrator_legacy.py` |
+| Promote | `NodeReducerDeclarative` | `NodeReducer` | `nodes/node_reducer.py` |
+| Promote | `NodeOrchestratorDeclarative` | `NodeOrchestrator` | `nodes/node_orchestrator.py` |
+| New | *(does not exist yet)* | `NodeCompute` | `nodes/node_compute.py` (declarative) |
+| New | *(does not exist yet)* | `NodeEffect` | `nodes/node_effect.py` (declarative) |
+
+**Status Legend**:
+- **Rename**: Existing class moves to legacy location with new suffix
+- **Promote**: Existing declarative class becomes the default implementation
+- **New**: Class to be created in v0.4.0 (declarative implementation)
+
+**Import Changes**:
+- Default imports (`from omnibase_core.nodes import NodeCompute`) resolve to declarative implementations
+- Legacy imports require explicit path: `from omnibase_core.nodes.legacy import NodeComputeLegacy`
+
+**Deprecation Timeline**: Legacy nodes deprecated in v0.4.0, removed in v1.0.0.
+
+See [MVP_PLAN.md](../MVP_PLAN.md) for full migration details.
+
+---
+
 **Correlation ID**: `a3c8f7d4-2b5e-4a19-9f3a-8d6e1c4b7a2f`
-**Document Version**: 1.0.0
-**Last Updated**: 2025-01-19
+**Document Version**: 1.2.0
+**Last Updated**: 2025-12-03
