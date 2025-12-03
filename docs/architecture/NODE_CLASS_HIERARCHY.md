@@ -19,6 +19,7 @@
 8. [Migration Paths](#migration-paths)
 9. [Common Scenarios](#common-scenarios)
 10. [When to Use Which Tier](#when-to-use-which-tier)
+11. [Naming Convention Migration (v0.4.0)](#naming-convention-migration-v040)
 
 ---
 
@@ -1359,6 +1360,31 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 
 ---
 
+## Naming Convention Migration (v0.4.0)
+
+In v0.4.0, declarative nodes become the default implementation. Legacy imperative nodes move to `nodes/legacy/` with a `Legacy` suffix.
+
+| Current Name | New Name | Location After Refactoring |
+|--------------|----------|---------------------------|
+| `NodeCompute` | `NodeComputeLegacy` | `nodes/legacy/node_compute_legacy.py` |
+| `NodeEffect` | `NodeEffectLegacy` | `nodes/legacy/node_effect_legacy.py` |
+| `NodeReducer` | `NodeReducerLegacy` | `nodes/legacy/node_reducer_legacy.py` |
+| `NodeOrchestrator` | `NodeOrchestratorLegacy` | `nodes/legacy/node_orchestrator_legacy.py` |
+| `NodeReducerDeclarative` | `NodeReducer` | `nodes/node_reducer.py` |
+| `NodeOrchestratorDeclarative` | `NodeOrchestrator` | `nodes/node_orchestrator.py` |
+| *(new)* | `NodeCompute` | `nodes/node_compute.py` (declarative) |
+| *(new)* | `NodeEffect` | `nodes/node_effect.py` (declarative) |
+
+**Import Changes**:
+- Default imports (`from omnibase_core.nodes import NodeCompute`) resolve to declarative implementations
+- Legacy imports require explicit path: `from omnibase_core.nodes.legacy import NodeComputeLegacy`
+
+**Deprecation Timeline**: Legacy nodes deprecated in v0.4.0, removed in v1.0.0.
+
+See [PROJECT_REFACTORING_PLAN.md](../../docs/PROJECT_REFACTORING_PLAN.md) for full migration details.
+
+---
+
 **Correlation ID**: `a3c8f7d4-2b5e-4a19-9f3a-8d6e1c4b7a2f`
-**Document Version**: 1.0.0
-**Last Updated**: 2025-01-19
+**Document Version**: 1.1.0
+**Last Updated**: 2025-12-03
