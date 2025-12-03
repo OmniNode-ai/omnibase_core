@@ -772,7 +772,9 @@ class TestNodeComputeProcessSignatureSnapshot:
         origin = typing.get_origin(return_annotation)
 
         # Accept either the generic subscript origin or the class directly
-        is_valid = (origin is ModelComputeOutput) or (return_annotation is ModelComputeOutput)
+        is_valid = (origin is ModelComputeOutput) or (
+            return_annotation is ModelComputeOutput
+        )
         assert is_valid, (
             f"NodeCompute.process should return ModelComputeOutput[T_Output], "
             f"got {return_annotation}"
@@ -786,9 +788,9 @@ class TestNodeComputeProcessSignatureSnapshot:
         """
         from omnibase_core.nodes import NodeCompute
 
-        assert inspect.iscoroutinefunction(NodeCompute.process), (
-            "NodeCompute.process must be an async method (coroutine function)"
-        )
+        assert inspect.iscoroutinefunction(
+            NodeCompute.process
+        ), "NodeCompute.process must be an async method (coroutine function)"
 
 
 class TestNodeEffectProcessSignatureSnapshot:
@@ -868,9 +870,9 @@ class TestNodeEffectProcessSignatureSnapshot:
         """
         from omnibase_core.nodes import NodeEffect
 
-        assert inspect.iscoroutinefunction(NodeEffect.process), (
-            "NodeEffect.process must be an async method (coroutine function)"
-        )
+        assert inspect.iscoroutinefunction(
+            NodeEffect.process
+        ), "NodeEffect.process must be an async method (coroutine function)"
 
 
 class TestNodeReducerProcessSignatureSnapshot:
@@ -959,7 +961,9 @@ class TestNodeReducerProcessSignatureSnapshot:
         origin = typing.get_origin(return_annotation)
 
         # Accept either the generic subscript origin or the class directly
-        is_valid = (origin is ModelReducerOutput) or (return_annotation is ModelReducerOutput)
+        is_valid = (origin is ModelReducerOutput) or (
+            return_annotation is ModelReducerOutput
+        )
         assert is_valid, (
             f"NodeReducer.process should return ModelReducerOutput[T_Output], "
             f"got {return_annotation}"
@@ -973,9 +977,9 @@ class TestNodeReducerProcessSignatureSnapshot:
         """
         from omnibase_core.nodes import NodeReducer
 
-        assert inspect.iscoroutinefunction(NodeReducer.process), (
-            "NodeReducer.process must be an async method (coroutine function)"
-        )
+        assert inspect.iscoroutinefunction(
+            NodeReducer.process
+        ), "NodeReducer.process must be an async method (coroutine function)"
 
 
 class TestNodeOrchestratorProcessSignatureSnapshot:
@@ -1055,9 +1059,9 @@ class TestNodeOrchestratorProcessSignatureSnapshot:
         """
         from omnibase_core.nodes import NodeOrchestrator
 
-        assert inspect.iscoroutinefunction(NodeOrchestrator.process), (
-            "NodeOrchestrator.process must be an async method (coroutine function)"
-        )
+        assert inspect.iscoroutinefunction(
+            NodeOrchestrator.process
+        ), "NodeOrchestrator.process must be an async method (coroutine function)"
 
 
 class TestProcessSignatureComprehensiveSummary:
@@ -1083,12 +1087,12 @@ class TestProcessSignatureComprehensiveSummary:
         node_classes = [NodeCompute, NodeEffect, NodeOrchestrator, NodeReducer]
 
         for node_class in node_classes:
-            assert hasattr(node_class, "process"), (
-                f"{node_class.__name__} must have 'process' method"
-            )
-            assert callable(node_class.process), (
-                f"{node_class.__name__}.process must be callable"
-            )
+            assert hasattr(
+                node_class, "process"
+            ), f"{node_class.__name__} must have 'process' method"
+            assert callable(
+                node_class.process
+            ), f"{node_class.__name__}.process must be callable"
 
     @pytest.mark.unit
     def test_all_process_methods_are_async(self) -> None:
@@ -1106,9 +1110,9 @@ class TestProcessSignatureComprehensiveSummary:
         node_classes = [NodeCompute, NodeEffect, NodeOrchestrator, NodeReducer]
 
         for node_class in node_classes:
-            assert inspect.iscoroutinefunction(node_class.process), (
-                f"{node_class.__name__}.process must be async (coroutine function)"
-            )
+            assert inspect.iscoroutinefunction(
+                node_class.process
+            ), f"{node_class.__name__}.process must be async (coroutine function)"
 
     @pytest.mark.unit
     def test_all_process_methods_have_input_data_param(self) -> None:
@@ -1127,9 +1131,9 @@ class TestProcessSignatureComprehensiveSummary:
 
         for node_class in node_classes:
             sig = inspect.signature(node_class.process)
-            assert "input_data" in sig.parameters, (
-                f"{node_class.__name__}.process must have 'input_data' parameter"
-            )
+            assert (
+                "input_data" in sig.parameters
+            ), f"{node_class.__name__}.process must have 'input_data' parameter"
 
     @pytest.mark.unit
     def test_process_signature_param_counts(self) -> None:
@@ -1184,9 +1188,9 @@ class TestProcessSignatureComprehensiveSummary:
 
         for node_class in node_classes:
             sig = inspect.signature(node_class.process)
-            assert sig.return_annotation is not inspect.Parameter.empty, (
-                f"{node_class.__name__}.process must have return type annotation"
-            )
+            assert (
+                sig.return_annotation is not inspect.Parameter.empty
+            ), f"{node_class.__name__}.process must have return type annotation"
 
     @pytest.mark.unit
     def test_process_input_params_have_type_annotations(self) -> None:
@@ -1207,6 +1211,6 @@ class TestProcessSignatureComprehensiveSummary:
         for node_class in node_classes:
             sig = inspect.signature(node_class.process)
             input_param = sig.parameters["input_data"]
-            assert input_param.annotation is not inspect.Parameter.empty, (
-                f"{node_class.__name__}.process input_data must have type annotation"
-            )
+            assert (
+                input_param.annotation is not inspect.Parameter.empty
+            ), f"{node_class.__name__}.process input_data must have type annotation"
