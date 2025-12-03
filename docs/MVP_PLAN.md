@@ -1961,7 +1961,7 @@ The following issues are lower priority and should be addressed after the core v
 **Labels**: `architecture`, `refactoring`
 
 **Description**:
-Extract 14 D-class (Domain) mixins to pure functions in `utils/` and `domain/`.
+Extract 16 D-class (Domain) mixins to pure functions in `utils/` and `domain/`.
 
 ---
 
@@ -2177,7 +2177,7 @@ When creating these issues in Linear:
 
 ## Release Blockers
 
-Not all 69 issues are equally critical for v0.4.0 to ship. The following MUST land before release:
+Not all 71 issues are equally critical for v0.4.0 to ship. The following MUST land before release:
 
 **Phase 0 (All blocking)**:
 - 0.1-0.9: Stabilization, versioning, hash registry, purity tests, meta-model

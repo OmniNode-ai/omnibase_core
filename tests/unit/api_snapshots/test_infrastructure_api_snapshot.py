@@ -19,6 +19,8 @@ Pre-refactor exports (v0.2.0):
 - ModelEffectTransaction: Transaction support for effect operations
 """
 
+import inspect
+
 import pytest
 
 
@@ -301,3 +303,209 @@ class TestInfrastructureReexportConsistency:
             "ModelEffectTransaction re-export must be identical to original. "
             "Check the import in infrastructure/__init__.py"
         )
+
+
+@pytest.mark.unit
+class TestAbstractMethodEnforcement:
+    """Tests for abstract method enforcement in NodeCoreBase hierarchy.
+
+    These tests verify that:
+    1. NodeCoreBase properly declares abstract methods
+    2. Abstract methods use @abstractmethod decorator
+    3. Concrete node classes properly implement all abstract methods
+    4. Attempting to instantiate abstract classes directly raises TypeError
+
+    This ensures the contract between base classes and implementations
+    is properly enforced at the Python level.
+    """
+
+    def test_node_core_base_is_abstract(self) -> None:
+        """Verify NodeCoreBase is an abstract class and cannot be instantiated.
+
+        NodeCoreBase inherits from ABC and declares abstract methods.
+        Attempting to instantiate it directly should raise TypeError.
+        """
+        from unittest.mock import MagicMock
+
+        from omnibase_core.infrastructure import NodeCoreBase
+
+        # Verify class is abstract using inspect
+        assert inspect.isabstract(NodeCoreBase), (
+            "NodeCoreBase must be an abstract class. "
+            "Ensure it inherits from ABC and has @abstractmethod decorated methods."
+        )
+
+        # Verify instantiation raises TypeError
+        mock_container = MagicMock()
+        with pytest.raises(TypeError) as exc_info:
+            NodeCoreBase(mock_container)
+
+        # Verify error message mentions abstract method
+        error_message = str(exc_info.value)
+        assert "abstract" in error_message.lower() or "process" in error_message, (
+            f"TypeError should mention abstract method. Got: {error_message}"
+        )
+
+    def test_node_core_base_process_is_abstract(self) -> None:
+        """Verify the 'process' method is declared as abstract in NodeCoreBase.
+
+        The process method is the core interface that all nodes must implement.
+        It must be decorated with @abstractmethod.
+        """
+        from omnibase_core.infrastructure import NodeCoreBase
+
+        # Get the process method from NodeCoreBase
+        process_method = getattr(NodeCoreBase, "process", None)
+        assert process_method is not None, "NodeCoreBase must have a 'process' method"
+
+        # Check if method has __isabstractmethod__ attribute set to True
+        is_abstract = getattr(process_method, "__isabstractmethod__", False)
+        assert is_abstract, (
+            "NodeCoreBase.process must be decorated with @abstractmethod. "
+            "This ensures concrete nodes are required to implement it."
+        )
+
+    def test_node_core_base_abstract_methods_snapshot(self) -> None:
+        """Verify the set of abstract methods in NodeCoreBase matches snapshot.
+
+        Pre-refactor snapshot: {'process'} is the only abstract method.
+
+        If this test fails, it means abstract methods were added or removed,
+        which may be a breaking change for existing node implementations.
+        """
+        from omnibase_core.infrastructure import NodeCoreBase
+
+        # Get all abstract methods from the class
+        abstract_methods = set()
+        for name, method in inspect.getmembers(NodeCoreBase):
+            if getattr(method, "__isabstractmethod__", False):
+                abstract_methods.add(name)
+
+        expected_abstract_methods = {"process"}
+        assert abstract_methods == expected_abstract_methods, (
+            f"Abstract methods in NodeCoreBase changed. "
+            f"Expected: {expected_abstract_methods}, Got: {abstract_methods}. "
+            f"Adding/removing abstract methods may break existing implementations."
+        )
+
+    def test_concrete_nodes_implement_process(self) -> None:
+        """Verify all concrete node classes implement the process method.
+
+        All 4-node architecture classes must provide a concrete implementation
+        of the abstract process method from NodeCoreBase.
+        """
+        from omnibase_core.nodes import (
+            NodeCompute,
+            NodeEffect,
+            NodeOrchestrator,
+            NodeReducer,
+        )
+
+        node_classes = [NodeCompute, NodeEffect, NodeOrchestrator, NodeReducer]
+
+        for node_class in node_classes:
+            # Verify class is NOT abstract (can be instantiated)
+            assert not inspect.isabstract(node_class), (
+                f"{node_class.__name__} must not be abstract. "
+                f"Ensure it implements all abstract methods from NodeCoreBase."
+            )
+
+            # Verify process method exists and is not abstract
+            process_method = getattr(node_class, "process", None)
+            assert process_method is not None, (
+                f"{node_class.__name__} must have a 'process' method"
+            )
+
+            is_abstract = getattr(process_method, "__isabstractmethod__", False)
+            assert not is_abstract, (
+                f"{node_class.__name__}.process must be a concrete implementation, "
+                f"not an abstract method."
+            )
+
+    def test_concrete_nodes_process_is_async(self) -> None:
+        """Verify all concrete node process methods are async.
+
+        The process method signature requires async for consistent behavior.
+        """
+        from omnibase_core.nodes import (
+            NodeCompute,
+            NodeEffect,
+            NodeOrchestrator,
+            NodeReducer,
+        )
+
+        node_classes = [NodeCompute, NodeEffect, NodeOrchestrator, NodeReducer]
+
+        for node_class in node_classes:
+            process_method = getattr(node_class, "process", None)
+            assert process_method is not None, (
+                f"{node_class.__name__} must have a 'process' method"
+            )
+
+            # Check if the method is a coroutine function
+            assert inspect.iscoroutinefunction(process_method), (
+                f"{node_class.__name__}.process must be an async method. "
+                f"This is required for consistent node behavior."
+            )
+
+    def test_incomplete_node_implementation_raises_type_error(self) -> None:
+        """Verify that incomplete node implementations cannot be instantiated.
+
+        A class inheriting from NodeCoreBase that does not implement process
+        should raise TypeError when instantiated.
+        """
+        from unittest.mock import MagicMock
+
+        from omnibase_core.infrastructure import NodeCoreBase
+
+        # Define an incomplete node class that doesn't implement process
+        class IncompleteNode(NodeCoreBase):  # type: ignore[misc]
+            """A node that intentionally does not implement process."""
+
+        # Verify the class is still abstract
+        assert inspect.isabstract(IncompleteNode), (
+            "IncompleteNode should be abstract since it doesn't implement process"
+        )
+
+        # Verify instantiation raises TypeError
+        mock_container = MagicMock()
+        with pytest.raises(TypeError) as exc_info:
+            IncompleteNode(mock_container)
+
+        error_message = str(exc_info.value)
+        assert "process" in error_message, (
+            f"TypeError should mention missing 'process' method. Got: {error_message}"
+        )
+
+    def test_complete_node_implementation_can_be_instantiated(self) -> None:
+        """Verify that a complete node implementation can be instantiated.
+
+        A class inheriting from NodeCoreBase that implements all abstract
+        methods should be instantiable without TypeError.
+        """
+        from typing import Any
+        from unittest.mock import MagicMock
+
+        from omnibase_core.infrastructure import NodeCoreBase
+
+        # Define a complete node class
+        class CompleteNode(NodeCoreBase):  # type: ignore[misc]
+            """A node that properly implements process."""
+
+            async def process(self, input_data: Any) -> Any:
+                """Concrete implementation of process."""
+                return input_data
+
+        # Verify the class is NOT abstract
+        assert not inspect.isabstract(CompleteNode), (
+            "CompleteNode should not be abstract since it implements process"
+        )
+
+        # Verify instantiation works
+        mock_container = MagicMock()
+        mock_container.get_service = MagicMock()
+
+        # This should not raise TypeError
+        node = CompleteNode(mock_container)
+        assert node is not None
+        assert node.container is mock_container

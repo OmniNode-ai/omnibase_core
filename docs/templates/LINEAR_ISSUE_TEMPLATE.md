@@ -1,6 +1,6 @@
 # Linear Issue Template - Omninode MVP Development
 
-Generic issue template for all Omninode MVP projects (omnibase_core, omnibase_spi, omnibase_infra).
+> **Scope**: This template applies to **all Omninode MVP projects** (omnibase_core, omnibase_spi, omnibase_infra), not just ONEX-specific work. Use this for any Linear issue in the MVP development phase.
 
 ---
 
@@ -14,7 +14,7 @@ Generic issue template for all Omninode MVP projects (omnibase_core, omnibase_sp
 
 - [ ] *Specific, testable criterion 1*
 - [ ] *Specific, testable criterion 2*
-- [ ] Type checking passes (mypy --strict / pyright)
+- [ ] Type checking passes (`poetry run mypy --strict` or `poetry run pyright`)
 - [ ] Tests pass with appropriate coverage
 
 ## Location
@@ -27,13 +27,15 @@ Generic issue template for all Omninode MVP projects (omnibase_core, omnibase_sp
 
 ## Cross-Repo Impact
 
-Impact scope for coordinated changes across repositories:
+Impact scope for coordinated changes across repositories (see [MVP_PLAN.md](../MVP_PLAN.md) for sync points):
 
-- **single repo** - Changes isolated to one repository
-- **core+spi** - Changes require updates to both omnibase_core and omnibase_spi
-- **core+spi+infra** - Changes span all three MVP repositories
+- **core-only** - No cross-repo dependencies, changes isolated to one repository
+- **core+spi** - Requires SPI protocol alignment, updates to both omnibase_core and omnibase_spi
+- **core+spi+infra** - Requires all three repos, spans omnibase_core, omnibase_spi, and omnibase_infra
 
-*single repo / core+spi / core+spi+infra*
+*core-only / core+spi / core+spi+infra*
+
+> **Note**: For `core+spi` or `core+spi+infra` issues, check the Cross-Repo Synchronization Points section in MVP_PLAN.md to understand blocking dependencies and release sequencing.
 
 ## TDD
 

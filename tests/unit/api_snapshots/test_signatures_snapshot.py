@@ -1,7 +1,7 @@
 """
 Pre-refactor class signature snapshot tests for omnibase_core node classes.
 
-These tests capture constructor signatures before v0.4.0 refactoring.
+These tests capture constructor and process method signatures before v0.4.0 refactoring.
 If these tests fail due to intentional breaking changes, update them
 in the same PR with a migration note in the changelog.
 
@@ -10,6 +10,8 @@ The tests verify:
 - Constructor parameter types match expected (where annotated)
 - Required vs optional parameters are correct
 - Default values are correct
+- Process method signatures are stable (critical for API contracts)
+- Process method parameter types and return types are correct
 
 VERSION: 1.0.0 (API stability guarantee per node modules)
 STABILITY: Node signatures are frozen for code generation.
@@ -681,4 +683,530 @@ class TestSignatureComprehensiveSummary:
                 f"{name}.__init__ parameter count changed. "
                 f"Expected {expected_count}, got {actual_count}. "
                 f"Params: {list(sig.parameters.keys())}"
+            )
+
+
+class TestNodeComputeProcessSignatureSnapshot:
+    """Signature snapshot tests for NodeCompute.process method."""
+
+    @pytest.mark.unit
+    def test_node_compute_process_signature_params(self) -> None:
+        """Verify NodeCompute.process parameter names.
+
+        Pre-refactor snapshot: ['self', 'input_data']
+        """
+        from omnibase_core.nodes import NodeCompute
+
+        sig = inspect.signature(NodeCompute.process)
+        params = list(sig.parameters.keys())
+
+        expected_params = ["self", "input_data"]
+        assert params == expected_params, (
+            f"NodeCompute.process signature changed. "
+            f"Expected params: {expected_params}, Got: {params}"
+        )
+
+    @pytest.mark.unit
+    def test_node_compute_process_input_required(self) -> None:
+        """Verify input_data parameter is required (no default).
+
+        Pre-refactor: input_data has no default value.
+        """
+        from omnibase_core.nodes import NodeCompute
+
+        sig = inspect.signature(NodeCompute.process)
+        input_param = sig.parameters["input_data"]
+
+        assert input_param.default is inspect.Parameter.empty, (
+            "NodeCompute.process input_data parameter should be required (no default). "
+            f"Got default: {input_param.default}"
+        )
+
+    @pytest.mark.unit
+    def test_node_compute_process_input_type_annotation(self) -> None:
+        """Verify input_data parameter type annotation.
+
+        Pre-refactor: input_data is annotated as ModelComputeInput[T_Input].
+
+        Note: Due to generic type parameters, we check the origin type or the class itself.
+        When inspect.signature resolves the type, it may be the generic subscript or the class.
+        """
+        import typing
+
+        from omnibase_core.models.model_compute_input import ModelComputeInput
+        from omnibase_core.nodes import NodeCompute
+
+        sig = inspect.signature(NodeCompute.process)
+        input_param = sig.parameters["input_data"]
+
+        # Get the origin type (ModelComputeInput without the generic parameter)
+        # or check if annotation is the class itself
+        annotation = input_param.annotation
+        origin = typing.get_origin(annotation)
+
+        # Accept either the generic subscript origin or the class directly
+        is_valid = (origin is ModelComputeInput) or (annotation is ModelComputeInput)
+        assert is_valid, (
+            f"NodeCompute.process input_data should be annotated as ModelComputeInput[T_Input], "
+            f"got {annotation}"
+        )
+
+    @pytest.mark.unit
+    def test_node_compute_process_return_type_annotation(self) -> None:
+        """Verify NodeCompute.process return type annotation.
+
+        Pre-refactor: Returns ModelComputeOutput[T_Output].
+
+        Note: Due to generic type parameters, we check the origin type or the class itself.
+        """
+        import typing
+
+        from omnibase_core.models.model_compute_output import ModelComputeOutput
+        from omnibase_core.nodes import NodeCompute
+
+        sig = inspect.signature(NodeCompute.process)
+        return_annotation = sig.return_annotation
+
+        # Get the origin type (ModelComputeOutput without the generic parameter)
+        # or check if annotation is the class directly
+        origin = typing.get_origin(return_annotation)
+
+        # Accept either the generic subscript origin or the class directly
+        is_valid = (origin is ModelComputeOutput) or (return_annotation is ModelComputeOutput)
+        assert is_valid, (
+            f"NodeCompute.process should return ModelComputeOutput[T_Output], "
+            f"got {return_annotation}"
+        )
+
+    @pytest.mark.unit
+    def test_node_compute_process_is_async(self) -> None:
+        """Verify NodeCompute.process is an async method.
+
+        Pre-refactor: process is defined as async def.
+        """
+        from omnibase_core.nodes import NodeCompute
+
+        assert inspect.iscoroutinefunction(NodeCompute.process), (
+            "NodeCompute.process must be an async method (coroutine function)"
+        )
+
+
+class TestNodeEffectProcessSignatureSnapshot:
+    """Signature snapshot tests for NodeEffect.process method."""
+
+    @pytest.mark.unit
+    def test_node_effect_process_signature_params(self) -> None:
+        """Verify NodeEffect.process parameter names.
+
+        Pre-refactor snapshot: ['self', 'input_data']
+        """
+        from omnibase_core.nodes import NodeEffect
+
+        sig = inspect.signature(NodeEffect.process)
+        params = list(sig.parameters.keys())
+
+        expected_params = ["self", "input_data"]
+        assert params == expected_params, (
+            f"NodeEffect.process signature changed. "
+            f"Expected params: {expected_params}, Got: {params}"
+        )
+
+    @pytest.mark.unit
+    def test_node_effect_process_input_required(self) -> None:
+        """Verify input_data parameter is required (no default).
+
+        Pre-refactor: input_data has no default value.
+        """
+        from omnibase_core.nodes import NodeEffect
+
+        sig = inspect.signature(NodeEffect.process)
+        input_param = sig.parameters["input_data"]
+
+        assert input_param.default is inspect.Parameter.empty, (
+            "NodeEffect.process input_data parameter should be required (no default). "
+            f"Got default: {input_param.default}"
+        )
+
+    @pytest.mark.unit
+    def test_node_effect_process_input_type_annotation(self) -> None:
+        """Verify input_data parameter type annotation.
+
+        Pre-refactor: input_data is annotated as ModelEffectInput.
+        """
+        from omnibase_core.models.model_effect_input import ModelEffectInput
+        from omnibase_core.nodes import NodeEffect
+
+        sig = inspect.signature(NodeEffect.process)
+        input_param = sig.parameters["input_data"]
+
+        assert input_param.annotation is ModelEffectInput, (
+            f"NodeEffect.process input_data should be annotated as ModelEffectInput, "
+            f"got {input_param.annotation}"
+        )
+
+    @pytest.mark.unit
+    def test_node_effect_process_return_type_annotation(self) -> None:
+        """Verify NodeEffect.process return type annotation.
+
+        Pre-refactor: Returns ModelEffectOutput.
+        """
+        from omnibase_core.models.model_effect_output import ModelEffectOutput
+        from omnibase_core.nodes import NodeEffect
+
+        sig = inspect.signature(NodeEffect.process)
+
+        assert sig.return_annotation is ModelEffectOutput, (
+            f"NodeEffect.process should return ModelEffectOutput, "
+            f"got {sig.return_annotation}"
+        )
+
+    @pytest.mark.unit
+    def test_node_effect_process_is_async(self) -> None:
+        """Verify NodeEffect.process is an async method.
+
+        Pre-refactor: process is defined as async def.
+        """
+        from omnibase_core.nodes import NodeEffect
+
+        assert inspect.iscoroutinefunction(NodeEffect.process), (
+            "NodeEffect.process must be an async method (coroutine function)"
+        )
+
+
+class TestNodeReducerProcessSignatureSnapshot:
+    """Signature snapshot tests for NodeReducer.process method."""
+
+    @pytest.mark.unit
+    def test_node_reducer_process_signature_params(self) -> None:
+        """Verify NodeReducer.process parameter names.
+
+        Pre-refactor snapshot: ['self', 'input_data']
+        """
+        from omnibase_core.nodes import NodeReducer
+
+        sig = inspect.signature(NodeReducer.process)
+        params = list(sig.parameters.keys())
+
+        expected_params = ["self", "input_data"]
+        assert params == expected_params, (
+            f"NodeReducer.process signature changed. "
+            f"Expected params: {expected_params}, Got: {params}"
+        )
+
+    @pytest.mark.unit
+    def test_node_reducer_process_input_required(self) -> None:
+        """Verify input_data parameter is required (no default).
+
+        Pre-refactor: input_data has no default value.
+        """
+        from omnibase_core.nodes import NodeReducer
+
+        sig = inspect.signature(NodeReducer.process)
+        input_param = sig.parameters["input_data"]
+
+        assert input_param.default is inspect.Parameter.empty, (
+            "NodeReducer.process input_data parameter should be required (no default). "
+            f"Got default: {input_param.default}"
+        )
+
+    @pytest.mark.unit
+    def test_node_reducer_process_input_type_annotation(self) -> None:
+        """Verify input_data parameter type annotation.
+
+        Pre-refactor: input_data is annotated as ModelReducerInput[T_Input].
+
+        Note: Due to generic type parameters, we check the origin type or the class itself.
+        When inspect.signature resolves the type, it may be the generic subscript or the class.
+        """
+        import typing
+
+        from omnibase_core.models.model_reducer_input import ModelReducerInput
+        from omnibase_core.nodes import NodeReducer
+
+        sig = inspect.signature(NodeReducer.process)
+        input_param = sig.parameters["input_data"]
+
+        # Get the origin type (ModelReducerInput without the generic parameter)
+        # or check if annotation is the class itself
+        annotation = input_param.annotation
+        origin = typing.get_origin(annotation)
+
+        # Accept either the generic subscript origin or the class directly
+        is_valid = (origin is ModelReducerInput) or (annotation is ModelReducerInput)
+        assert is_valid, (
+            f"NodeReducer.process input_data should be annotated as ModelReducerInput[T_Input], "
+            f"got {annotation}"
+        )
+
+    @pytest.mark.unit
+    def test_node_reducer_process_return_type_annotation(self) -> None:
+        """Verify NodeReducer.process return type annotation.
+
+        Pre-refactor: Returns ModelReducerOutput[T_Output].
+
+        Note: Due to generic type parameters, we check the origin type or the class itself.
+        """
+        import typing
+
+        from omnibase_core.models.model_reducer_output import ModelReducerOutput
+        from omnibase_core.nodes import NodeReducer
+
+        sig = inspect.signature(NodeReducer.process)
+        return_annotation = sig.return_annotation
+
+        # Get the origin type (ModelReducerOutput without the generic parameter)
+        # or check if annotation is the class directly
+        origin = typing.get_origin(return_annotation)
+
+        # Accept either the generic subscript origin or the class directly
+        is_valid = (origin is ModelReducerOutput) or (return_annotation is ModelReducerOutput)
+        assert is_valid, (
+            f"NodeReducer.process should return ModelReducerOutput[T_Output], "
+            f"got {return_annotation}"
+        )
+
+    @pytest.mark.unit
+    def test_node_reducer_process_is_async(self) -> None:
+        """Verify NodeReducer.process is an async method.
+
+        Pre-refactor: process is defined as async def.
+        """
+        from omnibase_core.nodes import NodeReducer
+
+        assert inspect.iscoroutinefunction(NodeReducer.process), (
+            "NodeReducer.process must be an async method (coroutine function)"
+        )
+
+
+class TestNodeOrchestratorProcessSignatureSnapshot:
+    """Signature snapshot tests for NodeOrchestrator.process method."""
+
+    @pytest.mark.unit
+    def test_node_orchestrator_process_signature_params(self) -> None:
+        """Verify NodeOrchestrator.process parameter names.
+
+        Pre-refactor snapshot: ['self', 'input_data']
+        """
+        from omnibase_core.nodes import NodeOrchestrator
+
+        sig = inspect.signature(NodeOrchestrator.process)
+        params = list(sig.parameters.keys())
+
+        expected_params = ["self", "input_data"]
+        assert params == expected_params, (
+            f"NodeOrchestrator.process signature changed. "
+            f"Expected params: {expected_params}, Got: {params}"
+        )
+
+    @pytest.mark.unit
+    def test_node_orchestrator_process_input_required(self) -> None:
+        """Verify input_data parameter is required (no default).
+
+        Pre-refactor: input_data has no default value.
+        """
+        from omnibase_core.nodes import NodeOrchestrator
+
+        sig = inspect.signature(NodeOrchestrator.process)
+        input_param = sig.parameters["input_data"]
+
+        assert input_param.default is inspect.Parameter.empty, (
+            "NodeOrchestrator.process input_data parameter should be required (no default). "
+            f"Got default: {input_param.default}"
+        )
+
+    @pytest.mark.unit
+    def test_node_orchestrator_process_input_type_annotation(self) -> None:
+        """Verify input_data parameter type annotation.
+
+        Pre-refactor: input_data is annotated as ModelOrchestratorInput.
+        """
+        from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
+        from omnibase_core.nodes import NodeOrchestrator
+
+        sig = inspect.signature(NodeOrchestrator.process)
+        input_param = sig.parameters["input_data"]
+
+        assert input_param.annotation is ModelOrchestratorInput, (
+            f"NodeOrchestrator.process input_data should be annotated as ModelOrchestratorInput, "
+            f"got {input_param.annotation}"
+        )
+
+    @pytest.mark.unit
+    def test_node_orchestrator_process_return_type_annotation(self) -> None:
+        """Verify NodeOrchestrator.process return type annotation.
+
+        Pre-refactor: Returns ModelOrchestratorOutput.
+        """
+        from omnibase_core.models.orchestrator import ModelOrchestratorOutput
+        from omnibase_core.nodes import NodeOrchestrator
+
+        sig = inspect.signature(NodeOrchestrator.process)
+
+        assert sig.return_annotation is ModelOrchestratorOutput, (
+            f"NodeOrchestrator.process should return ModelOrchestratorOutput, "
+            f"got {sig.return_annotation}"
+        )
+
+    @pytest.mark.unit
+    def test_node_orchestrator_process_is_async(self) -> None:
+        """Verify NodeOrchestrator.process is an async method.
+
+        Pre-refactor: process is defined as async def.
+        """
+        from omnibase_core.nodes import NodeOrchestrator
+
+        assert inspect.iscoroutinefunction(NodeOrchestrator.process), (
+            "NodeOrchestrator.process must be an async method (coroutine function)"
+        )
+
+
+class TestProcessSignatureComprehensiveSummary:
+    """Summary tests for all node process method signatures.
+
+    These tests provide a quick overview of all node process signatures
+    for verification during refactoring.
+    """
+
+    @pytest.mark.unit
+    def test_all_four_node_classes_have_process_method(self) -> None:
+        """Verify all 4-node architecture classes have a process method.
+
+        This is the core processing interface for all nodes.
+        """
+        from omnibase_core.nodes import (
+            NodeCompute,
+            NodeEffect,
+            NodeOrchestrator,
+            NodeReducer,
+        )
+
+        node_classes = [NodeCompute, NodeEffect, NodeOrchestrator, NodeReducer]
+
+        for node_class in node_classes:
+            assert hasattr(node_class, "process"), (
+                f"{node_class.__name__} must have 'process' method"
+            )
+            assert callable(node_class.process), (
+                f"{node_class.__name__}.process must be callable"
+            )
+
+    @pytest.mark.unit
+    def test_all_process_methods_are_async(self) -> None:
+        """Verify all 4-node process methods are async.
+
+        Pattern: async def process(self, input_data: ...) -> ...
+        """
+        from omnibase_core.nodes import (
+            NodeCompute,
+            NodeEffect,
+            NodeOrchestrator,
+            NodeReducer,
+        )
+
+        node_classes = [NodeCompute, NodeEffect, NodeOrchestrator, NodeReducer]
+
+        for node_class in node_classes:
+            assert inspect.iscoroutinefunction(node_class.process), (
+                f"{node_class.__name__}.process must be async (coroutine function)"
+            )
+
+    @pytest.mark.unit
+    def test_all_process_methods_have_input_data_param(self) -> None:
+        """Verify all 4-node process methods have input_data parameter.
+
+        Pattern: async def process(self, input_data: ...) -> ...
+        """
+        from omnibase_core.nodes import (
+            NodeCompute,
+            NodeEffect,
+            NodeOrchestrator,
+            NodeReducer,
+        )
+
+        node_classes = [NodeCompute, NodeEffect, NodeOrchestrator, NodeReducer]
+
+        for node_class in node_classes:
+            sig = inspect.signature(node_class.process)
+            assert "input_data" in sig.parameters, (
+                f"{node_class.__name__}.process must have 'input_data' parameter"
+            )
+
+    @pytest.mark.unit
+    def test_process_signature_param_counts(self) -> None:
+        """Verify expected parameter counts for each node process method.
+
+        Pre-refactor counts (all have 2 params: self, input_data):
+        - NodeCompute.process: 2 params
+        - NodeEffect.process: 2 params
+        - NodeReducer.process: 2 params
+        - NodeOrchestrator.process: 2 params
+        """
+        from omnibase_core.nodes import (
+            NodeCompute,
+            NodeEffect,
+            NodeOrchestrator,
+            NodeReducer,
+        )
+
+        expected_count = 2  # self and input_data
+
+        node_classes = {
+            "NodeCompute": NodeCompute,
+            "NodeEffect": NodeEffect,
+            "NodeReducer": NodeReducer,
+            "NodeOrchestrator": NodeOrchestrator,
+        }
+
+        for name, cls in node_classes.items():
+            sig = inspect.signature(cls.process)
+            actual_count = len(sig.parameters)
+            assert actual_count == expected_count, (
+                f"{name}.process parameter count changed. "
+                f"Expected {expected_count}, got {actual_count}. "
+                f"Params: {list(sig.parameters.keys())}"
+            )
+
+    @pytest.mark.unit
+    def test_process_methods_have_return_annotations(self) -> None:
+        """Verify all 4-node process methods have return type annotations.
+
+        All process methods should have explicit return type annotations
+        for code generation and type safety.
+        """
+        from omnibase_core.nodes import (
+            NodeCompute,
+            NodeEffect,
+            NodeOrchestrator,
+            NodeReducer,
+        )
+
+        node_classes = [NodeCompute, NodeEffect, NodeOrchestrator, NodeReducer]
+
+        for node_class in node_classes:
+            sig = inspect.signature(node_class.process)
+            assert sig.return_annotation is not inspect.Parameter.empty, (
+                f"{node_class.__name__}.process must have return type annotation"
+            )
+
+    @pytest.mark.unit
+    def test_process_input_params_have_type_annotations(self) -> None:
+        """Verify all 4-node process input_data parameters have type annotations.
+
+        All input_data parameters should have explicit type annotations
+        for code generation and type safety.
+        """
+        from omnibase_core.nodes import (
+            NodeCompute,
+            NodeEffect,
+            NodeOrchestrator,
+            NodeReducer,
+        )
+
+        node_classes = [NodeCompute, NodeEffect, NodeOrchestrator, NodeReducer]
+
+        for node_class in node_classes:
+            sig = inspect.signature(node_class.process)
+            input_param = sig.parameters["input_data"]
+            assert input_param.annotation is not inspect.Parameter.empty, (
+                f"{node_class.__name__}.process input_data must have type annotation"
             )

@@ -41,7 +41,7 @@ class ModelContractVersion(BaseModel):
 
 - Contracts MUST NOT be downgraded without explicit `ALLOW_DOWNGRADE=true`
 - CI check blocks PRs that reduce contract versions
-- Downgrade requires documented rationale in changelog
+- Downgrades require documented rationale in the changelog
 
 ---
 
@@ -182,11 +182,11 @@ class ContractHashRegistry:
 ### Use Cases
 
 ```text
-| Use Case | Method |
-|----------|--------|
+| Use Case            | Method         |
+|---------------------|----------------|
 | Migration debugging | detect_drift() |
-| Contract loading | verify() |
-| Registration | register() |
+| Contract loading    | verify()       |
+| Registration        | register()     |
 ```
 
 ---
@@ -228,6 +228,7 @@ ERR_CODE: message (path.to.field)
 ```
 
 **Examples**:
+
 ```text
 CONTRACT_INVALID_TYPE: Expected string (input.name)
 CONTRACT_MISSING_FIELD: Required field missing (output.result)
