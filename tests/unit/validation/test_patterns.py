@@ -285,6 +285,72 @@ class Test:
         # Special methods should not trigger violations
         assert len(checker.issues) == 0
 
+    def test_error_class_with_handler_allowed(self):
+        """Test that error classes with 'Handler' in name are allowed."""
+        code = """
+class HandlerConfigurationError(Exception):
+    pass
+"""
+        tree = ast.parse(code)
+        checker = NamingConventionChecker("src/errors/infra_errors.py")
+        checker.visit(tree)
+
+        # Error classes should not trigger anti-pattern violations
+        assert len(checker.issues) == 0
+
+    def test_error_class_with_service_allowed(self):
+        """Test that error classes with 'Service' in name are allowed."""
+        code = """
+class InfraServiceUnavailableError(Exception):
+    pass
+"""
+        tree = ast.parse(code)
+        checker = NamingConventionChecker("test.py")
+        checker.visit(tree)
+
+        # Error classes (ending in Error) should not trigger anti-pattern violations
+        assert len(checker.issues) == 0
+
+    def test_exception_class_with_handler_allowed(self):
+        """Test that exception classes with 'Handler' in name are allowed."""
+        code = """
+class HandlerInitializationException(Exception):
+    pass
+"""
+        tree = ast.parse(code)
+        checker = NamingConventionChecker("test.py")
+        checker.visit(tree)
+
+        # Exception classes should not trigger anti-pattern violations
+        assert len(checker.issues) == 0
+
+    def test_errors_directory_classes_allowed(self):
+        """Test that any class in errors/ directory is allowed anti-pattern names."""
+        code = """
+class ServiceRegistry:
+    pass
+"""
+        tree = ast.parse(code)
+        checker = NamingConventionChecker("src/mypackage/errors/registry.py")
+        checker.visit(tree)
+
+        # Classes in errors/ directory should not trigger anti-pattern violations
+        assert len(checker.issues) == 0
+
+    def test_non_error_class_still_flagged(self):
+        """Test that non-error classes with anti-patterns are still flagged."""
+        code = """
+class ServiceRegistry:
+    pass
+"""
+        tree = ast.parse(code)
+        checker = NamingConventionChecker("src/mypackage/services/registry.py")
+        checker.visit(tree)
+
+        # Non-error classes outside errors/ should still be flagged
+        assert len(checker.issues) > 0
+        assert any("Service" in issue for issue in checker.issues)
+
 
 class TestGenericPatternChecker:
     """Test GenericPatternChecker class."""
