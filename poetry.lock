@@ -2355,26 +2355,6 @@ files = [
 ]
 
 [[package]]
-name = "omnibase-spi"
-version = "0.2.0"
-description = "ONEX Service Provider Interface - Protocol definitions"
-optional = false
-python-versions = "^3.12"
-groups = ["main"]
-files = []
-develop = false
-
-[package.dependencies]
-pydantic = ">=2.11.7"
-typing-extensions = ">=4.5.0"
-
-[package.source]
-type = "git"
-url = "https://github.com/OmniNode-ai/omnibase_spi.git"
-reference = "v0.2.0"
-resolved_reference = "4c16335aa1a15a9ff587adc9ba485d96a59d0ea0"
-
-[[package]]
 name = "openai"
 version = "1.109.1"
 description = "The official Python library for the openai API"
@@ -4339,4 +4319,4 @@ full = ["psutil"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "e96c0d29d5a1bae0729f2389cabc6a87526b0478b5dc3da4e3ee4c3c26144450"
+content-hash = "2e1b8fb32c531be86bb46fb9acdff1cf81e4aa8feff0feea1ed30d56219f33a0"
