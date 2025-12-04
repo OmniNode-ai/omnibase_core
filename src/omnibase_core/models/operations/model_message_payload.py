@@ -40,7 +40,7 @@ class ModelMessagePayload(BaseModel):
     Strongly-typed message payload with discriminated unions.
 
     Replaces dict[str, Any] with discriminated message payload types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Identifiable: UUID-based identification
     - Serializable: Data serialization/deserialization

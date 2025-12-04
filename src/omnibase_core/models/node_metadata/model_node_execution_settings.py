@@ -30,7 +30,7 @@ class ModelNodeExecutionSettings(BaseModel):
     - Retry and timeout settings
     - Batch processing configuration
     - Execution mode flags
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

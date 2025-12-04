@@ -32,7 +32,7 @@ class ModelCustomConnectionProperties(BaseModel):
 
     Restructured using composition to organize properties by concern.
     Reduces string field count through logical grouping.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization

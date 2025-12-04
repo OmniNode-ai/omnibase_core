@@ -4,7 +4,7 @@ from typing import TypedDict
 
 """
 Execution-related factory parameters.
-Implements omnibase_spi protocols:
+Implements Core protocols:
 - Configurable: Configuration management capabilities
 - Serializable: Data serialization/deserialization
 - Validatable: Validation and verification
@@ -14,7 +14,7 @@ Implements omnibase_spi protocols:
 
 class TypedDictExecutionParams(TypedDict, total=False):
     """Execution-related factory parameters.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

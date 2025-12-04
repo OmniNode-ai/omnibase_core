@@ -38,7 +38,7 @@ class ModelPropertyValue(BaseModel):
 
     Uses discriminated union pattern with runtime validation to ensure
     type safety while avoiding overly broad Union types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

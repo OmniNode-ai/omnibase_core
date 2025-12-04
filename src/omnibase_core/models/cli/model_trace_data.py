@@ -23,7 +23,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 class ModelTraceData(BaseModel):
     """Restrictive model for trace data.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

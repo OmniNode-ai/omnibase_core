@@ -18,7 +18,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 class ModelConnectionMetrics(BaseModel):
     """Connection performance metrics.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization

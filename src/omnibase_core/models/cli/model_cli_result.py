@@ -43,7 +43,7 @@ class ModelCliResult(BaseModel):
     This model captures the complete outcome of CLI command execution
     including success/failure, output data, errors, and performance metrics.
     Properly typed for MyPy compliance.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

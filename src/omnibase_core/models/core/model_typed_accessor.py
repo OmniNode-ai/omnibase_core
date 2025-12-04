@@ -23,7 +23,7 @@ T = TypeVar("T")
 
 class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
     """Type-safe field accessor for specific types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

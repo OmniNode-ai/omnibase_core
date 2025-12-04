@@ -51,7 +51,7 @@ class ModelEnvironment(BaseModel):
 
     This model allows users and third-party nodes to define custom
     environments beyond the standard dev/staging/prod pattern.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Environment-specific configuration management
     - Validatable: Comprehensive validation and verification
     """

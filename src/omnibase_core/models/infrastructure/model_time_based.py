@@ -33,7 +33,7 @@ class ModelTimeBased(BaseModel, Generic[T]):
 
     This generic model provides a unified interface for all time-based operations,
     supporting both integer and float values with flexible unit conversion.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

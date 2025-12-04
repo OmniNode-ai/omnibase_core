@@ -23,7 +23,7 @@ from .model_value import ModelValue
 
 class ModelCliResultData(BaseModel):
     """CLI result data model with typed fields.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

@@ -31,7 +31,7 @@ class ModelFunctionRelationships(BaseModel):
     Contains relationship data:
     - Dependencies and related functions
     - Categorization and tagging
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

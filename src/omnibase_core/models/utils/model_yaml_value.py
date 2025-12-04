@@ -22,7 +22,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 class ModelYamlValue(BaseModel):
     """Discriminated union for YAML-serializable data structures.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """

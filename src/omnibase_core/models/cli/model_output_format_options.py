@@ -59,7 +59,7 @@ class ModelOutputFormatOptions(BaseModel):
     Structured model for CLI output format options.
 
     Replaces dict[str, str] with proper type safety for output formatting configuration.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

@@ -27,7 +27,7 @@ from .model_fallback_metadata import ModelFallbackMetadata
 
 class ModelFallbackStrategy(BaseModel):
     """Scalable fallback strategy configuration model.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

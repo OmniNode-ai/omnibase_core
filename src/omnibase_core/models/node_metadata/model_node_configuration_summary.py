@@ -23,7 +23,7 @@ from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValu
 
 class ModelNodeConfigurationSummary(BaseModel):
     """Node configuration summary with strongly-typed values.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

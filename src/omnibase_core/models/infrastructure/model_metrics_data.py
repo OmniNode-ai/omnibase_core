@@ -36,7 +36,7 @@ class ModelMetricsData(BaseModel):
     Eliminates: dict[str, str | int | bool | float]
 
     With proper structured data using a single generic metric type.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

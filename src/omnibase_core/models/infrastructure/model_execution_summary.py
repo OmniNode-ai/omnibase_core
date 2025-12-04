@@ -23,7 +23,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 class ModelExecutionSummary(BaseModel):
     """Execution summary model with typed fields.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

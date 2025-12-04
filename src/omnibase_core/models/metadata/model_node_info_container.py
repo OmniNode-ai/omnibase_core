@@ -28,7 +28,7 @@ class ModelNodeInfoContainer(BaseModel):
 
     Replaces: dict[str, ModelNodeInfoData] type alias
     With proper structured data using Pydantic validation.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

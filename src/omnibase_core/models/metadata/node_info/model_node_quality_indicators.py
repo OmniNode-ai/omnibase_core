@@ -27,7 +27,7 @@ class ModelNodeQualityIndicators(BaseModel):
     Node quality and documentation indicators.
 
     Focused on quality assessment and documentation tracking.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

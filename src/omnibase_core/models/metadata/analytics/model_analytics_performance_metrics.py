@@ -26,7 +26,7 @@ class ModelAnalyticsPerformanceMetrics(BaseModel):
     Performance and execution metrics for analytics collections.
 
     Focused on timing, memory usage, and invocation tracking.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

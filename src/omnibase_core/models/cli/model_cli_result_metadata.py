@@ -37,7 +37,7 @@ class ModelCliResultMetadata(BaseModel):
     Clean model for CLI result metadata.
 
     Replaces ModelGenericMetadata[Any] with structured metadata model.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

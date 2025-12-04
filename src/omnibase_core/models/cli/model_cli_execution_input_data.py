@@ -33,7 +33,7 @@ class ModelCliExecutionInputData(BaseModel):
     Replaces dict[str, Any] for input_data to provide
     type safety and validation for execution inputs.
     Uses discriminated union pattern for strong typing.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

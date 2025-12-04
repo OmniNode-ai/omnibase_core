@@ -1,13 +1,13 @@
 """
 Node workflow result model for reducer dispatch_async operations.
 
-Implements ProtocolNodeResult from omnibase_spi for workflow state transitions.
+Implements ProtocolNodeResult for workflow state transitions.
 """
 
 from dataclasses import dataclass
 from typing import Any
 
-from omnibase_spi.protocols.types.protocol_core_types import ContextValue
+from omnibase_core.protocols import ContextValue
 
 
 @dataclass

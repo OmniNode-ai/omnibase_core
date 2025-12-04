@@ -30,7 +30,7 @@ class ModelProgressMetrics(BaseModel):
     Progress metrics with custom data and tagging support.
 
     Focused on extensible metrics tracking and categorization.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

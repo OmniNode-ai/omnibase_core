@@ -23,7 +23,7 @@ class ModelValidationBase(BaseModel):
 
     This provides a standard validation container and common validation
     methods that can be inherited by any model requiring validation.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization
     """

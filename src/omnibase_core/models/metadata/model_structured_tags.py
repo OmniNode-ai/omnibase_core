@@ -30,7 +30,7 @@ class ModelStructuredTags(BaseModel):
 
     Provides organized tagging with validation and categorization
     while maintaining flexibility for custom tags.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

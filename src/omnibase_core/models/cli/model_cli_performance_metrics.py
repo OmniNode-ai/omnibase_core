@@ -17,7 +17,7 @@ from pydantic import BaseModel
 
 class ModelPerformanceMetrics(BaseModel):
     """Restrictive model for performance metrics.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

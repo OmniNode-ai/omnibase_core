@@ -26,7 +26,7 @@ from omnibase_core.enums.enum_status import EnumStatus
 
 class ModelNodeCoreInfoSummary(BaseModel):
     """Core node information summary with specific types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

@@ -25,7 +25,7 @@ from omnibase_core.types.constraints import SimpleValueType
 
 class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
     """Generic metrics model replacing type-specific variants.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -24,7 +24,7 @@ class ModelFsmData(BaseModel):
     Strongly-typed FSM data structure.
 
     Replaces dict[str, Any] with structured FSM model.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

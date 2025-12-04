@@ -25,7 +25,7 @@ class ModelNodeCoreMetadata(BaseModel):
     - Identity (ID, name, type)
     - Status and health
     - Version information
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

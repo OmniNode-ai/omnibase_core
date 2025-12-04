@@ -31,7 +31,7 @@ class ModelNodeCapabilitiesInfo(BaseModel):
     - Node capabilities
     - Supported operations
     - Dependencies
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

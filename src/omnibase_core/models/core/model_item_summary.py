@@ -30,7 +30,7 @@ class ModelItemSummary(BaseModel):
     Eliminates: dict[str, primitive_soup_unions] (replaced with PrimitiveValueType)
 
     With proper structured data using specific field types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -24,7 +24,7 @@ class ModelProgressMilestones(BaseModel):
     Progress milestone management with validation and tracking.
 
     Focused on milestone creation, validation, and completion tracking.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

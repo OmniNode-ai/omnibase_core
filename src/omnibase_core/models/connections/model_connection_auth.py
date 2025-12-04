@@ -29,7 +29,7 @@ class ModelConnectionAuth(BaseModel):
 
     Contains authentication credentials and configuration
     without endpoint or pooling concerns.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization

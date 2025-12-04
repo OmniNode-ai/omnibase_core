@@ -21,21 +21,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
-if TYPE_CHECKING:
-    from omnibase_spi.protocols.workflow_orchestration.protocol_workflow_reducer import (
-        ProtocolWorkflowReducer as WorkflowReducerInterface,
-    )
-else:
-    from omnibase_spi.protocols.workflow_orchestration.protocol_workflow_reducer import (
-        ProtocolWorkflowReducer as WorkflowReducerInterface,
-    )
-
-# Import or define Pydantic BaseModel
-from omnibase_spi.protocols.types.protocol_core_types import (
+# Core-native protocol imports (no SPI dependency)
+from omnibase_core.protocols import (
     ProtocolAction,
     ProtocolNodeResult,
     ProtocolState,
+    ProtocolWorkflowReducer,
 )
+
+# Alias for backwards compatibility
+WorkflowReducerInterface = ProtocolWorkflowReducer
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

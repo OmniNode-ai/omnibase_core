@@ -24,7 +24,7 @@ class ModelAnalyticsQualityMetrics(BaseModel):
     Quality and health metrics for analytics collections.
 
     Focused on quality indicators and health scoring.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -24,7 +24,7 @@ from omnibase_core.enums.enum_example_category import EnumExampleCategory
 class ModelExampleMetadata(BaseModel):
     """
     Metadata for example collections with enhanced structure.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -27,7 +27,7 @@ class ModelExample(BaseModel):
     Strongly typed example model with comprehensive fields.
 
     Replaces placeholder implementation with proper validation and structure.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

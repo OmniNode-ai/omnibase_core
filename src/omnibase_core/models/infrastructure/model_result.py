@@ -37,7 +37,7 @@ class ModelResult(
 
     Represents an operation that can either succeed with value T
     or fail with error E. Provides monadic operations for chaining.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

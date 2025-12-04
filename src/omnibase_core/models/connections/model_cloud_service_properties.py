@@ -22,7 +22,7 @@ from omnibase_core.enums.enum_instance_type import EnumInstanceType
 
 class ModelCloudServiceProperties(BaseModel):
     """Cloud/service-specific connection properties.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization

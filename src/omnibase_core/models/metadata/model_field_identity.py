@@ -21,7 +21,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 class ModelFieldIdentity(BaseModel):
     """Identity information for metadata fields.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

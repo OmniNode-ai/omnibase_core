@@ -28,7 +28,7 @@ class ModelFunctionNodePerformance(BaseModel):
 
     Contains performance metrics, complexity analysis, and runtime characteristics
     without core function or documentation concerns.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

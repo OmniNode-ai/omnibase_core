@@ -31,7 +31,7 @@ class ModelValue(BaseModel):
 
     Replaces Union[str, int, float, bool, dict[str, Any], list[Any], None] with
     a strongly-typed discriminated union following ONEX patterns.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

@@ -32,7 +32,7 @@ class ModelNodeResourceLimits(BaseModel):
     - Memory and CPU limits
     - Performance constraints
 
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

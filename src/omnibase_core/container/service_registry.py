@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Literal, TypeVar, cast
 from uuid import UUID, uuid4
 
-from omnibase_spi.protocols.container import (
+from omnibase_core.protocols import (
     LiteralInjectionScope,
     LiteralServiceLifecycle,
 )
@@ -686,7 +686,7 @@ class ServiceRegistry:
         # Calculate distributions
         lifecycle_dist: dict[LiteralServiceLifecycle, int] = {}
         scope_dist: dict[LiteralInjectionScope, int] = {}
-        from omnibase_spi.protocols.container import ServiceHealthStatus
+        from omnibase_core.protocols import ServiceHealthStatus
 
         health_dist: dict[ServiceHealthStatus, int] = {}
 

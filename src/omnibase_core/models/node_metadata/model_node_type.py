@@ -26,7 +26,7 @@ class ModelNodeType(BaseModel):
 
     Replaces the EnumNodeType enum to provide richer information
     about each node type.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

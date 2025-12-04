@@ -38,8 +38,7 @@ Usage:
 from typing import Any
 from uuid import UUID
 
-from omnibase_spi.protocols.event_bus import ProtocolEventBus
-from omnibase_spi.protocols.schema import ProtocolSchemaLoader
+from omnibase_core.protocols import ProtocolEventBus, ProtocolSchemaLoader
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 

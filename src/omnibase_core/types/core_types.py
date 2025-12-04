@@ -10,7 +10,7 @@ Design Principles:
 - Protocol-based interfaces for flexibility
 """
 
-from omnibase_spi.protocols.types import ProtocolSchemaValue
+from omnibase_core.protocols import ProtocolSchemaValue
 
 from .typed_dict_basic_error_context import TypedDictBasicErrorContext
 

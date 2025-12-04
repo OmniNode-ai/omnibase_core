@@ -30,7 +30,7 @@ class ModelStructuredDisplayName(BaseModel):
 
     Replaces free-form display name strings with structured naming
     that follows ONEX conventions and provides better categorization.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

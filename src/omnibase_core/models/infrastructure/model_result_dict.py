@@ -26,7 +26,7 @@ class ModelResultDict(BaseModel):
 
     Represents the dictionary structure when converting Results
     to/from dictionary format with proper type safety.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

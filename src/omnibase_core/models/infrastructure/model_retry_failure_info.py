@@ -26,7 +26,7 @@ class ModelRetryFailureInfo(BaseModel):
 
     Replaces dict[str, str | int | None] with structured failure information
     that maintains type safety for retry execution debugging.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

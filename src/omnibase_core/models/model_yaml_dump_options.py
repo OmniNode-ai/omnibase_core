@@ -15,7 +15,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 class ModelYamlDumpOptions(BaseModel):
     """Type-safe YAML dump options.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """

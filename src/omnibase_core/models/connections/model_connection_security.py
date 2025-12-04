@@ -77,7 +77,7 @@ class ModelConnectionSecurity(BaseModel):
 
     def get_ssl_context_options(self) -> TypedDictSSLContextOptions:
         """Get SSL context options for connection libraries.
-        Implements omnibase_spi protocols:
+        Implements Core protocols:
         - Configurable: Configuration management capabilities
         - Validatable: Validation and verification
         - Serializable: Data serialization/deserialization

@@ -22,7 +22,7 @@ class ModelCliExecutionResources(BaseModel):
 
     Contains resource limits, constraints, and user/session tracking
     for CLI command execution without cluttering core execution info.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

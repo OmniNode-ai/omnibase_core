@@ -21,7 +21,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 class ModelFallbackMetadata(BaseModel):
     """Strongly-typed metadata model for fallback strategy configuration.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

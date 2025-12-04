@@ -30,7 +30,7 @@ class ModelFlexibleValue(BaseModel):
 
     Replaces lazy Union[str, dict[str, Any], list[Any], int, etc.] patterns with
     structured type safety and proper validation.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """

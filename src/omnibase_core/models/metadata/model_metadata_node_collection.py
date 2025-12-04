@@ -24,7 +24,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
     Enterprise-grade collection of metadata/documentation nodes for ONEX metadata blocks.
 
     Clean implementation with proper typing, focused responsibilities, and ONEX compliance.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

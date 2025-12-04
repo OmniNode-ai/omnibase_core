@@ -19,7 +19,7 @@ class ModelNodeQualitySummary(BaseModel):
     Structured quality summary for nodes.
 
     Replaces primitive soup unions with typed fields.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

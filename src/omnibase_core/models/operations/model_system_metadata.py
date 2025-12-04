@@ -26,7 +26,7 @@ class ModelSystemMetadata(BaseModel):
     Strongly-typed system metadata.
 
     Replaces dict[str, Any] with structured system metadata model.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Identifiable: UUID-based identification
     - Serializable: Data serialization/deserialization

@@ -22,7 +22,7 @@ from omnibase_core.enums.enum_property_type import EnumPropertyType
 
 class ModelPropertyMetadata(BaseModel):
     """Metadata for individual properties.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

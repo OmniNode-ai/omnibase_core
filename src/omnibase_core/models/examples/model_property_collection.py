@@ -39,7 +39,7 @@ T = TypeVar("T", bound=PropertyValueType)
 
 class ModelPropertyCollection(BaseModel):
     """Collection of typed properties with validation and helper methods.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -21,7 +21,7 @@ T = TypeVar("T")
 
 class ModelEnvironmentAccessor(ModelFieldAccessor):
     """Specialized accessor for environment properties with type coercion.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

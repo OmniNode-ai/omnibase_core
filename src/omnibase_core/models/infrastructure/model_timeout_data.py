@@ -25,7 +25,7 @@ class ModelTimeoutData(BaseModel):
     Typed data model for ModelTimeout serialization.
 
     Replaces Dict[str, Any] with proper strong typing for timeout serialization.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

@@ -26,7 +26,7 @@ class ModelNodePerformanceMetrics(BaseModel):
     Node performance and usage metrics.
 
     Focused on execution statistics and performance indicators.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

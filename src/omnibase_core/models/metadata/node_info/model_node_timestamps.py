@@ -23,7 +23,7 @@ class ModelNodeTimestamps(BaseModel):
     Node timing and lifecycle information.
 
     Focused on creation, modification, and validation timestamps.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

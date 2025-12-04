@@ -24,7 +24,7 @@ class ModelErrorValue(BaseModel):
     Discriminated union for error values.
 
     Replaces str | Exception | None union with structured error handling.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

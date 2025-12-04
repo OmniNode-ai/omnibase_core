@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from omnibase_spi.protocols.container import (
+from omnibase_core.protocols import (
     LiteralInjectionScope,
     LiteralServiceLifecycle,
 )

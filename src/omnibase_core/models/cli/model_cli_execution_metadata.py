@@ -29,7 +29,7 @@ class ModelCliExecutionMetadata(BaseModel):
 
     Contains tags, categories, and custom context data
     for CLI command execution without cluttering core execution info.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

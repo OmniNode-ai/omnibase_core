@@ -68,7 +68,7 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     Tracks collection performance, health, and usage statistics
     for metadata node collections with proper typing.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

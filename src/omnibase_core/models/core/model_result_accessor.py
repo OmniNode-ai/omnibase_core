@@ -17,7 +17,7 @@ from .model_field_accessor import ModelFieldAccessor
 
 class ModelResultAccessor(ModelFieldAccessor):
     """Specialized accessor for CLI results and output data.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

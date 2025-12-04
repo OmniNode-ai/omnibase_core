@@ -28,7 +28,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
-from omnibase_spi.protocols.event_bus import ProtocolEventEnvelope
+from omnibase_core.protocols import ProtocolEventEnvelope
 
 # Local imports from extracted classes
 from .mixin_completion_data import MixinCompletionData

@@ -17,7 +17,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 class ModelArtifactTypeConfig(BaseModel):
     """Configuration for artifact types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

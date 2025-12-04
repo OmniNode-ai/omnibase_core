@@ -36,7 +36,7 @@ class ModelProgress(BaseModel):
     phase management, timing utilities, milestone tracking, and custom metrics.
 
     Uses composition pattern with focused components for maintainability.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

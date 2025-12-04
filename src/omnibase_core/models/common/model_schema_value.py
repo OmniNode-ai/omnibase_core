@@ -25,7 +25,7 @@ class ModelSchemaValue(BaseModel):
 
     This model can represent all valid JSON Schema value types without
     resorting to Any type usage.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """

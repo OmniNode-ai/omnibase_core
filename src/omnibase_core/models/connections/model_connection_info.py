@@ -42,7 +42,7 @@ class ModelConnectionInfo(BaseModel):
     - auth: Authentication configuration
     - security: SSL/TLS settings
     - pool: Connection pooling and timeouts
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization
