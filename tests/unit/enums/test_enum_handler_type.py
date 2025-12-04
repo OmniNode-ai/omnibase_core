@@ -12,11 +12,23 @@ from omnibase_core.enums.enum_handler_type import EnumHandlerType
 class TestEnumHandlerType:
     """Test cases for EnumHandlerType enum."""
 
-    def test_enum_values(self):
-        """Test that all enum values are correct."""
+    def test_legacy_enum_values(self):
+        """Test that legacy/abstract enum values are correct (backwards compatibility)."""
         assert EnumHandlerType.EXTENSION == "extension"
         assert EnumHandlerType.SPECIAL == "special"
         assert EnumHandlerType.NAMED == "named"
+
+    def test_concrete_handler_type_values(self):
+        """Test that concrete handler type values are correct (v0.3.6+)."""
+        assert EnumHandlerType.HTTP == "http"
+        assert EnumHandlerType.DATABASE == "database"
+        assert EnumHandlerType.KAFKA == "kafka"
+        assert EnumHandlerType.FILESYSTEM == "filesystem"
+        assert EnumHandlerType.VAULT == "vault"
+        assert EnumHandlerType.VECTOR_STORE == "vector_store"
+        assert EnumHandlerType.GRAPH_DATABASE == "graph_database"
+        assert EnumHandlerType.REDIS == "redis"
+        assert EnumHandlerType.EVENT_BUS == "event_bus"
 
     def test_enum_inheritance(self):
         """Test that enum inherits from str and Enum."""
@@ -28,20 +40,46 @@ class TestEnumHandlerType:
         assert str(EnumHandlerType.EXTENSION) == "EnumHandlerType.EXTENSION"
         assert str(EnumHandlerType.SPECIAL) == "EnumHandlerType.SPECIAL"
         assert str(EnumHandlerType.NAMED) == "EnumHandlerType.NAMED"
+        assert str(EnumHandlerType.HTTP) == "EnumHandlerType.HTTP"
+        assert str(EnumHandlerType.DATABASE) == "EnumHandlerType.DATABASE"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""
         values = list(EnumHandlerType)
-        assert len(values) == 3
+        # 3 legacy + 9 concrete = 12 total
+        assert len(values) == 12
+        # Legacy types
         assert EnumHandlerType.EXTENSION in values
         assert EnumHandlerType.SPECIAL in values
         assert EnumHandlerType.NAMED in values
+        # Concrete types
+        assert EnumHandlerType.HTTP in values
+        assert EnumHandlerType.DATABASE in values
+        assert EnumHandlerType.KAFKA in values
+        assert EnumHandlerType.FILESYSTEM in values
+        assert EnumHandlerType.VAULT in values
+        assert EnumHandlerType.VECTOR_STORE in values
+        assert EnumHandlerType.GRAPH_DATABASE in values
+        assert EnumHandlerType.REDIS in values
+        assert EnumHandlerType.EVENT_BUS in values
 
     def test_enum_membership(self):
         """Test membership testing."""
+        # Legacy types
         assert "extension" in EnumHandlerType
         assert "special" in EnumHandlerType
         assert "named" in EnumHandlerType
+        # Concrete types
+        assert "http" in EnumHandlerType
+        assert "database" in EnumHandlerType
+        assert "kafka" in EnumHandlerType
+        assert "filesystem" in EnumHandlerType
+        assert "vault" in EnumHandlerType
+        assert "vector_store" in EnumHandlerType
+        assert "graph_database" in EnumHandlerType
+        assert "redis" in EnumHandlerType
+        assert "event_bus" in EnumHandlerType
+        # Invalid
         assert "invalid" not in EnumHandlerType
 
     def test_enum_comparison(self):
@@ -49,18 +87,42 @@ class TestEnumHandlerType:
         assert EnumHandlerType.EXTENSION == "extension"
         assert EnumHandlerType.SPECIAL == "special"
         assert EnumHandlerType.NAMED == "named"
+        assert EnumHandlerType.HTTP == "http"
+        assert EnumHandlerType.DATABASE == "database"
 
     def test_enum_serialization(self):
         """Test enum serialization."""
+        # Legacy types
         assert EnumHandlerType.EXTENSION.value == "extension"
         assert EnumHandlerType.SPECIAL.value == "special"
         assert EnumHandlerType.NAMED.value == "named"
+        # Concrete types
+        assert EnumHandlerType.HTTP.value == "http"
+        assert EnumHandlerType.DATABASE.value == "database"
+        assert EnumHandlerType.KAFKA.value == "kafka"
+        assert EnumHandlerType.FILESYSTEM.value == "filesystem"
+        assert EnumHandlerType.VAULT.value == "vault"
+        assert EnumHandlerType.VECTOR_STORE.value == "vector_store"
+        assert EnumHandlerType.GRAPH_DATABASE.value == "graph_database"
+        assert EnumHandlerType.REDIS.value == "redis"
+        assert EnumHandlerType.EVENT_BUS.value == "event_bus"
 
     def test_enum_deserialization(self):
         """Test enum deserialization."""
+        # Legacy types
         assert EnumHandlerType("extension") == EnumHandlerType.EXTENSION
         assert EnumHandlerType("special") == EnumHandlerType.SPECIAL
         assert EnumHandlerType("named") == EnumHandlerType.NAMED
+        # Concrete types
+        assert EnumHandlerType("http") == EnumHandlerType.HTTP
+        assert EnumHandlerType("database") == EnumHandlerType.DATABASE
+        assert EnumHandlerType("kafka") == EnumHandlerType.KAFKA
+        assert EnumHandlerType("filesystem") == EnumHandlerType.FILESYSTEM
+        assert EnumHandlerType("vault") == EnumHandlerType.VAULT
+        assert EnumHandlerType("vector_store") == EnumHandlerType.VECTOR_STORE
+        assert EnumHandlerType("graph_database") == EnumHandlerType.GRAPH_DATABASE
+        assert EnumHandlerType("redis") == EnumHandlerType.REDIS
+        assert EnumHandlerType("event_bus") == EnumHandlerType.EVENT_BUS
 
     def test_enum_invalid_values(self):
         """Test that invalid values raise ValueError."""
@@ -70,21 +132,90 @@ class TestEnumHandlerType:
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
         all_values = [handler_type.value for handler_type in EnumHandlerType]
-        expected_values = ["extension", "special", "named"]
+        expected_values = [
+            # Legacy types
+            "extension",
+            "special",
+            "named",
+            # Concrete types
+            "http",
+            "database",
+            "kafka",
+            "filesystem",
+            "vault",
+            "vector_store",
+            "graph_database",
+            "redis",
+            "event_bus",
+        ]
         assert set(all_values) == set(expected_values)
 
     def test_enum_docstring(self):
         """Test that enum has proper docstring."""
         assert (
-            "Canonical handler types for ONEX/OmniBase file type handlers"
+            "Handler type classification for the ONEX handler registry"
             in EnumHandlerType.__doc__
         )
+        assert "v0.3.6" in EnumHandlerType.__doc__
 
     def test_handler_type_categories(self):
         """Test that handler types represent different categories."""
-        # Extension handlers work with file extensions
+        # Legacy/abstract types
         assert EnumHandlerType.EXTENSION in EnumHandlerType
-        # Special handlers work with special cases
         assert EnumHandlerType.SPECIAL in EnumHandlerType
-        # Named handlers work with specific names
         assert EnumHandlerType.NAMED in EnumHandlerType
+        # Concrete handler types for I/O
+        assert EnumHandlerType.HTTP in EnumHandlerType
+        assert EnumHandlerType.DATABASE in EnumHandlerType
+        assert EnumHandlerType.KAFKA in EnumHandlerType
+        assert EnumHandlerType.FILESYSTEM in EnumHandlerType
+        assert EnumHandlerType.VAULT in EnumHandlerType
+        assert EnumHandlerType.VECTOR_STORE in EnumHandlerType
+        assert EnumHandlerType.GRAPH_DATABASE in EnumHandlerType
+        assert EnumHandlerType.REDIS in EnumHandlerType
+        assert EnumHandlerType.EVENT_BUS in EnumHandlerType
+
+
+class TestEnumHandlerTypeConcreteCategories:
+    """Test cases for concrete handler type categorization."""
+
+    def test_network_io_handlers(self):
+        """Test handlers for network I/O operations."""
+        network_handlers = {
+            EnumHandlerType.HTTP,
+            EnumHandlerType.KAFKA,
+            EnumHandlerType.EVENT_BUS,
+        }
+        for handler in network_handlers:
+            assert handler in EnumHandlerType
+
+    def test_database_handlers(self):
+        """Test handlers for database operations."""
+        db_handlers = {
+            EnumHandlerType.DATABASE,
+            EnumHandlerType.VECTOR_STORE,
+            EnumHandlerType.GRAPH_DATABASE,
+            EnumHandlerType.REDIS,
+        }
+        for handler in db_handlers:
+            assert handler in EnumHandlerType
+
+    def test_system_access_handlers(self):
+        """Test handlers for system access operations."""
+        system_handlers = {
+            EnumHandlerType.FILESYSTEM,
+            EnumHandlerType.VAULT,
+        }
+        for handler in system_handlers:
+            assert handler in EnumHandlerType
+
+    def test_backwards_compatibility(self):
+        """Test that legacy enum values still work for backwards compatibility."""
+        # These values must remain stable for existing code
+        assert EnumHandlerType.EXTENSION.value == "extension"
+        assert EnumHandlerType.SPECIAL.value == "special"
+        assert EnumHandlerType.NAMED.value == "named"
+        # Ensure they can be constructed from strings
+        assert EnumHandlerType("extension") is EnumHandlerType.EXTENSION
+        assert EnumHandlerType("special") is EnumHandlerType.SPECIAL
+        assert EnumHandlerType("named") is EnumHandlerType.NAMED
