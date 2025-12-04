@@ -8,10 +8,64 @@ Strongly typed node type values for ONEX architecture node classification.
 
 
 from enum import Enum, unique
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_node_kind import EnumNodeKind
+
+# Module-level storage for the kind mapping.
+# This avoids the limitation that Enum classes treat class-level dicts as enum members.
+# The mapping is populated lazily on first access via get_node_kind().
+_KIND_MAP: dict[EnumNodeType, EnumNodeKind] = {}
+_KIND_MAP_POPULATED: bool = False
+
+
+def _populate_kind_map() -> None:
+    """
+    Populate the type-to-kind mapping with all EnumNodeType mappings.
+
+    This function is called lazily on first access to get_node_kind() to avoid
+    circular import issues at module load time.
+    """
+    global _KIND_MAP_POPULATED
+    if _KIND_MAP_POPULATED:
+        return
+
+    from omnibase_core.enums.enum_node_kind import EnumNodeKind
+
+    _KIND_MAP.update(
+        {
+            # COMPUTE kind - data processing & transformation
+            EnumNodeType.COMPUTE_GENERIC: EnumNodeKind.COMPUTE,
+            EnumNodeType.TRANSFORMER: EnumNodeKind.COMPUTE,
+            EnumNodeType.AGGREGATOR: EnumNodeKind.COMPUTE,
+            EnumNodeType.FUNCTION: EnumNodeKind.COMPUTE,
+            EnumNodeType.MODEL: EnumNodeKind.COMPUTE,
+            # EFFECT kind - external interactions (I/O)
+            EnumNodeType.EFFECT_GENERIC: EnumNodeKind.EFFECT,
+            EnumNodeType.TOOL: EnumNodeKind.EFFECT,
+            EnumNodeType.AGENT: EnumNodeKind.EFFECT,
+            # REDUCER kind - state aggregation & management
+            EnumNodeType.REDUCER_GENERIC: EnumNodeKind.REDUCER,
+            # ORCHESTRATOR kind - workflow coordination
+            EnumNodeType.ORCHESTRATOR_GENERIC: EnumNodeKind.ORCHESTRATOR,
+            EnumNodeType.GATEWAY: EnumNodeKind.ORCHESTRATOR,
+            EnumNodeType.VALIDATOR: EnumNodeKind.ORCHESTRATOR,
+            EnumNodeType.WORKFLOW: EnumNodeKind.ORCHESTRATOR,
+            # RUNTIME_HOST kind - runtime infrastructure
+            EnumNodeType.RUNTIME_HOST_GENERIC: EnumNodeKind.RUNTIME_HOST,
+            # Generic types - map to COMPUTE by default for backward compatibility
+            EnumNodeType.PLUGIN: EnumNodeKind.COMPUTE,
+            EnumNodeType.SCHEMA: EnumNodeKind.COMPUTE,
+            EnumNodeType.NODE: EnumNodeKind.COMPUTE,
+            EnumNodeType.SERVICE: EnumNodeKind.COMPUTE,
+            # NOTE: EnumNodeType.UNKNOWN intentionally has NO mapping.
+            # UNKNOWN semantically means "we don't know what this is" - it should NOT
+            # silently default to COMPUTE. Calling get_node_kind(EnumNodeType.UNKNOWN)
+            # will raise ModelOnexError, forcing callers to handle the unknown case explicitly.
+        }
+    )
+    _KIND_MAP_POPULATED = True
 
 
 @unique
@@ -38,8 +92,8 @@ class EnumNodeType(str, Enum):
       - Use when: Routing data through the ONEX pipeline, enforcing architectural patterns
 
     Multiple EnumNodeType values can map to a single EnumNodeKind. For example:
-    - TRANSFORMER, AGGREGATOR, COMPUTE_GENERIC → All are COMPUTE kind
-    - GATEWAY, VALIDATOR → Both are control flow nodes (ORCHESTRATOR kind)
+    - TRANSFORMER, AGGREGATOR, COMPUTE_GENERIC -> All are COMPUTE kind
+    - GATEWAY, VALIDATOR -> Both are control flow nodes (ORCHESTRATOR kind)
 
     For high-level architectural classification, see EnumNodeKind.
     """
@@ -112,105 +166,145 @@ class EnumNodeType(str, Enum):
             return "output"
         return "unknown"
 
+    @classmethod
+    def get_node_kind(cls, node_type: EnumNodeType) -> EnumNodeKind:
+        """
+        Get the architectural kind for this node type.
 
-# Note: _KIND_MAP is dynamically populated at module import time by _populate_kind_map()
-# This declaration provides the initial empty dict that gets updated with mappings
-# Type annotation: ClassVar[dict[EnumNodeType, EnumNodeKind]]
-EnumNodeType._KIND_MAP = {}  # type: ignore[attr-defined]
+        Args:
+            node_type: The specific node type to classify
 
+        Returns:
+            The architectural kind (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR, or RUNTIME_HOST)
 
-def _populate_kind_map() -> None:
-    """
-    Populate the type-to-kind mapping with all EnumNodeType mappings.
+        Raises:
+            ModelOnexError: If the node type has no kind mapping (e.g., UNKNOWN)
 
-    This function is called at module import time to populate EnumNodeType._KIND_MAP
-    with the authoritative mapping of node types to architectural kinds.
-    """
-    from omnibase_core.enums.enum_node_kind import EnumNodeKind
+        Example:
+            >>> EnumNodeType.get_node_kind(EnumNodeType.TRANSFORMER)
+            EnumNodeKind.COMPUTE
 
-    EnumNodeType._KIND_MAP.update(  # type: ignore[attr-defined]
-        {
-            # COMPUTE kind - data processing & transformation
-            EnumNodeType.COMPUTE_GENERIC: EnumNodeKind.COMPUTE,
-            EnumNodeType.TRANSFORMER: EnumNodeKind.COMPUTE,
-            EnumNodeType.AGGREGATOR: EnumNodeKind.COMPUTE,
-            EnumNodeType.FUNCTION: EnumNodeKind.COMPUTE,
-            EnumNodeType.MODEL: EnumNodeKind.COMPUTE,
-            # EFFECT kind - external interactions (I/O)
-            EnumNodeType.EFFECT_GENERIC: EnumNodeKind.EFFECT,
-            EnumNodeType.TOOL: EnumNodeKind.EFFECT,
-            EnumNodeType.AGENT: EnumNodeKind.EFFECT,
-            # REDUCER kind - state aggregation & management
-            EnumNodeType.REDUCER_GENERIC: EnumNodeKind.REDUCER,
-            # ORCHESTRATOR kind - workflow coordination
-            EnumNodeType.ORCHESTRATOR_GENERIC: EnumNodeKind.ORCHESTRATOR,
-            EnumNodeType.GATEWAY: EnumNodeKind.ORCHESTRATOR,
-            EnumNodeType.VALIDATOR: EnumNodeKind.ORCHESTRATOR,
-            EnumNodeType.WORKFLOW: EnumNodeKind.ORCHESTRATOR,
-            # RUNTIME_HOST kind - runtime infrastructure
-            EnumNodeType.RUNTIME_HOST_GENERIC: EnumNodeKind.RUNTIME_HOST,
-            # Generic types - map to COMPUTE by default for backward compatibility
-            EnumNodeType.PLUGIN: EnumNodeKind.COMPUTE,
-            EnumNodeType.SCHEMA: EnumNodeKind.COMPUTE,
-            EnumNodeType.NODE: EnumNodeKind.COMPUTE,
-            EnumNodeType.SERVICE: EnumNodeKind.COMPUTE,
-            # NOTE: EnumNodeType.UNKNOWN intentionally has NO mapping.
-            # UNKNOWN semantically means "we don't know what this is" - it should NOT
-            # silently default to COMPUTE. Calling get_node_kind(EnumNodeType.UNKNOWN)
-            # will raise ModelOnexError, forcing callers to handle the unknown case explicitly.
+            >>> EnumNodeType.get_node_kind(EnumNodeType.TOOL)
+            EnumNodeKind.EFFECT
+        """
+        # Ensure the mapping is populated (lazy initialization to avoid circular imports)
+        _populate_kind_map()
+
+        try:
+            return _KIND_MAP[node_type]
+        except KeyError as e:
+            from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+            from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+            raise ModelOnexError(
+                message=f"No kind mapping for node type '{node_type}'",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "node_type": str(node_type),
+                    "available_types": [str(k) for k in _KIND_MAP.keys()],
+                },
+            ) from e
+
+    @classmethod
+    def has_node_kind(cls, node_type: EnumNodeType) -> bool:
+        """
+        Check if a node type has a kind mapping.
+
+        This method enables defensive programming by allowing callers to check
+        whether a node type has a kind mapping before calling get_node_kind().
+        This is especially useful for handling EnumNodeType.UNKNOWN, which
+        intentionally has no mapping.
+
+        Args:
+            node_type: The specific node type to check
+
+        Returns:
+            True if the node type has a kind mapping, False otherwise.
+            Returns False for EnumNodeType.UNKNOWN.
+
+        Example:
+            >>> EnumNodeType.has_node_kind(EnumNodeType.COMPUTE_GENERIC)
+            True
+
+            >>> EnumNodeType.has_node_kind(EnumNodeType.UNKNOWN)
+            False
+
+            >>> # Defensive programming pattern
+            >>> if EnumNodeType.has_node_kind(node_type):
+            ...     kind = EnumNodeType.get_node_kind(node_type)
+            ... else:
+            ...     handle_unknown_type(node_type)
+        """
+        _populate_kind_map()
+        return node_type in _KIND_MAP
+
+    @classmethod
+    def get_core_node_types(cls) -> set[EnumNodeType]:
+        """
+        Get all EnumNodeType values that map to core node kinds.
+
+        Core node kinds are the four fundamental ONEX architecture types:
+        COMPUTE, EFFECT, REDUCER, and ORCHESTRATOR.
+
+        Returns:
+            A set of EnumNodeType values that map to core node kinds.
+            UNKNOWN is never included (it has no mapping).
+
+        Example:
+            >>> core_types = EnumNodeType.get_core_node_types()
+            >>> EnumNodeType.TRANSFORMER in core_types
+            True
+            >>> EnumNodeType.RUNTIME_HOST_GENERIC in core_types
+            False
+            >>> EnumNodeType.UNKNOWN in core_types
+            False
+        """
+        from omnibase_core.enums.enum_node_kind import EnumNodeKind as _EnumNodeKind
+
+        _populate_kind_map()
+        return {
+            node_type
+            for node_type, kind in _KIND_MAP.items()
+            if _EnumNodeKind.is_core_node_type(kind)
         }
-    )
+
+    @classmethod
+    def get_infrastructure_types(cls) -> set[EnumNodeType]:
+        """
+        Get all EnumNodeType values that map to infrastructure kinds.
+
+        Infrastructure kinds are node types that support the ONEX runtime
+        rather than participating in the core data flow. Currently this
+        includes RUNTIME_HOST.
+
+        Returns:
+            A set of EnumNodeType values that map to infrastructure kinds.
+            UNKNOWN is never included (it has no mapping).
+
+        Example:
+            >>> infra_types = EnumNodeType.get_infrastructure_types()
+            >>> EnumNodeType.RUNTIME_HOST_GENERIC in infra_types
+            True
+            >>> EnumNodeType.COMPUTE_GENERIC in infra_types
+            False
+            >>> EnumNodeType.UNKNOWN in infra_types
+            False
+        """
+        from omnibase_core.enums.enum_node_kind import EnumNodeKind as _EnumNodeKind
+
+        _populate_kind_map()
+        return {
+            node_type
+            for node_type, kind in _KIND_MAP.items()
+            if _EnumNodeKind.is_infrastructure_type(kind)
+        }
 
 
-# Populate mapping immediately upon module import
+# Expose _KIND_MAP on the class for backward compatibility with tests.
+# Tests access EnumNodeType._KIND_MAP directly as an attribute.
+# We populate the mapping eagerly and attach it to the class.
 _populate_kind_map()
-
-
-# Add get_node_kind as a classmethod to EnumNodeType
-@classmethod  # type: ignore[misc]
-def _get_node_kind_impl(
-    cls: type[EnumNodeType], node_type: EnumNodeType
-) -> EnumNodeKind:
-    """
-    Get the architectural kind for this node type.
-
-    Args:
-        node_type: The specific node type to classify
-
-    Returns:
-        The architectural kind (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR, or RUNTIME_HOST)
-
-    Raises:
-        ModelOnexError: If the node type has no kind mapping (should never happen if _KIND_MAP is complete)
-
-    Example:
-        >>> EnumNodeType.get_node_kind(EnumNodeType.TRANSFORMER)
-        EnumNodeKind.COMPUTE
-
-        >>> EnumNodeType.get_node_kind(EnumNodeType.TOOL)
-        EnumNodeKind.EFFECT
-    """
-    from omnibase_core.enums.enum_node_kind import EnumNodeKind as _EnumNodeKind
-
-    try:
-        result: _EnumNodeKind = cls._KIND_MAP[node_type]  # type: ignore[attr-defined]
-        return result
-    except KeyError as e:
-        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-        raise ModelOnexError(
-            message=f"No kind mapping for node type '{node_type}'",
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            context={
-                "node_type": str(node_type),
-                "available_types": [str(k) for k in cls._KIND_MAP.keys()],  # type: ignore[attr-defined]
-            },
-        ) from e
-
-
-# Attach the classmethod to EnumNodeType
-EnumNodeType.get_node_kind = _get_node_kind_impl  # type: ignore[attr-defined]
+setattr(EnumNodeType, "_KIND_MAP", _KIND_MAP)  # noqa: B010
 
 # Export for use
 __all__ = ["EnumNodeType"]

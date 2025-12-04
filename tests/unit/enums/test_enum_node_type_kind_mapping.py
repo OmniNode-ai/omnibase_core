@@ -348,6 +348,136 @@ class TestEnumNodeTypeKindMapping:
         )
 
 
+class TestHasNodeKind:
+    """Test the has_node_kind() helper method for defensive programming."""
+
+    def test_has_node_kind_returns_true_for_mapped_types(self) -> None:
+        """
+        Verify has_node_kind() returns True for all mapped node types.
+
+        All node types except UNKNOWN have kind mappings, so has_node_kind()
+        should return True for them.
+        """
+        # Skip this test if has_node_kind doesn't exist yet
+        if not hasattr(EnumNodeType, "has_node_kind"):
+            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
+
+        # Test all types except UNKNOWN
+        for node_type in EnumNodeType:
+            if node_type == EnumNodeType.UNKNOWN:
+                continue
+
+            result = EnumNodeType.has_node_kind(node_type)
+            assert result is True, (
+                f"has_node_kind({node_type}) returned {result}, expected True. "
+                f"All node types except UNKNOWN should have kind mappings."
+            )
+
+    def test_has_node_kind_returns_false_for_unknown(self) -> None:
+        """
+        Verify has_node_kind() returns False for EnumNodeType.UNKNOWN.
+
+        UNKNOWN intentionally has no kind mapping, so has_node_kind() must
+        return False to enable defensive programming patterns.
+        """
+        # Skip this test if has_node_kind doesn't exist yet
+        if not hasattr(EnumNodeType, "has_node_kind"):
+            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
+
+        result = EnumNodeType.has_node_kind(EnumNodeType.UNKNOWN)
+        assert result is False, (
+            f"has_node_kind(UNKNOWN) returned {result}, expected False. "
+            "UNKNOWN intentionally has no kind mapping."
+        )
+
+    def test_has_node_kind_for_compute_generic(self) -> None:
+        """Verify has_node_kind() returns True for COMPUTE_GENERIC."""
+        if not hasattr(EnumNodeType, "has_node_kind"):
+            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
+
+        assert EnumNodeType.has_node_kind(EnumNodeType.COMPUTE_GENERIC) is True
+
+    def test_has_node_kind_for_effect_generic(self) -> None:
+        """Verify has_node_kind() returns True for EFFECT_GENERIC."""
+        if not hasattr(EnumNodeType, "has_node_kind"):
+            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
+
+        assert EnumNodeType.has_node_kind(EnumNodeType.EFFECT_GENERIC) is True
+
+    def test_has_node_kind_for_reducer_generic(self) -> None:
+        """Verify has_node_kind() returns True for REDUCER_GENERIC."""
+        if not hasattr(EnumNodeType, "has_node_kind"):
+            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
+
+        assert EnumNodeType.has_node_kind(EnumNodeType.REDUCER_GENERIC) is True
+
+    def test_has_node_kind_for_orchestrator_generic(self) -> None:
+        """Verify has_node_kind() returns True for ORCHESTRATOR_GENERIC."""
+        if not hasattr(EnumNodeType, "has_node_kind"):
+            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
+
+        assert EnumNodeType.has_node_kind(EnumNodeType.ORCHESTRATOR_GENERIC) is True
+
+    def test_has_node_kind_for_runtime_host_generic(self) -> None:
+        """Verify has_node_kind() returns True for RUNTIME_HOST_GENERIC."""
+        if not hasattr(EnumNodeType, "has_node_kind"):
+            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
+
+        assert EnumNodeType.has_node_kind(EnumNodeType.RUNTIME_HOST_GENERIC) is True
+
+    def test_defensive_programming_pattern(self) -> None:
+        """
+        Verify the defensive programming pattern works correctly.
+
+        This test demonstrates the intended usage pattern where has_node_kind()
+        is used to guard calls to get_node_kind().
+        """
+        if not hasattr(EnumNodeType, "has_node_kind"):
+            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
+
+        # Test the pattern with a mapped type
+        node_type = EnumNodeType.COMPUTE_GENERIC
+        if EnumNodeType.has_node_kind(node_type):
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert kind == EnumNodeKind.COMPUTE
+
+        # Test the pattern with UNKNOWN
+        unknown_type = EnumNodeType.UNKNOWN
+        handled_unknown = False
+        if EnumNodeType.has_node_kind(unknown_type):
+            # This branch should NOT be taken
+            kind = EnumNodeType.get_node_kind(unknown_type)
+        else:
+            # This branch should be taken
+            handled_unknown = True
+
+        assert handled_unknown is True, (
+            "The defensive programming pattern failed - UNKNOWN should have "
+            "triggered the else branch."
+        )
+
+    def test_has_node_kind_consistency_with_kind_map(self) -> None:
+        """
+        Verify has_node_kind() is consistent with _KIND_MAP membership.
+
+        has_node_kind() should return True if and only if the node type
+        is a key in _KIND_MAP.
+        """
+        if not hasattr(EnumNodeType, "has_node_kind"):
+            pytest.skip("EnumNodeType.has_node_kind() not yet implemented")
+
+        if not hasattr(EnumNodeType, "_KIND_MAP"):
+            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
+
+        for node_type in EnumNodeType:
+            expected = node_type in EnumNodeType._KIND_MAP
+            actual = EnumNodeType.has_node_kind(node_type)
+            assert actual == expected, (
+                f"has_node_kind({node_type}) returned {actual}, "
+                f"but expected {expected} based on _KIND_MAP membership."
+            )
+
+
 class TestEnumNodeTypeKindMappingEdgeCases:
     """Test edge cases and error conditions for mapping."""
 
@@ -438,6 +568,242 @@ class TestEnumNodeTypeKindMappingEdgeCases:
         # would require MappingProxyType or frozen dataclass)
         assert isinstance(EnumNodeType._KIND_MAP, dict)
         assert len(EnumNodeType._KIND_MAP) == original_length
+
+
+class TestEnumNodeTypeCoreAndInfrastructureMethods:
+    """Test get_core_node_types() and get_infrastructure_types() methods."""
+
+    def test_get_core_node_types_returns_set(self) -> None:
+        """Verify get_core_node_types() returns a set."""
+        if not hasattr(EnumNodeType, "get_core_node_types"):
+            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
+
+        result = EnumNodeType.get_core_node_types()
+        assert isinstance(
+            result, set
+        ), f"get_core_node_types() should return a set, got {type(result).__name__}"
+
+    def test_get_infrastructure_types_returns_set(self) -> None:
+        """Verify get_infrastructure_types() returns a set."""
+        if not hasattr(EnumNodeType, "get_infrastructure_types"):
+            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
+
+        result = EnumNodeType.get_infrastructure_types()
+        assert isinstance(
+            result, set
+        ), f"get_infrastructure_types() should return a set, got {type(result).__name__}"
+
+    def test_get_core_node_types_contains_expected_types(self) -> None:
+        """
+        Verify get_core_node_types() contains all expected core types.
+
+        Core types should include all EnumNodeType values that map to:
+        COMPUTE, EFFECT, REDUCER, or ORCHESTRATOR kinds.
+        """
+        if not hasattr(EnumNodeType, "get_core_node_types"):
+            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
+
+        core_types = EnumNodeType.get_core_node_types()
+
+        # These should definitely be in core types
+        expected_core = {
+            EnumNodeType.COMPUTE_GENERIC,
+            EnumNodeType.TRANSFORMER,
+            EnumNodeType.AGGREGATOR,
+            EnumNodeType.FUNCTION,
+            EnumNodeType.MODEL,
+            EnumNodeType.EFFECT_GENERIC,
+            EnumNodeType.TOOL,
+            EnumNodeType.AGENT,
+            EnumNodeType.REDUCER_GENERIC,
+            EnumNodeType.ORCHESTRATOR_GENERIC,
+            EnumNodeType.GATEWAY,
+            EnumNodeType.VALIDATOR,
+            EnumNodeType.WORKFLOW,
+            # Legacy types mapped to COMPUTE for backward compatibility
+            EnumNodeType.PLUGIN,
+            EnumNodeType.SCHEMA,
+            EnumNodeType.NODE,
+            EnumNodeType.SERVICE,
+        }
+
+        missing = expected_core - core_types
+        assert (
+            not missing
+        ), f"get_core_node_types() is missing expected types: {missing}"
+
+    def test_get_infrastructure_types_contains_expected_types(self) -> None:
+        """
+        Verify get_infrastructure_types() contains all expected infrastructure types.
+
+        Infrastructure types should include all EnumNodeType values that map to
+        RUNTIME_HOST kind.
+        """
+        if not hasattr(EnumNodeType, "get_infrastructure_types"):
+            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
+
+        infra_types = EnumNodeType.get_infrastructure_types()
+
+        # RUNTIME_HOST_GENERIC should be in infrastructure types
+        expected_infra = {EnumNodeType.RUNTIME_HOST_GENERIC}
+
+        missing = expected_infra - infra_types
+        assert (
+            not missing
+        ), f"get_infrastructure_types() is missing expected types: {missing}"
+
+        # Verify the set only contains infrastructure types
+        assert infra_types == expected_infra, (
+            f"get_infrastructure_types() returned unexpected types. "
+            f"Expected: {expected_infra}, Got: {infra_types}"
+        )
+
+    def test_core_and_infrastructure_types_are_disjoint(self) -> None:
+        """
+        Verify core types and infrastructure types do not overlap.
+
+        A node type should be either core or infrastructure, never both.
+        """
+        if not hasattr(EnumNodeType, "get_core_node_types"):
+            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
+        if not hasattr(EnumNodeType, "get_infrastructure_types"):
+            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
+
+        core_types = EnumNodeType.get_core_node_types()
+        infra_types = EnumNodeType.get_infrastructure_types()
+
+        overlap = core_types & infra_types
+        assert not overlap, (
+            f"Core and infrastructure types should be disjoint, "
+            f"but found overlap: {overlap}"
+        )
+
+    def test_unknown_not_in_core_types(self) -> None:
+        """
+        Verify UNKNOWN is not included in core types.
+
+        UNKNOWN has no mapping, so it cannot be classified as core.
+        """
+        if not hasattr(EnumNodeType, "get_core_node_types"):
+            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
+
+        core_types = EnumNodeType.get_core_node_types()
+        assert EnumNodeType.UNKNOWN not in core_types, (
+            "UNKNOWN should NOT be in get_core_node_types() result. "
+            "UNKNOWN has no kind mapping and cannot be classified."
+        )
+
+    def test_unknown_not_in_infrastructure_types(self) -> None:
+        """
+        Verify UNKNOWN is not included in infrastructure types.
+
+        UNKNOWN has no mapping, so it cannot be classified as infrastructure.
+        """
+        if not hasattr(EnumNodeType, "get_infrastructure_types"):
+            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
+
+        infra_types = EnumNodeType.get_infrastructure_types()
+        assert EnumNodeType.UNKNOWN not in infra_types, (
+            "UNKNOWN should NOT be in get_infrastructure_types() result. "
+            "UNKNOWN has no kind mapping and cannot be classified."
+        )
+
+    def test_core_and_infrastructure_cover_all_mapped_types(self) -> None:
+        """
+        Verify that core + infrastructure types cover all mapped types.
+
+        Every type in _KIND_MAP should appear in either core or infrastructure.
+        """
+        if not hasattr(EnumNodeType, "get_core_node_types"):
+            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
+        if not hasattr(EnumNodeType, "get_infrastructure_types"):
+            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
+        if not hasattr(EnumNodeType, "_KIND_MAP"):
+            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
+
+        core_types = EnumNodeType.get_core_node_types()
+        infra_types = EnumNodeType.get_infrastructure_types()
+        mapped_types = set(EnumNodeType._KIND_MAP.keys())
+
+        combined = core_types | infra_types
+        missing = mapped_types - combined
+        extra = combined - mapped_types
+
+        assert (
+            not missing
+        ), f"Some mapped types are not in core or infrastructure: {missing}"
+        assert (
+            not extra
+        ), f"Some types in core/infrastructure are not in _KIND_MAP: {extra}"
+
+    def test_get_core_node_types_consistency_with_enum_node_kind(self) -> None:
+        """
+        Verify get_core_node_types() is consistent with EnumNodeKind.is_core_node_type().
+
+        For every type in the result, its kind should satisfy is_core_node_type().
+        """
+        if not hasattr(EnumNodeType, "get_core_node_types"):
+            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        core_types = EnumNodeType.get_core_node_types()
+
+        for node_type in core_types:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert EnumNodeKind.is_core_node_type(kind), (
+                f"{node_type} is in get_core_node_types() but its kind {kind} "
+                f"does not satisfy EnumNodeKind.is_core_node_type()"
+            )
+
+    def test_get_infrastructure_types_consistency_with_enum_node_kind(self) -> None:
+        """
+        Verify get_infrastructure_types() is consistent with EnumNodeKind.is_infrastructure_type().
+
+        For every type in the result, its kind should satisfy is_infrastructure_type().
+        """
+        if not hasattr(EnumNodeType, "get_infrastructure_types"):
+            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        infra_types = EnumNodeType.get_infrastructure_types()
+
+        for node_type in infra_types:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert EnumNodeKind.is_infrastructure_type(kind), (
+                f"{node_type} is in get_infrastructure_types() but its kind {kind} "
+                f"does not satisfy EnumNodeKind.is_infrastructure_type()"
+            )
+
+    def test_runtime_host_generic_is_infrastructure(self) -> None:
+        """
+        Verify RUNTIME_HOST_GENERIC is classified as infrastructure.
+
+        This is a key invariant: RUNTIME_HOST_GENERIC should be the only
+        infrastructure type currently.
+        """
+        if not hasattr(EnumNodeType, "get_infrastructure_types"):
+            pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
+
+        infra_types = EnumNodeType.get_infrastructure_types()
+        assert (
+            EnumNodeType.RUNTIME_HOST_GENERIC in infra_types
+        ), "RUNTIME_HOST_GENERIC should be in get_infrastructure_types() result"
+
+    def test_runtime_host_generic_not_in_core(self) -> None:
+        """
+        Verify RUNTIME_HOST_GENERIC is NOT classified as core.
+
+        Infrastructure types should never appear in core types.
+        """
+        if not hasattr(EnumNodeType, "get_core_node_types"):
+            pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
+
+        core_types = EnumNodeType.get_core_node_types()
+        assert (
+            EnumNodeType.RUNTIME_HOST_GENERIC not in core_types
+        ), "RUNTIME_HOST_GENERIC should NOT be in get_core_node_types() result"
 
 
 if __name__ == "__main__":

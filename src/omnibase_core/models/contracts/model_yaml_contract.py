@@ -108,41 +108,37 @@ class ModelYamlContract(BaseModel):
                 )
                 return new_value
 
-            # Try to match string to EnumNodeType value (case-insensitive)
-            value_lower = value.lower()
-            try:
-                return EnumNodeType(value_lower)
-            except ValueError:
-                # Try direct name match (case-insensitive)
-                for enum_value in EnumNodeType:
-                    if enum_value.name.upper() == value.upper():
-                        return enum_value
+            # Try to match string to EnumNodeType by name or value (case-insensitive)
+            value_upper = value.upper()
+            for enum_value in EnumNodeType:
+                if enum_value.name == value_upper or enum_value.value == value_upper:
+                    return enum_value
 
-                # Create proper error context
-                from omnibase_core.models.common.model_error_context import (
-                    ModelErrorContext,
-                )
-                from omnibase_core.models.common.model_schema_value import (
-                    ModelSchemaValue,
-                )
+            # No match found - create proper error context
+            from omnibase_core.models.common.model_error_context import (
+                ModelErrorContext,
+            )
+            from omnibase_core.models.common.model_schema_value import (
+                ModelSchemaValue,
+            )
 
-                error_context = ModelErrorContext.with_context(
-                    {
-                        "provided_value": ModelSchemaValue.from_value(value),
-                        "valid_options": ModelSchemaValue.from_value(
-                            [e.value for e in EnumNodeType],
-                        ),
-                        "enum_names": ModelSchemaValue.from_value(
-                            [e.name for e in EnumNodeType],
-                        ),
-                    },
-                )
+            error_context = ModelErrorContext.with_context(
+                {
+                    "provided_value": ModelSchemaValue.from_value(value),
+                    "valid_options": ModelSchemaValue.from_value(
+                        [e.value for e in EnumNodeType],
+                    ),
+                    "enum_names": ModelSchemaValue.from_value(
+                        [e.name for e in EnumNodeType],
+                    ),
+                },
+            )
 
-                raise ModelOnexError(
-                    message=f"Invalid node_type '{value}'. Must be a valid EnumNodeType value.",
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    details=error_context,
-                )
+            raise ModelOnexError(
+                message=f"Invalid node_type '{value}'. Must be a valid EnumNodeType value.",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=error_context,
+            )
 
         # Create proper error context
         from omnibase_core.models.common.model_error_context import ModelErrorContext
