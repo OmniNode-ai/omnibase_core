@@ -39,8 +39,8 @@ class TestModelNodeCoreInstantiation:
 
     def test_create_with_node_type(self):
         """Test creating node core with specific node type."""
-        node = ModelNodeCore(node_type=EnumNodeType.COMPUTE)
-        assert node.node_type == EnumNodeType.COMPUTE
+        node = ModelNodeCore(node_type=EnumNodeType.COMPUTE_GENERIC)
+        assert node.node_type == EnumNodeType.COMPUTE_GENERIC
 
     def test_create_with_status(self):
         """Test creating node core with specific status."""
@@ -253,7 +253,7 @@ class TestModelNodeCoreFactoryMethods:
         node = ModelNodeCore.create_for_node(
             node_id=node_id,
             node_name="Test Node",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             description="A test compute node",
         )
         assert node.node_id == node_id
@@ -267,7 +267,7 @@ class TestModelNodeCoreFactoryMethods:
         node = ModelNodeCore.create_for_node(
             node_id=node_id,
             node_name="Minimal Node",
-            node_type=EnumNodeType.EFFECT,
+            node_type=EnumNodeType.EFFECT_GENERIC,
         )
         assert node.node_id == node_id
         assert node.node_display_name == "Minimal Node"
@@ -278,7 +278,7 @@ class TestModelNodeCoreFactoryMethods:
         """Test create_minimal_node factory method."""
         node = ModelNodeCore.create_minimal_node(
             node_name="Minimal",
-            node_type=EnumNodeType.REDUCER,
+            node_type=EnumNodeType.REDUCER_GENERIC,
         )
         assert node.node_display_name == "Minimal"
         assert node.node_type == EnumNodeType.REDUCER
@@ -296,7 +296,7 @@ class TestModelNodeCoreFactoryMethods:
         """Test create_complex_node factory method."""
         node = ModelNodeCore.create_complex_node(
             node_name="Complex",
-            node_type=EnumNodeType.ORCHESTRATOR,
+            node_type=EnumNodeType.ORCHESTRATOR_GENERIC,
             description="A complex orchestrator node",
         )
         assert node.node_display_name == "Complex"
@@ -345,7 +345,7 @@ class TestModelNodeCoreProtocols:
         """Test serialize method."""
         node = ModelNodeCore(
             node_display_name="Test",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
         )
         data = node.serialize()
         assert isinstance(data, dict)
@@ -370,7 +370,7 @@ class TestModelNodeCoreSerialization:
             node_id=node_id,
             node_display_name="Test",
             description="Test node",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             status=EnumMetadataNodeStatus.ACTIVE,
             complexity=EnumConceptualComplexity.INTERMEDIATE,
             version=version,

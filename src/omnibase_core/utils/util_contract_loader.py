@@ -247,12 +247,12 @@ class ProtocolContractLoader:
                             # Keep as dict - Pydantic will validate and convert to ModelContractDependency
                             dependencies.append(dep_item)
 
-            # Parse node type (default to COMPUTE if not specified)
-            node_type_str = raw_content.get("node_type", "COMPUTE")
+            # Parse node type (default to COMPUTE_GENERIC if not specified)
+            node_type_str = raw_content.get("node_type", "COMPUTE_GENERIC")
             if isinstance(node_type_str, str):
                 node_type = EnumNodeType(node_type_str.upper())
             else:
-                node_type = EnumNodeType.COMPUTE
+                node_type = EnumNodeType.COMPUTE_GENERIC
 
             # Create contract content
             return ModelContractContent(

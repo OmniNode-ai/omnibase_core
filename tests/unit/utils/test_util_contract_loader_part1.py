@@ -230,7 +230,7 @@ class TestLoadContract:
         assert result.contract_version.major == 1
         assert result.contract_version.minor == 0
         assert result.contract_version.patch == 0
-        assert result.node_type == EnumNodeType.COMPUTE  # Default
+        assert result.node_type == EnumNodeType.COMPUTE_GENERIC  # Default
 
     def test_load_complex_contract(
         self, contract_loader: ProtocolContractLoader, complex_contract_yaml: Path
@@ -582,7 +582,7 @@ class TestConvertContractContentToDict:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=2, patch=3),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -609,7 +609,7 @@ class TestConvertContractContentToDict:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=99, minor=88, patch=77),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -640,7 +640,7 @@ class TestValidateContractStructure:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -661,7 +661,7 @@ class TestValidateContractStructure:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="",  # Empty node name
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -685,7 +685,7 @@ class TestValidateContractStructure:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class=""),  # Empty
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"

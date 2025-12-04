@@ -17,8 +17,8 @@ from .model_operation_data_base import ModelOperationDataBase
 class ModelEffectOperationData(ModelOperationDataBase):
     """Effect node operation data for external interactions."""
 
-    operation_type: Literal[EnumNodeType.EFFECT] = Field(
-        default=EnumNodeType.EFFECT,
+    operation_type: Literal[EnumNodeType.EFFECT_GENERIC] = Field(
+        default=EnumNodeType.EFFECT_GENERIC,
         description="Effect operation type",
     )
     target_system: str = Field(default=..., description="Target external system")

@@ -50,22 +50,25 @@ error = ModelOnexError(
 ```
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
-node_type = EnumNodeType.COMPUTE
+# Use the GENERIC variant for four-node architecture types
+node_type = EnumNodeType.COMPUTE_GENERIC
 ```
 
 #### Available Node Types
 
-**Core ONEX Node Types**:
-- `COMPUTE` - Pure computation nodes
+**Core ONEX Four-Node Architecture Types**:
+> **Migration Note**: As of v0.2.0, the four-node architecture types use `*_GENERIC` suffix to eliminate naming collisions with `EnumNodeKind`. Legacy YAML configs automatically map old names to new variants.
+
+- `COMPUTE_GENERIC` - Pure computation nodes (was `COMPUTE`)
+- `EFFECT_GENERIC` - Side effect nodes (was `EFFECT`)
+- `REDUCER_GENERIC` - State management nodes (was `REDUCER`)
+- `ORCHESTRATOR_GENERIC` - Workflow coordination nodes (was `ORCHESTRATOR`)
+
+**Other Node Types**:
 - `GATEWAY` - Gateway nodes for routing
-- `ORCHESTRATOR` - Workflow coordination nodes
-- `REDUCER` - State management nodes
-- `EFFECT` - Side effect nodes
 - `VALIDATOR` - Validation nodes
 - `TRANSFORMER` - Data transformation nodes
 - `AGGREGATOR` - Data aggregation nodes
-
-**Generic Node Types**:
 - `FUNCTION` - Function nodes
 - `TOOL` - Tool nodes
 - `AGENT` - Agent nodes
@@ -75,7 +78,6 @@ node_type = EnumNodeType.COMPUTE
 - `NODE` - Generic node
 - `WORKFLOW` - Workflow nodes
 - `SERVICE` - Service nodes
-- `COMPUTE_GENERIC` - Generic compute node type
 - `UNKNOWN` - Unknown node type
 
 **Helper Methods**:
@@ -437,7 +439,7 @@ from omnibase_core.enums.enum_node_type import EnumNodeType
 @lru_cache(maxsize=32)
 def is_compute_node(node_type: EnumNodeType) -> bool:
     """Cache enum comparison for performance."""
-    return node_type == EnumNodeType.COMPUTE
+    return node_type == EnumNodeType.COMPUTE_GENERIC
 ```
 
 ### Enum Lookup Optimization

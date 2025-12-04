@@ -13,11 +13,11 @@ class TestEnumNodeType:
     def test_enum_values(self):
         """Test core ONEX enum values are present."""
         expected_core_values = {
-            "COMPUTE",
+            "COMPUTE_GENERIC",
             "GATEWAY",
-            "ORCHESTRATOR",
-            "REDUCER",
-            "EFFECT",
+            "ORCHESTRATOR_GENERIC",
+            "REDUCER_GENERIC",
+            "EFFECT_GENERIC",
             "VALIDATOR",
             "TRANSFORMER",
             "AGGREGATOR",
@@ -28,16 +28,16 @@ class TestEnumNodeType:
 
     def test_string_inheritance(self):
         """Test that enum inherits from str."""
-        assert isinstance(EnumNodeType.COMPUTE, str)
-        assert EnumNodeType.COMPUTE == "COMPUTE"
+        assert isinstance(EnumNodeType.COMPUTE_GENERIC, str)
+        assert EnumNodeType.COMPUTE_GENERIC == "COMPUTE_GENERIC"
 
     def test_is_processing_node(self):
         """Test processing node classification."""
         processing_nodes = {
-            EnumNodeType.COMPUTE,
+            EnumNodeType.COMPUTE_GENERIC,
             EnumNodeType.TRANSFORMER,
             EnumNodeType.AGGREGATOR,
-            EnumNodeType.REDUCER,
+            EnumNodeType.REDUCER_GENERIC,
         }
 
         for node_type in EnumNodeType:
@@ -48,7 +48,7 @@ class TestEnumNodeType:
     def test_is_control_node(self):
         """Test control node classification."""
         control_nodes = {
-            EnumNodeType.ORCHESTRATOR,
+            EnumNodeType.ORCHESTRATOR_GENERIC,
             EnumNodeType.GATEWAY,
             EnumNodeType.VALIDATOR,
         }
@@ -61,7 +61,7 @@ class TestEnumNodeType:
     def test_is_output_node(self):
         """Test output node classification."""
         output_nodes = {
-            EnumNodeType.EFFECT,
+            EnumNodeType.EFFECT_GENERIC,
             EnumNodeType.AGGREGATOR,
         }
 
@@ -73,14 +73,14 @@ class TestEnumNodeType:
     def test_get_node_category(self):
         """Test node category mapping."""
         category_map = {
-            EnumNodeType.COMPUTE: "processing",
+            EnumNodeType.COMPUTE_GENERIC: "processing",
             EnumNodeType.TRANSFORMER: "processing",
             EnumNodeType.AGGREGATOR: "processing",
-            EnumNodeType.REDUCER: "processing",
-            EnumNodeType.ORCHESTRATOR: "control",
+            EnumNodeType.REDUCER_GENERIC: "processing",
+            EnumNodeType.ORCHESTRATOR_GENERIC: "control",
             EnumNodeType.GATEWAY: "control",
             EnumNodeType.VALIDATOR: "control",
-            EnumNodeType.EFFECT: "output",
+            EnumNodeType.EFFECT_GENERIC: "output",
         }
 
         for node_type, expected_category in category_map.items():

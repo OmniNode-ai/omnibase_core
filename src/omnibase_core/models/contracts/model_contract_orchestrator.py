@@ -66,7 +66,7 @@ class ModelContractOrchestrator(ModelContractBase):
     )
 
     node_type: EnumNodeType = Field(
-        default=EnumNodeType.ORCHESTRATOR,
+        default=EnumNodeType.ORCHESTRATOR_GENERIC,
         description="Node type classification for 4-node architecture",
     )
 

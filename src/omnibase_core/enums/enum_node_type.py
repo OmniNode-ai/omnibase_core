@@ -8,6 +8,10 @@ Strongly typed node type values for ONEX architecture node classification.
 
 
 from enum import Enum, unique
+from typing import TYPE_CHECKING, ClassVar
+
+if TYPE_CHECKING:
+    from omnibase_core.enums.enum_node_kind import EnumNodeKind
 
 
 @unique
@@ -40,17 +44,21 @@ class EnumNodeType(str, Enum):
     For high-level architectural classification, see EnumNodeKind.
     """
 
-    # Core ONEX node types
-    COMPUTE = "COMPUTE"
+    # Generic node types (one per EnumNodeKind)
+    # These are the primary node types aligned with the ONEX 4-node architecture
+    COMPUTE_GENERIC = "COMPUTE_GENERIC"  # Generic compute node type
+    EFFECT_GENERIC = "EFFECT_GENERIC"  # Generic effect node type
+    REDUCER_GENERIC = "REDUCER_GENERIC"  # Generic reducer node type
+    ORCHESTRATOR_GENERIC = "ORCHESTRATOR_GENERIC"  # Generic orchestrator node type
+    RUNTIME_HOST_GENERIC = "RUNTIME_HOST_GENERIC"  # Generic runtime host node type
+
+    # Specific node implementation types
     GATEWAY = "GATEWAY"
-    ORCHESTRATOR = "ORCHESTRATOR"
-    REDUCER = "REDUCER"
-    EFFECT = "EFFECT"
     VALIDATOR = "VALIDATOR"
     TRANSFORMER = "TRANSFORMER"
     AGGREGATOR = "AGGREGATOR"
 
-    # Generic node types
+    # Specific node types
     FUNCTION = "FUNCTION"
     TOOL = "TOOL"
     AGENT = "AGENT"
@@ -60,7 +68,6 @@ class EnumNodeType(str, Enum):
     NODE = "NODE"
     WORKFLOW = "WORKFLOW"
     SERVICE = "SERVICE"
-    COMPUTE_GENERIC = "COMPUTE_GENERIC"  # Generic compute node type
     UNKNOWN = "UNKNOWN"
 
     def __str__(self) -> str:
@@ -71,17 +78,17 @@ class EnumNodeType(str, Enum):
     def is_processing_node(cls, node_type: EnumNodeType) -> bool:
         """Check if the node type performs data processing."""
         return node_type in {
-            cls.COMPUTE,
+            cls.COMPUTE_GENERIC,
             cls.TRANSFORMER,
             cls.AGGREGATOR,
-            cls.REDUCER,
+            cls.REDUCER_GENERIC,
         }
 
     @classmethod
     def is_control_node(cls, node_type: EnumNodeType) -> bool:
         """Check if the node type handles control flow."""
         return node_type in {
-            cls.ORCHESTRATOR,
+            cls.ORCHESTRATOR_GENERIC,
             cls.GATEWAY,
             cls.VALIDATOR,
         }
@@ -90,7 +97,7 @@ class EnumNodeType(str, Enum):
     def is_output_node(cls, node_type: EnumNodeType) -> bool:
         """Check if the node type produces output effects."""
         return node_type in {
-            cls.EFFECT,
+            cls.EFFECT_GENERIC,
             cls.AGGREGATOR,
         }
 
@@ -105,6 +112,88 @@ class EnumNodeType(str, Enum):
             return "output"
         return "unknown"
 
+
+# Declare _KIND_MAP as class attribute to be populated after module import
+# This is required for tests that check hasattr(EnumNodeType, "_KIND_MAP")
+EnumNodeType._KIND_MAP = {}  # type: ignore[attr-defined]
+
+
+def _populate_kind_map() -> None:
+    """
+    Populate the type-to-kind mapping with all EnumNodeType mappings.
+
+    This function is called at module import time to populate EnumNodeType._KIND_MAP
+    with the authoritative mapping of node types to architectural kinds.
+    """
+    from omnibase_core.enums.enum_node_kind import EnumNodeKind
+
+    EnumNodeType._KIND_MAP.update(  # type: ignore[attr-defined]
+        {
+            # COMPUTE kind - data processing & transformation
+            EnumNodeType.COMPUTE_GENERIC: EnumNodeKind.COMPUTE,
+            EnumNodeType.TRANSFORMER: EnumNodeKind.COMPUTE,
+            EnumNodeType.AGGREGATOR: EnumNodeKind.COMPUTE,
+            EnumNodeType.FUNCTION: EnumNodeKind.COMPUTE,
+            EnumNodeType.MODEL: EnumNodeKind.COMPUTE,
+            # EFFECT kind - external interactions (I/O)
+            EnumNodeType.EFFECT_GENERIC: EnumNodeKind.EFFECT,
+            EnumNodeType.TOOL: EnumNodeKind.EFFECT,
+            EnumNodeType.AGENT: EnumNodeKind.EFFECT,
+            # REDUCER kind - state aggregation & management
+            EnumNodeType.REDUCER_GENERIC: EnumNodeKind.REDUCER,
+            # ORCHESTRATOR kind - workflow coordination
+            EnumNodeType.ORCHESTRATOR_GENERIC: EnumNodeKind.ORCHESTRATOR,
+            EnumNodeType.GATEWAY: EnumNodeKind.ORCHESTRATOR,
+            EnumNodeType.VALIDATOR: EnumNodeKind.ORCHESTRATOR,
+            EnumNodeType.WORKFLOW: EnumNodeKind.ORCHESTRATOR,
+            # RUNTIME_HOST kind - runtime infrastructure
+            EnumNodeType.RUNTIME_HOST_GENERIC: EnumNodeKind.RUNTIME_HOST,
+            # Generic/unknown types - map to COMPUTE by default for backward compatibility
+            EnumNodeType.PLUGIN: EnumNodeKind.COMPUTE,
+            EnumNodeType.SCHEMA: EnumNodeKind.COMPUTE,
+            EnumNodeType.NODE: EnumNodeKind.COMPUTE,
+            EnumNodeType.SERVICE: EnumNodeKind.COMPUTE,
+            EnumNodeType.UNKNOWN: EnumNodeKind.COMPUTE,
+        }
+    )
+
+
+# Populate mapping immediately upon module import
+_populate_kind_map()
+
+
+# Add get_node_kind as a classmethod to EnumNodeType
+@classmethod  # type: ignore[misc]
+def _get_node_kind_impl(
+    cls: type[EnumNodeType], node_type: EnumNodeType
+) -> EnumNodeKind:
+    """
+    Get the architectural kind for this node type.
+
+    Args:
+        node_type: The specific node type to classify
+
+    Returns:
+        The architectural kind (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR, or RUNTIME_HOST)
+
+    Raises:
+        KeyError: If the node type has no kind mapping (should never happen if _KIND_MAP is complete)
+
+    Example:
+        >>> EnumNodeType.get_node_kind(EnumNodeType.TRANSFORMER)
+        EnumNodeKind.COMPUTE
+
+        >>> EnumNodeType.get_node_kind(EnumNodeType.TOOL)
+        EnumNodeKind.EFFECT
+    """
+    from omnibase_core.enums.enum_node_kind import EnumNodeKind as _EnumNodeKind
+
+    result: _EnumNodeKind = cls._KIND_MAP[node_type]  # type: ignore[attr-defined]
+    return result
+
+
+# Attach the classmethod to EnumNodeType
+EnumNodeType.get_node_kind = _get_node_kind_impl  # type: ignore[attr-defined]
 
 # Export for use
 __all__ = ["EnumNodeType"]

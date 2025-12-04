@@ -136,7 +136,7 @@ class TestResolveAllReferences:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -162,7 +162,7 @@ class TestResolveAllReferences:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -185,7 +185,7 @@ class TestResolveAllReferences:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=2, minor=3, patch=4),
             node_name="PreservedNode",
-            node_type=EnumNodeType.EFFECT,
+            node_type=EnumNodeType.EFFECT_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="PreservedClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -213,7 +213,7 @@ class TestResolveAllReferences:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="ComplexNode",
-            node_type=EnumNodeType.ORCHESTRATOR,
+            node_type=EnumNodeType.ORCHESTRATOR_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="ComplexClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -235,7 +235,7 @@ class TestResolveAllReferences:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -622,7 +622,7 @@ class TestResolutionStack:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -645,7 +645,7 @@ class TestResolutionStack:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"

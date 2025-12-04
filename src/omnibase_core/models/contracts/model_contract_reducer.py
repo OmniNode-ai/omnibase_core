@@ -92,7 +92,7 @@ class ModelContractReducer(ModelContractBase):
     )
 
     node_type: EnumNodeType = Field(
-        default=EnumNodeType.REDUCER,
+        default=EnumNodeType.REDUCER_GENERIC,
         description="Node type classification for 4-node architecture",
     )
 

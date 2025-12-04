@@ -87,9 +87,15 @@ class ModelYamlContract(BaseModel):
             return value
 
         if isinstance(value, str):
-            # Handle legacy lowercase "compute" mapping
+            # Handle legacy lowercase "compute" mapping -> use COMPUTE_GENERIC
             if value.lower() == "compute":
-                return EnumNodeType.COMPUTE
+                return EnumNodeType.COMPUTE_GENERIC
+            if value.lower() == "effect":
+                return EnumNodeType.EFFECT_GENERIC
+            if value.lower() == "reducer":
+                return EnumNodeType.REDUCER_GENERIC
+            if value.lower() == "orchestrator":
+                return EnumNodeType.ORCHESTRATOR_GENERIC
 
             # Try to match string to EnumNodeType value (case-insensitive)
             value_lower = value.lower()
