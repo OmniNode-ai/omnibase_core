@@ -358,6 +358,13 @@ class EnumNodeType(str, Enum):
 #
 # Thread Safety: This module-level call executes during import, which is
 # protected by Python's import lock. See _populate_kind_map() docstring.
+#
+# Type Safety Note: The setattr() below dynamically attaches _KIND_MAP to the
+# EnumNodeType class. If mypy reports [attr-defined] errors, use
+# `# type: ignore[attr-defined]` - this is an ACCEPTED EXCEPTION to strict mypy
+# rules per the documentation block above (lines 327-353). The attribute IS
+# defined at runtime and verified by tests. See CLAUDE.md section "Node
+# Classification Enums: EnumNodeKind vs EnumNodeType" for architectural context.
 _populate_kind_map()
 setattr(EnumNodeType, "_KIND_MAP", _KIND_MAP)  # noqa: B010
 

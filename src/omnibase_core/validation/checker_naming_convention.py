@@ -13,6 +13,7 @@ Safe Runtime Imports (OK to import at module level):
 
 import ast
 import re
+from pathlib import Path
 
 
 class NamingConventionChecker(ast.NodeVisitor):
@@ -29,12 +30,10 @@ class NamingConventionChecker(ast.NodeVisitor):
         # Skip anti-pattern check for error taxonomy classes
         # Error classes legitimately use terms like "Handler" in names like "HandlerConfigurationError"
         # or "Service" in names like "InfraServiceUnavailableError"
-        is_error_class = class_name.endswith("Error") or class_name.endswith(
-            "Exception"
-        )
-        is_in_errors_dir = "/errors/" in self.file_path or self.file_path.endswith(
-            "/errors.py"
-        )
+        is_error_class = class_name.endswith(("Error", "Exception"))
+        # Use pathlib for cross-platform path handling
+        file_path = Path(self.file_path)
+        is_in_errors_dir = "errors" in file_path.parts or file_path.name == "errors.py"
 
         # Check for anti-pattern names (skip for error taxonomy classes)
         anti_patterns = [

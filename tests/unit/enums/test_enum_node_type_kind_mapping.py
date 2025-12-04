@@ -339,7 +339,7 @@ class TestEnumNodeTypeKindMapping:
         ]
 
         assert not duplicate_mappings, (
-            f"Duplicate mappings detected (each type must map to exactly one kind):\n"
+            "Duplicate mappings detected (each type must map to exactly one kind):\n"
             + "\n".join(
                 f"  - {node_type}: {count} mappings"
                 for node_type, count in duplicate_mappings
