@@ -21,7 +21,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 from typing import ClassVar
 from uuid import UUID, uuid4
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -32,7 +32,7 @@ ParameterValue = PrimitiveValueType
 StructuredData = dict[str, ParameterValue]
 StructuredDataList = list[StructuredData]
 
-from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums import EnumNodeArchitectureType, EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -95,6 +95,53 @@ class ModelContractReducer(ModelContractBase):
         default=EnumNodeType.REDUCER_GENERIC,
         description="Node type classification for 4-node architecture",
     )
+
+    # Mapping from architecture type strings to EnumNodeType
+    _ARCH_TO_NODE_TYPE: ClassVar[dict[str, EnumNodeType]] = {
+        "compute": EnumNodeType.COMPUTE_GENERIC,
+        "effect": EnumNodeType.EFFECT_GENERIC,
+        "reducer": EnumNodeType.REDUCER_GENERIC,
+        "orchestrator": EnumNodeType.ORCHESTRATOR_GENERIC,
+    }
+
+    @field_validator("node_type", mode="before")
+    @classmethod
+    def validate_node_type_architecture(cls, v: object) -> EnumNodeType:
+        """Validate and convert architecture type to base node type."""
+        if isinstance(v, EnumNodeArchitectureType):
+            return EnumNodeType.REDUCER_GENERIC
+        if isinstance(v, EnumNodeType):
+            return v
+        if isinstance(v, str):
+            if v.lower() in cls._ARCH_TO_NODE_TYPE:
+                return cls._ARCH_TO_NODE_TYPE[v.lower()]
+            try:
+                return EnumNodeType(v)
+            except ValueError:
+                raise ModelOnexError(
+                    message=f"Invalid node_type: {v}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation",
+                            ),
+                        },
+                    ),
+                )
+        raise ModelOnexError(
+            message=f"Invalid node_type: {v}",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            details=ModelErrorContext.with_context(
+                {
+                    "error_type": ModelSchemaValue.from_value("valueerror"),
+                    "validation_context": ModelSchemaValue.from_value(
+                        "model_validation",
+                    ),
+                },
+            ),
+        )
 
     # === INFRASTRUCTURE PATTERN SUPPORT ===
     # These fields support infrastructure patterns and YAML variations

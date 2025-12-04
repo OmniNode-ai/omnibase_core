@@ -23,6 +23,7 @@ from uuid import UUID, uuid4
 
 from pydantic import ConfigDict, Field, field_validator
 
+from omnibase_core.enums import EnumNodeArchitectureType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.contracts.model_action_emission_config import (
@@ -41,6 +42,8 @@ from omnibase_core.models.contracts.model_event_subscription import (
 )
 from omnibase_core.models.contracts.model_workflow_config import ModelWorkflowConfig
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
+from omnibase_core.models.common.model_error_context import ModelErrorContext
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -69,6 +72,53 @@ class ModelContractOrchestrator(ModelContractBase):
         default=EnumNodeType.ORCHESTRATOR_GENERIC,
         description="Node type classification for 4-node architecture",
     )
+
+    # Mapping from architecture type strings to EnumNodeType
+    _ARCH_TO_NODE_TYPE: ClassVar[dict[str, EnumNodeType]] = {
+        "compute": EnumNodeType.COMPUTE_GENERIC,
+        "effect": EnumNodeType.EFFECT_GENERIC,
+        "reducer": EnumNodeType.REDUCER_GENERIC,
+        "orchestrator": EnumNodeType.ORCHESTRATOR_GENERIC,
+    }
+
+    @field_validator("node_type", mode="before")
+    @classmethod
+    def validate_node_type_architecture(cls, v: object) -> EnumNodeType:
+        """Validate and convert architecture type to base node type."""
+        if isinstance(v, EnumNodeArchitectureType):
+            return EnumNodeType.ORCHESTRATOR_GENERIC
+        if isinstance(v, EnumNodeType):
+            return v
+        if isinstance(v, str):
+            if v.lower() in cls._ARCH_TO_NODE_TYPE:
+                return cls._ARCH_TO_NODE_TYPE[v.lower()]
+            try:
+                return EnumNodeType(v)
+            except ValueError:
+                raise ModelOnexError(
+                    message=f"Invalid node_type: {v}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation",
+                            ),
+                        },
+                    ),
+                )
+        raise ModelOnexError(
+            message=f"Invalid node_type: {v}",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            details=ModelErrorContext.with_context(
+                {
+                    "error_type": ModelSchemaValue.from_value("valueerror"),
+                    "validation_context": ModelSchemaValue.from_value(
+                        "model_validation",
+                    ),
+                },
+            ),
+        )
 
     # Orchestration configuration
     action_emission: ModelActionEmissionConfig = Field(

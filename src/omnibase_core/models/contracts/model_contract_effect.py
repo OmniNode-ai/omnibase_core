@@ -84,21 +84,42 @@ class ModelContractEffect(ModelContractBase):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
+    # Mapping from architecture type strings to EnumNodeType
+    _ARCH_TO_NODE_TYPE: ClassVar[dict[str, EnumNodeType]] = {
+        "compute": EnumNodeType.COMPUTE_GENERIC,
+        "effect": EnumNodeType.EFFECT_GENERIC,
+        "reducer": EnumNodeType.REDUCER_GENERIC,
+        "orchestrator": EnumNodeType.ORCHESTRATOR_GENERIC,
+    }
+
     # Override parent node_type with architecture-specific type
-    # Both EnumNodeType.EFFECT and EnumNodeArchitectureType.EFFECT have value "effect"
     @field_validator("node_type", mode="before")
     @classmethod
     def validate_node_type_architecture(cls, v: object) -> EnumNodeType:
-        """Validate and convert architecture type to base node type.
-
-        Note: Pydantic automatically handles string-to-enum conversion,
-        so we only need to handle the enum types directly.
-        """
+        """Validate and convert architecture type to base node type."""
         if isinstance(v, EnumNodeArchitectureType):
-            # Convert architecture type to base node type
-            return EnumNodeType(v.value)  # Both have "effect" value
+            return EnumNodeType.EFFECT_GENERIC
         if isinstance(v, EnumNodeType):
             return v
+        if isinstance(v, str):
+            # Try architecture type mapping first (lowercase)
+            if v.lower() in cls._ARCH_TO_NODE_TYPE:
+                return cls._ARCH_TO_NODE_TYPE[v.lower()]
+            try:
+                return EnumNodeType(v)
+            except ValueError:
+                raise ModelOnexError(
+                    message=f"Invalid node_type: {v}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "model_validation",
+                            ),
+                        },
+                    ),
+                )
         raise ModelOnexError(
             message=f"Invalid node_type: {v}",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,

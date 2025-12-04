@@ -64,16 +64,27 @@ class ModelContractCompute(ModelContractBase):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
+    # Mapping from architecture type strings to EnumNodeType
+    _ARCH_TO_NODE_TYPE: ClassVar[dict[str, EnumNodeType]] = {
+        "compute": EnumNodeType.COMPUTE_GENERIC,
+        "effect": EnumNodeType.EFFECT_GENERIC,
+        "reducer": EnumNodeType.REDUCER_GENERIC,
+        "orchestrator": EnumNodeType.ORCHESTRATOR_GENERIC,
+    }
+
     # Override parent node_type with architecture-specific type
     @field_validator("node_type", mode="before")
     @classmethod
     def validate_node_type_architecture(cls, v: object) -> EnumNodeType:
         """Validate and convert architecture type to base node type."""
         if isinstance(v, EnumNodeArchitectureType):
-            return EnumNodeType(v.value)  # Both have "compute" value
+            return EnumNodeType.COMPUTE_GENERIC
         if isinstance(v, EnumNodeType):
             return v
         if isinstance(v, str):
+            # Try architecture type mapping first (lowercase)
+            if v.lower() in cls._ARCH_TO_NODE_TYPE:
+                return cls._ARCH_TO_NODE_TYPE[v.lower()]
             try:
                 return EnumNodeType(v)
             except ValueError:
