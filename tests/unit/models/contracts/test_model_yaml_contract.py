@@ -17,7 +17,7 @@ class TestModelYamlContract:
         """Test creating a valid contract with all required fields."""
         contract_data = {
             "contract_version": {"major": 1, "minor": 0, "patch": 0},
-            "node_type": "COMPUTE",
+            "node_type": "COMPUTE_GENERIC",
             "description": "Test contract",
         }
 
@@ -26,23 +26,32 @@ class TestModelYamlContract:
         assert contract.contract_version.major == 1
         assert contract.contract_version.minor == 0
         assert contract.contract_version.patch == 0
-        assert contract.node_type == EnumNodeType.COMPUTE
+        assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
         assert contract.description == "Test contract"
 
     def test_contract_with_legacy_node_type(self):
-        """Test contract with legacy compute node type."""
+        """Test contract with legacy compute node type (triggers deprecation warning)."""
+        import warnings
+
         contract_data = {
             "contract_version": {"major": 1, "minor": 0, "patch": 0},
-            "node_type": "compute",  # Legacy lowercase
+            "node_type": "compute",  # Legacy lowercase - should trigger deprecation warning
         }
 
-        contract = ModelYamlContract.model_validate(contract_data)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            contract = ModelYamlContract.model_validate(contract_data)
 
-        assert contract.node_type == EnumNodeType.COMPUTE
+            # Verify deprecation warning was raised
+            assert len(w) == 1
+            assert issubclass(w[0].category, DeprecationWarning)
+            assert "deprecated" in str(w[0].message).lower()
+
+        assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
 
     def test_missing_contract_version_fails(self):
         """Test that contracts require explicit contract_version."""
-        contract_data = {"node_type": "COMPUTE"}
+        contract_data = {"node_type": "COMPUTE_GENERIC"}
 
         with pytest.raises(ValidationError) as exc_info:
             ModelYamlContract.model_validate(contract_data)
@@ -82,7 +91,7 @@ class TestModelYamlContract:
         """Test the validate_yaml_content classmethod."""
         yaml_data = {
             "contract_version": {"major": 2, "minor": 1, "patch": 3},
-            "node_type": "EFFECT",
+            "node_type": "EFFECT_GENERIC",
             "description": "Effect contract",
         }
 
@@ -91,14 +100,14 @@ class TestModelYamlContract:
         assert contract.contract_version.major == 2
         assert contract.contract_version.minor == 1
         assert contract.contract_version.patch == 3
-        assert contract.node_type == EnumNodeType.EFFECT
+        assert contract.node_type == EnumNodeType.EFFECT_GENERIC
         assert contract.description == "Effect contract"
 
     def test_extra_fields_allowed(self):
         """Test that extra fields are allowed in contracts but ignored per model config."""
         contract_data = {
             "contract_version": {"major": 1, "minor": 0, "patch": 0},
-            "node_type": "COMPUTE",
+            "node_type": "COMPUTE_GENERIC",
             "description": "Test contract",
             "custom_field": "custom_value",
             "metadata": {"author": "test"},
@@ -107,7 +116,7 @@ class TestModelYamlContract:
         contract = ModelYamlContract.model_validate(contract_data)
 
         assert contract.contract_version.major == 1
-        assert contract.node_type == EnumNodeType.COMPUTE
+        assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
         assert contract.description == "Test contract"
         # Extra fields are ignored per model config (extra="ignore")
         assert not hasattr(contract, "custom_field")

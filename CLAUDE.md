@@ -207,6 +207,71 @@ config = ModelContainer.create(
 
 **See**: [docs/architecture/CONTAINER_TYPES.md](docs/architecture/CONTAINER_TYPES.md) for complete details.
 
+### Node Classification Enums: EnumNodeKind vs EnumNodeType
+
+⚠️ **IMPORTANT**: omnibase_core has TWO node classification enums with different purposes!
+
+#### EnumNodeKind - Architectural Classification
+
+**Location**: `omnibase_core.enums.enum_node_kind`
+
+**Purpose**: High-level architectural role in the ONEX workflow
+
+**Values**: `EFFECT`, `COMPUTE`, `REDUCER`, `ORCHESTRATOR`, `RUNTIME_HOST`
+
+**Use When**: Routing data through the pipeline, enforcing architectural patterns
+
+```python
+from omnibase_core.enums import EnumNodeKind
+
+# Classify a node's architectural role
+if node_kind == EnumNodeKind.COMPUTE:
+    # Route to processing pipeline
+    pass
+
+# Check if it's a core 4-node type
+if EnumNodeKind.is_core_node_type(node_kind):
+    # Handle core node
+    pass
+```
+
+#### EnumNodeType - Implementation Type
+
+**Location**: `omnibase_core.enums.enum_node_type`
+
+**Purpose**: Specific implementation type for discovery and capability matching
+
+**Values**: `COMPUTE_GENERIC`, `TRANSFORMER`, `AGGREGATOR`, `GATEWAY`, `VALIDATOR`, etc.
+
+**Use When**: Node discovery, capability matching, specific behavior selection
+
+```python
+from omnibase_core.enums import EnumNodeType
+
+# Check specific implementation type
+if node_type == EnumNodeType.TRANSFORMER:
+    # Handle transformer-specific logic
+    pass
+
+# Get architectural kind from type
+kind = EnumNodeType.get_node_kind(node_type)  # Returns EnumNodeKind
+```
+
+#### Quick Reference
+
+| Question | Use This Enum |
+|----------|---------------|
+| "What role in the ONEX workflow?" | `EnumNodeKind` |
+| "What specific implementation?" | `EnumNodeType` |
+| "Routing through pipeline?" | `EnumNodeKind` |
+| "Node discovery/matching?" | `EnumNodeType` |
+
+**Relationship**: Multiple `EnumNodeType` values map to each `EnumNodeKind`:
+- `TRANSFORMER`, `AGGREGATOR`, `COMPUTE_GENERIC` → `EnumNodeKind.COMPUTE`
+- `GATEWAY`, `VALIDATOR`, `ORCHESTRATOR_GENERIC` → `EnumNodeKind.ORCHESTRATOR`
+
+**See**: [docs/guides/ENUM_NODE_KIND_MIGRATION.md](docs/guides/ENUM_NODE_KIND_MIGRATION.md) for migration guidance.
+
 ---
 
 ## Project Structure

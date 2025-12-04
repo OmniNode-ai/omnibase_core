@@ -113,8 +113,9 @@ class EnumNodeType(str, Enum):
         return "unknown"
 
 
-# Declare _KIND_MAP as class attribute to be populated after module import
-# This is required for tests that check hasattr(EnumNodeType, "_KIND_MAP")
+# Note: _KIND_MAP is dynamically populated at module import time by _populate_kind_map()
+# This declaration provides the initial empty dict that gets updated with mappings
+# Type annotation: ClassVar[dict[EnumNodeType, EnumNodeKind]]
 EnumNodeType._KIND_MAP = {}  # type: ignore[attr-defined]
 
 
@@ -177,7 +178,7 @@ def _get_node_kind_impl(
         The architectural kind (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR, or RUNTIME_HOST)
 
     Raises:
-        KeyError: If the node type has no kind mapping (should never happen if _KIND_MAP is complete)
+        ModelOnexError: If the node type has no kind mapping (should never happen if _KIND_MAP is complete)
 
     Example:
         >>> EnumNodeType.get_node_kind(EnumNodeType.TRANSFORMER)
@@ -188,8 +189,21 @@ def _get_node_kind_impl(
     """
     from omnibase_core.enums.enum_node_kind import EnumNodeKind as _EnumNodeKind
 
-    result: _EnumNodeKind = cls._KIND_MAP[node_type]  # type: ignore[attr-defined]
-    return result
+    try:
+        result: _EnumNodeKind = cls._KIND_MAP[node_type]  # type: ignore[attr-defined]
+        return result
+    except KeyError as e:
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+        raise ModelOnexError(
+            message=f"No kind mapping for node type '{node_type}'",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            context={
+                "node_type": str(node_type),
+                "available_types": [str(k) for k in cls._KIND_MAP.keys()],  # type: ignore[attr-defined]
+            },
+        ) from e
 
 
 # Attach the classmethod to EnumNodeType

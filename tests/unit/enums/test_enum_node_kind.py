@@ -368,5 +368,100 @@ class TestEnumNodeKindEdgeCases:
         assert isinstance(result2, bool)
 
 
+class TestEnumNodeKindPropertyBased:
+    """Property-based tests using hypothesis for EnumNodeKind."""
+
+    def test_all_kinds_have_valid_string_representation(self) -> None:
+        """Property: Every EnumNodeKind value has a non-empty string representation."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+
+        @given(st.sampled_from(list(EnumNodeKind)))
+        def check_string_representation(node_kind: EnumNodeKind) -> None:
+            string_repr = str(node_kind)
+            assert isinstance(string_repr, str)
+            assert len(string_repr) > 0
+            assert string_repr == node_kind.value
+
+        check_string_representation()
+
+    def test_all_kinds_roundtrip_through_value(self) -> None:
+        """Property: Every EnumNodeKind can be reconstructed from its value."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+
+        @given(st.sampled_from(list(EnumNodeKind)))
+        def check_roundtrip(node_kind: EnumNodeKind) -> None:
+            value = node_kind.value
+            reconstructed = EnumNodeKind(value)
+            assert reconstructed == node_kind
+            assert reconstructed is node_kind  # Same singleton instance
+
+        check_roundtrip()
+
+    def test_helper_methods_always_return_bool(self) -> None:
+        """Property: Helper methods always return boolean values."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+
+        @given(st.sampled_from(list(EnumNodeKind)))
+        def check_helper_methods(node_kind: EnumNodeKind) -> None:
+            is_core = EnumNodeKind.is_core_node_type(node_kind)
+            is_infra = EnumNodeKind.is_infrastructure_type(node_kind)
+
+            assert isinstance(is_core, bool)
+            assert isinstance(is_infra, bool)
+            # They should be mutually exclusive
+            if is_core:
+                assert not is_infra
+            if is_infra:
+                assert not is_core
+
+        check_helper_methods()
+
+    def test_json_serialization_roundtrip(self) -> None:
+        """Property: Every EnumNodeKind survives JSON serialization roundtrip."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+
+        @given(st.sampled_from(list(EnumNodeKind)))
+        def check_json_roundtrip(node_kind: EnumNodeKind) -> None:
+            serialized = json.dumps(node_kind.value)
+            deserialized = json.loads(serialized)
+            reconstructed = EnumNodeKind(deserialized)
+            assert reconstructed == node_kind
+
+        check_json_roundtrip()
+
+    def test_pickle_serialization_preserves_identity(self) -> None:
+        """Property: Pickle serialization preserves enum identity."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+
+        @given(st.sampled_from(list(EnumNodeKind)))
+        def check_pickle_identity(node_kind: EnumNodeKind) -> None:
+            pickled = pickle.dumps(node_kind)
+            unpickled = pickle.loads(pickled)
+            assert unpickled == node_kind
+            assert unpickled is node_kind  # Same singleton
+
+        check_pickle_identity()
+
+    def test_all_node_types_map_to_valid_kind(self) -> None:
+        """Property: Every EnumNodeType maps to a valid EnumNodeKind."""
+        from hypothesis import given
+        from hypothesis import strategies as st
+
+        from omnibase_core.enums.enum_node_type import EnumNodeType
+
+        @given(st.sampled_from(list(EnumNodeType)))
+        def check_type_to_kind_mapping(node_type: EnumNodeType) -> None:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert isinstance(kind, EnumNodeKind)
+            assert kind in EnumNodeKind
+
+        check_type_to_kind_mapping()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

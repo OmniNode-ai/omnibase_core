@@ -88,14 +88,25 @@ class ModelYamlContract(BaseModel):
 
         if isinstance(value, str):
             # Handle legacy lowercase "compute" mapping -> use COMPUTE_GENERIC
-            if value.lower() == "compute":
-                return EnumNodeType.COMPUTE_GENERIC
-            if value.lower() == "effect":
-                return EnumNodeType.EFFECT_GENERIC
-            if value.lower() == "reducer":
-                return EnumNodeType.REDUCER_GENERIC
-            if value.lower() == "orchestrator":
-                return EnumNodeType.ORCHESTRATOR_GENERIC
+            # Log deprecation warning for legacy values to help teams update
+            legacy_mappings = {
+                "compute": EnumNodeType.COMPUTE_GENERIC,
+                "effect": EnumNodeType.EFFECT_GENERIC,
+                "reducer": EnumNodeType.REDUCER_GENERIC,
+                "orchestrator": EnumNodeType.ORCHESTRATOR_GENERIC,
+            }
+            value_lower = value.lower()
+            if value_lower in legacy_mappings:
+                import warnings
+
+                new_value = legacy_mappings[value_lower]
+                warnings.warn(
+                    f"Legacy node_type value '{value}' is deprecated. "
+                    f"Please update to '{new_value.value}' for forward compatibility.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                return new_value
 
             # Try to match string to EnumNodeType value (case-insensitive)
             value_lower = value.lower()
