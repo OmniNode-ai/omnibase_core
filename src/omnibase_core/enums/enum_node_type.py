@@ -24,8 +24,32 @@ def _populate_kind_map() -> None:
     """
     Populate the type-to-kind mapping with all EnumNodeType mappings.
 
-    This function is called lazily on first access to get_node_kind() to avoid
-    circular import issues at module load time.
+    This function is called at module import time (line 334) and also defensively
+    in get_node_kind() and related methods to handle edge cases.
+
+    Thread Safety
+    -------------
+    This function is thread-safe without explicit locking because:
+
+    1. **Module-level execution**: The primary call at line 334 executes during
+       module import, before any external code can access this module.
+
+    2. **Python's import lock**: Python's import machinery (importlib) uses a
+       per-module lock (_ModuleLock) that ensures module-level code executes
+       exactly once, even under concurrent imports from multiple threads.
+       See: https://docs.python.org/3/library/importlib.html#importlib.import_module
+
+    3. **Idempotent operation**: The _KIND_MAP_POPULATED flag ensures the mapping
+       is only populated once. Even if multiple threads somehow called this
+       function concurrently, dict.update() is atomic in CPython (due to the GIL),
+       and the mapping would simply be populated with the same values.
+
+    4. **Module cache**: After first import, subsequent imports return the cached
+       module from sys.modules, so the module-level code never re-executes.
+
+    The lazy initialization pattern is preserved in get_node_kind() and related
+    methods for defensive programming and to support testing scenarios where the
+    module might be reloaded.
     """
     global _KIND_MAP_POPULATED
     if _KIND_MAP_POPULATED:
@@ -331,6 +355,9 @@ class EnumNodeType(str, Enum):
 # Expose _KIND_MAP on the class for backward compatibility with tests.
 # Tests access EnumNodeType._KIND_MAP directly as an attribute.
 # We populate the mapping eagerly and attach it to the class.
+#
+# Thread Safety: This module-level call executes during import, which is
+# protected by Python's import lock. See _populate_kind_map() docstring.
 _populate_kind_map()
 setattr(EnumNodeType, "_KIND_MAP", _KIND_MAP)  # noqa: B010
 

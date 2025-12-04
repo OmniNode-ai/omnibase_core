@@ -806,5 +806,411 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
         ), "RUNTIME_HOST_GENERIC should NOT be in get_core_node_types() result"
 
 
+class TestNodeRoutingIntegration:
+    """
+    Integration tests for node type to kind routing.
+
+    These tests verify that the full routing pathway works correctly:
+    EnumNodeType -> get_node_kind() -> EnumNodeKind
+
+    Each test validates that specific categories of node types route
+    to their expected architectural kinds, ensuring the mapping is
+    semantically correct for realistic node routing scenarios.
+    """
+
+    def test_compute_types_route_to_compute_kind(self) -> None:
+        """
+        All COMPUTE-related types should route to COMPUTE kind.
+
+        COMPUTE nodes perform data processing and transformation:
+        - Pure calculations and algorithms
+        - Data mapping and transformation
+        - Validation and data manipulation
+
+        This test verifies the full routing pathway for all node types
+        that should resolve to EnumNodeKind.COMPUTE.
+        """
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        compute_types = [
+            EnumNodeType.COMPUTE_GENERIC,
+            EnumNodeType.TRANSFORMER,
+            EnumNodeType.AGGREGATOR,
+            EnumNodeType.FUNCTION,
+            EnumNodeType.MODEL,
+            # Legacy types mapped to COMPUTE for backward compatibility
+            EnumNodeType.PLUGIN,
+            EnumNodeType.SCHEMA,
+            EnumNodeType.NODE,
+            EnumNodeType.SERVICE,
+        ]
+
+        for node_type in compute_types:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert kind == EnumNodeKind.COMPUTE, (
+                f"Node type {node_type} should route to COMPUTE kind, "
+                f"but got {kind}. This breaks compute node routing."
+            )
+
+    def test_effect_types_route_to_effect_kind(self) -> None:
+        """
+        All EFFECT-related types should route to EFFECT kind.
+
+        EFFECT nodes handle external interactions (I/O):
+        - API calls and network operations
+        - Database operations
+        - File system operations
+        - Message queue interactions
+
+        This test verifies the full routing pathway for all node types
+        that should resolve to EnumNodeKind.EFFECT.
+        """
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        effect_types = [
+            EnumNodeType.EFFECT_GENERIC,
+            EnumNodeType.TOOL,
+            EnumNodeType.AGENT,
+        ]
+
+        for node_type in effect_types:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert kind == EnumNodeKind.EFFECT, (
+                f"Node type {node_type} should route to EFFECT kind, "
+                f"but got {kind}. This breaks effect node routing."
+            )
+
+    def test_reducer_types_route_to_reducer_kind(self) -> None:
+        """
+        All REDUCER-related types should route to REDUCER kind.
+
+        REDUCER nodes handle state aggregation and management:
+        - State machines (FSM with ModelIntent)
+        - Accumulators
+        - Event reduction and state transitions
+
+        This test verifies the full routing pathway for all node types
+        that should resolve to EnumNodeKind.REDUCER.
+        """
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        reducer_types = [
+            EnumNodeType.REDUCER_GENERIC,
+        ]
+
+        for node_type in reducer_types:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert kind == EnumNodeKind.REDUCER, (
+                f"Node type {node_type} should route to REDUCER kind, "
+                f"but got {kind}. This breaks reducer node routing."
+            )
+
+    def test_orchestrator_types_route_to_orchestrator_kind(self) -> None:
+        """
+        All ORCHESTRATOR-related types should route to ORCHESTRATOR kind.
+
+        ORCHESTRATOR nodes handle workflow coordination:
+        - Multi-step workflows (ModelAction with Leases)
+        - Parallel execution coordination
+        - Error recovery and retry logic
+        - Gateway and validation control flow
+
+        This test verifies the full routing pathway for all node types
+        that should resolve to EnumNodeKind.ORCHESTRATOR.
+        """
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        orchestrator_types = [
+            EnumNodeType.ORCHESTRATOR_GENERIC,
+            EnumNodeType.GATEWAY,
+            EnumNodeType.VALIDATOR,
+            EnumNodeType.WORKFLOW,
+        ]
+
+        for node_type in orchestrator_types:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert kind == EnumNodeKind.ORCHESTRATOR, (
+                f"Node type {node_type} should route to ORCHESTRATOR kind, "
+                f"but got {kind}. This breaks orchestrator node routing."
+            )
+
+    def test_runtime_host_types_route_to_runtime_host_kind(self) -> None:
+        """
+        RUNTIME_HOST types should route to RUNTIME_HOST kind.
+
+        RUNTIME_HOST nodes manage the execution environment:
+        - Node lifecycle management
+        - Execution coordination
+        - Runtime infrastructure support
+
+        This test verifies the full routing pathway for all node types
+        that should resolve to EnumNodeKind.RUNTIME_HOST.
+        """
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        runtime_host_types = [
+            EnumNodeType.RUNTIME_HOST_GENERIC,
+        ]
+
+        for node_type in runtime_host_types:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert kind == EnumNodeKind.RUNTIME_HOST, (
+                f"Node type {node_type} should route to RUNTIME_HOST kind, "
+                f"but got {kind}. This breaks runtime host node routing."
+            )
+
+    def test_routing_is_deterministic(self) -> None:
+        """
+        Same input should always produce same output.
+
+        This test verifies that the routing is deterministic by calling
+        get_node_kind() multiple times for the same input and ensuring
+        the result is always identical. Non-deterministic routing would
+        cause unpredictable behavior in node dispatch.
+        """
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        # Test determinism for a sample of each kind
+        test_cases = [
+            EnumNodeType.COMPUTE_GENERIC,
+            EnumNodeType.EFFECT_GENERIC,
+            EnumNodeType.REDUCER_GENERIC,
+            EnumNodeType.ORCHESTRATOR_GENERIC,
+            EnumNodeType.RUNTIME_HOST_GENERIC,
+            EnumNodeType.TRANSFORMER,
+            EnumNodeType.TOOL,
+            EnumNodeType.GATEWAY,
+        ]
+
+        for node_type in test_cases:
+            # Call get_node_kind multiple times
+            results = [
+                EnumNodeType.get_node_kind(node_type) for _ in range(5)
+            ]
+
+            # All results should be identical
+            first_result = results[0]
+            for i, result in enumerate(results):
+                assert result == first_result, (
+                    f"Routing for {node_type} is non-deterministic: "
+                    f"call {i} returned {result}, expected {first_result}"
+                )
+
+    def test_routing_covers_all_mapped_types(self) -> None:
+        """
+        Every mapped type should successfully route to a valid kind.
+
+        This test iterates through all EnumNodeType values (except UNKNOWN)
+        and verifies that each one successfully routes to a valid EnumNodeKind.
+        This is an integration-level completeness check.
+        """
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        # Track successful and failed routings
+        successful_routings: dict[EnumNodeType, EnumNodeKind] = {}
+        failed_routings: list[tuple[EnumNodeType, Exception]] = []
+
+        for node_type in EnumNodeType:
+            if node_type == EnumNodeType.UNKNOWN:
+                continue  # UNKNOWN intentionally has no routing
+
+            try:
+                kind = EnumNodeType.get_node_kind(node_type)
+                successful_routings[node_type] = kind
+            except Exception as e:
+                failed_routings.append((node_type, e))
+
+        # All mapped types should route successfully
+        assert not failed_routings, (
+            f"Some node types failed to route:\n"
+            + "\n".join(
+                f"  - {node_type}: {type(e).__name__}: {e}"
+                for node_type, e in failed_routings
+            )
+        )
+
+        # Verify all routed kinds are valid EnumNodeKind members
+        for node_type, kind in successful_routings.items():
+            assert kind in EnumNodeKind, (
+                f"{node_type} routed to {kind}, which is not a valid EnumNodeKind"
+            )
+
+    def test_routing_preserves_kind_semantics(self) -> None:
+        """
+        Routing should preserve semantic relationships between types and kinds.
+
+        This test verifies that the routing respects the semantic categories:
+        - Processing types route to processing kinds (COMPUTE, REDUCER)
+        - Control flow types route to control kinds (ORCHESTRATOR)
+        - I/O types route to effect kinds (EFFECT)
+        - Infrastructure types route to infrastructure kinds (RUNTIME_HOST)
+        """
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        # Semantic category mappings
+        processing_types = {
+            EnumNodeType.TRANSFORMER,
+            EnumNodeType.AGGREGATOR,
+            EnumNodeType.FUNCTION,
+            EnumNodeType.MODEL,
+        }
+        processing_kinds = {EnumNodeKind.COMPUTE}
+
+        control_types = {
+            EnumNodeType.GATEWAY,
+            EnumNodeType.VALIDATOR,
+            EnumNodeType.WORKFLOW,
+        }
+        control_kinds = {EnumNodeKind.ORCHESTRATOR}
+
+        io_types = {
+            EnumNodeType.TOOL,
+            EnumNodeType.AGENT,
+        }
+        io_kinds = {EnumNodeKind.EFFECT}
+
+        infrastructure_types = {
+            EnumNodeType.RUNTIME_HOST_GENERIC,
+        }
+        infrastructure_kinds = {EnumNodeKind.RUNTIME_HOST}
+
+        # Verify processing types route to processing kinds
+        for node_type in processing_types:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert kind in processing_kinds, (
+                f"Processing type {node_type} should route to a processing kind, "
+                f"but got {kind}"
+            )
+
+        # Verify control types route to control kinds
+        for node_type in control_types:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert kind in control_kinds, (
+                f"Control type {node_type} should route to a control kind, "
+                f"but got {kind}"
+            )
+
+        # Verify I/O types route to effect kinds
+        for node_type in io_types:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert kind in io_kinds, (
+                f"I/O type {node_type} should route to an effect kind, "
+                f"but got {kind}"
+            )
+
+        # Verify infrastructure types route to infrastructure kinds
+        for node_type in infrastructure_types:
+            kind = EnumNodeType.get_node_kind(node_type)
+            assert kind in infrastructure_kinds, (
+                f"Infrastructure type {node_type} should route to an "
+                f"infrastructure kind, but got {kind}"
+            )
+
+    def test_generic_types_route_to_corresponding_kinds(self) -> None:
+        """
+        Generic node types should route to their corresponding kinds.
+
+        Each generic type (e.g., COMPUTE_GENERIC) should route to its
+        corresponding kind (e.g., COMPUTE). This is a fundamental invariant
+        of the naming convention.
+        """
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        generic_mappings = [
+            (EnumNodeType.COMPUTE_GENERIC, EnumNodeKind.COMPUTE),
+            (EnumNodeType.EFFECT_GENERIC, EnumNodeKind.EFFECT),
+            (EnumNodeType.REDUCER_GENERIC, EnumNodeKind.REDUCER),
+            (EnumNodeType.ORCHESTRATOR_GENERIC, EnumNodeKind.ORCHESTRATOR),
+            (EnumNodeType.RUNTIME_HOST_GENERIC, EnumNodeKind.RUNTIME_HOST),
+        ]
+
+        for node_type, expected_kind in generic_mappings:
+            actual_kind = EnumNodeType.get_node_kind(node_type)
+            assert actual_kind == expected_kind, (
+                f"Generic type {node_type} should route to {expected_kind}, "
+                f"but got {actual_kind}. Generic types must route to their "
+                f"corresponding kinds."
+            )
+
+    def test_all_core_kinds_have_routing_sources(self) -> None:
+        """
+        Each core kind should have at least one type that routes to it.
+
+        This test verifies that every core architectural kind (COMPUTE, EFFECT,
+        REDUCER, ORCHESTRATOR) has at least one EnumNodeType that routes to it.
+        A kind without routing sources would be unreachable in the architecture.
+        """
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        core_kinds = {
+            EnumNodeKind.COMPUTE,
+            EnumNodeKind.EFFECT,
+            EnumNodeKind.REDUCER,
+            EnumNodeKind.ORCHESTRATOR,
+        }
+
+        # Build reverse mapping: kind -> list of types that route to it
+        kind_to_types: dict[EnumNodeKind, list[EnumNodeType]] = {
+            kind: [] for kind in core_kinds
+        }
+
+        for node_type in EnumNodeType:
+            if node_type == EnumNodeType.UNKNOWN:
+                continue
+            kind = EnumNodeType.get_node_kind(node_type)
+            if kind in kind_to_types:
+                kind_to_types[kind].append(node_type)
+
+        # Each core kind should have at least one type routing to it
+        kinds_without_sources = [
+            kind for kind, types in kind_to_types.items() if not types
+        ]
+
+        assert not kinds_without_sources, (
+            f"Some core kinds have no types routing to them: {kinds_without_sources}. "
+            f"Each core kind must be reachable from at least one EnumNodeType."
+        )
+
+    def test_runtime_host_kind_has_routing_sources(self) -> None:
+        """
+        RUNTIME_HOST kind should have at least one type that routes to it.
+
+        This test verifies that the RUNTIME_HOST kind is reachable from
+        at least one EnumNodeType. Without routing sources, RUNTIME_HOST
+        nodes could not be properly classified.
+        """
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        runtime_host_sources = []
+
+        for node_type in EnumNodeType:
+            if node_type == EnumNodeType.UNKNOWN:
+                continue
+            kind = EnumNodeType.get_node_kind(node_type)
+            if kind == EnumNodeKind.RUNTIME_HOST:
+                runtime_host_sources.append(node_type)
+
+        assert runtime_host_sources, (
+            "No EnumNodeType routes to RUNTIME_HOST kind. "
+            "RUNTIME_HOST must be reachable from at least one node type."
+        )
+
+        # Verify RUNTIME_HOST_GENERIC is one of the sources
+        assert EnumNodeType.RUNTIME_HOST_GENERIC in runtime_host_sources, (
+            "RUNTIME_HOST_GENERIC should route to RUNTIME_HOST kind"
+        )
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
