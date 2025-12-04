@@ -212,7 +212,8 @@ class TestLoadContract:
 
         assert isinstance(result, ModelContractContent)
         assert result.node_name == "TestNode"
-        assert result.node_type == EnumNodeType.COMPUTE
+        # COMPUTE in YAML is mapped to COMPUTE_GENERIC for backwards compatibility
+        assert result.node_type == EnumNodeType.COMPUTE_GENERIC
         assert result.tool_specification.main_tool_class == "TestToolClass"
         assert result.contract_version.major == 1
         assert result.contract_version.minor == 0
@@ -239,7 +240,8 @@ class TestLoadContract:
         result = contract_loader.load_contract(complex_contract_yaml)
 
         assert result.node_name == "ComplexNode"
-        assert result.node_type == EnumNodeType.EFFECT
+        # EFFECT in YAML is mapped to EFFECT_GENERIC for backwards compatibility
+        assert result.node_type == EnumNodeType.EFFECT_GENERIC
         assert result.contract_version.major == 2
         assert result.contract_version.minor == 5
         assert result.contract_version.patch == 3
@@ -477,7 +479,8 @@ class TestParseContractContent:
 
         result = contract_loader._parse_contract_content(raw_content, tmp_path)
 
-        assert result.node_type == EnumNodeType.EFFECT
+        # EFFECT is mapped to EFFECT_GENERIC for backwards compatibility
+        assert result.node_type == EnumNodeType.EFFECT_GENERIC
 
     def test_parse_contract_node_type_case_insensitive(
         self, contract_loader: ProtocolContractLoader, tmp_path: Path
@@ -491,7 +494,8 @@ class TestParseContractContent:
 
         result = contract_loader._parse_contract_content(raw_content, tmp_path)
 
-        assert result.node_type == EnumNodeType.REDUCER
+        # reducer is mapped to REDUCER_GENERIC for backwards compatibility
+        assert result.node_type == EnumNodeType.REDUCER_GENERIC
 
     def test_parse_contract_with_dependencies(
         self, contract_loader: ProtocolContractLoader, tmp_path: Path
@@ -878,7 +882,8 @@ class TestContractLoaderIntegration:
 
         assert isinstance(result, ModelContractContent)
         assert result.node_name == "TestNode"
-        assert result.node_type == EnumNodeType.COMPUTE
+        # COMPUTE in YAML is mapped to COMPUTE_GENERIC for backwards compatibility
+        assert result.node_type == EnumNodeType.COMPUTE_GENERIC
 
         # Verify caching
         assert (

@@ -248,9 +248,20 @@ class ProtocolContractLoader:
                             dependencies.append(dep_item)
 
             # Parse node type (default to COMPUTE_GENERIC if not specified)
+            # Backwards compatibility: map old EnumNodeKind names to new EnumNodeType names
             node_type_str = raw_content.get("node_type", "COMPUTE_GENERIC")
             if isinstance(node_type_str, str):
-                node_type = EnumNodeType(node_type_str.upper())
+                node_type_upper = node_type_str.upper()
+                # Map old EnumNodeKind values to new EnumNodeType values for backwards compat
+                legacy_mapping = {
+                    "COMPUTE": "COMPUTE_GENERIC",
+                    "EFFECT": "EFFECT_GENERIC",
+                    "REDUCER": "REDUCER_GENERIC",
+                    "ORCHESTRATOR": "ORCHESTRATOR_GENERIC",
+                    "RUNTIME_HOST": "RUNTIME_HOST_GENERIC",
+                }
+                node_type_mapped = legacy_mapping.get(node_type_upper, node_type_upper)
+                node_type = EnumNodeType(node_type_mapped)
             else:
                 node_type = EnumNodeType.COMPUTE_GENERIC
 

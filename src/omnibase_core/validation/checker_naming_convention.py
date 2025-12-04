@@ -29,7 +29,9 @@ class NamingConventionChecker(ast.NodeVisitor):
         # Skip anti-pattern check for error taxonomy classes
         # Error classes legitimately use terms like "Handler" in names like "HandlerConfigurationError"
         # or "Service" in names like "InfraServiceUnavailableError"
-        is_error_class = class_name.endswith("Error") or class_name.endswith("Exception")
+        is_error_class = class_name.endswith("Error") or class_name.endswith(
+            "Exception"
+        )
         is_in_errors_dir = "/errors/" in self.file_path or self.file_path.endswith(
             "/errors.py"
         )
