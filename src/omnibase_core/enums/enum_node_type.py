@@ -215,7 +215,7 @@ class EnumNodeType(str, Enum):
         _populate_kind_map()
 
         try:
-            return _KIND_MAP[node_type]
+            result = _KIND_MAP[node_type]
         except KeyError as e:
             from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
             from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -228,6 +228,8 @@ class EnumNodeType(str, Enum):
                     "available_types": [str(k) for k in _KIND_MAP.keys()],
                 },
             ) from e
+        else:
+            return result
 
     @classmethod
     def has_node_kind(cls, node_type: EnumNodeType) -> bool:

@@ -72,7 +72,7 @@ class ModelYamlContract(BaseModel):
         Supports:
         - EnumNodeType enum values
         - String values that match EnumNodeType values
-        - Legacy "compute" string (maps to COMPUTE)
+        - Legacy lowercase values like "compute" (map to *_GENERIC values, e.g., COMPUTE_GENERIC)
 
         Args:
             value: Node type value to validate

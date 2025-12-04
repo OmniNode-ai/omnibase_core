@@ -340,6 +340,7 @@ class ProtocolContractLoader:
                 "patch": content.contract_version.patch,
             },
             "node_name": content.node_name,
+            "node_type": str(content.node_type),
             "tool_specification": {
                 "main_tool_class": content.tool_specification.main_tool_class,
             },

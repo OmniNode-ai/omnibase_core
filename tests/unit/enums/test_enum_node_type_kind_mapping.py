@@ -541,9 +541,8 @@ class TestEnumNodeTypeKindMappingEdgeCases:
         # this documents the expected behavior)
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-        get_node_kind_method = getattr(EnumNodeType, "get_node_kind")
         with pytest.raises((KeyError, ValueError, AttributeError, ModelOnexError)):
-            get_node_kind_method("INVALID_TYPE")
+            EnumNodeType.get_node_kind("INVALID_TYPE")  # type: ignore[arg-type]
 
     def test_mapping_table_is_immutable(self) -> None:
         """
