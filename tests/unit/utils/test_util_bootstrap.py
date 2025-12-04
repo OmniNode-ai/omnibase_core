@@ -487,49 +487,49 @@ class TestEmitLogEventSync:
 
 
 class TestGetRegistryNode:
-    """Tests for _get_registry_node() private function."""
+    """Tests for _get_registry_node() private function.
 
-    def test_get_registry_node_success(self):
-        """Test successful registry node retrieval via mocked import."""
-        # Arrange
-        mock_registry = Mock()
-        mock_get_spi_registry = Mock(return_value=mock_registry)
+    NOTE (v0.3.6): omnibase_spi was removed in v0.3.6 as part of the dependency
+    inversion refactoring. _get_registry_node() now always returns None to trigger
+    fallback service resolution via Core's native container-based DI system.
+    """
 
-        # Mock the module import
-        import sys
+    def test_get_registry_node_returns_none_without_spi(self):
+        """Test that _get_registry_node returns None after SPI removal.
 
-        mock_module = Mock()
-        mock_module.get_spi_registry = mock_get_spi_registry
-
+        Since v0.3.6, the SPI dependency was removed and registry discovery
+        is handled through Core's native container-based DI system.
+        _get_registry_node() always returns None to trigger fallback resolution.
+        """
         # Act
-        with patch.dict(sys.modules, {"omnibase_spi.spi_registry": mock_module}):
-            result = util_bootstrap._get_registry_node()
+        result = util_bootstrap._get_registry_node()
+
+        # Assert - always returns None since SPI was removed in v0.3.6
+        assert result is None
+
+    def test_get_registry_node_triggers_fallback_services(self):
+        """Test that None return triggers fallback service resolution.
+
+        This verifies the bootstrap system correctly falls back to minimal
+        services when _get_registry_node() returns None.
+        """
+        # Act
+        result = util_bootstrap._get_registry_node()
 
         # Assert
-        assert result == mock_registry
+        assert result is None
 
-    def test_get_registry_node_import_error(self):
-        """Test when omnibase_spi is not available."""
-        # Arrange - ensure the module is not available
-        import sys
+        # Verify fallback services work
+        logging_service = util_bootstrap.get_logging_service()
+        assert logging_service is not None
+        assert hasattr(logging_service, "emit_log_event")
 
-        # Act & Assert
-        # Since we can't easily force an ImportError in tests, we test the behavior
-        # by verifying _get_registry_node handles the case gracefully
-        # In production, if omnibase_spi is not installed, this returns None
-        with patch.dict(sys.modules, {"omnibase_spi.spi_registry": None}):
-            result = util_bootstrap._get_registry_node()
-            # Will return None or raise ImportError depending on environment
-            assert result is None or isinstance(result, type(None))
-
-    def test_get_registry_node_handles_missing_module(self):
-        """Test that _get_registry_node returns None when import fails."""
-        # This test verifies the ImportError handling logic
-        # In actual use, ImportError is caught and None is returned
-        result = util_bootstrap._get_registry_node()
-        # Should return None if omnibase_spi is not available
-        # or return a registry if it is available
-        assert result is None or hasattr(result, "get_service")
+    def test_get_registry_node_docstring_mentions_spi_removal(self):
+        """Test that _get_registry_node has documentation about SPI removal."""
+        # Verify the function exists and has documentation
+        assert util_bootstrap._get_registry_node.__doc__ is not None
+        # The docstring should mention the SPI removal
+        assert "v0.3.6" in util_bootstrap._get_registry_node.__doc__
 
 
 # =============================================================================

@@ -2,6 +2,12 @@
 
 This document describes the validation domain's protocol compliance with omnibase_spi validation protocols.
 
+> **Note (v0.3.6)**: The `omnibase_spi` dependency was removed in v0.3.6 as part of
+> the dependency inversion refactoring. SPI now depends on Core (not the reverse).
+> Protocol compliance tests that depended on SPI protocols have been removed.
+> This document is retained for historical reference and will be updated when
+> Core-native protocol compliance is implemented.
+
 ## Overview
 
 The omnibase_core validation domain implements two key SPI protocols:
@@ -140,24 +146,23 @@ print(f"Duplicates: {result.duplicates_found}")
 
 ## Protocol Compliance Testing
 
-Comprehensive tests verify protocol compliance in `tests/unit/validation/test_protocol_compliance.py`:
-
-### Test Coverage
-
-- ✅ Protocol implementation verification (`isinstance()` checks)
-- ✅ Required attributes presence and types
-- ✅ Required methods presence and callability
-- ✅ Backward compatibility verification
-- ✅ Optional parameter handling
-- ✅ Stub method behavior (NotImplementedError with helpful messages)
-- ✅ Polymorphic usage validation
+> **Note (v0.3.6)**: The protocol compliance tests (`tests/unit/validation/test_protocol_compliance.py`)
+> were removed in v0.3.6 because they depended on `omnibase_spi` protocols. These tests verified:
+>
+> - Protocol implementation verification (`isinstance()` checks against SPI protocols)
+> - Required attributes presence and types
+> - Required methods presence and callability
+> - Backward compatibility verification
+> - Optional parameter handling
+> - Stub method behavior (NotImplementedError with helpful messages)
+> - Polymorphic usage validation
+>
+> Future work: Implement Core-native protocol compliance testing once Core defines its own
+> protocol interfaces independent of SPI.
 
 ### Running Tests
 
 ```
-# Run protocol compliance tests
-poetry run pytest tests/unit/validation/test_protocol_compliance.py -v
-
 # Run all validation tests (verify backward compatibility)
 poetry run pytest tests/unit/validation/ -v
 ```
@@ -269,7 +274,8 @@ This allows:
 
 ## See Also
 
-- [omnibase_spi Validation Protocols](https://github.com/OmniNode-ai/omnibase_spi/tree/main/src/omnibase_spi/protocols/validation)
-- [Protocol Compliance Tests](../../tests/unit/validation/test_protocol_compliance.py)
 - [Contract Validator](../../src/omnibase_core/validation/contract_validator.py)
 - [Protocol Auditor](../../src/omnibase_core/validation/auditor_protocol.py)
+
+> **Note (v0.3.6)**: The link to omnibase_spi validation protocols was removed as
+> SPI now depends on Core. See the omnibase_spi repository for SPI-specific protocols.
