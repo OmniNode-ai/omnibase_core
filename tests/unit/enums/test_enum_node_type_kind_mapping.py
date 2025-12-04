@@ -122,8 +122,8 @@ class TestEnumNodeTypeKindMapping:
                     f"vs EnumNodeType.{type_member.name}"
                 )
 
-            assert False, (
-                f"Name collisions detected between EnumNodeKind and EnumNodeType:\n"
+            raise AssertionError(
+                "Name collisions detected between EnumNodeKind and EnumNodeType:\n"
                 + "\n".join(collision_details)
                 + "\n\nEnumNodeType names must not match EnumNodeKind names. "
                 "Consider using suffixes like COMPUTE_GENERIC instead of COMPUTE."

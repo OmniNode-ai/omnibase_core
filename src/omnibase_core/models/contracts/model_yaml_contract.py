@@ -118,9 +118,7 @@ class ModelYamlContract(BaseModel):
             from omnibase_core.models.common.model_error_context import (
                 ModelErrorContext,
             )
-            from omnibase_core.models.common.model_schema_value import (
-                ModelSchemaValue,
-            )
+            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
             error_context = ModelErrorContext.with_context(
                 {

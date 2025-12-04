@@ -765,6 +765,7 @@ class TestAdvancedIntegration:
             ("COMPUTE_GENERIC", EnumNodeType.COMPUTE_GENERIC),
             ("REDUCER_GENERIC", EnumNodeType.REDUCER_GENERIC),
             ("ORCHESTRATOR_GENERIC", EnumNodeType.ORCHESTRATOR_GENERIC),
+            ("RUNTIME_HOST_GENERIC", EnumNodeType.RUNTIME_HOST_GENERIC),
         ]
 
         for node_type_str, node_type_enum in node_types:

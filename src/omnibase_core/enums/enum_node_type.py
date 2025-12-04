@@ -300,6 +300,34 @@ class EnumNodeType(str, Enum):
         }
 
 
+# ==============================================================================
+# DYNAMIC CLASSMETHOD ATTACHMENT - DOCUMENTED EXCEPTION TO STRICT MYPY RULES
+# ==============================================================================
+#
+# WHY THIS PATTERN IS NECESSARY:
+# This module uses dynamic attribute attachment to avoid circular imports between
+# EnumNodeType and EnumNodeKind. The circular dependency arises because:
+# 1. EnumNodeType.get_node_kind() returns EnumNodeKind
+# 2. EnumNodeKind could need EnumNodeType for reverse lookups
+# 3. Both are fundamental enums that must be importable independently
+#
+# The lazy initialization pattern (_populate_kind_map) defers the import of
+# EnumNodeKind until first use, breaking the circular import at module load time.
+#
+# WHY type: ignore IS ACCEPTABLE HERE:
+# The setattr() call dynamically attaches _KIND_MAP to the class for backward
+# compatibility with tests that access EnumNodeType._KIND_MAP directly. Mypy
+# cannot statically verify dynamically attached attributes, so it may report
+# [attr-defined] errors. If such errors arise, `# type: ignore[attr-defined]`
+# suppression is acceptable because:
+# - The attribute IS defined at runtime (verified by tests)
+# - The code is fully functional and tested
+# - The suppression only affects static analysis, not runtime behavior
+# - This follows the ONEX pattern for avoiding circular imports in enum modules
+#
+# See CLAUDE.md section "Node Classification Enums" for architectural context.
+# ==============================================================================
+
 # Expose _KIND_MAP on the class for backward compatibility with tests.
 # Tests access EnumNodeType._KIND_MAP directly as an attribute.
 # We populate the mapping eagerly and attach it to the class.
