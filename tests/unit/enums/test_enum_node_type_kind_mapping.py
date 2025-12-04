@@ -5,9 +5,16 @@ This test module enforces hard invariants for the mapping between
 EnumNodeType (specific implementations) and EnumNodeKind (architectural roles).
 
 Critical Invariants Enforced:
-1. Every EnumNodeType MUST map to exactly one EnumNodeKind
-2. The mapping MUST be complete (no unmapped types)
+1. Every EnumNodeType (except UNKNOWN) MUST map to exactly one EnumNodeKind
+2. The mapping MUST be complete for all mapped types
 3. No EnumNodeType may share names with EnumNodeKind (prevent collisions)
+4. UNKNOWN intentionally has NO mapping - it must raise ModelOnexError
+
+DESIGN DECISION - UNKNOWN is intentionally unmapped:
+- UNKNOWN semantically means "we don't know what this is"
+- Silently defaulting UNKNOWN to COMPUTE would hide bugs
+- Callers must explicitly handle the UNKNOWN case with proper error handling
+- get_node_kind(EnumNodeType.UNKNOWN) raises ModelOnexError by design
 
 These tests will FAIL if the mapping becomes incomplete, ensuring regression
 protection during refactoring and future development.
@@ -26,13 +33,19 @@ class TestEnumNodeTypeKindMapping:
 
     def test_all_node_types_have_kind_mapping(self) -> None:
         """
-        Ensure every EnumNodeType maps to exactly one EnumNodeKind.
+        Ensure every EnumNodeType (except UNKNOWN) maps to exactly one EnumNodeKind.
 
-        This test enforces COMPLETENESS: no EnumNodeType can exist without
-        a corresponding EnumNodeKind mapping.
+        This test enforces COMPLETENESS: no EnumNodeType (except UNKNOWN) can exist
+        without a corresponding EnumNodeKind mapping.
+
+        DESIGN DECISION - UNKNOWN is intentionally unmapped:
+        - UNKNOWN semantically means "we don't know what this is"
+        - Silently defaulting UNKNOWN to COMPUTE would hide bugs
+        - Callers must explicitly handle the UNKNOWN case
+        - See test_unknown_type_intentionally_unmapped() for explicit verification
 
         Failure Scenarios:
-        - New EnumNodeType added without mapping
+        - New EnumNodeType added without mapping (except UNKNOWN)
         - Mapping table missing entries
         - Typos in mapping keys
 
@@ -42,13 +55,14 @@ class TestEnumNodeTypeKindMapping:
         if not hasattr(EnumNodeType, "_KIND_MAP"):
             pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
-        all_types = set(EnumNodeType)
+        # UNKNOWN is intentionally unmapped - exclude it from completeness check
+        all_types = set(EnumNodeType) - {EnumNodeType.UNKNOWN}
         mapped_types = set(EnumNodeType._KIND_MAP.keys())
 
         unmapped = all_types - mapped_types
         assert not unmapped, (
             f"Unmapped EnumNodeType values: {unmapped}. "
-            f"Every type must map to a kind in EnumNodeType._KIND_MAP. "
+            f"Every type (except UNKNOWN) must map to a kind in EnumNodeType._KIND_MAP. "
             f"Add mappings for these types to EnumNodeType._KIND_MAP."
         )
 
@@ -117,10 +131,13 @@ class TestEnumNodeTypeKindMapping:
 
     def test_get_node_kind_returns_valid_kind(self) -> None:
         """
-        Verify get_node_kind() returns valid EnumNodeKind for all types.
+        Verify get_node_kind() returns valid EnumNodeKind for all mapped types.
 
         This test enforces TYPE SAFETY: every mapping MUST resolve to a
         valid EnumNodeKind member.
+
+        NOTE: UNKNOWN is excluded because it intentionally raises ModelOnexError.
+        See test_unknown_type_intentionally_unmapped() for verification.
 
         Failure Scenarios:
         - Mapping contains invalid string values
@@ -133,7 +150,11 @@ class TestEnumNodeTypeKindMapping:
         if not hasattr(EnumNodeType, "get_node_kind"):
             pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
+        # Exclude UNKNOWN - it intentionally raises ModelOnexError
         for node_type in EnumNodeType:
+            if node_type == EnumNodeType.UNKNOWN:
+                continue  # UNKNOWN is tested separately in test_unknown_type_intentionally_unmapped
+
             kind = EnumNodeType.get_node_kind(node_type)
 
             assert isinstance(kind, EnumNodeKind), (
@@ -186,14 +207,19 @@ class TestEnumNodeTypeKindMapping:
 
     def test_kind_map_is_complete(self) -> None:
         """
-        Ensure mapping table has exactly as many entries as enum values.
+        Ensure mapping table has exactly as many entries as mapped enum values.
 
         This test enforces COMPLETENESS: the mapping table must cover ALL
-        EnumNodeType values, no more and no less.
+        EnumNodeType values that should be mapped (excludes UNKNOWN).
+
+        DESIGN DECISION - UNKNOWN is intentionally unmapped:
+        - UNKNOWN semantically means "we don't know what this is"
+        - Silently defaulting UNKNOWN to COMPUTE would hide bugs
+        - Expected count = len(EnumNodeType) - 1 (excluding UNKNOWN)
 
         Failure Scenarios:
-        - Missing mappings (len(_KIND_MAP) < len(EnumNodeType))
-        - Extra mappings (len(_KIND_MAP) > len(EnumNodeType))
+        - Missing mappings (len(_KIND_MAP) < expected)
+        - Extra mappings (len(_KIND_MAP) > expected)
         - Duplicate entries
 
         CRITICAL: Incomplete mapping causes runtime errors during node dispatch.
@@ -203,13 +229,14 @@ class TestEnumNodeTypeKindMapping:
             pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         mapping_count = len(EnumNodeType._KIND_MAP)
-        enum_count = len(EnumNodeType)
+        # UNKNOWN is intentionally unmapped, so expected count is len - 1
+        expected_count = len(EnumNodeType) - 1
 
-        assert mapping_count == enum_count, (
+        assert mapping_count == expected_count, (
             f"Mapping table has {mapping_count} entries, "
-            f"but EnumNodeType has {enum_count} values. "
-            f"Every type must be mapped exactly once. "
-            f"Missing: {set(EnumNodeType) - set(EnumNodeType._KIND_MAP.keys())}, "
+            f"but expected {expected_count} (all EnumNodeType values except UNKNOWN). "
+            f"Every type (except UNKNOWN) must be mapped exactly once. "
+            f"Missing: {set(EnumNodeType) - {EnumNodeType.UNKNOWN} - set(EnumNodeType._KIND_MAP.keys())}, "
             f"Extra: {set(EnumNodeType._KIND_MAP.keys()) - set(EnumNodeType)}"
         )
 
@@ -323,6 +350,51 @@ class TestEnumNodeTypeKindMapping:
 
 class TestEnumNodeTypeKindMappingEdgeCases:
     """Test edge cases and error conditions for mapping."""
+
+    def test_unknown_type_intentionally_unmapped(self) -> None:
+        """
+        Verify that UNKNOWN node type raises ModelOnexError when get_node_kind is called.
+
+        DESIGN DECISION - UNKNOWN intentionally has NO kind mapping because:
+        - UNKNOWN semantically means "we don't know what this is"
+        - Silently defaulting UNKNOWN to COMPUTE would hide bugs in node classification
+        - Callers must explicitly handle the UNKNOWN case with proper error handling
+        - This forces explicit error handling rather than silent failures
+
+        This test ensures the design decision is preserved across refactoring.
+        """
+        # Skip this test if get_node_kind doesn't exist yet (pre-refactor state)
+        if not hasattr(EnumNodeType, "get_node_kind"):
+            pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
+
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+        # UNKNOWN must raise ModelOnexError, NOT return a default kind
+        with pytest.raises(ModelOnexError) as exc_info:
+            EnumNodeType.get_node_kind(EnumNodeType.UNKNOWN)
+
+        # Verify the error message contains useful context
+        error = exc_info.value
+        assert "UNKNOWN" in str(error) or (
+            error.context and "UNKNOWN" in str(error.context.get("node_type", ""))
+        ), f"Error message should mention UNKNOWN. Got: {error}, context: {error.context}"
+
+    def test_unknown_is_not_in_kind_map(self) -> None:
+        """
+        Verify that UNKNOWN is explicitly NOT in _KIND_MAP.
+
+        This test enforces that UNKNOWN is intentionally excluded from the mapping,
+        not accidentally forgotten. If UNKNOWN appears in _KIND_MAP, this test fails.
+        """
+        # Skip this test if _KIND_MAP doesn't exist yet (pre-refactor state)
+        if not hasattr(EnumNodeType, "_KIND_MAP"):
+            pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
+
+        assert EnumNodeType.UNKNOWN not in EnumNodeType._KIND_MAP, (
+            "EnumNodeType.UNKNOWN should NOT be in _KIND_MAP. "
+            "UNKNOWN intentionally has no kind mapping - callers must handle it explicitly. "
+            "Remove UNKNOWN from _KIND_MAP to preserve this design decision."
+        )
 
     def test_get_node_kind_with_invalid_type_raises_error(self) -> None:
         """

@@ -149,12 +149,15 @@ def _populate_kind_map() -> None:
             EnumNodeType.WORKFLOW: EnumNodeKind.ORCHESTRATOR,
             # RUNTIME_HOST kind - runtime infrastructure
             EnumNodeType.RUNTIME_HOST_GENERIC: EnumNodeKind.RUNTIME_HOST,
-            # Generic/unknown types - map to COMPUTE by default for backward compatibility
+            # Generic types - map to COMPUTE by default for backward compatibility
             EnumNodeType.PLUGIN: EnumNodeKind.COMPUTE,
             EnumNodeType.SCHEMA: EnumNodeKind.COMPUTE,
             EnumNodeType.NODE: EnumNodeKind.COMPUTE,
             EnumNodeType.SERVICE: EnumNodeKind.COMPUTE,
-            EnumNodeType.UNKNOWN: EnumNodeKind.COMPUTE,
+            # NOTE: EnumNodeType.UNKNOWN intentionally has NO mapping.
+            # UNKNOWN semantically means "we don't know what this is" - it should NOT
+            # silently default to COMPUTE. Calling get_node_kind(EnumNodeType.UNKNOWN)
+            # will raise ModelOnexError, forcing callers to handle the unknown case explicitly.
         }
     )
 

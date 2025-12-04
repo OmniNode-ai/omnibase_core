@@ -448,19 +448,51 @@ class TestEnumNodeKindPropertyBased:
         check_pickle_identity()
 
     def test_all_node_types_map_to_valid_kind(self) -> None:
-        """Property: Every EnumNodeType maps to a valid EnumNodeKind."""
+        """Property: Every EnumNodeType (except UNKNOWN) maps to a valid EnumNodeKind.
+
+        NOTE: UNKNOWN is intentionally excluded from this test because:
+        - UNKNOWN semantically means "we don't know what this is"
+        - Silently defaulting UNKNOWN to COMPUTE would hide bugs
+        - Callers must explicitly handle the UNKNOWN case
+        - get_node_kind(EnumNodeType.UNKNOWN) raises ModelOnexError by design
+        """
         from hypothesis import given
         from hypothesis import strategies as st
 
         from omnibase_core.enums.enum_node_type import EnumNodeType
 
-        @given(st.sampled_from(list(EnumNodeType)))
+        # Exclude UNKNOWN - it intentionally has no kind mapping
+        mapped_types = [t for t in EnumNodeType if t != EnumNodeType.UNKNOWN]
+
+        @given(st.sampled_from(mapped_types))
         def check_type_to_kind_mapping(node_type: EnumNodeType) -> None:
             kind = EnumNodeType.get_node_kind(node_type)
             assert isinstance(kind, EnumNodeKind)
             assert kind in EnumNodeKind
 
         check_type_to_kind_mapping()
+
+    def test_unknown_node_type_raises_error(self) -> None:
+        """Verify that UNKNOWN node type raises ModelOnexError when get_node_kind is called.
+
+        DESIGN DECISION: UNKNOWN intentionally has NO kind mapping because:
+        - UNKNOWN semantically means "we don't know what this is"
+        - Silently defaulting to COMPUTE would hide bugs in node classification
+        - Callers must explicitly handle the UNKNOWN case with proper error handling
+        - This forces explicit error handling rather than silent failures
+        """
+        import pytest
+
+        from omnibase_core.enums.enum_node_type import EnumNodeType
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            EnumNodeType.get_node_kind(EnumNodeType.UNKNOWN)
+
+        # Verify the error contains useful context
+        assert "UNKNOWN" in str(exc_info.value) or "UNKNOWN" in str(
+            exc_info.value.context
+        )
 
 
 if __name__ == "__main__":

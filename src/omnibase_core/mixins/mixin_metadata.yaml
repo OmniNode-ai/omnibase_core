@@ -2624,7 +2624,7 @@ mixin_fsm_execution:
       description: "FSM-driven reducer node"
       pattern: |
         # contracts/reducer_metrics.yaml
-        node_type: REDUCER
+        node_type: REDUCER_GENERIC
         state_transitions:
           state_machine_name: metrics_aggregation
           states:
@@ -2940,7 +2940,7 @@ mixin_workflow_execution:
       description: "Workflow-driven orchestrator node"
       pattern: |
         # contracts/orchestrator_data_pipeline.yaml
-        node_type: ORCHESTRATOR
+        node_type: ORCHESTRATOR_GENERIC
         workflow_coordination:
           execution_mode: sequential
           workflow_definition:

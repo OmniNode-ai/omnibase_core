@@ -54,7 +54,7 @@ contract_version:
   minor: 0
   patch: 0
 node_name: TestNode
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: TestToolClass
 """,
@@ -87,7 +87,7 @@ contract_version:
   minor: 5
   patch: 3
 node_name: ComplexNode
-node_type: EFFECT
+node_type: EFFECT_GENERIC
 tool_specification:
   main_tool_class: ComplexToolClass
 dependencies:
@@ -212,7 +212,6 @@ class TestLoadContract:
 
         assert isinstance(result, ModelContractContent)
         assert result.node_name == "TestNode"
-        # COMPUTE in YAML is mapped to COMPUTE_GENERIC for backwards compatibility
         assert result.node_type == EnumNodeType.COMPUTE_GENERIC
         assert result.tool_specification.main_tool_class == "TestToolClass"
         assert result.contract_version.major == 1
@@ -240,7 +239,6 @@ class TestLoadContract:
         result = contract_loader.load_contract(complex_contract_yaml)
 
         assert result.node_name == "ComplexNode"
-        # EFFECT in YAML is mapped to EFFECT_GENERIC for backwards compatibility
         assert result.node_type == EnumNodeType.EFFECT_GENERIC
         assert result.contract_version.major == 2
         assert result.contract_version.minor == 5
@@ -473,13 +471,12 @@ class TestParseContractContent:
         """Test parsing contract with node type."""
         raw_content = {
             "node_name": "TestNode",
-            "node_type": "EFFECT",
+            "node_type": "EFFECT_GENERIC",
             "tool_specification": {"main_tool_class": "TestClass"},
         }
 
         result = contract_loader._parse_contract_content(raw_content, tmp_path)
 
-        # EFFECT is mapped to EFFECT_GENERIC for backwards compatibility
         assert result.node_type == EnumNodeType.EFFECT_GENERIC
 
     def test_parse_contract_node_type_case_insensitive(
@@ -488,13 +485,13 @@ class TestParseContractContent:
         """Test parsing contract with lowercase node type."""
         raw_content = {
             "node_name": "TestNode",
-            "node_type": "reducer",
+            "node_type": "reducer_generic",
             "tool_specification": {"main_tool_class": "TestClass"},
         }
 
         result = contract_loader._parse_contract_content(raw_content, tmp_path)
 
-        # reducer is mapped to REDUCER_GENERIC for backwards compatibility
+        # lowercase reducer_generic should be converted to REDUCER_GENERIC
         assert result.node_type == EnumNodeType.REDUCER_GENERIC
 
     def test_parse_contract_with_dependencies(
@@ -882,7 +879,6 @@ class TestContractLoaderIntegration:
 
         assert isinstance(result, ModelContractContent)
         assert result.node_name == "TestNode"
-        # COMPUTE in YAML is mapped to COMPUTE_GENERIC for backwards compatibility
         assert result.node_type == EnumNodeType.COMPUTE_GENERIC
 
         # Verify caching
