@@ -54,7 +54,7 @@ contract_version:
   minor: 0
   patch: 0
 node_name: TestNode
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: TestToolClass
 """,
@@ -87,7 +87,7 @@ contract_version:
   minor: 5
   patch: 3
 node_name: ComplexNode
-node_type: EFFECT
+node_type: EFFECT_GENERIC
 tool_specification:
   main_tool_class: ComplexToolClass
 dependencies:
@@ -212,7 +212,7 @@ class TestLoadContract:
 
         assert isinstance(result, ModelContractContent)
         assert result.node_name == "TestNode"
-        assert result.node_type == EnumNodeType.COMPUTE
+        assert result.node_type == EnumNodeType.COMPUTE_GENERIC
         assert result.tool_specification.main_tool_class == "TestToolClass"
         assert result.contract_version.major == 1
         assert result.contract_version.minor == 0
@@ -230,7 +230,7 @@ class TestLoadContract:
         assert result.contract_version.major == 1
         assert result.contract_version.minor == 0
         assert result.contract_version.patch == 0
-        assert result.node_type == EnumNodeType.COMPUTE  # Default
+        assert result.node_type == EnumNodeType.COMPUTE_GENERIC  # Default
 
     def test_load_complex_contract(
         self, contract_loader: ProtocolContractLoader, complex_contract_yaml: Path
@@ -239,7 +239,7 @@ class TestLoadContract:
         result = contract_loader.load_contract(complex_contract_yaml)
 
         assert result.node_name == "ComplexNode"
-        assert result.node_type == EnumNodeType.EFFECT
+        assert result.node_type == EnumNodeType.EFFECT_GENERIC
         assert result.contract_version.major == 2
         assert result.contract_version.minor == 5
         assert result.contract_version.patch == 3
@@ -471,13 +471,13 @@ class TestParseContractContent:
         """Test parsing contract with node type."""
         raw_content = {
             "node_name": "TestNode",
-            "node_type": "EFFECT",
+            "node_type": "EFFECT_GENERIC",
             "tool_specification": {"main_tool_class": "TestClass"},
         }
 
         result = contract_loader._parse_contract_content(raw_content, tmp_path)
 
-        assert result.node_type == EnumNodeType.EFFECT
+        assert result.node_type == EnumNodeType.EFFECT_GENERIC
 
     def test_parse_contract_node_type_case_insensitive(
         self, contract_loader: ProtocolContractLoader, tmp_path: Path
@@ -485,13 +485,14 @@ class TestParseContractContent:
         """Test parsing contract with lowercase node type."""
         raw_content = {
             "node_name": "TestNode",
-            "node_type": "reducer",
+            "node_type": "reducer_generic",
             "tool_specification": {"main_tool_class": "TestClass"},
         }
 
         result = contract_loader._parse_contract_content(raw_content, tmp_path)
 
-        assert result.node_type == EnumNodeType.REDUCER
+        # lowercase reducer_generic should be converted to REDUCER_GENERIC
+        assert result.node_type == EnumNodeType.REDUCER_GENERIC
 
     def test_parse_contract_with_dependencies(
         self, contract_loader: ProtocolContractLoader, tmp_path: Path
@@ -582,7 +583,7 @@ class TestConvertContractContentToDict:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=2, patch=3),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -609,7 +610,7 @@ class TestConvertContractContentToDict:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=99, minor=88, patch=77),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -640,7 +641,7 @@ class TestValidateContractStructure:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -661,7 +662,7 @@ class TestValidateContractStructure:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="",  # Empty node name
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class="TestClass"),
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -685,7 +686,7 @@ class TestValidateContractStructure:
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=0, patch=0),
             node_name="TestNode",
-            node_type=EnumNodeType.COMPUTE,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
             tool_specification=ModelToolSpecification(main_tool_class=""),  # Empty
             input_state=ModelYamlSchemaObject(
                 object_type="object", description="Input"
@@ -878,7 +879,7 @@ class TestContractLoaderIntegration:
 
         assert isinstance(result, ModelContractContent)
         assert result.node_name == "TestNode"
-        assert result.node_type == EnumNodeType.COMPUTE
+        assert result.node_type == EnumNodeType.COMPUTE_GENERIC
 
         # Verify caching
         assert (

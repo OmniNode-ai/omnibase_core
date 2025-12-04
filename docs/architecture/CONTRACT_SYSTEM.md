@@ -72,7 +72,7 @@ Pydantic provides automatic validation:
 contract = ModelContractCompute(
     name="price_calculator",
     version="1.0.0",
-    node_type=EnumNodeType.COMPUTE,
+    node_type=EnumNodeType.COMPUTE_GENERIC,
     input_data={"price": 100}
 )
 

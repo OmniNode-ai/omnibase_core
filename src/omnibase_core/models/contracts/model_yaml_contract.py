@@ -72,7 +72,7 @@ class ModelYamlContract(BaseModel):
         Supports:
         - EnumNodeType enum values
         - String values that match EnumNodeType values
-        - Legacy "compute" string (maps to COMPUTE)
+        - Legacy lowercase values like "compute" (map to *_GENERIC values, e.g., COMPUTE_GENERIC)
 
         Args:
             value: Node type value to validate
@@ -87,45 +87,56 @@ class ModelYamlContract(BaseModel):
             return value
 
         if isinstance(value, str):
-            # Handle legacy lowercase "compute" mapping
-            if value.lower() == "compute":
-                return EnumNodeType.COMPUTE
-
-            # Try to match string to EnumNodeType value (case-insensitive)
+            # Handle legacy lowercase "compute" mapping -> use COMPUTE_GENERIC
+            # Log deprecation warning for legacy values to help teams update
+            legacy_mappings = {
+                "compute": EnumNodeType.COMPUTE_GENERIC,
+                "effect": EnumNodeType.EFFECT_GENERIC,
+                "reducer": EnumNodeType.REDUCER_GENERIC,
+                "orchestrator": EnumNodeType.ORCHESTRATOR_GENERIC,
+            }
             value_lower = value.lower()
-            try:
-                return EnumNodeType(value_lower)
-            except ValueError:
-                # Try direct name match (case-insensitive)
-                for enum_value in EnumNodeType:
-                    if enum_value.name.upper() == value.upper():
-                        return enum_value
+            if value_lower in legacy_mappings:
+                import warnings
 
-                # Create proper error context
-                from omnibase_core.models.common.model_error_context import (
-                    ModelErrorContext,
+                new_value = legacy_mappings[value_lower]
+                warnings.warn(
+                    f"Legacy node_type value '{value}' is deprecated. "
+                    f"Please update to '{new_value.value}' for forward compatibility.",
+                    DeprecationWarning,
+                    stacklevel=2,
                 )
-                from omnibase_core.models.common.model_schema_value import (
-                    ModelSchemaValue,
-                )
+                return new_value
 
-                error_context = ModelErrorContext.with_context(
-                    {
-                        "provided_value": ModelSchemaValue.from_value(value),
-                        "valid_options": ModelSchemaValue.from_value(
-                            [e.value for e in EnumNodeType],
-                        ),
-                        "enum_names": ModelSchemaValue.from_value(
-                            [e.name for e in EnumNodeType],
-                        ),
-                    },
-                )
+            # Try to match string to EnumNodeType by name or value (case-insensitive)
+            value_upper = value.upper()
+            for enum_value in EnumNodeType:
+                if enum_value.name == value_upper or enum_value.value == value_upper:
+                    return enum_value
 
-                raise ModelOnexError(
-                    message=f"Invalid node_type '{value}'. Must be a valid EnumNodeType value.",
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    details=error_context,
-                )
+            # No match found - create proper error context
+            from omnibase_core.models.common.model_error_context import (
+                ModelErrorContext,
+            )
+            from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+            error_context = ModelErrorContext.with_context(
+                {
+                    "provided_value": ModelSchemaValue.from_value(value),
+                    "valid_options": ModelSchemaValue.from_value(
+                        [e.value for e in EnumNodeType],
+                    ),
+                    "enum_names": ModelSchemaValue.from_value(
+                        [e.name for e in EnumNodeType],
+                    ),
+                },
+            )
+
+            raise ModelOnexError(
+                message=f"Invalid node_type '{value}'. Must be a valid EnumNodeType value.",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=error_context,
+            )
 
         # Create proper error context
         from omnibase_core.models.common.model_error_context import ModelErrorContext

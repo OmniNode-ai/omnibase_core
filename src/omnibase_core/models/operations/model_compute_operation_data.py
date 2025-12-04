@@ -17,8 +17,8 @@ from .model_operation_data_base import ModelOperationDataBase
 class ModelComputeOperationData(ModelOperationDataBase):
     """Compute node operation data for business logic and calculations."""
 
-    operation_type: Literal[EnumNodeType.COMPUTE] = Field(
-        default=EnumNodeType.COMPUTE,
+    operation_type: Literal[EnumNodeType.COMPUTE_GENERIC] = Field(
+        default=EnumNodeType.COMPUTE_GENERIC,
         description="Compute operation type",
     )
     algorithm_type: str = Field(

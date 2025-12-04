@@ -13,6 +13,7 @@ Safe Runtime Imports (OK to import at module level):
 
 import ast
 import re
+from pathlib import Path
 
 
 class NamingConventionChecker(ast.NodeVisitor):
@@ -26,7 +27,15 @@ class NamingConventionChecker(ast.NodeVisitor):
         """Check class naming conventions."""
         class_name = node.name
 
-        # Check for anti-pattern names
+        # Skip anti-pattern check for error taxonomy classes
+        # Error classes legitimately use terms like "Handler" in names like "HandlerConfigurationError"
+        # or "Service" in names like "InfraServiceUnavailableError"
+        is_error_class = class_name.endswith(("Error", "Exception"))
+        # Use pathlib for cross-platform path handling
+        file_path = Path(self.file_path)
+        is_in_errors_dir = "errors" in file_path.parts or file_path.name == "errors.py"
+
+        # Check for anti-pattern names (skip for error taxonomy classes)
         anti_patterns = [
             "Manager",
             "Handler",
@@ -39,11 +48,13 @@ class NamingConventionChecker(ast.NodeVisitor):
             "Worker",
         ]
 
-        for pattern in anti_patterns:
-            if pattern.lower() in class_name.lower():
-                self.issues.append(
-                    f"Line {node.lineno}: Class name '{class_name}' contains anti-pattern '{pattern}' - use specific domain terminology",
-                )
+        # Only check anti-patterns for non-error classes outside errors directories
+        if not is_error_class and not is_in_errors_dir:
+            for pattern in anti_patterns:
+                if pattern.lower() in class_name.lower():
+                    self.issues.append(
+                        f"Line {node.lineno}: Class name '{class_name}' contains anti-pattern '{pattern}' - use specific domain terminology",
+                    )
 
         # Check naming style
         if not re.match(r"^[A-Z][a-zA-Z0-9]*$", class_name):

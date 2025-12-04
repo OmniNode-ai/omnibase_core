@@ -56,7 +56,7 @@ class TestModelContractBase:
             "name": "test_contract",
             "version": self.valid_semver,
             "description": "Test contract description",
-            "node_type": EnumNodeType.COMPUTE,
+            "node_type": EnumNodeType.COMPUTE_GENERIC,
             "input_model": "omnibase_core.models.test.TestInputModel",
             "output_model": "omnibase_core.models.test.TestOutputModel",
         }
@@ -70,7 +70,7 @@ class TestModelContractBase:
         assert contract.name == "test_contract"
         assert contract.version == self.valid_semver
         assert contract.description == "Test contract description"
-        assert contract.node_type == EnumNodeType.COMPUTE
+        assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
         assert contract.input_model == "omnibase_core.models.test.TestInputModel"
         assert contract.output_model == "omnibase_core.models.test.TestOutputModel"
 
@@ -166,10 +166,10 @@ class TestModelContractBase:
 
     def test_node_type_string_conversion_yaml_support(self):
         """Test node_type string conversion for YAML deserialization."""
-        # Test valid string conversion
-        data = {**self.minimal_valid_data, "node_type": "COMPUTE"}
+        # Test valid string conversion using EnumNodeType value
+        data = {**self.minimal_valid_data, "node_type": "COMPUTE_GENERIC"}
         contract = TestableContractModel(**data)
-        assert contract.node_type == EnumNodeType.COMPUTE
+        assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
 
     def test_node_type_invalid_string_raises_onex_error(self):
         """Test node_type validation with invalid string raises ModelOnexError."""
@@ -503,7 +503,7 @@ class TestModelContractBase:
         """Test that enum objects are preserved, not converted to strings."""
         contract = TestableContractModel(**self.minimal_valid_data)
         assert isinstance(contract.node_type, EnumNodeType)
-        assert contract.node_type == EnumNodeType.COMPUTE
+        assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
 
     # =================== INTEGRATION WITH ONEX ERROR SYSTEM ===================
 

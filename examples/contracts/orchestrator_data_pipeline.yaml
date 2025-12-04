@@ -16,7 +16,7 @@
 # - Sequential/parallel/batch execution modes
 
 # Contract Metadata
-node_type: ORCHESTRATOR
+node_type: ORCHESTRATOR_GENERIC
 contract_version: {major: 1, minor: 0, patch: 0}
 
 # Workflow Coordination Subcontract
@@ -44,7 +44,7 @@ workflow_coordination:
       nodes:
         # Stage 1: Data Ingestion
         - node_id: "fetch_raw_data"
-          node_type: effect
+          node_type: EFFECT_GENERIC
           node_name: "Fetch Raw Data"
           description: "Fetch raw data from external API"
           target_node_type: "NodeDataFetcherEffect"
@@ -55,7 +55,7 @@ workflow_coordination:
 
         # Stage 2: Parallel Processing (Schema Validation + Data Enrichment)
         - node_id: "validate_schema"
-          node_type: compute
+          node_type: COMPUTE_GENERIC
           node_name: "Validate Schema"
           description: "Validate data against expected schema"
           target_node_type: "NodeSchemaValidatorCompute"
@@ -66,7 +66,7 @@ workflow_coordination:
             strict_mode: true
 
         - node_id: "enrich_data"
-          node_type: compute
+          node_type: COMPUTE_GENERIC
           node_name: "Enrich Data"
           description: "Enrich data with additional fields from cache"
           target_node_type: "NodeDataEnricherCompute"
@@ -80,7 +80,7 @@ workflow_coordination:
 
         # Stage 3: Data Aggregation (depends on validation + enrichment)
         - node_id: "aggregate_metrics"
-          node_type: reducer
+          node_type: REDUCER_GENERIC
           node_name: "Aggregate Metrics"
           description: "Aggregate metrics from validated and enriched data"
           target_node_type: "NodeMetricsAggregatorReducer"
@@ -95,7 +95,7 @@ workflow_coordination:
 
         # Stage 4: Quality Check
         - node_id: "quality_check"
-          node_type: compute
+          node_type: COMPUTE_GENERIC
           node_name: "Quality Check"
           description: "Verify data quality meets thresholds"
           target_node_type: "NodeQualityCheckerCompute"
@@ -107,7 +107,7 @@ workflow_coordination:
 
         # Stage 5: Data Persistence (final step)
         - node_id: "persist_results"
-          node_type: effect
+          node_type: EFFECT_GENERIC
           node_name: "Persist Results"
           description: "Save processed data to database"
           target_node_type: "NodeDataPersisterEffect"
@@ -121,7 +121,7 @@ workflow_coordination:
 
         # Stage 6: Notification (parallel with persistence)
         - node_id: "send_notification"
-          node_type: effect
+          node_type: EFFECT_GENERIC
           node_name: "Send Notification"
           description: "Send completion notification to stakeholders"
           target_node_type: "NodeNotificationEffect"

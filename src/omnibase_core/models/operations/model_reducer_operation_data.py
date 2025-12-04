@@ -17,8 +17,8 @@ from .model_operation_data_base import ModelOperationDataBase
 class ModelReducerOperationData(ModelOperationDataBase):
     """Reducer node operation data for state management and aggregation."""
 
-    operation_type: Literal[EnumNodeType.REDUCER] = Field(
-        default=EnumNodeType.REDUCER,
+    operation_type: Literal[EnumNodeType.REDUCER_GENERIC] = Field(
+        default=EnumNodeType.REDUCER_GENERIC,
         description="Reducer operation type",
     )
     aggregation_type: str = Field(default=..., description="Type of data aggregation")

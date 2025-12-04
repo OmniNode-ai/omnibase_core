@@ -107,8 +107,8 @@ class ModelContractCompute(ModelContractBase):
         """Post-initialization validation."""
         # Set default node_type if not provided
         if not hasattr(self, "_node_type_set"):
-            # Ensure node_type is set to COMPUTE for compute contracts
-            object.__setattr__(self, "node_type", EnumNodeType.COMPUTE)
+            # Ensure node_type is set to COMPUTE_GENERIC for compute contracts
+            object.__setattr__(self, "node_type", EnumNodeType.COMPUTE_GENERIC)
             object.__setattr__(self, "_node_type_set", True)
 
         # Call parent post-init validation

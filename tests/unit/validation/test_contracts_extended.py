@@ -56,7 +56,8 @@ operations:
         contract = load_and_validate_yaml_model(yaml_content)
 
         assert contract is not None
-        assert contract.node_type.value == "COMPUTE"
+        # After enum refactoring: COMPUTE maps to EnumNodeType.COMPUTE_GENERIC
+        assert contract.node_type.value == "COMPUTE_GENERIC"
 
     def test_load_valid_yaml_minimal(self) -> None:
         """Test loading valid YAML with minimal fields."""
@@ -72,7 +73,8 @@ operations: []
         contract = load_and_validate_yaml_model(yaml_content)
 
         assert contract is not None
-        assert contract.node_type.value == "COMPUTE"
+        # After enum refactoring: COMPUTE maps to EnumNodeType.COMPUTE_GENERIC
+        assert contract.node_type.value == "COMPUTE_GENERIC"
 
     def test_load_invalid_yaml_syntax(self) -> None:
         """Test loading YAML with invalid syntax."""
@@ -115,7 +117,8 @@ another_extra: also_ignored
 
         # Should succeed with extra fields (model config has extra="ignore")
         assert contract is not None
-        assert contract.node_type.value == "COMPUTE"
+        # After enum refactoring: COMPUTE maps to EnumNodeType.COMPUTE_GENERIC
+        assert contract.node_type.value == "COMPUTE_GENERIC"
 
     def test_load_yaml_empty_string(self) -> None:
         """Test loading empty YAML string."""

@@ -17,8 +17,8 @@ from .model_operation_data_base import ModelOperationDataBase
 class ModelOrchestratorOperationData(ModelOperationDataBase):
     """Orchestrator node operation data for workflow coordination."""
 
-    operation_type: Literal[EnumNodeType.ORCHESTRATOR] = Field(
-        default=EnumNodeType.ORCHESTRATOR,
+    operation_type: Literal[EnumNodeType.ORCHESTRATOR_GENERIC] = Field(
+        default=EnumNodeType.ORCHESTRATOR_GENERIC,
         description="Orchestrator operation type",
     )
     workflow_definition: str = Field(

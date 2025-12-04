@@ -247,12 +247,26 @@ class ProtocolContractLoader:
                             # Keep as dict - Pydantic will validate and convert to ModelContractDependency
                             dependencies.append(dep_item)
 
-            # Parse node type (default to COMPUTE if not specified)
-            node_type_str = raw_content.get("node_type", "COMPUTE")
+            # Parse node type (default to COMPUTE_GENERIC if not specified)
+            # No backwards compatibility - invalid enum values must fail fast
+            node_type_str = raw_content.get("node_type", "COMPUTE_GENERIC")
             if isinstance(node_type_str, str):
-                node_type = EnumNodeType(node_type_str.upper())
+                node_type_upper = node_type_str.upper()
+                try:
+                    node_type = EnumNodeType(node_type_upper)
+                except ValueError as e:
+                    valid_values = [v.value for v in EnumNodeType]
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=f"Invalid node_type '{node_type_str}'. Valid values are: {valid_values}",
+                        context={
+                            "contract_path": str(contract_path),
+                            "invalid_value": node_type_str,
+                            "valid_values": valid_values,
+                        },
+                    ) from e
             else:
-                node_type = EnumNodeType.COMPUTE
+                node_type = EnumNodeType.COMPUTE_GENERIC
 
             # Create contract content
             return ModelContractContent(
@@ -326,6 +340,7 @@ class ProtocolContractLoader:
                 "patch": content.contract_version.patch,
             },
             "node_name": content.node_name,
+            "node_type": str(content.node_type),
             "tool_specification": {
                 "main_tool_class": content.tool_specification.main_tool_class,
             },
