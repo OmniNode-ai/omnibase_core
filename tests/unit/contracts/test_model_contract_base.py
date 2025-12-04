@@ -166,8 +166,8 @@ class TestModelContractBase:
 
     def test_node_type_string_conversion_yaml_support(self):
         """Test node_type string conversion for YAML deserialization."""
-        # Test valid string conversion
-        data = {**self.minimal_valid_data, "node_type": "COMPUTE"}
+        # Test valid string conversion using EnumNodeType value
+        data = {**self.minimal_valid_data, "node_type": "COMPUTE_GENERIC"}
         contract = TestableContractModel(**data)
         assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
 

@@ -38,7 +38,7 @@ version:
   minor: 0
   patch: 0
 description: Effect node for writing data to PostgreSQL database
-node_type: effect
+node_type: effect_generic
 input_model: omnibase_core.models.ModelDatabaseWriteInput
 output_model: omnibase_core.models.ModelDatabaseWriteOutput
 io_operations:
@@ -88,7 +88,7 @@ version:
   minor: 0
   patch: 0
 description: Incomplete effect contract
-node_type: effect
+node_type: effect_generic
 input_model: ModelInput
 output_model: ModelOutput
 """
@@ -111,7 +111,7 @@ version:
   minor: 0
   patch: 0
 description: Short
-node_type: effect
+node_type: effect_generic
 input_model: ModelInput
 output_model: ModelOutput
 io_operations:
@@ -151,7 +151,7 @@ version:
   minor: 0
   patch: 0
 description: Effect node for writing data to PostgreSQL database
-node_type: effect
+node_type: effect_generic
 input_model: omnibase_core.models.ModelDatabaseWriteInput
 output_model: omnibase_core.models.ModelDatabaseWriteOutput
 io_operations:
@@ -186,7 +186,7 @@ version:
   minor: 0
   patch: 0
 description: Test effect contract
-node_type: effect
+node_type: effect_generic
 input_model: omnibase_core.models.ModelExpectedInput
 output_model: omnibase_core.models.ModelExpectedOutput
 io_operations:
@@ -223,7 +223,7 @@ version:
   minor: 0
   patch: 0
 description: Test effect contract
-node_type: effect
+node_type: effect_generic
 input_model: BadName
 output_model: BadName
 io_operations:
@@ -256,7 +256,7 @@ version:
   minor: 0
   patch: 0
 description: Pure compute node for data transformation
-node_type: compute
+node_type: compute_generic
 input_model: omnibase_core.models.ModelTransformInput
 output_model: omnibase_core.models.ModelTransformOutput
 algorithm:
@@ -288,7 +288,7 @@ version:
   minor: 0
   patch: 0
 description: X
-node_type: effect
+node_type: effect_generic
 input_model: Input
 output_model: Output
 io_operations:
@@ -333,7 +333,7 @@ version:
   minor: 0
   patch: 0
 description: Test effect contract
-node_type: effect
+node_type: effect_generic
 input_model: ModelInput
 output_model: ModelOutput
 io_operations:
@@ -364,7 +364,7 @@ version:
   minor: 0
   patch: 0
 description: Effect contract from file
-node_type: effect
+node_type: effect_generic
 input_model: ModelInput
 output_model: ModelOutput
 io_operations:
@@ -405,7 +405,7 @@ version:
   minor: 0
   patch: 0
 description: Test effect contract for suggestions
-node_type: effect
+node_type: effect_generic
 input_model: ModelInput
 output_model: ModelOutput
 io_operations:
@@ -441,7 +441,7 @@ version:
   minor: 0
   patch: 0
 description: Test effect contract
-node_type: effect
+node_type: effect_generic
 input_model: omnibase_core.models.ModelTestInput
 output_model: omnibase_core.models.ModelTestOutput
 io_operations:

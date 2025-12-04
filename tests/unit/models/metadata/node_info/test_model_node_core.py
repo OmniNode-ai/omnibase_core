@@ -258,7 +258,7 @@ class TestModelNodeCoreFactoryMethods:
         )
         assert node.node_id == node_id
         assert node.node_display_name == "Test Node"
-        assert node.node_type == EnumNodeType.COMPUTE
+        assert node.node_type == EnumNodeType.COMPUTE_GENERIC
         assert node.description == "A test compute node"
 
     def test_create_for_node_no_description(self):
@@ -271,7 +271,7 @@ class TestModelNodeCoreFactoryMethods:
         )
         assert node.node_id == node_id
         assert node.node_display_name == "Minimal Node"
-        assert node.node_type == EnumNodeType.EFFECT
+        assert node.node_type == EnumNodeType.EFFECT_GENERIC
         assert node.description is None
 
     def test_create_minimal_node(self):
@@ -281,7 +281,7 @@ class TestModelNodeCoreFactoryMethods:
             node_type=EnumNodeType.REDUCER_GENERIC,
         )
         assert node.node_display_name == "Minimal"
-        assert node.node_type == EnumNodeType.REDUCER
+        assert node.node_type == EnumNodeType.REDUCER_GENERIC
         assert node.description is None
         assert node.complexity == EnumConceptualComplexity.BASIC
 
@@ -300,7 +300,7 @@ class TestModelNodeCoreFactoryMethods:
             description="A complex orchestrator node",
         )
         assert node.node_display_name == "Complex"
-        assert node.node_type == EnumNodeType.ORCHESTRATOR
+        assert node.node_type == EnumNodeType.ORCHESTRATOR_GENERIC
         assert node.description == "A complex orchestrator node"
         assert node.complexity == EnumConceptualComplexity.ADVANCED
 

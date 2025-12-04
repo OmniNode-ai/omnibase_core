@@ -55,7 +55,7 @@ contract_version:
   minor: 0
   patch: 0
 node_name: TestNode
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: TestToolClass
 """,
@@ -74,7 +74,7 @@ contract_version:
   minor: 0
   patch: 0
 node_name: ReferencingNode
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: RefToolClass
 definitions:
@@ -102,7 +102,7 @@ contract_version:
   minor: {i}
   patch: 0
 node_name: TestNode{i}
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: TestToolClass{i}
 """,
@@ -200,7 +200,7 @@ class TestResolveAllReferences:
 
         # Should preserve all content
         assert result.node_name == "PreservedNode"
-        assert result.node_type == EnumNodeType.EFFECT
+        assert result.node_type == EnumNodeType.EFFECT_GENERIC
         assert result.contract_version.major == 2
         assert result.contract_version.minor == 3
         assert result.contract_version.patch == 4
@@ -226,7 +226,7 @@ class TestResolveAllReferences:
 
         result = contract_loader._resolve_all_references(content, tmp_path)
 
-        assert result.node_type == EnumNodeType.ORCHESTRATOR
+        assert result.node_type == EnumNodeType.ORCHESTRATOR_GENERIC
 
     def test_resolve_references_multiple_calls(
         self, contract_loader: ProtocolContractLoader, tmp_path: Path
@@ -525,7 +525,7 @@ contract_version:
   minor: 0
   patch: 0
 node_name: ModifiedNode
-node_type: EFFECT
+node_type: EFFECT_GENERIC
 tool_specification:
   main_tool_class: ModifiedClass
 """,
@@ -538,7 +538,7 @@ tool_specification:
         result2 = contract_loader.load_contract(valid_contract_yaml)
 
         assert result2.node_name == "ModifiedNode"
-        assert result2.node_type == EnumNodeType.EFFECT
+        assert result2.node_type == EnumNodeType.EFFECT_GENERIC
 
     def test_cache_with_multiple_loaders(
         self, tmp_path: Path, valid_contract_yaml: Path
@@ -686,7 +686,7 @@ contract_version:
   minor: 0
   patch: {i}
 node_name: TestNode{i}
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: TestToolClass{i}
 """,
@@ -736,7 +736,7 @@ contract_version:
   minor: 0
   patch: 0
 node_name: LargeNode
-node_type: COMPUTE
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: LargeToolClass
 metadata:
@@ -759,25 +759,31 @@ class TestAdvancedIntegration:
         self, contract_loader: ProtocolContractLoader, tmp_path: Path
     ) -> None:
         """Test loading contracts with all node types."""
-        node_types = ["EFFECT", "COMPUTE", "REDUCER", "ORCHESTRATOR"]
+        # Use the _GENERIC variants that are valid EnumNodeType values
+        node_types = [
+            ("EFFECT_GENERIC", EnumNodeType.EFFECT_GENERIC),
+            ("COMPUTE_GENERIC", EnumNodeType.COMPUTE_GENERIC),
+            ("REDUCER_GENERIC", EnumNodeType.REDUCER_GENERIC),
+            ("ORCHESTRATOR_GENERIC", EnumNodeType.ORCHESTRATOR_GENERIC),
+        ]
 
-        for i, node_type in enumerate(node_types):
-            contract_file = tmp_path / f"contract_{node_type.lower()}.yaml"
+        for node_type_str, node_type_enum in node_types:
+            contract_file = tmp_path / f"contract_{node_type_str.lower()}.yaml"
             contract_file.write_text(
                 f"""
 contract_version:
   major: 1
   minor: 0
   patch: 0
-node_name: {node_type}Node
-node_type: {node_type}
+node_name: {node_type_str}Node
+node_type: {node_type_str}
 tool_specification:
-  main_tool_class: {node_type}ToolClass
+  main_tool_class: {node_type_str}ToolClass
 """,
             )
 
             result = contract_loader.load_contract(contract_file)
-            assert result.node_type == EnumNodeType(node_type)
+            assert result.node_type == node_type_enum
 
     def test_concurrent_loads_different_contracts(
         self,
