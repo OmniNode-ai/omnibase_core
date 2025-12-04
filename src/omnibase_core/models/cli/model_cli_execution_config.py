@@ -29,7 +29,7 @@ class ModelCliExecutionConfig(BaseModel):
 
     Contains all configuration options, settings, and parameters
     for CLI command execution without cluttering core execution info.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

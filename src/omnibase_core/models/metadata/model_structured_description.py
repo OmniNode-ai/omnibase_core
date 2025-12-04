@@ -28,7 +28,7 @@ class ModelStructuredDescription(BaseModel):
 
     Replaces free-form description strings with structured components
     that provide better consistency and information architecture.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

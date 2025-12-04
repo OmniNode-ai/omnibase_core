@@ -25,7 +25,7 @@ from .model_test_result import ModelTestResult
 
 class ModelTestResults(BaseModel):
     """Collection of test results with summary.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

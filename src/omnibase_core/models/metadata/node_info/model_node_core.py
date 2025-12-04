@@ -30,7 +30,7 @@ class ModelNodeCore(BaseModel):
     Core node identification and basic information.
 
     Focused on fundamental node identity and basic properties.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

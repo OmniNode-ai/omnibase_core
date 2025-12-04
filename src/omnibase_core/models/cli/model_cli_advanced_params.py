@@ -34,7 +34,7 @@ class ModelCliAdvancedParams(BaseModel):
     Clean model for CLI advanced parameters.
 
     Replaces ModelCustomFields[Any] with structured advanced parameters model.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

@@ -27,7 +27,7 @@ class ModelTypedConfiguration(
 
     Combines the standard configuration base with ModelCustomProperties
     for configurations that need extensible custom fields.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

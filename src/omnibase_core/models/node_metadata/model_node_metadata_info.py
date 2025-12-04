@@ -38,7 +38,7 @@ class ModelNodeMetadataInfo(BaseModel):
     Node metadata information model.
 
     Restructured to use focused sub-models for better organization.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

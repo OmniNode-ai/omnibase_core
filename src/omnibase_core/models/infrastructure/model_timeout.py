@@ -35,7 +35,7 @@ class ModelTimeout(BaseModel):
 
     This model provides a timeout-specific interface
     that delegates all operations to the unified ModelTimeBased model.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

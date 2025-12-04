@@ -26,7 +26,7 @@ class ModelProgressCore(BaseModel):
     Core progress tracking with percentage, steps, and phase management.
 
     Focused on fundamental progress tracking without timing or milestone complexity.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

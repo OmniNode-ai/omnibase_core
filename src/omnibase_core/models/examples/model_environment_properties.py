@@ -35,7 +35,7 @@ class ModelEnvironmentProperties(BaseModel):
 
     This model provides structured storage for custom environment properties
     with type safety and helper methods for property access.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

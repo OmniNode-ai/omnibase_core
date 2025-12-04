@@ -18,7 +18,7 @@ class ModelEventPayload(BaseModel):
     Strongly-typed event payload with discriminated unions.
 
     Replaces dict[str, Any] with discriminated event payload types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Identifiable: UUID-based identification
     - Serializable: Data serialization/deserialization

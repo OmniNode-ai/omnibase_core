@@ -35,7 +35,7 @@ class ModelSchemaExample(BaseModel):
 
     Replaces dict[str, Any] returns from extract_example_from_schema
     with properly structured and validated data.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

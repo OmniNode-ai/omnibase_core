@@ -30,7 +30,7 @@ class ModelNodeInformationSummary(BaseModel):
     Eliminates: dict[str, Any]
 
     With proper structured data using specific field types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

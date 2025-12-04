@@ -25,7 +25,7 @@ class ModelEffectParameters(BaseModel):
     Strongly-typed effect operation parameters with discriminated unions.
 
     Replaces primitive soup pattern with discriminated effect parameter types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Identifiable: UUID-based identification
     - Serializable: Data serialization/deserialization

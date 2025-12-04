@@ -26,7 +26,7 @@ class ModelRegexFlags(BaseModel):
     Discriminated union for regex flags.
 
     Replaces Union[re.DOTALL, re.IGNORECASE, re.MULTILINE] with structured flag handling.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

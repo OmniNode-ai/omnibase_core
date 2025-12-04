@@ -27,7 +27,7 @@ class ModelConnectionEndpoint(BaseModel):
 
     Contains network addressing and protocol details
     without authentication or pooling concerns.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization

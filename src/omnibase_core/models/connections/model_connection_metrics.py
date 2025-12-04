@@ -1,24 +1,20 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Connection metrics model for network performance tracking.
 """
 
+from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelConnectionMetrics(BaseModel):
     """Connection performance metrics.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization
@@ -87,16 +83,10 @@ class ModelConnectionMetrics(BaseModel):
             ) from e
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                message=f"Operation failed: {e}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            ) from e
+        """Validate instance integrity (Validatable protocol)."""
+        # Basic validation - Pydantic ensures field types and constraints
+        # Override in specific models for custom validation
+        return True
 
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""

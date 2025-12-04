@@ -26,7 +26,7 @@ class ModelAnalyticsErrorTracking(BaseModel):
     Error and warning tracking for analytics collections.
 
     Focused on error counting and severity management.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

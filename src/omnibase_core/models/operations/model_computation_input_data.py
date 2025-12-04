@@ -49,7 +49,7 @@ class ModelComputationInputData(BaseModel):
     Strongly-typed input data for computation operations with discriminated unions.
 
     Replaces primitive soup pattern with discriminated data types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Identifiable: UUID-based identification
     - Serializable: Data serialization/deserialization

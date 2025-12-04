@@ -38,7 +38,7 @@ class ModelPropertyValue(BaseModel):
 
     Uses discriminated union pattern with runtime validation to ensure
     type safety while avoiding overly broad Union types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
@@ -391,7 +391,7 @@ class ModelPropertyValue(BaseModel):
             assert isinstance(
                 self.value,
                 list,
-            ), f"Expected list[Any]type, got {type(self.value)}"
+            ), f"Expected list type, got {type(self.value)}"
             return list(self.value)
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,

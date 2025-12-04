@@ -42,7 +42,7 @@ class ModelFunctionNodeData(BaseModel):
 
     With proper structured data using specific field types.
     Now uses structured types to reduce string field reliance.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -28,7 +28,7 @@ class ModelProgressTiming(BaseModel):
     Progress timing with duration calculations and estimates.
 
     Focused on time-based progress tracking functionality.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

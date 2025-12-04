@@ -262,6 +262,8 @@ extend_skip = [
     "src/omnibase_core/infrastructure/node_base.py",
     "src/omnibase_core/logging/structured.py",
     "src/omnibase_core/validation/contract_validator.py",
+    # Files with intentional section-based import organization
+    "src/omnibase_core/protocols/__init__.py",
 ]
 extend_skip_glob = ["tests/fixtures/validation/edge_cases/*.py"]
 

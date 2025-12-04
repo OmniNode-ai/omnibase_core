@@ -25,7 +25,7 @@ class ModelConnectionPool(BaseModel):
 
     Contains pool size, timeouts, and connection management settings
     without endpoint or authentication concerns.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization

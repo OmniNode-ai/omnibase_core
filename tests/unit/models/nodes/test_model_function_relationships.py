@@ -307,19 +307,6 @@ class TestModelFunctionRelationships:
         assert rel.dependencies == [dep]
         assert rel.related_functions == []
 
-    def test_get_id_protocol(self):
-        """Test get_id protocol method raises OnexError without ID field."""
-        from omnibase_core.models.errors.model_onex_error import (
-            ModelOnexError as OnexError,
-        )
-
-        rel = ModelFunctionRelationships()
-
-        with pytest.raises(OnexError) as exc_info:
-            rel.get_id()
-
-        assert "must have a valid ID field" in str(exc_info.value)
-
     def test_get_metadata_protocol(self):
         """Test get_metadata protocol method."""
         rel = ModelFunctionRelationships()

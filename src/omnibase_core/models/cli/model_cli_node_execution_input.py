@@ -31,7 +31,7 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     Provides type safety for node execution inputs while maintaining
     flexibility for different node types and their specific requirements.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

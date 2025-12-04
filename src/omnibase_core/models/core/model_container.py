@@ -37,7 +37,7 @@ class ModelContainer(BaseModel, Generic[T]):
 
     Type Parameters:
         T: The type of value stored in the container
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

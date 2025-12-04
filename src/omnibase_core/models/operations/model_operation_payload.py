@@ -44,7 +44,7 @@ class ModelOperationPayload(BaseModel):
     Strongly-typed operation payload with discriminated unions.
 
     Replaces dict[str, Any] with discriminated operation payload types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Identifiable: UUID-based identification
     - Serializable: Data serialization/deserialization

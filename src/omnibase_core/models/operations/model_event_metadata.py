@@ -25,7 +25,7 @@ class ModelEventMetadata(BaseModel):
     Strongly-typed event metadata.
 
     Replaces dict[str, Any] with structured event metadata model.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Identifiable: UUID-based identification
     - Serializable: Data serialization/deserialization

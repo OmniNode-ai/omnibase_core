@@ -28,7 +28,7 @@ class ModelRetryExecution(BaseModel):
 
     Contains execution state, timing, and error tracking
     without configuration concerns.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

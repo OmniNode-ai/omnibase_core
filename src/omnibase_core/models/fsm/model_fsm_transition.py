@@ -16,7 +16,7 @@ from pydantic import BaseModel
 class ModelFsmTransition(BaseModel):
     """
     Strongly-typed FSM transition.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

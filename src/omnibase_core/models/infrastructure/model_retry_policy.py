@@ -38,7 +38,7 @@ class ModelRetryPolicy(BaseModel):
     - conditions: Retry trigger conditions and decision logic
     - execution: Execution tracking and state management
     - advanced: Circuit breaker and advanced features
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

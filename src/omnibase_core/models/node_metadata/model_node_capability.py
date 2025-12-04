@@ -33,7 +33,7 @@ class ModelNodeCapability(BaseModel):
 
     Replaces the EnumNodeCapability enum to provide richer information
     about each node capability including dependencies and configuration.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

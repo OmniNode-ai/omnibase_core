@@ -30,7 +30,7 @@ class ModelNodeConnectionSettings(BaseModel):
     Contains network connection parameters:
     - Service endpoints and ports
     - Protocol configuration
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

@@ -17,10 +17,8 @@ type-safe generic containers that preserve exact type information.
 """
 
 
-# Import protocols from omnibase_spi (centralized location)
-from omnibase_spi.protocols.types import (
-    ProtocolModelValidatable as ModelProtocolValidatable,
-)
+# Import protocols from Core-native location
+from omnibase_core.protocols import ProtocolModelValidatable as ModelProtocolValidatable
 
 # Import extracted classes
 from .model_typed_mapping import ModelTypedMapping

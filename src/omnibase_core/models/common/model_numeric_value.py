@@ -27,7 +27,7 @@ class ModelNumericValue(BaseModel):
 
     Replaces int | float unions with structured value storage
     that maintains type information for numeric validation.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """

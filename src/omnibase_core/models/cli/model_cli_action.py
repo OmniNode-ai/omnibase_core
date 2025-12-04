@@ -28,7 +28,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
 
     Replaces hardcoded EnumNodeCliAction to allow third-party nodes
     to register their own actions dynamically.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

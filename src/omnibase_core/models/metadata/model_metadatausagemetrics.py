@@ -8,7 +8,7 @@ from omnibase_core.types.typed_dict_usage_metadata import TypedDictUsageMetadata
 
 class ModelMetadataUsageMetrics(BaseModel):
     """Usage metrics for metadata nodes.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

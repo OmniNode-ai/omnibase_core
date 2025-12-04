@@ -21,7 +21,7 @@ from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 
 class ModelFieldValidationRules(BaseModel):
     """Validation rules for metadata fields.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

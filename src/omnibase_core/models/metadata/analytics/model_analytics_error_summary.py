@@ -24,7 +24,7 @@ class ModelAnalyticsErrorSummary(BaseModel):
     Structured error summary for analytics.
 
     Replaces primitive soup unions with typed fields.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

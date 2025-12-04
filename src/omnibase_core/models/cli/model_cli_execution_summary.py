@@ -31,7 +31,7 @@ class ModelCliExecutionSummary(BaseModel):
 
     Replaces dict[str, Any] for get_summary() return type to provide
     type safety and validation for execution summary data.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

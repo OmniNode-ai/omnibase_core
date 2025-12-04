@@ -36,7 +36,7 @@ class ModelCustomProperties(BaseModel):
     - custom_flags: dict[str, bool]
 
     Provides organized, typed custom fields with validation and utility methods.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

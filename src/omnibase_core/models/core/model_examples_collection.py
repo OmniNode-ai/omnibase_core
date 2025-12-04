@@ -41,7 +41,7 @@ class ModelExamplesCollection(BaseModel):
 
     This model manages collections of examples with proper validation,
     metadata tracking, and format conversion capabilities.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     - Migratable: Data migration and compatibility
