@@ -13,10 +13,31 @@ from enum import Enum, unique
 @unique
 class EnumNodeType(str, Enum):
     """
-    Strongly typed node type values for ONEX architecture.
+    Specific node implementation types for ONEX architecture.
+
+    EnumNodeType represents the specific KIND OF IMPLEMENTATION a node uses,
+    defining its concrete behavior, capabilities, and implementation pattern.
 
     Inherits from str for JSON serialization compatibility while providing
     type safety and IDE support for node classification operations.
+
+    Relationship to EnumNodeKind
+    -----------------------------
+    - **EnumNodeType** (this enum): Specific node implementation type
+      - Answers: "What specific kind of node implementation is this?"
+      - Example: TRANSFORMER, AGGREGATOR, VALIDATOR (specific implementations)
+      - Use when: Node discovery, capability matching, specific behavior selection
+
+    - **EnumNodeKind**: High-level architectural classification
+      - Answers: "What role does this node play in the ONEX workflow?"
+      - Example: COMPUTE (data processing role)
+      - Use when: Routing data through the ONEX pipeline, enforcing architectural patterns
+
+    Multiple EnumNodeType values can map to a single EnumNodeKind. For example:
+    - TRANSFORMER, AGGREGATOR, COMPUTE_GENERIC → All are COMPUTE kind
+    - GATEWAY, VALIDATOR → Both are control flow nodes (ORCHESTRATOR kind)
+
+    For high-level architectural classification, see EnumNodeKind.
     """
 
     # Core ONEX node types
