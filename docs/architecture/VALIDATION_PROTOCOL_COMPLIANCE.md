@@ -270,6 +270,5 @@ This allows:
 ## See Also
 
 - [omnibase_spi Validation Protocols](https://github.com/OmniNode-ai/omnibase_spi/tree/main/src/omnibase_spi/protocols/validation)
-- [Protocol Compliance Tests](../../tests/unit/validation/test_protocol_compliance.py)
 - [Contract Validator](../../src/omnibase_core/validation/contract_validator.py)
 - [Protocol Auditor](../../src/omnibase_core/validation/auditor_protocol.py)
