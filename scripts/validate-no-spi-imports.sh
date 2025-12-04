@@ -14,7 +14,7 @@ echo "Checking for omnibase_spi imports in omnibase_core..."
 EXCLUDE_PATTERN="validation/migrator_protocol.py|validation/auditor_protocol.py"
 
 # Find violations
-VIOLATIONS=$(grep -rn "^from omnibase_spi\|^import omnibase_spi" "$CORE_SRC" --include="*.py" 2>/dev/null | grep -vE "$EXCLUDE_PATTERN" || true)
+VIOLATIONS=$(grep -RnE "^(from|import) omnibase_spi" "$CORE_SRC" --include="*.py" 2>/dev/null | grep -vE "$EXCLUDE_PATTERN" || true)
 
 if [ -n "$VIOLATIONS" ]; then
     echo "ERROR: Found omnibase_spi imports in omnibase_core!"

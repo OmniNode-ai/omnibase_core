@@ -47,8 +47,6 @@ from omnibase_core.protocols import (
 )
 from pydantic import BaseModel
 
-from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
-
 # Bounded type variables with proper constraints
 
 # For Pydantic models
