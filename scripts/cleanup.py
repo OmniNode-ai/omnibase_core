@@ -7,13 +7,20 @@ not be committed to the repository. It's designed to catch common patterns of
 files generated during development and analysis.
 
 Usage:
-    python scripts/cleanup.py [--dry-run] [--verbose]
+    python scripts/cleanup.py [--dry-run] [--verbose] [--remove-from-git]
+
+Options:
+    --dry-run           Show what would be removed without removing
+    --verbose, -v       Show detailed output
+    --remove-from-git   Remove tracked files from git index (for tmp/ cleanup)
+    --root DIR          Root directory to clean (default: current directory)
 """
 
 import argparse
 import os
 import re
 import shutil
+import subprocess
 from pathlib import Path
 from re import Pattern
 
@@ -62,6 +69,7 @@ CLEANUP_DIRECTORIES = [
     ".coverage",
     "htmlcov",
     "reports",
+    "tmp",  # Temporary files and PR review cache
 ]
 
 
@@ -74,11 +82,17 @@ def find_cleanup_files(root_dir: Path, patterns: list[Pattern]) -> list[Path]:
     """Find files matching cleanup patterns."""
     cleanup_files = []
 
+    # Directories to skip entirely during traversal
+    SKIP_DIRS = {".git", ".venv", "venv", "ENV", "env", "node_modules"}
+
     for root, dirs, files in os.walk(root_dir):
         root_path = Path(root)
 
-        # Skip .git directory and other version control
-        if ".git" in root_path.parts:
+        # Skip excluded directories
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+
+        # Skip if we're inside an excluded directory
+        if any(part in SKIP_DIRS for part in root_path.parts):
             continue
 
         # Check files
@@ -99,6 +113,51 @@ def find_cleanup_files(root_dir: Path, patterns: list[Pattern]) -> list[Path]:
                 dirs.remove(dir_name)  # Don't recurse into directories we're removing
 
     return cleanup_files
+
+
+def remove_from_git_index(
+    path: Path, root_dir: Path, dry_run: bool = False, verbose: bool = False
+) -> bool:
+    """Remove a file or directory from git index (untrack it)."""
+    try:
+        relative_path = path.relative_to(root_dir)
+
+        # Check if file is tracked by git
+        result = subprocess.run(
+            ["git", "ls-files", str(relative_path)],
+            cwd=root_dir,
+            capture_output=True,
+            text=True,
+        )
+
+        if not result.stdout.strip():
+            return False  # Not tracked, nothing to do
+
+        if dry_run:
+            if verbose:
+                print(f"[DRY RUN] Would remove from git: {relative_path}")
+            return True
+
+        # Remove from git index
+        subprocess.run(
+            ["git", "rm", "-r", "--cached", "--quiet", str(relative_path)],
+            cwd=root_dir,
+            check=True,
+            capture_output=True,
+        )
+
+        if verbose:
+            print(f"Removed from git index: {relative_path}")
+        return True
+
+    except subprocess.CalledProcessError as e:
+        if verbose:
+            print(f"Git removal failed for {path}: {e}")
+        return False
+    except Exception as e:
+        if verbose:
+            print(f"Error removing from git {path}: {e}")
+        return False
 
 
 def remove_file_or_dir(
@@ -141,6 +200,11 @@ def main():
         help="Show detailed output of cleanup operations",
     )
     parser.add_argument(
+        "--remove-from-git",
+        action="store_true",
+        help="Remove tracked files from git index (for accidentally committed tmp files)",
+    )
+    parser.add_argument(
         "--root",
         type=str,
         default=".",
@@ -174,11 +238,24 @@ def main():
     # Sort files for consistent output
     cleanup_files.sort()
 
-    # Remove files
+    # Remove from git index first (if requested)
+    git_removed_count = 0
+    if args.remove_from_git:
+        if args.verbose:
+            print("\n🔧 Removing tracked files from git index...")
+
+        for file_path in cleanup_files:
+            if remove_from_git_index(file_path, root_dir, args.dry_run, args.verbose):
+                git_removed_count += 1
+
+        if git_removed_count > 0:
+            print(f"✓ Removed {git_removed_count} items from git index")
+
+    # Remove files from filesystem
     removed_count = 0
     failed_count = 0
 
-    print(f"Found {len(cleanup_files)} items to clean up:")
+    print(f"\nFound {len(cleanup_files)} items to clean up:")
 
     for file_path in cleanup_files:
         relative_path = file_path.relative_to(root_dir)

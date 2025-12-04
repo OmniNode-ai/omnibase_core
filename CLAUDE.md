@@ -1,6 +1,6 @@
 # CLAUDE.md - Omnibase Core Project Instructions
 
-> **Version**: 0.2.0 (Release Branch: `release/0.2.0`)
+> **Version**: 0.3.6
 > **Python**: 3.12+
 > **Framework**: ONEX Core - Foundational implementations for the ONEX architecture
 
@@ -39,7 +39,6 @@
 
 ### Dependencies
 
-- **Core**: omnibase_spi (v0.2.0) - Protocol definitions
 - **Framework**: Pydantic 2.11+, FastAPI 0.120+
 - **Testing**: pytest 8.4+, pytest-asyncio, pytest-xdist, pytest-split, pytest-cov
 
@@ -542,7 +541,7 @@ If a split exceeds expected thresholds:
 - **Next Review**: When average runtime exceeds 4 minutes
 
 **Benchmark Source**: [CI Run #18997947041](https://github.com/OmniNode-ai/omnibase_core/actions/runs/18997947041)
-**Last Updated**: 2025-11-01
+**Last Updated**: 2025-12-04
 **Correlation ID**: `95cac850-05a3-43e2-9e57-ccbbef683f43`
 
 ### Operational Monitoring
@@ -853,6 +852,12 @@ class MyNode(NodeCoreBase, MixinDiscoveryResponder):
 poetry install
 pre-commit install
 
+# Cleanup
+python3 scripts/cleanup.py                  # Clean tmp/, cache files
+python3 scripts/cleanup.py --remove-from-git # Also remove tracked tmp files
+python3 scripts/cleanup.py --dry-run        # Preview what would be cleaned
+python3 scripts/cleanup.py --verbose        # Detailed output
+
 # Testing
 poetry run pytest tests/                    # All tests
 poetry run pytest tests/unit/              # Unit tests only
@@ -882,9 +887,12 @@ poetry show                                 # List dependencies
 
 ---
 
-## Recent Updates (v0.2.0)
+## Recent Updates (v0.3.6)
 
-- ✅ **Upgraded to omnibase_spi v0.2.0** - 9 new protocols for enhanced type safety
+- ✅ **Enhanced cleanup.py script** - Added `tmp/` cleanup with git index removal and `.venv` exclusion
+- ✅ **Updated .gitignore** - Added `tmp/` to ignore list for temporary files
+- ✅ **Pre-push hook** - Automated cleanup before every push using Python script
+- ✅ **Removed omnibase_spi dependency** - v0.3.6 transition to dependency inversion (SPI now depends on Core)
 - ✅ Added container types documentation (ModelContainer vs ModelONEXContainer)
 - ✅ Fixed formatter conflicts (isort/ruff) with --filter-files flag
 - ✅ Comprehensive test suite with 12,000+ tests (12,198 collected)
@@ -897,10 +905,10 @@ poetry show                                 # List dependencies
 
 ---
 
-**Last Updated**: 2025-11-01
-**Project Version**: 0.2.0
+**Last Updated**: 2025-12-04
+**Project Version**: 0.3.6
 **Python Version**: 3.12+
-**Branch**: release/0.2.0
+**Branch**: main
 
 ---
 

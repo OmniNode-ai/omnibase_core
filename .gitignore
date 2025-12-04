@@ -245,6 +245,9 @@ docs_private/
 .onex_cache/
 docs_archived/
 
+# Temporary files and caches
+tmp/
+
 # AI IDE tools (entire directories ignored)
 .codanna/
 .serena/
