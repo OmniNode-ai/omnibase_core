@@ -990,9 +990,7 @@ class TestNodeRoutingIntegration:
 
         for node_type in test_cases:
             # Call get_node_kind multiple times
-            results = [
-                EnumNodeType.get_node_kind(node_type) for _ in range(5)
-            ]
+            results = [EnumNodeType.get_node_kind(node_type) for _ in range(5)]
 
             # All results should be identical
             first_result = results[0]
@@ -1028,19 +1026,16 @@ class TestNodeRoutingIntegration:
                 failed_routings.append((node_type, e))
 
         # All mapped types should route successfully
-        assert not failed_routings, (
-            f"Some node types failed to route:\n"
-            + "\n".join(
-                f"  - {node_type}: {type(e).__name__}: {e}"
-                for node_type, e in failed_routings
-            )
+        assert not failed_routings, f"Some node types failed to route:\n" + "\n".join(
+            f"  - {node_type}: {type(e).__name__}: {e}"
+            for node_type, e in failed_routings
         )
 
         # Verify all routed kinds are valid EnumNodeKind members
         for node_type, kind in successful_routings.items():
-            assert kind in EnumNodeKind, (
-                f"{node_type} routed to {kind}, which is not a valid EnumNodeKind"
-            )
+            assert (
+                kind in EnumNodeKind
+            ), f"{node_type} routed to {kind}, which is not a valid EnumNodeKind"
 
     def test_routing_preserves_kind_semantics(self) -> None:
         """
@@ -1207,9 +1202,9 @@ class TestNodeRoutingIntegration:
         )
 
         # Verify RUNTIME_HOST_GENERIC is one of the sources
-        assert EnumNodeType.RUNTIME_HOST_GENERIC in runtime_host_sources, (
-            "RUNTIME_HOST_GENERIC should route to RUNTIME_HOST kind"
-        )
+        assert (
+            EnumNodeType.RUNTIME_HOST_GENERIC in runtime_host_sources
+        ), "RUNTIME_HOST_GENERIC should route to RUNTIME_HOST kind"
 
 
 if __name__ == "__main__":

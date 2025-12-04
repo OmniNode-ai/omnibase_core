@@ -185,7 +185,9 @@ class TestDeprecationWarnings:
 
             # No deprecation warnings should be raised
             deprecation_warnings = [
-                warning for warning in w if issubclass(warning.category, DeprecationWarning)
+                warning
+                for warning in w
+                if issubclass(warning.category, DeprecationWarning)
             ]
             assert (
                 len(deprecation_warnings) == 0
@@ -225,7 +227,9 @@ class TestDeprecationWarnings:
 
             # No deprecation warnings should be raised
             deprecation_warnings = [
-                warning for warning in w if issubclass(warning.category, DeprecationWarning)
+                warning
+                for warning in w
+                if issubclass(warning.category, DeprecationWarning)
             ]
             assert (
                 len(deprecation_warnings) == 0
@@ -288,7 +292,9 @@ class TestDeprecationWarnings:
 
             # No deprecation warnings should be raised for direct enum access
             deprecation_warnings = [
-                warning for warning in w if issubclass(warning.category, DeprecationWarning)
+                warning
+                for warning in w
+                if issubclass(warning.category, DeprecationWarning)
             ]
             assert (
                 len(deprecation_warnings) == 0
@@ -321,7 +327,9 @@ class TestDeprecationWarnings:
 
                 # All should trigger deprecation warning
                 deprecation_warnings = [
-                    warning for warning in w if issubclass(warning.category, DeprecationWarning)
+                    warning
+                    for warning in w
+                    if issubclass(warning.category, DeprecationWarning)
                 ]
                 assert (
                     len(deprecation_warnings) == 1
