@@ -35,6 +35,11 @@ Critical Rules:
 
 from typing import TYPE_CHECKING, TypeVar
 
+if TYPE_CHECKING:
+    # Type-only imports for static analysis (mypy, IDEs)
+    # These don't run at runtime, avoiding circular imports
+    from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
+
 # Import protocols from omnibase_core (Core-native protocols)
 from omnibase_core.protocols import (
     ProtocolConfigurable as Configurable,
