@@ -1,11 +1,5 @@
 from __future__ import annotations
 
-import hashlib
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Connection Authentication Model.
 
@@ -13,14 +7,15 @@ Authentication configuration for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
-
+import hashlib
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, SecretStr, field_serializer
+from pydantic import BaseModel, Field, SecretStr, field_serializer
 
 from omnibase_core.enums.enum_auth_type import EnumAuthType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelConnectionAuth(BaseModel):
@@ -117,8 +112,6 @@ class ModelConnectionAuth(BaseModel):
     def username(self, value: str | None) -> None:
         """Set username and generate corresponding user ID."""
         if value:
-            import hashlib
-
             user_hash = hashlib.sha256(value.encode()).hexdigest()
             self.user_id = UUID(
                 f"{user_hash[:8]}-{user_hash[8:12]}-{user_hash[12:16]}-{user_hash[16:20]}-{user_hash[20:32]}",

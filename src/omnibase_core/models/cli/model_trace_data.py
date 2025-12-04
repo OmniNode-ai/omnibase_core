@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Trace Data Model.
 
@@ -11,22 +5,23 @@ Restrictive model for CLI execution trace data
 with proper typing and validation.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelTraceData(BaseModel):
     """Restrictive model for trace data.
-    Implements Core protocols:
-    - Serializable: Data serialization/deserialization
-    - Nameable: Name management interface
-    - Validatable: Validation and verification
+
+    Provides serialization and validation utilities for CLI trace data.
+    Note: Uses Pydantic BaseModel for validation, not protocol-based interfaces.
     """
 
     trace_id: UUID = Field(description="Unique trace identifier")
@@ -46,14 +41,14 @@ class ModelTraceData(BaseModel):
         "validate_assignment": True,
     }
 
-    # Protocol method implementations
+    # Utility methods
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """Serialize to dictionary."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def get_name(self) -> str:
-        """Get name (Nameable protocol)."""
+        """Get a display name for this trace data."""
         # Try common name field patterns
         for field in ["name", "display_name", "title", "node_name"]:
             if hasattr(self, field):
@@ -63,7 +58,7 @@ class ModelTraceData(BaseModel):
         return f"Unnamed {self.__class__.__name__}"
 
     def set_name(self, name: str) -> None:
-        """Set name (Nameable protocol)."""
+        """Set a display name for this trace data."""
         # Try to set the most appropriate name field
         for field in ["name", "display_name", "title", "node_name"]:
             if hasattr(self, field):
@@ -71,13 +66,50 @@ class ModelTraceData(BaseModel):
                 return
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
+        """Validate instance integrity.
+
+        Validates:
+        - end_time is after start_time
+        - duration_ms matches time difference
+        - duration_ms is non-negative
+
+        Returns:
+            True if validation passes
+
+        Raises:
+            ModelOnexError: If validation fails
+        """
+        # Validate temporal consistency
+        if self.end_time < self.start_time:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+                message="end_time must be after start_time",
+                context={
+                    "start_time": self.start_time.isoformat(),
+                    "end_time": self.end_time.isoformat(),
+                },
+            )
+
+        # Validate duration is non-negative
+        if self.duration_ms < 0:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="duration_ms must be non-negative",
+                context={"duration_ms": self.duration_ms},
+            )
+
+        # Validate duration matches time difference (with tolerance for rounding)
+        time_delta_ms = (self.end_time - self.start_time).total_seconds() * 1000
+        tolerance_ms = 1.0  # 1ms tolerance for floating point precision
+        if abs(time_delta_ms - self.duration_ms) > tolerance_ms:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="duration_ms does not match time difference",
+                context={
+                    "duration_ms": self.duration_ms,
+                    "calculated_duration_ms": time_delta_ms,
+                    "tolerance_ms": tolerance_ms,
+                },
+            )
+
+        return True

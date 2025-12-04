@@ -104,6 +104,7 @@ class ModelMessagePayload(BaseModel):
         """Get unique identifier (Identifiable protocol)."""
         # Try common ID field patterns
         for field in [
+            "message_id",
             "id",
             "uuid",
             "identifier",

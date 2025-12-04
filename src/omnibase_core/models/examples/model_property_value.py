@@ -391,7 +391,7 @@ class ModelPropertyValue(BaseModel):
             assert isinstance(
                 self.value,
                 list,
-            ), f"Expected list[Any]type, got {type(self.value)}"
+            ), f"Expected list type, got {type(self.value)}"
             return list(self.value)
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,

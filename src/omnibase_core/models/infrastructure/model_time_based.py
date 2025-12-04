@@ -249,6 +249,8 @@ class ModelTimeBased(BaseModel, Generic[T]):
         """Get timeout progress as percentage (0-100)."""
         elapsed = self.get_elapsed_seconds(start_time, current_time)
         total_seconds = self.to_seconds()
+        if total_seconds <= 0:
+            return 100.0
         return min(100.0, (elapsed / total_seconds) * 100.0)
 
     def extend_time(self, additional_value: T) -> bool:

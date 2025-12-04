@@ -33,8 +33,6 @@ from .model_cli_result_metadata import ModelCliResultMetadata
 from .model_result_summary import ModelResultSummary
 from .model_trace_data import ModelTraceData
 
-# Removed Any import - using object for ONEX compliance
-
 
 class ModelCliResult(BaseModel):
     """

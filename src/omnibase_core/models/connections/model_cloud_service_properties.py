@@ -75,7 +75,7 @@ class ModelCloudServiceProperties(BaseModel):
             ) from e
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """Validate instance integrity (Validatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

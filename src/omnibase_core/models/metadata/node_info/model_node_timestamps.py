@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import Any
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 """
 Node Timestamps Model.
@@ -10,12 +11,6 @@ Node Timestamps Model.
 Timing and lifecycle information for nodes.
 Follows ONEX one-model-per-file architecture.
 """
-
-
-from datetime import UTC
-from typing import Any
-
-from pydantic import BaseModel
 
 
 class ModelNodeTimestamps(BaseModel):
@@ -194,9 +189,20 @@ class ModelNodeTimestamps(BaseModel):
             if hasattr(self, field):
                 value = getattr(self, field)
                 if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
+                    # Duck typing: check if value is dict-like or list-like
+                    # by attempting to iterate with items() or checking __iter__
+                    try:
+                        # Try dict-like access first
+                        if hasattr(value, "items") and callable(value.items):
+                            metadata[field] = value
+                        # Check for list-like behavior
+                        elif hasattr(value, "__iter__") and not hasattr(value, "items"):
+                            metadata[field] = value
+                        else:
+                            metadata[field] = str(value)
+                    except (TypeError, AttributeError):
+                        # Fallback to string conversion
+                        metadata[field] = str(value)
         return metadata
 
     def set_metadata(self, metadata: dict[str, Any]) -> bool:

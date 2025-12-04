@@ -162,6 +162,8 @@ class ModelProgressMilestones(BaseModel):
         phases: list[EnumExecutionPhase],
     ) -> ModelProgressMilestones:
         """Create milestone tracker with phase-based milestones."""
+        if not phases:
+            return cls(milestones={})
         milestones = {}
         phase_increment = 100.0 / len(phases)
 

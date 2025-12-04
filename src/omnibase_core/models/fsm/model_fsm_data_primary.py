@@ -65,7 +65,7 @@ class ModelFsmData(BaseModel):
         return [t for t in self.transitions if t.to_state == state_name]
 
     def validate_fsm_structure(self) -> list[str]:
-        """Validate FSM structure and return list[Any]of validation errors."""
+        """Validate FSM structure and return list of validation errors."""
         errors = []
 
         if not self.initial_state:

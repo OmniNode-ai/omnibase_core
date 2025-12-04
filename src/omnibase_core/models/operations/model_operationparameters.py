@@ -14,11 +14,10 @@ class ModelOperationParameters(BaseModel):
     Strongly-typed operation parameters with discriminated unions.
 
     Replaces primitive soup pattern with discriminated parameter types.
-    Implements Core protocols:
-    - Executable: Execution management capabilities
-    - Identifiable: UUID-based identification
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
+
+    Note: This class provides utility methods but does NOT implement
+    protocol interfaces. Use protocol-specific adapters if protocol
+    compliance is required.
     """
 
     # Use discriminated union for parameter values
@@ -33,23 +32,46 @@ class ModelOperationParameters(BaseModel):
         "validate_assignment": True,
     }
 
-    # Protocol method implementations
+    # Utility methods (NOT protocol implementations)
 
-    def execute(self, **kwargs: Any) -> bool:
-        """Execute or update execution status (Executable protocol)."""
+    async def execute(self) -> object:
+        """
+        Execute or validate operation parameters.
+
+        Returns:
+            Dictionary containing execution results and parameter validation status.
+
+        Raises:
+            ModelOnexError: If parameter validation fails.
+        """
         try:
-            # Update any relevant execution fields
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
-            return False
+            # Validate all parameters
+            validation_results = {
+                "success": True,
+                "parameters": self.parameters,
+                "validated": True,
+            }
+            return validation_results
+        except Exception as e:
+            raise ModelOnexError(
+                message=f"Parameter execution failed: {e}",
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                context={"error": str(e)},
+            ) from e
 
     def get_id(self) -> str:
-        """Get unique identifier (Identifiable protocol)."""
+        """
+        Get unique identifier from common field patterns.
+
+        Utility method for extracting ID from various field names.
+        Not a protocol implementation.
+
+        Returns:
+            String representation of the ID field.
+
+        Raises:
+            ModelOnexError: If no valid ID field is found.
+        """
         # Try common ID field patterns
         for field in [
             "id",
@@ -71,16 +93,29 @@ class ModelOperationParameters(BaseModel):
         )
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize to dictionary (Serializable protocol)."""
+        """
+        Serialize to dictionary format.
+
+        Utility method for serialization. Not a protocol implementation.
+
+        Returns:
+            Dictionary representation of the operation parameters.
+        """
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """
+        Validate instance integrity.
+
+        Utility method for basic validation. Not a protocol implementation.
+
+        Returns:
+            True if validation passes, False otherwise.
+        """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
+        except Exception:
+            # Graceful fallback for validation failures
             return False

@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Function Relationships Model.
 
@@ -11,14 +7,12 @@ Dependency and relationship information for functions.
 Part of the ModelFunctionNodeMetadata restructuring.
 """
 
-
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.types.typed_dict_function_relationships_summary import (
     TypedDictFunctionRelationshipsSummary,
 )
@@ -32,7 +26,6 @@ class ModelFunctionRelationships(BaseModel):
     - Dependencies and related functions
     - Categorization and tagging
     Implements Core protocols:
-    - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
@@ -145,28 +138,6 @@ class ModelFunctionRelationships(BaseModel):
     }
 
     # Protocol method implementations
-
-    def get_id(self) -> str:
-        """Get unique identifier (Identifiable protocol)."""
-        # Try common ID field patterns
-        for field in [
-            "id",
-            "uuid",
-            "identifier",
-            "node_id",
-            "execution_id",
-            "metadata_id",
-        ]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    return str(value)
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=f"{self.__class__.__name__} must have a valid ID field "
-            f"(type_id, id, uuid, identifier, etc.). "
-            f"Cannot generate stable ID without UUID field.",
-        )
 
     def get_metadata(self) -> dict[str, Any]:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""

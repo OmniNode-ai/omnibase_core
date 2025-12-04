@@ -1,9 +1,16 @@
 from __future__ import annotations
 
-from pydantic import Field
+from typing import Any
+from uuid import UUID
 
+from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_standard_category import EnumStandardCategory
+from omnibase_core.enums.enum_standard_tag import EnumStandardTag
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 """
 Structured Display Name Model.
@@ -11,17 +18,6 @@ Structured Display Name Model.
 Provides consistent naming patterns across metadata models.
 Reduces reliance on free-form display name strings.
 """
-
-
-from typing import Any
-from uuid import UUID
-
-from pydantic import BaseModel
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_standard_category import EnumStandardCategory
-from omnibase_core.enums.enum_standard_tag import EnumStandardTag
-from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
 class ModelStructuredDisplayName(BaseModel):
