@@ -24,7 +24,7 @@ class ModelMetric(BaseModel):
 
     Eliminates Any usage and uses Union types for supported metric values
     following ONEX strong typing standards.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

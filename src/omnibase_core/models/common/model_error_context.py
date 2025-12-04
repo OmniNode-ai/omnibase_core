@@ -22,7 +22,7 @@ class ModelErrorContext(BaseModel):
     Type-safe representation of error context.
 
     This model can represent error context values without resorting to Any type usage.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """

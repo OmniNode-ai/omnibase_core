@@ -29,7 +29,7 @@ class ModelNodeFeatureFlags(BaseModel):
     Contains feature enablement flags:
     - Caching and monitoring
     - Tracing and debugging features
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

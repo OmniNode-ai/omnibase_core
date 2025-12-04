@@ -19,7 +19,7 @@ class ModelInputState(BaseModel):
     Replaces dict[str, str | int | ModelSemVer | dict[str, int]] with
     structured input state that handles version parsing requirements.
 
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -24,7 +24,7 @@ from .model_example_data import ModelExampleInputData, ModelExampleOutputData
 
 class ModelExampleSummary(BaseModel):
     """Clean model for individual example summary data.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

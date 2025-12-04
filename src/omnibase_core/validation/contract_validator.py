@@ -16,17 +16,16 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 import yaml
-from omnibase_spi.protocols.validation.protocol_compliance_validator import (
+from pydantic import ValidationError
+
+from omnibase_core.protocols import (
     ProtocolArchitectureCompliance,
     ProtocolComplianceReport,
     ProtocolComplianceRule,
     ProtocolComplianceViolation,
     ProtocolONEXStandards,
-)
-from omnibase_spi.protocols.validation.protocol_validation import (
     ProtocolValidationResult,
 )
-from pydantic import ValidationError
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

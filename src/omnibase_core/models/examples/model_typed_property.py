@@ -38,7 +38,7 @@ T = TypeVar("T")
 
 class ModelTypedProperty(BaseModel):
     """A single typed property with validation.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

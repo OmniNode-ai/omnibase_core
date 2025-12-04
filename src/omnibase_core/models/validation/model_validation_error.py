@@ -24,7 +24,7 @@ from .model_validation_value import ModelValidationValue
 
 class ModelValidationError(BaseModel):
     """Validation error information.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization
     """

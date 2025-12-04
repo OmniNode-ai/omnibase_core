@@ -32,7 +32,7 @@ class ModelExamplesCollectionSummary(BaseModel):
     Eliminates: dict[str, list[dict[str, Any]] | dict[str, Any] | None | int | bool]
 
     With proper structured data using specific field types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

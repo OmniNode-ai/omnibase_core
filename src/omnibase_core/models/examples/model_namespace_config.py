@@ -14,7 +14,7 @@ from omnibase_core.enums.enum_namespace_strategy import EnumNamespaceStrategy
 
 class ModelNamespaceConfig(BaseModel):
     """Configuration for namespace handling.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

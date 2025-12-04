@@ -9,7 +9,7 @@ class ModelOnexUri(BaseModel):
     """
     Canonical Pydantic model for ONEX URIs.
     See docs/nodes/node_contracts.md and docs/nodes/structural_conventions.md for spec.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

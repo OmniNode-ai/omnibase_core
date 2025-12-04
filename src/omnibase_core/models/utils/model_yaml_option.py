@@ -20,7 +20,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 class ModelYamlOption(BaseModel):
     """Discriminated union for YAML dumper option values.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
     """

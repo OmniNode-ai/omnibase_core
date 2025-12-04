@@ -28,7 +28,7 @@ class ModelMetadataValue(BaseModel):
 
     Replaces Union[str, int, float, bool] with structured value storage
     that maintains type information for metadata fields.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

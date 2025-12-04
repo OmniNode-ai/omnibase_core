@@ -28,7 +28,7 @@ class ModelCliCommandOption(BaseModel):
 
     Uses type discriminator pattern to provide type safety
     and validation for CLI command configurations.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

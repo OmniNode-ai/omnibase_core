@@ -50,7 +50,7 @@ class ModelMetadataNodeInfo(BaseModel):
 
     Provides detailed metadata, usage tracking, and performance
     metrics for nodes in metadata collections.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -19,7 +19,7 @@ from omnibase_core.types.constraints import PrimitiveValueType
 
 class ModelFieldAccessor(BaseModel):
     """Generic field accessor with dot notation support and type safety.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

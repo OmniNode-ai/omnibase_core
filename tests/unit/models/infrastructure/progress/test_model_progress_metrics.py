@@ -2,6 +2,8 @@
 
 from datetime import datetime
 
+import pytest
+
 from omnibase_core.models.infrastructure.progress.model_progress_metrics import (
     ModelProgressMetrics,
 )
@@ -237,17 +239,20 @@ class TestModelProgressMetricsFactoryMethods:
 class TestModelProgressMetricsProtocols:
     """Tests for ModelProgressMetrics protocol implementations."""
 
-    def test_execute_protocol(self):
+    @pytest.mark.asyncio
+    async def test_execute_protocol(self):
         """Test execute method."""
         metrics = ModelProgressMetrics()
-        result = metrics.execute()
-        assert result is True
+        result = await metrics.execute()
+        assert isinstance(
+            result, dict
+        )  # execute() returns object (model_dump() result)
 
     def test_configure_protocol(self):
         """Test configure method."""
         metrics = ModelProgressMetrics()
         result = metrics.configure()
-        assert result is True
+        assert result is None  # configure() returns None per protocol contract
 
     def test_serialize_protocol(self):
         """Test serialize method."""

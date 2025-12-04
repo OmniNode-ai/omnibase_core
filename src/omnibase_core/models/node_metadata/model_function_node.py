@@ -39,7 +39,7 @@ class ModelFunctionNode(BaseModel):
     - core: Essential function information and signature
     - metadata: Documentation, tags, and organizational info
     - performance: Performance metrics and complexity analysis
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

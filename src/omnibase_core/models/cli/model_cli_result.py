@@ -33,8 +33,6 @@ from .model_cli_result_metadata import ModelCliResultMetadata
 from .model_result_summary import ModelResultSummary
 from .model_trace_data import ModelTraceData
 
-# Removed Any import - using object for ONEX compliance
-
 
 class ModelCliResult(BaseModel):
     """
@@ -43,7 +41,7 @@ class ModelCliResult(BaseModel):
     This model captures the complete outcome of CLI command execution
     including success/failure, output data, errors, and performance metrics.
     Properly typed for MyPy compliance.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

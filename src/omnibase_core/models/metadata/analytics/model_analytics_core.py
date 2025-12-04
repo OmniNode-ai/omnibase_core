@@ -26,7 +26,7 @@ class ModelAnalyticsCore(BaseModel):
     Core analytics information with collection details and basic counts.
 
     Focused on fundamental collection identification and node counts.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

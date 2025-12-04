@@ -19,7 +19,7 @@ from omnibase_core.enums.enum_data_classification import EnumDataClassification
 
 class ModelDataHandlingDeclaration(BaseModel):
     """Data handling and classification declaration.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -30,7 +30,7 @@ class ModelValidationValue(BaseModel):
 
     Replaces str | int | bool unions in validation details with
     a strongly-typed discriminated union following ONEX patterns.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization
     """

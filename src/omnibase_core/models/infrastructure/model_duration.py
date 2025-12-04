@@ -30,7 +30,7 @@ class ModelDuration(BaseModel):
 
     This model delegates all operations to the unified ModelTimeBased model
     while providing an intuitive interface for duration operations.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

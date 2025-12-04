@@ -30,7 +30,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
 
     Provides patterns for creating validation errors with
     appropriate severity levels and error codes.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -1,24 +1,22 @@
+"""
+Execution-related factory parameters.
+
+Provides strong typing for execution results and parameters
+using TypedDict for structural typing.
+"""
+
 from __future__ import annotations
 
 from typing import TypedDict
 
-"""
-Execution-related factory parameters.
-Implements omnibase_spi protocols:
-- Configurable: Configuration management capabilities
-- Serializable: Data serialization/deserialization
-- Validatable: Validation and verification
-- Nameable: Name management interface
-"""
-
 
 class TypedDictExecutionParams(TypedDict, total=False):
     """Execution-related factory parameters.
-    Implements omnibase_spi protocols:
-    - Configurable: Configuration management capabilities
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
-    - Nameable: Name management interface
+
+    Provides strong typing for execution results including success status,
+    exit codes, error messages, and generic data payloads.
+
+    All fields are optional (total=False).
     """
 
     success: bool

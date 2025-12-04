@@ -34,7 +34,7 @@ class ModelValidationContainer(BaseModel):
     This model standardizes validation error collection across all domains,
     replacing scattered validation_errors list[Any]s and providing consistent
     validation reporting capabilities.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization
     """

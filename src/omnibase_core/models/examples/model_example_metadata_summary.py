@@ -25,7 +25,7 @@ from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValu
 
 class ModelExampleMetadataSummary(BaseModel):
     """Clean model for metadata summary.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

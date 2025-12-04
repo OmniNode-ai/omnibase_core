@@ -37,7 +37,7 @@ class ModelMetadataFieldInfo(BaseModel):
 
     Restructured using composition to organize properties by concern.
     Reduces string field count through logical grouping.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -1,7 +1,14 @@
 from __future__ import annotations
 
-from pydantic import Field
+from typing import Any
+from uuid import UUID
 
+from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.enums.enum_status import EnumStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -13,20 +20,9 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 
-from typing import Any
-from uuid import UUID
-
-from pydantic import BaseModel
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
-from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
-from omnibase_core.enums.enum_status import EnumStatus
-
-
 class ModelNodeCoreInfoSummary(BaseModel):
     """Core node information summary with specific types.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

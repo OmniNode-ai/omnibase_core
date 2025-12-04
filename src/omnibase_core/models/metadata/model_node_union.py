@@ -27,7 +27,7 @@ class ModelNodeUnion(BaseModel):
     Discriminated union for function node types.
 
     Replaces ModelFunctionNode | ModelFunctionNodeData union with structured typing.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

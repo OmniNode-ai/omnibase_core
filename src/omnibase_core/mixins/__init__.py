@@ -9,9 +9,9 @@ that can be composed into concrete node implementations.
 """
 
 # Core mixins
-# Import protocols from omnibase_spi v0.2.0
-from omnibase_spi.protocols import ProtocolEventBusRegistry as RegistryWithBus
-from omnibase_spi.protocols.types import ProtocolLogEmitter as LogEmitter
+# Import protocols from omnibase_core (Core-native protocols)
+from omnibase_core.protocols import ProtocolEventBusRegistry as RegistryWithBus
+from omnibase_core.protocols import ProtocolLogEmitter as LogEmitter
 
 # Protocol name transition: ProtocolRegistryWithBus → ProtocolEventBusRegistry
 # omnibase_spi v0.2.0 renamed ProtocolRegistryWithBus to ProtocolEventBusRegistry

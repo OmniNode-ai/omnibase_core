@@ -19,6 +19,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
 from omnibase_core.enums.enum_metric_data_type import EnumMetricDataType
 from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
 
@@ -36,7 +37,7 @@ class ModelMetricsData(BaseModel):
     Eliminates: dict[str, str | int | bool | float]
 
     With proper structured data using a single generic metric type.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
@@ -100,11 +101,17 @@ class ModelMetricsData(BaseModel):
 
     def get_metrics_by_type(self, metric_type: EnumMetricDataType) -> list[ModelMetric]:
         """Get all metrics of a specific type."""
-        # Convert metric_type to string for comparison with value.value_type
+        type_mapping = {
+            EnumMetricDataType.STRING: [EnumFlexibleValueType.STRING],
+            EnumMetricDataType.NUMERIC: [
+                EnumFlexibleValueType.INTEGER,
+                EnumFlexibleValueType.FLOAT,
+            ],
+            EnumMetricDataType.BOOLEAN: [EnumFlexibleValueType.BOOLEAN],
+        }
+        valid_types = type_mapping[metric_type]
         return [
-            metric
-            for metric in self.metrics
-            if str(metric.value.value_type).lower() == str(metric_type).lower()
+            metric for metric in self.metrics if metric.value.value_type in valid_types
         ]
 
     @property

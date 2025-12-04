@@ -31,7 +31,7 @@ class ModelNodeOrganizationMetadata(BaseModel):
     - Tags and classifications
     - Dependencies and relationships
     - Custom metadata
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

@@ -29,7 +29,7 @@ class ModelFunctionDocumentation(BaseModel):
     Contains documentation content:
     - Docstrings and descriptions
     - Usage examples and notes
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Identifiable: UUID-based identification
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization

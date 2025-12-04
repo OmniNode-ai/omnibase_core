@@ -23,8 +23,7 @@
 
 from typing import Any, Union
 
-from omnibase_spi.protocols.core import ProtocolCanonicalSerializer
-from omnibase_spi.protocols.types.protocol_core_types import ContextValue
+from omnibase_core.protocols import ProtocolCanonicalSerializer, ContextValue
 
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

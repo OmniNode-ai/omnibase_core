@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Progress Metrics Model.
 
@@ -13,15 +5,17 @@ Custom metrics and tagging for progress tracking.
 Follows ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 
 
@@ -30,7 +24,7 @@ class ModelProgressMetrics(BaseModel):
     Progress metrics with custom data and tagging support.
 
     Focused on extensible metrics tracking and categorization.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
@@ -192,27 +186,23 @@ class ModelProgressMetrics(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: Any) -> bool:
+    async def execute(self) -> object:
         """Execute or update execution status (Executable protocol)."""
         try:
-            # Update any relevant execution fields
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
+            # Return current state as execution result
+            return self.model_dump(exclude_none=False, by_alias=True)
         except Exception as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Operation failed: {e}",
             ) from e
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: Any) -> None:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
-            return True
         except Exception as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

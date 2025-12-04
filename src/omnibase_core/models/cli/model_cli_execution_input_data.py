@@ -33,7 +33,7 @@ class ModelCliExecutionInputData(BaseModel):
     Replaces dict[str, Any] for input_data to provide
     type safety and validation for execution inputs.
     Uses discriminated union pattern for strong typing.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification
@@ -366,7 +366,7 @@ class ModelCliExecutionInputData(BaseModel):
         value: list[str],
         **kwargs: object,
     ) -> ModelCliExecutionInputData:
-        """Create input data from string list[Any]value."""
+        """Create input data from string list value."""
         # Extract known fields with proper types from kwargs
         data_type = kwargs.get("data_type", EnumDataType.TEXT)
         is_sensitive = kwargs.get("is_sensitive", False)

@@ -22,7 +22,7 @@ class ModelRetryAdvanced(BaseModel):
 
     Contains circuit breaker settings and metadata
     without basic retry configuration concerns.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

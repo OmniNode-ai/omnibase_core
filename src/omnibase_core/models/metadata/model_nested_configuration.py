@@ -21,7 +21,7 @@ from omnibase_core.models.infrastructure.model_value import ModelValue
 
 class ModelNestedConfiguration(BaseModel):
     """Model for nested configuration data.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

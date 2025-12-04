@@ -29,7 +29,7 @@ class ModelExampleOutputData(BaseModel):
     Clean model for example output data.
 
     Replaces dict[str, Any] with structured data model.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

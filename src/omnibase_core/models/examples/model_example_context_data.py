@@ -29,7 +29,7 @@ class ModelExampleContextData(BaseModel):
     Clean model for example context data.
 
     Replaces dict[str, Any] with structured context model.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

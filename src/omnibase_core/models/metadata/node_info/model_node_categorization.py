@@ -25,7 +25,7 @@ class ModelNodeCategorization(BaseModel):
     Node categorization with tags, categories, and relationships.
 
     Focused on organizational and relational aspects of nodes.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

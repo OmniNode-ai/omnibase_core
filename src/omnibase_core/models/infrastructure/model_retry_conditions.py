@@ -21,7 +21,7 @@ class ModelRetryConditions(BaseModel):
 
     Contains rules for when retries should be attempted
     without configuration or execution tracking concerns.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization

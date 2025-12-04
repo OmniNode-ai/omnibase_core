@@ -39,7 +39,7 @@ class ModelConfigurationBase(BaseModel, Generic[T]):
     - Generic typed configuration data
     - Common utility methods
 
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

@@ -22,7 +22,7 @@ from omnibase_core.enums.enum_instance_type import EnumInstanceType
 
 class ModelCloudServiceProperties(BaseModel):
     """Cloud/service-specific connection properties.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Validatable: Validation and verification
     - Serializable: Data serialization/deserialization
@@ -75,7 +75,7 @@ class ModelCloudServiceProperties(BaseModel):
             ) from e
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """Validate instance integrity (Validatable protocol)."""
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

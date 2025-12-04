@@ -24,7 +24,7 @@ class ModelGenericCollectionSummary(BaseModel):
     Strongly-typed summary for generic collections.
 
     Replaces Dict[str, Any] anti-pattern with proper type safety.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Configurable: Configuration management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification

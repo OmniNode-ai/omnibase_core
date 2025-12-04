@@ -27,7 +27,7 @@ class ModelCliOutputData(BaseModel):
     Clean model for CLI execution output data.
 
     Replaces dict[str, Any] with structured data model.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

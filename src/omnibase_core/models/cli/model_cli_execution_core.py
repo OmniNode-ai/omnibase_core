@@ -37,7 +37,7 @@ class ModelCliExecutionCore(BaseModel):
 
     Contains essential execution identification, command info, and timing.
     Focused model without configuration or metadata clutter.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

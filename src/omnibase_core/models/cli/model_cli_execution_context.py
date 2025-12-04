@@ -32,7 +32,7 @@ class ModelCliExecutionContext(BaseModel):
 
     Replaces dict[str, Any] for custom_context to provide
     type safety and validation for execution context data.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Serializable: Data serialization/deserialization
     - Nameable: Name management interface
     - Validatable: Validation and verification

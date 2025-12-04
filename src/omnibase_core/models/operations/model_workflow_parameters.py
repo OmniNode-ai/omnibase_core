@@ -29,7 +29,7 @@ class ModelWorkflowParameters(BaseModel):
     Strongly-typed workflow parameters with discriminated unions.
 
     Replaces primitive soup pattern with specific parameter type classes.
-    Implements omnibase_spi protocols:
+    Implements Core protocols:
     - Executable: Execution management capabilities
     - Identifiable: UUID-based identification
     - Serializable: Data serialization/deserialization

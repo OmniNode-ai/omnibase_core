@@ -10,11 +10,12 @@ from typing_extensions import TypedDict
 
 class TypedDictFieldValue(TypedDict, total=False):
     """Typed dictionary for field values.
-    Implements omnibase_spi protocols:
-    - Configurable: Configuration management capabilities
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
-    - Nameable: Name management interface
+
+    Provides strong typing for field values in the field accessor pattern,
+    supporting common data types (string, int, float, bool, list) without
+    resorting to Any type usage.
+
+    All fields are optional (total=False).
     """
 
     string_value: str

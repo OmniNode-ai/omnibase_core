@@ -210,7 +210,7 @@ jobs:
         run: poetry run black --check src/ tests/
 
       - name: Check isort import sorting
-        run: poetry run isort --check-only src/ tests/
+        run: poetry run isort --check-only --filter-files src/ tests/
 
       - name: Run mypy type checking (strict)
         run: poetry run mypy src/omnibase_core

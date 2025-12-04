@@ -1,9 +1,7 @@
 from typing import overload
 from uuid import UUID
 
-from omnibase_spi.protocols.types import (
-    ProtocolMetadata as ProtocolSupportedMetadataType,
-)
+from omnibase_core.protocols import ProtocolSupportedMetadataType
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -23,7 +21,7 @@ class ModelGenericMetadata(BaseModel):
     """
     Generic metadata storage with flexible fields.
 
-    Implements omnibase_spi protocols:
+    Implements Core-native protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
