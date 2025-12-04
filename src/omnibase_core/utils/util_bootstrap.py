@@ -179,19 +179,18 @@ def _get_registry_node() -> Any | None:
     """
     Attempt to find and return the registry node.
 
+    NOTE: omnibase_spi was removed in v0.3.6 - SPI now depends on Core.
+    Registry discovery now happens through Core's native mechanisms
+    via ModelONEXContainer. This function returns None to trigger
+    fallback service resolution.
+
     Returns:
         Registry node instance or None if not found
     """
-    try:
-        # Use ONEX-compliant service registry
-        # DELETED: using containers now
-        from omnibase_spi.spi_registry import get_spi_registry
-
-        return get_spi_registry()
-
-    except ImportError:
-        # No registry available - ONEX systems should always have a registry
-        return None
+    # v0.3.6: SPI dependency removed - registry discovery is now handled
+    # through Core's native container-based DI system.
+    # Return None to use fallback service resolution.
+    return None
 
 
 def _get_fallback_service(protocol_type: type[T]) -> T | None:
