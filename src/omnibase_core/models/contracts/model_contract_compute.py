@@ -76,7 +76,38 @@ class ModelContractCompute(ModelContractBase):
     @field_validator("node_type", mode="before")
     @classmethod
     def validate_node_type_architecture(cls, v: object) -> EnumNodeType:
-        """Validate and convert architecture type to base node type."""
+        """
+        Validate and convert node_type field values to EnumNodeType.
+
+        Accepts multiple input formats for flexibility in YAML contracts:
+        - EnumNodeArchitectureType enum values (mapped to COMPUTE_GENERIC)
+        - EnumNodeType enum values (passed through unchanged)
+        - Lowercase architecture type strings: "compute", "effect", "reducer", "orchestrator"
+        - Valid EnumNodeType string values (e.g., "COMPUTE_GENERIC")
+
+        Lowercase strings are mapped to their generic node types:
+        - "compute" -> EnumNodeType.COMPUTE_GENERIC
+        - "effect" -> EnumNodeType.EFFECT_GENERIC
+        - "reducer" -> EnumNodeType.REDUCER_GENERIC
+        - "orchestrator" -> EnumNodeType.ORCHESTRATOR_GENERIC
+
+        Args:
+            v: The raw node_type value from YAML or direct input
+
+        Returns:
+            EnumNodeType: The validated and converted node type
+
+        Raises:
+            ModelOnexError: If the value is invalid or cannot be converted
+
+        Examples:
+            >>> validate_node_type_architecture("compute")
+            EnumNodeType.COMPUTE_GENERIC
+            >>> validate_node_type_architecture("COMPUTE_GENERIC")
+            EnumNodeType.COMPUTE_GENERIC
+            >>> validate_node_type_architecture(EnumNodeType.COMPUTE_GENERIC)
+            EnumNodeType.COMPUTE_GENERIC
+        """
         if isinstance(v, EnumNodeArchitectureType):
             return EnumNodeType.COMPUTE_GENERIC
         if isinstance(v, EnumNodeType):
@@ -85,21 +116,25 @@ class ModelContractCompute(ModelContractBase):
             # Try architecture type mapping first (lowercase)
             if v.lower() in cls._ARCH_TO_NODE_TYPE:
                 return cls._ARCH_TO_NODE_TYPE[v.lower()]
+            # Try exact match first, then uppercase (for case-insensitive YAML support)
             try:
                 return EnumNodeType(v)
             except ValueError:
-                raise ModelOnexError(
-                    message=f"Invalid string value for node_type: {v}",
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    details=ModelErrorContext.with_context(
-                        {
-                            "error_type": ModelSchemaValue.from_value("valueerror"),
-                            "validation_context": ModelSchemaValue.from_value(
-                                "model_validation",
-                            ),
-                        },
-                    ),
-                )
+                try:
+                    return EnumNodeType(v.upper())
+                except ValueError:
+                    raise ModelOnexError(
+                        message=f"Invalid string value for node_type: {v}",
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        details=ModelErrorContext.with_context(
+                            {
+                                "error_type": ModelSchemaValue.from_value("valueerror"),
+                                "validation_context": ModelSchemaValue.from_value(
+                                    "model_validation",
+                                ),
+                            },
+                        ),
+                    )
         else:
             raise ModelOnexError(
                 message=f"Invalid node_type type: {type(v).__name__}",

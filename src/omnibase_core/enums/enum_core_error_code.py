@@ -67,6 +67,10 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     MIGRATION_ERROR = "ONEX_CORE_091_MIGRATION_ERROR"
     TIMEOUT_ERROR = "ONEX_CORE_092_TIMEOUT_ERROR"
     RESOURCE_ERROR = "ONEX_CORE_093_RESOURCE_ERROR"
+    RUNTIME_ERROR = "ONEX_CORE_094_RUNTIME_ERROR"
+    HANDLER_EXECUTION_ERROR = "ONEX_CORE_095_HANDLER_EXECUTION_ERROR"
+    EVENT_BUS_ERROR = "ONEX_CORE_096_EVENT_BUS_ERROR"
+    CONTRACT_VALIDATION_ERROR = "ONEX_CORE_097_CONTRACT_VALIDATION_ERROR"
 
     # Test and development errors (101-120)
     TEST_SETUP_FAILED = "ONEX_CORE_101_TEST_SETUP_FAILED"
@@ -197,6 +201,10 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.MIGRATION_ERROR: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.TIMEOUT_ERROR: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.RESOURCE_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.RUNTIME_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.HANDLER_EXECUTION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.EVENT_BUS_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR: EnumCLIExitCode.ERROR,
     # Database errors -> ERROR
     EnumCoreErrorCode.DATABASE_CONNECTION_ERROR: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.DATABASE_OPERATION_ERROR: EnumCLIExitCode.ERROR,
@@ -303,6 +311,10 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.MIGRATION_ERROR: "Migration error occurred",
         EnumCoreErrorCode.TIMEOUT_ERROR: "Timeout error occurred",
         EnumCoreErrorCode.RESOURCE_ERROR: "Resource error occurred",
+        EnumCoreErrorCode.RUNTIME_ERROR: "Runtime error occurred",
+        EnumCoreErrorCode.HANDLER_EXECUTION_ERROR: "Handler execution failed",
+        EnumCoreErrorCode.EVENT_BUS_ERROR: "Event bus operation failed",
+        EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR: "Contract validation failed",
         EnumCoreErrorCode.TEST_SETUP_FAILED: "Test setup failed",
         EnumCoreErrorCode.TEST_ASSERTION_FAILED: "Test assertion failed",
         EnumCoreErrorCode.MOCK_CONFIGURATION_ERROR: "Mock configuration error",
