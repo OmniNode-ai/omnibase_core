@@ -147,13 +147,11 @@ omnibase_core/docs/
 | [Configuration Management](patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns | ✅ Available |
 | [Performance Benchmarks](guides/PERFORMANCE_BENCHMARKS.md) | Performance testing | ✅ Available |
 
-### Release Notes
+### Changelog
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| Release Notes v0.2.0 | Discovery enhancements, omnibase_spi v0.2.0 upgrade, container types documentation | ✅ Current |
-| [Release Notes v0.1.1](release-notes/RELEASE_NOTES_v0.1.1.md) | Quality & documentation improvements | ✅ Available |
-| [Release Notes v0.1.0](release-notes/RELEASE_NOTES_v0.1.0.md) | Initial public release | ✅ Available |
+| [CHANGELOG.md](../CHANGELOG.md) | All notable changes following [Keep a Changelog](https://keepachangelog.com) format | ✅ Current |
 
 ---
 

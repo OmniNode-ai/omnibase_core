@@ -1,0 +1,11 @@
+# yamlfmt configuration for omnibase_core
+# Reference: https://github.com/google/yamlfmt/blob/main/docs/config-file.md
+#
+# This configuration aligns with the ONEX ecosystem standards.
+
+formatter:
+  retain_line_breaks: true
+  max_line_length: 100
+  indent: 2
+  include_document_start: true
+  pad_line_comments: 2

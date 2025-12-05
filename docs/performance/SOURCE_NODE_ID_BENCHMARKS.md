@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-Performance benchmarks were conducted to measure the overhead introduced by the optional `source_node_id` field added to `ModelOnexEnvelopeV1` in PR #71. This field enables node-to-node event tracking in the ONEX architecture.
+Performance benchmarks were conducted to measure the overhead introduced by the optional `source_node_id` field added to `ModelOnexEnvelope` (formerly `ModelOnexEnvelopeV1`) in PR #71. This field enables node-to-node event tracking in the ONEX architecture.
 
 **Key Findings**:
 - ✅ **Memory overhead**: Zero (0 bytes)
@@ -36,16 +36,19 @@ Performance benchmarks were conducted to measure the overhead introduced by the 
 
 ### What is source_node_id?
 
-The `source_node_id` field is an optional UUID field added to `ModelOnexEnvelopeV1` to enable node-to-node event tracking in distributed ONEX workflows.
+The `source_node_id` field is an optional UUID field added to `ModelOnexEnvelope` (formerly `ModelOnexEnvelopeV1`) to enable node-to-node event tracking in distributed ONEX workflows.
 
-```
-class ModelOnexEnvelopeV1(BaseModel):
+```python
+class ModelOnexEnvelope(BaseModel):
     # ... other fields ...
     source_node_id: UUID | None = Field(
         default=None,
-        description="UUID of the node instance that generated this event"
+        description="UUID of the node instance that created this envelope. "
+        "Used for node-to-node tracking in distributed systems.",
     )
 ```
+
+> **Migration Note**: The **model class** `ModelOnexEnvelopeV1` was renamed to `ModelOnexEnvelope` in OMN-224. The `source_node_id` field (optional UUID for tracking node instances) remains unchanged. Note that `source_node_id` is distinct from `source_node`, which is a required string field for the node name.
 
 ### Purpose
 
@@ -106,7 +109,7 @@ PR #71 reviewer requested benchmarks to quantify:
 
 **Test**: Envelope creation time with and without `source_node_id`
 
-```
+```text
 Creation Time Benchmark:
   Without source_node_id: 0.0060ms ± 0.0001ms
   With source_node_id:    0.0079ms ± 0.0001ms
@@ -128,7 +131,7 @@ Creation Time Benchmark:
 
 **Test**: Dictionary serialization performance
 
-```
+```text
 model_dump() Serialization Benchmark:
   Without source_node_id: 0.0013ms ± 0.0000ms
   With source_node_id:    0.0014ms ± 0.0000ms
@@ -149,7 +152,7 @@ model_dump() Serialization Benchmark:
 
 **Test**: JSON string serialization performance
 
-```
+```text
 model_dump_json() Serialization Benchmark:
   Without source_node_id: 0.0019ms ± 0.0000ms
   With source_node_id:    0.0021ms ± 0.0001ms
@@ -170,7 +173,7 @@ model_dump_json() Serialization Benchmark:
 
 **Test**: Object size and serialized size impact
 
-```
+```text
 Memory Footprint Benchmark:
   Without source_node_id: 72 bytes
   With source_node_id:    72 bytes
@@ -219,7 +222,7 @@ Serialized JSON Size:
 
 **Test**: Serializing 1,000 envelopes to JSON
 
-```
+```text
 Bulk Serialization Benchmark (n=1000):
   Without source_node_id: 0.0043s
   With source_node_id:    0.0022s
@@ -240,7 +243,7 @@ Bulk Serialization Benchmark (n=1000):
 
 **Test**: Complete cycle (create → serialize → deserialize)
 
-```
+```text
 Round Trip Benchmark:
   Without source_node_id: 0.0116ms ± 0.0003ms
   With source_node_id:    0.0137ms ± 0.0001ms
@@ -261,7 +264,7 @@ Round Trip Benchmark:
 
 **Test**: Process-level memory usage at scale (1,000 envelopes)
 
-```
+```text
 Process Memory Benchmark (n=1000):
   Baseline memory:        104.22MB
   After without:          104.22MB (+0.00KB)
@@ -283,7 +286,7 @@ Process Memory Benchmark (n=1000):
 
 **Test**: Baseline performance requirements
 
-```
+```text
 Baseline Creation Performance:
   Average time: 0.0081ms
   Baseline:     1.0000ms
@@ -446,7 +449,7 @@ If overhead becomes a concern (unlikely):
 
 ### Execute All Benchmarks
 
-```
+```bash
 # Run complete benchmark suite
 poetry run pytest tests/performance/test_source_node_id_overhead.py -v
 
@@ -485,7 +488,7 @@ Tests validate against these thresholds:
 ### Re-running Benchmarks
 
 Benchmarks should be re-run:
-- **After major changes** to `ModelOnexEnvelopeV1`
+- **After major changes** to `ModelOnexEnvelope`
 - **Before releases** to detect regressions
 - **On different hardware** to validate portability
 - **Under load** to measure real-world impact
@@ -496,7 +499,7 @@ Benchmarks should be re-run:
 
 ### Test File Location
 
-```
+```text
 tests/performance/test_source_node_id_overhead.py
 ```
 
@@ -508,8 +511,8 @@ tests/performance/test_source_node_id_overhead.py
 ### Key Test Functions
 
 - `time_operation()`: High-precision timing with warmup
-- `create_envelope_without_source_node()`: Baseline envelope creation
-- `create_envelope_with_source_node()`: Overhead envelope creation
+- `create_envelope_without_source_node_id()`: Baseline envelope creation
+- `create_envelope_with_source_node_id()`: Overhead envelope creation
 
 ### Dependencies
 
@@ -530,10 +533,10 @@ tests/performance/test_source_node_id_overhead.py
 
 ## References
 
-- **PR #71**: Added `source_node_id` field to ModelOnexEnvelopeV1
+- **PR #71**: Added `source_node_id` field to `ModelOnexEnvelopeV1` (Note: Model class renamed to `ModelOnexEnvelope` in OMN-224; the `source_node_id` field remains unchanged)
 - **Commit**: 28b0f4df - Implementation commit
 - **Correlation ID**: 95cac850-05a3-43e2-9e57-ccbbef683f43
-- **Model**: `src/omnibase_core/models/core/model_onex_envelope_v1.py`
+- **Model**: `src/omnibase_core/models/core/model_onex_envelope.py` (formerly `model_onex_envelope_v1.py`)
 - **Tests**: `tests/performance/test_source_node_id_overhead.py`
 
 ---

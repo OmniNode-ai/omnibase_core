@@ -19,6 +19,11 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 # Thread-local correlation ID context
 _context = threading.local()
 
+# Lock for thread-safe logger initialization
+_logger_lock = threading.Lock()
+
+# Cached logger instance (protected by _logger_lock)
+_cached_logger: Any = None
 
 # Background tasks set to prevent garbage collection of fire-and-forget tasks
 _background_tasks: set[asyncio.Task[None]] = set()
@@ -92,31 +97,44 @@ def _get_correlation_id() -> UUID:
     return correlation_id
 
 
-@lru_cache(maxsize=1)
 def _get_cached_logger() -> Any:
-    """Get cached logger instance.
+    """Get cached logger instance with thread-safe initialization.
 
-    Uses lru_cache for single-instance caching without global state.
+    Uses double-checked locking pattern for thread-safe singleton.
     Falls back to SimpleFallbackLogger if container unavailable.
     """
-    try:
-        from omnibase_core.models.container.model_onex_container import (
-            get_model_onex_container_sync,
-        )
+    global _cached_logger
 
-        container = get_model_onex_container_sync()
-        # Try to get logger from container registry
-        try:
-            return container.get_service("ProtocolLogger")  # type: ignore[arg-type]
-        except Exception:  # fallback-ok: logger init must never fail
-            return _SimpleFallbackLogger()
-    except Exception:  # fallback-ok: logger init must never fail
-        return _SimpleFallbackLogger()
+    # Fast path: return cached logger if already initialized
+    if _cached_logger is not None:
+        return _cached_logger
+
+    # Slow path: acquire lock and initialize
+    with _logger_lock:
+        # Double-check after acquiring lock (another thread may have initialized)
+        if _cached_logger is None:
+            try:
+                from omnibase_core.models.container.model_onex_container import (
+                    get_model_onex_container_sync,
+                )
+
+                container = get_model_onex_container_sync()
+                # Try to get logger from container registry
+                try:
+                    _cached_logger = container.get_service("ProtocolLogger")  # type: ignore[arg-type]
+                except Exception:  # fallback-ok: logger init must never fail
+                    _cached_logger = _SimpleFallbackLogger()
+            except Exception:  # fallback-ok: logger init must never fail
+                _cached_logger = _SimpleFallbackLogger()
+
+        return _cached_logger
 
 
 def clear_logger_cache() -> None:
     """Clear the logger cache (for testing)."""
-    _get_cached_logger.cache_clear()
+    global _cached_logger
+    with _logger_lock:
+        _cached_logger = None
 
 
 def _get_registry_logger() -> Any:

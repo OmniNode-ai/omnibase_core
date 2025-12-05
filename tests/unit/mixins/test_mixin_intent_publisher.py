@@ -328,7 +328,7 @@ class TestMixinIntentPublisher:
 
         envelope_data = json.loads(published_value)
 
-        # Verify envelope structure (should have ModelOnexEnvelopeV1 fields or fallback)
+        # Verify envelope structure (should have ModelOnexEnvelope fields or fallback)
         assert "payload" in envelope_data or "intent_id" in envelope_data
 
     @pytest.mark.asyncio
@@ -437,11 +437,11 @@ class TestMixinIntentPublisher:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_onex_envelope_success_path(self, test_node, test_event):
         """
-        Test successful ModelOnexEnvelopeV1 wrapping.
+        Test successful ModelOnexEnvelope wrapping.
 
-        Validates envelope creation when ModelOnexEnvelopeV1 is available.
+        Validates envelope creation when ModelOnexEnvelope is available.
         """
-        # Mock ModelOnexEnvelopeV1 to be available
+        # Mock ModelOnexEnvelope to be available
         mock_envelope_class = Mock()
         mock_envelope_instance = Mock()
         mock_envelope_instance.model_dump_json.return_value = '{"envelope": "data"}'
@@ -449,11 +449,7 @@ class TestMixinIntentPublisher:
 
         with patch.dict(
             "sys.modules",
-            {
-                "omnibase_core.models.core": Mock(
-                    ModelOnexEnvelopeV1=mock_envelope_class
-                )
-            },
+            {"omnibase_core.models.core": Mock(ModelOnexEnvelope=mock_envelope_class)},
         ):
             await test_node.publish_event_intent(
                 target_topic="dev.omninode.test.v1",
@@ -469,7 +465,7 @@ class TestMixinIntentPublisher:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_onex_envelope_fallback_path(self, test_node, test_event):
         """
-        Test fallback when ModelOnexEnvelopeV1 is not available.
+        Test fallback when ModelOnexEnvelope is not available.
 
         Validates graceful degradation without envelope wrapping.
         """

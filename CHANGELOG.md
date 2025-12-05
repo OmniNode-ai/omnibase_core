@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Renamed `ModelOnexEnvelopeV1` to `ModelOnexEnvelope` (OMN-224)
+- Renamed fields: `event_id`→`envelope_id`, `source_service`→`source_node`, `event_type`→`operation`
+- Added new fields: `causation_id`, `target_node`, `handler_type`, `metadata`, `is_response`, `success`, `error`
+
 ## [0.3.3] - 2025-11-19
 
 ### Added
@@ -85,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Node Introspection Improvements
 - **ONEX Architecture Classification**: Added `node_type` field with 4-node validation (effect, compute, reducer, orchestrator) to `ModelNodeIntrospectionEvent`
 - **Node Role Support**: Added optional `node_role` field for specialization within node types
-- **Source Node Tracking**: Added `source_node_id` field to `ModelOnexEnvelopeV1` for node-to-node event correlation and tracking
+- **Source Node Tracking**: Added `source_node_id` field to `ModelOnexEnvelopeV1` for node-to-node event correlation and tracking (Note: `ModelOnexEnvelopeV1` was later renamed to `ModelOnexEnvelope` in OMN-224)
 
 #### Documentation Enhancements
 - **Mermaid Diagrams**: Added 5 visual diagrams for ONEX architecture flows:

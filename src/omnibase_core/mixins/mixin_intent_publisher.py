@@ -31,7 +31,7 @@ Subcontract:
 
 Dependencies:
     - kafka_client service (for intent publishing)
-    - ModelOnexEnvelopeV1 (from omnibase_core)
+    - ModelOnexEnvelope (from omnibase_core)
 
 Part of omnibase_core framework - provides coordination I/O for all ONEX nodes
 """
@@ -217,25 +217,25 @@ class MixinIntentPublisher:
             priority=priority,
         )
 
-        # Wrap in ModelOnexEnvelopeV1 for standard event format
+        # Wrap in ModelOnexEnvelope for standard event format
         try:
-            from omnibase_core.models.core import ModelOnexEnvelopeV1
+            from omnibase_core.models.core import ModelOnexEnvelope
             from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-            envelope = ModelOnexEnvelopeV1(
+            envelope = ModelOnexEnvelope(
+                envelope_id=intent_id,
                 envelope_version=ModelSemVer(major=1, minor=0, patch=0),
                 correlation_id=correlation_id,
-                event_id=intent_id,
-                event_type="EVENT_PUBLISH_INTENT",
-                timestamp=published_at,
-                source_service=f"omninode_bridge.{self.__class__.__name__}",
+                source_node=f"omninode_bridge.{self.__class__.__name__}",
+                operation="EVENT_PUBLISH_INTENT",
                 payload=intent.model_dump(),
+                timestamp=published_at,
             )
 
             envelope_json = envelope.model_dump_json()
 
         except ImportError:
-            # Fallback if ModelOnexEnvelopeV1 not available (should not happen)
+            # Fallback if ModelOnexEnvelope not available (should not happen)
             envelope_json = intent.model_dump_json()
 
         # Publish to intent topic (coordination I/O)
