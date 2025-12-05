@@ -337,6 +337,19 @@ class ServiceRegistry:
         # Classes in errors/ directory should not trigger anti-pattern violations
         assert len(checker.issues) == 0
 
+    def test_handlers_directory_classes_allowed(self):
+        """Test that handler classes in handlers/ directory are allowed."""
+        code = """
+class HandlerHttp:
+    pass
+"""
+        tree = ast.parse(code)
+        checker = NamingConventionChecker("src/omnibase_infra/handlers/handler_http.py")
+        checker.visit(tree)
+
+        # Classes in handlers/ directory should not trigger anti-pattern violations
+        assert len(checker.issues) == 0
+
     def test_non_error_class_still_flagged(self):
         """Test that non-error classes with anti-patterns are still flagged."""
         code = """

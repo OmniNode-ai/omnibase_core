@@ -27,13 +27,18 @@ class NamingConventionChecker(ast.NodeVisitor):
         """Check class naming conventions."""
         class_name = node.name
 
-        # Skip anti-pattern check for error taxonomy classes
+        # Skip anti-pattern check for error taxonomy classes and handler classes
         # Error classes legitimately use terms like "Handler" in names like "HandlerConfigurationError"
         # or "Service" in names like "InfraServiceUnavailableError"
+        # Handler classes in handlers/ directories are exempt (e.g., HandlerHttp)
         is_error_class = class_name.endswith(("Error", "Exception"))
         # Use pathlib for cross-platform path handling
         file_path = Path(self.file_path)
-        is_in_errors_dir = "errors" in file_path.parts or file_path.name == "errors.py"
+        is_in_exempt_dir = (
+            "errors" in file_path.parts
+            or "handlers" in file_path.parts
+            or file_path.name == "errors.py"
+        )
 
         # Check for anti-pattern names (skip for error taxonomy classes)
         anti_patterns = [
@@ -48,8 +53,8 @@ class NamingConventionChecker(ast.NodeVisitor):
             "Worker",
         ]
 
-        # Only check anti-patterns for non-error classes outside errors directories
-        if not is_error_class and not is_in_errors_dir:
+        # Only check anti-patterns for non-error classes outside exempt directories
+        if not is_error_class and not is_in_exempt_dir:
             for pattern in anti_patterns:
                 if pattern.lower() in class_name.lower():
                     self.issues.append(
