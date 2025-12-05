@@ -418,18 +418,24 @@ class ModelOnexEnvelope(BaseModel):
         Human-readable representation of the envelope.
 
         Returns a concise string showing the operation type, correlation ID
-        (truncated), and source node for quick identification.
+        (truncated), source node, and response status for quick identification.
 
         Returns:
             str: Formatted string like:
-                "ModelOnexEnvelope[op=GET_DATA, corr=12345678, src=client_service]"
+                "ModelOnexEnvelope[op=GET_DATA, corr=12345678, src=client_service, resp=False]"
+
+        Note:
+            The ``resp`` field indicates whether this is a response envelope
+            (``resp=True``) or a request/event envelope (``resp=False``).
+            This is useful for debugging request/response flows in logs.
         """
         corr_short = str(self.correlation_id)[:8]
         return (
             f"ModelOnexEnvelope["
             f"op={self.operation}, "
             f"corr={corr_short}, "
-            f"src={self.source_node}]"
+            f"src={self.source_node}, "
+            f"resp={self.is_response}]"
         )
 
     # ==========================================================================

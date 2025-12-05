@@ -407,7 +407,7 @@ class TestSourceNodeIdOverhead:
 
         # Clear and create 1000 envelopes WITH source_node_id
         envelopes_without.clear()
-        envelopes_with = [self.create_envelope_with_source_node() for _ in range(1000)]
+        _envelopes_with = [self.create_envelope_with_source_node() for _ in range(1000)]
         memory_with = process.memory_info().rss
         increase_with = memory_with - memory_without
 

@@ -1148,7 +1148,7 @@ class TestModelOnexEnvelopeStringRepresentation:
     """Test __str__ and __repr__ methods."""
 
     def test_str_representation(self) -> None:
-        """Test __str__ produces readable output."""
+        """Test __str__ produces readable output with is_response status."""
         envelope = ModelOnexEnvelope(
             envelope_id=FIXED_ENVELOPE_ID,
             envelope_version=DEFAULT_VERSION,
@@ -1162,11 +1162,25 @@ class TestModelOnexEnvelopeStringRepresentation:
         str_repr = str(envelope)
 
         # Should contain key identifying information
-        assert "ModelOnexEnvelope" in str_repr or "TEST_OPERATION" in str_repr
-        assert "test_service" in str_repr or str(FIXED_CORRELATION_ID)[:8] in str_repr
+        assert "ModelOnexEnvelope" in str_repr
+        assert "TEST_OPERATION" in str_repr
+        assert "test_service" in str_repr
+        assert str(FIXED_CORRELATION_ID)[:8] in str_repr
+        # Should include is_response status (defaults to False)
+        assert "resp=False" in str_repr
+
+        # Verify exact format
+        expected = (
+            f"ModelOnexEnvelope["
+            f"op=TEST_OPERATION, "
+            f"corr={str(FIXED_CORRELATION_ID)[:8]}, "
+            f"src=test_service, "
+            f"resp=False]"
+        )
+        assert str_repr == expected
 
     def test_str_representation_with_response(self) -> None:
-        """Test __str__ for response envelope."""
+        """Test __str__ for response envelope shows resp=True."""
         envelope = ModelOnexEnvelope(
             envelope_id=FIXED_ENVELOPE_ID,
             envelope_version=DEFAULT_VERSION,
@@ -1184,6 +1198,52 @@ class TestModelOnexEnvelopeStringRepresentation:
         # String representation should exist
         assert isinstance(str_repr, str)
         assert len(str_repr) > 0
+        # Should show is_response=True
+        assert "resp=True" in str_repr
+
+        # Verify exact format
+        expected = (
+            f"ModelOnexEnvelope["
+            f"op=RESPONSE_OP, "
+            f"corr={str(FIXED_CORRELATION_ID)[:8]}, "
+            f"src=test_service, "
+            f"resp=True]"
+        )
+        assert str_repr == expected
+
+    def test_str_representation_request_vs_response_distinguishable(self) -> None:
+        """Test that request and response envelopes are distinguishable by __str__."""
+        request = ModelOnexEnvelope(
+            envelope_id=FIXED_ENVELOPE_ID,
+            envelope_version=DEFAULT_VERSION,
+            correlation_id=FIXED_CORRELATION_ID,
+            source_node="client",
+            operation="GET_DATA",
+            payload={"query": "test"},
+            timestamp=FIXED_TIMESTAMP,
+            is_response=False,
+        )
+
+        response = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=DEFAULT_VERSION,
+            correlation_id=FIXED_CORRELATION_ID,
+            source_node="server",
+            operation="GET_DATA",
+            payload={"result": "data"},
+            timestamp=FIXED_TIMESTAMP,
+            is_response=True,
+            success=True,
+        )
+
+        request_str = str(request)
+        response_str = str(response)
+
+        # Both should have the same operation but different resp values
+        assert "op=GET_DATA" in request_str
+        assert "op=GET_DATA" in response_str
+        assert "resp=False" in request_str
+        assert "resp=True" in response_str
 
 
 # =============================================================================
@@ -1582,10 +1642,7 @@ class TestModelOnexEnvelopeValidationWarnings:
 
     def test_error_with_success_true_emits_warning(self) -> None:
         """Test that setting error with success=True emits a UserWarning."""
-        # warnings already imported at top level
-
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
+        with pytest.warns(UserWarning, match=r"error=.*success=True"):
             envelope = ModelOnexEnvelope(
                 envelope_id=FIXED_ENVELOPE_ID,
                 envelope_version=DEFAULT_VERSION,
@@ -1599,22 +1656,13 @@ class TestModelOnexEnvelopeValidationWarnings:
                 error="Something went wrong",
             )
 
-            # Envelope should still be created (soft validation)
-            assert envelope.success is True
-            assert envelope.error == "Something went wrong"
-
-            # Should have emitted a warning
-            assert len(caught) == 1
-            assert issubclass(caught[0].category, UserWarning)
-            assert "error=" in str(caught[0].message)
-            assert "success=True" in str(caught[0].message)
+        # Envelope should still be created (soft validation)
+        assert envelope.success is True
+        assert envelope.error == "Something went wrong"
 
     def test_response_success_false_without_error_emits_warning(self) -> None:
         """Test that is_response=True with success=False but no error emits warning."""
-        # warnings already imported at top level
-
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
+        with pytest.warns(UserWarning, match=r"success=False.*no error"):
             envelope = ModelOnexEnvelope(
                 envelope_id=FIXED_ENVELOPE_ID,
                 envelope_version=DEFAULT_VERSION,
@@ -1628,22 +1676,14 @@ class TestModelOnexEnvelopeValidationWarnings:
                 error=None,  # No error message
             )
 
-            # Envelope should still be created (soft validation)
-            assert envelope.success is False
-            assert envelope.error is None
-
-            # Should have emitted a warning
-            assert len(caught) == 1
-            assert issubclass(caught[0].category, UserWarning)
-            assert "success=False" in str(caught[0].message)
-            assert "no error" in str(caught[0].message).lower()
+        # Envelope should still be created (soft validation)
+        assert envelope.success is False
+        assert envelope.error is None
 
     def test_response_success_false_with_empty_error_emits_warning(self) -> None:
         """Test that success=False with empty string error emits warning."""
-        # warnings already imported at top level
-
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
+        # Empty string is treated as no error, so we expect the same warning pattern
+        with pytest.warns(UserWarning, match=r"success=False.*no error"):
             envelope = ModelOnexEnvelope(
                 envelope_id=FIXED_ENVELOPE_ID,
                 envelope_version=DEFAULT_VERSION,
@@ -1657,20 +1697,14 @@ class TestModelOnexEnvelopeValidationWarnings:
                 error="",  # Empty string
             )
 
-            # Envelope should still be created
-            assert envelope.success is False
-            assert envelope.error == ""
-
-            # Should have emitted a warning (empty string treated as no error)
-            assert len(caught) == 1
-            assert issubclass(caught[0].category, UserWarning)
+        # Envelope should still be created
+        assert envelope.success is False
+        assert envelope.error == ""
 
     def test_response_success_false_with_whitespace_error_emits_warning(self) -> None:
         """Test that success=False with whitespace-only error emits warning."""
-        # warnings already imported at top level
-
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
+        # Whitespace-only is treated as no error, so we expect the same warning pattern
+        with pytest.warns(UserWarning, match=r"success=False.*no error"):
             envelope = ModelOnexEnvelope(
                 envelope_id=FIXED_ENVELOPE_ID,
                 envelope_version=DEFAULT_VERSION,
@@ -1684,17 +1718,11 @@ class TestModelOnexEnvelopeValidationWarnings:
                 error="   ",  # Whitespace only
             )
 
-            # Envelope should still be created
-            assert envelope.success is False
-
-            # Should have emitted a warning (whitespace treated as no error)
-            assert len(caught) == 1
-            assert issubclass(caught[0].category, UserWarning)
+        # Envelope should still be created
+        assert envelope.success is False
 
     def test_success_true_without_error_no_warning(self) -> None:
         """Test that success=True without error does NOT emit warning (canonical success)."""
-        # warnings already imported at top level
-
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             envelope = ModelOnexEnvelope(
@@ -1718,8 +1746,6 @@ class TestModelOnexEnvelopeValidationWarnings:
 
     def test_success_false_with_error_no_warning(self) -> None:
         """Test that success=False with error does NOT emit warning (canonical failure)."""
-        # warnings already imported at top level
-
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             envelope = ModelOnexEnvelope(
@@ -1743,8 +1769,6 @@ class TestModelOnexEnvelopeValidationWarnings:
 
     def test_non_response_success_false_without_error_no_warning(self) -> None:
         """Test that non-response with success=False and no error does NOT warn."""
-        # warnings already imported at top level
-
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             envelope = ModelOnexEnvelope(
@@ -1768,8 +1792,6 @@ class TestModelOnexEnvelopeValidationWarnings:
 
     def test_success_none_with_error_no_warning(self) -> None:
         """Test that success=None with error does NOT emit warning."""
-        # warnings already imported at top level
-
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             envelope = ModelOnexEnvelope(
@@ -1793,10 +1815,8 @@ class TestModelOnexEnvelopeValidationWarnings:
 
     def test_warning_includes_correlation_id(self) -> None:
         """Test that warnings include correlation_id for debugging."""
-        # warnings already imported at top level
-
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
+        # Match the correlation_id in the warning message
+        with pytest.warns(UserWarning, match=str(FIXED_CORRELATION_ID)):
             ModelOnexEnvelope(
                 envelope_id=FIXED_ENVELOPE_ID,
                 envelope_version=DEFAULT_VERSION,
@@ -1810,16 +1830,10 @@ class TestModelOnexEnvelopeValidationWarnings:
                 error="Error with success",
             )
 
-            assert len(caught) == 1
-            warning_msg = str(caught[0].message)
-            assert str(FIXED_CORRELATION_ID) in warning_msg
-
     def test_warning_includes_operation(self) -> None:
         """Test that warnings include operation for debugging."""
-        # warnings already imported at top level
-
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
+        # Match the operation name in the warning message
+        with pytest.warns(UserWarning, match="MY_UNIQUE_OPERATION"):
             ModelOnexEnvelope(
                 envelope_id=FIXED_ENVELOPE_ID,
                 envelope_version=DEFAULT_VERSION,
@@ -1833,15 +1847,9 @@ class TestModelOnexEnvelopeValidationWarnings:
                 error="Error with success",
             )
 
-            assert len(caught) == 1
-            warning_msg = str(caught[0].message)
-            assert "MY_UNIQUE_OPERATION" in warning_msg
-
     def test_validation_runs_on_assignment(self) -> None:
         """Test that validation warnings are emitted on field assignment."""
-        # warnings already imported at top level
-
-        # Create envelope with valid state
+        # Create envelope with valid state (no warning expected for canonical failure)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             envelope = ModelOnexEnvelope(
@@ -1858,11 +1866,6 @@ class TestModelOnexEnvelopeValidationWarnings:
             )
 
         # Update to inconsistent state - should warn
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
+        # Note: validate_assignment triggers a full model validation
+        with pytest.warns(UserWarning, match=r"error=.*success=True"):
             envelope.success = True  # Now inconsistent with error
-
-            # Note: validate_assignment triggers a full model validation
-            # which should emit the warning
-            assert len(caught) == 1
-            assert issubclass(caught[0].category, UserWarning)
