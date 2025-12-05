@@ -531,7 +531,10 @@ async def _execute_parallel(
                         )
                     logging.warning(
                         f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed: {error.message}",
-                        extra={"error_code": error_code_value, "context": error.context},
+                        extra={
+                            "error_code": error_code_value,
+                            "context": error.context,
+                        },
                         exc_info=True,
                     )
                 else:

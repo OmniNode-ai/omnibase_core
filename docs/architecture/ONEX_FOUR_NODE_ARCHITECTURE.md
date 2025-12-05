@@ -1911,5 +1911,5 @@ This architecture documentation provides comprehensive coverage of the ONEX Four
 - [Node Building Guide](../guides/node-building/README.md)
 - [Node Class Hierarchy](NODE_CLASS_HIERARCHY.md)
 - [Migration Guide](../guides/MIGRATING_TO_DECLARATIVE_NODES.md)
-- [FSM Subcontract Reference](../reference/contracts/FSM_SUBCONTRACT.md)
-- [Workflow Definition Reference](../reference/contracts/WORKFLOW_DEFINITION.md)
+- [Pure FSM Reducer Pattern](../patterns/PURE_FSM_REDUCER_PATTERN.md)
+- [Declarative Workflow Architecture](DECLARATIVE_WORKFLOW_FINDINGS.md)

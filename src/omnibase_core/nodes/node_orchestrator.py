@@ -154,6 +154,10 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         - Action metadata tracking
     """
 
+    # Type annotation for workflow_definition attribute
+    # Set via object.__setattr__() in __init__ to bypass Pydantic validation
+    workflow_definition: ModelWorkflowDefinition | None
+
     def __init__(self, container: ModelONEXContainer) -> None:
         """
         Initialize orchestrator node.
@@ -169,15 +173,19 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         # Load workflow definition from node contract
         # This assumes the node contract has a workflow_coordination field
         # If not present, workflow capabilities are not active
-        self.workflow_definition: ModelWorkflowDefinition | None = None
+        # Use object.__setattr__() to bypass Pydantic validation when mixins with
+        # Pydantic BaseModel are in the MRO (e.g., MixinEventBus in ModelServiceOrchestrator)
+        object.__setattr__(self, "workflow_definition", None)
 
         # Try to load workflow definition if available in node contract
         if hasattr(self, "contract") and hasattr(
             self.contract, "workflow_coordination"
         ):
             if hasattr(self.contract.workflow_coordination, "workflow_definition"):
-                self.workflow_definition = (
-                    self.contract.workflow_coordination.workflow_definition
+                object.__setattr__(
+                    self,
+                    "workflow_definition",
+                    self.contract.workflow_coordination.workflow_definition,
                 )
 
     async def process(

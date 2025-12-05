@@ -286,7 +286,7 @@ async def process(self, input_data):
 
 **FSM-driven state management** - pure finite state machine transitions with intent emission for side effects.
 
-> **v0.4.0 Update**: `NodeReducer` is now the PRIMARY implementation using the Pure FSM pattern. Legacy aggregation-focused implementations have been moved to `nodes/legacy/`. See [LEGACY_NODE_MIGRATION.md](../LEGACY_NODE_MIGRATION.md) for migration guidance.
+> **v0.4.0 Update**: `NodeReducer` is now the PRIMARY implementation using the Pure FSM pattern. Legacy aggregation-focused implementations have been moved to `nodes/legacy/`. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
 
 ### When to Use REDUCER
 
@@ -372,7 +372,7 @@ class NodeOrderProcessingReducer(NodeReducer):
 
 ### Legacy Aggregation Patterns
 
-> **Note**: The following patterns use the legacy aggregation-focused approach which has been moved to `nodes/legacy/`. New implementations should use the Pure FSM pattern above. See [LEGACY_NODE_MIGRATION.md](../LEGACY_NODE_MIGRATION.md) for migration guidance.
+> **Note**: The following patterns use the legacy aggregation-focused approach which has been moved to `nodes/legacy/`. New implementations should use the Pure FSM pattern above. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
 
 #### Real-World Examples (Legacy)
 
@@ -487,7 +487,7 @@ def _resolve_conflict(self, value_a, value_b, field_name):
 
 **Workflow-driven coordination** - orchestrating multiple nodes with lease-based ownership and ModelAction command patterns.
 
-> **v0.4.0 Update**: `NodeOrchestrator` is now the PRIMARY implementation using the ModelAction pattern with lease-based coordination. Legacy workflow implementations have been moved to `nodes/legacy/`. See [LEGACY_NODE_MIGRATION.md](../LEGACY_NODE_MIGRATION.md) for migration guidance.
+> **v0.4.0 Update**: `NodeOrchestrator` is now the PRIMARY implementation using the ModelAction pattern with lease-based coordination. Legacy workflow implementations have been moved to `nodes/legacy/`. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
 
 ### Characteristics
 
