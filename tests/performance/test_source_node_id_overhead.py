@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Performance benchmarks for source_node_id field overhead in ModelOnexEnvelope.
 
@@ -488,18 +487,6 @@ class TestPerformanceRegression:
         Baseline: < 1ms per envelope (with or without source_node_id)
         """
         max_creation_time = 0.001  # 1ms
-
-        # Test with source_node_id
-        envelope = ModelOnexEnvelope(
-            envelope_version=ModelSemVer(major=1, minor=0, patch=0),
-            correlation_id=uuid4(),
-            envelope_id=uuid4(),
-            operation="TEST_EVENT",
-            timestamp=datetime.now(UTC),
-            source_node="test_service",
-            source_node_id=uuid4(),
-            payload={"test": "data"},
-        )
 
         # Time multiple creations
         times = []

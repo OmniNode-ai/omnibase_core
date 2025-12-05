@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 TDD Unit tests for ModelOnexEnvelope (OMN-224).
 
@@ -24,6 +23,7 @@ Related:
 - PR #71 - Original source_node_id field
 """
 
+import warnings
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -1331,9 +1331,537 @@ class TestModelOnexEnvelopeBulkOperations:
 
         assert len(restored_envelopes) == count
 
-        for i, (original, restored) in enumerate(
-            zip(original_envelopes, restored_envelopes)
+        for original, restored in zip(
+            original_envelopes, restored_envelopes, strict=True
         ):
             assert restored.envelope_id == original.envelope_id
             assert restored.correlation_id == original.correlation_id
             assert restored.payload == original.payload
+
+
+# =============================================================================
+# Test Class: Success/Error Field Correlation Validation
+# =============================================================================
+
+
+class TestModelOnexEnvelopeSuccessErrorValidation:
+    """
+    Test validation behavior around success and error field correlation.
+
+    These tests document the expected behavior of the ModelOnexEnvelope model
+    regarding the relationship between success and error fields. The model
+    allows flexible combinations to support various use cases:
+
+    - Warnings (error message with success=True or None)
+    - Failures without details (success=False without error)
+    - Standard success (success=True without error)
+    - Standard failure (success=False with error)
+
+    Note: The model does NOT enforce strict correlation between success and
+    error fields. This is intentional to support diverse messaging patterns.
+    """
+
+    def test_error_with_success_true_is_allowed(self) -> None:
+        """
+        Test that setting error with success=True is allowed (documents current behavior).
+
+        This combination may represent a "successful with warnings" scenario
+        where the operation completed but encountered non-fatal issues.
+
+        Note: This creates a semantically inconsistent state that emits a
+        warning but is still allowed for backward compatibility.
+        """
+        # warnings already imported at top level
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # Suppress expected warning
+            envelope = ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="WARNING_OP",
+                payload={"status": "completed_with_warnings"},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=True,
+                error="Non-fatal warning: deprecated API used",
+            )
+
+        # Model allows this combination - documents current permissive behavior
+        assert envelope.success is True
+        assert envelope.error == "Non-fatal warning: deprecated API used"
+
+    def test_success_false_without_error_is_valid(self) -> None:
+        """
+        Test that success=False without an error message is valid.
+
+        This represents a failure case where the error details are either:
+        - Not available
+        - Conveyed through other means (e.g., in payload)
+        - Intentionally omitted for security reasons
+
+        Note: This emits a warning but is still allowed for backward compatibility.
+        """
+        # warnings already imported at top level
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)  # Suppress expected warning
+            envelope = ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="SILENT_FAILURE_OP",
+                payload={"error_code": "ERR_001"},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=False,
+                error=None,  # No error message provided
+            )
+
+        assert envelope.success is False
+        assert envelope.error is None
+
+    def test_success_true_with_no_error_is_valid(self) -> None:
+        """
+        Test that success=True without an error is the standard success case.
+
+        This is the canonical success response pattern where the operation
+        completed successfully without any issues or warnings.
+        """
+        envelope = ModelOnexEnvelope(
+            envelope_id=FIXED_ENVELOPE_ID,
+            envelope_version=DEFAULT_VERSION,
+            correlation_id=FIXED_CORRELATION_ID,
+            source_node="test_service",
+            operation="SUCCESS_OP",
+            payload={"result": "data"},
+            timestamp=FIXED_TIMESTAMP,
+            is_response=True,
+            success=True,
+            error=None,
+        )
+
+        assert envelope.success is True
+        assert envelope.error is None
+
+    def test_error_with_success_false_is_consistent(self) -> None:
+        """
+        Test that error with success=False is the standard failure pattern.
+
+        This is the canonical failure response pattern where the operation
+        failed and an error message explains why.
+        """
+        envelope = ModelOnexEnvelope(
+            envelope_id=FIXED_ENVELOPE_ID,
+            envelope_version=DEFAULT_VERSION,
+            correlation_id=FIXED_CORRELATION_ID,
+            source_node="test_service",
+            operation="FAILURE_OP",
+            payload={},
+            timestamp=FIXED_TIMESTAMP,
+            is_response=True,
+            success=False,
+            error="Operation failed: resource not found",
+        )
+
+        assert envelope.success is False
+        assert envelope.error == "Operation failed: resource not found"
+
+    def test_success_none_is_valid(self) -> None:
+        """
+        Test that success=None (default) is valid.
+
+        This represents cases where success status is:
+        - Not yet determined
+        - Not applicable (e.g., for request envelopes)
+        - Intentionally left unset
+        """
+        envelope = ModelOnexEnvelope(
+            envelope_id=FIXED_ENVELOPE_ID,
+            envelope_version=DEFAULT_VERSION,
+            correlation_id=FIXED_CORRELATION_ID,
+            source_node="test_service",
+            operation="PENDING_OP",
+            payload={"status": "processing"},
+            timestamp=FIXED_TIMESTAMP,
+            is_response=False,  # Request, not response
+            # success defaults to None
+        )
+
+        assert envelope.success is None
+        assert envelope.error is None
+
+    def test_success_none_with_error_is_valid(self) -> None:
+        """
+        Test that success=None with an error message is valid.
+
+        This represents cases like:
+        - Warning messages on non-response envelopes
+        - Error context without definitive success/failure status
+        """
+        envelope = ModelOnexEnvelope(
+            envelope_id=FIXED_ENVELOPE_ID,
+            envelope_version=DEFAULT_VERSION,
+            correlation_id=FIXED_CORRELATION_ID,
+            source_node="test_service",
+            operation="WARN_OP",
+            payload={},
+            timestamp=FIXED_TIMESTAMP,
+            is_response=False,
+            success=None,
+            error="Warning: rate limit approaching",
+        )
+
+        assert envelope.success is None
+        assert envelope.error == "Warning: rate limit approaching"
+
+    def test_all_success_error_combinations_serialize_correctly(self) -> None:
+        """
+        Test that all combinations of success/error serialize and deserialize correctly.
+
+        This ensures that regardless of the combination used, the model
+        maintains data integrity through serialization round-trips.
+        """
+        # warnings already imported at top level
+
+        combinations: list[tuple[bool | None, str | None]] = [
+            (True, None),  # Standard success
+            (False, "Error message"),  # Standard failure
+            (True, "Warning message"),  # Success with warning
+            (False, None),  # Silent failure
+            (None, None),  # Undetermined
+            (None, "Info message"),  # Info with no status
+        ]
+
+        for success_val, error_val in combinations:
+            # Some combinations emit warnings, which is expected
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                original = ModelOnexEnvelope(
+                    envelope_id=FIXED_ENVELOPE_ID,
+                    envelope_version=DEFAULT_VERSION,
+                    correlation_id=FIXED_CORRELATION_ID,
+                    source_node="test_service",
+                    operation="TEST_OP",
+                    payload={},
+                    timestamp=FIXED_TIMESTAMP,
+                    is_response=True,
+                    success=success_val,
+                    error=error_val,
+                )
+
+                # Serialize and deserialize
+                json_str = original.model_dump_json()
+                restored = ModelOnexEnvelope.model_validate_json(json_str)
+
+            # Verify round-trip preserves values
+            assert restored.success == success_val, (
+                f"success mismatch for ({success_val}, {error_val})"
+            )
+            assert restored.error == error_val, (
+                f"error mismatch for ({success_val}, {error_val})"
+            )
+
+
+# =============================================================================
+# Test Class: Success/Error Validation Warnings
+# =============================================================================
+
+
+class TestModelOnexEnvelopeValidationWarnings:
+    """
+    Test that validation warnings are emitted for inconsistent success/error states.
+
+    These tests verify the soft validation behavior added to ModelOnexEnvelope
+    that warns about potentially inconsistent success/error field combinations
+    while maintaining backward compatibility by not raising errors.
+    """
+
+    def test_error_with_success_true_emits_warning(self) -> None:
+        """Test that setting error with success=True emits a UserWarning."""
+        # warnings already imported at top level
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            envelope = ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="WARNING_OP",
+                payload={},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=True,
+                error="Something went wrong",
+            )
+
+            # Envelope should still be created (soft validation)
+            assert envelope.success is True
+            assert envelope.error == "Something went wrong"
+
+            # Should have emitted a warning
+            assert len(caught) == 1
+            assert issubclass(caught[0].category, UserWarning)
+            assert "error=" in str(caught[0].message)
+            assert "success=True" in str(caught[0].message)
+
+    def test_response_success_false_without_error_emits_warning(self) -> None:
+        """Test that is_response=True with success=False but no error emits warning."""
+        # warnings already imported at top level
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            envelope = ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="SILENT_FAIL_OP",
+                payload={},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=False,
+                error=None,  # No error message
+            )
+
+            # Envelope should still be created (soft validation)
+            assert envelope.success is False
+            assert envelope.error is None
+
+            # Should have emitted a warning
+            assert len(caught) == 1
+            assert issubclass(caught[0].category, UserWarning)
+            assert "success=False" in str(caught[0].message)
+            assert "no error" in str(caught[0].message).lower()
+
+    def test_response_success_false_with_empty_error_emits_warning(self) -> None:
+        """Test that success=False with empty string error emits warning."""
+        # warnings already imported at top level
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            envelope = ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="EMPTY_ERR_OP",
+                payload={},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=False,
+                error="",  # Empty string
+            )
+
+            # Envelope should still be created
+            assert envelope.success is False
+            assert envelope.error == ""
+
+            # Should have emitted a warning (empty string treated as no error)
+            assert len(caught) == 1
+            assert issubclass(caught[0].category, UserWarning)
+
+    def test_response_success_false_with_whitespace_error_emits_warning(self) -> None:
+        """Test that success=False with whitespace-only error emits warning."""
+        # warnings already imported at top level
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            envelope = ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="WHITESPACE_ERR_OP",
+                payload={},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=False,
+                error="   ",  # Whitespace only
+            )
+
+            # Envelope should still be created
+            assert envelope.success is False
+
+            # Should have emitted a warning (whitespace treated as no error)
+            assert len(caught) == 1
+            assert issubclass(caught[0].category, UserWarning)
+
+    def test_success_true_without_error_no_warning(self) -> None:
+        """Test that success=True without error does NOT emit warning (canonical success)."""
+        # warnings already imported at top level
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            envelope = ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="SUCCESS_OP",
+                payload={},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=True,
+                error=None,
+            )
+
+            assert envelope.success is True
+            assert envelope.error is None
+
+            # Should NOT have emitted any warnings
+            assert len(caught) == 0
+
+    def test_success_false_with_error_no_warning(self) -> None:
+        """Test that success=False with error does NOT emit warning (canonical failure)."""
+        # warnings already imported at top level
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            envelope = ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="FAILURE_OP",
+                payload={},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=False,
+                error="Operation failed",
+            )
+
+            assert envelope.success is False
+            assert envelope.error == "Operation failed"
+
+            # Should NOT have emitted any warnings
+            assert len(caught) == 0
+
+    def test_non_response_success_false_without_error_no_warning(self) -> None:
+        """Test that non-response with success=False and no error does NOT warn."""
+        # warnings already imported at top level
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            envelope = ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="REQUEST_OP",
+                payload={},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=False,  # Not a response
+                success=False,
+                error=None,
+            )
+
+            assert envelope.success is False
+            assert envelope.is_response is False
+
+            # Should NOT warn - rule only applies to responses
+            assert len(caught) == 0
+
+    def test_success_none_with_error_no_warning(self) -> None:
+        """Test that success=None with error does NOT emit warning."""
+        # warnings already imported at top level
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            envelope = ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="INFO_OP",
+                payload={},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=None,  # Undetermined
+                error="Informational message",
+            )
+
+            assert envelope.success is None
+            assert envelope.error == "Informational message"
+
+            # Should NOT warn - success is None, not True
+            assert len(caught) == 0
+
+    def test_warning_includes_correlation_id(self) -> None:
+        """Test that warnings include correlation_id for debugging."""
+        # warnings already imported at top level
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="TEST_OP",
+                payload={},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=True,
+                error="Error with success",
+            )
+
+            assert len(caught) == 1
+            warning_msg = str(caught[0].message)
+            assert str(FIXED_CORRELATION_ID) in warning_msg
+
+    def test_warning_includes_operation(self) -> None:
+        """Test that warnings include operation for debugging."""
+        # warnings already imported at top level
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="MY_UNIQUE_OPERATION",
+                payload={},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=True,
+                error="Error with success",
+            )
+
+            assert len(caught) == 1
+            warning_msg = str(caught[0].message)
+            assert "MY_UNIQUE_OPERATION" in warning_msg
+
+    def test_validation_runs_on_assignment(self) -> None:
+        """Test that validation warnings are emitted on field assignment."""
+        # warnings already imported at top level
+
+        # Create envelope with valid state
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            envelope = ModelOnexEnvelope(
+                envelope_id=FIXED_ENVELOPE_ID,
+                envelope_version=DEFAULT_VERSION,
+                correlation_id=FIXED_CORRELATION_ID,
+                source_node="test_service",
+                operation="TEST_OP",
+                payload={},
+                timestamp=FIXED_TIMESTAMP,
+                is_response=True,
+                success=False,
+                error="Initial error",
+            )
+
+        # Update to inconsistent state - should warn
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            envelope.success = True  # Now inconsistent with error
+
+            # Note: validate_assignment triggers a full model validation
+            # which should emit the warning
+            assert len(caught) == 1
+            assert issubclass(caught[0].category, UserWarning)

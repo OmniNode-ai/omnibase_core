@@ -41,13 +41,13 @@ The `source_node_id` field is an optional UUID field added to `ModelOnexEnvelope
 ```
 class ModelOnexEnvelope(BaseModel):
     # ... other fields ...
-    source_node: UUID | None = Field(
+    source_node_id: UUID | None = Field(
         default=None,
         description="UUID of the node instance that generated this event"
     )
 ```
 
-> **Migration Note**: `ModelOnexEnvelopeV1` was renamed to `ModelOnexEnvelope` in OMN-224, and the field `source_node_id` was renamed to `source_node`.
+> **Migration Note**: `ModelOnexEnvelopeV1` was replaced by `ModelOnexEnvelope` in OMN-224. The `source_node_id` field (optional UUID) remains unchanged in both models. The key difference is that `ModelOnexEnvelope` uses `source_node` (required str) for the node name, while `ModelOnexEnvelopeV1` uses `source_service`.
 
 ### Purpose
 
@@ -410,7 +410,7 @@ The high percentage overheads (30-130%) are artifacts of:
 
 ### 1. ✅ Approve for Production
 
-The `source_node` field (formerly `source_node_id`) is **approved for production use** with no performance concerns.
+The `source_node_id` field is **approved for production use** with no performance concerns.
 
 ### 2. ✅ Make Optional Field the Default
 
@@ -532,7 +532,7 @@ tests/performance/test_source_node_id_overhead.py
 
 ## References
 
-- **PR #71**: Added `source_node_id` field to ModelOnexEnvelopeV1 (Note: Model renamed to `ModelOnexEnvelope` and field renamed to `source_node` in OMN-224)
+- **PR #71**: Added `source_node_id` field to ModelOnexEnvelopeV1 (Note: Model replaced by `ModelOnexEnvelope` in OMN-224; the `source_node_id` field remains unchanged)
 - **Commit**: 28b0f4df - Implementation commit
 - **Correlation ID**: 95cac850-05a3-43e2-9e57-ccbbef683f43
 - **Model**: `src/omnibase_core/models/core/model_onex_envelope.py` (formerly `model_onex_envelope_v1.py`)
