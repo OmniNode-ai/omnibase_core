@@ -266,6 +266,96 @@ class ModelOnexEnvelope(BaseModel):
                 error="Validation failed: missing required field",  # Correct
             )
 
+    Security Considerations:
+        The ``error`` field may contain information about internal system state
+        that should not be exposed to external clients. Follow these guidelines
+        when handling error messages in envelopes:
+
+        **1. Internal vs External Errors:**
+
+        Use detailed errors for internal logging and debugging, but sanitize
+        before sending to external clients. The correlation_id enables
+        correlating sanitized responses with detailed internal logs.
+
+        **2. Information to Avoid Exposing:**
+
+        - Stack traces and exception details
+        - Database connection strings or query details
+        - Internal file paths or directory structures
+        - User credentials, tokens, or session identifiers
+        - Internal service names, IPs, or network topology
+        - Configuration details or environment variables
+
+        **3. Safe vs Unsafe Error Message Examples:**
+
+        .. code-block:: python
+
+            # UNSAFE - exposes internal details
+            error="Database error: connection to postgres://user:pass@db.internal:5432 failed"
+            error="FileNotFoundError: /var/app/secrets/config.yaml not found"
+            error="Authentication failed for user admin with token eyJhbGc..."
+
+            # SAFE - generic but actionable
+            error="Service temporarily unavailable"
+            error="Request failed: invalid input"
+            error="Authentication failed"
+
+            # SAFE - specific but sanitized
+            error="Validation failed: field 'email' is required"
+            error="Resource not found: user_id does not exist"
+            error="Rate limit exceeded: retry after 60 seconds"
+
+        **4. Recommended Sanitization Pattern:**
+
+        Log full error details internally with the correlation_id, then return
+        a sanitized message in the envelope. Use the correlation_id to connect
+        sanitized client responses with detailed server-side logs.
+
+        .. code-block:: python
+
+            from datetime import UTC, datetime
+            from uuid import uuid4
+
+            # 1. Capture the full error internally
+            try:
+                result = database.query(sql)
+            except DatabaseError as e:
+                # Full details logged internally with correlation_id
+                logger.error(
+                    f"Database query failed: {e}",
+                    extra={
+                        "correlation_id": str(request.correlation_id),
+                        "sql_error_code": e.code,
+                        "operation": request.operation,
+                    }
+                )
+
+                # 2. Return sanitized error to client
+                response = ModelOnexEnvelope(
+                    envelope_id=uuid4(),
+                    envelope_version=request.envelope_version,
+                    correlation_id=request.correlation_id,
+                    causation_id=request.envelope_id,
+                    source_node="data_service",
+                    target_node=request.source_node,
+                    operation=f"{request.operation}_RESPONSE",
+                    payload={},
+                    timestamp=datetime.now(UTC),
+                    is_response=True,
+                    success=False,
+                    # Sanitized: no internal details, includes reference ID
+                    error=f"Data retrieval failed. Reference: {str(request.correlation_id)[:8]}",
+                )
+
+        **5. Error Severity Classification:**
+
+        Consider classifying errors by severity to determine sanitization level:
+
+        - **Client Errors (4xx)**: Can include specific validation details
+          (e.g., "field 'email' format invalid")
+        - **Server Errors (5xx)**: Should be generic (e.g., "Internal error")
+          with correlation_id reference for support
+
     See Also:
         - :class:`~omnibase_core.models.primitives.model_semver.ModelSemVer`:
           Semantic versioning for envelope format
@@ -351,6 +441,17 @@ class ModelOnexEnvelope(BaseModel):
     # Payload and Metadata (Required + Optional)
     # ==========================================================================
 
+    # NOTE: dict[str, Any] is intentionally used here and is an acceptable exception
+    # to the typed-dict pattern. Rationale:
+    # - Envelopes are generic message containers that MUST accept arbitrary
+    #   JSON-serializable data from any producer
+    # - Type safety is enforced at the application layer where specific payload
+    #   schemas (e.g., ModelUserCreatedPayload) are defined and validated
+    # - This is a core messaging primitive, not a domain model - forcing typed
+    #   payloads here would require envelope-per-message-type, defeating the purpose
+    # - Consumers should use payload.get() with appropriate type guards or
+    #   Pydantic model_validate() to parse expected payload structures
+    # See: scripts/validation/validate-dict-any-usage.py for the validation script
     payload: dict[str, Any] = Field(
         ...,
         description="The actual message data as a dictionary. Contains the "
@@ -394,10 +495,18 @@ class ModelOnexEnvelope(BaseModel):
         "None indicates status is not applicable or not yet determined.",
     )
 
+    # SECURITY WARNING: The error field may contain sensitive information.
+    # Before exposing to external clients:
+    # - Log detailed errors internally with correlation_id for debugging
+    # - Sanitize error messages to remove stack traces, connection strings,
+    #   file paths, credentials, and internal service topology
+    # - Use correlation_id[:8] as a reference ID for client-facing errors
+    # See "Security Considerations" in class docstring for detailed guidance.
     error: str | None = Field(
         default=None,
         description="Error message if the operation failed. Only meaningful when "
-        "is_response=True and success=False.",
+        "is_response=True and success=False. SECURITY: Sanitize before exposing "
+        "to external clients - see class docstring Security Considerations.",
     )
 
     # ==========================================================================
@@ -487,3 +596,225 @@ class ModelOnexEnvelope(BaseModel):
             )
 
         return self
+
+    # ==========================================================================
+    # Factory Methods
+    # ==========================================================================
+
+    @classmethod
+    def create_request(
+        cls,
+        operation: str,
+        payload: dict[str, Any],
+        source_node: str,
+        *,
+        target_node: str | None = None,
+        handler_type: EnumHandlerType | None = None,
+        correlation_id: UUID | None = None,
+        envelope_version: ModelSemVer | None = None,
+        metadata: ModelEnvelopeMetadata | None = None,
+        source_node_id: UUID | None = None,
+    ) -> Self:
+        """
+        Create a request envelope with sensible defaults.
+
+        This factory method simplifies the creation of request envelopes by:
+        - Auto-generating envelope_id (always unique)
+        - Auto-generating correlation_id if not provided
+        - Defaulting envelope_version to 1.0.0 if not provided
+        - Setting timestamp to current UTC time
+        - Setting is_response=False (this is a request)
+
+        Args:
+            operation: Operation or event type identifier (e.g., 'GET_DATA',
+                'USER_CREATE'). Describes what action this envelope represents.
+            payload: The actual message data as a dictionary. Contains the
+                business-specific content of the request.
+            source_node: Name/identifier of the node creating this request.
+                Used for debugging and routing responses.
+            target_node: Optional target node name for routing. If None, the
+                request may be handled by any capable node.
+            handler_type: Optional handler type for routing decisions
+                (HTTP, KAFKA, DATABASE, etc.).
+            correlation_id: Optional correlation ID for tracking. If not
+                provided, a new UUID is generated automatically.
+            envelope_version: Optional envelope format version. Defaults to
+                1.0.0 if not provided.
+            metadata: Optional typed metadata for the envelope. Defaults to
+                an empty ModelEnvelopeMetadata instance.
+            source_node_id: Optional UUID of the specific node instance
+                creating this request.
+
+        Returns:
+            A new ModelOnexEnvelope configured as a request.
+
+        Example:
+            .. code-block:: python
+
+                from omnibase_core.models.core.model_onex_envelope import (
+                    ModelOnexEnvelope,
+                )
+
+                # Simple request with auto-generated IDs
+                request = ModelOnexEnvelope.create_request(
+                    operation="GET_USER",
+                    payload={"user_id": "123"},
+                    source_node="api_gateway",
+                    target_node="user_service",
+                )
+
+                # Request with explicit correlation ID for tracking
+                from uuid import uuid4
+                correlation = uuid4()
+                request = ModelOnexEnvelope.create_request(
+                    operation="CREATE_ORDER",
+                    payload={"items": [{"id": 1, "qty": 2}]},
+                    source_node="checkout_service",
+                    correlation_id=correlation,
+                )
+
+        See Also:
+            - :meth:`create_response`: Create a response from a request envelope
+
+        .. versionadded:: 0.3.6
+        """
+        from datetime import UTC, datetime
+        from uuid import uuid4
+
+        return cls(
+            envelope_id=uuid4(),
+            envelope_version=envelope_version
+            or ModelSemVer(major=1, minor=0, patch=0),
+            correlation_id=correlation_id or uuid4(),
+            source_node=source_node,
+            source_node_id=source_node_id,
+            target_node=target_node,
+            handler_type=handler_type,
+            operation=operation,
+            payload=payload,
+            metadata=metadata or ModelEnvelopeMetadata(),
+            timestamp=datetime.now(UTC),
+            is_response=False,
+            success=None,
+            error=None,
+        )
+
+    @classmethod
+    def create_response(
+        cls,
+        request: "ModelOnexEnvelope",
+        payload: dict[str, Any],
+        *,
+        success: bool = True,
+        error: str | None = None,
+        source_node: str | None = None,
+        operation: str | None = None,
+        metadata: ModelEnvelopeMetadata | None = None,
+        source_node_id: UUID | None = None,
+        handler_type: EnumHandlerType | None = None,
+    ) -> Self:
+        """
+        Create a response envelope from a request envelope.
+
+        This factory method simplifies response creation by:
+        - Auto-generating a unique envelope_id
+        - Preserving the correlation_id from the request
+        - Setting causation_id to the request's envelope_id (chain tracking)
+        - Swapping source/target nodes if source_node not provided
+        - Using the same envelope_version as the request
+        - Setting timestamp to current UTC time
+        - Setting is_response=True
+
+        Args:
+            request: The original request envelope to respond to. The response
+                will inherit correlation_id and set causation_id to the
+                request's envelope_id.
+            payload: The response data as a dictionary. Contains the
+                business-specific response content.
+            success: Whether the operation succeeded. Defaults to True.
+            error: Error message if the operation failed. Should be set when
+                success=False to provide debugging information.
+            source_node: Optional source node for the response. If not provided,
+                defaults to the request's target_node (response comes from the
+                target that processed the request).
+            operation: Optional operation name for the response. If not provided,
+                defaults to the request's operation with "_RESPONSE" suffix.
+            metadata: Optional typed metadata for the response. Defaults to
+                an empty ModelEnvelopeMetadata instance.
+            source_node_id: Optional UUID of the specific node instance
+                creating this response.
+            handler_type: Optional handler type for routing the response.
+                If not provided, inherits from the request.
+
+        Returns:
+            A new ModelOnexEnvelope configured as a response with proper
+            causation chain linking.
+
+        Example:
+            .. code-block:: python
+
+                from omnibase_core.models.core.model_onex_envelope import (
+                    ModelOnexEnvelope,
+                )
+
+                # Create request
+                request = ModelOnexEnvelope.create_request(
+                    operation="GET_USER",
+                    payload={"user_id": "123"},
+                    source_node="api_gateway",
+                    target_node="user_service",
+                )
+
+                # Create successful response
+                response = ModelOnexEnvelope.create_response(
+                    request=request,
+                    payload={"user": {"id": "123", "name": "Alice"}},
+                    success=True,
+                )
+
+                # Create error response
+                error_response = ModelOnexEnvelope.create_response(
+                    request=request,
+                    payload={},
+                    success=False,
+                    error="User not found: 123",
+                )
+
+                # Verify causation chain
+                assert response.correlation_id == request.correlation_id
+                assert response.causation_id == request.envelope_id
+
+        See Also:
+            - :meth:`create_request`: Create a request envelope
+
+        .. versionadded:: 0.3.6
+        """
+        from datetime import UTC, datetime
+        from uuid import uuid4
+
+        # Determine source_node: use provided, else swap from request's target
+        response_source = source_node or request.target_node or request.source_node
+
+        # Determine target_node: response goes back to request's source
+        response_target = request.source_node
+
+        # Determine operation: use provided, else append _RESPONSE suffix
+        response_operation = operation or f"{request.operation}_RESPONSE"
+
+        return cls(
+            envelope_id=uuid4(),
+            envelope_version=request.envelope_version,
+            correlation_id=request.correlation_id,
+            causation_id=request.envelope_id,  # Causation chain linking
+            source_node=response_source,
+            source_node_id=source_node_id,
+            target_node=response_target,
+            handler_type=handler_type or request.handler_type,
+            operation=response_operation,
+            payload=payload,
+            metadata=metadata or ModelEnvelopeMetadata(),
+            timestamp=datetime.now(UTC),
+            is_response=True,
+            success=success,
+            error=error,
+        )

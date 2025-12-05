@@ -1869,3 +1869,658 @@ class TestModelOnexEnvelopeValidationWarnings:
         # Note: validate_assignment triggers a full model validation
         with pytest.warns(UserWarning, match=r"error=.*success=True"):
             envelope.success = True  # Now inconsistent with error
+
+
+# =============================================================================
+# Test Class: Factory Method - create_request
+# =============================================================================
+
+
+class TestModelOnexEnvelopeCreateRequest:
+    """Test the create_request factory method."""
+
+    def test_create_request_minimal(self) -> None:
+        """Test create_request with only required parameters."""
+        request = ModelOnexEnvelope.create_request(
+            operation="GET_DATA",
+            payload={"key": "value"},
+            source_node="test_service",
+        )
+
+        # Verify required fields are set correctly
+        assert request.operation == "GET_DATA"
+        assert request.payload == {"key": "value"}
+        assert request.source_node == "test_service"
+
+        # Verify auto-generated fields
+        assert isinstance(request.envelope_id, UUID)
+        assert isinstance(request.correlation_id, UUID)
+        assert request.envelope_version == ModelSemVer(major=1, minor=0, patch=0)
+        assert isinstance(request.timestamp, datetime)
+
+        # Verify request-specific defaults
+        assert request.is_response is False
+        assert request.success is None
+        assert request.error is None
+
+        # Verify optional fields default to None
+        assert request.target_node is None
+        assert request.handler_type is None
+        assert request.causation_id is None
+        assert request.source_node_id is None
+
+        # Verify metadata defaults to empty
+        assert request.metadata == ModelEnvelopeMetadata()
+
+    def test_create_request_with_target_node(self) -> None:
+        """Test create_request with target_node specified."""
+        request = ModelOnexEnvelope.create_request(
+            operation="GET_USER",
+            payload={"user_id": "123"},
+            source_node="api_gateway",
+            target_node="user_service",
+        )
+
+        assert request.source_node == "api_gateway"
+        assert request.target_node == "user_service"
+
+    def test_create_request_with_handler_type(self) -> None:
+        """Test create_request with handler_type specified."""
+        request = ModelOnexEnvelope.create_request(
+            operation="SEND_MESSAGE",
+            payload={"message": "hello"},
+            source_node="producer",
+            handler_type=EnumHandlerType.KAFKA,
+        )
+
+        assert request.handler_type == EnumHandlerType.KAFKA
+
+    def test_create_request_with_explicit_correlation_id(self) -> None:
+        """Test create_request with explicit correlation_id."""
+        correlation = FIXED_CORRELATION_ID
+
+        request = ModelOnexEnvelope.create_request(
+            operation="TRACKED_OP",
+            payload={},
+            source_node="tracker",
+            correlation_id=correlation,
+        )
+
+        assert request.correlation_id == correlation
+
+    def test_create_request_with_custom_version(self) -> None:
+        """Test create_request with custom envelope_version."""
+        custom_version = ModelSemVer(major=2, minor=1, patch=0)
+
+        request = ModelOnexEnvelope.create_request(
+            operation="V2_OP",
+            payload={},
+            source_node="test",
+            envelope_version=custom_version,
+        )
+
+        assert request.envelope_version == custom_version
+
+    def test_create_request_with_metadata(self) -> None:
+        """Test create_request with custom metadata."""
+        metadata = ModelEnvelopeMetadata(
+            trace_id="trace-123",
+            request_id="req-456",
+        )
+
+        request = ModelOnexEnvelope.create_request(
+            operation="TRACED_OP",
+            payload={},
+            source_node="test",
+            metadata=metadata,
+        )
+
+        assert request.metadata.trace_id == "trace-123"
+        assert request.metadata.request_id == "req-456"
+
+    def test_create_request_with_source_node_id(self) -> None:
+        """Test create_request with source_node_id specified."""
+        source_id = FIXED_SOURCE_NODE_ID
+
+        request = ModelOnexEnvelope.create_request(
+            operation="INSTANCE_OP",
+            payload={},
+            source_node="scaled_service",
+            source_node_id=source_id,
+        )
+
+        assert request.source_node_id == source_id
+
+    def test_create_request_with_all_options(self) -> None:
+        """Test create_request with all optional parameters."""
+        custom_version = ModelSemVer(major=2, minor=0, patch=0)
+        metadata = ModelEnvelopeMetadata(trace_id="abc")
+
+        request = ModelOnexEnvelope.create_request(
+            operation="FULL_OP",
+            payload={"data": "test"},
+            source_node="source",
+            target_node="target",
+            handler_type=EnumHandlerType.HTTP,
+            correlation_id=FIXED_CORRELATION_ID,
+            envelope_version=custom_version,
+            metadata=metadata,
+            source_node_id=FIXED_SOURCE_NODE_ID,
+        )
+
+        assert request.operation == "FULL_OP"
+        assert request.payload == {"data": "test"}
+        assert request.source_node == "source"
+        assert request.target_node == "target"
+        assert request.handler_type == EnumHandlerType.HTTP
+        assert request.correlation_id == FIXED_CORRELATION_ID
+        assert request.envelope_version == custom_version
+        assert request.metadata.trace_id == "abc"
+        assert request.source_node_id == FIXED_SOURCE_NODE_ID
+
+    def test_create_request_generates_unique_envelope_ids(self) -> None:
+        """Test that create_request generates unique envelope_ids."""
+        requests = [
+            ModelOnexEnvelope.create_request(
+                operation="OP",
+                payload={},
+                source_node="test",
+            )
+            for _ in range(10)
+        ]
+
+        envelope_ids = [r.envelope_id for r in requests]
+        assert len(set(envelope_ids)) == 10, "All envelope_ids should be unique"
+
+    def test_create_request_generates_unique_correlation_ids_when_not_specified(
+        self,
+    ) -> None:
+        """Test that create_request generates unique correlation_ids when not provided."""
+        requests = [
+            ModelOnexEnvelope.create_request(
+                operation="OP",
+                payload={},
+                source_node="test",
+            )
+            for _ in range(10)
+        ]
+
+        correlation_ids = [r.correlation_id for r in requests]
+        assert len(set(correlation_ids)) == 10, "All correlation_ids should be unique"
+
+    def test_create_request_timestamp_is_recent(self) -> None:
+        """Test that create_request sets a recent timestamp."""
+        before = datetime.now(UTC)
+        request = ModelOnexEnvelope.create_request(
+            operation="TIME_OP",
+            payload={},
+            source_node="test",
+        )
+        after = datetime.now(UTC)
+
+        assert before <= request.timestamp <= after
+
+    def test_create_request_serializes_correctly(self) -> None:
+        """Test that envelopes created via create_request serialize/deserialize."""
+        request = ModelOnexEnvelope.create_request(
+            operation="SERIALIZE_OP",
+            payload={"nested": {"key": "value"}},
+            source_node="test",
+            target_node="target",
+        )
+
+        json_str = request.model_dump_json()
+        restored = ModelOnexEnvelope.model_validate_json(json_str)
+
+        assert restored.operation == request.operation
+        assert restored.payload == request.payload
+        assert restored.source_node == request.source_node
+        assert restored.correlation_id == request.correlation_id
+
+
+# =============================================================================
+# Test Class: Factory Method - create_response
+# =============================================================================
+
+
+class TestModelOnexEnvelopeCreateResponse:
+    """Test the create_response factory method."""
+
+    def test_create_response_minimal(self) -> None:
+        """Test create_response with only required parameters."""
+        request = ModelOnexEnvelope.create_request(
+            operation="GET_DATA",
+            payload={"query": "test"},
+            source_node="client",
+            target_node="server",
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={"result": "data"},
+        )
+
+        # Verify response-specific fields
+        assert response.is_response is True
+        assert response.success is True  # Default
+        assert response.error is None
+
+        # Verify causation chain
+        assert response.correlation_id == request.correlation_id
+        assert response.causation_id == request.envelope_id
+
+        # Verify envelope_version inherited
+        assert response.envelope_version == request.envelope_version
+
+        # Verify node swapping
+        assert response.source_node == request.target_node  # server
+        assert response.target_node == request.source_node  # client
+
+        # Verify operation naming
+        assert response.operation == "GET_DATA_RESPONSE"
+
+    def test_create_response_with_success_false(self) -> None:
+        """Test create_response with explicit success=False and error."""
+        request = ModelOnexEnvelope.create_request(
+            operation="GET_USER",
+            payload={"user_id": "123"},
+            source_node="api",
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+            success=False,
+            error="User not found: 123",
+        )
+
+        assert response.is_response is True
+        assert response.success is False
+        assert response.error == "User not found: 123"
+
+    def test_create_response_inherits_correlation_id(self) -> None:
+        """Test that create_response properly inherits correlation_id."""
+        request = ModelOnexEnvelope.create_request(
+            operation="OP",
+            payload={},
+            source_node="test",
+            correlation_id=FIXED_CORRELATION_ID,
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+        )
+
+        assert response.correlation_id == FIXED_CORRELATION_ID
+
+    def test_create_response_sets_causation_id(self) -> None:
+        """Test that create_response sets causation_id to request's envelope_id."""
+        request = ModelOnexEnvelope.create_request(
+            operation="CAUSE_OP",
+            payload={},
+            source_node="test",
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+        )
+
+        assert response.causation_id == request.envelope_id
+
+    def test_create_response_with_custom_source_node(self) -> None:
+        """Test create_response with explicit source_node override."""
+        request = ModelOnexEnvelope.create_request(
+            operation="OP",
+            payload={},
+            source_node="client",
+            target_node="server",
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+            source_node="different_server",
+        )
+
+        assert response.source_node == "different_server"
+        assert response.target_node == "client"  # Still goes back to original source
+
+    def test_create_response_with_custom_operation(self) -> None:
+        """Test create_response with explicit operation override."""
+        request = ModelOnexEnvelope.create_request(
+            operation="GET_DATA",
+            payload={},
+            source_node="test",
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+            operation="DATA_FETCHED",
+        )
+
+        assert response.operation == "DATA_FETCHED"
+
+    def test_create_response_inherits_handler_type(self) -> None:
+        """Test that create_response inherits handler_type from request."""
+        request = ModelOnexEnvelope.create_request(
+            operation="OP",
+            payload={},
+            source_node="test",
+            handler_type=EnumHandlerType.KAFKA,
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+        )
+
+        assert response.handler_type == EnumHandlerType.KAFKA
+
+    def test_create_response_can_override_handler_type(self) -> None:
+        """Test that create_response can override handler_type."""
+        request = ModelOnexEnvelope.create_request(
+            operation="OP",
+            payload={},
+            source_node="test",
+            handler_type=EnumHandlerType.KAFKA,
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+            handler_type=EnumHandlerType.HTTP,
+        )
+
+        assert response.handler_type == EnumHandlerType.HTTP
+
+    def test_create_response_with_metadata(self) -> None:
+        """Test create_response with custom metadata."""
+        request = ModelOnexEnvelope.create_request(
+            operation="OP",
+            payload={},
+            source_node="test",
+        )
+
+        metadata = ModelEnvelopeMetadata(
+            trace_id="response-trace",
+            span_id="response-span",
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+            metadata=metadata,
+        )
+
+        assert response.metadata.trace_id == "response-trace"
+        assert response.metadata.span_id == "response-span"
+
+    def test_create_response_with_source_node_id(self) -> None:
+        """Test create_response with source_node_id."""
+        request = ModelOnexEnvelope.create_request(
+            operation="OP",
+            payload={},
+            source_node="test",
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+            source_node_id=FIXED_SOURCE_NODE_ID,
+        )
+
+        assert response.source_node_id == FIXED_SOURCE_NODE_ID
+
+    def test_create_response_generates_unique_envelope_id(self) -> None:
+        """Test that create_response generates unique envelope_id."""
+        request = ModelOnexEnvelope.create_request(
+            operation="OP",
+            payload={},
+            source_node="test",
+        )
+
+        responses = [
+            ModelOnexEnvelope.create_response(request=request, payload={})
+            for _ in range(10)
+        ]
+
+        envelope_ids = [r.envelope_id for r in responses]
+        assert len(set(envelope_ids)) == 10, "All envelope_ids should be unique"
+
+    def test_create_response_timestamp_is_recent(self) -> None:
+        """Test that create_response sets a recent timestamp."""
+        request = ModelOnexEnvelope.create_request(
+            operation="OP",
+            payload={},
+            source_node="test",
+        )
+
+        before = datetime.now(UTC)
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+        )
+        after = datetime.now(UTC)
+
+        assert before <= response.timestamp <= after
+
+    def test_create_response_when_request_has_no_target(self) -> None:
+        """Test create_response when request has no target_node."""
+        request = ModelOnexEnvelope.create_request(
+            operation="BROADCAST_OP",
+            payload={},
+            source_node="broadcaster",
+            # No target_node specified
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+        )
+
+        # source_node should fall back to request's source_node
+        assert response.source_node == "broadcaster"
+        assert response.target_node == "broadcaster"
+
+    def test_create_response_serializes_correctly(self) -> None:
+        """Test that envelopes created via create_response serialize/deserialize."""
+        request = ModelOnexEnvelope.create_request(
+            operation="SERIALIZE_OP",
+            payload={},
+            source_node="client",
+            target_node="server",
+        )
+
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={"result": "success"},
+            success=True,
+        )
+
+        json_str = response.model_dump_json()
+        restored = ModelOnexEnvelope.model_validate_json(json_str)
+
+        assert restored.is_response is True
+        assert restored.success is True
+        assert restored.correlation_id == request.correlation_id
+        assert restored.causation_id == request.envelope_id
+
+    def test_create_response_error_with_success_false_emits_no_warning(self) -> None:
+        """Test that proper error response doesn't emit warning."""
+        request = ModelOnexEnvelope.create_request(
+            operation="OP",
+            payload={},
+            source_node="test",
+        )
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            response = ModelOnexEnvelope.create_response(
+                request=request,
+                payload={},
+                success=False,
+                error="Operation failed",
+            )
+
+            assert response.success is False
+            assert response.error == "Operation failed"
+            assert len(caught) == 0
+
+
+# =============================================================================
+# Test Class: Request/Response Flow Integration
+# =============================================================================
+
+
+class TestModelOnexEnvelopeRequestResponseFlow:
+    """Test complete request/response flows using factory methods."""
+
+    def test_complete_successful_flow(self) -> None:
+        """Test a complete successful request/response flow."""
+        # 1. Create request
+        request = ModelOnexEnvelope.create_request(
+            operation="GET_USER_PROFILE",
+            payload={"user_id": "user-123"},
+            source_node="api_gateway",
+            target_node="user_service",
+            handler_type=EnumHandlerType.HTTP,
+        )
+
+        # 2. Create success response
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={"user": {"id": "user-123", "name": "Alice", "email": "alice@example.com"}},
+            success=True,
+        )
+
+        # Verify the flow
+        assert request.is_response is False
+        assert response.is_response is True
+
+        # Verify correlation
+        assert response.correlation_id == request.correlation_id
+
+        # Verify causation chain
+        assert response.causation_id == request.envelope_id
+        assert request.causation_id is None  # Root request has no cause
+
+        # Verify routing
+        assert request.source_node == "api_gateway"
+        assert request.target_node == "user_service"
+        assert response.source_node == "user_service"  # Swapped
+        assert response.target_node == "api_gateway"  # Swapped
+
+        # Verify operation naming
+        assert request.operation == "GET_USER_PROFILE"
+        assert response.operation == "GET_USER_PROFILE_RESPONSE"
+
+    def test_complete_error_flow(self) -> None:
+        """Test a complete error request/response flow."""
+        # 1. Create request
+        request = ModelOnexEnvelope.create_request(
+            operation="GET_USER_PROFILE",
+            payload={"user_id": "nonexistent"},
+            source_node="api_gateway",
+            target_node="user_service",
+        )
+
+        # 2. Create error response
+        response = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={},
+            success=False,
+            error="User not found: nonexistent",
+        )
+
+        # Verify error response
+        assert response.is_response is True
+        assert response.success is False
+        assert response.error == "User not found: nonexistent"
+        assert response.causation_id == request.envelope_id
+
+    def test_chained_requests_causation(self) -> None:
+        """Test causation chain through multiple requests."""
+        # Initial request from client
+        initial_request = ModelOnexEnvelope.create_request(
+            operation="CREATE_ORDER",
+            payload={"items": [{"id": 1, "qty": 2}]},
+            source_node="client_app",
+            target_node="order_service",
+        )
+
+        # Order service needs to check inventory (chained request)
+        inventory_request = ModelOnexEnvelope.create_request(
+            operation="CHECK_INVENTORY",
+            payload={"item_id": 1, "qty": 2},
+            source_node="order_service",
+            target_node="inventory_service",
+            correlation_id=initial_request.correlation_id,  # Same correlation
+        )
+
+        # Inventory response
+        inventory_response = ModelOnexEnvelope.create_response(
+            request=inventory_request,
+            payload={"available": True},
+            success=True,
+        )
+
+        # Final response to client
+        order_response = ModelOnexEnvelope.create_response(
+            request=initial_request,
+            payload={"order_id": "order-123"},
+            success=True,
+        )
+
+        # All should share the same correlation_id
+        assert initial_request.correlation_id == inventory_request.correlation_id
+        assert initial_request.correlation_id == inventory_response.correlation_id
+        assert initial_request.correlation_id == order_response.correlation_id
+
+        # Causation chain should be:
+        # initial_request -> None (root)
+        # inventory_request -> None (new request, not response)
+        # inventory_response -> inventory_request.envelope_id
+        # order_response -> initial_request.envelope_id
+        assert initial_request.causation_id is None
+        assert inventory_request.causation_id is None
+        assert inventory_response.causation_id == inventory_request.envelope_id
+        assert order_response.causation_id == initial_request.envelope_id
+
+    def test_multiple_responses_to_same_request(self) -> None:
+        """Test creating multiple responses to the same request (e.g., retries)."""
+        request = ModelOnexEnvelope.create_request(
+            operation="FLAKY_OP",
+            payload={},
+            source_node="client",
+            target_node="server",
+        )
+
+        # First attempt fails
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # Suppress expected warning
+            response1 = ModelOnexEnvelope.create_response(
+                request=request,
+                payload={},
+                success=False,
+            )
+
+        # Retry succeeds
+        response2 = ModelOnexEnvelope.create_response(
+            request=request,
+            payload={"result": "success"},
+            success=True,
+        )
+
+        # Both responses should point to the same request
+        assert response1.causation_id == request.envelope_id
+        assert response2.causation_id == request.envelope_id
+
+        # But have different envelope_ids
+        assert response1.envelope_id != response2.envelope_id
+
+        # And same correlation_id
+        assert response1.correlation_id == request.correlation_id
+        assert response2.correlation_id == request.correlation_id
