@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Performance benchmarks for source_node_id field overhead in ModelOnexEnvelopeV1.
+Performance benchmarks for source_node_id field overhead in ModelOnexEnvelope.
 
 IMPORTANT: These are real performance benchmarks, not unit tests.
 They measure actual wall-clock time and are NOT suitable for CI.
@@ -53,7 +53,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.models.core.model_onex_envelope_v1 import ModelOnexEnvelopeV1
+from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Skip all performance tests in CI - they're unreliable in shared runners
@@ -94,27 +94,27 @@ class TestSourceNodeIdOverhead:
 
         return mean(times), stdev(times)
 
-    def create_envelope_without_source_node(self) -> ModelOnexEnvelopeV1:
+    def create_envelope_without_source_node(self) -> ModelOnexEnvelope:
         """Create envelope without source_node_id."""
-        return ModelOnexEnvelopeV1(
+        return ModelOnexEnvelope(
             envelope_version=ModelSemVer(major=1, minor=0, patch=0),
             correlation_id=uuid4(),
-            event_id=uuid4(),
-            event_type="TEST_EVENT",
+            envelope_id=uuid4(),
+            operation="TEST_EVENT",
             timestamp=datetime.now(UTC),
-            source_service="test_service",
+            source_node="test_service",
             payload={"key": "value", "count": 42},
         )
 
-    def create_envelope_with_source_node(self) -> ModelOnexEnvelopeV1:
+    def create_envelope_with_source_node(self) -> ModelOnexEnvelope:
         """Create envelope with source_node_id."""
-        return ModelOnexEnvelopeV1(
+        return ModelOnexEnvelope(
             envelope_version=ModelSemVer(major=1, minor=0, patch=0),
             correlation_id=uuid4(),
-            event_id=uuid4(),
-            event_type="TEST_EVENT",
+            envelope_id=uuid4(),
+            operation="TEST_EVENT",
             timestamp=datetime.now(UTC),
-            source_service="test_service",
+            source_node="test_service",
             source_node_id=uuid4(),  # Additional field
             payload={"key": "value", "count": 42},
         )
@@ -446,13 +446,13 @@ class TestSourceNodeIdOverhead:
             """Create, serialize, deserialize without source_node_id."""
             envelope = self.create_envelope_without_source_node()
             json_str = envelope.model_dump_json()
-            return ModelOnexEnvelopeV1.model_validate_json(json_str)
+            return ModelOnexEnvelope.model_validate_json(json_str)
 
         def round_trip_with():
             """Create, serialize, deserialize with source_node_id."""
             envelope = self.create_envelope_with_source_node()
             json_str = envelope.model_dump_json()
-            return ModelOnexEnvelopeV1.model_validate_json(json_str)
+            return ModelOnexEnvelope.model_validate_json(json_str)
 
         # Time round trips
         mean_without, stdev_without = self.time_operation(
@@ -490,13 +490,13 @@ class TestPerformanceRegression:
         max_creation_time = 0.001  # 1ms
 
         # Test with source_node_id
-        envelope = ModelOnexEnvelopeV1(
+        envelope = ModelOnexEnvelope(
             envelope_version=ModelSemVer(major=1, minor=0, patch=0),
             correlation_id=uuid4(),
-            event_id=uuid4(),
-            event_type="TEST_EVENT",
+            envelope_id=uuid4(),
+            operation="TEST_EVENT",
             timestamp=datetime.now(UTC),
-            source_service="test_service",
+            source_node="test_service",
             source_node_id=uuid4(),
             payload={"test": "data"},
         )
@@ -505,13 +505,13 @@ class TestPerformanceRegression:
         times = []
         for _ in range(100):
             start = time.perf_counter()
-            ModelOnexEnvelopeV1(
+            ModelOnexEnvelope(
                 envelope_version=ModelSemVer(major=1, minor=0, patch=0),
                 correlation_id=uuid4(),
-                event_id=uuid4(),
-                event_type="TEST_EVENT",
+                envelope_id=uuid4(),
+                operation="TEST_EVENT",
                 timestamp=datetime.now(UTC),
-                source_service="test_service",
+                source_node="test_service",
                 source_node_id=uuid4(),
                 payload={"test": "data"},
             )
@@ -535,13 +535,13 @@ class TestPerformanceRegression:
         """
         max_serialization_time = 0.001  # 1ms
 
-        envelope = ModelOnexEnvelopeV1(
+        envelope = ModelOnexEnvelope(
             envelope_version=ModelSemVer(major=1, minor=0, patch=0),
             correlation_id=uuid4(),
-            event_id=uuid4(),
-            event_type="TEST_EVENT",
+            envelope_id=uuid4(),
+            operation="TEST_EVENT",
             timestamp=datetime.now(UTC),
-            source_service="test_service",
+            source_node="test_service",
             source_node_id=uuid4(),
             payload={"test": "data"},
         )

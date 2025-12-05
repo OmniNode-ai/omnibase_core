@@ -158,7 +158,7 @@ class TestIntentPublisherIntegration:
         """
         Extract intent from Kafka message, handling both wrapped and unwrapped formats.
 
-        The mixin tries to wrap intents in ModelOnexEnvelopeV1, but falls back to raw JSON
+        The mixin tries to wrap intents in ModelOnexEnvelope, but falls back to raw JSON
         if the envelope class is not available.
 
         Args:
@@ -169,7 +169,7 @@ class TestIntentPublisherIntegration:
         """
         data = json.loads(message_value)
 
-        # Check if wrapped in ModelOnexEnvelopeV1
+        # Check if wrapped in ModelOnexEnvelope
         if "payload" in data and "envelope_version" in data:
             return data["payload"]
 

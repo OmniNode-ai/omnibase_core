@@ -115,3 +115,24 @@ class ModelOnexEnvelopeV1(BaseModel):
             f"correlation={str(self.correlation_id)[:8]}, "
             f"source={self.source_service}]"
         )
+
+
+# =============================================================================
+# Backwards Compatibility Notice
+# =============================================================================
+# DEPRECATED: Use ModelOnexEnvelope instead.
+#
+# ModelOnexEnvelopeV1 is maintained for backwards compatibility but new code
+# should use ModelOnexEnvelope which provides:
+# - Causation chain tracking (causation_id)
+# - Routing support (target_node, handler_type)
+# - Request/response pattern (is_response, success, error)
+# - Extended metadata support
+#
+# Field mapping from V1 to new ModelOnexEnvelope:
+#   event_id      -> envelope_id
+#   source_service -> source_node
+#   event_type    -> operation
+#
+# See: omnibase_core.models.core.model_onex_envelope
+# =============================================================================

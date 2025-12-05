@@ -21,7 +21,7 @@ This release maintains full backward compatibility with v0.1.0 while adding new 
 ### Node Introspection & Classification
 - **ONEX Architecture Classification**: New `node_type` field validates against 4-node architecture (effect, compute, reducer, orchestrator)
 - **Node Role Support**: Optional `node_role` field enables specialization within node types
-- **Event Correlation**: New `source_node_id` field in ModelOnexEnvelopeV1 enables node-to-node event tracking
+- **Event Correlation**: New `source_node_id` field in ModelOnexEnvelopeV1 enables node-to-node event tracking (Note: `ModelOnexEnvelopeV1` was later renamed to `ModelOnexEnvelope` in OMN-224)
 - **Validation Improvements**: Explicit `get_node_type()` requirement prevents invalid node type values
 
 ### Documentation Excellence
@@ -119,14 +119,16 @@ event = ModelNodeIntrospectionEvent.create_from_node_info(
 #### Source Node Tracking
 Track event origins across node-to-node communication:
 
+> **Migration Note**: `ModelOnexEnvelopeV1` was renamed to `ModelOnexEnvelope` in OMN-224. The example below shows the current API.
+
 ```
-from omnibase_core.models.core.model_onex_envelope_v1 import ModelOnexEnvelopeV1
+from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 
 # Create envelope with source tracking
-envelope = ModelOnexEnvelopeV1(
+envelope = ModelOnexEnvelope(
     envelope_id=uuid4(),
     correlation_id=correlation_id,
-    source_node_id=my_node_id,  # NEW: Track event source
+    source_node=my_node_id,  # Track event source
     payload=event_data
 )
 ```

@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-Performance benchmarks were conducted to measure the overhead introduced by the optional `source_node_id` field added to `ModelOnexEnvelopeV1` in PR #71. This field enables node-to-node event tracking in the ONEX architecture.
+Performance benchmarks were conducted to measure the overhead introduced by the optional `source_node_id` field added to `ModelOnexEnvelope` (formerly `ModelOnexEnvelopeV1`) in PR #71. This field enables node-to-node event tracking in the ONEX architecture.
 
 **Key Findings**:
 - ✅ **Memory overhead**: Zero (0 bytes)
@@ -36,16 +36,18 @@ Performance benchmarks were conducted to measure the overhead introduced by the 
 
 ### What is source_node_id?
 
-The `source_node_id` field is an optional UUID field added to `ModelOnexEnvelopeV1` to enable node-to-node event tracking in distributed ONEX workflows.
+The `source_node_id` field is an optional UUID field added to `ModelOnexEnvelope` (formerly `ModelOnexEnvelopeV1`) to enable node-to-node event tracking in distributed ONEX workflows.
 
 ```
-class ModelOnexEnvelopeV1(BaseModel):
+class ModelOnexEnvelope(BaseModel):
     # ... other fields ...
-    source_node_id: UUID | None = Field(
+    source_node: UUID | None = Field(
         default=None,
         description="UUID of the node instance that generated this event"
     )
 ```
+
+> **Migration Note**: `ModelOnexEnvelopeV1` was renamed to `ModelOnexEnvelope` in OMN-224, and the field `source_node_id` was renamed to `source_node`.
 
 ### Purpose
 
@@ -408,7 +410,7 @@ The high percentage overheads (30-130%) are artifacts of:
 
 ### 1. ✅ Approve for Production
 
-The `source_node_id` field is **approved for production use** with no performance concerns.
+The `source_node` field (formerly `source_node_id`) is **approved for production use** with no performance concerns.
 
 ### 2. ✅ Make Optional Field the Default
 
@@ -530,10 +532,10 @@ tests/performance/test_source_node_id_overhead.py
 
 ## References
 
-- **PR #71**: Added `source_node_id` field to ModelOnexEnvelopeV1
+- **PR #71**: Added `source_node_id` field to ModelOnexEnvelopeV1 (Note: Model renamed to `ModelOnexEnvelope` and field renamed to `source_node` in OMN-224)
 - **Commit**: 28b0f4df - Implementation commit
 - **Correlation ID**: 95cac850-05a3-43e2-9e57-ccbbef683f43
-- **Model**: `src/omnibase_core/models/core/model_onex_envelope_v1.py`
+- **Model**: `src/omnibase_core/models/core/model_onex_envelope.py` (formerly `model_onex_envelope_v1.py`)
 - **Tests**: `tests/performance/test_source_node_id_overhead.py`
 
 ---

@@ -42,6 +42,7 @@ from .model_mixin_property import ModelMixinProperty
 from .model_mixin_version import ModelMixinVersion
 
 # Event envelope patterns
+from .model_onex_envelope import ModelOnexEnvelope
 from .model_onex_envelope_v1 import ModelOnexEnvelopeV1
 
 # Version information
@@ -122,6 +123,7 @@ __all__ = [
     # Version information
     "ModelOnexVersionInfo",
     # Event envelope patterns
+    "ModelOnexEnvelope",
     "ModelOnexEnvelopeV1",
     # Generic container pattern
     "ModelContainer",
