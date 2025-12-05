@@ -282,6 +282,21 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
+      # dict[str, Any] Anti-Pattern Detection
+      # Enforces strong typing by detecting dict[str, Any] usage
+      # TECHNICAL DEBT: Current baseline is 842 violations (2025-12-05)
+      # Goal: Reduce to 0 over time by replacing with TypedDict or specific models
+      # Track progress by lowering --max-violations as fixes are applied
+      - id: validate-dict-any-usage
+        name: ONEX dict[str, Any] Anti-Pattern Detection
+        entry: poetry run python scripts/validation/validate-dict-any-usage.py
+        args: [--max-violations, "850"]
+        language: system
+        pass_filenames: false
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
+        stages: [pre-commit]
+
       - id: no-pydantic-bypass-in-prod
         name: ONEX Pydantic Bypass Prevention
         entry: poetry run python scripts/validation/validate-no-pydantic-bypass.py

@@ -449,11 +449,7 @@ class TestMixinIntentPublisher:
 
         with patch.dict(
             "sys.modules",
-            {
-                "omnibase_core.models.core": Mock(
-                    ModelOnexEnvelope=mock_envelope_class
-                )
-            },
+            {"omnibase_core.models.core": Mock(ModelOnexEnvelope=mock_envelope_class)},
         ):
             await test_node.publish_event_intent(
                 target_topic="dev.omninode.test.v1",

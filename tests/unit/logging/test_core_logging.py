@@ -23,6 +23,7 @@ from omnibase_core.logging.core_logging import (
     _get_correlation_id,
     _get_registry_logger,
     _SimpleFallbackLogger,
+    clear_logger_cache,
     emit_log_event,
     get_correlation_id,
     set_correlation_id,
@@ -282,6 +283,9 @@ class TestGetRegistryLogger:
 
     def test_get_registry_logger_thread_safe(self):
         """Test that _get_registry_logger is thread-safe."""
+        # Clear cache to test fresh initialization under concurrent access
+        clear_logger_cache()
+
         results = []
 
         def get_logger_in_thread():

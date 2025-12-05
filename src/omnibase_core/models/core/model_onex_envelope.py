@@ -59,6 +59,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
+from omnibase_core.models.core.model_envelope_metadata import ModelEnvelopeMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -81,8 +82,8 @@ class ModelOnexEnvelope(BaseModel):
             tracking across distributed systems.
 
         envelope_version (ModelSemVer): Envelope format version following
-            semantic versioning. Used for forward/backward compatibility
-            when the envelope schema evolves.
+            semantic versioning. Used for schema evolution when the
+            envelope format changes between versions.
 
         correlation_id (UUID): Correlation ID for tracking related events
             across services. All envelopes in a single logical transaction
@@ -117,9 +118,9 @@ class ModelOnexEnvelope(BaseModel):
             Contains the business-specific content of the envelope. Can
             contain nested structures and any JSON-serializable types.
 
-        metadata (dict[str, Any]): Additional metadata for the envelope.
-            Can include trace_id, request_id, custom headers, or other
-            contextual data. Defaults to an empty dict (new dict per instance).
+        metadata (ModelEnvelopeMetadata): Typed metadata for the envelope.
+            Contains trace_id, request_id, span_id, headers, tags, and an
+            extra field for dynamic data. Defaults to an empty instance.
 
         timestamp (datetime): When the envelope was created. Should be
             timezone-aware (preferably UTC) for consistency across
@@ -207,11 +208,11 @@ class ModelOnexEnvelope(BaseModel):
         For comprehensive threading guidance, see: ``docs/guides/THREADING.md``
 
     Note:
-        The ``metadata`` field uses ``default_factory=dict`` rather than a
-        mutable default value. This is the recommended Pydantic pattern to
-        ensure each instance gets its own dict, avoiding shared mutable state
-        bugs. The performance impact is negligible (dict creation is O(1),
-        ~50-100ns per envelope).
+        The ``metadata`` field uses ``default_factory=ModelEnvelopeMetadata``
+        rather than a mutable default value. This is the recommended Pydantic
+        pattern to ensure each instance gets its own metadata object, avoiding
+        shared mutable state bugs. The performance impact is negligible (model
+        creation is ~100-200ns per envelope).
 
     Validation:
         The model performs soft validation for success/error correlation to
@@ -356,18 +357,16 @@ class ModelOnexEnvelope(BaseModel):
         "business-specific content of the envelope.",
     )
 
-    # Performance Note: default_factory=dict creates a new dict per envelope.
-    # This is intentional and correct:
-    # - dict() creation is O(1), ~50-100ns (negligible overhead)
+    # Performance Note: default_factory creates a new ModelEnvelopeMetadata per
+    # envelope. This is intentional and correct:
+    # - Model creation is fast (~100-200ns, negligible overhead)
     # - Required by Pydantic to avoid mutable default sharing between instances
-    # - Alternative (metadata: dict | None = None) would require null checks
-    #   throughout the codebase and complicate the API
     # - For high-throughput scenarios (>100k envelopes/sec), consider pooling
     #   or pre-allocating envelopes at the application level
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional metadata for the envelope. Can include "
-        "trace_id, request_id, custom headers, or other contextual data.",
+    metadata: ModelEnvelopeMetadata = Field(
+        default_factory=ModelEnvelopeMetadata,
+        description="Typed metadata for the envelope. Contains trace_id, "
+        "request_id, span_id, headers, tags, and extra for dynamic data.",
     )
 
     # ==========================================================================
@@ -444,8 +443,7 @@ class ModelOnexEnvelope(BaseModel):
 
         This validator ensures that the success and error fields are used
         consistently in response envelopes. It issues warnings (not errors)
-        to maintain backward compatibility while helping identify potentially
-        inconsistent state.
+        to help identify potentially inconsistent state.
 
         Validation Rules:
             1. If error is set and success is True, warn about inconsistency.

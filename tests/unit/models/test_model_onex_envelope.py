@@ -32,6 +32,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
+from omnibase_core.models.core.model_envelope_metadata import ModelEnvelopeMetadata
 from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -46,7 +47,7 @@ FIXED_CAUSATION_ID = UUID("11111111-2222-3333-4444-555555555555")
 FIXED_SOURCE_NODE_ID = UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
 FIXED_TIMESTAMP = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 FIXED_PAYLOAD: dict[str, Any] = {"key": "value", "count": 42}
-FIXED_METADATA: dict[str, Any] = {"trace_id": "abc123", "request_id": "req-001"}
+FIXED_METADATA = ModelEnvelopeMetadata(trace_id="abc123", request_id="req-001")
 
 
 # =============================================================================
@@ -83,7 +84,7 @@ class TestModelOnexEnvelopeInstantiation:
         assert envelope.source_node_id is None
         assert envelope.target_node is None
         assert envelope.handler_type is None
-        assert envelope.metadata == {}
+        assert envelope.metadata == ModelEnvelopeMetadata()
         assert envelope.is_response is False
         assert envelope.success is None
         assert envelope.error is None
@@ -402,7 +403,7 @@ class TestModelOnexEnvelopeNewFields:
         )
 
         assert envelope.metadata == FIXED_METADATA
-        assert envelope.metadata["trace_id"] == "abc123"
+        assert envelope.metadata.trace_id == "abc123"
 
     def test_metadata_defaults_to_empty_dict(self) -> None:
         """Test metadata defaults to empty dict."""
@@ -416,8 +417,8 @@ class TestModelOnexEnvelopeNewFields:
             timestamp=FIXED_TIMESTAMP,
         )
 
-        assert envelope.metadata == {}
-        assert isinstance(envelope.metadata, dict)
+        assert envelope.metadata == ModelEnvelopeMetadata()
+        assert isinstance(envelope.metadata, ModelEnvelopeMetadata)
 
     def test_is_response_field_true(self) -> None:
         """Test is_response field set to True."""
@@ -581,7 +582,7 @@ class TestModelOnexEnvelopeSerialization:
         assert data["causation_id"] == FIXED_CAUSATION_ID
         assert data["target_node"] == "target_service"
         assert data["handler_type"] == EnumHandlerType.HTTP
-        assert data["metadata"] == FIXED_METADATA
+        assert data["metadata"] == FIXED_METADATA.model_dump()
         assert data["is_response"] is True
         assert data["success"] is True
         assert data["error"] is None
@@ -1557,12 +1558,12 @@ class TestModelOnexEnvelopeSuccessErrorValidation:
                 restored = ModelOnexEnvelope.model_validate_json(json_str)
 
             # Verify round-trip preserves values
-            assert restored.success == success_val, (
-                f"success mismatch for ({success_val}, {error_val})"
-            )
-            assert restored.error == error_val, (
-                f"error mismatch for ({success_val}, {error_val})"
-            )
+            assert (
+                restored.success == success_val
+            ), f"success mismatch for ({success_val}, {error_val})"
+            assert (
+                restored.error == error_val
+            ), f"error mismatch for ({success_val}, {error_val})"
 
 
 # =============================================================================

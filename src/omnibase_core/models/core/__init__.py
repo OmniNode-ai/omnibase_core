@@ -20,6 +20,9 @@ from .model_custom_fields_accessor import ModelCustomFieldsAccessor
 
 # Custom properties pattern
 from .model_custom_properties import ModelCustomProperties
+
+# Event envelope patterns
+from .model_envelope_metadata import ModelEnvelopeMetadata
 from .model_environment_accessor import ModelEnvironmentAccessor
 
 # Field accessor patterns
@@ -40,8 +43,6 @@ from .model_mixin_performance import ModelMixinPerformance
 from .model_mixin_preset import ModelMixinPreset
 from .model_mixin_property import ModelMixinProperty
 from .model_mixin_version import ModelMixinVersion
-
-# Event envelope patterns
 from .model_onex_envelope import ModelOnexEnvelope
 from .model_onex_envelope_v1 import ModelOnexEnvelopeV1
 
@@ -123,6 +124,7 @@ __all__ = [
     # Version information
     "ModelOnexVersionInfo",
     # Event envelope patterns
+    "ModelEnvelopeMetadata",
     "ModelOnexEnvelope",
     "ModelOnexEnvelopeV1",
     # Generic container pattern
