@@ -1391,21 +1391,20 @@ The node class hierarchy is used across the ONEX ecosystem:
 
 As of v0.4.0, the declarative nodes ARE the default implementation. The "Declarative" suffix has been removed because these ARE the standard now.
 
-### Migration Table (Current Status)
+### Node Classes (v0.4.0+)
 
-| Node Type | Primary Class (v0.4.0+) | Location | Legacy Class |
-|-----------|-------------------------|----------|--------------|
-| **Reducer** | `NodeReducer` | `nodes/node_reducer.py` | `NodeReducerLegacy` in `nodes/legacy/` |
-| **Orchestrator** | `NodeOrchestrator` | `nodes/node_orchestrator.py` | `NodeOrchestratorLegacy` in `nodes/legacy/` |
-| **Compute** | `NodeCompute` | `nodes/node_compute.py` | `NodeComputeLegacy` in `nodes/legacy/` |
-| **Effect** | `NodeEffect` | `nodes/node_effect.py` | `NodeEffectLegacy` in `nodes/legacy/` |
+| Node Type | Class | Location | Pattern |
+|-----------|-------|----------|---------|
+| **Reducer** | `NodeReducer` | `nodes/node_reducer.py` | FSM-driven |
+| **Orchestrator** | `NodeOrchestrator` | `nodes/node_orchestrator.py` | Workflow-driven |
+| **Compute** | `NodeCompute` | `nodes/node_compute.py` | Contract-based |
+| **Effect** | `NodeEffect` | `nodes/node_effect.py` | Transaction-based |
 
 ### Key Points
 
-- **`NodeReducer`** and **`NodeOrchestrator`** are now FSM/workflow-driven by default
+- **`NodeReducer`** and **`NodeOrchestrator`** are FSM/workflow-driven by default
 - **No "Declarative" suffix** - these ARE the standard implementations
-- **Legacy implementations** available in `nodes/legacy/` for backwards compatibility
-- **Default imports** resolve to declarative implementations
+- **All nodes use declarative YAML contracts**
 
 ### Import Examples
 

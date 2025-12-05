@@ -4,7 +4,7 @@
 **Last Updated**: 2025-12-05
 **Correlation ID**: `dec-migration-guide-001`
 
-> **UPDATE (v0.4.0)**: The declarative node classes (`NodeReducer`, `NodeOrchestrator`) are now the **PRIMARY implementations**. The "Declarative" suffix has been removed because these ARE the standard. Legacy imperative implementations have been moved to `nodes/legacy/` for backwards compatibility.
+> **UPDATE (v0.4.0)**: The declarative node classes (`NodeReducer`, `NodeOrchestrator`) are now the **PRIMARY implementations**. The "Declarative" suffix has been removed because these ARE the standard. All nodes use declarative YAML contracts.
 
 ## Table of Contents
 
@@ -42,7 +42,6 @@ All 4 phases of declarative node implementation are complete:
 | **FSM Runtime** | ✅ Complete | fsm_executor.py + MixinFSMExecution (548 lines, 18 tests) |
 | **Workflow Runtime** | ✅ Complete | workflow_executor.py + MixinWorkflowExecution |
 | **Declarative Base Classes** | ✅ Complete | `NodeReducer`, `NodeOrchestrator` (primary implementations) |
-| **Legacy Classes** | ✅ Available | `NodeReducerLegacy`, `NodeOrchestratorLegacy` in `nodes/legacy/` |
 | **Documentation** | ✅ Complete | Full tutorials and migration guides |
 
 **Ready for production use.** All code examples in this guide are functional and tested.

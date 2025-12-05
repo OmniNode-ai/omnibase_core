@@ -108,7 +108,7 @@ When spawning polymorphic agents or AI assistants:
 | **REDUCER** | State aggregation & management (FSM-driven) | State machines (FSM w/ ModelIntent), accumulators, event reduction | `from omnibase_core.nodes import NodeReducer` |
 | **ORCHESTRATOR** | Workflow coordination (workflow-driven) | Multi-step workflows (ModelAction w/ Leases), parallel execution, error recovery | `from omnibase_core.nodes import NodeOrchestrator` |
 
-**v0.4.0 Architecture Change**: `NodeReducer` and `NodeOrchestrator` are now the PRIMARY implementations (FSM/workflow-driven). Legacy imperative implementations are deprecated and available in `omnibase_core.nodes.legacy`.
+**v0.4.0 Architecture Change**: `NodeReducer` and `NodeOrchestrator` are now the PRIMARY implementations (FSM/workflow-driven). All nodes use declarative YAML contracts.
 
 ### Protocol-Driven Dependency Injection
 
@@ -161,7 +161,7 @@ class NodeMyOrchestrator(NodeOrchestrator):
 
 **CRITICAL**: Always call `super().__init__(container)` - this eliminates 80+ lines of boilerplate.
 
-**Legacy Migration**: If migrating from pre-v0.4.0, see `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`. Legacy implementations are available in `omnibase_core.nodes.legacy` but are deprecated.
+**Migration Guide**: If migrating from pre-v0.4.0, see `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`.
 
 ### Advanced Patterns (ONEX v2.0 / v0.4.0+)
 
@@ -177,7 +177,7 @@ class NodeMyOrchestrator(NodeOrchestrator):
 - Resource locking and conflict resolution for concurrent workflows
 - **v0.4.0**: `NodeOrchestrator` is now the primary implementation (formerly `NodeOrchestratorDeclarative`)
 
-**See**: [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) for complete details and [Migration Guide](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for upgrading from legacy nodes.
+**See**: [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) for complete details and [Migration Guide](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for upgrade instructions.
 
 ### Container Types: CRITICAL DISTINCTION
 
@@ -358,9 +358,8 @@ omnibase_core/
 │   ├── nodes/                  # Node implementations (v0.4.0+)
 │   │   ├── node_compute.py     # NodeCompute - data processing
 │   │   ├── node_effect.py      # NodeEffect - external I/O
-│   │   ├── node_reducer.py     # NodeReducer - FSM-driven state (PRIMARY)
-│   │   ├── node_orchestrator.py# NodeOrchestrator - workflow-driven (PRIMARY)
-│   │   └── legacy/             # Deprecated implementations (pre-v0.4.0)
+│   │   ├── node_reducer.py     # NodeReducer - FSM-driven state
+│   │   └── node_orchestrator.py# NodeOrchestrator - workflow-driven
 │   ├── primitives/             # Primitive types
 │   ├── types/                  # Type definitions
 │   ├── utils/                  # Utility functions
@@ -922,7 +921,6 @@ poetry show                                 # List dependencies
 
 - ✅ **NodeReducer and NodeOrchestrator are now PRIMARY** - FSM/workflow-driven implementations
 - ✅ **"Declarative" suffix removed** - `NodeReducerDeclarative` → `NodeReducer`, `NodeOrchestratorDeclarative` → `NodeOrchestrator`
-- ✅ **Legacy implementations moved** - Old implementations in `omnibase_core.nodes.legacy` (deprecated)
 - ✅ **Unified import path** - All nodes: `from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect`
 - ✅ **Input/Output models exported** - `ModelComputeInput`, `ModelReducerInput`, etc. available from `omnibase_core.nodes`
 - ✅ **Public enums exported** - Reducer and Orchestrator enums available from `omnibase_core.nodes`

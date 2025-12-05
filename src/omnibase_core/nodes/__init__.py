@@ -8,17 +8,9 @@ STABILITY GUARANTEE: Node interfaces are frozen for code generation.
 Breaking changes require major version bump.
 
 Changes in v2.0.0:
-- NodeReducer: Now FSM-driven (formerly NodeReducerDeclarative)
-- NodeOrchestrator: Now workflow-driven (formerly NodeOrchestratorDeclarative)
-- Legacy implementations available in omnibase_core.nodes.legacy module
-
-For deprecated legacy implementations, see:
-    from omnibase_core.nodes.legacy import (
-        NodeComputeLegacy,
-        NodeEffectLegacy,
-        NodeReducerLegacy,
-        NodeOrchestratorLegacy,
-    )
+- NodeReducer: FSM-driven state management
+- NodeOrchestrator: Workflow-driven coordination
+- All nodes use declarative YAML contracts
 """
 
 from omnibase_core.enums.enum_orchestrator_types import (
