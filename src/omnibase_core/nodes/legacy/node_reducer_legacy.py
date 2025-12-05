@@ -576,7 +576,9 @@ class NodeReducerLegacy(NodeCoreBase):
                         accumulator = batch_result
                     else:
                         # Use conflict resolver to merge results
-                        accumulator = conflict_resolver.resolve(accumulator, batch_result)
+                        accumulator = conflict_resolver.resolve(
+                            accumulator, batch_result
+                        )
                     total_processed += batch_count
                     batches_processed += 1
                     batch = []

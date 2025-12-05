@@ -200,9 +200,7 @@ class NodeReducer(NodeCoreBase, MixinFSMExecution, Generic[T_Input, T_Output]):
 
         # Create reducer output with FSM result
         output: ModelReducerOutput[T_Output] = ModelReducerOutput(
-            result=cast(
-                T_Output, input_data.data
-            ),  # Cast to T_Output for passthrough
+            result=cast(T_Output, input_data.data),  # Cast to T_Output for passthrough
             operation_id=input_data.operation_id,
             reduction_type=input_data.reduction_type,
             processing_time_ms=processing_time_ms,
