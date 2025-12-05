@@ -158,14 +158,14 @@ class ModelSessionAffinity(BaseModel):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            hash_obj = hashlib.md5(affinity_key.encode())
+            hash_obj = hashlib.md5(affinity_key.encode(), usedforsecurity=False)
         elif self.hash_algorithm == "sha1":
             warnings.warn(
                 "SHA1 hash algorithm is deprecated and insecure. Use SHA256 or SHA512 instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            hash_obj = hashlib.sha1(affinity_key.encode())
+            hash_obj = hashlib.sha1(affinity_key.encode(), usedforsecurity=False)
         elif self.hash_algorithm == "sha256":
             hash_obj = hashlib.sha256(affinity_key.encode())
         elif self.hash_algorithm == "sha512":

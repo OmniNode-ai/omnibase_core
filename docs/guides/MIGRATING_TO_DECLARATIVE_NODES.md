@@ -113,10 +113,10 @@ Convert your logic to YAML using the appropriate pattern:
 ### Step 4: Update Node Class
 
 Replace custom implementation with the primary declarative base class:
-- **Reducer**: Inherit from `NodeReducer` (from `omnibase_core.nodes.node_reducer`)
-- **Orchestrator**: Inherit from `NodeOrchestrator` (from `omnibase_core.nodes.node_orchestrator`)
+- **Reducer**: Inherit from `NodeReducer` (from `omnibase_core.nodes`)
+- **Orchestrator**: Inherit from `NodeOrchestrator` (from `omnibase_core.nodes`)
 
-> **Note**: These are now the standard implementations. Legacy imperative implementations are available in `nodes/legacy/` if needed for backwards compatibility.
+> **Note**: These are now the standard implementations. The "Declarative" suffix was removed in v0.4.0 because these ARE the standard.
 
 ### Step 5: Test & Validate
 
@@ -131,9 +131,7 @@ Verify behavior matches original implementation.
 #### Before (Code-Based)
 
 ```python
-from omnibase_core.nodes.node_reducer import NodeReducer
-from omnibase_core.models.model_reducer_input import ModelReducerInput
-from omnibase_core.models.model_reducer_output import ModelReducerOutput
+from omnibase_core.nodes import NodeReducer, ModelReducerInput, ModelReducerOutput
 
 class NodeMetricsAggregator(NodeReducer):
     """Aggregates metrics with custom state management."""
@@ -220,15 +218,14 @@ class NodeMetricsAggregator(NodeReducer):
 **Node Implementation (99% reduction in code):**
 
 ```python
-from omnibase_core.nodes.node_reducer import NodeReducer
+from omnibase_core.nodes import NodeReducer
 
 class NodeMetricsAggregator(NodeReducer):
     """Aggregates metrics using declarative FSM - NO custom code needed!"""
     pass  # All logic driven by YAML contract
 
 # Note: NodeReducer is now the primary implementation (FSM-driven by default).
-# For legacy imperative behavior, use:
-# from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
+# All node classes are exported from omnibase_core.nodes for convenience.
 ```
 
 **YAML Contract (`contracts/metrics_aggregator.yaml`):**
@@ -337,9 +334,7 @@ state_transitions:
 #### Before (Code-Based)
 
 ```python
-from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
-from omnibase_core.models.orchestrator import ModelOrchestratorOutput
+from omnibase_core.nodes import NodeOrchestrator, ModelOrchestratorInput, ModelOrchestratorOutput
 
 class NodeDataPipeline(NodeOrchestrator):
     """Orchestrates data processing pipeline with custom coordination."""
@@ -417,15 +412,14 @@ class NodeDataPipeline(NodeOrchestrator):
 **Node Implementation (99% reduction in code):**
 
 ```python
-from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+from omnibase_core.nodes import NodeOrchestrator
 
 class NodeDataPipeline(NodeOrchestrator):
     """Data processing pipeline using declarative workflow - NO custom code needed!"""
     pass  # All logic driven by YAML contract
 
 # Note: NodeOrchestrator is now the primary implementation (workflow-driven by default).
-# For legacy imperative behavior, use:
-# from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy
+# All node classes are exported from omnibase_core.nodes for convenience.
 ```
 
 **YAML Contract (`contracts/data_pipeline.yaml`):**
@@ -682,11 +676,32 @@ See the `examples/contracts/` directory for complete working examples:
 
 ## Import Path Changes Summary
 
-With v0.4.0, the import paths have been updated:
+With v0.4.0, all node classes are exported from `omnibase_core.nodes`:
 
-| Node Type | New Import (Primary) | Legacy Import |
-|-----------|---------------------|---------------|
-| **Reducer** | `from omnibase_core.nodes.node_reducer import NodeReducer` | `from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy` |
-| **Orchestrator** | `from omnibase_core.nodes.node_orchestrator import NodeOrchestrator` | `from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy` |
+```python
+# Primary import (recommended)
+from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect
 
-**Deprecation Timeline**: Legacy nodes deprecated in v0.4.0, removed in v1.0.0.
+# Also available: Input/Output models
+from omnibase_core.nodes import (
+    ModelComputeInput, ModelComputeOutput,
+    ModelEffectInput, ModelEffectOutput,
+    ModelReducerInput, ModelReducerOutput,
+    ModelOrchestratorInput, ModelOrchestratorOutput,
+)
+
+# Also available: Public enums
+from omnibase_core.nodes import (
+    EnumReductionType, EnumConflictResolution, EnumStreamingMode,  # Reducer
+    EnumExecutionMode, EnumWorkflowState, EnumActionType, EnumBranchCondition,  # Orchestrator
+)
+```
+
+| Node Type | Import Path |
+|-----------|-------------|
+| **Compute** | `from omnibase_core.nodes import NodeCompute` |
+| **Effect** | `from omnibase_core.nodes import NodeEffect` |
+| **Reducer** | `from omnibase_core.nodes import NodeReducer` |
+| **Orchestrator** | `from omnibase_core.nodes import NodeOrchestrator` |
+
+**Note**: Legacy backwards compatibility imports were removed in v0.4.0. All nodes now use declarative YAML contracts by default.

@@ -8,7 +8,7 @@
 
 The ONEX framework defines **four fundamental node types**, each designed for a specific category of operations. Understanding when to use each type is essential for building well-architected systems.
 
-> **v0.4.0 Architecture Update**: `NodeReducer` and `NodeOrchestrator` are now the PRIMARY implementations using FSM-driven state management and workflow-driven coordination respectively. The "Declarative" suffix has been removed. Legacy implementations have been moved to `nodes/legacy/`.
+> **v0.4.0 Architecture Update**: `NodeReducer` and `NodeOrchestrator` are now the PRIMARY implementations using FSM-driven state management and workflow-driven coordination respectively. The "Declarative" suffix has been removed. Legacy implementations have been removed from the codebase.
 
 ## The Four Node Types
 
@@ -286,7 +286,7 @@ async def process(self, input_data):
 
 **FSM-driven state management** - pure finite state machine transitions with intent emission for side effects.
 
-> **v0.4.0 Update**: `NodeReducer` is now the PRIMARY implementation using the Pure FSM pattern. Legacy aggregation-focused implementations have been moved to `nodes/legacy/`. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
+> **v0.4.0 Update**: `NodeReducer` is now the PRIMARY implementation using the Pure FSM pattern. Legacy aggregation-focused implementations have been removed from the codebase. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
 
 ### When to Use REDUCER
 
@@ -327,7 +327,7 @@ Use a REDUCER node when you need to:
 **Example: Order Processing FSM**
 
 ```python
-from omnibase_core.nodes.reducer.node_reducer import NodeReducer
+from omnibase_core.nodes import NodeReducer
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
 class NodeOrderProcessingReducer(NodeReducer):
@@ -372,7 +372,7 @@ class NodeOrderProcessingReducer(NodeReducer):
 
 ### Legacy Aggregation Patterns
 
-> **Note**: The following patterns use the legacy aggregation-focused approach which has been moved to `nodes/legacy/`. New implementations should use the Pure FSM pattern above. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
+> **Note**: The following patterns use the legacy aggregation-focused approach which has been removed from the codebase. New implementations should use the Pure FSM pattern above. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
 
 #### Real-World Examples (Legacy)
 
@@ -487,7 +487,7 @@ def _resolve_conflict(self, value_a, value_b, field_name):
 
 **Workflow-driven coordination** - orchestrating multiple nodes with lease-based ownership and ModelAction command patterns.
 
-> **v0.4.0 Update**: `NodeOrchestrator` is now the PRIMARY implementation using the ModelAction pattern with lease-based coordination. Legacy workflow implementations have been moved to `nodes/legacy/`. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
+> **v0.4.0 Update**: `NodeOrchestrator` is now the PRIMARY implementation using the ModelAction pattern with lease-based coordination. Legacy workflow implementations have been removed from the codebase. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
 
 ### Characteristics
 
@@ -522,7 +522,7 @@ Use an ORCHESTRATOR node when you need to:
 **Example: Workflow Coordination with Lease Management**
 
 ```python
-from omnibase_core.nodes.orchestrator.node_orchestrator import NodeOrchestrator
+from omnibase_core.nodes import NodeOrchestrator
 from omnibase_core.models.model_action import ModelAction, EnumActionType
 
 class NodeWorkflowOrchestrator(NodeOrchestrator):
@@ -814,17 +814,15 @@ result = await orchestrator.process(input)
 - **Purpose**: FSM-driven state management
 - **Use when**: State transitions, FSM patterns, aggregation
 - **Key trait**: Pure FSM with intent emission
-- **Import**: `from omnibase_core.nodes.reducer.node_reducer import NodeReducer`
+- **Import**: `from omnibase_core.nodes import NodeReducer`
 - **Example**: Order processing FSM, event reduction
-- **Legacy**: Aggregation-focused implementations in `nodes/legacy/`
 
 ### ORCHESTRATOR Node (v0.4.0 PRIMARY)
 - **Purpose**: Workflow-driven coordination
 - **Use when**: Multi-step workflows, lease-based coordination
 - **Key trait**: ModelAction with lease management
-- **Import**: `from omnibase_core.nodes.orchestrator.node_orchestrator import NodeOrchestrator`
+- **Import**: `from omnibase_core.nodes import NodeOrchestrator`
 - **Example**: User registration flow, parallel orchestration
-- **Legacy**: Simple workflow implementations in `nodes/legacy/`
 
 ## What's Next?
 
@@ -910,11 +908,8 @@ flowchart TD
 ## Quick Reference
 
 ```python
-# v0.4.0 PRIMARY NODE IMPLEMENTATIONS
-from omnibase_core.nodes.effect.node_effect import NodeEffect
-from omnibase_core.nodes.compute.node_compute import NodeCompute
-from omnibase_core.nodes.reducer.node_reducer import NodeReducer           # FSM-driven
-from omnibase_core.nodes.orchestrator.node_orchestrator import NodeOrchestrator  # Workflow-driven
+# v0.4.0 PRIMARY NODE IMPLEMENTATIONS (top-level API)
+from omnibase_core.nodes import NodeEffect, NodeCompute, NodeReducer, NodeOrchestrator
 
 # Example: FSM-driven REDUCER (PRIMARY)
 class MyOrderReducer(NodeReducer):
@@ -935,7 +930,4 @@ from omnibase_core.models.service.model_service_effect import ModelServiceEffect
 from omnibase_core.models.service.model_service_compute import ModelServiceCompute
 from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
 from omnibase_core.models.service.model_service_orchestrator import ModelServiceOrchestrator
-
-# LEGACY IMPLEMENTATIONS: Moved to nodes/legacy/
-# Use for backwards compatibility only - migrate to primary implementations
 ```

@@ -12,6 +12,118 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed fields: `event_id`→`envelope_id`, `source_service`→`source_node`, `event_type`→`operation`
 - Added new fields: `causation_id`, `target_node`, `handler_type`, `metadata`, `is_response`, `success`, `error`
 
+## [0.4.0] - 2025-12-05
+
+### Breaking Changes ⚠️
+
+#### Legacy Node Removal
+- **REMOVED**: `NodeReducerLegacy` and `NodeOrchestratorLegacy` have been **permanently removed** (not deprecated)
+- **REMOVED**: The entire `nodes/legacy/` directory has been deleted
+- **REMOVED**: All backward compatibility imports for legacy node types no longer function
+- **Impact**: Any code importing from `omnibase_core.nodes.legacy` will fail immediately
+- **Migration**: Update all imports to use the new unified import paths (see Changed section below)
+
+#### Import Path Changes
+- **BREAKING**: All nodes must now be imported from `omnibase_core.nodes`
+- **OLD** (no longer works):
+  ```python
+  from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
+  from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy
+  from omnibase_core.infrastructure.nodes.node_reducer_declarative import NodeReducerDeclarative
+  ```
+- **NEW** (required):
+  ```python
+  from omnibase_core.nodes import NodeReducer, NodeOrchestrator, NodeCompute, NodeEffect
+  ```
+
+### Changed
+
+#### Node Architecture Overhaul
+- **NodeReducer**: Now FSM-driven as the primary implementation (formerly `NodeReducerDeclarative`)
+  - Uses `ModelIntent` pattern for pure state machine transitions
+  - Intent-based state management separates transition logic from side effects
+- **NodeOrchestrator**: Now workflow-driven as the primary implementation (formerly `NodeOrchestratorDeclarative`)
+  - Uses `ModelAction` pattern with lease-based single-writer semantics
+  - Workflow-driven action definitions with automatic retry and rollback
+
+#### Class Renaming ("Declarative" Suffix Removed)
+- `NodeReducerDeclarative` → `NodeReducer`
+- `NodeOrchestratorDeclarative` → `NodeOrchestrator`
+- All YAML contract-driven configuration is now the default and only approach
+
+### Added
+
+#### Unified Import Surface
+- **Single Import Path**: All node types now available from `omnibase_core.nodes`:
+  ```python
+  from omnibase_core.nodes import (
+      NodeCompute,
+      NodeEffect,
+      NodeReducer,
+      NodeOrchestrator,
+  )
+  ```
+- **Input/Output Models**: All node I/O models exported from `omnibase_core.nodes`:
+  ```python
+  from omnibase_core.nodes import (
+      ModelComputeInput,
+      ModelComputeOutput,
+      ModelReducerInput,
+      ModelReducerOutput,
+      ModelOrchestratorInput,
+      ModelOrchestratorOutput,
+      ModelEffectInput,
+      ModelEffectOutput,
+  )
+  ```
+- **Public Enums**: Reducer and Orchestrator enums available from `omnibase_core.nodes`
+
+#### Documentation Updates
+- **Updated Node Building Guides**: All tutorials reflect v0.4.0 architecture
+- **Migration Guide**: New `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md` for upgrade instructions
+- **CLAUDE.md Updates**: Project instructions updated to reflect v0.4.0 patterns
+
+### Removed
+
+#### Legacy Infrastructure
+- **`nodes/legacy/` directory**: Entire directory removed from codebase
+- **`NodeReducerLegacy`**: Class permanently removed
+- **`NodeOrchestratorLegacy`**: Class permanently removed
+- **Legacy import paths**: All backward compatibility shims removed
+
+#### Deprecated Patterns
+- **Non-declarative nodes**: Imperative node implementations no longer supported
+- **Legacy state management**: Direct state mutation patterns removed from Reducer nodes
+- **Legacy workflow patterns**: Non-lease-based orchestration removed
+
+### Migration Guide (v0.3.x → v0.4.0)
+
+#### Step 1: Update Imports
+```python
+# Before (v0.3.x)
+from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
+from omnibase_core.infrastructure.nodes.node_reducer_declarative import NodeReducerDeclarative
+
+# After (v0.4.0)
+from omnibase_core.nodes import NodeReducer
+```
+
+#### Step 2: Update Class Inheritance
+```python
+# Before (v0.3.x)
+class MyReducer(NodeReducerLegacy):
+    pass
+
+# After (v0.4.0)
+class MyReducer(NodeReducer):
+    pass
+```
+
+#### Step 3: Adopt FSM/Workflow Patterns
+- **Reducer nodes**: Implement `ModelIntent` emission instead of direct state updates
+- **Orchestrator nodes**: Use `ModelAction` with lease management for coordination
+- See `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md` for detailed examples
+
 ## [0.3.3] - 2025-11-19
 
 ### Added

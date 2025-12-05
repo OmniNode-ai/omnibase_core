@@ -360,7 +360,7 @@ class NodeCompute(NodeCoreBase):
         """Generate deterministic cache key for computation input."""
         data_str = str(input_data.data)
         # Use hashlib for deterministic hashing across Python processes
-        data_hash = hashlib.md5(data_str.encode()).hexdigest()
+        data_hash = hashlib.sha256(data_str.encode()).hexdigest()
         return f"{input_data.computation_type}:{data_hash}"
 
     def _supports_parallel_execution(self, input_data: ModelComputeInput[Any]) -> bool:

@@ -5,7 +5,7 @@
 **Status**: ✅ Complete
 **Correlation ID**: `a3c8f7d4-2b5e-4a19-9f3a-8d6e1c4b7a2f`
 
-> **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed. Legacy imperative implementations have been moved to `nodes/legacy/`.
+> **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed. Legacy imperative implementations have been removed.
 
 ---
 
@@ -466,13 +466,11 @@ async def test_caching(calculator):
 ```python
 """Custom COMPUTE node with selective mixin composition."""
 
-from omnibase_core.nodes.node_compute import NodeCompute
+from omnibase_core.nodes import NodeCompute, ModelComputeInput, ModelComputeOutput
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 # Note: Intentionally NOT including MixinCaching for this use case
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_compute_input import ModelComputeInput
-from omnibase_core.models.model_compute_output import ModelComputeOutput
 
 
 class NodeCustomAnalyticsCompute(
@@ -539,11 +537,9 @@ class NodeCustomAnalyticsCompute(
 ```python
 """Custom EFFECT node with retry-focused composition."""
 
-from omnibase_core.nodes.node_effect import NodeEffect
+from omnibase_core.nodes import NodeEffect, ModelEffectInput, ModelEffectOutput
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_effect_input import ModelEffectInput
-from omnibase_core.models.model_effect_output import ModelEffectOutput
 
 
 class NodeCustomApiClientEffect(
@@ -1145,8 +1141,8 @@ class NodeMcpCalculatorCompute(ModelServiceCompute):
 
 **Solution**: **Tier 2 - NodeEffect + Custom Mixins**
 
-```
-from omnibase_core.nodes.node_effect import NodeEffect
+```python
+from omnibase_core.nodes import NodeEffect
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 
 class NodeHighPerfApiEffect(
@@ -1181,8 +1177,8 @@ class NodeHighPerfApiEffect(
 
 **Solution**: **Tier 2 - NodeCompute + Selective Mixins**
 
-```
-from omnibase_core.nodes.node_compute import NodeCompute
+```python
+from omnibase_core.nodes import NodeCompute
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 
@@ -1409,20 +1405,28 @@ As of v0.4.0, the declarative nodes ARE the default implementation. The "Declara
 ### Import Examples
 
 ```python
-# Primary imports (FSM/workflow-driven, RECOMMENDED)
-from omnibase_core.nodes.node_reducer import NodeReducer
-from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-from omnibase_core.nodes.node_compute import NodeCompute
-from omnibase_core.nodes.node_effect import NodeEffect
+# v0.4.0+ Top-Level API (RECOMMENDED)
+from omnibase_core.nodes import (
+    NodeCompute,
+    NodeEffect,
+    NodeOrchestrator,
+    NodeReducer,
+)
 
-# Legacy imports (imperative, for backwards compatibility only)
-from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
-from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy
-from omnibase_core.nodes.legacy.node_compute_legacy import NodeComputeLegacy
-from omnibase_core.nodes.legacy.node_effect_legacy import NodeEffectLegacy
+# Input/Output models also available from top-level
+from omnibase_core.nodes import (
+    ModelComputeInput,
+    ModelComputeOutput,
+    ModelEffectInput,
+    ModelEffectOutput,
+    ModelOrchestratorInput,
+    ModelOrchestratorOutput,
+    ModelReducerInput,
+    ModelReducerOutput,
+)
 ```
 
-**Deprecation Timeline**: Legacy nodes deprecated in v0.4.0, removed in v1.0.0.
+**Note**: Legacy imperative nodes were removed in v0.4.0. All nodes now use declarative YAML contracts.
 
 See [MVP_PLAN.md](../MVP_PLAN.md) for full migration details.
 

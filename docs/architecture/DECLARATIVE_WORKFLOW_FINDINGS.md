@@ -5,7 +5,7 @@
 > **Correlation ID**: `doc-review-declarative-workflows-2025-11-16`
 > **Status**: COMPLETED - DECLARATIVE NODES ARE NOW PRIMARY
 
-> **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed because these ARE the standard. Legacy imperative implementations have been moved to `nodes/legacy/`.
+> **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed because these ARE the standard.
 
 ---
 
@@ -18,7 +18,7 @@ This document summarizes findings from a comprehensive review of omnibase_core's
 ✅ **Infrastructure EXISTS**: Complete Pydantic models for FSM and workflow subcontracts
 ✅ **Runtime IMPLEMENTED**: Mixin-based execution via `MixinFSMExecution` and `MixinWorkflowExecution`
 ✅ **Adoption COMPLETE**: `NodeReducer` and `NodeOrchestrator` are now FSM/workflow-driven by default
-✅ **Legacy Support**: Imperative implementations available in `nodes/legacy/` for backwards compatibility
+✅ **Backwards Compatibility**: Nodes support both declarative YAML contracts and imperative Python code
 📝 **Naming Convention**: "Declarative" suffix removed - these ARE the standard implementations now
 
 ---
@@ -324,9 +324,8 @@ class MixinWorkflowExecution:
 **Current (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` ARE the declarative implementations
 
 ```python
-# Current pattern (v0.4.0) - RECOMMENDED
-from omnibase_core.nodes.node_reducer import NodeReducer
-from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+# Current pattern (v0.4.0) - RECOMMENDED - Use top-level API
+from omnibase_core.nodes import NodeReducer, NodeOrchestrator
 
 class NodeMyReducer(NodeReducer):
     """Reducer with FSM-driven execution by default."""
@@ -337,12 +336,7 @@ class NodeMyOrchestrator(NodeOrchestrator):
     pass  # All logic from YAML contract
 ```
 
-**Legacy (for backwards compatibility only)**:
-```python
-# Legacy pattern - use only when needed for backwards compatibility
-from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
-from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy
-```
+**Note**: The top-level import `from omnibase_core.nodes import ...` is the recommended pattern. All four node types (`NodeCompute`, `NodeEffect`, `NodeReducer`, `NodeOrchestrator`) are available from this single import.
 
 ---
 
@@ -368,7 +362,7 @@ from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestrator
 - ✅ `NodeReducer` is now the primary FSM-driven implementation
 - ✅ `NodeOrchestrator` is now the primary workflow-driven implementation
 - ✅ "Declarative" suffix removed - these ARE the standard
-- ✅ Legacy implementations moved to `nodes/legacy/`
+- ✅ Top-level API: `from omnibase_core.nodes import NodeReducer, NodeOrchestrator`
 - ✅ Import paths updated throughout codebase
 
 ### 3. Add Declarative Examples
@@ -454,7 +448,7 @@ from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestrator
 1. **✅ Declarative Base Classes - COMPLETE**
    - ✅ `NodeOrchestrator` - Primary workflow-driven implementation (no "Declarative" suffix)
    - ✅ `NodeReducer` - Primary FSM-driven implementation (no "Declarative" suffix)
-   - ✅ Legacy implementations: `NodeOrchestratorLegacy`, `NodeReducerLegacy` in `nodes/legacy/`
+   - ✅ Top-level API: `from omnibase_core.nodes import NodeReducer, NodeOrchestrator`
 
 2. **Documentation Updates**
    - Emphasize declarative patterns FIRST

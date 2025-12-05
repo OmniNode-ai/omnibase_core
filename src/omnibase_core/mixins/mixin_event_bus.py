@@ -24,8 +24,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, StrictStr, ValidationError
 
-from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.protocols import ProtocolEventEnvelope
@@ -171,7 +171,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         import hashlib
 
         namespace_uuid = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  # DNS namespace
-        return UUID(hashlib.md5(self.node_name.encode()).hexdigest())
+        return UUID(hashlib.sha256(self.node_name.encode()).hexdigest()[:32])
 
     def process(self, input_state: InputStateT) -> OutputStateT:
         """
