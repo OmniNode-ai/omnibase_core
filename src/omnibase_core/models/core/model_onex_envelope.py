@@ -683,8 +683,7 @@ class ModelOnexEnvelope(BaseModel):
 
         return cls(
             envelope_id=uuid4(),
-            envelope_version=envelope_version
-            or ModelSemVer(major=1, minor=0, patch=0),
+            envelope_version=envelope_version or ModelSemVer(major=1, minor=0, patch=0),
             correlation_id=correlation_id or uuid4(),
             source_node=source_node,
             source_node_id=source_node_id,

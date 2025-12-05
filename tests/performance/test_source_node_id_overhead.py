@@ -50,6 +50,7 @@ from statistics import mean, stdev
 from typing import Any
 from uuid import uuid4
 
+import psutil
 import pytest
 
 from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
@@ -389,10 +390,6 @@ class TestSourceNodeIdOverhead:
 
         Expected: Linear memory growth, minimal overhead percentage
         """
-        import os
-
-        import psutil
-
         process = psutil.Process(os.getpid())
 
         # Baseline memory

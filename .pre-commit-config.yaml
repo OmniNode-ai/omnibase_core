@@ -9,11 +9,11 @@
 
 repos:
   # YAML formatting (standard across ecosystem)
+  # Configuration in .yamlfmt file (ecosystem-aligned settings)
   - repo: https://github.com/google/yamlfmt
     rev: v0.17.2
     hooks:
       - id: yamlfmt
-        args: [--formatter, retain_line_breaks=true]
         exclude: ^(work_tickets/|tests/fixtures/validation/invalid/|\.github/workflows/|archived/)
 
   # Essential file formatting (standard across ecosystem)

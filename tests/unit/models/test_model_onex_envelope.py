@@ -2392,7 +2392,13 @@ class TestModelOnexEnvelopeRequestResponseFlow:
         # 2. Create success response
         response = ModelOnexEnvelope.create_response(
             request=request,
-            payload={"user": {"id": "user-123", "name": "Alice", "email": "alice@example.com"}},
+            payload={
+                "user": {
+                    "id": "user-123",
+                    "name": "Alice",
+                    "email": "alice@example.com",
+                }
+            },
             success=True,
         )
 
