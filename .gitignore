@@ -235,7 +235,6 @@ reports/
 secrets/
 
 # Ignore sensitive and legacy files
-.cursor/
 legacy/
 
 #ignore private docs

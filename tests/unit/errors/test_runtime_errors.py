@@ -9,15 +9,12 @@ TDD tests for minimal MVP error classes:
 - ContractValidationError
 """
 
-from datetime import datetime
 from uuid import UUID, uuid4
 
 import pytest
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
-
+@pytest.mark.timeout(10)
 class TestRuntimeHostError:
     """Tests for RuntimeHostError base class."""
 
@@ -30,9 +27,10 @@ class TestRuntimeHostError:
         # ModelOnexError includes error code in string representation
         assert "[ONEX_CORE_094_RUNTIME_ERROR]" in str(error)
         assert "Runtime error occurred" in str(error)
-        assert isinstance(error, Exception)
+        # Check error-specific attributes before isinstance check to avoid type narrowing
         assert error.correlation_id is not None
         assert isinstance(error.correlation_id, UUID)
+        assert isinstance(error, Exception)
 
     def test_runtime_host_error_with_correlation_id(self) -> None:
         """Test RuntimeHostError preserves correlation_id."""
@@ -75,6 +73,7 @@ class TestRuntimeHostError:
         assert error_dict["context"].get("operation") == "test_operation"
 
 
+@pytest.mark.timeout(10)
 class TestHandlerExecutionError:
     """Tests for HandlerExecutionError."""
 
@@ -136,6 +135,7 @@ class TestHandlerExecutionError:
         assert "correlation_id" in error_dict
 
 
+@pytest.mark.timeout(10)
 class TestEventBusError:
     """Tests for EventBusError."""
 
@@ -174,6 +174,7 @@ class TestEventBusError:
         assert error.correlation_id == corr_id
 
 
+@pytest.mark.timeout(10)
 class TestInvalidOperationError:
     """Tests for InvalidOperationError."""
 
@@ -211,6 +212,7 @@ class TestInvalidOperationError:
         assert isinstance(error, Exception)
 
 
+@pytest.mark.timeout(10)
 class TestContractValidationError:
     """Tests for ContractValidationError."""
 
@@ -254,6 +256,7 @@ class TestContractValidationError:
         assert "expected_type" in error_dict["context"]
 
 
+@pytest.mark.timeout(10)
 class TestErrorInvariants:
     """Tests for MVP error invariants from OMN-232."""
 
@@ -317,5 +320,5 @@ class TestErrorInvariants:
         assert "traceback" not in error_dict
 
         # Context fields should be structured, not raw exception data
-        for key, value in error_dict.items():
+        for _key, value in error_dict.items():
             assert not isinstance(value, type(error))  # No nested exceptions

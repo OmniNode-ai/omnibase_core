@@ -1,23 +1,26 @@
 from typing import TYPE_CHECKING, Any
 
+# TYPE_CHECKING imports for IDE support and type hints.
+# These symbols are re-exported via __all__ and resolved at runtime
+# through __getattr__ to avoid circular import dependencies.
 if TYPE_CHECKING:
-    from omnibase_core.errors.runtime_errors import (  # noqa: TC004
+    from omnibase_core.errors.runtime_errors import (
         ContractValidationError,
         EventBusError,
         HandlerExecutionError,
         InvalidOperationError,
         RuntimeHostError,
     )
-    from omnibase_core.models.common.model_onex_warning import (  # noqa: TC004
+    from omnibase_core.models.common.model_onex_warning import (
         ModelOnexWarning,
     )
-    from omnibase_core.models.common.model_registry_error import (  # noqa: TC004
+    from omnibase_core.models.common.model_registry_error import (
         ModelRegistryError,
     )
-    from omnibase_core.models.core.model_cli_adapter import (  # noqa: TC004
+    from omnibase_core.models.core.model_cli_adapter import (
         ModelCLIAdapter,
     )
-    from omnibase_core.models.errors.model_onex_error import (  # noqa: TC004
+    from omnibase_core.models.errors.model_onex_error import (
         ModelOnexError,
     )
 

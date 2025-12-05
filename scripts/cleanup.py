@@ -7,7 +7,7 @@ not be committed to the repository. It's designed to catch common patterns of
 files generated during development and analysis.
 
 Usage:
-    python scripts/cleanup.py [--dry-run] [--verbose] [--remove-from-git]
+    poetry run python scripts/cleanup.py [--dry-run] [--verbose] [--remove-from-git]
 
 Options:
     --dry-run           Show what would be removed without removing
@@ -77,12 +77,12 @@ CLEANUP_DIRECTORIES = [
 ]
 
 
-def compile_patterns(patterns: list[str]) -> list[Pattern]:
+def compile_patterns(patterns: list[str]) -> list[Pattern[str]]:
     """Compile regex patterns for file matching."""
     return [re.compile(pattern) for pattern in patterns]
 
 
-def find_cleanup_files(root_dir: Path, patterns: list[Pattern]) -> list[Path]:
+def find_cleanup_files(root_dir: Path, patterns: list[Pattern[str]]) -> list[Path]:
     """Find files matching cleanup patterns."""
     cleanup_files = []
 
@@ -94,10 +94,6 @@ def find_cleanup_files(root_dir: Path, patterns: list[Pattern]) -> list[Path]:
 
         # Skip excluded directories
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
-
-        # Skip if we're inside an excluded directory
-        if any(part in SKIP_DIRS for part in root_path.parts):
-            continue
 
         # Check files
         for file in files:
@@ -132,6 +128,7 @@ def remove_from_git_index(
             cwd=root_dir,
             capture_output=True,
             text=True,
+            check=False,
         )
 
         if not result.stdout.strip():
@@ -189,7 +186,7 @@ def remove_file_or_dir(
         return False
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(
         description="Clean up temporary files and analysis reports from ONEX repository"
     )
@@ -217,6 +214,19 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # Check git availability upfront if --remove-from-git is requested
+    if args.remove_from_git:
+        try:
+            subprocess.run(
+                ["git", "--version"],
+                capture_output=True,
+                check=True,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Use print here since logging is not yet configured
+            print("ERROR: git is not available. Cannot use --remove-from-git option.")
+            return 1
 
     # Configure logging based on verbose flag
     # WARNING level is always enabled to capture errors
@@ -256,7 +266,7 @@ def main():
     git_removed_count = 0
     if args.remove_from_git:
         if args.verbose:
-            print("\n🔧 Removing tracked files from git index...")
+            logger.info("Removing tracked files from git index...")
 
         for file_path in cleanup_files:
             if remove_from_git_index(file_path, root_dir, args.dry_run, args.verbose):
@@ -275,7 +285,7 @@ def main():
         relative_path = file_path.relative_to(root_dir)
 
         if not args.verbose and not args.dry_run:
-            print(f"Removing: {relative_path}")
+            print(f"  Removing: {relative_path}")
 
         if remove_file_or_dir(file_path, args.dry_run, args.verbose):
             removed_count += 1

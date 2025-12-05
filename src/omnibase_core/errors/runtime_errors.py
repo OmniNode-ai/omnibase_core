@@ -83,6 +83,8 @@ class RuntimeHostError(ModelOnexError):
         )
     """
 
+    # NOTE: **context: Any is intentional - accepts arbitrary structured context
+    # fields for logging, debugging, and observability (e.g., node_id, topic, etc.)
     def __init__(
         self,
         message: str,
@@ -145,6 +147,8 @@ class HandlerExecutionError(RuntimeHostError):
         )
     """
 
+    # NOTE: **context: Any is intentional - accepts arbitrary structured context
+    # fields for logging, debugging, and observability (e.g., topic, retry_count, etc.)
     def __init__(
         self,
         message: str,
@@ -206,6 +210,8 @@ class EventBusError(RuntimeHostError):
         )
     """
 
+    # NOTE: **context: Any is intentional - accepts arbitrary structured context
+    # fields for logging, debugging, and observability (e.g., topic, event_type, etc.)
     def __init__(
         self,
         message: str,
@@ -259,6 +265,8 @@ class InvalidOperationError(RuntimeHostError):
         )
     """
 
+    # NOTE: **context: Any is intentional - accepts arbitrary structured context
+    # fields for logging, debugging, and observability (e.g., current_state, node_id, etc.)
     def __init__(
         self,
         message: str,
@@ -312,6 +320,8 @@ class ContractValidationError(RuntimeHostError):
         )
     """
 
+    # NOTE: **context: Any is intentional - accepts arbitrary structured context
+    # fields for logging, debugging, and observability (e.g., field, expected_type, etc.)
     def __init__(
         self,
         message: str,
@@ -350,9 +360,9 @@ class ContractValidationError(RuntimeHostError):
 
 
 __all__ = [
-    "RuntimeHostError",
-    "HandlerExecutionError",
-    "EventBusError",
-    "InvalidOperationError",
     "ContractValidationError",
+    "EventBusError",
+    "HandlerExecutionError",
+    "InvalidOperationError",
+    "RuntimeHostError",
 ]
