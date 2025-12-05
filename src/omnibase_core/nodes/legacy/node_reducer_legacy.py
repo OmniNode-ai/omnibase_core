@@ -571,7 +571,12 @@ class NodeReducerLegacy(NodeCoreBase):
                         batch_input,
                         conflict_resolver,
                     )
-                    accumulator = batch_result
+                    # Merge batch result with accumulator
+                    if accumulator is None:
+                        accumulator = batch_result
+                    else:
+                        # Use conflict resolver to merge results
+                        accumulator = conflict_resolver.resolve(accumulator, batch_result)
                     total_processed += batch_count
                     batches_processed += 1
                     batch = []
@@ -593,7 +598,12 @@ class NodeReducerLegacy(NodeCoreBase):
                 batch_input,
                 conflict_resolver,
             )
-            accumulator = batch_result
+            # Merge batch result with accumulator
+            if accumulator is None:
+                accumulator = batch_result
+            else:
+                # Use conflict resolver to merge results
+                accumulator = conflict_resolver.resolve(accumulator, batch_result)
             total_processed += batch_count
             batches_processed += 1
 

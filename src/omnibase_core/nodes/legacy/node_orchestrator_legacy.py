@@ -26,6 +26,7 @@ Author: ONEX Framework Team
 
 import asyncio
 import time
+from collections import deque
 from collections.abc import Callable
 from datetime import datetime
 from typing import Any
@@ -988,11 +989,11 @@ class NodeOrchestratorLegacy(NodeCoreBase):
         """Get topological ordering of steps based on dependencies."""
         # Kahn's algorithm
         in_degree = dependency_graph.in_degree.copy()
-        queue = [node for node, degree in in_degree.items() if degree == 0]
+        queue = deque(node for node, degree in in_degree.items() if degree == 0)
         result: list[str] = []
 
         while queue:
-            node = queue.pop(0)
+            node = queue.popleft()
             result.append(node)
 
             for neighbor in dependency_graph.edges.get(node, []):

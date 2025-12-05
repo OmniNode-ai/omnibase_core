@@ -135,6 +135,7 @@ def simple_workflow_definition() -> ModelWorkflowDefinition:
     )
 
 
+@pytest.mark.unit
 class TestNodeReducer:
     """Test declarative reducer node."""
 
@@ -293,6 +294,7 @@ class TestNodeReducer:
         assert node.is_complete()
 
 
+@pytest.mark.unit
 class TestNodeOrchestrator:
     """Test declarative orchestrator node."""
 
@@ -457,6 +459,7 @@ class TestNodeOrchestrator:
         assert order[1] == step2_id  # Step 2 second
 
 
+@pytest.mark.unit
 class TestDeclarativeNodesIntegration:
     """Integration tests for declarative nodes."""
 

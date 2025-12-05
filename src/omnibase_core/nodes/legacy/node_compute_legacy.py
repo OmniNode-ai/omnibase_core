@@ -28,6 +28,7 @@ Author: ONEX Framework Team
 """
 
 import asyncio
+import hashlib
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -368,7 +369,8 @@ class NodeComputeLegacy(NodeCoreBase):
     def _generate_cache_key(self, input_data: ModelComputeInput[Any]) -> str:
         """Generate cache key for computation input."""
         data_str = str(input_data.data)
-        return f"{input_data.computation_type}:{hash(data_str)}"
+        data_hash = hashlib.sha256(data_str.encode()).hexdigest()[:16]
+        return f"{input_data.computation_type}:{data_hash}"
 
     def _supports_parallel_execution(self, input_data: ModelComputeInput[Any]) -> bool:
         """Check if computation supports parallel execution."""
@@ -412,8 +414,7 @@ class NodeComputeLegacy(NodeCoreBase):
                 context={"node_id": str(self.node_id)},
             )
 
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
+        return await asyncio.get_running_loop().run_in_executor(
             self.thread_pool, computation_func, input_data.data
         )
 

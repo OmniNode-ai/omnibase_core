@@ -271,7 +271,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             ```
         """
         if not self.workflow_definition:
-            return ["Workflow definition not loaded"]
+            return [_ERR_WORKFLOW_DEFINITION_NOT_LOADED]
 
         # For validation, we need some steps - use empty list for structural validation
         return await self.validate_workflow_contract(self.workflow_definition, [])
@@ -299,7 +299,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             ```
         """
         if not self.workflow_definition:
-            return ["Workflow definition not loaded"]
+            return [_ERR_WORKFLOW_DEFINITION_NOT_LOADED]
 
         return await self.validate_workflow_contract(self.workflow_definition, steps)
 

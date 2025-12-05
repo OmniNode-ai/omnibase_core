@@ -10,6 +10,7 @@ STABILITY GUARANTEE: FSM contract interface is stable.
 Author: ONEX Framework Team
 """
 
+import time
 from typing import Any, Generic, cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -188,12 +189,14 @@ class NodeReducer(NodeCoreBase, MixinFSMExecution, Generic[T_Input, T_Output]):
             **input_data.metadata,
         }
 
-        # Execute FSM transition
+        # Execute FSM transition with timing measurement
+        start_time = time.perf_counter()
         fsm_result = await self.execute_fsm_transition(
             self.fsm_contract,
             trigger=trigger,
             context=context,
         )
+        processing_time_ms = (time.perf_counter() - start_time) * 1000
 
         # Create reducer output with FSM result
         output: ModelReducerOutput[T_Output] = ModelReducerOutput(
@@ -202,7 +205,7 @@ class NodeReducer(NodeCoreBase, MixinFSMExecution, Generic[T_Input, T_Output]):
             ),  # Cast to T_Output for passthrough
             operation_id=input_data.operation_id,
             reduction_type=input_data.reduction_type,
-            processing_time_ms=0,  # Computed by caller if needed
+            processing_time_ms=processing_time_ms,
             items_processed=(
                 len(input_data.data) if hasattr(input_data.data, "__len__") else 0
             ),
