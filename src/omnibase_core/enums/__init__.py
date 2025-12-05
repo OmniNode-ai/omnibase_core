@@ -114,6 +114,7 @@ from .enum_metadata_tool_type import EnumMetadataToolType
 
 # Namespace-related enums
 from .enum_namespace_strategy import EnumNamespaceStrategy
+from .enum_node_architecture_type import EnumNodeArchitectureType
 from .enum_node_health_status import EnumNodeHealthStatus
 
 # Node-related enums
@@ -250,6 +251,7 @@ __all__ = [
     "EnumNodeHealthStatus",
     "EnumNodeStatus",
     # Node domain
+    "EnumNodeArchitectureType",
     "EnumNodeKind",
     "EnumNodeType",
     "EnumOperationStatus",

@@ -24,9 +24,11 @@ from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.contracts.mixin_node_type_validator import (
+    MixinNodeTypeValidator,
+)
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
 
@@ -50,7 +52,7 @@ from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
 
 
-class ModelContractCompute(ModelContractBase):
+class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
     """
     Contract model for NodeCompute implementations - Clean ModelArchitecture.
 
@@ -64,44 +66,8 @@ class ModelContractCompute(ModelContractBase):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
-    # Override parent node_type with architecture-specific type
-    @field_validator("node_type", mode="before")
-    @classmethod
-    def validate_node_type_architecture(cls, v: object) -> EnumNodeType:
-        """Validate and convert architecture type to base node type."""
-        if isinstance(v, EnumNodeArchitectureType):
-            return EnumNodeType(v.value)  # Both have "compute" value
-        if isinstance(v, EnumNodeType):
-            return v
-        if isinstance(v, str):
-            try:
-                return EnumNodeType(v)
-            except ValueError:
-                raise ModelOnexError(
-                    message=f"Invalid string value for node_type: {v}",
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    details=ModelErrorContext.with_context(
-                        {
-                            "error_type": ModelSchemaValue.from_value("valueerror"),
-                            "validation_context": ModelSchemaValue.from_value(
-                                "model_validation",
-                            ),
-                        },
-                    ),
-                )
-        else:
-            raise ModelOnexError(
-                message=f"Invalid node_type type: {type(v).__name__}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                details=ModelErrorContext.with_context(
-                    {
-                        "error_type": ModelSchemaValue.from_value("valueerror"),
-                        "validation_context": ModelSchemaValue.from_value(
-                            "model_validation",
-                        ),
-                    },
-                ),
-            )
+    # Default node type for COMPUTE contracts (used by MixinNodeTypeValidator)
+    _DEFAULT_NODE_TYPE: ClassVar[EnumNodeType] = EnumNodeType.COMPUTE_GENERIC
 
     def model_post_init(self, __context: object) -> None:
         """Post-initialization validation."""

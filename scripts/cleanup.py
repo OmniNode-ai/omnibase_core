@@ -7,15 +7,26 @@ not be committed to the repository. It's designed to catch common patterns of
 files generated during development and analysis.
 
 Usage:
-    python scripts/cleanup.py [--dry-run] [--verbose]
+    poetry run python scripts/cleanup.py [--dry-run] [--verbose] [--remove-from-git]
+
+Options:
+    --dry-run           Show what would be removed without removing
+    --verbose, -v       Show detailed output
+    --remove-from-git   Remove tracked files from git index (for tmp/ cleanup)
+    --root DIR          Root directory to clean (default: current directory)
 """
 
 import argparse
+import logging
 import os
 import re
 import shutil
+import subprocess
 from pathlib import Path
 from re import Pattern
+
+# Configure module logger
+logger = logging.getLogger(__name__)
 
 # Patterns for files and directories to clean up
 CLEANUP_PATTERNS = [
@@ -62,24 +73,27 @@ CLEANUP_DIRECTORIES = [
     ".coverage",
     "htmlcov",
     "reports",
+    "tmp",  # Temporary files and PR review cache
 ]
 
+# Directories to skip entirely during traversal
+SKIP_DIRS = {".git", ".venv", "venv", "ENV", "env", "node_modules"}
 
-def compile_patterns(patterns: list[str]) -> list[Pattern]:
+
+def compile_patterns(patterns: list[str]) -> list[Pattern[str]]:
     """Compile regex patterns for file matching."""
     return [re.compile(pattern) for pattern in patterns]
 
 
-def find_cleanup_files(root_dir: Path, patterns: list[Pattern]) -> list[Path]:
+def find_cleanup_files(root_dir: Path, patterns: list[Pattern[str]]) -> list[Path]:
     """Find files matching cleanup patterns."""
     cleanup_files = []
 
     for root, dirs, files in os.walk(root_dir):
         root_path = Path(root)
 
-        # Skip .git directory and other version control
-        if ".git" in root_path.parts:
-            continue
+        # Skip excluded directories
+        dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
 
         # Check files
         for file in files:
@@ -101,6 +115,52 @@ def find_cleanup_files(root_dir: Path, patterns: list[Pattern]) -> list[Path]:
     return cleanup_files
 
 
+def remove_from_git_index(
+    path: Path, root_dir: Path, dry_run: bool = False, verbose: bool = False
+) -> bool:
+    """Remove a file or directory from git index (untrack it)."""
+    try:
+        relative_path = path.relative_to(root_dir)
+
+        # Check if file is tracked by git
+        result = subprocess.run(
+            ["git", "ls-files", str(relative_path)],
+            cwd=root_dir,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        if not result.stdout.strip():
+            return False  # Not tracked, nothing to do
+
+        if dry_run:
+            if verbose:
+                logger.info("[DRY RUN] Would remove from git: %s", relative_path)
+            return True
+
+        # Remove from git index
+        subprocess.run(
+            ["git", "rm", "-r", "--cached", "--quiet", str(relative_path)],
+            cwd=root_dir,
+            check=True,
+            capture_output=True,
+        )
+
+        if verbose:
+            logger.info("Removed from git index: %s", relative_path)
+        return True
+
+    except subprocess.CalledProcessError as e:
+        # Always log errors at WARNING level regardless of verbose setting
+        logger.warning("Git removal failed for %s: %s", path, e)
+        return False
+    except Exception as e:
+        # Always log errors at WARNING level regardless of verbose setting
+        logger.warning("Error removing from git %s: %s", path, e)
+        return False
+
+
 def remove_file_or_dir(
     path: Path, dry_run: bool = False, verbose: bool = False
 ) -> bool:
@@ -108,24 +168,25 @@ def remove_file_or_dir(
     try:
         if dry_run:
             if verbose:
-                print(f"[DRY RUN] Would remove: {path}")
+                logger.info("[DRY RUN] Would remove: %s", path)
             return True
 
         if path.is_dir():
             shutil.rmtree(path)
             if verbose:
-                print(f"Removed directory: {path}")
+                logger.info("Removed directory: %s", path)
         else:
             path.unlink()
             if verbose:
-                print(f"Removed file: {path}")
+                logger.info("Removed file: %s", path)
         return True
     except Exception as e:
-        print(f"Error removing {path}: {e}")
+        # Always log errors at WARNING level regardless of verbose setting
+        logger.warning("Error removing %s: %s", path, e)
         return False
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(
         description="Clean up temporary files and analysis reports from ONEX repository"
     )
@@ -141,6 +202,11 @@ def main():
         help="Show detailed output of cleanup operations",
     )
     parser.add_argument(
+        "--remove-from-git",
+        action="store_true",
+        help="Remove tracked files from git index (for accidentally committed tmp files)",
+    )
+    parser.add_argument(
         "--root",
         type=str,
         default=".",
@@ -149,16 +215,38 @@ def main():
 
     args = parser.parse_args()
 
+    # Check git availability upfront if --remove-from-git is requested
+    if args.remove_from_git:
+        try:
+            subprocess.run(
+                ["git", "--version"],
+                capture_output=True,
+                check=True,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Use print here since logging is not yet configured
+            print("ERROR: git is not available. Cannot use --remove-from-git option.")
+            return 1
+
+    # Configure logging based on verbose flag
+    # WARNING level is always enabled to capture errors
+    # INFO level is enabled only in verbose mode
+    log_level = logging.INFO if args.verbose else logging.WARNING
+    logging.basicConfig(
+        level=log_level,
+        format="%(levelname)s: %(message)s",
+    )
+
     root_dir = Path(args.root).resolve()
 
     if not root_dir.exists():
-        print(f"Error: Root directory {root_dir} does not exist")
+        logger.error("Root directory %s does not exist", root_dir)
         return 1
 
     if args.verbose:
-        print(f"Cleaning up repository: {root_dir}")
+        logger.info("Cleaning up repository: %s", root_dir)
         if args.dry_run:
-            print("DRY RUN MODE - No files will be actually removed")
+            logger.info("DRY RUN MODE - No files will be actually removed")
 
     # Compile cleanup patterns
     patterns = compile_patterns(CLEANUP_PATTERNS)
@@ -168,23 +256,36 @@ def main():
 
     if not cleanup_files:
         if args.verbose:
-            print("No cleanup files found.")
+            logger.info("No cleanup files found.")
         return 0
 
     # Sort files for consistent output
     cleanup_files.sort()
 
-    # Remove files
+    # Remove from git index first (if requested)
+    git_removed_count = 0
+    if args.remove_from_git:
+        if args.verbose:
+            logger.info("Removing tracked files from git index...")
+
+        for file_path in cleanup_files:
+            if remove_from_git_index(file_path, root_dir, args.dry_run, args.verbose):
+                git_removed_count += 1
+
+        if git_removed_count > 0:
+            print(f"✓ Removed {git_removed_count} items from git index")
+
+    # Remove files from filesystem
     removed_count = 0
     failed_count = 0
 
-    print(f"Found {len(cleanup_files)} items to clean up:")
+    print(f"\nFound {len(cleanup_files)} items to clean up:")
 
     for file_path in cleanup_files:
         relative_path = file_path.relative_to(root_dir)
 
         if not args.verbose and not args.dry_run:
-            print(f"Removing: {relative_path}")
+            print(f"  Removing: {relative_path}")
 
         if remove_file_or_dir(file_path, args.dry_run, args.verbose):
             removed_count += 1

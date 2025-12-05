@@ -21,7 +21,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 from typing import ClassVar
 from uuid import UUID, uuid4
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -36,6 +36,9 @@ from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.contracts.mixin_node_type_validator import (
+    MixinNodeTypeValidator,
+)
 from omnibase_core.models.contracts.model_conflict_resolution_config import (
     ModelConflictResolutionConfig,
 )
@@ -67,7 +70,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_coordination_sub
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
-class ModelContractReducer(ModelContractBase):
+class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
     """
     Contract model for NodeReducer implementations - Clean ModelArchitecture.
 
@@ -81,6 +84,9 @@ class ModelContractReducer(ModelContractBase):
 
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
+
+    # Default node type for REDUCER contracts (used by MixinNodeTypeValidator)
+    _DEFAULT_NODE_TYPE: ClassVar[EnumNodeType] = EnumNodeType.REDUCER_GENERIC
 
     # Note: Removed explicit __init__ and model_post_init to avoid MyPy type issues
     # UUID correlation is handled by field default_factory

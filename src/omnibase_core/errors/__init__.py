@@ -1,18 +1,20 @@
 from typing import TYPE_CHECKING, Any
 
+# TYPE_CHECKING imports for IDE support and type hints.
+# These symbols are re-exported via __all__ and resolved at runtime
+# through __getattr__ to avoid circular import dependencies.
 if TYPE_CHECKING:
-    from omnibase_core.models.common.model_onex_warning import (  # noqa: TC004
-        ModelOnexWarning,
+    from omnibase_core.errors.runtime_errors import (
+        ContractValidationError,
+        EventBusError,
+        HandlerExecutionError,
+        InvalidOperationError,
+        RuntimeHostError,
     )
-    from omnibase_core.models.common.model_registry_error import (  # noqa: TC004
-        ModelRegistryError,
-    )
-    from omnibase_core.models.core.model_cli_adapter import (  # noqa: TC004
-        ModelCLIAdapter,
-    )
-    from omnibase_core.models.errors.model_onex_error import (  # noqa: TC004
-        ModelOnexError,
-    )
+    from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
+    from omnibase_core.models.common.model_registry_error import ModelRegistryError
+    from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """Core error handling for ONEX framework."""
 
@@ -39,25 +41,25 @@ from omnibase_core.errors.error_codes import (
 # to avoid circular dependencies
 
 __all__ = [
-    # Base error classes
-    "ModelOnexError",
-    "OnexError",  # Alias for ModelOnexError
-    "ModelOnexWarning",
-    # Error codes and enums
-    "EnumCoreErrorCode",
+    "ContractValidationError",
     "EnumCLIExitCode",
+    "EnumCoreErrorCode",
     "EnumRegistryErrorCode",
-    # CLI adapter and utilities
+    "EventBusError",
+    "HandlerExecutionError",
+    "InvalidOperationError",
     "ModelCLIAdapter",
-    "get_exit_code_for_status",
-    "get_exit_code_for_core_error",
-    "get_core_error_description",
-    # Error code registration
-    "register_error_codes",
-    "get_error_codes_for_component",
-    "list_registered_components",
-    # Registry errors
+    "ModelOnexError",
+    "ModelOnexWarning",
     "ModelRegistryError",
+    "OnexError",
+    "RuntimeHostError",
+    "get_core_error_description",
+    "get_error_codes_for_component",
+    "get_exit_code_for_core_error",
+    "get_exit_code_for_status",
+    "list_registered_components",
+    "register_error_codes",
 ]
 
 
@@ -80,6 +82,27 @@ def __getattr__(name: str) -> Any:
         from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
 
         return ModelCLIAdapter
+    # Runtime host errors (OMN-232)
+    if name == "RuntimeHostError":
+        from omnibase_core.errors.runtime_errors import RuntimeHostError
+
+        return RuntimeHostError
+    if name == "HandlerExecutionError":
+        from omnibase_core.errors.runtime_errors import HandlerExecutionError
+
+        return HandlerExecutionError
+    if name == "EventBusError":
+        from omnibase_core.errors.runtime_errors import EventBusError
+
+        return EventBusError
+    if name == "InvalidOperationError":
+        from omnibase_core.errors.runtime_errors import InvalidOperationError
+
+        return InvalidOperationError
+    if name == "ContractValidationError":
+        from omnibase_core.errors.runtime_errors import ContractValidationError
+
+        return ContractValidationError
     # Raise standard AttributeError for unknown attributes
     # Cannot use ModelOnexError here as it would cause circular import
     raise AttributeError(  # error-ok: avoid circular import in lazy loader

@@ -154,24 +154,8 @@ class ProtocolContractValidator:
                     interface_version=self.interface_version,
                 )
 
-            # Pre-process node_type to ensure proper enum conversion
-            # yaml-ok: Contract validation requires manual YAML preprocessing for enum conversion
-            if "node_type" in yaml_data and isinstance(
-                yaml_data["node_type"], str
-            ):  # yaml-ok: manual field check required for preprocessing
-                try:
-                    # Convert string to EnumNodeType for proper validation
-                    node_type_str = yaml_data[
-                        "node_type"
-                    ].upper()  # yaml-ok: field access for enum conversion
-                    yaml_data["node_type"] = EnumNodeType[
-                        node_type_str
-                    ]  # yaml-ok: field mutation for validation
-                except (KeyError, AttributeError):
-                    # Keep as string if conversion fails - let Pydantic validation handle it
-                    yaml_data["node_type"] = yaml_data[
-                        "node_type"
-                    ].upper()  # yaml-ok: fallback field mutation
+            # Note: node_type preprocessing removed - Pydantic model validators
+            # now handle lowercase architecture type strings directly
 
             # Pre-process version field to ensure ModelSemVer conversion
             if "version" in yaml_data and isinstance(yaml_data["version"], dict):

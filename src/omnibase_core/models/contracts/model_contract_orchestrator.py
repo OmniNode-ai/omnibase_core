@@ -25,6 +25,9 @@ from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.models.contracts.mixin_node_type_validator import (
+    MixinNodeTypeValidator,
+)
 from omnibase_core.models.contracts.model_action_emission_config import (
     ModelActionEmissionConfig,
 )
@@ -45,7 +48,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
-class ModelContractOrchestrator(ModelContractBase):
+class ModelContractOrchestrator(MixinNodeTypeValidator, ModelContractBase):
     """
     Contract model for NodeOrchestrator implementations.
 
@@ -58,6 +61,9 @@ class ModelContractOrchestrator(ModelContractBase):
 
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
+
+    # Default node type for ORCHESTRATOR contracts (used by MixinNodeTypeValidator)
+    _DEFAULT_NODE_TYPE: ClassVar[EnumNodeType] = EnumNodeType.ORCHESTRATOR_GENERIC
 
     # UUID correlation tracking for operational traceability
     correlation_id: UUID = Field(

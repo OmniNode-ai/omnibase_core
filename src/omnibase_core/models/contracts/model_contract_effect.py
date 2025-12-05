@@ -33,9 +33,11 @@ StructuredDataList = list[StructuredData]
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_node_architecture_type import EnumNodeArchitectureType
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.contracts.mixin_node_type_validator import (
+    MixinNodeTypeValidator,
+)
 from omnibase_core.models.contracts.model_backup_config import ModelBackupConfig
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_effect_retry_config import (
@@ -70,7 +72,7 @@ from omnibase_core.models.utils.model_subcontract_constraint_validator import (
 # Import centralized conversion utilities
 
 
-class ModelContractEffect(ModelContractBase):
+class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
     """
     Contract model for NodeEffect implementations - Clean ModelArchitecture.
 
@@ -84,33 +86,8 @@ class ModelContractEffect(ModelContractBase):
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
 
-    # Override parent node_type with architecture-specific type
-    # Both EnumNodeType.EFFECT and EnumNodeArchitectureType.EFFECT have value "effect"
-    @field_validator("node_type", mode="before")
-    @classmethod
-    def validate_node_type_architecture(cls, v: object) -> EnumNodeType:
-        """Validate and convert architecture type to base node type.
-
-        Note: Pydantic automatically handles string-to-enum conversion,
-        so we only need to handle the enum types directly.
-        """
-        if isinstance(v, EnumNodeArchitectureType):
-            # Convert architecture type to base node type
-            return EnumNodeType(v.value)  # Both have "effect" value
-        if isinstance(v, EnumNodeType):
-            return v
-        raise ModelOnexError(
-            message=f"Invalid node_type: {v}",
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            details=ModelErrorContext.with_context(
-                {
-                    "error_type": ModelSchemaValue.from_value("valueerror"),
-                    "validation_context": ModelSchemaValue.from_value(
-                        "model_validation",
-                    ),
-                },
-            ),
-        )
+    # Default node type for EFFECT contracts (used by MixinNodeTypeValidator)
+    _DEFAULT_NODE_TYPE: ClassVar[EnumNodeType] = EnumNodeType.EFFECT_GENERIC
 
     def model_post_init(self, __context: object) -> None:
         """Post-initialization validation."""

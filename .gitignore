@@ -235,7 +235,6 @@ reports/
 secrets/
 
 # Ignore sensitive and legacy files
-.cursor/
 legacy/
 
 #ignore private docs
@@ -244,6 +243,9 @@ docs_private/
 # Optimization cache files
 .onex_cache/
 docs_archived/
+
+# Temporary files and caches
+tmp/
 
 # AI IDE tools (entire directories ignored)
 .codanna/
