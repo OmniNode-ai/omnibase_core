@@ -266,25 +266,23 @@ omnibase_core/docs/
 | Category | Complete | In Progress | Planned | Total |
 |----------|----------|-------------|---------|-------|
 | **Getting Started** | 3 | 0 | 0 | 3 |
-| **Node Building** | 9 | 0 | 1 | 10 |
+| **Node Building** | 10 | 0 | 0 | 10 |
 | **Architecture** | 12 | 0 | 0 | 12 |
 | **Reference** | 13 | 0 | 0 | 13 |
 | **Specialized** | 11 | 0 | 0 | 11 |
-| **TOTAL** | **48** | **0** | **1** | **49** |
+| **TOTAL** | **49** | **0** | **0** | **49** |
 
-**Overall Progress**: 98% complete (48/49 documents)
+**Overall Progress**: 100% complete (49/49 documents)
 
 ### Priority Items
 
 **Completed**:
-- ✅ Node Building Guide (9/10 complete, Agent Templates pending)
+- ✅ Node Building Guide (10/10 complete)
 - ✅ Getting Started guides (3/3 complete)
 - ✅ Architecture documentation (12/12 complete)
 - ✅ Testing Guide
 - ✅ All node tutorials (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)
-
-**Remaining**:
-- 🚧 Agent Templates (guides/node-building/10_AGENT_TEMPLATES.md)
+- ✅ Agent Templates (AI-optimized node templates)
 
 ---
 
