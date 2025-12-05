@@ -320,5 +320,5 @@ class TestErrorInvariants:
         assert "traceback" not in error_dict
 
         # Context fields should be structured, not raw exception data
-        for _key, value in error_dict.items():
+        for _, value in error_dict.items():
             assert not isinstance(value, type(error))  # No nested exceptions

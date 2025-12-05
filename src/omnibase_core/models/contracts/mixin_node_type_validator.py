@@ -107,7 +107,7 @@ class MixinNodeTypeValidator:
             except ValueError:
                 try:
                     return EnumNodeType(v.upper())
-                except ValueError:
+                except ValueError as e:
                     raise ModelOnexError(
                         message=f"Invalid node_type: {v}",
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -119,7 +119,7 @@ class MixinNodeTypeValidator:
                                 ),
                             },
                         ),
-                    )
+                    ) from e
 
         # Invalid type
         raise ModelOnexError(

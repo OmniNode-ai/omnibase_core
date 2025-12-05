@@ -76,6 +76,9 @@ CLEANUP_DIRECTORIES = [
     "tmp",  # Temporary files and PR review cache
 ]
 
+# Directories to skip entirely during traversal
+SKIP_DIRS = {".git", ".venv", "venv", "ENV", "env", "node_modules"}
+
 
 def compile_patterns(patterns: list[str]) -> list[Pattern[str]]:
     """Compile regex patterns for file matching."""
@@ -85,9 +88,6 @@ def compile_patterns(patterns: list[str]) -> list[Pattern[str]]:
 def find_cleanup_files(root_dir: Path, patterns: list[Pattern[str]]) -> list[Path]:
     """Find files matching cleanup patterns."""
     cleanup_files = []
-
-    # Directories to skip entirely during traversal
-    SKIP_DIRS = {".git", ".venv", "venv", "ENV", "env", "node_modules"}
 
     for root, dirs, files in os.walk(root_dir):
         root_path = Path(root)

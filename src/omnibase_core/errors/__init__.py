@@ -41,31 +41,25 @@ from omnibase_core.errors.error_codes import (
 # to avoid circular dependencies
 
 __all__ = [
-    # Base error classes
-    "ModelOnexError",
-    "OnexError",  # Alias for ModelOnexError
-    "ModelOnexWarning",
-    # Runtime host errors (OMN-232)
-    "RuntimeHostError",
-    "HandlerExecutionError",
-    "EventBusError",
-    "InvalidOperationError",
     "ContractValidationError",
-    # Error codes and enums
-    "EnumCoreErrorCode",
     "EnumCLIExitCode",
+    "EnumCoreErrorCode",
     "EnumRegistryErrorCode",
-    # CLI adapter and utilities
+    "EventBusError",
+    "HandlerExecutionError",
+    "InvalidOperationError",
     "ModelCLIAdapter",
-    "get_exit_code_for_status",
-    "get_exit_code_for_core_error",
-    "get_core_error_description",
-    # Error code registration
-    "register_error_codes",
-    "get_error_codes_for_component",
-    "list_registered_components",
-    # Registry errors
+    "ModelOnexError",
+    "ModelOnexWarning",
     "ModelRegistryError",
+    "OnexError",
+    "RuntimeHostError",
+    "get_core_error_description",
+    "get_error_codes_for_component",
+    "get_exit_code_for_core_error",
+    "get_exit_code_for_status",
+    "list_registered_components",
+    "register_error_codes",
 ]
 
 
