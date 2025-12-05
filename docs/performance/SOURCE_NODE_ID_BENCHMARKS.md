@@ -38,7 +38,7 @@ Performance benchmarks were conducted to measure the overhead introduced by the 
 
 The `source_node_id` field is an optional UUID field added to `ModelOnexEnvelope` (formerly `ModelOnexEnvelopeV1`) to enable node-to-node event tracking in distributed ONEX workflows.
 
-```
+```python
 class ModelOnexEnvelope(BaseModel):
     # ... other fields ...
     source_node_id: UUID | None = Field(
@@ -47,7 +47,7 @@ class ModelOnexEnvelope(BaseModel):
     )
 ```
 
-> **Migration Note**: `ModelOnexEnvelopeV1` was replaced by `ModelOnexEnvelope` in OMN-224. The `source_node_id` field (optional UUID) remains unchanged in both models. The key difference is that `ModelOnexEnvelope` uses `source_node` (required str) for the node name, while `ModelOnexEnvelopeV1` uses `source_service`.
+> **Migration Note**: The **model class** `ModelOnexEnvelopeV1` was renamed to `ModelOnexEnvelope` in OMN-224. The `source_node_id` field (optional UUID for tracking node instances) remains unchanged. Additionally, `ModelOnexEnvelope` uses a required `source_node` string field for the node name (replacing `source_service` from V1).
 
 ### Purpose
 
@@ -487,7 +487,7 @@ Tests validate against these thresholds:
 ### Re-running Benchmarks
 
 Benchmarks should be re-run:
-- **After major changes** to `ModelOnexEnvelopeV1`
+- **After major changes** to `ModelOnexEnvelope`
 - **Before releases** to detect regressions
 - **On different hardware** to validate portability
 - **Under load** to measure real-world impact
@@ -510,8 +510,8 @@ tests/performance/test_source_node_id_overhead.py
 ### Key Test Functions
 
 - `time_operation()`: High-precision timing with warmup
-- `create_envelope_without_source_node()`: Baseline envelope creation
-- `create_envelope_with_source_node()`: Overhead envelope creation
+- `create_envelope_without_source_node_id()`: Baseline envelope creation
+- `create_envelope_with_source_node_id()`: Overhead envelope creation
 
 ### Dependencies
 
