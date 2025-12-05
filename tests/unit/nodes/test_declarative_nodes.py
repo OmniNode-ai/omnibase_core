@@ -1,7 +1,7 @@
 """
 Unit tests for declarative node base classes.
 
-Tests NodeReducerDeclarative and NodeOrchestratorDeclarative for YAML-driven execution.
+Tests NodeReducer and NodeOrchestrator for YAML-driven execution.
 """
 
 from uuid import uuid4
@@ -37,10 +37,10 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
 from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.models.model_reducer_input import ModelReducerInput
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.nodes.node_orchestrator_declarative import (
-    NodeOrchestratorDeclarative,
+from omnibase_core.nodes.node_orchestrator import (
+    NodeOrchestrator,
 )
-from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
+from omnibase_core.nodes.node_reducer import NodeReducer
 
 
 @pytest.fixture
@@ -135,12 +135,12 @@ def simple_workflow_definition() -> ModelWorkflowDefinition:
     )
 
 
-class TestNodeReducerDeclarative:
+class TestNodeReducer:
     """Test declarative reducer node."""
 
     def test_initialization(self, test_container: ModelONEXContainer):
         """Test node initialization."""
-        node = NodeReducerDeclarative(test_container)
+        node = NodeReducer(test_container)
 
         assert node.container is test_container
         assert node.node_id is not None
@@ -152,7 +152,7 @@ class TestNodeReducerDeclarative:
         simple_fsm: ModelFSMSubcontract,
     ):
         """Test node initialization with FSM contract."""
-        node = NodeReducerDeclarative(test_container)
+        node = NodeReducer(test_container)
 
         # Set FSM contract directly and initialize state
         node.fsm_contract = simple_fsm
@@ -168,7 +168,7 @@ class TestNodeReducerDeclarative:
         simple_fsm: ModelFSMSubcontract,
     ):
         """Test processing with FSM execution."""
-        node = NodeReducerDeclarative(test_container)
+        node = NodeReducer(test_container)
         node.fsm_contract = simple_fsm
         node.initialize_fsm_state(simple_fsm, context={})
 
@@ -194,7 +194,7 @@ class TestNodeReducerDeclarative:
         """Test processing without FSM contract raises error."""
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-        node = NodeReducerDeclarative(test_container)
+        node = NodeReducer(test_container)
 
         input_data = ModelReducerInput(
             data=[1, 2, 3],
@@ -214,7 +214,7 @@ class TestNodeReducerDeclarative:
         simple_fsm: ModelFSMSubcontract,
     ):
         """Test contract validation."""
-        node = NodeReducerDeclarative(test_container)
+        node = NodeReducer(test_container)
         node.fsm_contract = simple_fsm
 
         errors = await node.validate_contract()
@@ -227,7 +227,7 @@ class TestNodeReducerDeclarative:
         test_container: ModelONEXContainer,
     ):
         """Test validation without FSM contract."""
-        node = NodeReducerDeclarative(test_container)
+        node = NodeReducer(test_container)
 
         errors = await node.validate_contract()
 
@@ -240,7 +240,7 @@ class TestNodeReducerDeclarative:
         simple_fsm: ModelFSMSubcontract,
     ):
         """Test getting current state."""
-        node = NodeReducerDeclarative(test_container)
+        node = NodeReducer(test_container)
         node.fsm_contract = simple_fsm
         node.initialize_fsm_state(simple_fsm, context={})
 
@@ -254,7 +254,7 @@ class TestNodeReducerDeclarative:
         simple_fsm: ModelFSMSubcontract,
     ):
         """Test getting state history."""
-        node = NodeReducerDeclarative(test_container)
+        node = NodeReducer(test_container)
         node.fsm_contract = simple_fsm
         node.initialize_fsm_state(simple_fsm, context={})
 
@@ -269,7 +269,7 @@ class TestNodeReducerDeclarative:
         simple_fsm: ModelFSMSubcontract,
     ):
         """Test is_complete returns False for non-terminal state."""
-        node = NodeReducerDeclarative(test_container)
+        node = NodeReducer(test_container)
         node.fsm_contract = simple_fsm
         node.initialize_fsm_state(simple_fsm, context={})
 
@@ -282,7 +282,7 @@ class TestNodeReducerDeclarative:
         simple_fsm: ModelFSMSubcontract,
     ):
         """Test is_complete returns True for terminal state."""
-        node = NodeReducerDeclarative(test_container)
+        node = NodeReducer(test_container)
         node.fsm_contract = simple_fsm
         node.initialize_fsm_state(simple_fsm, context={})
 
@@ -293,12 +293,12 @@ class TestNodeReducerDeclarative:
         assert node.is_complete()
 
 
-class TestNodeOrchestratorDeclarative:
+class TestNodeOrchestrator:
     """Test declarative orchestrator node."""
 
     def test_initialization(self, test_container: ModelONEXContainer):
         """Test node initialization."""
-        node = NodeOrchestratorDeclarative(test_container)
+        node = NodeOrchestrator(test_container)
 
         assert node.container is test_container
         assert node.node_id is not None
@@ -310,7 +310,7 @@ class TestNodeOrchestratorDeclarative:
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
         """Test node initialization with workflow definition."""
-        node = NodeOrchestratorDeclarative(test_container)
+        node = NodeOrchestrator(test_container)
 
         # Set workflow definition directly
         node.workflow_definition = simple_workflow_definition
@@ -327,7 +327,7 @@ class TestNodeOrchestratorDeclarative:
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
         """Test processing with workflow execution."""
-        node = NodeOrchestratorDeclarative(test_container)
+        node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
         # Create workflow steps
@@ -370,7 +370,7 @@ class TestNodeOrchestratorDeclarative:
         """Test processing without workflow definition raises error."""
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-        node = NodeOrchestratorDeclarative(test_container)
+        node = NodeOrchestrator(test_container)
 
         input_data = ModelOrchestratorInput(
             workflow_id=uuid4(),
@@ -390,7 +390,7 @@ class TestNodeOrchestratorDeclarative:
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
         """Test contract validation."""
-        node = NodeOrchestratorDeclarative(test_container)
+        node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
         errors = await node.validate_contract()
@@ -404,7 +404,7 @@ class TestNodeOrchestratorDeclarative:
         test_container: ModelONEXContainer,
     ):
         """Test validation without workflow definition."""
-        node = NodeOrchestratorDeclarative(test_container)
+        node = NodeOrchestrator(test_container)
 
         errors = await node.validate_contract()
 
@@ -418,7 +418,7 @@ class TestNodeOrchestratorDeclarative:
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
         """Test validating workflow steps."""
-        node = NodeOrchestratorDeclarative(test_container)
+        node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
         steps = [
@@ -435,7 +435,7 @@ class TestNodeOrchestratorDeclarative:
         test_container: ModelONEXContainer,
     ):
         """Test getting execution order."""
-        node = NodeOrchestratorDeclarative(test_container)
+        node = NodeOrchestrator(test_container)
 
         step1_id = uuid4()
         step2_id = uuid4()
@@ -467,7 +467,7 @@ class TestDeclarativeNodesIntegration:
         simple_fsm: ModelFSMSubcontract,
     ):
         """Test complete reducer workflow."""
-        node = NodeReducerDeclarative(test_container)
+        node = NodeReducer(test_container)
         node.fsm_contract = simple_fsm
         node.initialize_fsm_state(simple_fsm, context={})
 
@@ -505,7 +505,7 @@ class TestDeclarativeNodesIntegration:
         simple_workflow_definition.workflow_metadata.execution_mode = "parallel"
         simple_workflow_definition.coordination_rules.parallel_execution_allowed = True
 
-        node = NodeOrchestratorDeclarative(test_container)
+        node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
         # Create parallel steps

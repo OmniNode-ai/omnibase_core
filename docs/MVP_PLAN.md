@@ -15,10 +15,12 @@
 |-------|----------|---------|-------------|-------|
 | Phase 0: Repository Stabilization | 2 | 2 | 5 | 9 |
 | Phase 1: Legacy Node Migration | 0 | 0 | 5 | 5 |
-| Phase 2: Declarative Node Promotion | 1 | 1 | 5 | 7 |
+| Phase 2: Declarative Node Promotion | 3 | 1 | 3 | 7 |
 | Phase 3-7 | 0 | 0 | 36 | 36 |
 | Future (F.5 RUNTIME_HOST) | 1 | 0 | 13 | 14 |
-| **Total** | **4** | **3** | **64** | **71** |
+| **Total** | **6** | **3** | **62** | **71** |
+
+> **UPDATE (v0.4.0)**: Issues 2.1 (NodeReducerDeclarative -> NodeReducer) and 2.2 (NodeOrchestratorDeclarative -> NodeOrchestrator) are **COMPLETE**. The "Declarative" suffix has been removed because these ARE now the standard implementations.
 
 **Key Completions**:
 - ✅ OMN-222: EnumNodeKind with RUNTIME_HOST value (PR #108)
@@ -28,6 +30,8 @@
 - ✅ OMN-241: Contract Linter CLI (omniintelligence)
 - ✅ Pre-refactor API snapshot tests (4 test files in `tests/unit/api_snapshots/`)
 - ✅ NodeCoreBase interface frozen (interface tests + documentation)
+- ✅ Issue 2.1: NodeReducerDeclarative renamed to NodeReducer (primary FSM-driven)
+- ✅ Issue 2.2: NodeOrchestratorDeclarative renamed to NodeOrchestrator (primary workflow-driven)
 
 ### What v0.4.0 Changes
 - Legacy nodes moved to `nodes/legacy/` namespace with deprecation warnings
@@ -894,45 +898,51 @@ class BadNode(NodeCoreBase, SomeMixin):  # P4: No extra inheritance
 
 ---
 
-#### Issue 2.1: Rename NodeReducerDeclarative to NodeReducer
+#### Issue 2.1: Rename NodeReducerDeclarative to NodeReducer ✅ COMPLETE
 
 **Title**: Rename NodeReducerDeclarative to NodeReducer
 **Type**: Task
 **Priority**: High (2)
 **Labels**: `architecture`, `refactoring`
+**Status**: ✅ **COMPLETE** (v0.4.0)
 
 **Description**:
 Rename `node_reducer_declarative.py` to `node_reducer.py`, rename class from `NodeReducerDeclarative` to `NodeReducer`.
 
 **Acceptance Criteria**:
-- [ ] File renamed from `node_reducer_declarative.py` to `node_reducer.py`
-- [ ] Class renamed from `NodeReducerDeclarative` to `NodeReducer`
-- [ ] Docstring updated with `.. versionchanged:: 0.4.0`
-- [ ] All internal imports updated
-- [ ] mypy --strict passes
-- [ ] pyright passes
-- [ ] Pydantic validation tests pass
+- [x] File renamed from `node_reducer_declarative.py` to `node_reducer.py`
+- [x] Class renamed from `NodeReducerDeclarative` to `NodeReducer`
+- [x] Docstring updated with `.. versionchanged:: 0.4.0`
+- [x] All internal imports updated
+- [x] mypy --strict passes
+- [x] pyright passes
+- [x] Pydantic validation tests pass
+
+**Result**: `NodeReducer` is now the PRIMARY FSM-driven implementation. Import from `omnibase_core.nodes.node_reducer`.
 
 ---
 
-#### Issue 2.2: Rename NodeOrchestratorDeclarative to NodeOrchestrator
+#### Issue 2.2: Rename NodeOrchestratorDeclarative to NodeOrchestrator ✅ COMPLETE
 
 **Title**: Rename NodeOrchestratorDeclarative to NodeOrchestrator
 **Type**: Task
 **Priority**: High (2)
 **Labels**: `architecture`, `refactoring`
+**Status**: ✅ **COMPLETE** (v0.4.0)
 
 **Description**:
 Rename `node_orchestrator_declarative.py` to `node_orchestrator.py`, rename class from `NodeOrchestratorDeclarative` to `NodeOrchestrator`.
 
 **Acceptance Criteria**:
-- [ ] File renamed from `node_orchestrator_declarative.py` to `node_orchestrator.py`
-- [ ] Class renamed from `NodeOrchestratorDeclarative` to `NodeOrchestrator`
-- [ ] Docstring updated with `.. versionchanged:: 0.4.0`
-- [ ] All internal imports updated
-- [ ] mypy --strict passes
-- [ ] pyright passes
-- [ ] Pydantic validation tests pass
+- [x] File renamed from `node_orchestrator_declarative.py` to `node_orchestrator.py`
+- [x] Class renamed from `NodeOrchestratorDeclarative` to `NodeOrchestrator`
+- [x] Docstring updated with `.. versionchanged:: 0.4.0`
+- [x] All internal imports updated
+- [x] mypy --strict passes
+- [x] pyright passes
+- [x] Pydantic validation tests pass
+
+**Result**: `NodeOrchestrator` is now the PRIMARY workflow-driven implementation. Import from `omnibase_core.nodes.node_orchestrator`.
 
 ---
 
@@ -1645,21 +1655,24 @@ Update 16 service model test files for new class names and MRO references.
 
 ---
 
-#### Issue 5.4: Remove deprecated class name references
+#### Issue 5.4: Remove deprecated class name references ✅ COMPLETE
 
 **Title**: Remove NodeReducerDeclarative/NodeOrchestratorDeclarative from tests
 **Type**: Task
 **Priority**: Medium (3)
 **Labels**: `testing`, `refactoring`
+**Status**: ✅ **COMPLETE** (v0.4.0)
 
 **Description**:
 Search and replace all remaining deprecated class name references in tests.
 
 **Acceptance Criteria**:
-- [ ] No `NodeReducerDeclarative` references in tests
-- [ ] No `NodeOrchestratorDeclarative` references in tests
-- [ ] All tests pass
-- [ ] No unexpected deprecation warnings
+- [x] No `NodeReducerDeclarative` references in tests (now use `NodeReducer`)
+- [x] No `NodeOrchestratorDeclarative` references in tests (now use `NodeOrchestrator`)
+- [x] All tests pass
+- [x] No unexpected deprecation warnings
+
+**Note**: The class names `NodeReducer` and `NodeOrchestrator` are now the PRIMARY implementations. Documentation has been updated to reflect this change.
 
 ---
 

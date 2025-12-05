@@ -1,9 +1,11 @@
 # Node Class Hierarchy Guide
 
-**Version**: 1.0.0
-**Last Updated**: 2025-01-19
+**Version**: 1.1.0
+**Last Updated**: 2025-12-05
 **Status**: ✅ Complete
 **Correlation ID**: `a3c8f7d4-2b5e-4a19-9f3a-8d6e1c4b7a2f`
+
+> **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed. Legacy imperative implementations have been moved to `nodes/legacy/`.
 
 ---
 
@@ -1385,33 +1387,41 @@ The node class hierarchy is used across the ONEX ecosystem:
 
 ---
 
-## Naming Convention Migration (v0.4.0)
+## Naming Convention Migration (v0.4.0) - COMPLETED
 
-In v0.4.0, declarative nodes become the default implementation. Legacy imperative nodes move to `nodes/legacy/` with a `Legacy` suffix.
+As of v0.4.0, the declarative nodes ARE the default implementation. The "Declarative" suffix has been removed because these ARE the standard now.
 
-### Migration Table
+### Migration Table (Current Status)
 
-The table below shows the transition from current (pre-v0.4.0) naming to the new (v0.4.0+) naming convention:
+| Node Type | Primary Class (v0.4.0+) | Location | Legacy Class |
+|-----------|-------------------------|----------|--------------|
+| **Reducer** | `NodeReducer` | `nodes/node_reducer.py` | `NodeReducerLegacy` in `nodes/legacy/` |
+| **Orchestrator** | `NodeOrchestrator` | `nodes/node_orchestrator.py` | `NodeOrchestratorLegacy` in `nodes/legacy/` |
+| **Compute** | `NodeCompute` | `nodes/node_compute.py` | `NodeComputeLegacy` in `nodes/legacy/` |
+| **Effect** | `NodeEffect` | `nodes/node_effect.py` | `NodeEffectLegacy` in `nodes/legacy/` |
 
-| Status | Current Name (pre-v0.4.0) | New Name (v0.4.0+) | Location After Refactoring |
-|--------|---------------------------|--------------------|-----------------------------|
-| Rename | `NodeCompute` | `NodeComputeLegacy` | `nodes/legacy/node_compute_legacy.py` |
-| Rename | `NodeEffect` | `NodeEffectLegacy` | `nodes/legacy/node_effect_legacy.py` |
-| Rename | `NodeReducer` | `NodeReducerLegacy` | `nodes/legacy/node_reducer_legacy.py` |
-| Rename | `NodeOrchestrator` | `NodeOrchestratorLegacy` | `nodes/legacy/node_orchestrator_legacy.py` |
-| Promote | `NodeReducerDeclarative` | `NodeReducer` | `nodes/node_reducer.py` |
-| Promote | `NodeOrchestratorDeclarative` | `NodeOrchestrator` | `nodes/node_orchestrator.py` |
-| New | *(does not exist yet)* | `NodeCompute` | `nodes/node_compute.py` (declarative) |
-| New | *(does not exist yet)* | `NodeEffect` | `nodes/node_effect.py` (declarative) |
+### Key Points
 
-**Status Legend**:
-- **Rename**: Existing class moves to legacy location with new suffix
-- **Promote**: Existing declarative class becomes the default implementation
-- **New**: Class to be created in v0.4.0 (declarative implementation)
+- **`NodeReducer`** and **`NodeOrchestrator`** are now FSM/workflow-driven by default
+- **No "Declarative" suffix** - these ARE the standard implementations
+- **Legacy implementations** available in `nodes/legacy/` for backwards compatibility
+- **Default imports** resolve to declarative implementations
 
-**Import Changes**:
-- Default imports (`from omnibase_core.nodes import NodeCompute`) resolve to declarative implementations
-- Legacy imports require explicit path: `from omnibase_core.nodes.legacy import NodeComputeLegacy`
+### Import Examples
+
+```python
+# Primary imports (FSM/workflow-driven, RECOMMENDED)
+from omnibase_core.nodes.node_reducer import NodeReducer
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+from omnibase_core.nodes.node_compute import NodeCompute
+from omnibase_core.nodes.node_effect import NodeEffect
+
+# Legacy imports (imperative, for backwards compatibility only)
+from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
+from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy
+from omnibase_core.nodes.legacy.node_compute_legacy import NodeComputeLegacy
+from omnibase_core.nodes.legacy.node_effect_legacy import NodeEffectLegacy
+```
 
 **Deprecation Timeline**: Legacy nodes deprecated in v0.4.0, removed in v1.0.0.
 
@@ -1420,5 +1430,5 @@ See [MVP_PLAN.md](../MVP_PLAN.md) for full migration details.
 ---
 
 **Correlation ID**: `a3c8f7d4-2b5e-4a19-9f3a-8d6e1c4b7a2f`
-**Document Version**: 1.2.0
-**Last Updated**: 2025-12-03
+**Document Version**: 1.3.0
+**Last Updated**: 2025-12-05

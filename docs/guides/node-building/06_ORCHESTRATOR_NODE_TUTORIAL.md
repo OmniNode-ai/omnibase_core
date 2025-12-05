@@ -36,7 +36,8 @@ The omnibase_core codebase now includes:
 - **Pydantic Models**: Complete workflow coordination infrastructure
 - **Runtime Execution**: `utils/workflow_executor.py` with sequential/parallel/batch execution modes
 - **Mixin Integration**: `MixinWorkflowExecution` for seamless orchestrator integration
-- **Declarative Nodes**: `NodeOrchestratorDeclarative` base class for zero-code workflows
+- **Primary Implementation**: `NodeOrchestrator` base class for zero-code workflows (workflow-driven by default)
+- **Legacy Support**: `NodeOrchestratorLegacy` in `nodes/legacy/` for backwards compatibility
 - **Production Ready**: Topological ordering, cycle detection, dependency resolution, comprehensive tests
 
 **Example YAML Contract** (fully functional, production-ready):
@@ -96,7 +97,8 @@ workflow_coordination:
 | YAML Contract Models | ✅ Complete | Full Pydantic validation |
 | Subcontract Composition | ✅ Complete | ModelContractOrchestrator |
 | Runtime Executor Services | ✅ Complete | workflow_executor.py with MixinWorkflowExecution |
-| Declarative Base Classes | ✅ Complete | NodeOrchestratorDeclarative (production-ready) |
+| Declarative Base Classes | ✅ Complete | `NodeOrchestrator` (primary implementation, workflow-driven) |
+| Legacy Classes | ✅ Available | `NodeOrchestratorLegacy` in `nodes/legacy/` for backwards compatibility |
 | Documentation | ✅ Complete | Full tutorial and migration guides available |
 
 **See**: [DECLARATIVE_WORKFLOW_FINDINGS.md](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for implementation roadmap.
@@ -107,7 +109,9 @@ workflow_coordination:
 
 This tutorial demonstrates **two implementation approaches**:
 1. **Manual Orchestrator Implementation** (Current pattern): Custom Python code with action emission and workflow coordination
-2. **Declarative Workflows** (Recommended for new workflows): YAML-driven workflows using `NodeOrchestratorDeclarative`
+2. **Declarative Workflows** (Recommended for new workflows): YAML-driven workflows using `NodeOrchestrator` (the primary workflow-driven implementation)
+
+> **Note (v0.4.0)**: `NodeOrchestrator` is now the PRIMARY workflow-driven implementation. The "Declarative" suffix has been removed because this IS the standard. Legacy imperative implementations are available in `nodes/legacy/NodeOrchestratorLegacy` for backwards compatibility.
 
 **Both approaches are production-ready and fully supported.**
 

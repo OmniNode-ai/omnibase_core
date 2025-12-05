@@ -1,8 +1,10 @@
 # Migrating to Declarative Nodes
 
-**Version**: 1.0.0
-**Last Updated**: 2025-11-16
+**Version**: 2.0.0
+**Last Updated**: 2025-12-05
 **Correlation ID**: `dec-migration-guide-001`
+
+> **UPDATE (v0.4.0)**: The declarative node classes (`NodeReducer`, `NodeOrchestrator`) are now the **PRIMARY implementations**. The "Declarative" suffix has been removed because these ARE the standard. Legacy imperative implementations have been moved to `nodes/legacy/` for backwards compatibility.
 
 ## Table of Contents
 
@@ -39,7 +41,8 @@ All 4 phases of declarative node implementation are complete:
 | **Workflow Models** | ✅ Complete | ModelWorkflowDefinition with dependency resolution |
 | **FSM Runtime** | ✅ Complete | fsm_executor.py + MixinFSMExecution (548 lines, 18 tests) |
 | **Workflow Runtime** | ✅ Complete | workflow_executor.py + MixinWorkflowExecution |
-| **Declarative Base Classes** | ✅ Complete | NodeReducerDeclarative, NodeOrchestratorDeclarative |
+| **Declarative Base Classes** | ✅ Complete | `NodeReducer`, `NodeOrchestrator` (primary implementations) |
+| **Legacy Classes** | ✅ Available | `NodeReducerLegacy`, `NodeOrchestratorLegacy` in `nodes/legacy/` |
 | **Documentation** | ✅ Complete | Full tutorials and migration guides |
 
 **Ready for production use.** All code examples in this guide are functional and tested.
@@ -110,9 +113,11 @@ Convert your logic to YAML using the appropriate pattern:
 
 ### Step 4: Update Node Class
 
-Replace custom implementation with declarative base class:
-- **Reducer**: Inherit from `NodeReducerDeclarative`
-- **Orchestrator**: Inherit from `NodeOrchestratorDeclarative`
+Replace custom implementation with the primary declarative base class:
+- **Reducer**: Inherit from `NodeReducer` (from `omnibase_core.nodes.node_reducer`)
+- **Orchestrator**: Inherit from `NodeOrchestrator` (from `omnibase_core.nodes.node_orchestrator`)
+
+> **Note**: These are now the standard implementations. Legacy imperative implementations are available in `nodes/legacy/` if needed for backwards compatibility.
 
 ### Step 5: Test & Validate
 
@@ -215,12 +220,16 @@ class NodeMetricsAggregator(NodeReducer):
 
 **Node Implementation (99% reduction in code):**
 
-```
-from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
+```python
+from omnibase_core.nodes.node_reducer import NodeReducer
 
-class NodeMetricsAggregator(NodeReducerDeclarative):
+class NodeMetricsAggregator(NodeReducer):
     """Aggregates metrics using declarative FSM - NO custom code needed!"""
     pass  # All logic driven by YAML contract
+
+# Note: NodeReducer is now the primary implementation (FSM-driven by default).
+# For legacy imperative behavior, use:
+# from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
 ```
 
 **YAML Contract (`contracts/metrics_aggregator.yaml`):**
@@ -408,12 +417,16 @@ class NodeDataPipeline(NodeOrchestrator):
 
 **Node Implementation (99% reduction in code):**
 
-```
-from omnibase_core.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
+```python
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 
-class NodeDataPipeline(NodeOrchestratorDeclarative):
+class NodeDataPipeline(NodeOrchestrator):
     """Data processing pipeline using declarative workflow - NO custom code needed!"""
     pass  # All logic driven by YAML contract
+
+# Note: NodeOrchestrator is now the primary implementation (workflow-driven by default).
+# For legacy imperative behavior, use:
+# from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy
 ```
 
 **YAML Contract (`contracts/data_pipeline.yaml`):**
@@ -662,6 +675,19 @@ See the `examples/contracts/` directory for complete working examples:
 
 ---
 
-**Last Updated**: 2025-11-16
-**Version**: 1.0.0
+**Last Updated**: 2025-12-05
+**Version**: 2.0.0
 **Maintainer**: ONEX Framework Team
+
+---
+
+## Import Path Changes Summary
+
+With v0.4.0, the import paths have been updated:
+
+| Node Type | New Import (Primary) | Legacy Import |
+|-----------|---------------------|---------------|
+| **Reducer** | `from omnibase_core.nodes.node_reducer import NodeReducer` | `from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy` |
+| **Orchestrator** | `from omnibase_core.nodes.node_orchestrator import NodeOrchestrator` | `from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy` |
+
+**Deprecation Timeline**: Legacy nodes deprecated in v0.4.0, removed in v1.0.0.

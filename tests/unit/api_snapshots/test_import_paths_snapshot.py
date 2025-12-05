@@ -167,51 +167,38 @@ class TestNodesModuleImports:
 class TestNodesDeclarativeImports:
     """Verify declarative node class imports.
 
-    NOTE: NodeReducerDeclarative and NodeOrchestratorDeclarative exist in the
-    codebase but are NOT currently exported from omnibase_core.nodes.__init__.py.
+    NOTE: NodeReducer and NodeOrchestrator are the primary declarative node classes.
+    They are exported from omnibase_core.nodes.__init__.py.
 
-    These tests document the expected future API. Once these classes are added
-    to the public API, these tests can be updated to verify actual imports.
+    These tests verify the classes are properly exported and importable.
     """
 
-    def test_declarative_classes_exist_but_not_exported(self) -> None:
-        """Document that declarative classes exist but are not currently exported.
+    def test_declarative_classes_exist_and_exported(self) -> None:
+        """Verify declarative classes exist and are exported from nodes module.
 
-        This test verifies the classes exist at their source locations,
-        documenting them for future public API inclusion.
+        This test verifies the classes exist at their source locations
+        and are part of the public API.
         """
-        # These classes exist but are not exported from nodes.__init__.py
-        from omnibase_core.nodes.node_orchestrator_declarative import (
-            NodeOrchestratorDeclarative,
+        # These classes should be exported from nodes.__init__.py
+        from omnibase_core.nodes.node_orchestrator import (
+            NodeOrchestrator,
         )
-        from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
+        from omnibase_core.nodes.node_reducer import NodeReducer
 
-        assert isinstance(NodeReducerDeclarative, type)
-        assert isinstance(NodeOrchestratorDeclarative, type)
+        assert isinstance(NodeReducer, type)
+        assert isinstance(NodeOrchestrator, type)
 
-    @pytest.mark.xfail(
-        reason="NodeReducerDeclarative not yet exported from nodes module"
-    )
-    def test_nodes_reducer_declarative_import(self) -> None:
-        """Verify NodeReducerDeclarative is importable from nodes module.
+    def test_nodes_reducer_import(self) -> None:
+        """Verify NodeReducer is importable from nodes module."""
+        from omnibase_core.nodes import NodeReducer
 
-        EXPECTED: This import should work once the class is added to __all__.
-        """
-        from omnibase_core.nodes import NodeReducerDeclarative
+        assert isinstance(NodeReducer, type)
 
-        assert isinstance(NodeReducerDeclarative, type)
+    def test_nodes_orchestrator_import(self) -> None:
+        """Verify NodeOrchestrator is importable from nodes module."""
+        from omnibase_core.nodes import NodeOrchestrator
 
-    @pytest.mark.xfail(
-        reason="NodeOrchestratorDeclarative not yet exported from nodes module"
-    )
-    def test_nodes_orchestrator_declarative_import(self) -> None:
-        """Verify NodeOrchestratorDeclarative is importable from nodes module.
-
-        EXPECTED: This import should work once the class is added to __all__.
-        """
-        from omnibase_core.nodes import NodeOrchestratorDeclarative
-
-        assert isinstance(NodeOrchestratorDeclarative, type)
+        assert isinstance(NodeOrchestrator, type)
 
 
 @pytest.mark.unit

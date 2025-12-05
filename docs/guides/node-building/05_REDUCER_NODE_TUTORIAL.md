@@ -144,7 +144,8 @@ state_transitions:
 | Pydantic Validation | ✅ Complete | Comprehensive validation |
 | Subcontract Composition | ✅ Complete | ModelContractReducer |
 | FSM Runtime Executor | ✅ Complete | fsm_executor.py with MixinFSMExecution |
-| Declarative Base Classes | ✅ Complete | NodeReducerDeclarative (production-ready) |
+| Declarative Base Classes | ✅ Complete | `NodeReducer` (primary implementation, FSM-driven) |
+| Legacy Classes | ✅ Available | `NodeReducerLegacy` in `nodes/legacy/` for backwards compatibility |
 | Documentation | ✅ Complete | Full tutorial and migration guides available |
 
 **See**: [DECLARATIVE_WORKFLOW_FINDINGS.md](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for implementation roadmap.
@@ -155,7 +156,9 @@ state_transitions:
 
 This tutorial demonstrates **two implementation approaches**:
 1. **Manual FSM Implementation** (Current pattern): Custom Python code with pure FSM principles and Intent emission
-2. **Declarative FSM** (Recommended for new nodes): YAML-driven state machines using `NodeReducerDeclarative`
+2. **Declarative FSM** (Recommended for new nodes): YAML-driven state machines using `NodeReducer` (the primary FSM-driven implementation)
+
+> **Note (v0.4.0)**: `NodeReducer` is now the PRIMARY FSM-driven implementation. The "Declarative" suffix has been removed because this IS the standard. Legacy imperative implementations are available in `nodes/legacy/NodeReducerLegacy` for backwards compatibility.
 
 **Both approaches are production-ready and fully supported.**
 

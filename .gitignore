@@ -234,8 +234,9 @@ generated/
 reports/
 secrets/
 
-# Ignore sensitive and legacy files
-legacy/
+# Ignore sensitive and legacy files (but NOT src/omnibase_core/nodes/legacy/)
+/legacy/
+!/src/omnibase_core/nodes/legacy/
 
 #ignore private docs
 docs_private/

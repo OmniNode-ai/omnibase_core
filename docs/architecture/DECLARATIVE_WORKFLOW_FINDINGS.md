@@ -1,22 +1,25 @@
 # Declarative Workflow Architecture - Findings and Recommendations
 
-> **Date**: 2025-11-16
-> **Version**: v0.3.2
+> **Date**: 2025-12-05
+> **Version**: v0.4.0
 > **Correlation ID**: `doc-review-declarative-workflows-2025-11-16`
-> **Status**: ARCHITECTURE REVIEW
+> **Status**: COMPLETED - DECLARATIVE NODES ARE NOW PRIMARY
+
+> **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed because these ARE the standard. Legacy imperative implementations have been moved to `nodes/legacy/`.
 
 ---
 
 ## Executive Summary
 
-This document summarizes findings from a comprehensive review of omnibase_core's declarative workflow and FSM capabilities. **UPDATED (v0.3.2)**: The review confirms that **YAML contract infrastructure AND mixin-based runtime execution are both complete**, but **current node implementations don't fully leverage these declarative patterns yet**.
+This document summarizes findings from a comprehensive review of omnibase_core's declarative workflow and FSM capabilities. **UPDATED (v0.4.0)**: The review confirms that **declarative node implementations are now the PRIMARY pattern** - `NodeReducer` and `NodeOrchestrator` are FSM/workflow-driven by default.
 
-### Key Finding: Runtime Implemented, Adoption Pending
+### Key Finding: Declarative Nodes Are Now Primary (v0.4.0)
 
 ✅ **Infrastructure EXISTS**: Complete Pydantic models for FSM and workflow subcontracts
-✅ **Runtime IMPLEMENTED (v0.3.2)**: Mixin-based execution via `MixinFSMExecution` and `MixinWorkflowExecution`
-⚠️ **Adoption GAP**: NodeOrchestrator and NodeReducer still primarily use imperative Python code
-📝 **Documentation NEEDS**: Emphasize mixin-based declarative patterns with comprehensive examples
+✅ **Runtime IMPLEMENTED**: Mixin-based execution via `MixinFSMExecution` and `MixinWorkflowExecution`
+✅ **Adoption COMPLETE**: `NodeReducer` and `NodeOrchestrator` are now FSM/workflow-driven by default
+✅ **Legacy Support**: Imperative implementations available in `nodes/legacy/` for backwards compatibility
+📝 **Naming Convention**: "Declarative" suffix removed - these ARE the standard implementations now
 
 ---
 
@@ -299,21 +302,29 @@ class MixinWorkflowExecution:
 
 #### 3. Remaining Gaps
 
-**Partial**: Declarative Node Base Classes
+**COMPLETED (v0.4.0)**: Declarative Node Base Classes
 
-**Current**: Nodes compose mixins for FSM/workflow capabilities
-```
-# Current pattern (v0.3.2)
-class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
-    """Reducer with declarative FSM support."""
-    # FSM execution via mixin - no custom code needed
+**Current (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` ARE the declarative implementations
+
+```python
+# Current pattern (v0.4.0) - RECOMMENDED
+from omnibase_core.nodes.node_reducer import NodeReducer
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+
+class NodeMyReducer(NodeReducer):
+    """Reducer with FSM-driven execution by default."""
+    pass  # All logic from YAML contract
+
+class NodeMyOrchestrator(NodeOrchestrator):
+    """Orchestrator with workflow-driven execution by default."""
+    pass  # All logic from YAML contract
 ```
 
-**Future** (Planned for Phase 3):
-```
-# Planned declarative base classes
-class NodeReducerDeclarative(NodeCoreBase):
-    """Fully declarative reducer - YAML contract only."""
+**Legacy (for backwards compatibility only)**:
+```python
+# Legacy pattern - use only when needed for backwards compatibility
+from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
+from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy
 ```
 
 ---
@@ -331,16 +342,17 @@ class NodeReducerDeclarative(NodeCoreBase):
 - ✅ Pure utility functions in `utils/fsm_executor.py` and `utils/workflow_executor.py`
 - ✅ Unit tests for runtime functions
 
-### 2. Update Node Implementations
+### 2. ✅ Update Node Implementations - COMPLETE (v0.4.0)
 
-**Priority**: HIGH
-**Timeline**: Sprint 2
+**Priority**: ~~HIGH~~ **COMPLETED**
+**Status**: ✅ Implemented
 
-**Tasks**:
-- [ ] Create `NodeOrchestratorDeclarative` base class
-- [ ] Create `NodeReducerDeclarative` base class
-- [ ] Migrate existing orchestrators to use declarative pattern
-- [ ] Deprecate imperative methods in favor of YAML contracts
+**Completed (v0.4.0)**:
+- ✅ `NodeReducer` is now the primary FSM-driven implementation
+- ✅ `NodeOrchestrator` is now the primary workflow-driven implementation
+- ✅ "Declarative" suffix removed - these ARE the standard
+- ✅ Legacy implementations moved to `nodes/legacy/`
+- ✅ Import paths updated throughout codebase
 
 ### 3. Add Declarative Examples
 
@@ -418,13 +430,14 @@ class NodeReducerDeclarative(NodeCoreBase):
    # src/omnibase_core/mixins/mixin_workflow_execution.py
    ```
 
-### Sprint 2: Declarative Nodes & Documentation (Week 3-4)
+### ✅ Sprint 2: Declarative Nodes & Documentation - COMPLETE (v0.4.0)
 
-**Goal**: Create declarative base classes and update docs
+**Goal**: ~~Create declarative base classes and update docs~~ **COMPLETED**
 
-1. **Declarative Base Classes**
-   - `NodeOrchestratorDeclarative` - YAML-driven workflows
-   - `NodeReducerDeclarative` - YAML-driven FSM/aggregation
+1. **✅ Declarative Base Classes - COMPLETE**
+   - ✅ `NodeOrchestrator` - Primary workflow-driven implementation (no "Declarative" suffix)
+   - ✅ `NodeReducer` - Primary FSM-driven implementation (no "Declarative" suffix)
+   - ✅ Legacy implementations: `NodeOrchestratorLegacy`, `NodeReducerLegacy` in `nodes/legacy/`
 
 2. **Documentation Updates**
    - Emphasize declarative patterns FIRST
@@ -498,9 +511,9 @@ The omnibase_core codebase has **excellent infrastructure** for declarative work
 
 ---
 
-**Last Updated**: 2025-11-16
-**Version**: v0.3.2
-**Next Review**: After Sprint 2 completion (declarative base classes)
+**Last Updated**: 2025-12-05
+**Version**: v0.4.0
+**Status**: COMPLETED - Declarative nodes are now the primary implementations
 **Related Documents**:
 - [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md)
 - [Contract System](CONTRACT_SYSTEM.md)
