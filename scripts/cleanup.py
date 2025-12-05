@@ -17,12 +17,16 @@ Options:
 """
 
 import argparse
+import logging
 import os
 import re
 import shutil
 import subprocess
 from pathlib import Path
 from re import Pattern
+
+# Configure module logger
+logger = logging.getLogger(__name__)
 
 # Patterns for files and directories to clean up
 CLEANUP_PATTERNS = [
@@ -135,7 +139,7 @@ def remove_from_git_index(
 
         if dry_run:
             if verbose:
-                print(f"[DRY RUN] Would remove from git: {relative_path}")
+                logger.info("[DRY RUN] Would remove from git: %s", relative_path)
             return True
 
         # Remove from git index
@@ -147,16 +151,16 @@ def remove_from_git_index(
         )
 
         if verbose:
-            print(f"Removed from git index: {relative_path}")
+            logger.info("Removed from git index: %s", relative_path)
         return True
 
     except subprocess.CalledProcessError as e:
-        if verbose:
-            print(f"Git removal failed for {path}: {e}")
+        # Always log errors at WARNING level regardless of verbose setting
+        logger.warning("Git removal failed for %s: %s", path, e)
         return False
     except Exception as e:
-        if verbose:
-            print(f"Error removing from git {path}: {e}")
+        # Always log errors at WARNING level regardless of verbose setting
+        logger.warning("Error removing from git %s: %s", path, e)
         return False
 
 
@@ -167,20 +171,21 @@ def remove_file_or_dir(
     try:
         if dry_run:
             if verbose:
-                print(f"[DRY RUN] Would remove: {path}")
+                logger.info("[DRY RUN] Would remove: %s", path)
             return True
 
         if path.is_dir():
             shutil.rmtree(path)
             if verbose:
-                print(f"Removed directory: {path}")
+                logger.info("Removed directory: %s", path)
         else:
             path.unlink()
             if verbose:
-                print(f"Removed file: {path}")
+                logger.info("Removed file: %s", path)
         return True
     except Exception as e:
-        print(f"Error removing {path}: {e}")
+        # Always log errors at WARNING level regardless of verbose setting
+        logger.warning("Error removing %s: %s", path, e)
         return False
 
 
@@ -213,16 +218,25 @@ def main():
 
     args = parser.parse_args()
 
+    # Configure logging based on verbose flag
+    # WARNING level is always enabled to capture errors
+    # INFO level is enabled only in verbose mode
+    log_level = logging.INFO if args.verbose else logging.WARNING
+    logging.basicConfig(
+        level=log_level,
+        format="%(levelname)s: %(message)s",
+    )
+
     root_dir = Path(args.root).resolve()
 
     if not root_dir.exists():
-        print(f"Error: Root directory {root_dir} does not exist")
+        logger.error("Root directory %s does not exist", root_dir)
         return 1
 
     if args.verbose:
-        print(f"Cleaning up repository: {root_dir}")
+        logger.info("Cleaning up repository: %s", root_dir)
         if args.dry_run:
-            print("DRY RUN MODE - No files will be actually removed")
+            logger.info("DRY RUN MODE - No files will be actually removed")
 
     # Compile cleanup patterns
     patterns = compile_patterns(CLEANUP_PATTERNS)
@@ -232,7 +246,7 @@ def main():
 
     if not cleanup_files:
         if args.verbose:
-            print("No cleanup files found.")
+            logger.info("No cleanup files found.")
         return 0
 
     # Sort files for consistent output

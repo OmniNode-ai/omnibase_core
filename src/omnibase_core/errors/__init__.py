@@ -1,6 +1,13 @@
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from omnibase_core.errors.runtime_errors import (  # noqa: TC004
+        ContractValidationError,
+        EventBusError,
+        HandlerExecutionError,
+        InvalidOperationError,
+        RuntimeHostError,
+    )
     from omnibase_core.models.common.model_onex_warning import (  # noqa: TC004
         ModelOnexWarning,
     )
@@ -43,6 +50,12 @@ __all__ = [
     "ModelOnexError",
     "OnexError",  # Alias for ModelOnexError
     "ModelOnexWarning",
+    # Runtime host errors (OMN-232)
+    "RuntimeHostError",
+    "HandlerExecutionError",
+    "EventBusError",
+    "InvalidOperationError",
+    "ContractValidationError",
     # Error codes and enums
     "EnumCoreErrorCode",
     "EnumCLIExitCode",
@@ -80,6 +93,27 @@ def __getattr__(name: str) -> Any:
         from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
 
         return ModelCLIAdapter
+    # Runtime host errors (OMN-232)
+    if name == "RuntimeHostError":
+        from omnibase_core.errors.runtime_errors import RuntimeHostError
+
+        return RuntimeHostError
+    if name == "HandlerExecutionError":
+        from omnibase_core.errors.runtime_errors import HandlerExecutionError
+
+        return HandlerExecutionError
+    if name == "EventBusError":
+        from omnibase_core.errors.runtime_errors import EventBusError
+
+        return EventBusError
+    if name == "InvalidOperationError":
+        from omnibase_core.errors.runtime_errors import InvalidOperationError
+
+        return InvalidOperationError
+    if name == "ContractValidationError":
+        from omnibase_core.errors.runtime_errors import ContractValidationError
+
+        return ContractValidationError
     # Raise standard AttributeError for unknown attributes
     # Cannot use ModelOnexError here as it would cause circular import
     raise AttributeError(  # error-ok: avoid circular import in lazy loader
