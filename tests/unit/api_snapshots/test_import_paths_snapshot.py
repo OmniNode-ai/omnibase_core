@@ -180,9 +180,7 @@ class TestNodesDeclarativeImports:
         and are part of the public API.
         """
         # These classes should be exported from nodes.__init__.py
-        from omnibase_core.nodes.node_orchestrator import (
-            NodeOrchestrator,
-        )
+        from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
         from omnibase_core.nodes.node_reducer import NodeReducer
 
         assert isinstance(NodeReducer, type)

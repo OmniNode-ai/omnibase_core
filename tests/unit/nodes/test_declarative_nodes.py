@@ -37,9 +37,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
 from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
 from omnibase_core.models.model_reducer_input import ModelReducerInput
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.nodes.node_orchestrator import (
-    NodeOrchestrator,
-)
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.nodes.node_reducer import NodeReducer
 
 

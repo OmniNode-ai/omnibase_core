@@ -29,9 +29,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.constants.event_types import TOOL_INVOCATION
-from omnibase_core.enums.enum_workflow_execution import (
-    EnumExecutionMode,
-)
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.discovery.model_tool_invocation_event import (
