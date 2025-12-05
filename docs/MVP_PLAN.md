@@ -9,6 +9,26 @@
 
 ## Executive Summary
 
+### Current Status (as of 2025-12-05)
+
+| Phase | Complete | Partial | Not Started | Total |
+|-------|----------|---------|-------------|-------|
+| Phase 0: Repository Stabilization | 2 | 2 | 5 | 9 |
+| Phase 1: Legacy Node Migration | 0 | 0 | 5 | 5 |
+| Phase 2: Declarative Node Promotion | 1 | 1 | 5 | 7 |
+| Phase 3-7 | 0 | 0 | 36 | 36 |
+| Future (F.5 RUNTIME_HOST) | 1 | 0 | 13 | 14 |
+| **Total** | **4** | **3** | **64** | **71** |
+
+**Key Completions**:
+- ✅ OMN-222: EnumNodeKind with RUNTIME_HOST value (PR #108)
+- ✅ OMN-223: EnumHandlerType enum for protocol handlers
+- ✅ OMN-224: ModelOnexEnvelope unified message format (PR #112) - In Progress
+- ✅ OMN-232: Core error hierarchy (RuntimeHostError, HandlerExecutionError, etc.)
+- ✅ OMN-241: Contract Linter CLI (omniintelligence)
+- ✅ Pre-refactor API snapshot tests (4 test files in `tests/unit/api_snapshots/`)
+- ✅ NodeCoreBase interface frozen (interface tests + documentation)
+
 ### What v0.4.0 Changes
 - Legacy nodes moved to `nodes/legacy/` namespace with deprecation warnings
 - Declarative nodes become the default exports
@@ -494,11 +514,11 @@ Before ANY refactoring begins, establish a stable baseline that prevents silent 
 Lock current public API behavior with snapshot tests before any changes.
 
 **Acceptance Criteria**:
-- [ ] All public exports from `omnibase_core.nodes` captured
-- [ ] All public exports from `omnibase_core.infrastructure` captured
-- [ ] Snapshot tests verify import paths work
-- [ ] Snapshot tests verify class instantiation signatures
-- [ ] CI runs snapshot tests on every PR
+- [x] All public exports from `omnibase_core.nodes` captured
+- [x] All public exports from `omnibase_core.infrastructure` captured
+- [x] Snapshot tests verify import paths work
+- [x] Snapshot tests verify class instantiation signatures
+- [x] CI runs snapshot tests on every PR
 - [ ] If snapshot tests fail due to intentional breaking changes, they MUST be updated in the same PR with a migration note in the changelog
 
 ---
@@ -514,11 +534,11 @@ Lock current public API behavior with snapshot tests before any changes.
 Create integration tests that verify current node behavior before refactoring.
 
 **Acceptance Criteria**:
-- [ ] NodeCompute behavior captured in tests
-- [ ] NodeEffect behavior captured in tests
+- [x] NodeCompute behavior captured in tests
+- [x] NodeEffect behavior captured in tests
 - [ ] NodeReducer behavior captured in tests
 - [ ] NodeOrchestrator behavior captured in tests
-- [ ] Tests use real container injection
+- [x] Tests use real container injection
 - [ ] Tests pass before AND after refactoring
 
 ---
@@ -579,10 +599,10 @@ Add CI rules that will catch architectural violations during and after refactori
 Document and freeze `NodeCoreBase` interface. Determine if it needs splitting into base logic vs contract-based logic.
 
 **Acceptance Criteria**:
-- [ ] `NodeCoreBase` public methods documented
-- [ ] Decision made: single class vs split architecture
-- [ ] Interface tests created
-- [ ] Breaking changes identified and documented
+- [x] `NodeCoreBase` public methods documented
+- [x] Decision made: single class vs split architecture
+- [x] Interface tests created
+- [x] Breaking changes identified and documented
 
 ---
 
@@ -1017,12 +1037,12 @@ def __getattr__(name: str):
 Update `EnumNodeKind` enum with any new values needed, create compatibility mapping for legacy->declarative names.
 
 **Acceptance Criteria**:
-- [ ] `EnumNodeKind` enum reviewed for completeness
-- [ ] Legacy name → new name mapping created
-- [ ] Serializer/deserializer updated for backward compatibility
+- [x] `EnumNodeKind` enum reviewed for completeness
+- [x] Legacy name → new name mapping created
+- [x] Serializer/deserializer updated for backward compatibility
 - [ ] Legacy→declarative compatibility fingerprint added
-- [ ] mypy --strict passes
-- [ ] Unit tests for enum serialization
+- [x] mypy --strict passes
+- [x] Unit tests for enum serialization
 
 ---
 
@@ -2015,6 +2035,7 @@ Move `MixinDiscovery`, `MixinServiceRegistry`, `MixinCLIHandler` implementations
 **Type**: Feature
 **Priority**: Low (4)
 **Labels**: `architecture`, `new-feature`
+**Status**: ✅ COMPLETE - RUNTIME_HOST enum value added to EnumNodeKind in `src/omnibase_core/enums/enum_node_kind.py`
 
 ---
 
