@@ -79,10 +79,18 @@ from uuid import UUID
 
 from pydantic import ValidationError
 
-from omnibase_core.nodes.base.node_core_base import NodeCoreBase
-from omnibase_core.models.model_onex_container import ModelONEXContainer
+# v0.4.0 unified node imports
+from omnibase_core.nodes import (
+    NodeReducer,
+    ModelReducerInput,
+    ModelReducerOutput,
+    # FSM-related enums for state management
+    EnumConflictResolution,
+    EnumReductionType,
+    EnumStreamingMode,
+)
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.model_intent import ModelIntent
-from omnibase_core.models.model_reducer_output import ModelReducerOutput
 from omnibase_core.enums.enum_intent_type import EnumIntentType
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer
 
@@ -96,17 +104,18 @@ from .utils.stream_processor import process_stream_window
 from .utils.pattern_detector import detect_patterns
 
 
-class Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(NodeCoreBase):
-    """Pure FSM REDUCER node for {DOMAIN} {MICROSERVICE_NAME} data reduction.
+class Node{DomainCamelCase}{MicroserviceCamelCase}Reducer(NodeReducer):
+    """FSM-driven REDUCER node for {DOMAIN} {MICROSERVICE_NAME} data reduction.
 
-    This node implements pure functional reduction logic with Intent emission
-    for all side effects. NO mutable state is maintained within the node.
+    This node implements FSM-driven reduction logic using MixinFSMExecution
+    for state management. Pure functional reduction with Intent emission
+    for all side effects.
 
-    FSM Compliance:
-    - ✅ Immutable configuration only
-    - ✅ Pure process() function
-    - ✅ Intent emission for side effects
-    - ✅ No direct state mutations
+    v0.4.0 Architecture:
+    - NodeReducer provides MixinFSMExecution for FSM-driven state management
+    - Pure process() function with Intent emission
+    - No direct state mutations - FSM handles state transitions
+    - Conflict resolution via EnumConflictResolution
 
     Key Features:
     - Sub-{PERFORMANCE_TARGET}ms reduction performance

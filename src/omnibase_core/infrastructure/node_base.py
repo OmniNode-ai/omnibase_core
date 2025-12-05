@@ -521,7 +521,7 @@ class NodeBase(
                 return cast(T_OUTPUT_STATE, result)
             if hasattr(main_tool, "process"):
                 # Run sync process in thread pool to avoid blocking
-                result = await asyncio.get_event_loop().run_in_executor(
+                result = await asyncio.get_running_loop().run_in_executor(
                     None,
                     main_tool.process,
                     input_state,
@@ -529,7 +529,7 @@ class NodeBase(
                 return cast(T_OUTPUT_STATE, result)
             if hasattr(main_tool, "run"):
                 # Run sync run method in thread pool
-                result = await asyncio.get_event_loop().run_in_executor(
+                result = await asyncio.get_running_loop().run_in_executor(
                     None,
                     main_tool.run,
                     input_state,

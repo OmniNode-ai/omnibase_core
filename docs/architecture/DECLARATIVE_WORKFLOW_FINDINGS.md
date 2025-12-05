@@ -44,7 +44,7 @@ The omnibase_core codebase has **comprehensive YAML contract support** for decla
 
 **File**: `src/omnibase_core/models/contracts/subcontracts/model_fsm_subcontract.py`
 
-```
+```python
 class ModelFSMSubcontract(BaseModel):
     """FSM (Finite State Machine) subcontract model."""
 
@@ -90,7 +90,7 @@ class ModelFSMSubcontract(BaseModel):
 
 **File**: `src/omnibase_core/models/contracts/subcontracts/model_workflow_definition.py`
 
-```
+```python
 class ModelWorkflowDefinition(BaseModel):
     """Complete workflow definition."""
 
@@ -109,7 +109,7 @@ class ModelWorkflowDefinition(BaseModel):
 
 **File**: `src/omnibase_core/models/contracts/model_contract_reducer.py`
 
-```
+```python
 class ModelContractReducer(ModelContractBase):
     """Contract model for NodeReducer implementations."""
 
@@ -144,7 +144,7 @@ All subcontract models include:
 **Current State**: Primarily imperative Python code
 
 **Key Methods**:
-```
+```python
 async def process(self, input_data: ModelOrchestratorInput) -> ModelOrchestratorOutput:
     """Execute workflow coordination with thunk emission."""
     # Lines 142-267: Imperative workflow execution
@@ -172,7 +172,7 @@ async def process(self, input_data: ModelOrchestratorInput) -> ModelOrchestrator
 **Current State**: Primarily imperative Python code with custom reduction functions
 
 **Key Patterns**:
-```
+```python
 def __init__(self, container: ModelONEXContainer) -> None:
     """PURE FSM PATTERN: No mutable instance state."""
     super().__init__(container)
@@ -214,7 +214,7 @@ def __init__(self, container: ModelONEXContainer) -> None:
 
 **File**: `src/omnibase_core/mixins/mixin_workflow_support.py`
 
-```
+```python
 class MixinDagSupport:
     """Mixin providing Workflow event support for ONEX tools."""
 
@@ -238,20 +238,37 @@ class MixinDagSupport:
 
 ## Gap Analysis
 
-### Infrastructure vs. Implementation
+### Current Implementation Status (v0.4.0)
+
+| Component | Infrastructure | Implementation | Status |
+|-----------|---------------|----------------|--------|
+| **FSM Subcontracts** | ✅ Complete | ✅ Primary (v0.4.0) | COMPLETE |
+| **Workflow Subcontracts** | ✅ Complete | ✅ Primary (v0.4.0) | COMPLETE |
+| **Pydantic Validation** | ✅ Complete | ✅ Working | COMPLETE |
+| **Contract Composition** | ✅ Complete | ✅ Integrated | COMPLETE |
+| **FSM Runtime** | ✅ Complete | ✅ Mixin-based | COMPLETE |
+| **Workflow Runtime** | ✅ Complete | ✅ Mixin-based | COMPLETE |
+| **Declarative Examples** | ⚠️ Limited | ⚠️ Limited | IN PROGRESS |
+| **Documentation** | ⚠️ Partial | ⚠️ Needs Updates | IN PROGRESS |
+
+**Note**: FSM and Workflow runtimes implemented via mixin-based approach (`MixinFSMExecution`, `MixinWorkflowExecution`) with pure utility functions (`utils/fsm_executor.py`, `utils/workflow_executor.py`).
+
+<details>
+<summary><strong>Historical Status (2025-11-16 snapshot)</strong></summary>
+
+The following table reflects the status at the time of initial review (v0.3.2):
 
 | Component | Infrastructure | Implementation | Gap |
 |-----------|---------------|----------------|-----|
 | **FSM Subcontracts** | ✅ Complete | ⚠️ Available (v0.3.2) | MEDIUM |
 | **Workflow Subcontracts** | ✅ Complete | ⚠️ Available (v0.3.2) | MEDIUM |
-| **Pydantic Validation** | ✅ Complete | ✅ Working | NONE |
 | **Contract Composition** | ✅ Complete | ⚠️ Partial | MEDIUM |
-| **FSM Runtime** | ✅ **IMPLEMENTED** (v0.3.2) | ✅ **Mixin-based** | LOW |
-| **Workflow Runtime** | ✅ **IMPLEMENTED** (v0.3.2) | ✅ **Mixin-based** | LOW |
-| **Declarative Examples** | ⚠️ Limited | ⚠️ Limited | MEDIUM |
-| **Documentation** | ⚠️ Partial | ⚠️ Needs Updates | MEDIUM |
+| **FSM Runtime** | ✅ IMPLEMENTED (v0.3.2) | ✅ Mixin-based | LOW |
+| **Workflow Runtime** | ✅ IMPLEMENTED (v0.3.2) | ✅ Mixin-based | LOW |
 
-**Note**: FSM and Workflow runtimes implemented via mixin-based approach (`MixinFSMExecution`, `MixinWorkflowExecution`) with pure utility functions (`utils/fsm_executor.py`, `utils/workflow_executor.py`).
+These gaps were addressed in v0.4.0 with `NodeReducer` and `NodeOrchestrator` becoming the primary declarative implementations.
+
+</details>
 
 ### ✅ Implemented Components (v0.3.2)
 
@@ -260,7 +277,7 @@ class MixinDagSupport:
 **Status**: ✅ **COMPLETE** (Mixin-based approach)
 
 **Implementation**:
-```
+```python
 # src/omnibase_core/mixins/mixin_fsm_execution.py
 class MixinFSMExecution:
     """Mixin providing FSM execution from YAML contracts."""
@@ -270,7 +287,7 @@ class MixinFSMExecution:
 ```
 
 **Runtime Functions** (`utils/fsm_executor.py`):
-```
+```python
 def execute_transition(
     fsm: ModelFSMSubcontract,
     current_state: str,
@@ -285,7 +302,7 @@ def execute_transition(
 **Status**: ✅ **COMPLETE** (Mixin-based approach)
 
 **Implementation**:
-```
+```python
 # src/omnibase_core/mixins/mixin_workflow_execution.py
 class MixinWorkflowExecution:
     """Mixin providing workflow execution from YAML contracts."""
@@ -295,7 +312,7 @@ class MixinWorkflowExecution:
 ```
 
 **Runtime Functions** (`utils/workflow_executor.py`):
-```
+```python
 # Pure functions for workflow execution
 # Handles sequential, parallel, and mixed execution modes
 ```

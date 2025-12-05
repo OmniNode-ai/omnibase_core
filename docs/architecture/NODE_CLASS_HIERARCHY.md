@@ -1,6 +1,6 @@
 # Node Class Hierarchy Guide
 
-**Version**: 1.1.0
+**Version**: 1.3.0
 **Last Updated**: 2025-12-05
 **Status**: ✅ Complete
 **Correlation ID**: `a3c8f7d4-2b5e-4a19-9f3a-8d6e1c4b7a2f`
@@ -43,7 +43,7 @@ omnibase_core provides **three tiers** of node base classes, each optimized for 
 
 ### The Hierarchy
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │  Tier 1: ModelService* Wrappers (RECOMMENDED)           │
 │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
@@ -139,7 +139,7 @@ Each tier inherits from the one below, **adding features without removing flexib
 
 **File**: `src/your_project/nodes/node_price_calculator_compute.py`
 
-```
+```python
 """Price calculator using Tier 1 ModelServiceCompute wrapper."""
 
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
@@ -263,7 +263,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
 
 **File**: `src/your_project/nodes/node_database_writer_effect.py`
 
-```
+```python
 """Database writer using Tier 1 ModelServiceEffect wrapper."""
 
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
@@ -359,7 +359,7 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 
 ### Testing Tier 1 Nodes
 
-```
+```python
 """Test ModelServiceCompute node."""
 
 import pytest
@@ -463,7 +463,7 @@ async def test_caching(calculator):
 
 ### Complete Example: Custom COMPUTE Node
 
-```
+```python
 """Custom COMPUTE node with selective mixin composition."""
 
 from omnibase_core.nodes.node_compute import NodeCompute
@@ -536,7 +536,7 @@ class NodeCustomAnalyticsCompute(
 
 ### Complete Example: Custom EFFECT Node
 
-```
+```python
 """Custom EFFECT node with retry-focused composition."""
 
 from omnibase_core.nodes.node_effect import NodeEffect
@@ -606,7 +606,7 @@ class NodeCustomApiClientEffect(
 
 When building Tier 2 nodes, **order matters** in MRO:
 
-```
+```python
 # ✅ CORRECT - Service mode first, then base node, then features
 class MyNode(
     MixinNodeService,     # 1. Service mode (if needed)
@@ -686,7 +686,7 @@ class MyNode(
 
 ### Complete Example: Custom Node Type
 
-```
+```python
 """Custom VALIDATOR node type using NodeCoreBase."""
 
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -820,7 +820,7 @@ class NodeCustomValidator(NodeCoreBase):
 
 To add features, **compose with mixins manually**. This pattern forms the foundation for ONEX's upcoming declarative node architecture (v0.4.0), where nodes define their behavior through configuration rather than inheritance. See [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md#declarative-patterns) for the declarative approach.
 
-```
+```python
 """NodeCoreBase with manual mixin composition."""
 
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -861,7 +861,7 @@ class NodeCustomValidatorWithFeatures(
 
 ### Visual Decision Tree
 
-```
+```text
 START: What are you building?
 │
 ├─ Standard production node? ───────────────────────┐

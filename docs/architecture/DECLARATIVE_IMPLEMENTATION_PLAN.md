@@ -89,7 +89,7 @@ This document provides a complete implementation plan for closing the gap betwee
 
 ### ✅ Correct Pattern: Execution via Mixins + Utilities
 
-```
+```python
 # ✅ CORRECT - Mixin-based execution
 class MixinFSMExecution:
     """Mixin providing FSM execution from YAML contracts."""
@@ -125,7 +125,7 @@ async def execute_transition(
 
 ### Component Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                   YAML Contracts (✅ Complete)               │
 │  ModelFSMSubcontract, ModelWorkflowCoordinationSubcontract  │
@@ -161,7 +161,7 @@ async def execute_transition(
 
 **File**: `src/omnibase_core/utils/fsm_executor.py`
 
-```
+```python
 """
 FSM execution utilities for declarative state machines.
 
@@ -563,7 +563,7 @@ def _find_reachable_states(fsm: ModelFSMSubcontract) -> set[str]:
 
 **File**: `src/omnibase_core/mixins/mixin_fsm_execution.py`
 
-```
+```python
 """
 Mixin for FSM execution from YAML contracts.
 
@@ -677,7 +677,7 @@ class MixinFSMExecution:
 
 Add new entry:
 
-```
+```yaml
 mixins:
   # ... existing mixins ...
 
@@ -779,7 +779,7 @@ mixins:
 
 **File**: `src/omnibase_core/utils/workflow_executor.py`
 
-```
+```python
 """
 Workflow execution utilities for declarative orchestration.
 
@@ -1334,7 +1334,7 @@ def _has_dependency_cycles(
 
 **File**: `src/omnibase_core/mixins/mixin_workflow_execution.py`
 
-```
+```python
 """
 Mixin for workflow execution from YAML contracts.
 
@@ -1482,7 +1482,7 @@ Create comprehensive example contracts demonstrating common patterns:
 
 **File**: `examples/contracts/reducer_with_fsm_and_events.yaml`
 
-```
+```yaml
 node_type: REDUCER
 node_name: metrics_aggregator_with_events
 node_version: 1.0.0
@@ -1516,7 +1516,7 @@ event_coordination:
 ```
 
 **Usage**:
-```
+```python
 class NodeMetricsReducer(NodeCoreBase, MixinFSMExecution, MixinEventBus):
     # No custom FSM code - driven by YAML!
     # MixinFSMExecution provides execute_fsm_transition()
@@ -1528,7 +1528,7 @@ class NodeMetricsReducer(NodeCoreBase, MixinFSMExecution, MixinEventBus):
 
 **File**: `examples/contracts/orchestrator_parallel_workflow.yaml`
 
-```
+```yaml
 node_type: ORCHESTRATOR
 node_name: parallel_data_pipeline
 node_version: 1.0.0

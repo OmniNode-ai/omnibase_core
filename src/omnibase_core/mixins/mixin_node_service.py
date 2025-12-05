@@ -536,7 +536,7 @@ class MixinNodeService:
         if asyncio.iscoroutinefunction(run_method):
             return await run_method(input_state)
         # Run synchronous method in executor to avoid blocking
-        return await asyncio.get_event_loop().run_in_executor(
+        return await asyncio.get_running_loop().run_in_executor(
             None,
             run_method,
             input_state,

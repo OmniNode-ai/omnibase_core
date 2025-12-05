@@ -42,7 +42,7 @@ The omnibase_core codebase now includes:
 
 **Example YAML Contract** (fully functional, production-ready):
 
-```
+```yaml
 # contracts/orchestrator_data_pipeline.yaml
 node_type: ORCHESTRATOR
 node_name: data_pipeline_orchestrator
@@ -154,7 +154,7 @@ ORCHESTRATOR nodes coordinate complex workflows in the ONEX architecture:
 
 ## Prerequisites Check
 
-```
+```bash
 # Verify Poetry and environment
 poetry --version
 pwd  # Should end with /omnibase_core
@@ -176,7 +176,7 @@ poetry run pytest tests/unit/nodes/test_node_orchestrator.py -v --maxfail=1
 
 An **action** is an Orchestrator-issued command that represents work to be done by a specific node type. Actions replace the legacy "thunk" terminology and include lease management for single-writer semantics:
 
-```
+```python
 from omnibase_core.models.model_action import ModelAction
 from omnibase_core.enums.enum_orchestrator_types import EnumActionType
 
@@ -233,7 +233,7 @@ Actions include **lease management** fields to ensure single-writer semantics an
 - Must match expected value for updates to succeed
 
 **Usage Example**:
-```
+```python
 from uuid import uuid4
 
 # Orchestrator creates action with initial lease and epoch
@@ -276,7 +276,7 @@ action_update = ModelAction(
 
 A **workflow step** groups related actions together:
 
-```
+```python
 from omnibase_core.models.model_workflow_step import ModelWorkflowStep
 
 step = ModelWorkflowStep(
@@ -302,7 +302,7 @@ ORCHESTRATOR nodes support three execution modes:
 
 The orchestrator builds a **dependency graph** to determine execution order:
 
-```
+```text
 Step 1 (Validate) ─┐
                    ├──> Step 3 (Aggregate)
 Step 2 (Fetch) ────┘
@@ -318,7 +318,7 @@ Execution order: Steps 1&2 in parallel → Step 3 → Step 4
 
 **File**: `src/your_project/nodes/model_pipeline_orchestrator_input.py`
 
-```
+```python
 """Input model for data processing pipeline orchestrator."""
 
 from pydantic import BaseModel, Field
@@ -424,7 +424,7 @@ For **95% of use cases**, use the production-ready `ModelServiceOrchestrator` wr
 
 **File**: `src/your_project/nodes/node_pipeline_orchestrator.py`
 
-```
+```python
 """
 Data Processing Pipeline Orchestrator Node.
 
@@ -851,7 +851,7 @@ class NodePipelineOrchestrator(ModelServiceOrchestrator):
 
 For **5% of use cases** where you need custom mixin composition:
 
-```
+```python
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.mixins import MixinCustomWorkflow
 
@@ -903,7 +903,7 @@ Let's extend the orchestrator to support conditional execution:
 
 **File**: `src/your_project/nodes/node_conditional_pipeline_orchestrator.py`
 
-```
+```python
 """
 Conditional Pipeline Orchestrator with branching logic.
 
@@ -1054,7 +1054,7 @@ Let's see how the same pipeline executes in different modes:
 
 ### SEQUENTIAL Mode
 
-```
+```python
 # Create orchestrator
 orchestrator = NodePipelineOrchestrator(container)
 
@@ -1077,7 +1077,7 @@ result = await orchestrator.process(input_data)
 
 ### PARALLEL Mode
 
-```
+```python
 # Configure for parallel execution
 input_data = ModelPipelineOrchestratorInput(
     input_data={"id": "123", "data": "sample"},
@@ -1108,7 +1108,7 @@ result = await orchestrator.process(input_data)
 
 ### BATCH Mode
 
-```
+```python
 # Configure for batch execution with load balancing
 input_data = ModelPipelineOrchestratorInput(
     input_data={"id": "123", "data": "sample"},
@@ -1145,7 +1145,7 @@ result = await orchestrator.process(input_data)
 
 Add robust error handling with compensation logic:
 
-```
+```python
 class NodeResilientPipelineOrchestrator(NodePipelineOrchestrator):
     """
     Pipeline orchestrator with error recovery.
@@ -1270,7 +1270,7 @@ class NodeResilientPipelineOrchestrator(NodePipelineOrchestrator):
 
 **File**: `tests/nodes/test_node_pipeline_orchestrator.py`
 
-```
+```python
 """Tests for NodePipelineOrchestrator."""
 
 import pytest
@@ -1503,7 +1503,7 @@ async def test_action_emission(orchestrator):
 
 ### Example 1: ETL Pipeline
 
-```
+```python
 """ETL pipeline using ORCHESTRATOR node."""
 
 orchestrator = NodePipelineOrchestrator(container)
@@ -1532,7 +1532,7 @@ print(f"Actions emitted: {len(result.actions_emitted)}")
 
 ### Example 2: Real-Time Data Processing
 
-```
+```python
 """Real-time data processing with parallel execution."""
 
 orchestrator = NodePipelineOrchestrator(container)
@@ -1561,7 +1561,7 @@ print(f"Parallel executions: {result.parallel_executions}")
 
 ### Example 3: Conditional Workflow
 
-```
+```python
 """Conditional workflow based on data quality."""
 
 orchestrator = NodeConditionalPipelineOrchestrator(container)
@@ -1595,7 +1595,7 @@ print(f"Workflow path taken: {result.metadata.get('path', 'standard')}")
 
 Execute multiple operations in parallel, then aggregate:
 
-```
+```python
 """Fan-out/fan-in pattern for parallel data processing."""
 
 orchestrator_lease_id = uuid4()
@@ -1643,7 +1643,7 @@ aggregate_action = ModelAction(
 
 Prevent cascading failures with circuit breaker pattern:
 
-```
+```python
 """Circuit breaker pattern for resilient orchestration."""
 
 class NodeCircuitBreakerOrchestrator(NodePipelineOrchestrator):
@@ -1711,7 +1711,7 @@ class NodeCircuitBreakerOrchestrator(NodePipelineOrchestrator):
 
 Implement saga pattern with compensation:
 
-```
+```python
 """Saga pattern with compensation for distributed transactions."""
 
 class NodeSagaOrchestrator(NodePipelineOrchestrator):
@@ -1787,7 +1787,7 @@ class NodeSagaOrchestrator(NodePipelineOrchestrator):
 2. Verify timeout values are appropriate
 3. Enable debug logging to see step execution:
 
-```
+```python
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 
@@ -1808,7 +1808,7 @@ emit_log_event_sync(
 2. Enable dependency resolution: `dependency_resolution_enabled=True`
 3. Use SEQUENTIAL mode to force serial execution during debugging
 
-```
+```python
 # Verify dependency graph
 orchestrator_input = ModelOrchestratorInput(
     # ...
@@ -1826,7 +1826,7 @@ orchestrator_input = ModelOrchestratorInput(
 2. Verify `max_parallel_steps` is appropriate for your system
 3. Use BATCH mode for resource-constrained environments
 
-```
+```python
 # Optimize parallel configuration
 input_data = ModelPipelineOrchestratorInput(
     # ...
@@ -1844,7 +1844,7 @@ input_data = ModelPipelineOrchestratorInput(
 2. Clear workflow tracking dictionaries
 3. Limit concurrent workflows with semaphore
 
-```
+```python
 async def _cleanup_node_resources(self):
     """Cleanup orchestrator resources."""
     self.active_workflows.clear()
@@ -1860,7 +1860,7 @@ async def _cleanup_node_resources(self):
 
 While ORCHESTRATOR nodes primarily use action emission for coordination, you can optionally integrate LlamaIndex workflows via the `MixinHybridExecution` mixin:
 
-```
+```python
 """Optional LlamaIndex workflow integration."""
 
 from omnibase_core.mixins.mixin_hybrid_execution import MixinHybridExecution

@@ -14,7 +14,9 @@ import time
 from typing import Any, Generic, cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
@@ -137,6 +139,14 @@ class NodeReducer(NodeCoreBase, MixinFSMExecution, Generic[T_Input, T_Output]):
 
             # Auto-initialize FSM state if contract is present
             self.initialize_fsm_state(self.fsm_contract, context={})
+        else:
+            # FSM capabilities inactive - no state_transitions in contract
+            emit_log_event(
+                LogLevel.DEBUG,
+                f"FSM capabilities inactive for {self.__class__.__name__}: "
+                "no state_transitions found in contract",
+                {"node_id": str(self.node_id), "node_type": self.__class__.__name__},
+            )
 
     async def process(
         self,

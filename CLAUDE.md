@@ -1,6 +1,6 @@
 # CLAUDE.md - Omnibase Core Project Instructions
 
-> **Version**: 0.3.6
+> **Version**: 0.4.0
 > **Python**: 3.12+
 > **Framework**: ONEX Core - Foundational implementations for the ONEX architecture
 
@@ -101,12 +101,14 @@ When spawning polymorphic agents or AI assistants:
 
 #### Node Responsibilities
 
-| Node Type | Purpose | Examples |
-|-----------|---------|----------|
-| **EFFECT** | External interactions (I/O) | API calls, database ops, file system, message queues |
-| **COMPUTE** | Data processing & transformation | Calculations, validations, data mapping |
-| **REDUCER** | State aggregation & management | State machines (FSM w/ ModelIntent), accumulators, event reduction |
-| **ORCHESTRATOR** | Workflow coordination | Multi-step workflows (ModelAction w/ Leases), parallel execution, error recovery |
+| Node Type | Purpose | Examples | Import |
+|-----------|---------|----------|--------|
+| **EFFECT** | External interactions (I/O) | API calls, database ops, file system, message queues | `from omnibase_core.nodes import NodeEffect` |
+| **COMPUTE** | Data processing & transformation | Calculations, validations, data mapping | `from omnibase_core.nodes import NodeCompute` |
+| **REDUCER** | State aggregation & management (FSM-driven) | State machines (FSM w/ ModelIntent), accumulators, event reduction | `from omnibase_core.nodes import NodeReducer` |
+| **ORCHESTRATOR** | Workflow coordination (workflow-driven) | Multi-step workflows (ModelAction w/ Leases), parallel execution, error recovery | `from omnibase_core.nodes import NodeOrchestrator` |
+
+**v0.4.0 Architecture Change**: `NodeReducer` and `NodeOrchestrator` are now the PRIMARY implementations (FSM/workflow-driven). Legacy imperative implementations are deprecated and available in `omnibase_core.nodes.legacy`.
 
 ### Protocol-Driven Dependency Injection
 
@@ -123,12 +125,14 @@ logger = container.get_service("ProtocolLogger")
 
 ### Base Classes Usage
 
+**v0.4.0+**: Import nodes directly from `omnibase_core.nodes`:
+
 ```python
-from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-class NodeMyServiceCompute(NodeCoreBase):
-    """COMPUTE node example."""
+class NodeMyServiceCompute(NodeCompute):
+    """COMPUTE node example - inherits from NodeCompute."""
 
     def __init__(self, container: ModelONEXContainer):
         super().__init__(container)  # MANDATORY - handles all boilerplate
@@ -137,23 +141,43 @@ class NodeMyServiceCompute(NodeCoreBase):
         self.logger = container.get_service("ProtocolLogger")
 
         # Your business logic initialization
+
+
+class NodeMyReducer(NodeReducer):
+    """REDUCER node example - FSM-driven state management."""
+
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+        # FSM configuration is handled by the base class
+
+
+class NodeMyOrchestrator(NodeOrchestrator):
+    """ORCHESTRATOR node example - workflow-driven coordination."""
+
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+        # Workflow configuration is handled by the base class
 ```
 
 **CRITICAL**: Always call `super().__init__(container)` - this eliminates 80+ lines of boilerplate.
 
-### Advanced Patterns (ONEX v2.0)
+**Legacy Migration**: If migrating from pre-v0.4.0, see `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`. Legacy implementations are available in `omnibase_core.nodes.legacy` but are deprecated.
 
-**ModelIntent Pattern** (REDUCER nodes):
+### Advanced Patterns (ONEX v2.0 / v0.4.0+)
+
+**ModelIntent Pattern** (REDUCER nodes - `NodeReducer`):
 - Pure FSM transitions without direct side effects
-- Intent-based state machines for declarative state management
+- Intent-based state machines for FSM-driven state management
 - Separates state transition logic from side effect execution
+- **v0.4.0**: `NodeReducer` is now the primary implementation (formerly `NodeReducerDeclarative`)
 
-**ModelAction Pattern** (ORCHESTRATOR nodes):
+**ModelAction Pattern** (ORCHESTRATOR nodes - `NodeOrchestrator`):
 - Lease-based single-writer semantics for distributed coordination
-- Declarative action definitions with automatic retry and rollback
+- Workflow-driven action definitions with automatic retry and rollback
 - Resource locking and conflict resolution for concurrent workflows
+- **v0.4.0**: `NodeOrchestrator` is now the primary implementation (formerly `NodeOrchestratorDeclarative`)
 
-**See**: [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) for complete details and [Migration Guide](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for upgrading existing nodes.
+**See**: [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) for complete details and [Migration Guide](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for upgrading from legacy nodes.
 
 ### Container Types: CRITICAL DISTINCTION
 
@@ -331,7 +355,12 @@ omnibase_core/
 │   │   └── workflow/           # Workflow models
 │   │       ├── api/            # Workflow API interface
 │   │       └── execution/      # Workflow execution internals
-│   ├── nodes/                  # Node implementations
+│   ├── nodes/                  # Node implementations (v0.4.0+)
+│   │   ├── node_compute.py     # NodeCompute - data processing
+│   │   ├── node_effect.py      # NodeEffect - external I/O
+│   │   ├── node_reducer.py     # NodeReducer - FSM-driven state (PRIMARY)
+│   │   ├── node_orchestrator.py# NodeOrchestrator - workflow-driven (PRIMARY)
+│   │   └── legacy/             # Deprecated implementations (pre-v0.4.0)
 │   ├── primitives/             # Primitive types
 │   ├── types/                  # Type definitions
 │   ├── utils/                  # Utility functions
@@ -887,7 +916,18 @@ poetry show                                 # List dependencies
 
 ---
 
-## Recent Updates (v0.3.6)
+## Recent Updates (v0.4.0)
+
+### v0.4.0 - Node Architecture Overhaul
+
+- ✅ **NodeReducer and NodeOrchestrator are now PRIMARY** - FSM/workflow-driven implementations
+- ✅ **"Declarative" suffix removed** - `NodeReducerDeclarative` → `NodeReducer`, `NodeOrchestratorDeclarative` → `NodeOrchestrator`
+- ✅ **Legacy implementations moved** - Old implementations in `omnibase_core.nodes.legacy` (deprecated)
+- ✅ **Unified import path** - All nodes: `from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect`
+- ✅ **Input/Output models exported** - `ModelComputeInput`, `ModelReducerInput`, etc. available from `omnibase_core.nodes`
+- ✅ **Public enums exported** - Reducer and Orchestrator enums available from `omnibase_core.nodes`
+
+### v0.3.6 - Foundation
 
 - ✅ **Enhanced cleanup.py script** - Added `tmp/` cleanup with git index removal and `.venv` exclusion
 - ✅ **Updated .gitignore** - Added `tmp/` to ignore list for temporary files
@@ -905,8 +945,8 @@ poetry show                                 # List dependencies
 
 ---
 
-**Last Updated**: 2025-12-04
-**Project Version**: 0.3.6
+**Last Updated**: 2025-12-05
+**Project Version**: 0.4.0
 **Python Version**: 3.12+
 **Branch**: main
 

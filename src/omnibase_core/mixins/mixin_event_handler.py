@@ -79,7 +79,7 @@ class MixinEventHandler:
         if subscribe_async and inspect.iscoroutinefunction(subscribe_async):
             # Schedule async subscription in the event loop
             try:
-                loop = asyncio.get_event_loop()
+                loop = asyncio.get_running_loop()
                 if loop.is_running():
                     # Create background tasks and store references to prevent garbage collection
                     task1 = asyncio.create_task(

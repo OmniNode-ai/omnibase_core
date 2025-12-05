@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from typing import Any, Optional, TypeVar
 
@@ -81,7 +82,10 @@ class MixinLazyEvaluation:
                 EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             )
 
-        cache_key = f"model_dump_{hash((tuple(exclude or set()), by_alias))}"
+        # Use deterministic hashing for cache key consistency across processes
+        key_str = f"{tuple(sorted(exclude or set()))}_{by_alias}"
+        key_hash = hashlib.md5(key_str.encode()).hexdigest()
+        cache_key = f"model_dump_{key_hash}"
         return self.lazy_property(cache_key, _compute_dump)
 
     def lazy_serialize_nested(
@@ -184,7 +188,13 @@ def lazy_cached(
             if not hasattr(self, "_lazy_cache"):
                 self._lazy_cache = {}
 
-            key = cache_key or f"{func.__name__}_{hash((args, tuple(kwargs.items())))}"
+            # Use deterministic hashing for cache key consistency across processes
+            if cache_key:
+                key = cache_key
+            else:
+                key_str = f"{func.__name__}_{args}_{sorted(kwargs.items())}"
+                key_hash = hashlib.md5(key_str.encode()).hexdigest()
+                key = f"{func.__name__}_{key_hash}"
 
             if key not in self._lazy_cache:
 

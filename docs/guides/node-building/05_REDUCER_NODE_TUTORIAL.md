@@ -48,7 +48,7 @@ The omnibase_core codebase now includes complete FSM execution capabilities:
 
 **Example YAML Contract** (fully functional):
 
-```
+```yaml
 # contracts/reducer_metrics_aggregator.yaml
 node_type: REDUCER
 node_name: metrics_aggregator
@@ -188,7 +188,7 @@ REDUCER nodes in ONEX are **pure finite state machines**:
 - **Effect Delegation**: Let Effect nodes handle I/O, logging, metrics
 
 **Core Concept**:
-```
+```text
 δ(state, action) → (new_state, intents[])
 ```
 
@@ -205,7 +205,7 @@ REDUCER nodes in ONEX are **pure finite state machines**:
 ## Pure FSM Pattern: Key Principles
 
 ### ❌ Old Pattern (Stateful, Side Effects)
-```
+```python
 class NodeMetricsAggregatorReducer(NodeReducer):
     def __init__(self, container):
         super().__init__(container)
@@ -226,7 +226,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
 ```
 
 ### ✅ New Pattern (Pure FSM, Intent Emission)
-```
+```python
 class NodeMetricsAggregatorReducer(NodeReducer):
     def __init__(self, container):
         super().__init__(container)
@@ -283,7 +283,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
 
 ## Prerequisites Check
 
-```
+```bash
 # Verify Poetry and environment
 poetry --version
 pwd  # Should end with /omnibase_core
@@ -303,7 +303,7 @@ poetry run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1
 
 **File**: `src/your_project/nodes/model_metrics_aggregation_input.py`
 
-```
+```python
 """Input model for metrics aggregation REDUCER node."""
 
 from enum import Enum
@@ -392,7 +392,7 @@ class ModelMetricsAggregationInput(BaseModel):
 
 **File**: `src/your_project/nodes/model_metrics_aggregation_output.py`
 
-```
+```python
 """Output model for metrics aggregation REDUCER node."""
 
 from datetime import datetime
@@ -519,7 +519,7 @@ class ModelMetricsAggregationOutput(BaseModel):
 
 **File**: `src/your_project/nodes/node_metrics_aggregator_reducer.py`
 
-```
+```python
 """
 Metrics Aggregator REDUCER Node - Pure FSM Implementation.
 
@@ -838,7 +838,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
 
 If you need custom mixin composition or want to build from scratch:
 
-```
+```python
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from collections import defaultdict
 
@@ -882,7 +882,7 @@ class NodeMetricsAggregatorReducer(NodeCoreBase):
 
 ### How Intents Flow to Effect Nodes
 
-```
+```python
 """
 Intent Flow Example:
 
@@ -915,7 +915,7 @@ Intent Flow Example:
 
 **File**: `src/your_project/nodes/node_intent_executor_effect.py`
 
-```
+```python
 """Effect node that executes Intents from Reducer nodes."""
 
 from omnibase_core.nodes.node_effect import NodeEffect
@@ -991,7 +991,7 @@ class NodeIntentExecutorEffect(NodeEffect):
 
 **File**: `tests/unit/nodes/test_node_metrics_aggregator_reducer.py`
 
-```
+```python
 """Tests for Pure FSM NodeMetricsAggregatorReducer."""
 
 import pytest

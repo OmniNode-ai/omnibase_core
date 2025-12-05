@@ -234,7 +234,12 @@ generated/
 reports/
 secrets/
 
-# Ignore sensitive and legacy files (but NOT src/omnibase_core/nodes/legacy/)
+# Legacy files exclusion pattern:
+# - /legacy/ : Ignore any root-level legacy directory (e.g., /legacy/) which may contain
+#              old, deprecated, or sensitive files that should not be tracked
+# - !/src/omnibase_core/nodes/legacy/ : EXCEPTION - preserve the nodes/legacy/ directory
+#              which contains backwards-compatible node implementations for migration support
+#              (e.g., NodeBaseLegacy, legacy effect/reducer base classes)
 /legacy/
 !/src/omnibase_core/nodes/legacy/
 

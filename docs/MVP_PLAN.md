@@ -206,7 +206,7 @@ This document outlines proposed issues for the MVP milestone, derived from the a
 | Infra uses SPI + Core | `omnibase_infra` implements handlers using SPI protocols and Core models |
 
 **Dependency Direction**:
-```
+```text
 omnibase_infra  ──implements──►  omnibase_spi  ──imports──►  omnibase_core
      │                                │                            │
      │ (handlers, RuntimeHostProcess) │ (protocols only)           │ (models, NodeRuntime, pure logic)
@@ -1789,7 +1789,7 @@ Add comprehensive mapping table showing where each mixin goes in the new archite
 Add visual diagram showing exact data flow through the system.
 
 **Diagram Flow**:
-```
+```text
 Contract (YAML)
     → Validator (structural → semantic → capability → fingerprint)
     → Adapter (pure transformation)
@@ -2239,7 +2239,7 @@ Not all 71 issues are equally critical for v0.4.0 to ship. The following MUST la
 
 ## Execution Order
 
-```
+```text
 Phase 0 (Stabilization)
     └── Issues 0.1-0.9: Freeze APIs, baseline tests, CI checks,
                         contract versioning, hash registry, purity tests,
