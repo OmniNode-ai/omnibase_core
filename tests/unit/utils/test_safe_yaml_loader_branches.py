@@ -38,7 +38,7 @@ class TestLoadAndValidateYamlModelExceptionBranches:
         )
 
         # Non-existent path
-        temp_path = Path("/tmp/nonexistent_yaml_file_xyz.yaml")  # noqa: S108
+        temp_path = Path("/tmp/nonexistent_yaml_file_xyz.yaml")
 
         with pytest.raises(ModelOnexError) as exc_info:
             load_and_validate_yaml_model(temp_path, SimpleModel)

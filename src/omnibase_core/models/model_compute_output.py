@@ -4,19 +4,17 @@ Output model for NodeCompute operations.
 Provides strongly typed output wrapper with computation metadata and performance metrics.
 """
 
-from typing import Any, Generic, TypeVar
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-
-T_Output = TypeVar("T_Output")
 
 __all__ = [
     "ModelComputeOutput",
 ]
 
 
-class ModelComputeOutput(BaseModel, Generic[T_Output]):
+class ModelComputeOutput[T_Output](BaseModel):
     """
     Output model for NodeCompute operations.
 

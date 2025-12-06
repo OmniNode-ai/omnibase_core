@@ -367,7 +367,7 @@ class ModelSecretManager(BaseModel):
     def create_for_kubernetes(
         cls,
         namespace: str = "default",
-        secret_name: str = "onex-secrets",  # noqa: S107 - config name, not a password
+        secret_name: str = "onex-secrets",
     ) -> "ModelSecretManager":
         """Create secret manager for Kubernetes environment."""
         config = ModelSecretConfig.create_for_kubernetes(namespace, secret_name)

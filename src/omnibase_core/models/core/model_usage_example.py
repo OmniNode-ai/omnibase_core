@@ -1,21 +1,13 @@
-from typing import TypeVar
-
 """
 Model for introspection usage examples.
 
 Provides a typed structure for tool usage examples with generic type support.
 """
 
-from typing import Generic
-
 from pydantic import BaseModel, Field
 
-# Type variables for input and output types
-InputT = TypeVar("InputT")
-OutputT = TypeVar("OutputT")
 
-
-class ModelUsageExample(BaseModel, Generic[InputT, OutputT]):
+class ModelUsageExample[InputT, OutputT](BaseModel):
     """Model representing a usage example for introspection with typed input/output."""
 
     description: str = Field(

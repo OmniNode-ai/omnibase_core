@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -46,17 +46,13 @@ from omnibase_core.models.infrastructure.model_node_workflow_result import (
 )
 from omnibase_core.models.infrastructure.model_state import ModelState
 
-T_INPUT_STATE = TypeVar("T_INPUT_STATE")
-T_OUTPUT_STATE = TypeVar("T_OUTPUT_STATE")
-
 
 # Simple stub models for reducer pattern (ONEX 2.0 minimal implementation)
 # Import from separate files: ModelAction, ModelState, ModelNodeState
 
 
-class NodeBase(
+class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
     WorkflowReducerInterface,
-    Generic[T_INPUT_STATE, T_OUTPUT_STATE],
 ):
     """
     Enhanced NodeBase class implementing ONEX architecture patterns.

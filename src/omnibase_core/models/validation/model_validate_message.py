@@ -14,7 +14,7 @@ from omnibase_core.models.core.model_base_error import ModelBaseError
 from .model_validate_message_context import ModelValidateMessageContext
 
 
-class ModelValidateMessage(ModelBaseError):  # noqa: N818
+class ModelValidateMessage(ModelBaseError):
     """Model for validation messages."""
 
     file: str | None = None

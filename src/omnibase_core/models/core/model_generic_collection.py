@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import datetime
-from typing import Generic, TypeVar
 
 from pydantic import Field
 
@@ -24,14 +23,8 @@ from omnibase_core.types.typed_dict_collection_kwargs import (
 
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 
-# More constrained TypeVar for collection items
-T = TypeVar(
-    "T",
-    bound=BaseModel,
-)  # Keep BaseModel bound for now, can be made more specific
 
-
-class ModelGenericCollection(BaseModel, Generic[T]):
+class ModelGenericCollection[T: BaseModel](BaseModel):
     """
     Generic collection with type safety and common operations.
 

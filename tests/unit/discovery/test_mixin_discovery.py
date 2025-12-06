@@ -455,7 +455,7 @@ class TestMixinDiscoveryIntegration:
         # 5. Validate composition
         if len(all_mixins) > 0:
             composition = [all_mixins[0].name]
-            is_valid, errors = discovery.validate_composition(composition)
+            is_valid, _ = discovery.validate_composition(composition)
             assert is_valid
 
     def test_mixin_recommendation_workflow(self) -> None:

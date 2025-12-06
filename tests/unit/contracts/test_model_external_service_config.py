@@ -501,7 +501,7 @@ class TestModelExternalServiceConfigFactoryMethods:
             port=5432,
             database="testdb",
             username="user",
-            password="test_password_not_real",  # noqa: S106
+            password="test_password_not_real",
             required=True,
         )
 

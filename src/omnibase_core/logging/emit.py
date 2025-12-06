@@ -1,6 +1,5 @@
 from collections.abc import Callable
 from datetime import datetime
-from typing import TypeVar
 
 """
 Core emit_log_event utility for ONEX structured logging.
@@ -28,7 +27,6 @@ LogNodeIdentifier = UUID | str
 # LogDataValue uses Any for boundary layer flexibility - logging infrastructure
 # needs to accept various types while sanitization ensures JSON compatibility
 LogDataValue = Any
-F = TypeVar("F", bound=Callable[..., Any])
 
 
 def _validate_node_id(node_id: LogNodeIdentifier | None) -> UUID | None:
@@ -221,7 +219,7 @@ async def emit_log_event_async(
     )
 
 
-def trace_function_lifecycle(func: F) -> F:
+def trace_function_lifecycle[F: Callable[..., Any]](func: F) -> F:
     """
     Decorator to automatically log function entry/exit with TRACE level.
 
@@ -376,7 +374,9 @@ class LogCodeBlock:
             )
 
 
-def log_performance_metrics(threshold_ms: int = 1000) -> Callable[[F], F]:
+def log_performance_metrics[F: Callable[..., Any]](
+    threshold_ms: int = 1000,
+) -> Callable[[F], F]:
     """
     Decorator to log performance metrics for functions.
 

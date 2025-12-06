@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -25,11 +24,8 @@ from pydantic import field_serializer
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_result import ModelResult
 
-# Type variable for configuration data - using Any to avoid Pydantic schema generation issues
-T = TypeVar("T")
 
-
-class ModelConfigurationBase(BaseModel, Generic[T]):
+class ModelConfigurationBase[T](BaseModel):
     """
     Base class for all configuration models with common patterns.
 

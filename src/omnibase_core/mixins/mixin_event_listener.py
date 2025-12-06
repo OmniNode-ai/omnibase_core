@@ -15,7 +15,7 @@ import time
 import uuid
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, cast
 from uuid import UUID
 
 from pydantic import ValidationError
@@ -30,12 +30,8 @@ from omnibase_core.validation.contracts import load_and_validate_yaml_model
 # Note: Event bus uses duck-typing interface, not a formal protocol
 # The omnibase_spi ProtocolEventBus is Kafka-based and incompatible with this interface
 
-# Generic type variables for input and output states
-InputStateT = TypeVar("InputStateT")
-OutputStateT = TypeVar("OutputStateT")
 
-
-class MixinEventListener(Generic[InputStateT, OutputStateT]):
+class MixinEventListener[InputStateT, OutputStateT]:
     """
     Mixin that provides event listening capabilities to tool nodes.
 
@@ -850,7 +846,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                 loop = asyncio.get_running_loop()
                 # Schedule the coroutine as a fire-and-forget task
                 # Store reference to prevent garbage collection
-                task = loop.create_task(result)  # noqa: RUF006
+                task = loop.create_task(result)
             except RuntimeError:
                 # No running event loop - skip async operation to prevent blocking
                 # In test contexts or synchronous code, event_bus is likely a Mock

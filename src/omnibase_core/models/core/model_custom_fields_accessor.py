@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar
-
 from pydantic import model_validator
 
 """
@@ -22,15 +20,12 @@ from omnibase_core.types.constraints import PrimitiveValueType
 
 from .model_field_accessor import ModelFieldAccessor
 
-# Generic type parameter
-T = TypeVar("T")
-
 # Type alias for schema values that can be stored in custom fields
 # Simplified to PrimitiveValueType for ONEX compliance (removing List[Any] primitive soup)
 SchemaValueType = PrimitiveValueType | None
 
 
-class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
+class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
     """Generic custom fields accessor with comprehensive field management."""
 
     # Typed field storage

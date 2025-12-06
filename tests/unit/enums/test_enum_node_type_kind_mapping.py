@@ -326,7 +326,7 @@ class TestEnumNodeTypeKindMapping:
 
         # Verify each type appears exactly once in the mapping
         type_occurrences: dict[EnumNodeType, int] = {}
-        for node_type in EnumNodeType._KIND_MAP.keys():
+        for node_type in EnumNodeType._KIND_MAP:
             if node_type in type_occurrences:
                 type_occurrences[node_type] += 1
             else:

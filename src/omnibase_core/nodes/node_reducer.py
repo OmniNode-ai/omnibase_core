@@ -11,7 +11,7 @@ Author: ONEX Framework Team
 """
 
 import time
-from typing import Any, Generic, cast
+from typing import Any, cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -23,14 +23,14 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.model_reducer_input import ModelReducerInput, T_Input
-from omnibase_core.models.model_reducer_output import ModelReducerOutput, T_Output
+from omnibase_core.models.model_reducer_input import ModelReducerInput
+from omnibase_core.models.model_reducer_output import ModelReducerOutput
 
 # Error messages
 _ERR_FSM_CONTRACT_NOT_LOADED = "FSM contract not loaded"
 
 
-class NodeReducer(NodeCoreBase, MixinFSMExecution, Generic[T_Input, T_Output]):
+class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
     """
     FSM-driven reducer node for state management.
 

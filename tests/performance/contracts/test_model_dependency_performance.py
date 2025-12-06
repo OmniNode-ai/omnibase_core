@@ -487,7 +487,7 @@ class TestModelDependencyPerformance:
         max_thread_time = 0
 
         while not results.empty():
-            thread_id, successes, failures, thread_time = results.get()
+            _, successes, failures, thread_time = results.get()
             total_successes += successes
             total_failures += failures
             max_thread_time = max(max_thread_time, thread_time)

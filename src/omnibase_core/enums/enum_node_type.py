@@ -368,7 +368,7 @@ class EnumNodeType(str, Enum):
 # defined at runtime and verified by tests. See CLAUDE.md section "Node
 # Classification Enums: EnumNodeKind vs EnumNodeType" for architectural context.
 _populate_kind_map()
-setattr(EnumNodeType, "_KIND_MAP", _KIND_MAP)  # noqa: B010
+setattr(EnumNodeType, "_KIND_MAP", _KIND_MAP)
 
 # Export for use
 __all__ = ["EnumNodeType"]

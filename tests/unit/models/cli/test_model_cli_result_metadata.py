@@ -142,13 +142,13 @@ class TestModelCliResultMetadata:
         # Invalid scores should raise OnexError
         with pytest.raises(
             OnexError,
-            match="Quality score must be between 0.0 and 1.0",
+            match=r"Quality score must be between 0\.0 and 1\.0",
         ):
             metadata.set_quality_score(-0.1)
 
         with pytest.raises(
             OnexError,
-            match="Quality score must be between 0.0 and 1.0",
+            match=r"Quality score must be between 0\.0 and 1\.0",
         ):
             metadata.set_quality_score(1.1)
 
@@ -169,13 +169,13 @@ class TestModelCliResultMetadata:
         # Invalid confidence levels should raise OnexError
         with pytest.raises(
             OnexError,
-            match="Confidence level must be between 0.0 and 1.0",
+            match=r"Confidence level must be between 0\.0 and 1\.0",
         ):
             metadata.set_confidence_level(-0.01)
 
         with pytest.raises(
             OnexError,
-            match="Confidence level must be between 0.0 and 1.0",
+            match=r"Confidence level must be between 0\.0 and 1\.0",
         ):
             metadata.set_confidence_level(1.01)
 

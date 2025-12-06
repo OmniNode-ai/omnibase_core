@@ -19,7 +19,7 @@ STABILITY: Node interfaces are frozen for code generation.
 import pytest
 
 # Use explicit import path - omnibase_core.nodes is not exposed via omnibase_core.__all__
-import omnibase_core.nodes as nodes  # noqa: PLR0402
+import omnibase_core.nodes as nodes
 
 
 class TestNodesAPISnapshot:

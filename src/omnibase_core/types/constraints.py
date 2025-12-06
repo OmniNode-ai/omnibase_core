@@ -146,7 +146,7 @@ else:
             "BaseFactory",
         ):
             # Lazy import - happens only when these names are accessed
-            from omnibase_core.models.base import (  # noqa: PLC0415
+            from omnibase_core.models.base import (
                 ModelBaseCollection,
                 ModelBaseFactory,
             )

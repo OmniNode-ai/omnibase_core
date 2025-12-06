@@ -26,8 +26,6 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from typing import Generic, TypeVar
-
 from pydantic import BaseModel, ValidationError
 
 # Import current implementation directly
@@ -37,10 +35,8 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 # Generic[T] Approach - Alternative Implementation
 # ============================================================================
 
-T = TypeVar("T")
 
-
-class ModelSchemaValueGeneric(BaseModel, Generic[T]):
+class ModelSchemaValueGeneric[T](BaseModel):
     """
     Generic approach to schema values.
 

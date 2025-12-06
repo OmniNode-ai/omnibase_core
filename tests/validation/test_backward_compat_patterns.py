@@ -269,7 +269,7 @@ class MyModel(BaseModel):
     class Config:
         extra = 'allow'
 """
-        success, errors = self._validate_content(content)
+        success, _ = self._validate_content(content)
         assert not success, (
             "Should detect compatibility in docstring with extra='allow'"
         )
@@ -287,7 +287,7 @@ class DynamicConfig(BaseModel):
     class Config:
         extra = 'allow'  # Allow dynamic configuration fields
 """
-        success, errors = self._validate_content(content)
+        success, _ = self._validate_content(content)
         assert success, "Should NOT detect extra='allow' without compatibility keywords"
 
     def test_extra_forbid(self):
@@ -299,7 +299,7 @@ class StrictModel(BaseModel):
     class Config:
         extra = 'forbid'  # No backward compatibility
 """
-        success, errors = self._validate_content(content)
+        success, _ = self._validate_content(content)
         assert success, "Should NOT detect extra='forbid'"
 
     def test_extra_ignore(self):
@@ -311,7 +311,7 @@ class FlexibleModel(BaseModel):
     class Config:
         extra = 'ignore'  # Ignore unknown fields
 """
-        success, errors = self._validate_content(content)
+        success, _ = self._validate_content(content)
         assert success, "Should NOT detect extra='ignore' without compat keywords"
 
     def test_no_extra_field(self):
@@ -323,7 +323,7 @@ class SimpleModel(BaseModel):
     class Config:
         validate_assignment = True
 """
-        success, errors = self._validate_content(content)
+        success, _ = self._validate_content(content)
         assert success, "Should NOT detect Config without extra field"
 
     def test_extra_in_unrelated_context(self):
@@ -334,5 +334,5 @@ def process_data(data: dict) -> dict:
     extra = data.get('allow', False)
     return {'extra': extra}
 """
-        success, errors = self._validate_content(content)
+        success, _ = self._validate_content(content)
         assert success, "Should NOT detect 'extra' in unrelated context"

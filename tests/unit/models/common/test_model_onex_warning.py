@@ -148,7 +148,7 @@ class TestModelOnexWarning:
         context = {
             "operation": "file_write",
             "details": {
-                "path": "/tmp/output.txt",  # noqa: S108
+                "path": "/tmp/output.txt",
                 "size_bytes": 1024,
                 "permissions": "0644",
             },

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +12,6 @@ __all__ = [
     "ModelValidationIssue",
     "ModelValidationMetadata",
     "ModelValidationResult",
-    "T",
 ]
 
 """
@@ -29,11 +27,8 @@ This replaces:
 - omnibase_core.model.validation.model_validation_result
 """
 
-# TypeVar with constraints for better type safety
-T = TypeVar("T", bound=object)
 
-
-class ModelValidationResult(BaseModel, Generic[T]):
+class ModelValidationResult[T: object](BaseModel):
     """
     Unified validation result model for all ONEX components.
 

@@ -26,9 +26,13 @@ import hashlib
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
+from typing import Any, TypeVar
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+# Type variables for generic compute input/output
+T_Input = TypeVar("T_Input")
+T_Output = TypeVar("T_Output")
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -36,8 +40,8 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure import ModelComputeCache
-from omnibase_core.models.model_compute_input import ModelComputeInput, T_Input
-from omnibase_core.models.model_compute_output import ModelComputeOutput, T_Output
+from omnibase_core.models.model_compute_input import ModelComputeInput
+from omnibase_core.models.model_compute_output import ModelComputeOutput
 
 
 class NodeCompute(NodeCoreBase):

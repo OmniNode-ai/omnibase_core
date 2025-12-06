@@ -344,9 +344,7 @@ name: test
 Body content
 """
 
-        block, body = extract_metadata_block_and_body(
-            content, MD_META_OPEN, MD_META_CLOSE
-        )
+        _, body = extract_metadata_block_and_body(content, MD_META_OPEN, MD_META_CLOSE)
 
         assert body is not None
 
@@ -354,7 +352,7 @@ Body content
         """Test extracting with only delimiters, no content."""
         content = "---\n---"
 
-        block, body = extract_metadata_block_and_body(content, "---", "---")
+        block, _ = extract_metadata_block_and_body(content, "---", "---")
 
         assert block is not None
 

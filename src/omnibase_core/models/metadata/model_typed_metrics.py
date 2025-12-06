@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Generic
 
 from pydantic import Field
 
@@ -23,7 +22,7 @@ from omnibase_core.types.constraints import SimpleValueType
 # Use consolidated SimpleValueType instead of redundant TypeVar
 
 
-class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
+class ModelTypedMetrics[SimpleValueType](BaseModel):
     """Generic metrics model replacing type-specific variants.
     Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities

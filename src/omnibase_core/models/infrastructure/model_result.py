@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import Field, field_validator
 
@@ -21,16 +21,13 @@ from pydantic import BaseModel, field_serializer
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
-# Type variables for Result pattern
-T = TypeVar("T")  # Success type
-E = TypeVar("E")  # Error type
+# Type variables for mapped types in transformations (still needed for methods)
 U = TypeVar("U")  # Mapped type for transformations
 F = TypeVar("F")  # Mapped error type for transformations
 
 
-class ModelResult(
+class ModelResult[T, E](
     BaseModel,
-    Generic[T, E],
 ):  # Protocols removed temporarily for validation
     """
     Generic Result[T, E] pattern for type-safe error handling.
@@ -358,17 +355,17 @@ class ModelResult(
 
 
 # Factory functions for common patterns
-def ok(value: T) -> ModelResult[T, str]:
+def ok[T](value: T) -> ModelResult[T, str]:
     """Create successful result with string error type."""
     return ModelResult.ok(value)
 
 
-def err(error: E) -> ModelResult[str, E]:
+def err[E](error: E) -> ModelResult[str, E]:
     """Create error result with string success type."""
     return ModelResult.err(error)
 
 
-def try_result(f: Callable[[], T]) -> ModelResult[T, Exception]:
+def try_result[T](f: Callable[[], T]) -> ModelResult[T, Exception]:
     """
     Execute function and wrap result/exception in Result.
 
@@ -385,7 +382,9 @@ def try_result(f: Callable[[], T]) -> ModelResult[T, Exception]:
         return ModelResult.err(e)
 
 
-def collect_results(results: list[ModelResult[T, E]]) -> ModelResult[list[T], list[E]]:
+def collect_results[T, E](
+    results: list[ModelResult[T, E]],
+) -> ModelResult[list[T], list[E]]:
     """
     Collect a list[Any]of Results into a Result of list[Any]s.
 

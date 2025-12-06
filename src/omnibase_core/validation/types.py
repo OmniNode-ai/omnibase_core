@@ -147,7 +147,7 @@ Examples of problematic patterns:
     base_path = Path(args.path)
     if base_path.is_file() and base_path.suffix == ".py":
         # Single file validation
-        union_count, issues, patterns = validate_union_usage_file(base_path)
+        union_count, issues, _ = validate_union_usage_file(base_path)
 
         if issues:
             print(f"❌ Union validation issues found in {base_path}:")

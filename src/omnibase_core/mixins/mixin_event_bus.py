@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, cast
 
 from pydantic import Field
 
@@ -34,12 +34,8 @@ from omnibase_core.protocols import ProtocolEventEnvelope
 from .mixin_completion_data import MixinCompletionData
 from .mixin_log_data import MixinLogData
 
-# Generic type variables for input and output states
-InputStateT = TypeVar("InputStateT")
-OutputStateT = TypeVar("OutputStateT")
 
-
-class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
+class MixinEventBus[InputStateT, OutputStateT](BaseModel):
     """
     Unified mixin for all event bus operations in ONEX nodes.
 

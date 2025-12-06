@@ -456,7 +456,7 @@ class NodeCoreBase(ABC):
                 {"node_id": self.node_id, "node_type": self.__class__.__name__},
             )
 
-    async def _initialize_node_resources(self) -> None:  # noqa: B027
+    async def _initialize_node_resources(self) -> None:
         """
         Initialize node-specific resources.
 
@@ -464,7 +464,7 @@ class NodeCoreBase(ABC):
         Base implementation does nothing.
         """
 
-    async def _cleanup_node_resources(self) -> None:  # noqa: B027
+    async def _cleanup_node_resources(self) -> None:
         """
         Cleanup node-specific resources.
 

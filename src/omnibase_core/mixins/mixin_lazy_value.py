@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Generic, Optional, TypeVar, cast
-
-T = TypeVar("T")
+from typing import cast
 
 
-class MixinLazyValue(Generic[T]):
+class MixinLazyValue[T]:
     """Lazy evaluation wrapper for expensive operations."""
 
     def __init__(self, func: Callable[[], T], cache: bool = True):

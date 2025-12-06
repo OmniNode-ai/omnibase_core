@@ -416,7 +416,7 @@ class ServiceRegistry:
             instance_result = await self._resolve_by_lifecycle(
                 registration_id, registration, scope or registration.scope, context
             )
-            instance = cast(TInterface, instance_result)
+            instance = cast("TInterface", instance_result)
 
             # Track performance
             end_time = time.perf_counter()
@@ -477,7 +477,7 @@ class ServiceRegistry:
         result = await self._resolve_by_lifecycle(
             registration_id, registration, scope or registration.scope, None
         )
-        return cast(TInterface, result)
+        return cast("TInterface", result)
 
     async def resolve_all_services(
         self,

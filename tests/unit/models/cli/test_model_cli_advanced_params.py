@@ -317,10 +317,14 @@ class TestModelCliAdvancedParams:
             ModelOnexError as OnexError,
         )
 
-        with pytest.raises(OnexError, match="CPU limit must be between 0.0 and 100.0"):
+        with pytest.raises(
+            OnexError, match=r"CPU limit must be between 0\.0 and 100\.0"
+        ):
             params.set_cpu_limit(-0.1)
 
-        with pytest.raises(OnexError, match="CPU limit must be between 0.0 and 100.0"):
+        with pytest.raises(
+            OnexError, match=r"CPU limit must be between 0\.0 and 100\.0"
+        ):
             params.set_cpu_limit(100.1)
 
     def test_environment_variables_management(self):

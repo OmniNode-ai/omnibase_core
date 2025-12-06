@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -18,10 +16,8 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from .model_field_accessor import ModelFieldAccessor
 
-T = TypeVar("T")
 
-
-class ModelTypedAccessor(ModelFieldAccessor, Generic[T]):
+class ModelTypedAccessor[T](ModelFieldAccessor):
     """Type-safe field accessor for specific types.
     Implements Core protocols:
     - Configurable: Configuration management capabilities

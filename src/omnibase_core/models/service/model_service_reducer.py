@@ -55,12 +55,10 @@ from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_reducer_input import T_Input
-from omnibase_core.models.model_reducer_output import T_Output
 from omnibase_core.nodes.node_reducer import NodeReducer
 
 
-class ModelServiceReducer(
+class ModelServiceReducer[T_Input, T_Output](
     MixinNodeService,
     NodeReducer[T_Input, T_Output],
     MixinHealthCheck,

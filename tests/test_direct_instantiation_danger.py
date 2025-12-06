@@ -10,14 +10,10 @@ This is a REAL RISK in autonomous agent systems where agents might:
 3. Generate code that looks "cleaner" without factory methods
 """
 
-from typing import Generic, TypeVar
-
 from pydantic import BaseModel
 
-T = TypeVar("T")
 
-
-class ModelSchemaValueGeneric(BaseModel, Generic[T]):
+class ModelSchemaValueGeneric[T](BaseModel):
     """Generic approach - allows direct instantiation with any type."""
 
     value: T

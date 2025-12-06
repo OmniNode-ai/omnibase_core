@@ -1,4 +1,4 @@
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -19,12 +19,8 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-# Type variables for input/output states
-InputStateT = TypeVar("InputStateT")
-OutputStateT = TypeVar("OutputStateT")
 
-
-class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
+class MixinCLIHandler[InputStateT, OutputStateT]:
     """
     Mixin that provides CLI handling capabilities to tool nodes.
 

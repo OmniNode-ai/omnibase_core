@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Generic, TypeVar
 
 """
 Generic Factory Pattern for Model Creation.
@@ -23,10 +22,8 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictFactoryKwargs
 
-T = TypeVar("T", bound=BaseModel)
 
-
-class ModelGenericFactory(Generic[T]):
+class ModelGenericFactory[T: BaseModel]:
     """
     Generic factory for creating typed model instances with consistent patterns.
 

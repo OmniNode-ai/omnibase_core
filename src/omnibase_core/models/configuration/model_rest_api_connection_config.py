@@ -158,7 +158,7 @@ class ModelRestApiConnectionConfig(BaseModel):
 
     def is_localhost(self) -> bool:
         """Check if this points to localhost."""
-        scheme, host, port, path = self.get_parsed_url()
+        _, host, _, _ = self.get_parsed_url()
         return host.lower() in ("localhost", "127.0.0.1")
 
     def uses_https(self) -> bool:

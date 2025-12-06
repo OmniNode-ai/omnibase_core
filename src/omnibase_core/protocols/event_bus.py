@@ -17,7 +17,6 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import (
     TYPE_CHECKING,
-    Generic,
     Literal,
     Protocol,
     TypeVar,
@@ -305,7 +304,7 @@ class ProtocolEventBus(Protocol):
 
 
 @runtime_checkable
-class ProtocolEventEnvelope(Protocol, Generic[T_co]):
+class ProtocolEventEnvelope[T_co](Protocol):
     """
     Protocol defining the minimal interface for event envelopes.
 

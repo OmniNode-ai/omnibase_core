@@ -1,5 +1,3 @@
-from typing import TypeVar
-
 """
 Core Bootstrap for ONEX Service Discovery.
 
@@ -14,9 +12,6 @@ registry-centric architecture pattern.
 from typing import Any, cast
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-
-# Type variable for protocol types
-T = TypeVar("T")
 
 
 class _BootstrapMinimalLogger:
@@ -64,7 +59,7 @@ class _BootstrapMinimalLogger:
         return decorator
 
 
-def get_service(protocol_type: type[T]) -> T | None:
+def get_service[T](protocol_type: type[T]) -> T | None:
     """
     Get a service implementation for the given protocol type.
 
@@ -193,7 +188,7 @@ def _get_registry_node() -> Any | None:
     return None
 
 
-def _get_fallback_service(protocol_type: type[T]) -> T | None:
+def _get_fallback_service[T](protocol_type: type[T]) -> T | None:
     """
     Get fallback service implementation for bootstrap scenarios.
 
@@ -223,7 +218,7 @@ def _get_minimal_logging_service() -> Any:
     return _BootstrapMinimalLogger()
 
 
-def is_service_available(protocol_type: type[T]) -> bool:
+def is_service_available[T](protocol_type: type[T]) -> bool:
     """
     Check if a service is available for the given protocol type.
 

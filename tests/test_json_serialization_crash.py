@@ -6,14 +6,11 @@ when trying to serialize for distributed execution (e.g., sending to another pro
 """
 
 import json
-from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
-T = TypeVar("T")
 
-
-class ModelSchemaValueGeneric(BaseModel, Generic[T]):
+class ModelSchemaValueGeneric[T](BaseModel):
     """Generic approach with arbitrary types allowed."""
 
     value: T

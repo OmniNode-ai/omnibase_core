@@ -327,7 +327,7 @@ class TestCacheInternalStorage:
         cache.put("test_key", "test_value")
 
         # Access internal storage
-        value, expiry, access_metric = cache._cache["test_key"]
+        _, _, access_metric = cache._cache["test_key"]
 
         # LRU should store float timestamp
         assert isinstance(access_metric, float), "LRU should store float timestamp"
@@ -343,7 +343,7 @@ class TestCacheInternalStorage:
         cache.put("test_key", "test_value")
 
         # Access internal storage
-        value, expiry, access_metric = cache._cache["test_key"]
+        _, _, access_metric = cache._cache["test_key"]
 
         # LFU should store int count (starts at 1)
         assert isinstance(access_metric, int), "LFU should store int access count"
@@ -353,7 +353,7 @@ class TestCacheInternalStorage:
         cache.get("test_key")
 
         # Check updated count
-        value, expiry, access_metric = cache._cache["test_key"]
+        _, _, access_metric = cache._cache["test_key"]
         assert access_metric == 2, "Access count should increment to 2"
 
     def test_fifo_internal_storage_uses_insertion_order(self):
