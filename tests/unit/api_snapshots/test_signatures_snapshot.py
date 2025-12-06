@@ -728,8 +728,11 @@ class TestNodeComputeProcessSignatureSnapshot:
 
         Pre-refactor: input_data is annotated as ModelComputeInput[T_Input].
 
-        Note: Due to generic type parameters, we check the origin type or the class itself.
-        When inspect.signature resolves the type, it may be the generic subscript or the class.
+        Note: Due to generic type parameters and PEP 695 style generics, we check:
+        1. typing.get_origin() for standard generic subscripts
+        2. The annotation is the class itself
+        3. issubclass() for PEP 695 style generics where typing.get_origin() returns None
+           but the annotation is a specialized generic class with ModelComputeInput in its MRO
         """
         import typing
 
@@ -739,13 +742,23 @@ class TestNodeComputeProcessSignatureSnapshot:
         sig = inspect.signature(NodeCompute.process)
         input_param = sig.parameters["input_data"]
 
-        # Get the origin type (ModelComputeInput without the generic parameter)
-        # or check if annotation is the class itself
         annotation = input_param.annotation
         origin = typing.get_origin(annotation)
 
-        # Accept either the generic subscript origin or the class directly
+        # Accept:
+        # 1. Standard generic subscript where origin is ModelComputeInput
+        # 2. The class directly (annotation is ModelComputeInput)
+        # 3. PEP 695 style generics where annotation is a subclass of ModelComputeInput
+        #    (typing.get_origin returns None but issubclass returns True)
         is_valid = (origin is ModelComputeInput) or (annotation is ModelComputeInput)
+        if not is_valid:
+            # Check for PEP 695 style generics using issubclass
+            try:
+                is_valid = issubclass(annotation, ModelComputeInput)
+            except TypeError:
+                # issubclass raises TypeError if annotation is not a class
+                is_valid = False
+
         assert is_valid, (
             f"NodeCompute.process input_data should be annotated as ModelComputeInput[T_Input], "
             f"got {annotation}"
@@ -757,7 +770,11 @@ class TestNodeComputeProcessSignatureSnapshot:
 
         Pre-refactor: Returns ModelComputeOutput[T_Output].
 
-        Note: Due to generic type parameters, we check the origin type or the class itself.
+        Note: Due to generic type parameters and PEP 695 style generics, we check:
+        1. typing.get_origin() for standard generic subscripts
+        2. The annotation is the class itself
+        3. issubclass() for PEP 695 style generics where typing.get_origin() returns None
+           but the annotation is a specialized generic class with ModelComputeOutput in its MRO
         """
         import typing
 
@@ -767,14 +784,24 @@ class TestNodeComputeProcessSignatureSnapshot:
         sig = inspect.signature(NodeCompute.process)
         return_annotation = sig.return_annotation
 
-        # Get the origin type (ModelComputeOutput without the generic parameter)
-        # or check if annotation is the class directly
         origin = typing.get_origin(return_annotation)
 
-        # Accept either the generic subscript origin or the class directly
+        # Accept:
+        # 1. Standard generic subscript where origin is ModelComputeOutput
+        # 2. The class directly (return_annotation is ModelComputeOutput)
+        # 3. PEP 695 style generics where annotation is a subclass of ModelComputeOutput
+        #    (typing.get_origin returns None but issubclass returns True)
         is_valid = (origin is ModelComputeOutput) or (
             return_annotation is ModelComputeOutput
         )
+        if not is_valid:
+            # Check for PEP 695 style generics using issubclass
+            try:
+                is_valid = issubclass(return_annotation, ModelComputeOutput)
+            except TypeError:
+                # issubclass raises TypeError if return_annotation is not a class
+                is_valid = False
+
         assert is_valid, (
             f"NodeCompute.process should return ModelComputeOutput[T_Output], "
             f"got {return_annotation}"
@@ -917,8 +944,11 @@ class TestNodeReducerProcessSignatureSnapshot:
 
         Pre-refactor: input_data is annotated as ModelReducerInput[T_Input].
 
-        Note: Due to generic type parameters, we check the origin type or the class itself.
-        When inspect.signature resolves the type, it may be the generic subscript or the class.
+        Note: Due to generic type parameters and PEP 695 style generics, we check:
+        1. typing.get_origin() for standard generic subscripts
+        2. The annotation is the class itself
+        3. issubclass() for PEP 695 style generics where typing.get_origin() returns None
+           but the annotation is a specialized generic class with ModelReducerInput in its MRO
         """
         import typing
 
@@ -928,13 +958,23 @@ class TestNodeReducerProcessSignatureSnapshot:
         sig = inspect.signature(NodeReducer.process)
         input_param = sig.parameters["input_data"]
 
-        # Get the origin type (ModelReducerInput without the generic parameter)
-        # or check if annotation is the class itself
         annotation = input_param.annotation
         origin = typing.get_origin(annotation)
 
-        # Accept either the generic subscript origin or the class directly
+        # Accept:
+        # 1. Standard generic subscript where origin is ModelReducerInput
+        # 2. The class directly (annotation is ModelReducerInput)
+        # 3. PEP 695 style generics where annotation is a subclass of ModelReducerInput
+        #    (typing.get_origin returns None but issubclass returns True)
         is_valid = (origin is ModelReducerInput) or (annotation is ModelReducerInput)
+        if not is_valid:
+            # Check for PEP 695 style generics using issubclass
+            try:
+                is_valid = issubclass(annotation, ModelReducerInput)
+            except TypeError:
+                # issubclass raises TypeError if annotation is not a class
+                is_valid = False
+
         assert is_valid, (
             f"NodeReducer.process input_data should be annotated as ModelReducerInput[T_Input], "
             f"got {annotation}"
@@ -946,7 +986,11 @@ class TestNodeReducerProcessSignatureSnapshot:
 
         Pre-refactor: Returns ModelReducerOutput[T_Output].
 
-        Note: Due to generic type parameters, we check the origin type or the class itself.
+        Note: Due to generic type parameters and PEP 695 style generics, we check:
+        1. typing.get_origin() for standard generic subscripts
+        2. The annotation is the class itself
+        3. issubclass() for PEP 695 style generics where typing.get_origin() returns None
+           but the annotation is a specialized generic class with ModelReducerOutput in its MRO
         """
         import typing
 
@@ -956,14 +1000,24 @@ class TestNodeReducerProcessSignatureSnapshot:
         sig = inspect.signature(NodeReducer.process)
         return_annotation = sig.return_annotation
 
-        # Get the origin type (ModelReducerOutput without the generic parameter)
-        # or check if annotation is the class directly
         origin = typing.get_origin(return_annotation)
 
-        # Accept either the generic subscript origin or the class directly
+        # Accept:
+        # 1. Standard generic subscript where origin is ModelReducerOutput
+        # 2. The class directly (return_annotation is ModelReducerOutput)
+        # 3. PEP 695 style generics where annotation is a subclass of ModelReducerOutput
+        #    (typing.get_origin returns None but issubclass returns True)
         is_valid = (origin is ModelReducerOutput) or (
             return_annotation is ModelReducerOutput
         )
+        if not is_valid:
+            # Check for PEP 695 style generics using issubclass
+            try:
+                is_valid = issubclass(return_annotation, ModelReducerOutput)
+            except TypeError:
+                # issubclass raises TypeError if return_annotation is not a class
+                is_valid = False
+
         assert is_valid, (
             f"NodeReducer.process should return ModelReducerOutput[T_Output], "
             f"got {return_annotation}"
