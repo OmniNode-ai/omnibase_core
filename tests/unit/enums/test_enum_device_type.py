@@ -402,9 +402,9 @@ class TestDeviceEnumsEdgeCases:
 
         for enum_class in enums_to_test:
             values = [e.value for e in enum_class]
-            assert len(values) == len(
-                set(values)
-            ), f"{enum_class.__name__} has duplicate values"
+            assert len(values) == len(set(values)), (
+                f"{enum_class.__name__} has duplicate values"
+            )
 
     def test_case_sensitivity_all_enums(self):
         """Test that all enum values use lowercase with underscores."""

@@ -92,7 +92,7 @@ class EnumNodeKind(str, Enum):
         return self.value
 
     @classmethod
-    def is_core_node_type(cls, node_kind: "EnumNodeKind") -> bool:
+    def is_core_node_type(cls, node_kind: EnumNodeKind) -> bool:
         """
         Check if the node kind is one of the core four-node architecture types.
 
@@ -105,7 +105,7 @@ class EnumNodeKind(str, Enum):
         return node_kind in {cls.EFFECT, cls.COMPUTE, cls.REDUCER, cls.ORCHESTRATOR}
 
     @classmethod
-    def is_infrastructure_type(cls, node_kind: "EnumNodeKind") -> bool:
+    def is_infrastructure_type(cls, node_kind: EnumNodeKind) -> bool:
         """
         Check if the node kind is an infrastructure type.
 

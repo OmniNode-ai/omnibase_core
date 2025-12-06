@@ -305,9 +305,9 @@ class TestRollbackFailureIntegration:
 
         # Execute operations with 1, 2, and 3 failing rollback operations
         for num_failures in [1, 2, 3]:
-            node_effect.effect_handlers[EnumEffectType.FILE_OPERATION] = (
-                await make_failing_handler(num_failures)
-            )
+            node_effect.effect_handlers[
+                EnumEffectType.FILE_OPERATION
+            ] = await make_failing_handler(num_failures)
 
             effect_input = ModelEffectInput(
                 effect_type=EnumEffectType.FILE_OPERATION,

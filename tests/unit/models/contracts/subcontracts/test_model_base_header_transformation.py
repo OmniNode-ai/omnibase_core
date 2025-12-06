@@ -385,10 +385,10 @@ class TestBaseHeaderTransformationDocumentation:
             "priority",
         ]
         for field_name in base_fields:
-            assert field_name in schema.get(
-                "properties", {}
-            ), f"Field {field_name} not in schema"
+            assert field_name in schema.get("properties", {}), (
+                f"Field {field_name} not in schema"
+            )
             field_info = schema["properties"][field_name]
-            assert (
-                "description" in field_info
-            ), f"Field {field_name} missing description"
+            assert "description" in field_info, (
+                f"Field {field_name} missing description"
+            )

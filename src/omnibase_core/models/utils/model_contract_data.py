@@ -58,11 +58,11 @@ class ModelContractData(BaseModel):
         # Check if dict[str, Any]contains ModelSchemaValue instances
         if data and isinstance(next(iter(data.values())), ModelSchemaValue):
             # Type narrowing: data is now dict[str, ModelSchemaValue]
-            schema_data = cast(dict[str, ModelSchemaValue], data)
+            schema_data = cast("dict[str, ModelSchemaValue]", data)
             return cls.from_schema_values(schema_data)
 
         # Otherwise treat as dict[str, object]
-        raw_data = cast(dict[str, object], data)
+        raw_data = cast("dict[str, object]", data)
         return cls.from_raw_values(raw_data)
 
     def to_schema_values(self) -> dict[str, ModelSchemaValue] | None:

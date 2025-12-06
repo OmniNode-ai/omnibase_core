@@ -88,9 +88,9 @@ class TestCacheRaceConditions:
         # This assertion may fail without proper synchronization!
         # That's the point - it demonstrates the race condition
         # In production, use ThreadSafeComputeCache wrapper
-        assert (
-            stats["total_entries"] <= cache.max_size
-        ), "Cache exceeded max size due to race condition!"
+        assert stats["total_entries"] <= cache.max_size, (
+            "Cache exceeded max size due to race condition!"
+        )
 
     @pytest.mark.xfail(
         reason="Demonstrates redundant computations under races", strict=False
@@ -198,9 +198,9 @@ class TestCacheRaceConditions:
         stats = cache.get_stats()
 
         # Cache should maintain max_size invariant even under concurrent load
-        assert (
-            stats["total_entries"] <= cache.max_size
-        ), f"Cache corrupted: {stats['total_entries']} entries (max: {cache.max_size})"
+        assert stats["total_entries"] <= cache.max_size, (
+            f"Cache corrupted: {stats['total_entries']} entries (max: {cache.max_size})"
+        )
 
 
 class TestCircuitBreakerRaceConditions:
@@ -249,9 +249,9 @@ class TestCircuitBreakerRaceConditions:
 
         # This assertion may fail due to lost updates!
         # That's the point - it demonstrates the race condition
-        assert (
-            breaker.failure_count == expected_failures
-        ), f"Lost {expected_failures - breaker.failure_count} failure updates due to race condition"
+        assert breaker.failure_count == expected_failures, (
+            f"Lost {expected_failures - breaker.failure_count} failure updates due to race condition"
+        )
 
     @pytest.mark.xfail(
         reason="Unpredictable state transitions under races", strict=False
@@ -456,9 +456,9 @@ class TestThreadSafeWrappers:
         # Check using id() now that all instances are kept alive
         instance_ids = [id(inst) for inst in instances]
         assert len(instance_ids) == num_threads, "All threads should complete"
-        assert (
-            len(set(instance_ids)) == num_threads
-        ), "Each thread should have unique instance"
+        assert len(set(instance_ids)) == num_threads, (
+            "Each thread should have unique instance"
+        )
         print(
             f"Successfully created {len(set(instance_ids))} thread-local NodeCompute instances"
         )
@@ -587,9 +587,9 @@ class TestDocumentationExamples:
         # Check using id() now that all instances are kept alive
         instance_ids = [id(inst) for inst in instances]
         unique_instances = len(set(instance_ids))
-        assert (
-            unique_instances == 3
-        ), f"Expected 3 unique thread-local instances, got {unique_instances}"
+        assert unique_instances == 3, (
+            f"Expected 3 unique thread-local instances, got {unique_instances}"
+        )
 
 
 # Run tests with pytest

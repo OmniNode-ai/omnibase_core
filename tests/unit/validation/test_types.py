@@ -272,7 +272,7 @@ def func(x: Union[str, int]) -> None:
 """
         )
 
-        union_count, issues, patterns = validate_union_usage_file(test_file)
+        union_count, _, patterns = validate_union_usage_file(test_file)
 
         assert union_count == 1
         assert len(patterns) == 1
@@ -288,7 +288,7 @@ def func(x: str | int | bool) -> None:
 """
         )
 
-        union_count, issues, patterns = validate_union_usage_file(test_file)
+        union_count, _, patterns = validate_union_usage_file(test_file)
 
         assert union_count == 1
         assert len(patterns) == 1
@@ -321,7 +321,7 @@ def func(x: Union[str, int, bool, float]) -> None:
 """
         )
 
-        union_count, issues, patterns = validate_union_usage_file(test_file)
+        union_count, issues, _ = validate_union_usage_file(test_file)
 
         assert union_count == 1
         assert len(issues) > 0  # Should have issues for complex union
@@ -336,7 +336,7 @@ def func(x: Union[str, int)  # Missing closing bracket
 """
         )
 
-        union_count, issues, patterns = validate_union_usage_file(test_file)
+        union_count, issues, _ = validate_union_usage_file(test_file)
 
         assert union_count == 0
         assert len(issues) > 0  # Should have parsing error
@@ -360,7 +360,7 @@ def func3(z: str | int | bool) -> None:
 """
         )
 
-        union_count, issues, patterns = validate_union_usage_file(test_file)
+        union_count, _, patterns = validate_union_usage_file(test_file)
 
         assert union_count == 3
         assert len(patterns) == 3
@@ -552,7 +552,7 @@ def func(x: typing.Union[str, int]) -> None:
         """Test validating nonexistent file."""
         nonexistent = tmp_path / "nonexistent.py"
 
-        union_count, issues, patterns = validate_union_usage_file(nonexistent)
+        union_count, issues, _ = validate_union_usage_file(nonexistent)
 
         # Should handle gracefully with error
         assert union_count == 0

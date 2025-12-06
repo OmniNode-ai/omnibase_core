@@ -35,10 +35,10 @@ class CircularImportValidator:
     def __init__(
         self,
         source_path: str | Path,
-        include_patterns: Optional[list[str]] = None,
-        exclude_patterns: Optional[list[str]] = None,
+        include_patterns: list[str] | None = None,
+        exclude_patterns: list[str] | None = None,
         verbose: bool = False,
-        progress_callback: Optional[Callable[[str], None]] = None,
+        progress_callback: Callable[[str], None] | None = None,
     ):
         """
         Initialize the circular import validator.
@@ -83,7 +83,7 @@ class CircularImportValidator:
 
         return python_files
 
-    def _path_to_module_name(self, file_path: Path) -> Optional[str]:
+    def _path_to_module_name(self, file_path: Path) -> str | None:
         """
         Convert a file path to a Python module name.
 
@@ -159,9 +159,7 @@ class CircularImportValidator:
                     file_path=str(file_path),
                 )
 
-        except (
-            Exception
-        ) as e:  # fallback-ok: Import testing requires catching all exceptions to classify import failures
+        except Exception as e:  # fallback-ok: Import testing requires catching all exceptions to classify import failures
             # Unexpected errors
             return ModelModuleImportResult(
                 module_name=module_name,

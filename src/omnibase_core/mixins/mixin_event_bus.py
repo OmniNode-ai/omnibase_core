@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, cast
 
 from pydantic import Field
 
@@ -24,8 +24,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, StrictStr, ValidationError
 
-from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.protocols import ProtocolEventEnvelope
@@ -34,12 +34,8 @@ from omnibase_core.protocols import ProtocolEventEnvelope
 from .mixin_completion_data import MixinCompletionData
 from .mixin_log_data import MixinLogData
 
-# Generic type variables for input and output states
-InputStateT = TypeVar("InputStateT")
-OutputStateT = TypeVar("OutputStateT")
 
-
-class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
+class MixinEventBus[InputStateT, OutputStateT](BaseModel):
     """
     Unified mixin for all event bus operations in ONEX nodes.
 
@@ -171,7 +167,7 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
         import hashlib
 
         namespace_uuid = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  # DNS namespace
-        return UUID(hashlib.md5(self.node_name.encode()).hexdigest())
+        return UUID(hashlib.sha256(self.node_name.encode()).hexdigest()[:32])
 
     def process(self, input_state: InputStateT) -> OutputStateT:
         """
@@ -701,10 +697,10 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             # Try to create input state from event data
             if hasattr(input_state_class, "from_event"):
                 result = input_state_class.from_event(event)
-                return cast(InputStateT, result)
+                return cast("InputStateT", result)
             # Create from event data directly
             result = input_state_class(**event_data)
-            return cast(InputStateT, result)
+            return cast("InputStateT", result)
 
         except Exception as e:
             self._log_error(

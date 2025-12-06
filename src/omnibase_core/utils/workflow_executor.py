@@ -7,8 +7,10 @@ No side effects - returns results and actions.
 Typing: Strongly typed with strategic Any usage where runtime flexibility required.
 """
 
+import asyncio
 import logging
 import time
+from collections import deque
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -462,17 +464,33 @@ async def _execute_parallel(
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
     completed_step_ids: set[UUID] = set()
+    should_stop = False
 
     # Log workflow execution start
     logging.info(
         f"Starting parallel execution of workflow '{workflow_definition.workflow_metadata.workflow_name}' ({workflow_id})"
     )
 
+    async def execute_step(
+        step: ModelWorkflowStep,
+    ) -> tuple[ModelWorkflowStep, ModelAction | None, Exception | None]:
+        """
+        Execute a single workflow step asynchronously.
+
+        Returns tuple of (step, action_or_none, error_or_none).
+        """
+        try:
+            # Create action for this step
+            action = _create_action_for_step(step, workflow_id)
+            return (step, action, None)
+        except Exception as e:
+            return (step, None, e)
+
     # For parallel execution, we execute in waves based on dependencies
     # Filter out disabled steps entirely - they are skipped, not failed
     remaining_steps = [step for step in workflow_steps if step.enabled]
 
-    while remaining_steps:
+    while remaining_steps and not should_stop:
         # Find steps with met dependencies
         ready_steps = [
             step
@@ -486,54 +504,51 @@ async def _execute_parallel(
                 failed_steps.append(str(step.step_id))
             break
 
-        # Execute ready steps (in parallel conceptually, but we emit actions)
-        for step in ready_steps:
-            try:
-                # Emit action for this step
-                action = _create_action_for_step(step, workflow_id)
-                all_actions.append(action)
+        # Execute all ready steps in parallel using asyncio.gather
+        tasks = [asyncio.create_task(execute_step(step)) for step in ready_steps]
+        results = await asyncio.gather(*tasks)
 
-                # Mark as completed
+        # Process results from parallel execution
+        for step, action, error in results:
+            if error is None and action is not None:
+                # Step succeeded
+                all_actions.append(action)
                 completed_steps.append(str(step.step_id))
                 completed_step_ids.add(step.step_id)
-
-            except ModelOnexError as e:
-                # Handle expected ONEX errors
+            else:
+                # Step failed
                 failed_steps.append(str(step.step_id))
-                # Extract error code value safely
-                error_code_value: str | None = None
-                if e.error_code is not None:
-                    error_code_value = (
-                        e.error_code.value
-                        if hasattr(e.error_code, "value")
-                        else str(e.error_code)
+
+                if isinstance(error, ModelOnexError):
+                    # Handle expected ONEX errors
+                    error_code_value: str | None = None
+                    if error.error_code is not None:
+                        error_code_value = (
+                            error.error_code.value
+                            if hasattr(error.error_code, "value")
+                            else str(error.error_code)
+                        )
+                    logging.warning(
+                        f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed: {error.message}",
+                        extra={
+                            "error_code": error_code_value,
+                            "context": error.context,
+                        },
+                        exc_info=True,
                     )
-                logging.warning(
-                    f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed: {e.message}",
-                    extra={"error_code": error_code_value, "context": e.context},
-                    exc_info=True,
-                )
+                else:
+                    # Broad exception catch justified for workflow orchestration:
+                    # - Workflow steps execute external code with unknown exception types
+                    # - Production workflows require resilient error handling
+                    # - All failures logged with full traceback for debugging
+                    # - Failed steps tracked; execution continues per error_action config
+                    logging.exception(
+                        f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed with unexpected error: {error}"
+                    )
 
                 if step.error_action == "stop":
-                    # Stop entire workflow
-                    remaining_steps = []
-                    break
-
-            except Exception as e:
-                # Broad exception catch justified for workflow orchestration:
-                # - Workflow steps execute external code with unknown exception types
-                # - Production workflows require resilient error handling
-                # - All failures logged with full traceback for debugging
-                # - Failed steps tracked; execution continues per error_action config
-                failed_steps.append(str(step.step_id))
-                logging.exception(
-                    f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed with unexpected error: {e}"
-                )
-
-                if step.error_action == "stop":
-                    # Stop entire workflow
-                    remaining_steps = []
-                    break
+                    # Stop entire workflow after processing current wave
+                    should_stop = True
 
         # Remove processed steps
         remaining_steps = [s for s in remaining_steps if s not in ready_steps]
@@ -656,7 +671,7 @@ def _get_topological_order(
     # Build adjacency list and in-degree map
     step_ids = {step.step_id for step in workflow_steps}
     edges: dict[UUID, list[UUID]] = {step_id: [] for step_id in step_ids}
-    in_degree: dict[UUID, int] = {step_id: 0 for step_id in step_ids}
+    in_degree: dict[UUID, int] = dict.fromkeys(step_ids, 0)
 
     for step in workflow_steps:
         for dep_id in step.depends_on:
@@ -664,12 +679,14 @@ def _get_topological_order(
                 edges[dep_id].append(step.step_id)
                 in_degree[step.step_id] += 1
 
-    # Kahn's algorithm
-    queue = [step_id for step_id, degree in in_degree.items() if degree == 0]
+    # Kahn's algorithm - use deque for O(1) queue operations
+    queue: deque[UUID] = deque(
+        step_id for step_id, degree in in_degree.items() if degree == 0
+    )
     result: list[UUID] = []
 
     while queue:
-        node = queue.pop(0)
+        node = queue.popleft()
         result.append(node)
 
         for neighbor in edges.get(node, []):

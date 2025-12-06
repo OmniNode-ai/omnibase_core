@@ -31,7 +31,7 @@ class MixinWorkflowExecution:
     custom code. Workflow coordination is driven entirely by contract.
 
     Usage:
-        class NodeMyOrchestrator(NodeOrchestratorDeclarative, MixinWorkflowExecution):
+        class NodeMyOrchestrator(NodeOrchestrator, MixinWorkflowExecution):
             # No custom workflow code needed - driven by YAML contract
             pass
 

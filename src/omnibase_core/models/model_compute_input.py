@@ -5,7 +5,7 @@ Provides type-safe input wrapper with metadata tracking for computation operatio
 """
 
 from datetime import datetime
-from typing import Any, Generic, TypeVar
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -14,10 +14,8 @@ __all__ = [
     "ModelComputeInput",
 ]
 
-T_Input = TypeVar("T_Input")
 
-
-class ModelComputeInput(BaseModel, Generic[T_Input]):
+class ModelComputeInput[T_Input](BaseModel):
     """
     Input model for NodeCompute operations.
 

@@ -107,7 +107,7 @@ class ModelOptionalInt(BaseModel):
         >>> assert result == 100
     """
 
-    value: Optional[int] = Field(
+    value: int | None = Field(
         default=None,
         description="Optional integer value",
     )

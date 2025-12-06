@@ -1,4 +1,4 @@
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 """
 Hybrid Execution Mixin for ONEX Tool Nodes.
@@ -17,12 +17,8 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
 
-# Type variables for input/output states
-InputStateT = TypeVar("InputStateT")
-OutputStateT = TypeVar("OutputStateT")
 
-
-class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
+class MixinHybridExecution[InputStateT, OutputStateT]:
     """
     Mixin that provides hybrid execution capabilities to tool nodes.
 
@@ -239,11 +235,9 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
 
             from typing import cast
 
-            return cast(OutputStateT, result)
+            return cast("OutputStateT", result)
 
-        except (
-            Exception
-        ) as e:  # fallback-ok: workflow failure falls back to direct execution with logging
+        except Exception as e:  # fallback-ok: workflow failure falls back to direct execution with logging
             emit_log_event(
                 LogLevel.ERROR,
                 f"❌ WORKFLOW_EXECUTION: Workflow failed: {e}",

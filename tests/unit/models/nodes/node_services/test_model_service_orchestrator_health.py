@@ -511,9 +511,9 @@ class TestHealthMonitoringLoop:
             await service_orchestrator._health_monitor_loop()
 
         # Check that wait_for was called with 30 second timeout
-        assert (
-            captured_timeout == 30
-        ), f"Expected 30 second timeout, got {captured_timeout}"
+        assert captured_timeout == 30, (
+            f"Expected 30 second timeout, got {captured_timeout}"
+        )
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_handles_cancellation(
@@ -554,9 +554,9 @@ class TestHealthMonitoringLoop:
             "cancelled" in str(call_args).lower()
             for call_args in mock_log_info.call_args_list
         )
-        assert (
-            not cancellation_logged
-        ), "Should not log during cancellation to avoid closed file errors"
+        assert not cancellation_logged, (
+            "Should not log during cancellation to avoid closed file errors"
+        )
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_handles_exceptions(

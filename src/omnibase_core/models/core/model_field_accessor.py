@@ -188,9 +188,7 @@ class ModelFieldAccessor(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Configurable protocol requires boolean return for graceful config failure
+        except Exception:  # fallback-ok: Configurable protocol requires boolean return for graceful config failure
             return False
 
     def serialize(self) -> dict[str, Any]:
@@ -203,9 +201,7 @@ class ModelFieldAccessor(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Validatable protocol requires boolean return for graceful validation failure
+        except Exception:  # fallback-ok: Validatable protocol requires boolean return for graceful validation failure
             return False
 
     def get_name(self) -> str:

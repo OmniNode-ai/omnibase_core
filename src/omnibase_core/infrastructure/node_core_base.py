@@ -25,7 +25,7 @@ Author: ONEX Framework Team
 
 import time
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
@@ -101,7 +101,7 @@ class NodeCoreBase(ABC):
         object.__setattr__(
             self, "_node_id", node_id_value
         )  # Alias for mixin compatibility
-        object.__setattr__(self, "created_at", datetime.now())
+        object.__setattr__(self, "created_at", datetime.now(UTC))
 
         # Core state tracking
         object.__setattr__(self, "state", {"status": "initialized"})
@@ -122,8 +122,9 @@ class NodeCoreBase(ABC):
         object.__setattr__(self, "contract_data", None)
         object.__setattr__(self, "version", ModelSemVer(major=1, minor=0, patch=0))
 
-        # Initialize metrics - capture creation timestamp
-        self.metrics["initialized_at_ms"] = time.time() * 1000
+        # Initialize metrics - capture creation timestamp using perf_counter for accurate
+        # duration measurements (monotonic, unaffected by system clock adjustments)
+        self.metrics["initialized_at_ms"] = time.perf_counter() * 1000
 
     @abstractmethod
     async def process(self, input_data: Any) -> Any:
@@ -165,7 +166,8 @@ class NodeCoreBase(ABC):
             ModelOnexError: If initialization fails or dependencies unavailable
         """
         try:
-            start_time = time.time()
+            # Use time.perf_counter() for accurate duration measurement
+            start_time = time.perf_counter()
 
             # Validate container - use try/except to avoid hasattr() deadlock with Mock
             try:
@@ -191,7 +193,7 @@ class NodeCoreBase(ABC):
             await self._initialize_node_resources()
 
             # Update metrics - record initialization duration
-            initialization_time = (time.time() - start_time) * 1000
+            initialization_time = (time.perf_counter() - start_time) * 1000
             self.metrics["initialization_duration_ms"] = initialization_time
 
             # Update state
@@ -243,7 +245,8 @@ class NodeCoreBase(ABC):
         Should be called when node lifecycle is complete.
         """
         try:
-            start_time = time.time()
+            # Use time.perf_counter() for accurate duration measurement
+            start_time = time.perf_counter()
 
             # Update state
             self.state["status"] = "cleaning_up"
@@ -251,9 +254,11 @@ class NodeCoreBase(ABC):
             # Cleanup node-specific resources
             await self._cleanup_node_resources()
 
-            # Calculate final metrics
-            cleanup_time = (time.time() - start_time) * 1000
-            total_lifetime = (time.time() * 1000) - self.metrics["initialized_at_ms"]
+            # Calculate final metrics using perf_counter for accurate timing
+            cleanup_time = (time.perf_counter() - start_time) * 1000
+            total_lifetime = (time.perf_counter() * 1000) - self.metrics[
+                "initialized_at_ms"
+            ]
 
             # Emit final metrics
             final_metrics = {
@@ -314,7 +319,9 @@ class NodeCoreBase(ABC):
             **self.metrics,
             "success_rate": success_rate,
             "error_rate": error_rate,
-            "uptime_ms": (time.time() * 1000) - self.metrics["initialized_at_ms"],
+            # Use perf_counter for consistent uptime calculation (matches initialized_at_ms)
+            "uptime_ms": (time.perf_counter() * 1000)
+            - self.metrics["initialized_at_ms"],
             "node_health_score": max(0.0, 1.0 - error_rate),
         }
 
@@ -449,7 +456,7 @@ class NodeCoreBase(ABC):
                 {"node_id": self.node_id, "node_type": self.__class__.__name__},
             )
 
-    async def _initialize_node_resources(self) -> None:  # noqa: B027
+    async def _initialize_node_resources(self) -> None:
         """
         Initialize node-specific resources.
 
@@ -457,7 +464,7 @@ class NodeCoreBase(ABC):
         Base implementation does nothing.
         """
 
-    async def _cleanup_node_resources(self) -> None:  # noqa: B027
+    async def _cleanup_node_resources(self) -> None:
         """
         Cleanup node-specific resources.
 
@@ -495,7 +502,7 @@ class NodeCoreBase(ABC):
                         "node_id": self.node_id,
                         "node_type": self.__class__.__name__,
                         "event_type": event_type,
-                        "timestamp": datetime.now().isoformat(),
+                        "timestamp": datetime.now(UTC).isoformat(),
                         **metadata,
                     }
 
@@ -850,5 +857,5 @@ class NodeCoreBase(ABC):
             "failing_components": failing_components,
             "healthy_count": sum(1 for h in health_checks.values() if h),
             "total_components": len(health_checks),
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }

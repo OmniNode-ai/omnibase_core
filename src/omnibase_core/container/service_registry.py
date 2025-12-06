@@ -5,11 +5,6 @@ from datetime import datetime
 from typing import Any, Literal, TypeVar, cast
 from uuid import UUID, uuid4
 
-from omnibase_core.protocols import (
-    LiteralInjectionScope,
-    LiteralServiceLifecycle,
-)
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
@@ -25,6 +20,10 @@ from omnibase_core.models.container.model_service_registration import (
     ModelServiceRegistration,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.protocols import (
+    LiteralInjectionScope,
+    LiteralServiceLifecycle,
+)
 
 # Define LiteralOperationStatus locally to avoid runtime import
 LiteralOperationStatus = Literal[

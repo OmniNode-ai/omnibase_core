@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import TypeVar
-
 """
 Base Factory Model.
 
@@ -10,15 +8,11 @@ Abstract base class for typed factories following ONEX one-model-per-file archit
 
 
 from abc import ABC, abstractmethod
-from typing import Generic
 
 from pydantic import BaseModel
 
-# Generic type variable for the type this factory creates
-T = TypeVar("T")
 
-
-class ModelBaseFactory(ABC, BaseModel, Generic[T]):
+class ModelBaseFactory[T](ABC, BaseModel):
     """Abstract base class for typed factories."""
 
     @abstractmethod

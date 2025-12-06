@@ -466,9 +466,9 @@ class TestHealthMonitoringLoop:
             "cancelled" in str(call_args).lower()
             for call_args in mock_log_info.call_args_list
         )
-        assert (
-            not cancellation_logged
-        ), "Should not log during cancellation to avoid closed file errors"
+        assert not cancellation_logged, (
+            "Should not log during cancellation to avoid closed file errors"
+        )
 
     @pytest.mark.asyncio
     async def test_health_monitor_loop_handles_exceptions(

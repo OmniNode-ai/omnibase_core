@@ -147,24 +147,24 @@ class TestSourceNodeIdOverhead:
 
         print("\nCreation Time Benchmark:")
         print(
-            f"  Without source_node_id: {mean_without*1000:.4f}ms ± {stdev_without*1000:.4f}ms"
+            f"  Without source_node_id: {mean_without * 1000:.4f}ms ± {stdev_without * 1000:.4f}ms"
         )
         print(
-            f"  With source_node_id:    {mean_with*1000:.4f}ms ± {stdev_with*1000:.4f}ms"
+            f"  With source_node_id:    {mean_with * 1000:.4f}ms ± {stdev_with * 1000:.4f}ms"
         )
         print(f"  Overhead:               {overhead_pct:.2f}%")
-        print(f"  Absolute difference:    {(mean_with - mean_without)*1000:.6f}ms")
+        print(f"  Absolute difference:    {(mean_with - mean_without) * 1000:.6f}ms")
 
         # Assert < 200% overhead (UUID generation is the main cost)
         # Threshold relaxed from 55% to 200% based on actual measurements (120-155%)
-        assert (
-            overhead_pct < 200.0
-        ), f"source_node_id creation overhead ({overhead_pct:.2f}%) exceeds 200% threshold"
+        assert overhead_pct < 200.0, (
+            f"source_node_id creation overhead ({overhead_pct:.2f}%) exceeds 200% threshold"
+        )
 
         # Ensure absolute time remains fast
-        assert (
-            mean_with < 0.01
-        ), f"Absolute creation time ({mean_with*1000:.4f}ms) exceeds 10ms threshold"
+        assert mean_with < 0.01, (
+            f"Absolute creation time ({mean_with * 1000:.4f}ms) exceeds 10ms threshold"
+        )
 
     def test_serialization_overhead_model_dump(self):
         """
@@ -191,17 +191,17 @@ class TestSourceNodeIdOverhead:
 
         print("\nmodel_dump() Serialization Benchmark:")
         print(
-            f"  Without source_node_id: {mean_without*1000:.4f}ms ± {stdev_without*1000:.4f}ms"
+            f"  Without source_node_id: {mean_without * 1000:.4f}ms ± {stdev_without * 1000:.4f}ms"
         )
         print(
-            f"  With source_node_id:    {mean_with*1000:.4f}ms ± {stdev_with*1000:.4f}ms"
+            f"  With source_node_id:    {mean_with * 1000:.4f}ms ± {stdev_with * 1000:.4f}ms"
         )
         print(f"  Overhead:               {overhead_pct:.2f}%")
 
         # Assert < 15% overhead
-        assert (
-            overhead_pct < 15.0
-        ), f"source_node_id serialization overhead ({overhead_pct:.2f}%) exceeds 15% threshold"
+        assert overhead_pct < 15.0, (
+            f"source_node_id serialization overhead ({overhead_pct:.2f}%) exceeds 15% threshold"
+        )
 
     def test_serialization_overhead_model_dump_json(self):
         """
@@ -228,17 +228,17 @@ class TestSourceNodeIdOverhead:
 
         print("\nmodel_dump_json() Serialization Benchmark:")
         print(
-            f"  Without source_node_id: {mean_without*1000:.4f}ms ± {stdev_without*1000:.4f}ms"
+            f"  Without source_node_id: {mean_without * 1000:.4f}ms ± {stdev_without * 1000:.4f}ms"
         )
         print(
-            f"  With source_node_id:    {mean_with*1000:.4f}ms ± {stdev_with*1000:.4f}ms"
+            f"  With source_node_id:    {mean_with * 1000:.4f}ms ± {stdev_with * 1000:.4f}ms"
         )
         print(f"  Overhead:               {overhead_pct:.2f}%")
 
         # Assert < 20% overhead (relaxed from 15% based on CI variance)
-        assert (
-            overhead_pct < 20.0
-        ), f"source_node_id JSON serialization overhead ({overhead_pct:.2f}%) exceeds 20% threshold"
+        assert overhead_pct < 20.0, (
+            f"source_node_id JSON serialization overhead ({overhead_pct:.2f}%) exceeds 20% threshold"
+        )
 
     def test_memory_footprint_overhead(self):
         """
@@ -264,9 +264,9 @@ class TestSourceNodeIdOverhead:
         print(f"  Overhead:               {overhead_bytes} bytes ({overhead_pct:.2f}%)")
 
         # Assert < 1KB overhead (1024 bytes)
-        assert (
-            overhead_bytes < 1024
-        ), f"source_node_id memory overhead ({overhead_bytes} bytes) exceeds 1KB threshold"
+        assert overhead_bytes < 1024, (
+            f"source_node_id memory overhead ({overhead_bytes} bytes) exceeds 1KB threshold"
+        )
 
         # Also measure serialized JSON size
         json_without = envelope_without.model_dump_json()
@@ -280,9 +280,9 @@ class TestSourceNodeIdOverhead:
 
         # JSON overhead should be roughly size of UUID in JSON (36 chars + quotes + field name)
         # Expected: ~60 bytes ('"source_node_id":"<UUID>"')
-        assert (
-            json_overhead < 100
-        ), f"JSON size overhead ({json_overhead} bytes) is unexpectedly large"
+        assert json_overhead < 100, (
+            f"JSON size overhead ({json_overhead} bytes) is unexpectedly large"
+        )
 
     @pytest.mark.parametrize("count", [100, 1000, 10000])
     def test_bulk_creation_performance(self, count: int):
@@ -332,9 +332,9 @@ class TestSourceNodeIdOverhead:
         #   - Local dev typically shows ~100-110% overhead for n=10000
         #   - CI shows higher variance due to resource constraints and scheduler noise
         max_overhead = 300.0 if count == 10000 else 200.0
-        assert (
-            overhead_pct < max_overhead
-        ), f"Bulk creation overhead ({overhead_pct:.2f}%) exceeds {max_overhead}% threshold for n={count}"
+        assert overhead_pct < max_overhead, (
+            f"Bulk creation overhead ({overhead_pct:.2f}%) exceeds {max_overhead}% threshold for n={count}"
+        )
 
         # Verify all envelopes were created
         assert len(envelopes_without) == count
@@ -376,9 +376,9 @@ class TestSourceNodeIdOverhead:
         # Allow negative values (better performance with source_node_id due to caching)
         # Threshold relaxed from ±60% to ±80% due to high variance in CI environments
         # Negative overhead indicates caching benefits, which is actually desirable
-        assert (
-            abs(overhead_pct) < 80.0
-        ), f"Bulk serialization overhead ({overhead_pct:.2f}%) exceeds ±80% threshold"
+        assert abs(overhead_pct) < 80.0, (
+            f"Bulk serialization overhead ({overhead_pct:.2f}%) exceeds ±80% threshold"
+        )
 
         # Verify all envelopes were serialized
         assert len(serialized_without) == count
@@ -461,17 +461,17 @@ class TestSourceNodeIdOverhead:
 
         print("\nRound Trip Benchmark:")
         print(
-            f"  Without source_node_id: {mean_without*1000:.4f}ms ± {stdev_without*1000:.4f}ms"
+            f"  Without source_node_id: {mean_without * 1000:.4f}ms ± {stdev_without * 1000:.4f}ms"
         )
         print(
-            f"  With source_node_id:    {mean_with*1000:.4f}ms ± {stdev_with*1000:.4f}ms"
+            f"  With source_node_id:    {mean_with * 1000:.4f}ms ± {stdev_with * 1000:.4f}ms"
         )
         print(f"  Overhead:               {overhead_pct:.2f}%")
 
         # Assert < 40% overhead (combines creation + serialization + deserialization)
-        assert (
-            overhead_pct < 40.0
-        ), f"Round trip overhead ({overhead_pct:.2f}%) exceeds 40% threshold"
+        assert overhead_pct < 40.0, (
+            f"Round trip overhead ({overhead_pct:.2f}%) exceeds 40% threshold"
+        )
 
 
 class TestPerformanceRegression:
@@ -504,12 +504,12 @@ class TestPerformanceRegression:
         avg_time = mean(times)
 
         print("\nBaseline Creation Performance:")
-        print(f"  Average time: {avg_time*1000:.4f}ms")
-        print(f"  Baseline:     {max_creation_time*1000:.4f}ms")
+        print(f"  Average time: {avg_time * 1000:.4f}ms")
+        print(f"  Baseline:     {max_creation_time * 1000:.4f}ms")
 
-        assert (
-            avg_time < max_creation_time
-        ), f"Creation time ({avg_time*1000:.4f}ms) exceeds baseline ({max_creation_time*1000:.4f}ms)"
+        assert avg_time < max_creation_time, (
+            f"Creation time ({avg_time * 1000:.4f}ms) exceeds baseline ({max_creation_time * 1000:.4f}ms)"
+        )
 
     def test_serialization_performance_baseline(self):
         """
@@ -540,9 +540,9 @@ class TestPerformanceRegression:
         avg_time = mean(times)
 
         print("\nBaseline Serialization Performance:")
-        print(f"  Average time: {avg_time*1000:.4f}ms")
-        print(f"  Baseline:     {max_serialization_time*1000:.4f}ms")
+        print(f"  Average time: {avg_time * 1000:.4f}ms")
+        print(f"  Baseline:     {max_serialization_time * 1000:.4f}ms")
 
-        assert (
-            avg_time < max_serialization_time
-        ), f"Serialization time ({avg_time*1000:.4f}ms) exceeds baseline ({max_serialization_time*1000:.4f}ms)"
+        assert avg_time < max_serialization_time, (
+            f"Serialization time ({avg_time * 1000:.4f}ms) exceeds baseline ({max_serialization_time * 1000:.4f}ms)"
+        )

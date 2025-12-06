@@ -8,12 +8,17 @@ Tests the integration of MixinNodeService with NodeOrchestrator and all mixins:
 - Service mode + Metrics integration
 - Tool invocation + workflow event emission
 - Orchestrator semantics (workflow coordination) + service mode
-- Subnode coordination + service mode
 - Workflow lifecycle events through tool invocation
 - Full end-to-end workflows
 - Mixin initialization order verification
 - Super() call propagation
 - Method accessibility from all mixins
+
+v0.4.0 Architecture:
+- NodeOrchestrator uses workflow-driven pattern with ModelWorkflowDefinition
+- Uses MixinWorkflowExecution for execution
+- process() method executes workflow steps
+- No longer has active_workflows, workflow_states, emitted_actions, condition_functions
 """
 
 import asyncio
@@ -24,11 +29,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.constants.event_types import TOOL_INVOCATION
-from omnibase_core.enums.enum_workflow_execution import (
-    EnumActionType,
-    EnumExecutionMode,
-    EnumWorkflowState,
-)
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.discovery.model_tool_invocation_event import (
@@ -136,8 +137,8 @@ class TestMROCorrectness:
         mro = inspect.getmro(ModelServiceOrchestrator)
 
         # Expected MRO (per Python's C3 linearization):
-        # ModelServiceOrchestrator → MixinNodeService → NodeOrchestrator →
-        # NodeCoreBase → ABC → MixinHealthCheck → MixinEventBus → (BaseModel/Generic) → MixinMetrics
+        # ModelServiceOrchestrator -> MixinNodeService -> NodeOrchestrator ->
+        # NodeCoreBase -> ABC -> MixinHealthCheck -> MixinEventBus -> (BaseModel/Generic) -> MixinMetrics
         #
         # Note: NodeCoreBase MUST come immediately after NodeOrchestrator because
         # NodeOrchestrator inherits from NodeCoreBase. Python's C3 algorithm ensures
@@ -159,7 +160,6 @@ class TestMROCorrectness:
             )
 
         # Verify NodeCoreBase comes early (due to NodeOrchestrator inheritance)
-
         nodecorebase_index = next(
             i for i, cls in enumerate(mro) if cls.__name__ == "NodeCoreBase"
         )
@@ -181,9 +181,9 @@ class TestMROCorrectness:
 
         # Verify no class appears twice in MRO (diamond problem indicator)
         class_names = [cls.__name__ for cls in mro]
-        assert len(class_names) == len(
-            set(class_names)
-        ), f"MRO contains duplicate classes: {class_names}"
+        assert len(class_names) == len(set(class_names)), (
+            f"MRO contains duplicate classes: {class_names}"
+        )
 
     def test_all_mixins_accessible(self, service_orchestrator):
         """Test that methods from all mixins are accessible."""
@@ -193,12 +193,17 @@ class TestMROCorrectness:
         assert hasattr(service_orchestrator, "handle_tool_invocation")
         assert hasattr(service_orchestrator, "get_service_health")
 
-        # NodeOrchestrator methods
+        # NodeOrchestrator methods (v0.4.0 workflow-driven pattern)
         assert hasattr(service_orchestrator, "process")
-        assert hasattr(service_orchestrator, "emit_action")
-        assert hasattr(service_orchestrator, "orchestrate_rsd_ticket_lifecycle")
-        assert hasattr(service_orchestrator, "register_condition_function")
-        assert hasattr(service_orchestrator, "get_orchestration_metrics")
+        assert hasattr(service_orchestrator, "validate_contract")
+        assert hasattr(service_orchestrator, "validate_workflow_steps")
+        assert hasattr(service_orchestrator, "get_execution_order_for_steps")
+
+        # MixinWorkflowExecution methods (from NodeOrchestrator)
+        assert hasattr(service_orchestrator, "execute_workflow_from_contract")
+        assert hasattr(service_orchestrator, "validate_workflow_contract")
+        assert hasattr(service_orchestrator, "get_workflow_execution_order")
+        assert hasattr(service_orchestrator, "create_workflow_steps_from_config")
 
         # MixinHealthCheck methods
         assert hasattr(service_orchestrator, "get_health_status")
@@ -219,15 +224,11 @@ class TestMROCorrectness:
         assert hasattr(service, "_active_invocations")
         assert isinstance(service._active_invocations, set)
 
-        # Verify NodeOrchestrator initialization
-        assert hasattr(service, "active_workflows")
-        assert isinstance(service.active_workflows, dict)
-        assert hasattr(service, "workflow_states")
-        assert isinstance(service.workflow_states, dict)
-        assert hasattr(service, "emitted_actions")
-        assert isinstance(service.emitted_actions, dict)
-        assert hasattr(service, "condition_functions")
-        assert isinstance(service.condition_functions, dict)
+        # Verify NodeOrchestrator initialization (v0.4.0 workflow-driven pattern)
+        # NodeOrchestrator now has workflow_definition attribute
+        assert hasattr(service, "workflow_definition")
+        # workflow_definition starts as None until loaded
+        assert service.workflow_definition is None
 
         # Verify base NodeCoreBase initialization
         assert hasattr(service, "node_id")
@@ -249,9 +250,9 @@ class TestMROCorrectness:
             service = ModelServiceOrchestrator(mock_container)
 
             # Verify that NodeOrchestrator.__init__ was called via super()
-            assert (
-                len(init_called) == 1
-            ), "NodeOrchestrator.__init__ should be called exactly once via super() chain"
+            assert len(init_called) == 1, (
+                "NodeOrchestrator.__init__ should be called exactly once via super() chain"
+            )
 
 
 class TestServiceModeEventBusIntegration:
@@ -284,34 +285,6 @@ class TestServiceModeEventBusIntegration:
             pass
 
     @pytest.mark.asyncio
-    async def test_workflow_lifecycle_events_published(
-        self, service_orchestrator, mock_event_bus
-    ):
-        """Test that workflow lifecycle events are published via EventBus."""
-        # Mock container to return event bus
-        service_orchestrator.container.get_service = Mock(return_value=mock_event_bus)
-
-        # Create orchestrator input
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Test Step",
-                    "thunks": [],
-                }
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        # Execute workflow
-        result = await service_orchestrator.process(orch_input)
-
-        # Verify workflow completed
-        assert result.execution_status == "completed"
-
-    @pytest.mark.asyncio
     async def test_tool_response_published_via_event_bus(
         self, service_orchestrator, mock_event_bus, tool_invocation_event
     ):
@@ -336,80 +309,6 @@ class TestServiceModeEventBusIntegration:
         assert isinstance(published_event, ModelToolResponseEvent)
         assert published_event.correlation_id == tool_invocation_event.correlation_id
         assert published_event.success is True
-
-    @pytest.mark.asyncio
-    async def test_subnode_coordination_events_emitted(
-        self, service_orchestrator, mock_event_bus
-    ):
-        """Test that subnode coordination events are emitted during workflow execution."""
-        # Mock container to return event bus
-        service_orchestrator.container.get_service = Mock(return_value=mock_event_bus)
-
-        # Create workflow with multiple steps
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Step 1",
-                    "thunks": [
-                        {
-                            "thunk_id": str(uuid4()),
-                            "thunk_type": "compute",
-                            "target_node_type": "NodeCompute",
-                            "operation_data": {"test": "data"},
-                            "dependencies": [],
-                        }
-                    ],
-                },
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Step 2",
-                    "thunks": [],
-                },
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        # Execute workflow
-        result = await service_orchestrator.process(orch_input)
-
-        # Verify workflow executed successfully
-        assert result.execution_status == "completed"
-        assert len(result.completed_steps) == 2
-
-    @pytest.mark.asyncio
-    async def test_correlation_id_tracked_across_workflow(
-        self, service_orchestrator, mock_event_bus
-    ):
-        """Test that correlation IDs are tracked across workflow execution."""
-        # Mock container to return event bus
-        service_orchestrator.container.get_service = Mock(return_value=mock_event_bus)
-
-        correlation_id = uuid4()
-        workflow_id = uuid4()
-
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            operation_id=correlation_id,
-            steps=[
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Test Step",
-                    "thunks": [],
-                }
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        # Execute workflow
-        result = await service_orchestrator.process(orch_input)
-
-        # Verify workflow executed successfully (operation_id tracking is handled internally)
-        assert result.execution_status == "completed"
-        assert len(result.completed_steps) == 1
-        assert len(result.failed_steps) == 0
 
 
 class TestServiceModeHealthCheckIntegration:
@@ -440,63 +339,6 @@ class TestServiceModeHealthCheckIntegration:
         assert service_health["status"] in ["healthy", "unhealthy"]
         assert "node_id" in node_health
         assert "is_healthy" in node_health
-
-    @pytest.mark.asyncio
-    async def test_health_includes_subnode_health_aggregation(
-        self, service_orchestrator
-    ):
-        """Test that health check includes subnode health aggregation."""
-        # Create workflow with active workflows
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Test Step",
-                    "thunks": [],
-                }
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        # Execute workflow to populate metrics
-        await service_orchestrator.process(orch_input)
-
-        # Get orchestration metrics (includes subnode status)
-        metrics = await service_orchestrator.get_orchestration_metrics()
-
-        # Verify workflow management metrics are included
-        assert "workflow_management" in metrics
-        assert "active_workflows" in metrics["workflow_management"]
-        assert "total_actions_emitted" in metrics["workflow_management"]
-
-    @pytest.mark.asyncio
-    async def test_health_includes_workflow_status(self, service_orchestrator):
-        """Test that health check includes current workflow status."""
-        # Create and start a workflow
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Test Step",
-                    "thunks": [],
-                }
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        # Execute workflow
-        result = await service_orchestrator.process(orch_input)
-
-        # Get metrics after execution
-        metrics = await service_orchestrator.get_orchestration_metrics()
-
-        # Verify workflow metrics exist
-        assert "workflow_management" in metrics
-        assert metrics["workflow_management"]["active_workflows"] == 0.0  # Completed
 
     @pytest.mark.asyncio
     async def test_health_reflects_active_invocations(
@@ -564,77 +406,6 @@ class TestServiceModeMetricsIntegration:
         # Verify count increased
         assert service_orchestrator._total_invocations == initial_count + 1
 
-    @pytest.mark.asyncio
-    async def test_metrics_track_workflow_timing(self, service_orchestrator):
-        """Test that metrics track workflow execution timing."""
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Test Step",
-                    "thunks": [],
-                }
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        # Execute workflow
-        result = await service_orchestrator.process(orch_input)
-
-        # Verify timing metrics
-        assert result.execution_time_ms >= 0
-
-    @pytest.mark.asyncio
-    async def test_metrics_track_step_completion_rates(self, service_orchestrator):
-        """Test that metrics track step completion rates."""
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {"step_id": str(uuid4()), "step_name": "Step 1", "thunks": []},
-                {"step_id": str(uuid4()), "step_name": "Step 2", "thunks": []},
-                {"step_id": str(uuid4()), "step_name": "Step 3", "thunks": []},
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        # Execute workflow
-        result = await service_orchestrator.process(orch_input)
-
-        # Verify all steps completed
-        assert len(result.completed_steps) == 3
-        assert len(result.failed_steps) == 0
-
-    @pytest.mark.asyncio
-    async def test_orchestrator_metrics_include_workflow_metrics(
-        self, service_orchestrator
-    ):
-        """Test that orchestrator metrics include workflow-specific data."""
-        # Execute a workflow to populate metrics
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Test Step",
-                    "thunks": [],
-                }
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        await service_orchestrator.process(orch_input)
-
-        # Get orchestration metrics
-        metrics = await service_orchestrator.get_orchestration_metrics()
-
-        # Verify orchestration-specific metrics exist
-        assert "workflow_management" in metrics
-        assert "load_balancing" in metrics
-
 
 class TestToolInvocationWorkflowEventEmission:
     """Test tool invocation and workflow event emission integration."""
@@ -692,239 +463,56 @@ class TestToolInvocationWorkflowEventEmission:
         assert "Workflow error" in published_event.error
 
 
-class TestOrchestratorSemanticsServiceMode:
-    """Test orchestrator semantics (workflow coordination) in service mode."""
+class TestWorkflowDefinitionPattern:
+    """Test v0.4.0 workflow-driven orchestrator pattern."""
 
-    @pytest.mark.asyncio
-    async def test_sequential_workflow_execution(self, service_orchestrator):
-        """Test sequential workflow execution."""
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {"step_id": str(uuid4()), "step_name": "Step 1", "thunks": []},
-                {"step_id": str(uuid4()), "step_name": "Step 2", "thunks": []},
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
+    def test_workflow_definition_initially_none(self, service_orchestrator):
+        """Test that workflow_definition starts as None."""
+        assert service_orchestrator.workflow_definition is None
 
-        result = await service_orchestrator.process(orch_input)
+    def test_can_set_workflow_definition(self, service_orchestrator):
+        """Test that workflow_definition can be set using object.__setattr__()."""
+        # Create a minimal workflow definition mock
+        mock_definition = Mock()
+        mock_definition.workflow_metadata = Mock()
+        mock_definition.execution_graph = Mock()
+        mock_definition.coordination_rules = Mock()
 
-        # Verify sequential execution
-        assert result.execution_status == "completed"
-        assert len(result.completed_steps) == 2
+        # Use object.__setattr__() to bypass Pydantic validation
+        # This is the same pattern used in NodeOrchestrator.__init__
+        object.__setattr__(service_orchestrator, "workflow_definition", mock_definition)
+        assert service_orchestrator.workflow_definition is mock_definition
 
-    @pytest.mark.asyncio
-    async def test_parallel_workflow_execution(self, service_orchestrator):
-        """Test parallel workflow execution."""
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {"step_id": str(uuid4()), "step_name": "Step 1", "thunks": []},
-                {"step_id": str(uuid4()), "step_name": "Step 2", "thunks": []},
-                {"step_id": str(uuid4()), "step_name": "Step 3", "thunks": []},
-            ],
-            execution_mode=EnumExecutionMode.PARALLEL,
-            max_parallel_steps=2,
-        )
+    def test_create_workflow_steps_from_config_available(self, service_orchestrator):
+        """Test that create_workflow_steps_from_config method is available."""
+        assert callable(service_orchestrator.create_workflow_steps_from_config)
 
-        result = await service_orchestrator.process(orch_input)
+        # Test with simple config - note: step_type is required by ModelWorkflowStep
+        steps_config = [
+            {
+                "step_name": "Step 1",
+                "step_type": "compute",
+            },
+        ]
 
-        # Verify parallel execution
-        assert result.execution_status == "completed"
-        assert len(result.completed_steps) == 3
-        assert result.parallel_executions >= 1
+        # This should create ModelWorkflowStep instances
+        steps = service_orchestrator.create_workflow_steps_from_config(steps_config)
+        assert isinstance(steps, list)
+        assert len(steps) == 1
 
-    @pytest.mark.asyncio
-    async def test_dependency_aware_execution(self, service_orchestrator):
-        """Test dependency-aware workflow execution."""
-        workflow_id = uuid4()
-        step1_id = uuid4()
-        step2_id = uuid4()
-
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {"step_id": str(step1_id), "step_name": "Step 1", "thunks": []},
-                {"step_id": str(step2_id), "step_name": "Step 2", "thunks": []},
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-            dependency_resolution_enabled=True,
-        )
-
-        result = await service_orchestrator.process(orch_input)
-
-        # Verify workflow completed with dependency resolution
-        assert result.execution_status == "completed"
-
-    @pytest.mark.asyncio
-    async def test_thunk_emission_during_workflow(self, service_orchestrator):
-        """Test action emission during workflow execution."""
-        workflow_id = uuid4()
-
-        # Create action manually
-        action = await service_orchestrator.emit_action(
-            action_type=EnumActionType.COMPUTE,
-            target_node_type="NodeCompute",
-            payload={"workflow_id": str(workflow_id), "test": "data"},
-            priority=1,
-        )
-
-        # Verify action was created and stored
-        assert action.action_id is not None
-        assert action.action_type == EnumActionType.COMPUTE
-        assert workflow_id in service_orchestrator.emitted_actions
-        assert len(service_orchestrator.emitted_actions[workflow_id]) == 1
-
-
-class TestSubnodeCoordinationServiceMode:
-    """Test subnode coordination in service mode."""
-
-    @pytest.mark.asyncio
-    async def test_subnode_health_aggregation(self, service_orchestrator):
-        """Test that subnode health is aggregated in service health."""
-        # Execute workflow to create orchestration state
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Test Step",
-                    "thunks": [],
-                }
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        await service_orchestrator.process(orch_input)
-
-        # Get health metrics
-        metrics = await service_orchestrator.get_orchestration_metrics()
-
-        # Verify workflow management metrics exist
-        assert "workflow_management" in metrics
-
-    @pytest.mark.asyncio
-    async def test_workflow_step_coordination(self, service_orchestrator):
-        """Test coordination of workflow steps with actions."""
-        workflow_id = uuid4()
-        action_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Coordinate Step",
-                    "actions": [
-                        {
-                            "action_id": action_id,
-                            "action_type": EnumActionType.COMPUTE,
-                            "target_node_type": "NodeCompute",
-                            "payload": {"test": "data"},
-                            "dependencies": [],
-                            "lease_id": uuid4(),
-                            "epoch": 0,
-                        }
-                    ],
-                }
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        result = await service_orchestrator.process(orch_input)
-
-        # Verify coordination succeeded
-        assert result.execution_status == "completed"
-        assert len(result.actions_emitted) >= 1
-
-
-class TestWorkflowLifecycleEventsToolInvocation:
-    """Test workflow lifecycle events through tool invocation."""
-
-    @pytest.mark.asyncio
-    async def test_workflow_started_event(self, service_orchestrator, mock_event_bus):
-        """Test that workflow_started event is emitted on workflow initiation."""
-        # Mock container to return event bus
-        service_orchestrator.container.get_service = Mock(return_value=mock_event_bus)
-
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Test Step",
-                    "thunks": [],
-                }
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        # Execute workflow
-        await service_orchestrator.process(orch_input)
-
-        # Workflow lifecycle events would be emitted if custom implementation added
-        # For now, verify workflow completed successfully
-        assert workflow_id not in service_orchestrator.active_workflows
-
-    @pytest.mark.asyncio
-    async def test_workflow_completed_event(self, service_orchestrator, mock_event_bus):
-        """Test that workflow_completed event is emitted on successful completion."""
-        # Mock container to return event bus
-        service_orchestrator.container.get_service = Mock(return_value=mock_event_bus)
-
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {
-                    "step_id": str(uuid4()),
-                    "step_name": "Test Step",
-                    "thunks": [],
-                }
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        result = await service_orchestrator.process(orch_input)
-
-        # Verify workflow completed
-        assert result.execution_status == "completed"
-        assert (
-            service_orchestrator.workflow_states.get(workflow_id)
-            == EnumWorkflowState.COMPLETED
-        )
-
-    @pytest.mark.asyncio
-    async def test_workflow_failed_event(self, service_orchestrator, mock_event_bus):
-        """Test that workflow_failed event is emitted on failure."""
-        # Mock container to return event bus
-        service_orchestrator.container.get_service = Mock(return_value=mock_event_bus)
-
-        workflow_id = uuid4()
-
-        # Create invalid input to trigger failure
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[],  # Empty steps should trigger validation error
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        # Expect validation error due to empty steps
-        with pytest.raises(Exception):
-            await service_orchestrator.process(orch_input)
+    def test_validate_contract_available(self, service_orchestrator):
+        """Test that validate_contract method is available."""
+        assert callable(service_orchestrator.validate_contract)
 
 
 class TestEndToEndWorkflow:
     """Test full end-to-end orchestrator service workflow."""
 
     @pytest.mark.asyncio
-    async def test_full_lifecycle_start_invoke_coordinate_respond_stop(
+    async def test_full_lifecycle_start_invoke_respond_stop(
         self, service_orchestrator, mock_event_bus
     ):
-        """Test complete lifecycle: start → invoke → coordinate → emit events → respond → stop."""
+        """Test complete lifecycle: start -> invoke -> respond -> stop."""
         # Mock container to return event bus
         service_orchestrator.container.get_service = Mock(return_value=mock_event_bus)
 
@@ -983,27 +571,6 @@ class TestEndToEndWorkflow:
 
         # Verify service stopped
         assert service_orchestrator._shutdown_requested is True
-
-    @pytest.mark.asyncio
-    async def test_multi_step_workflow_coordination(self, service_orchestrator):
-        """Test end-to-end multi-step workflow coordination."""
-        workflow_id = uuid4()
-        orch_input = ModelOrchestratorInput(
-            workflow_id=workflow_id,
-            steps=[
-                {"step_id": str(uuid4()), "step_name": "Validation", "thunks": []},
-                {"step_id": str(uuid4()), "step_name": "Processing", "thunks": []},
-                {"step_id": str(uuid4()), "step_name": "Finalization", "thunks": []},
-            ],
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-        )
-
-        result = await service_orchestrator.process(orch_input)
-
-        # Verify all steps completed
-        assert len(result.completed_steps) == 3
-        assert len(result.failed_steps) == 0
-        assert result.execution_status == "completed"
 
     @pytest.mark.asyncio
     async def test_graceful_shutdown_waits_for_active_workflows(
@@ -1072,12 +639,17 @@ class TestMixinMethodAccessibility:
         assert callable(service_orchestrator.add_shutdown_callback)
 
     def test_node_orchestrator_methods_accessible(self, service_orchestrator):
-        """Test NodeOrchestrator methods are accessible."""
+        """Test NodeOrchestrator methods are accessible (v0.4.0 workflow-driven)."""
         assert callable(service_orchestrator.process)
-        assert callable(service_orchestrator.emit_action)
-        assert callable(service_orchestrator.orchestrate_rsd_ticket_lifecycle)
-        assert callable(service_orchestrator.register_condition_function)
-        assert callable(service_orchestrator.get_orchestration_metrics)
+        assert callable(service_orchestrator.validate_contract)
+        assert callable(service_orchestrator.validate_workflow_steps)
+        assert callable(service_orchestrator.get_execution_order_for_steps)
+
+        # MixinWorkflowExecution methods
+        assert callable(service_orchestrator.execute_workflow_from_contract)
+        assert callable(service_orchestrator.validate_workflow_contract)
+        assert callable(service_orchestrator.get_workflow_execution_order)
+        assert callable(service_orchestrator.create_workflow_steps_from_config)
 
     def test_health_check_methods_accessible(self, service_orchestrator):
         """Test MixinHealthCheck methods are accessible."""

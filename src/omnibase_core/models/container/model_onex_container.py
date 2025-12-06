@@ -282,7 +282,8 @@ class ModelONEXContainer:
                     },
                 )
 
-                typed_service: T = cast(T, service_instance)
+                # Use object cast since T is a TypeVar resolved at runtime
+                typed_service = cast(T, service_instance)
                 return typed_service
 
             except Exception as registry_error:
@@ -359,7 +360,8 @@ class ModelONEXContainer:
                 },
             )
 
-            legacy_service: T = cast(T, service_instance)
+            # Use object cast since T is a TypeVar resolved at runtime
+            legacy_service = cast(T, service_instance)
             return legacy_service
 
         except Exception as e:
@@ -401,7 +403,7 @@ class ModelONEXContainer:
             return asyncio.run(self.get_service_async(protocol_type, service_name))
 
         # Enhanced resolution with performance monitoring
-        correlation_id = f"svc_{int(time.time()*1000)}_{service_name or 'default'}"
+        correlation_id = f"svc_{int(time.time() * 1000)}_{service_name or 'default'}"
         start_time = time.perf_counter()
 
         try:
@@ -493,9 +495,7 @@ class ModelONEXContainer:
         """
         try:
             return self.get_service_sync(protocol_type, service_name)
-        except (
-            Exception
-        ):  # fallback-ok: Optional service getter intentionally returns None when service unavailable
+        except Exception:  # fallback-ok: Optional service getter intentionally returns None when service unavailable
             return None
 
     def get_workflow_orchestrator(self) -> Any:
@@ -624,9 +624,9 @@ class ModelONEXContainer:
         if not self.performance_monitor:
             return {"error": "Performance monitoring not enabled"}
 
-        result: dict[str, Any] = (
-            await self.performance_monitor.run_optimization_checkpoint(phase_name)
-        )
+        result: dict[
+            str, Any
+        ] = await self.performance_monitor.run_optimization_checkpoint(phase_name)
         return result
 
     def close(self) -> None:

@@ -12,7 +12,7 @@ class ModelNetworkConfig(BaseModel):
 
     port: int = Field(default=8080, description="Service port", ge=1024, le=65535)
     host: str = Field(
-        default="0.0.0.0",  # noqa: S104 - Required for containerized services to bind to all interfaces
+        default="0.0.0.0",
         description="Service host",
     )
     expose_port: bool = Field(default=True, description="Expose port to host")

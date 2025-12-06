@@ -25,8 +25,8 @@ Imagine a restaurant kitchen:
 
 - **EFFECT Node** = The server (interfaces with external world - customers, suppliers)
 - **COMPUTE Node** = The chef (transforms ingredients into dishes)
-- **REDUCER Node** = The prep cook (aggregates ingredients, combines components)
-- **ORCHESTRATOR Node** = The kitchen manager (coordinates all activities)
+- **REDUCER Node** = The prep cook with a recipe card (FSM-driven state aggregation using intents)
+- **ORCHESTRATOR Node** = The kitchen manager with a workflow chart (coordinates multi-step activities with leases)
 
 Each has a specific role. Together, they create a complete system.
 
@@ -205,11 +205,11 @@ External World          │      ONEX System        │   Data Flow
                        │         │                │
                        │         ▼                │
                        │    REDUCER Node ─────────┼───▶ Aggregated data
-                       │    (Aggregate)           │
+                       │    (FSM + Intents)       │
                        │         │                │
                        │         ▼                │
                        │  ORCHESTRATOR Node ──────┼───▶ Coordinated result
-                       │  (Coordinate)            │
+                       │  (Workflows + Leases)    │
 ```
 
 ### Data Flow Example
@@ -354,11 +354,11 @@ Don't create a node when:
 - Uses dependency injection for flexibility
 - Includes built-in error handling and performance tracking
 
-**Four node types**:
+**Four node types** (v0.4.0):
 1. **EFFECT**: External interactions (APIs, databases, files)
 2. **COMPUTE**: Data transformation and computation
-3. **REDUCER**: Data aggregation and state management
-4. **ORCHESTRATOR**: Workflow coordination
+3. **REDUCER**: FSM-driven state aggregation using ModelIntent
+4. **ORCHESTRATOR**: Workflow coordination with ModelAction and leases
 
 **Key benefits**:
 - Testability
@@ -374,7 +374,10 @@ Now that you understand what nodes are, learn about the **four node types** and 
 
 ## Quick Reference
 
-```
+```python
+# v0.4.0: Import nodes directly from omnibase_core.nodes
+from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator
+
 # Preferred: production-ready compute via service wrapper
 from omnibase_core.models.service.model_service_compute import ModelServiceCompute
 
@@ -400,10 +403,13 @@ class NodeMyServiceCompute(NodeCoreBase):
         pass
 ```
 
-**Essential imports**:
-- `NodeCoreBase` - Base class for all nodes
+**Essential imports** (v0.4.0):
+- `from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator` - Primary node implementations
+- `NodeCoreBase` - Base class for custom nodes
 - `ModelONEXContainer` - Dependency injection container
 - `ModelOnexError` - Structured error handling
 - `EnumCoreErrorCode` - Error code enumeration
+
+> **Note**: In v0.4.0, `NodeReducer` and `NodeOrchestrator` are the primary implementations (FSM-driven and workflow-driven respectively). Legacy implementations have been moved to `nodes/legacy/`.
 
 **Next step**: [Learn about the four node types →](02_NODE_TYPES.md)

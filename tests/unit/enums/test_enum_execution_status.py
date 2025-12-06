@@ -213,18 +213,18 @@ class TestEnumExecutionStatus:
             is_terminal = EnumExecutionStatus.is_terminal(status)
 
             # A status cannot be both active and terminal
-            assert not (
-                is_active and is_terminal
-            ), f"{status} cannot be both active and terminal"
+            assert not (is_active and is_terminal), (
+                f"{status} cannot be both active and terminal"
+            )
 
         # Test that all statuses are either active or terminal
         for status in EnumExecutionStatus:
             is_active = EnumExecutionStatus.is_active(status)
             is_terminal = EnumExecutionStatus.is_terminal(status)
 
-            assert (
-                is_active or is_terminal
-            ), f"{status} must be either active or terminal"
+            assert is_active or is_terminal, (
+                f"{status} must be either active or terminal"
+            )
 
     def test_success_status_logic(self):
         """Test success status categorization logic."""

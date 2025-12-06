@@ -41,6 +41,8 @@ if TYPE_CHECKING:
     from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
 
 # Import protocols from omnibase_core (Core-native protocols)
+from pydantic import BaseModel
+
 from omnibase_core.protocols import (
     ProtocolConfigurable as Configurable,
     ProtocolExecutable as Executable,
@@ -50,7 +52,6 @@ from omnibase_core.protocols import (
     ProtocolSerializable as Serializable,
     ProtocolValidatable,
 )
-from pydantic import BaseModel
 
 # Bounded type variables with proper constraints
 
@@ -147,7 +148,10 @@ else:
             "BaseFactory",
         ):
             # Lazy import - happens only when these names are accessed
-            from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
+            from omnibase_core.models.base import (
+                ModelBaseCollection,
+                ModelBaseFactory,
+            )
 
             globals()["ModelBaseCollection"] = ModelBaseCollection
             globals()["ModelBaseFactory"] = ModelBaseFactory

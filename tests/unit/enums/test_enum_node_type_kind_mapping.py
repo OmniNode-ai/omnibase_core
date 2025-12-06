@@ -287,7 +287,7 @@ class TestEnumNodeTypeKindMapping:
             pytest.skip("EnumNodeType._KIND_MAP not yet implemented")
 
         # Count how many types map to each kind
-        kind_usage = {kind: 0 for kind in EnumNodeKind}
+        kind_usage = dict.fromkeys(EnumNodeKind, 0)
         for kind in EnumNodeType._KIND_MAP.values():
             if kind in kind_usage:
                 kind_usage[kind] += 1
@@ -326,7 +326,7 @@ class TestEnumNodeTypeKindMapping:
 
         # Verify each type appears exactly once in the mapping
         type_occurrences: dict[EnumNodeType, int] = {}
-        for node_type in EnumNodeType._KIND_MAP.keys():
+        for node_type in EnumNodeType._KIND_MAP:
             if node_type in type_occurrences:
                 type_occurrences[node_type] += 1
             else:
@@ -507,7 +507,9 @@ class TestEnumNodeTypeKindMappingEdgeCases:
         error = exc_info.value
         assert "UNKNOWN" in str(error) or (
             error.context and "UNKNOWN" in str(error.context.get("node_type", ""))
-        ), f"Error message should mention UNKNOWN. Got: {error}, context: {error.context}"
+        ), (
+            f"Error message should mention UNKNOWN. Got: {error}, context: {error.context}"
+        )
 
     def test_unknown_is_not_in_kind_map(self) -> None:
         """
@@ -578,9 +580,9 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
             pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
 
         result = EnumNodeType.get_core_node_types()
-        assert isinstance(
-            result, set
-        ), f"get_core_node_types() should return a set, got {type(result).__name__}"
+        assert isinstance(result, set), (
+            f"get_core_node_types() should return a set, got {type(result).__name__}"
+        )
 
     def test_get_infrastructure_types_returns_set(self) -> None:
         """Verify get_infrastructure_types() returns a set."""
@@ -588,9 +590,9 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
             pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
 
         result = EnumNodeType.get_infrastructure_types()
-        assert isinstance(
-            result, set
-        ), f"get_infrastructure_types() should return a set, got {type(result).__name__}"
+        assert isinstance(result, set), (
+            f"get_infrastructure_types() should return a set, got {type(result).__name__}"
+        )
 
     def test_get_core_node_types_contains_expected_types(self) -> None:
         """
@@ -627,9 +629,9 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
         }
 
         missing = expected_core - core_types
-        assert (
-            not missing
-        ), f"get_core_node_types() is missing expected types: {missing}"
+        assert not missing, (
+            f"get_core_node_types() is missing expected types: {missing}"
+        )
 
     def test_get_infrastructure_types_contains_expected_types(self) -> None:
         """
@@ -647,9 +649,9 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
         expected_infra = {EnumNodeType.RUNTIME_HOST_GENERIC}
 
         missing = expected_infra - infra_types
-        assert (
-            not missing
-        ), f"get_infrastructure_types() is missing expected types: {missing}"
+        assert not missing, (
+            f"get_infrastructure_types() is missing expected types: {missing}"
+        )
 
         # Verify the set only contains infrastructure types
         assert infra_types == expected_infra, (
@@ -728,12 +730,12 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
         missing = mapped_types - combined
         extra = combined - mapped_types
 
-        assert (
-            not missing
-        ), f"Some mapped types are not in core or infrastructure: {missing}"
-        assert (
-            not extra
-        ), f"Some types in core/infrastructure are not in _KIND_MAP: {extra}"
+        assert not missing, (
+            f"Some mapped types are not in core or infrastructure: {missing}"
+        )
+        assert not extra, (
+            f"Some types in core/infrastructure are not in _KIND_MAP: {extra}"
+        )
 
     def test_get_core_node_types_consistency_with_enum_node_kind(self) -> None:
         """
@@ -786,9 +788,9 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
             pytest.skip("EnumNodeType.get_infrastructure_types() not yet implemented")
 
         infra_types = EnumNodeType.get_infrastructure_types()
-        assert (
-            EnumNodeType.RUNTIME_HOST_GENERIC in infra_types
-        ), "RUNTIME_HOST_GENERIC should be in get_infrastructure_types() result"
+        assert EnumNodeType.RUNTIME_HOST_GENERIC in infra_types, (
+            "RUNTIME_HOST_GENERIC should be in get_infrastructure_types() result"
+        )
 
     def test_runtime_host_generic_not_in_core(self) -> None:
         """
@@ -800,9 +802,9 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
             pytest.skip("EnumNodeType.get_core_node_types() not yet implemented")
 
         core_types = EnumNodeType.get_core_node_types()
-        assert (
-            EnumNodeType.RUNTIME_HOST_GENERIC not in core_types
-        ), "RUNTIME_HOST_GENERIC should NOT be in get_core_node_types() result"
+        assert EnumNodeType.RUNTIME_HOST_GENERIC not in core_types, (
+            "RUNTIME_HOST_GENERIC should NOT be in get_core_node_types() result"
+        )
 
 
 class TestNodeRoutingIntegration:
@@ -1025,16 +1027,16 @@ class TestNodeRoutingIntegration:
                 failed_routings.append((node_type, e))
 
         # All mapped types should route successfully
-        assert not failed_routings, f"Some node types failed to route:\n" + "\n".join(
+        assert not failed_routings, "Some node types failed to route:\n" + "\n".join(
             f"  - {node_type}: {type(e).__name__}: {e}"
             for node_type, e in failed_routings
         )
 
         # Verify all routed kinds are valid EnumNodeKind members
         for node_type, kind in successful_routings.items():
-            assert (
-                kind in EnumNodeKind
-            ), f"{node_type} routed to {kind}, which is not a valid EnumNodeKind"
+            assert kind in EnumNodeKind, (
+                f"{node_type} routed to {kind}, which is not a valid EnumNodeKind"
+            )
 
     def test_routing_preserves_kind_semantics(self) -> None:
         """
@@ -1096,8 +1098,7 @@ class TestNodeRoutingIntegration:
         for node_type in io_types:
             kind = EnumNodeType.get_node_kind(node_type)
             assert kind in io_kinds, (
-                f"I/O type {node_type} should route to an effect kind, "
-                f"but got {kind}"
+                f"I/O type {node_type} should route to an effect kind, but got {kind}"
             )
 
         # Verify infrastructure types route to infrastructure kinds
@@ -1201,9 +1202,9 @@ class TestNodeRoutingIntegration:
         )
 
         # Verify RUNTIME_HOST_GENERIC is one of the sources
-        assert (
-            EnumNodeType.RUNTIME_HOST_GENERIC in runtime_host_sources
-        ), "RUNTIME_HOST_GENERIC should route to RUNTIME_HOST kind"
+        assert EnumNodeType.RUNTIME_HOST_GENERIC in runtime_host_sources, (
+            "RUNTIME_HOST_GENERIC should route to RUNTIME_HOST kind"
+        )
 
 
 if __name__ == "__main__":

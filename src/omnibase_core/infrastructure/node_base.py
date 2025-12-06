@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -46,17 +46,13 @@ from omnibase_core.models.infrastructure.model_node_workflow_result import (
 )
 from omnibase_core.models.infrastructure.model_state import ModelState
 
-T_INPUT_STATE = TypeVar("T_INPUT_STATE")
-T_OUTPUT_STATE = TypeVar("T_OUTPUT_STATE")
-
 
 # Simple stub models for reducer pattern (ONEX 2.0 minimal implementation)
 # Import from separate files: ModelAction, ModelState, ModelNodeState
 
 
-class NodeBase(
+class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
     WorkflowReducerInterface,
-    Generic[T_INPUT_STATE, T_OUTPUT_STATE],
 ):
     """
     Enhanced NodeBase class implementing ONEX architecture patterns.
@@ -518,23 +514,23 @@ class NodeBase(
             # Check if tool supports async processing
             if hasattr(main_tool, "process_async"):
                 result = await main_tool.process_async(input_state)
-                return cast(T_OUTPUT_STATE, result)
+                return cast("T_OUTPUT_STATE", result)
             if hasattr(main_tool, "process"):
                 # Run sync process in thread pool to avoid blocking
-                result = await asyncio.get_event_loop().run_in_executor(
+                result = await asyncio.get_running_loop().run_in_executor(
                     None,
                     main_tool.process,
                     input_state,
                 )
-                return cast(T_OUTPUT_STATE, result)
+                return cast("T_OUTPUT_STATE", result)
             if hasattr(main_tool, "run"):
                 # Run sync run method in thread pool
-                result = await asyncio.get_event_loop().run_in_executor(
+                result = await asyncio.get_running_loop().run_in_executor(
                     None,
                     main_tool.run,
                     input_state,
                 )
-                return cast(T_OUTPUT_STATE, result)
+                return cast("T_OUTPUT_STATE", result)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process_async(), process(), or run() method",
@@ -612,7 +608,7 @@ class NodeBase(
         Default implementation returns empty state.
         Override in subclasses for custom initial state.
         """
-        return cast(ProtocolState, ModelState())
+        return cast("ProtocolState", ModelState())
 
     def dispatch(self, state: ProtocolState, action: ProtocolAction) -> ProtocolState:
         """

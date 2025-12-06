@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Generic, TypeVar
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -30,11 +29,9 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 # Use ModelSchemaValue directly for ONEX compliance
 
-T = TypeVar("T")
-
 
 @dataclass(frozen=True)
-class FieldConverter(Generic[T]):
+class FieldConverter[T]:
     """
     Represents a field conversion strategy.
 

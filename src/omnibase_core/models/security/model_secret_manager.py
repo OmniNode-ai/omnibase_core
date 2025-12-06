@@ -367,7 +367,7 @@ class ModelSecretManager(BaseModel):
     def create_for_kubernetes(
         cls,
         namespace: str = "default",
-        secret_name: str = "onex-secrets",  # noqa: S107 - config name, not a password
+        secret_name: str = "onex-secrets",
     ) -> "ModelSecretManager":
         """Create secret manager for Kubernetes environment."""
         config = ModelSecretConfig.create_for_kubernetes(namespace, secret_name)
@@ -394,7 +394,7 @@ def get_secret_manager() -> ModelSecretManager:
 
     try:
         container = get_model_onex_container_sync()
-        return cast(ModelSecretManager, container.secret_manager())
+        return cast("ModelSecretManager", container.secret_manager())
     except Exception as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get secret manager. "
@@ -424,7 +424,7 @@ def init_secret_manager(config: ModelSecretConfig) -> ModelSecretManager:
 
     try:
         container = get_model_onex_container_sync()
-        return cast(ModelSecretManager, container.secret_manager())
+        return cast("ModelSecretManager", container.secret_manager())
     except Exception as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot initialize secret manager.",
@@ -456,7 +456,7 @@ def init_secret_manager_from_manager(manager: ModelSecretManager) -> ModelSecret
 
     try:
         container = get_model_onex_container_sync()
-        return cast(ModelSecretManager, container.secret_manager())
+        return cast("ModelSecretManager", container.secret_manager())
     except Exception as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot initialize secret manager.",

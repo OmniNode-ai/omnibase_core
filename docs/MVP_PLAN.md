@@ -15,10 +15,12 @@
 |-------|----------|---------|-------------|-------|
 | Phase 0: Repository Stabilization | 2 | 2 | 5 | 9 |
 | Phase 1: Legacy Node Migration | 0 | 0 | 5 | 5 |
-| Phase 2: Declarative Node Promotion | 1 | 1 | 5 | 7 |
+| Phase 2: Declarative Node Promotion | 3 | 1 | 3 | 7 |
 | Phase 3-7 | 0 | 0 | 36 | 36 |
 | Future (F.5 RUNTIME_HOST) | 1 | 0 | 13 | 14 |
-| **Total** | **4** | **3** | **64** | **71** |
+| **Total** | **6** | **3** | **62** | **71** |
+
+> **UPDATE (v0.4.0)**: Issues 2.1 (NodeReducerDeclarative -> NodeReducer) and 2.2 (NodeOrchestratorDeclarative -> NodeOrchestrator) are **COMPLETE**. The "Declarative" suffix has been removed because these ARE now the standard implementations.
 
 **Key Completions**:
 - ✅ OMN-222: EnumNodeKind with RUNTIME_HOST value (PR #108)
@@ -28,10 +30,12 @@
 - ✅ OMN-241: Contract Linter CLI (omniintelligence)
 - ✅ Pre-refactor API snapshot tests (4 test files in `tests/unit/api_snapshots/`)
 - ✅ NodeCoreBase interface frozen (interface tests + documentation)
+- ✅ Issue 2.1: NodeReducerDeclarative renamed to NodeReducer (primary FSM-driven)
+- ✅ Issue 2.2: NodeOrchestratorDeclarative renamed to NodeOrchestrator (primary workflow-driven)
 
 ### What v0.4.0 Changes
-- Legacy nodes moved to `nodes/legacy/` namespace with deprecation warnings
-- Declarative nodes become the default exports
+- **Legacy nodes HARD DELETED** (not moved to legacy namespace - decision changed due to no existing users)
+- Declarative nodes become the ONLY exports (`NodeReducer`, `NodeOrchestrator`)
 - Contract adapters and validators formalized
 - Strict purity enforcement via CI
 
@@ -52,7 +56,7 @@
 - [ ] All behavior equivalence tests pass
 - [ ] All contracts have fingerprints
 - [ ] No infra imports in core
-- [ ] Legacy imports only under `nodes/legacy/`
+- [x] Legacy imports removed (hard deletion - no `nodes/legacy/` namespace exists)
 - [ ] Contract validator + adapters have >90% coverage
 - [ ] `SIMULATE_LEGACY_REMOVAL=true` runs cleanly
 
@@ -202,7 +206,7 @@ This document outlines proposed issues for the MVP milestone, derived from the a
 | Infra uses SPI + Core | `omnibase_infra` implements handlers using SPI protocols and Core models |
 
 **Dependency Direction**:
-```
+```text
 omnibase_infra  ──implements──►  omnibase_spi  ──imports──►  omnibase_core
      │                                │                            │
      │ (handlers, RuntimeHostProcess) │ (protocols only)           │ (models, NodeRuntime, pure logic)
@@ -320,9 +324,10 @@ May change in minor versions. Document usage if depending on these.
 
 | Module | Reason |
 |--------|--------|
-| `omnibase_core.nodes.legacy.*` | Deprecated, removed in v1.0.0 |
 | `omnibase_core._internal.*` | Implementation details |
 | `omnibase_core.*.impl_*` | Private implementations |
+
+> **Note**: The originally planned `omnibase_core.nodes.legacy.*` namespace was never created. Legacy nodes were hard deleted in v0.4.0 due to no existing users.
 
 ---
 
@@ -480,7 +485,7 @@ All CI checks must pass before cutting v0.4.0. This table consolidates CI-relate
 | No top-level executable code | No module-level side effects | New | 0 | Yes |
 | Import-time purity scan | No sys, asyncio loops, threading, multiprocessing, path ops | New | 0 | Yes |
 | Private symbol leak check | No `_private` objects in `__all__` | New | 7 | Yes |
-| Legacy import isolation | No legacy imports outside nodes/legacy/ | New | 7 | Yes |
+| Legacy import isolation | N/A - legacy nodes hard deleted, no legacy namespace exists | New | 7 | Yes |
 
 ---
 
@@ -706,13 +711,17 @@ Nodes are being reorganized but the meta-model they adhere to is not defined. Wi
 **Dependencies**: Phase 0 complete
 **Related docs**: `PROJECT_REFACTORING_PLAN.md`, `ARCHITECTURE_EVOLUTION_OVERVIEW.md`
 
-> **Scope Boundary**: Mixin classification (R/H/D) and migration of mixins to NodeRuntime/infra are **post-v0.4.0** work tracked under Future issues F.1-F.4. Phase 1 only moves existing node implementations to `legacy/` namespace.
+> **SUPERSEDED (v0.4.0)**: This phase was originally planned to move legacy nodes to a `nodes/legacy/` namespace with deprecation warnings. However, after confirming there were **no existing users** of the legacy node implementations, the decision was made to **hard delete** the legacy code entirely. The issues below are retained for historical reference but are no longer applicable.
 >
-> **Behavioral Guarantee**: Through v0.4.0, **legacy and declarative nodes MUST remain behaviorally equivalent** for all supported contracts. This is the primary acceptance bar for PR review.
+> **What Actually Happened**:
+> - Legacy nodes (`NodeReducerLegacy`, `NodeOrchestratorLegacy`) were **never created**
+> - The `nodes/legacy/` namespace was **never created**
+> - Declarative nodes (`NodeReducer`, `NodeOrchestrator`) became the ONLY implementations
+> - See `CHANGELOG.md` v0.4.0 for the "Implementation Note: Hard Deletion" section
 
-### Epic: Move Legacy Nodes to Legacy Namespace
+~~### Epic: Move Legacy Nodes to Legacy Namespace~~ (SUPERSEDED)
 
-Move current mixin-based node implementations to a `legacy/` namespace, making room for declarative implementations.
+~~Move current mixin-based node implementations to a `legacy/` namespace, making room for declarative implementations.~~ **This was replaced by hard deletion.**
 
 #### Issue 1.1: Create nodes/legacy/ directory structure
 
@@ -894,45 +903,51 @@ class BadNode(NodeCoreBase, SomeMixin):  # P4: No extra inheritance
 
 ---
 
-#### Issue 2.1: Rename NodeReducerDeclarative to NodeReducer
+#### Issue 2.1: Rename NodeReducerDeclarative to NodeReducer ✅ COMPLETE
 
 **Title**: Rename NodeReducerDeclarative to NodeReducer
 **Type**: Task
 **Priority**: High (2)
 **Labels**: `architecture`, `refactoring`
+**Status**: ✅ **COMPLETE** (v0.4.0)
 
 **Description**:
 Rename `node_reducer_declarative.py` to `node_reducer.py`, rename class from `NodeReducerDeclarative` to `NodeReducer`.
 
 **Acceptance Criteria**:
-- [ ] File renamed from `node_reducer_declarative.py` to `node_reducer.py`
-- [ ] Class renamed from `NodeReducerDeclarative` to `NodeReducer`
-- [ ] Docstring updated with `.. versionchanged:: 0.4.0`
-- [ ] All internal imports updated
-- [ ] mypy --strict passes
-- [ ] pyright passes
-- [ ] Pydantic validation tests pass
+- [x] File renamed from `node_reducer_declarative.py` to `node_reducer.py`
+- [x] Class renamed from `NodeReducerDeclarative` to `NodeReducer`
+- [x] Docstring updated with `.. versionchanged:: 0.4.0`
+- [x] All internal imports updated
+- [x] mypy --strict passes
+- [x] pyright passes
+- [x] Pydantic validation tests pass
+
+**Result**: `NodeReducer` is now the PRIMARY FSM-driven implementation. Import from `omnibase_core.nodes.node_reducer`.
 
 ---
 
-#### Issue 2.2: Rename NodeOrchestratorDeclarative to NodeOrchestrator
+#### Issue 2.2: Rename NodeOrchestratorDeclarative to NodeOrchestrator ✅ COMPLETE
 
 **Title**: Rename NodeOrchestratorDeclarative to NodeOrchestrator
 **Type**: Task
 **Priority**: High (2)
 **Labels**: `architecture`, `refactoring`
+**Status**: ✅ **COMPLETE** (v0.4.0)
 
 **Description**:
 Rename `node_orchestrator_declarative.py` to `node_orchestrator.py`, rename class from `NodeOrchestratorDeclarative` to `NodeOrchestrator`.
 
 **Acceptance Criteria**:
-- [ ] File renamed from `node_orchestrator_declarative.py` to `node_orchestrator.py`
-- [ ] Class renamed from `NodeOrchestratorDeclarative` to `NodeOrchestrator`
-- [ ] Docstring updated with `.. versionchanged:: 0.4.0`
-- [ ] All internal imports updated
-- [ ] mypy --strict passes
-- [ ] pyright passes
-- [ ] Pydantic validation tests pass
+- [x] File renamed from `node_orchestrator_declarative.py` to `node_orchestrator.py`
+- [x] Class renamed from `NodeOrchestratorDeclarative` to `NodeOrchestrator`
+- [x] Docstring updated with `.. versionchanged:: 0.4.0`
+- [x] All internal imports updated
+- [x] mypy --strict passes
+- [x] pyright passes
+- [x] Pydantic validation tests pass
+
+**Result**: `NodeOrchestrator` is now the PRIMARY workflow-driven implementation. Import from `omnibase_core.nodes.node_orchestrator`.
 
 ---
 
@@ -1645,21 +1660,24 @@ Update 16 service model test files for new class names and MRO references.
 
 ---
 
-#### Issue 5.4: Remove deprecated class name references
+#### Issue 5.4: Remove deprecated class name references ✅ COMPLETE
 
 **Title**: Remove NodeReducerDeclarative/NodeOrchestratorDeclarative from tests
 **Type**: Task
 **Priority**: Medium (3)
 **Labels**: `testing`, `refactoring`
+**Status**: ✅ **COMPLETE** (v0.4.0)
 
 **Description**:
 Search and replace all remaining deprecated class name references in tests.
 
 **Acceptance Criteria**:
-- [ ] No `NodeReducerDeclarative` references in tests
-- [ ] No `NodeOrchestratorDeclarative` references in tests
-- [ ] All tests pass
-- [ ] No unexpected deprecation warnings
+- [x] No `NodeReducerDeclarative` references in tests (now use `NodeReducer`)
+- [x] No `NodeOrchestratorDeclarative` references in tests (now use `NodeOrchestrator`)
+- [x] All tests pass
+- [x] No unexpected deprecation warnings
+
+**Note**: The class names `NodeReducer` and `NodeOrchestrator` are now the PRIMARY implementations. Documentation has been updated to reflect this change.
 
 ---
 
@@ -1776,7 +1794,7 @@ Add comprehensive mapping table showing where each mixin goes in the new archite
 Add visual diagram showing exact data flow through the system.
 
 **Diagram Flow**:
-```
+```text
 Contract (YAML)
     → Validator (structural → semantic → capability → fingerprint)
     → Adapter (pure transformation)
@@ -2226,7 +2244,7 @@ Not all 71 issues are equally critical for v0.4.0 to ship. The following MUST la
 
 ## Execution Order
 
-```
+```text
 Phase 0 (Stabilization)
     └── Issues 0.1-0.9: Freeze APIs, baseline tests, CI checks,
                         contract versioning, hash registry, purity tests,

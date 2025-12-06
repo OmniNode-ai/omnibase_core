@@ -214,7 +214,7 @@ class ModelNodeServiceConfig(BaseModel):
             "port": int(os.getenv("SERVICE_PORT", "8080")),
             "host": os.getenv(
                 "SERVICE_HOST",
-                "0.0.0.0",  # noqa: S104 - Required for containerized services to bind to all interfaces
+                "0.0.0.0",
             ),
         }
         health_config: dict[str, Any] = {

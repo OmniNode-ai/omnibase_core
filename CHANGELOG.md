@@ -12,6 +12,277 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed fields: `event_id`→`envelope_id`, `source_service`→`source_node`, `event_type`→`operation`
 - Added new fields: `causation_id`, `target_node`, `handler_type`, `metadata`, `is_response`, `success`, `error`
 
+## [0.4.0] - 2025-12-05
+
+> **WARNING**: This is a major release with significant breaking changes. Please review the migration guide before upgrading.
+
+### ⚠️ BREAKING CHANGES
+
+This release implements the **Node Architecture Overhaul**, promoting declarative (FSM/workflow-driven) node implementations as the primary classes. Legacy node implementations have been removed in favor of the new architecture.
+
+#### Node Architecture Overhaul Summary
+
+**What Changed**:
+- `NodeReducerDeclarative` → `NodeReducer` (primary FSM-driven implementation)
+- `NodeOrchestratorDeclarative` → `NodeOrchestrator` (primary workflow-driven implementation)
+- The "Declarative" suffix has been removed - these ARE now the standard implementations
+- Legacy implementations (`NodeOrchestratorLegacy`, `NodeReducerLegacy`) have been removed
+
+#### Breaking Changes Summary
+
+| Change | Impact | Migration Effort |
+|--------|--------|------------------|
+| "Declarative" suffix removed | **HIGH** - Class names changed | Update imports (5 min) |
+| Import paths changed | **HIGH** - Old paths removed | Update imports (5 min) |
+| Legacy nodes hard deleted | **HIGH** - Must migrate to FSM/workflow patterns (no deprecation period) | See migration guide (30-60 min) |
+| FSM-driven NodeReducer is now default | **MEDIUM** - API behavior changes | Review FSM patterns (30 min) |
+| Workflow-driven NodeOrchestrator is now default | **MEDIUM** - API behavior changes | Review workflow patterns (30 min) |
+| Error recovery patterns changed | **MEDIUM** - Error handling is now declarative | Review error patterns (15 min) |
+
+#### Import Path Changes
+
+**Primary Import Path**:
+```python
+from omnibase_core.nodes import NodeReducer, NodeOrchestrator, NodeCompute, NodeEffect
+```
+
+**Old Declarative Import Path** (no longer works):
+```python
+# These paths are removed - use omnibase_core.nodes instead
+from omnibase_core.infrastructure.nodes.node_reducer_declarative import NodeReducerDeclarative
+from omnibase_core.infrastructure.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
+```
+
+### Changed
+
+#### Node Architecture Overhaul
+- **NodeReducer**: Now FSM-driven as the primary implementation (formerly `NodeReducerDeclarative`)
+  - Uses `ModelIntent` pattern for pure state machine transitions
+  - Intent-based state management separates transition logic from side effects
+- **NodeOrchestrator**: Now workflow-driven as the primary implementation (formerly `NodeOrchestratorDeclarative`)
+  - Uses `ModelAction` pattern with lease-based single-writer semantics
+  - Workflow-driven action definitions with automatic retry and rollback
+
+#### Class Renaming ("Declarative" Suffix Removed)
+- `NodeReducerDeclarative` → `NodeReducer`
+- `NodeOrchestratorDeclarative` → `NodeOrchestrator`
+- All YAML contract-driven configuration is now the default and only approach
+
+### Added
+
+#### Unified Import Surface
+- **Single Import Path**: All node types now available from `omnibase_core.nodes`:
+  ```python
+  from omnibase_core.nodes import (
+      NodeCompute,
+      NodeEffect,
+      NodeReducer,
+      NodeOrchestrator,
+  )
+  ```
+- **Input/Output Models**: All node I/O models exported from `omnibase_core.nodes`:
+  ```python
+  from omnibase_core.nodes import (
+      ModelComputeInput,
+      ModelComputeOutput,
+      ModelReducerInput,
+      ModelReducerOutput,
+      ModelOrchestratorInput,
+      ModelOrchestratorOutput,
+      ModelEffectInput,
+      ModelEffectOutput,
+  )
+  ```
+- **Public Enums**: Reducer and Orchestrator enums available from `omnibase_core.nodes`
+
+#### Documentation Updates
+- **Updated Node Building Guides**: All tutorials reflect v0.4.0 architecture
+- **Migration Guide**: New `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md` for upgrade instructions
+- **CLAUDE.md Updates**: Project instructions updated to reflect v0.4.0 patterns
+
+### Removed
+
+#### Legacy Node Implementations (Hard Deletion - No Deprecation Period)
+- **`NodeOrchestratorLegacy`**: Fully deleted in favor of workflow-driven `NodeOrchestrator`
+- **`NodeReducerLegacy`**: Fully deleted in favor of FSM-driven `NodeReducer`
+- **Legacy namespace**: The `omnibase_core.nodes.legacy` namespace does not exist and was never created
+
+#### Legacy Patterns (No Longer Supported)
+- **Imperative state management**: Direct state mutation in Reducer nodes (use FSM transitions instead)
+- **Custom error handling**: Per-step try/except blocks in Orchestrator nodes (use YAML `failure_recovery_strategy`)
+- **Non-lease-based orchestration**: Workflow patterns without `lease_id` and `epoch` (use ModelAction with lease semantics)
+
+#### Old Import Paths
+- **Declarative import paths**: `omnibase_core.infrastructure.nodes.node_*_declarative` paths removed
+- **Direct infrastructure imports**: Must use `omnibase_core.nodes` for primary implementations
+
+#### Error Recovery Changes (BREAKING)
+
+The error recovery system has been **significantly changed** to align with the declarative architecture. **Existing error handling code will need to be rewritten.**
+
+##### What Changed
+
+| Aspect | Before (v0.3.x) | After (v0.4.0) |
+|--------|----------------|----------------|
+| **Reducer Error Handling** | `try/except` blocks with direct state mutation | FSM wildcard transitions (`from_state: "*"`) |
+| **Orchestrator Error Handling** | Custom Python error handling per step | YAML `failure_recovery_strategy` (retry/skip/abort) |
+| **Error State Transitions** | Imperative code sets error state | Declarative FSM transitions via `ModelIntent` |
+| **Retry Logic** | Custom retry loops in Python | Lease-based idempotent retries with `lease_id` + `epoch` |
+
+##### Reducer Nodes - Error Recovery Migration
+
+**Before (v0.3.x)** - Imperative error handling:
+```python
+# Legacy pattern (removed in v0.4.0)
+class MyReducer(NodeReducerBase):
+    async def process(self, input_data):
+        try:
+            result = await self.do_work()
+            self.state = "completed"
+        except Exception as e:
+            self.state = "failed"  # Direct state mutation
+            self.error = str(e)
+            raise
+```
+
+**After (v0.4.0)** - Declarative FSM transitions:
+```yaml
+# In your YAML contract
+transitions:
+  - from_state: "*"           # Wildcard: catches errors from ANY state
+    to_state: failed
+    trigger: error_occurred
+    actions:
+      - action_name: "log_error"
+        action_type: "logging"
+      - action_name: "emit_failure_event"
+        action_type: "event"
+```
+
+```python
+# Recommended: Use FSM-driven base class
+class MyReducer(NodeReducer):
+    pass  # Error handling is declarative via YAML
+```
+
+##### Orchestrator Nodes - Error Recovery Migration
+
+**Before (v0.3.x)** - Per-step error handling:
+```python
+# Legacy pattern (removed in v0.4.0)
+class MyOrchestrator(NodeOrchestratorBase):
+    async def process(self, input_data):
+        try:
+            await self.step1()
+        except Exception:
+            await self.retry_step1()  # Custom retry logic
+```
+
+**After (v0.4.0)** - Workflow-level failure strategy:
+```yaml
+# In your YAML contract
+coordination_rules:
+  failure_recovery_strategy: retry  # Options: retry, skip, abort
+  max_retries: 3
+  retry_backoff_ms: 1000
+```
+
+Actions now include `lease_id` and `epoch` for idempotent retries, preventing duplicate execution.
+
+##### Migration Checklist for Error Handling
+
+- [ ] Remove all `try/except` blocks that mutate state directly in Reducer nodes
+- [ ] Add FSM wildcard transitions (`from_state: "*"`) for error handling
+- [ ] Remove custom retry loops in Orchestrator nodes
+- [ ] Configure `failure_recovery_strategy` in YAML workflow contracts
+- [ ] Verify `ModelIntent` emission replaces direct error state mutations
+- [ ] Test error recovery paths with the new declarative patterns
+
+---
+
+### Migration Guide (v0.3.x to v0.4.0)
+
+> **Estimated Migration Time**: 30-60 minutes for typical projects
+>
+> **Full Guide**: See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for comprehensive migration instructions with complete examples.
+
+#### Quick Migration Checklist
+
+- [ ] Update all node imports to use `omnibase_core.nodes`
+- [ ] Replace legacy reducer implementations with `NodeReducer`
+- [ ] Replace legacy orchestrator implementations with `NodeOrchestrator`
+- [ ] Convert imperative state management to FSM YAML contracts
+- [ ] Convert workflow coordination to workflow YAML contracts
+- [ ] Update error handling to use declarative patterns
+- [ ] Run tests to verify behavior
+
+#### Step 1: Update Imports
+```python
+# Before (v0.3.x) - Old declarative import paths
+from omnibase_core.infrastructure.nodes.node_reducer_declarative import NodeReducerDeclarative
+
+# After (v0.4.0) - Use primary implementation
+from omnibase_core.nodes import NodeReducer
+```
+
+#### Step 2: Update Class Inheritance
+```python
+# Before (v0.3.x)
+class MyReducer(NodeReducerBase):
+    pass
+
+# After (v0.4.0)
+class MyReducer(NodeReducer):
+    pass
+```
+
+#### Step 3: Adopt FSM/Workflow Patterns
+- **Reducer nodes**: Implement `ModelIntent` emission instead of direct state updates
+- **Orchestrator nodes**: Use `ModelAction` with lease management for coordination
+- See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for detailed examples
+
+#### Step 4: Update Error Handling
+```python
+# Before (v0.3.x) - Imperative error handling
+class MyReducer(NodeReducerBase):
+    async def process(self, input_data):
+        try:
+            result = await self.do_work()
+            self.state = "completed"
+        except Exception as e:
+            self.state = "failed"
+            raise
+
+# After (v0.4.0) - Declarative error handling via YAML
+# In your contract.yaml:
+# transitions:
+#   - from_state: "*"
+#     to_state: failed
+#     trigger: error_occurred
+```
+
+---
+
+### ⚠️ Implementation Note: Hard Deletion (Not Soft Deprecation)
+
+> **BREAKING CHANGE**: After reviewing the architecture and confirming that no users currently exist on the legacy node implementations, we pivoted from the originally planned Phase 1 (soft deprecation with warnings) directly to **hard deletion** of legacy nodes.
+
+**Why Hard Deletion Instead of Soft Deprecation?**
+
+1. **No Existing Users**: The legacy `NodeReducerLegacy` and `NodeOrchestratorLegacy` classes had no production usage
+2. **Cleaner Codebase**: Removing legacy code entirely eliminates maintenance burden and confusion
+3. **Simpler Migration**: Users only need to learn the new patterns, not navigate deprecated APIs
+4. **Reduced Risk**: No transition period means no risk of users depending on soon-to-be-removed code
+
+**What This Means for You**:
+
+- Legacy imports (`NodeReducerLegacy`, `NodeOrchestratorLegacy`) will **fail immediately** - no deprecation warnings
+- The `omnibase_core.nodes.legacy` namespace **does not exist**
+- All nodes must use FSM-driven (`NodeReducer`) or workflow-driven (`NodeOrchestrator`) patterns
+- See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for migration instructions
+
+---
+
 ## [0.3.3] - 2025-11-19
 
 ### Added

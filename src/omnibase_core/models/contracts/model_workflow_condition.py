@@ -153,7 +153,7 @@ class ModelWorkflowCondition(BaseModel):
     ) -> ContextValueType:
         """Extract field value supporting nested field paths with dot notation."""
         current_value: ComplexContextValueType = cast(
-            ComplexContextValueType,
+            "ComplexContextValueType",
             context_data,
         )
 
@@ -176,7 +176,7 @@ class ModelWorkflowCondition(BaseModel):
             return container.values
         if hasattr(container, "value"):
             # ModelConditionValue generic container - type guard for .value attribute
-            return cast(ConditionValueType, container.value)
+            return cast("ConditionValueType", container.value)
         raise ModelOnexError(
             message=f"Invalid container type: {type(container).__name__}. Expected ModelConditionValue or ModelConditionValueList.",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,

@@ -30,7 +30,7 @@ from .model_log_context import ModelLogContext
 from .model_log_markdown_row import ModelLogMarkdownRow
 
 
-class ModelLogEntry(ModelBaseError):  # noqa: N818
+class ModelLogEntry(ModelBaseError):
     """Main log entry model."""
 
     message: str

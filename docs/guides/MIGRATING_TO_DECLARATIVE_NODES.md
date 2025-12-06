@@ -1,8 +1,10 @@
-# Migrating to Declarative Nodes
+# Migrating to v0.4.0 Node Architecture
 
-**Version**: 1.0.0
-**Last Updated**: 2025-11-16
+**Version**: 0.4.0
+**Last Updated**: 2025-12-06
 **Correlation ID**: `dec-migration-guide-001`
+
+> **BREAKING CHANGE (v0.4.0)**: Legacy node implementations have been **REMOVED**. `NodeReducer` and `NodeOrchestrator` are now the only implementations, using declarative YAML contracts. There is no deprecation period - direct migration is required.
 
 ## Table of Contents
 
@@ -14,12 +16,16 @@
 6. [Testing Your Migration](#testing-your-migration)
 7. [Troubleshooting](#troubleshooting)
 8. [Complete Examples](#complete-examples)
+9. [Import Path Changes Summary](#import-path-changes-summary)
+10. [Additional Resources](#additional-resources)
 
 ---
 
 ## Overview
 
-This guide shows how to migrate existing code-based reducer and orchestrator nodes to declarative YAML-driven nodes. The declarative approach enables:
+This guide shows how to migrate from code-based reducer and orchestrator patterns to the v0.4.0 declarative YAML-driven nodes. Legacy implementations have been removed - this migration is required for any code using the old patterns.
+
+The declarative approach enables:
 
 - **Zero Custom Code**: All logic defined in YAML contracts
 - **Type Safety**: Complete Pydantic validation
@@ -29,20 +35,18 @@ This guide shows how to migrate existing code-based reducer and orchestrator nod
 
 ### Implementation Status
 
-**✅ Production-Ready** (as of omnibase_core v0.3.2, 2025-11-16)
-
-All 4 phases of declarative node implementation are complete:
+**Production-Ready** (omnibase_core v0.4.0)
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| **FSM Models** | ✅ Complete | ModelFSMSubcontract with full state machine support |
-| **Workflow Models** | ✅ Complete | ModelWorkflowDefinition with dependency resolution |
-| **FSM Runtime** | ✅ Complete | fsm_executor.py + MixinFSMExecution (548 lines, 18 tests) |
-| **Workflow Runtime** | ✅ Complete | workflow_executor.py + MixinWorkflowExecution |
-| **Declarative Base Classes** | ✅ Complete | NodeReducerDeclarative, NodeOrchestratorDeclarative |
-| **Documentation** | ✅ Complete | Full tutorials and migration guides |
+| **FSM Models** | Complete | ModelFSMSubcontract with full state machine support |
+| **Workflow Models** | Complete | ModelWorkflowDefinition with dependency resolution |
+| **FSM Runtime** | Complete | fsm_executor.py + MixinFSMExecution |
+| **Workflow Runtime** | Complete | workflow_executor.py + MixinWorkflowExecution |
+| **Node Base Classes** | Complete | `NodeReducer` (FSM-driven), `NodeOrchestrator` (workflow-driven) |
+| **Legacy Code** | Removed | No legacy implementations available |
 
-**Ready for production use.** All code examples in this guide are functional and tested.
+All code examples in this guide are functional and tested.
 
 ### What Changes?
 
@@ -81,7 +85,7 @@ All 4 phases of declarative node implementation are complete:
 ### Step 1: Identify Node Type
 
 **Reducer Node** - Manages state and aggregates data:
-```
+```python
 class NodeMyReducer(NodeReducer):
     async def process(self, input_data):
         # Custom state management code
@@ -89,7 +93,7 @@ class NodeMyReducer(NodeReducer):
 ```
 
 **Orchestrator Node** - Coordinates multi-step workflows:
-```
+```python
 class NodeMyOrchestrator(NodeOrchestrator):
     async def process(self, input_data):
         # Custom workflow coordination code
@@ -110,9 +114,11 @@ Convert your logic to YAML using the appropriate pattern:
 
 ### Step 4: Update Node Class
 
-Replace custom implementation with declarative base class:
-- **Reducer**: Inherit from `NodeReducerDeclarative`
-- **Orchestrator**: Inherit from `NodeOrchestratorDeclarative`
+Replace custom implementation with the new base class:
+- **Reducer**: Inherit from `NodeReducer` (from `omnibase_core.nodes`)
+- **Orchestrator**: Inherit from `NodeOrchestrator` (from `omnibase_core.nodes`)
+
+These are the only implementations available in v0.4.0. All nodes use declarative YAML contracts.
 
 ### Step 5: Test & Validate
 
@@ -126,10 +132,8 @@ Verify behavior matches original implementation.
 
 #### Before (Code-Based)
 
-```
-from omnibase_core.nodes.node_reducer import NodeReducer
-from omnibase_core.models.model_reducer_input import ModelReducerInput
-from omnibase_core.models.model_reducer_output import ModelReducerOutput
+```python
+from omnibase_core.nodes import NodeReducer, ModelReducerInput, ModelReducerOutput
 
 class NodeMetricsAggregator(NodeReducer):
     """Aggregates metrics with custom state management."""
@@ -215,17 +219,19 @@ class NodeMetricsAggregator(NodeReducer):
 
 **Node Implementation (99% reduction in code):**
 
-```
-from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
+```python
+from omnibase_core.nodes import NodeReducer
 
-class NodeMetricsAggregator(NodeReducerDeclarative):
-    """Aggregates metrics using declarative FSM - NO custom code needed!"""
+class NodeMetricsAggregator(NodeReducer):
+    """Aggregates metrics using FSM - all logic driven by YAML contract."""
     pass  # All logic driven by YAML contract
+
+# NodeReducer is FSM-driven. All node classes are exported from omnibase_core.nodes.
 ```
 
 **YAML Contract (`contracts/metrics_aggregator.yaml`):**
 
-```
+```yaml
 state_transitions:
   state_machine_name: metrics_aggregation_fsm
   initial_state: idle
@@ -328,10 +334,8 @@ state_transitions:
 
 #### Before (Code-Based)
 
-```
-from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
-from omnibase_core.models.orchestrator import ModelOrchestratorOutput
+```python
+from omnibase_core.nodes import NodeOrchestrator, ModelOrchestratorInput, ModelOrchestratorOutput
 
 class NodeDataPipeline(NodeOrchestrator):
     """Orchestrates data processing pipeline with custom coordination."""
@@ -408,17 +412,19 @@ class NodeDataPipeline(NodeOrchestrator):
 
 **Node Implementation (99% reduction in code):**
 
-```
-from omnibase_core.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
+```python
+from omnibase_core.nodes import NodeOrchestrator
 
-class NodeDataPipeline(NodeOrchestratorDeclarative):
-    """Data processing pipeline using declarative workflow - NO custom code needed!"""
+class NodeDataPipeline(NodeOrchestrator):
+    """Data processing pipeline using workflow - all logic driven by YAML contract."""
     pass  # All logic driven by YAML contract
+
+# NodeOrchestrator is workflow-driven. All node classes are exported from omnibase_core.nodes.
 ```
 
 **YAML Contract (`contracts/data_pipeline.yaml`):**
 
-```
+```yaml
 workflow_coordination:
   workflow_definition:
     workflow_metadata:
@@ -485,7 +491,7 @@ workflow_coordination:
 
 ### Test Reducer Migration
 
-```
+```python
 import pytest
 from uuid import uuid4
 
@@ -526,7 +532,7 @@ def test_reducer_fsm_transitions():
 
 ### Test Orchestrator Migration
 
-```
+```python
 def test_orchestrator_workflow_execution():
     """Test orchestrator workflow execution."""
     node = NodeDataPipeline(container)
@@ -568,7 +574,8 @@ def test_orchestrator_workflow_execution():
 **Cause**: Node contract doesn't have `state_transitions` field
 
 **Solution**:
-```
+
+```python
 # Ensure your contract has FSM subcontract
 class MyNodeContract(BaseModel):
     state_transitions: ModelFSMSubcontract  # Add this field
@@ -582,7 +589,8 @@ node.fsm_contract = ModelFSMSubcontract.parse_file("contract.yaml")
 **Cause**: Node contract doesn't have `workflow_coordination` field
 
 **Solution**:
-```
+
+```python
 # Ensure your contract has workflow coordination
 class MyNodeContract(BaseModel):
     workflow_coordination: ModelWorkflowCoordination  # Add this field
@@ -596,7 +604,7 @@ node.workflow_definition = ModelWorkflowDefinition.parse_file("workflow.yaml")
 **Cause**: Condition syntax incorrect or context missing
 
 **Solution**:
-```
+```yaml
 # Verify expression syntax
 conditions:
   - expression: "data_sources min_length 1"  # Correct
@@ -610,16 +618,17 @@ conditions:
 **Cause**: Workflow has circular dependencies
 
 **Solution**:
-```
+
+```yaml
 # Fix circular dependency
 nodes:
   - node_id: "step1"
     depends_on:
-      - step2  # ❌ Circular: step1 → step2 → step1
+      - step2  # Circular: step1 -> step2 -> step1 (WRONG)
 
 # Should be:
   - node_id: "step1"
-    depends_on: []  # ✅ No circular dependency
+    depends_on: []  # No circular dependency (CORRECT)
 ```
 
 ---
@@ -647,9 +656,69 @@ See the `examples/contracts/` directory for complete working examples:
 1. **Review Examples**: Study the complete YAML contracts in `examples/contracts/`
 2. **Identify Candidates**: Find reducer/orchestrator nodes to migrate
 3. **Create YAML**: Convert logic to FSM/workflow contracts
-4. **Update Classes**: Inherit from declarative base classes
+4. **Update Classes**: Inherit from the v0.4.0 base classes
 5. **Test**: Verify behavior matches original implementation
 6. **Deploy**: Replace code-based nodes with declarative versions
+
+---
+
+## Import Path Changes Summary
+
+With v0.4.0, all node classes are exported from `omnibase_core.nodes`:
+
+```python
+# Primary import (recommended) - v0.4.0 top-level API
+from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect
+
+# Also available: Input/Output models
+from omnibase_core.nodes import (
+    ModelComputeInput, ModelComputeOutput,
+    ModelEffectInput, ModelEffectOutput,
+    ModelReducerInput, ModelReducerOutput,
+    ModelOrchestratorInput, ModelOrchestratorOutput,
+)
+
+# Also available: Public enums
+from omnibase_core.nodes import (
+    EnumReductionType, EnumConflictResolution, EnumStreamingMode,  # Reducer
+    EnumExecutionMode, EnumWorkflowState, EnumActionType, EnumBranchCondition,  # Orchestrator
+)
+```
+
+| Node Type | v0.4.0 Import Path | Notes |
+|-----------|--------------------|---------------------------------|
+| **Compute** | `from omnibase_core.nodes import NodeCompute` | Unchanged |
+| **Effect** | `from omnibase_core.nodes import NodeEffect` | Unchanged |
+| **Reducer** | `from omnibase_core.nodes import NodeReducer` | FSM-driven (formerly `NodeReducerDeclarative`) |
+| **Orchestrator** | `from omnibase_core.nodes import NodeOrchestrator` | Workflow-driven (formerly `NodeOrchestratorDeclarative`) |
+
+### Migration from Pre-v0.4.0 Code
+
+If you have code using old import patterns, update your imports:
+
+```python
+# Old patterns (removed in v0.4.0) - will cause ImportError
+# from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
+# from omnibase_core.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
+
+# v0.4.0 - use these instead
+from omnibase_core.nodes import NodeReducer, NodeOrchestrator
+```
+
+**Important Notes**:
+
+- Legacy node implementations have been **removed** - there is no `nodes/legacy/` module
+- `NodeCompute` and `NodeEffect` remain unchanged (no declarative variants existed)
+- `NodeReducer` is now FSM-driven via YAML contracts
+- `NodeOrchestrator` is now workflow-driven via YAML contracts
+
+**Required Migration Steps**:
+
+1. Update imports to use `from omnibase_core.nodes import NodeReducer, NodeOrchestrator`
+2. Convert custom state management logic to FSM YAML contracts (for reducers)
+3. Convert custom workflow logic to workflow YAML contracts (for orchestrators)
+4. Follow the examples in this guide to create declarative contracts
+5. Run tests to verify behavior matches the original implementation
 
 ---
 
@@ -658,10 +727,10 @@ See the `examples/contracts/` directory for complete working examples:
 - **FSM Executor Documentation**: [`src/omnibase_core/utils/fsm_executor.py`](../../src/omnibase_core/utils/fsm_executor.py)
 - **Workflow Executor Documentation**: [`src/omnibase_core/utils/workflow_executor.py`](../../src/omnibase_core/utils/workflow_executor.py)
 - **Mixin Documentation**: [`src/omnibase_core/mixins/mixin_metadata.yaml`](../../src/omnibase_core/mixins/mixin_metadata.yaml)
-- **Implementation Plan**: [`docs/architecture/DECLARATIVE_IMPLEMENTATION_PLAN.md`](../architecture/DECLARATIVE_IMPLEMENTATION_PLAN.md)
 
 ---
 
-**Last Updated**: 2025-11-16
-**Version**: 1.0.0
+**Last Updated**: 2025-12-06
+**Version**: 0.4.0
 **Maintainer**: ONEX Framework Team
+

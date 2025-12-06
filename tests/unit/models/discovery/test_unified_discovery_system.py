@@ -7,8 +7,6 @@ Tests the complete hybrid discovery system including:
 - Integration with registry coordination hub
 """
 
-# ruff: noqa: F821
-
 import time
 from unittest.mock import Mock
 from uuid import UUID, uuid4

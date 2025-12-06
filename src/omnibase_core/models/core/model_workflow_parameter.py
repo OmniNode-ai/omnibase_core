@@ -1,5 +1,3 @@
-from typing import TypeVar
-
 from pydantic import Field
 
 """
@@ -9,14 +7,10 @@ Single responsibility: Define type-safe workflow parameters with generic value t
 Replaces all duplicate ModelWorkflowParameter definitions across the codebase.
 """
 
-from typing import Generic
-
 from pydantic import BaseModel
 
-T = TypeVar("T")
 
-
-class ModelWorkflowParameter(BaseModel, Generic[T]):
+class ModelWorkflowParameter[T](BaseModel):
     """
     Type-safe workflow parameter with generic value type.
 

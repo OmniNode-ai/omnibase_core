@@ -85,7 +85,7 @@ class ModelConnectionProperties(BaseModel):
 
         if value and hasattr(value, "get_secret_value"):
             return "***MASKED***"
-        return cast(str, value)
+        return cast("str", value)
 
     """
     Masked connection properties with typed fields.

@@ -279,9 +279,9 @@ def test_lazy_imports_work() -> None:
         # This should trigger __getattr__ and import models.base
         try:
             attr = getattr(constraints_module, import_name)
-            assert (
-                attr is not None
-            ), f"{import_name} should be available via __getattr__"
+            assert attr is not None, (
+                f"{import_name} should be available via __getattr__"
+            )
         except AttributeError as e:
             msg = f"Lazy import {import_name} failed: {e}"
             raise AssertionError(msg) from e
@@ -320,9 +320,9 @@ def test_validation_functions_lazy_import() -> None:
         pytest.fail("validate_primitive_value should have raised TypeError")
 
     # Verify error_codes is NOT imported (lazy import maintained)
-    assert (
-        "omnibase_core.errors.error_codes" not in sys.modules
-    ), "error_codes should NOT be imported (lazy import pattern maintained)"
+    assert "omnibase_core.errors.error_codes" not in sys.modules, (
+        "error_codes should NOT be imported (lazy import pattern maintained)"
+    )
 
 
 def test_import_order_documentation() -> None:

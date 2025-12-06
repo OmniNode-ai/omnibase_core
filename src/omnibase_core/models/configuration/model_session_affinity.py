@@ -1,3 +1,5 @@
+import hashlib
+import warnings
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -11,6 +13,16 @@ ModelSessionAffinity - Session affinity configuration for load balancing
 
 Session affinity model for configuring sticky sessions and client-to-node
 routing persistence in load balancing systems.
+
+Hash Algorithm Security Notes:
+    - SHA-256 (default): Recommended for all new implementations
+    - SHA-512: Stronger security for high-sensitivity environments
+    - MD5: DEPRECATED - Only supported for legacy compatibility, emits DeprecationWarning
+    - SHA-1: DEPRECATED - Only supported for legacy compatibility, emits DeprecationWarning
+
+    When using deprecated hash algorithms (MD5/SHA-1), the system will emit
+    warnings at runtime. These algorithms have known cryptographic weaknesses
+    and should not be used in new implementations.
 """
 
 
@@ -75,7 +87,12 @@ class ModelSessionAffinity(BaseModel):
 
     hash_algorithm: str = Field(
         default="sha256",
-        description="Hash algorithm for IP/header hashing (sha256 recommended, md5/sha1 deprecated)",
+        description=(
+            "Hash algorithm for IP/header hashing. "
+            "SHA-256 (default) or SHA-512 recommended. "
+            "MD5 and SHA-1 are DEPRECATED and emit warnings at runtime - "
+            "use only for legacy compatibility."
+        ),
         pattern="^(md5|sha1|sha256|sha512)$",
     )
 
@@ -148,9 +165,6 @@ class ModelSessionAffinity(BaseModel):
         if not affinity_key or not available_nodes:
             return None
 
-        import hashlib
-        import warnings
-
         # Create hash of affinity key
         if self.hash_algorithm == "md5":
             warnings.warn(
@@ -158,14 +172,14 @@ class ModelSessionAffinity(BaseModel):
                 DeprecationWarning,
                 stacklevel=2,
             )
-            hash_obj = hashlib.md5(affinity_key.encode())
+            hash_obj = hashlib.md5(affinity_key.encode(), usedforsecurity=False)
         elif self.hash_algorithm == "sha1":
             warnings.warn(
                 "SHA1 hash algorithm is deprecated and insecure. Use SHA256 or SHA512 instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            hash_obj = hashlib.sha1(affinity_key.encode())
+            hash_obj = hashlib.sha1(affinity_key.encode(), usedforsecurity=False)
         elif self.hash_algorithm == "sha256":
             hash_obj = hashlib.sha256(affinity_key.encode())
         elif self.hash_algorithm == "sha512":

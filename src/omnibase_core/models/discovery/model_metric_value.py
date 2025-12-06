@@ -22,16 +22,15 @@ Usage Examples:
     }
 """
 
-from typing import Generic, TypeVar, Union
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
-# TypeVar constrained to valid metric value types
-# Using bound instead of constraints allows union types in annotations
-MetricValueT = TypeVar("MetricValueT", bound=Union[str, int, float, bool])
+# TypeVar exported for backwards compatibility and external use in type hints
+MetricValueT = TypeVar("MetricValueT", str, int, float, bool)
 
 
-class ModelMetricValue(BaseModel, Generic[MetricValueT]):
+class ModelMetricValue[MetricValueT: str | int | float | bool](BaseModel):
     """Single metric value with strong typing for discovery systems.
 
     Generic over MetricValueT which must be str, int, float, or bool.
@@ -76,4 +75,4 @@ class ModelMetricValue(BaseModel, Generic[MetricValueT]):
 
 
 # Type alias for collections containing mixed metric value types
-AnyMetricValue = ModelMetricValue[Union[str, int, float, bool]]
+AnyMetricValue = ModelMetricValue[str | int | float | bool]

@@ -14,7 +14,7 @@ Design Principles:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, Protocol, Type, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
 
 from omnibase_core.protocols.base import (
     ContextValue,
@@ -29,10 +29,6 @@ from omnibase_core.protocols.base import (
     TImplementation,
     TInterface,
 )
-
-if TYPE_CHECKING:
-    pass
-
 
 # =============================================================================
 # Service Health Status (alias for health status in registry context)
@@ -263,7 +259,7 @@ class ProtocolServiceValidator(Protocol):
     """
 
     async def validate_service(
-        self, service: Any, interface: Type[Any]
+        self, service: Any, interface: type[Any]
     ) -> ProtocolValidationResult:
         """Validate that a service implementation conforms to its interface."""
         ...
@@ -290,7 +286,7 @@ class ProtocolServiceFactory(Protocol):
     """
 
     async def create_instance(
-        self, interface: Type[T], context: dict[str, ContextValue]
+        self, interface: type[T], context: dict[str, ContextValue]
     ) -> T:
         """Create a new service instance with dependency injection."""
         ...
@@ -357,8 +353,8 @@ class ProtocolServiceRegistry(Protocol):
 
     async def register_service(
         self,
-        interface: Type[TInterface],
-        implementation: Type[TImplementation],
+        interface: type[TInterface],
+        implementation: type[TImplementation],
         lifecycle: LiteralServiceLifecycle,
         scope: LiteralInjectionScope,
         configuration: dict[str, ContextValue] | None = None,
@@ -368,7 +364,7 @@ class ProtocolServiceRegistry(Protocol):
 
     async def register_instance(
         self,
-        interface: Type[TInterface],
+        interface: type[TInterface],
         instance: TInterface,
         scope: LiteralInjectionScope = "global",
         metadata: dict[str, ContextValue] | None = None,
@@ -378,7 +374,7 @@ class ProtocolServiceRegistry(Protocol):
 
     async def register_factory(
         self,
-        interface: Type[TInterface],
+        interface: type[TInterface],
         factory: ProtocolServiceFactory,
         lifecycle: LiteralServiceLifecycle = "transient",
         scope: LiteralInjectionScope = "global",
@@ -392,7 +388,7 @@ class ProtocolServiceRegistry(Protocol):
 
     async def resolve_service(
         self,
-        interface: Type[TInterface],
+        interface: type[TInterface],
         scope: LiteralInjectionScope | None = None,
         context: dict[str, ContextValue] | None = None,
     ) -> TInterface:
@@ -401,7 +397,7 @@ class ProtocolServiceRegistry(Protocol):
 
     async def resolve_named_service(
         self,
-        interface: Type[TInterface],
+        interface: type[TInterface],
         name: str,
         scope: LiteralInjectionScope | None = None,
     ) -> TInterface:
@@ -409,13 +405,13 @@ class ProtocolServiceRegistry(Protocol):
         ...
 
     async def resolve_all_services(
-        self, interface: Type[TInterface], scope: LiteralInjectionScope | None = None
+        self, interface: type[TInterface], scope: LiteralInjectionScope | None = None
     ) -> list[TInterface]:
         """Resolve all services matching interface."""
         ...
 
     async def try_resolve_service(
-        self, interface: Type[TInterface], scope: LiteralInjectionScope | None = None
+        self, interface: type[TInterface], scope: LiteralInjectionScope | None = None
     ) -> TInterface | None:
         """Try to resolve a service, returning None if not found."""
         ...
@@ -427,7 +423,7 @@ class ProtocolServiceRegistry(Protocol):
         ...
 
     async def get_registrations_by_interface(
-        self, interface: Type[T]
+        self, interface: type[T]
     ) -> list[ProtocolServiceRegistration]:
         """Get all registrations for an interface."""
         ...

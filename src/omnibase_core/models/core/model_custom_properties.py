@@ -276,9 +276,7 @@ class ModelCustomProperties(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (
-            Exception
-        ):  # fallback-ok: protocol method contract requires bool return - False indicates configuration failed safely
+        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates configuration failed safely
             return False
 
     def serialize(self) -> dict[str, Any]:
@@ -291,9 +289,7 @@ class ModelCustomProperties(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (
-            Exception
-        ):  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
+        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
             return False
 
     def get_name(self) -> str:

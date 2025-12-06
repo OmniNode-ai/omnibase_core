@@ -242,9 +242,7 @@ class ModelToolCollection(BaseModel):
 
             return True
 
-        except (
-            Exception
-        ):  # fallback-ok: registration method, False indicates failure with metrics update
+        except Exception:  # fallback-ok: registration method, False indicates failure with metrics update
             self.failed_registration_count += 1
             return False
 

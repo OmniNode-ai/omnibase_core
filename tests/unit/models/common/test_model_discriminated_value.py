@@ -408,7 +408,7 @@ class TestModelDiscriminatedValueComparison:
     def test_equality_with_raw_bool(self) -> None:
         """Test equality with raw boolean."""
         value = ModelDiscriminatedValue.from_bool(True)
-        assert value == True  # noqa: E712 - intentional comparison
+        assert value == True
 
     def test_equality_collections(self) -> None:
         """Test equality for collection types."""

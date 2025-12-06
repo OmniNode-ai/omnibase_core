@@ -285,9 +285,7 @@ class MixinServiceRegistry:
             node_id = envelope.payload.node_id if hasattr(envelope, "payload") else None
             if node_id:
                 # Ensure node_id is string for dict key
-                node_id_str = (
-                    str(node_id) if isinstance(node_id, UUID) else str(node_id)
-                )
+                node_id_str = str(node_id)
 
                 if node_id_str in self.service_registry:
                     self.service_registry[node_id_str].set_offline()
@@ -379,9 +377,7 @@ class MixinServiceRegistry:
             node_id = envelope.payload.node_id if hasattr(envelope, "payload") else None
             if node_id:
                 # Ensure node_id is string for dict key
-                node_id_str = (
-                    str(node_id) if isinstance(node_id, UUID) else str(node_id)
-                )
+                node_id_str = str(node_id)
 
                 if node_id_str in self.service_registry:
                     introspection_data = (

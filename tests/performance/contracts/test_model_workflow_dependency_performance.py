@@ -87,9 +87,9 @@ class TestModelWorkflowDependencyPerformance:
         avg_time_ms = (total_time / iterations) * 1000
 
         # Performance target: <1ms per dependency validation
-        assert (
-            avg_time_ms < 1.0
-        ), f"Single dependency validation too slow: {avg_time_ms:.2f}ms"
+        assert avg_time_ms < 1.0, (
+            f"Single dependency validation too slow: {avg_time_ms:.2f}ms"
+        )
 
         print(f"✅ Single dependency validation: {avg_time_ms:.3f}ms average")
 
@@ -129,19 +129,21 @@ class TestModelWorkflowDependencyPerformance:
         circular_detection_time = time.perf_counter() - start_time
 
         # Performance targets
-        assert (
-            non_circular_time < 0.1
-        ), f"Non-circular validation too slow: {non_circular_time:.3f}s"
-        assert (
-            circular_detection_time < 0.1
-        ), f"Circular detection too slow: {circular_detection_time:.3f}s"
-        assert (
-            circular_detections == 50
-        ), f"Expected 50 circular detections, got {circular_detections}"
+        assert non_circular_time < 0.1, (
+            f"Non-circular validation too slow: {non_circular_time:.3f}s"
+        )
+        assert circular_detection_time < 0.1, (
+            f"Circular detection too slow: {circular_detection_time:.3f}s"
+        )
+        assert circular_detections == 50, (
+            f"Expected 50 circular detections, got {circular_detections}"
+        )
 
-        print(f"✅ Non-circular validation (100 deps): {non_circular_time*1000:.2f}ms")
         print(
-            f"✅ Circular detection (50 attempts): {circular_detection_time*1000:.2f}ms"
+            f"✅ Non-circular validation (100 deps): {non_circular_time * 1000:.2f}ms"
+        )
+        print(
+            f"✅ Circular detection (50 attempts): {circular_detection_time * 1000:.2f}ms"
         )
 
     def test_regex_pattern_performance(self):
@@ -200,18 +202,18 @@ class TestModelWorkflowDependencyPerformance:
         valid_avg_ms = (valid_time / valid_count) * 1000
         invalid_avg_ms = (invalid_time / len(invalid_modules) / 200) * 1000
 
-        assert (
-            valid_avg_ms < 0.5
-        ), f"Valid module validation too slow: {valid_avg_ms:.3f}ms"
-        assert (
-            invalid_avg_ms < 0.5
-        ), f"Invalid module rejection too slow: {invalid_avg_ms:.3f}ms"
-        assert (
-            valid_count == 1000
-        ), f"Expected 1000 valid validations, got {valid_count}"
-        assert (
-            invalid_rejections > 800
-        ), f"Expected >800 rejections, got {invalid_rejections}"
+        assert valid_avg_ms < 0.5, (
+            f"Valid module validation too slow: {valid_avg_ms:.3f}ms"
+        )
+        assert invalid_avg_ms < 0.5, (
+            f"Invalid module rejection too slow: {invalid_avg_ms:.3f}ms"
+        )
+        assert valid_count == 1000, (
+            f"Expected 1000 valid validations, got {valid_count}"
+        )
+        assert invalid_rejections > 800, (
+            f"Expected >800 rejections, got {invalid_rejections}"
+        )
 
         print(f"✅ Valid module validation: {valid_avg_ms:.3f}ms average")
         print(f"✅ Invalid module rejection: {invalid_avg_ms:.3f}ms average")
@@ -267,12 +269,12 @@ class TestModelWorkflowDependencyPerformance:
         analysis_time = time.perf_counter() - start_time
 
         # Performance targets
-        assert (
-            creation_time < 2.0
-        ), f"Large graph creation too slow: {creation_time:.2f}s"
-        assert (
-            analysis_time < 0.1
-        ), f"Large graph analysis too slow: {analysis_time:.2f}s"
+        assert creation_time < 2.0, (
+            f"Large graph creation too slow: {creation_time:.2f}s"
+        )
+        assert analysis_time < 0.1, (
+            f"Large graph analysis too slow: {analysis_time:.2f}s"
+        )
 
         # Verify correctness
         assert len(dependencies) == num_dependencies
@@ -286,7 +288,7 @@ class TestModelWorkflowDependencyPerformance:
         print(
             f"✅ Large graph creation ({num_dependencies} deps): {creation_time:.2f}s"
         )
-        print(f"✅ Large graph analysis: {analysis_time*1000:.2f}ms")
+        print(f"✅ Large graph analysis: {analysis_time * 1000:.2f}ms")
         print(
             f"📊 Graph stats: {sequential_count} seq, {parallel_count} par, {conditional_count} cond, {blocking_count} block"
         )
@@ -343,12 +345,12 @@ class TestModelWorkflowDependencyPerformance:
         invalid_avg_ms = (invalid_time / (len(invalid_timeouts) * 100)) * 1000
 
         assert valid_avg_ms < 1.0, f"Timeout validation too slow: {valid_avg_ms:.3f}ms"
-        assert (
-            invalid_avg_ms < 1.0
-        ), f"Invalid timeout rejection too slow: {invalid_avg_ms:.3f}ms"
-        assert (
-            invalid_rejections >= 300
-        ), f"Expected ≥300 timeout rejections, got {invalid_rejections}"
+        assert invalid_avg_ms < 1.0, (
+            f"Invalid timeout rejection too slow: {invalid_avg_ms:.3f}ms"
+        )
+        assert invalid_rejections >= 300, (
+            f"Expected ≥300 timeout rejections, got {invalid_rejections}"
+        )
 
         print(f"✅ Timeout validation: {valid_avg_ms:.3f}ms average")
         print(f"✅ Invalid timeout rejection: {invalid_avg_ms:.3f}ms average")
@@ -385,12 +387,12 @@ class TestModelWorkflowDependencyPerformance:
 
         # Memory efficiency targets (realistic for complex objects with UUIDs, conditions, versions)
         memory_per_dep_bytes = (total_memory_kb * 1024) / num_dependencies
-        assert (
-            memory_per_dep_bytes < 3000
-        ), f"Memory usage too high: {memory_per_dep_bytes:.1f} bytes/dep"
-        assert (
-            total_memory_kb < 15000
-        ), f"Total memory usage too high: {total_memory_kb:.1f} KB"
+        assert memory_per_dep_bytes < 3000, (
+            f"Memory usage too high: {memory_per_dep_bytes:.1f} bytes/dep"
+        )
+        assert total_memory_kb < 15000, (
+            f"Total memory usage too high: {total_memory_kb:.1f} KB"
+        )
 
         print(f"✅ Memory usage: {memory_per_dep_bytes:.1f} bytes per dependency")
         print(
@@ -456,9 +458,9 @@ class TestModelWorkflowDependencyPerformance:
         )
 
         # Performance targets
-        assert (
-            overall_time < 5.0
-        ), f"Concurrent validation too slow: {overall_time:.2f}s"
+        assert overall_time < 5.0, (
+            f"Concurrent validation too slow: {overall_time:.2f}s"
+        )
         assert max_thread_time < 2.0, f"Slowest thread too slow: {max_thread_time:.2f}s"
         assert total_validations == num_threads * deps_per_thread
 

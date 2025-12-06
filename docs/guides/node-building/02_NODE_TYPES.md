@@ -8,9 +8,11 @@
 
 The ONEX framework defines **four fundamental node types**, each designed for a specific category of operations. Understanding when to use each type is essential for building well-architected systems.
 
+> **v0.4.0 Architecture Update**: `NodeReducer` and `NodeOrchestrator` are now the PRIMARY implementations using FSM-driven state management and workflow-driven coordination respectively. The "Declarative" suffix has been removed. Legacy implementations have been removed from the codebase.
+
 ## The Four Node Types
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                    ONEX Four-Node Architecture                 │
 ├────────────────────────────────────────────────────────────────┤
@@ -56,9 +58,11 @@ Use an EFFECT node when you need to:
 
 ### Real-World Examples
 
-```
+```python
+from omnibase_core.nodes import NodeEffect, ModelEffectInput, ModelEffectOutput
+
 # Example 1: Database read operation
-class NodeUserFetcherEffect(NodeCoreBase):
+class NodeUserFetcherEffect(NodeEffect):
     """Fetch user data from database."""
 
     async def process(
@@ -81,7 +85,7 @@ class NodeUserFetcherEffect(NodeCoreBase):
         )
 
 # Example 2: External API call
-class NodeWeatherFetcherEffect(NodeCoreBase):
+class NodeWeatherFetcherEffect(NodeEffect):
     """Fetch weather data from external API."""
 
     async def process(
@@ -108,7 +112,9 @@ class NodeWeatherFetcherEffect(NodeCoreBase):
 ### Key Patterns
 
 **Connection Pooling**:
-```
+```python
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
 def __init__(self, container: ModelONEXContainer):
     super().__init__(container)
     # Use connection pooling for efficiency
@@ -117,7 +123,7 @@ def __init__(self, container: ModelONEXContainer):
 ```
 
 **Retry Logic**:
-```
+```python
 async def process(self, input_data):
     for attempt in range(3):  # Retry up to 3 times
         try:
@@ -129,7 +135,7 @@ async def process(self, input_data):
 ```
 
 **Idempotency**:
-```
+```python
 # Same input always produces same result (when possible)
 async def process(self, input_data):
     # Use idempotency key for operations
@@ -174,9 +180,11 @@ Use a COMPUTE node when you need to:
 
 ### Real-World Examples
 
-```
+```python
+from omnibase_core.nodes import NodeCompute, ModelComputeInput, ModelComputeOutput
+
 # Example 1: Data validation
-class NodeDataValidatorCompute(NodeCoreBase):
+class NodeDataValidatorCompute(NodeCompute):
     """Validate data structure and business rules."""
 
     async def process(
@@ -204,7 +212,7 @@ class NodeDataValidatorCompute(NodeCoreBase):
         )
 
 # Example 2: Price calculation
-class NodePriceCalculatorCompute(NodeCoreBase):
+class NodePriceCalculatorCompute(NodeCompute):
     """Calculate total price with tax and discounts."""
 
     async def process(
@@ -236,7 +244,10 @@ class NodePriceCalculatorCompute(NodeCoreBase):
 ### Key Patterns
 
 **Caching**:
-```
+```python
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes import ModelComputeOutput
+
 def __init__(self, container: ModelONEXContainer):
     super().__init__(container)
     # Cache expensive computations
@@ -261,7 +272,10 @@ async def process(self, input_data):
 ```
 
 **Parallel Processing**:
-```
+```python
+import asyncio
+from omnibase_core.nodes import ModelComputeOutput
+
 async def process(self, input_data):
     """Process items in parallel for performance."""
     items = input_data.items
@@ -282,40 +296,38 @@ async def process(self, input_data):
 
 ### Purpose
 
-**Aggregate and consolidate data** - combining, merging, accumulating data from multiple sources.
+**FSM-driven state management** - pure finite state machine transitions with intent emission for side effects.
+
+> **v0.4.0 Update**: `NodeReducer` is now the PRIMARY implementation using the Pure FSM pattern. Legacy aggregation-focused implementations have been removed from the codebase. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
 
 ### When to Use REDUCER
 
 Use a REDUCER node when you need to:
 
+✅ Implement finite state machines (FSM)
+✅ Manage state transitions with intent emission
+✅ Process events into state changes
 ✅ Sum, average, or aggregate values
 ✅ Merge data from multiple sources
-✅ Consolidate state across operations
 ✅ Group or categorize data
-✅ Build summary statistics
-✅ Combine partial results
 
 ### Design Principles
 
 **Key Principles**:
-- **Pure FSM Pattern** ⭐ **RECOMMENDED** - No mutable state, no direct side effects
+- **Pure FSM Pattern** - No mutable state, no direct side effects (PRIMARY pattern)
 - **Intent Emission** - Emit intents for side effects instead of executing directly
+- **Deterministic Transitions** - Same input always produces same state transition
 - **Aggregation Operations** - Fold, reduce, accumulate data
-- **State Management** - Can maintain state across operations (legacy pattern)
 - **Streaming Support** - Process large datasets incrementally
 - **Conflict Resolution** - Handle data conflicts during merging
 
-> **Note**: New implementations should use the Pure FSM pattern with intent emission (see below). Traditional aggregation patterns are still supported but considered legacy. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
-
 ---
 
-### Modern Pure FSM Pattern ⭐ **RECOMMENDED**
+### Pure FSM Pattern (Primary Implementation)
 
-The recommended approach for REDUCER nodes is the **pure FSM pattern** with intent emission.
+`NodeReducer` implements the **Pure Finite State Machine (FSM)** pattern with intent emission:
 
-**Modern REDUCER Pattern**: REDUCER nodes should follow the **Pure Finite State Machine (FSM)** pattern:
-
-```
+```text
 δ(state, action) → (new_state, intents[])
 ```
 
@@ -326,10 +338,11 @@ The recommended approach for REDUCER nodes is the **pure FSM pattern** with inte
 
 **Example: Order Processing FSM**
 
-```
+```python
+from omnibase_core.nodes import NodeReducer
 from omnibase_core.models.model_intent import ModelIntent, EnumIntentType
 
-class NodeOrderProcessingReducer(NodeCoreBase):
+class NodeOrderProcessingReducer(NodeReducer):
     """Pure FSM reducer for order processing."""
 
     def _apply_fsm_transition(self, state: dict, action: str, payload: dict):
@@ -369,16 +382,18 @@ class NodeOrderProcessingReducer(NodeCoreBase):
 
 ---
 
-### Traditional Aggregation Patterns
+### Aggregation Operations (Secondary Use Case)
 
-**Note**: The following patterns are still supported but new implementations should migrate to the pure FSM pattern with intent emission (see above). See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for step-by-step migration guidance.
+> **v0.4.0 Note**: `NodeReducer` is the primary implementation for FSM-driven state management. It also supports aggregation operations as a secondary use case. The examples below demonstrate aggregation patterns that can be implemented within the FSM framework. For pure aggregation without FSM state management, consider whether a `NodeCompute` might be more appropriate.
 
-#### Real-World Examples
+#### Aggregation Examples
 
-```
+```python
+from omnibase_core.nodes import NodeReducer, ModelReducerInput, ModelReducerOutput
+
 # Example 1: Aggregate user statistics
-class NodeUserStatsReducer(NodeCoreBase):
-    """Aggregate user activity statistics."""
+class NodeUserStatsReducer(NodeReducer):
+    """Aggregate user activity statistics using FSM-driven reducer."""
 
     async def process(
         self,
@@ -414,8 +429,8 @@ class NodeUserStatsReducer(NodeCoreBase):
         )
 
 # Example 2: Merge data from multiple sources
-class NodeDataMergerReducer(NodeCoreBase):
-    """Merge user data from multiple systems."""
+class NodeDataMergerReducer(NodeReducer):
+    """Merge user data from multiple systems using FSM-driven reducer."""
 
     async def process(
         self,
@@ -446,7 +461,9 @@ class NodeDataMergerReducer(NodeCoreBase):
 ### Key Patterns
 
 **Streaming Reduction**:
-```
+```python
+from omnibase_core.nodes import ModelReducerOutput
+
 async def process(self, input_data):
     """Process large dataset incrementally."""
     stream = input_data.data_stream
@@ -463,7 +480,7 @@ async def process(self, input_data):
 ```
 
 **Conflict Resolution**:
-```
+```python
 def _resolve_conflict(self, value_a, value_b, field_name):
     """Resolve conflicts when merging data."""
     if field_name in self.priority_fields:
@@ -484,13 +501,16 @@ def _resolve_conflict(self, value_a, value_b, field_name):
 
 ### Purpose
 
-**Coordinate workflows and manage dependencies** - orchestrating multiple nodes, managing complex workflows, handling sequences and parallel operations.
+**Workflow-driven coordination** - orchestrating multiple nodes with lease-based ownership and ModelAction command patterns.
+
+> **v0.4.0 Update**: `NodeOrchestrator` is now the PRIMARY implementation using the ModelAction pattern with lease-based coordination. Legacy workflow implementations have been removed from the codebase. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
 
 ### Characteristics
 
-- **Workflow coordination**: Manage multi-step processes
-- **Dependency management**: Handle execution order
-- **Error recovery**: Retry, fallback, compensation
+- **Workflow coordination**: Manage multi-step processes with ModelAction
+- **Lease-based ownership**: Single-writer semantics for concurrent safety
+- **Dependency management**: Handle execution order with epoch versioning
+- **Error recovery**: Retry, fallback, compensation with action validation
 - **Parallel execution**: Coordinate concurrent operations
 - **Service integration**: Tie multiple nodes together
 
@@ -498,16 +518,16 @@ def _resolve_conflict(self, value_a, value_b, field_name):
 
 Use an ORCHESTRATOR node when you need to:
 
-✅ Coordinate multi-step workflows
+✅ Coordinate multi-step workflows with lease management
 ✅ Manage dependencies between operations
 ✅ Execute operations in sequence or parallel
-✅ Handle complex error recovery
-✅ Implement saga patterns
-✅ Coordinate multiple services
+✅ Handle complex error recovery with compensation
+✅ Implement saga patterns with action tracing
+✅ Coordinate multiple services with optimistic concurrency
 
-### ORCHESTRATOR and ModelAction Pattern 🎯
+### ModelAction Pattern (Primary Implementation)
 
-**Modern ORCHESTRATOR Pattern**: ORCHESTRATOR nodes use **ModelAction** for command issuance with **lease-based ownership** and **optimistic concurrency**:
+`NodeOrchestrator` uses **ModelAction** for command issuance with **lease-based ownership** and **optimistic concurrency**:
 
 **Key Principles**:
 - **Single-Writer Semantics**: Only lease-holding orchestrator can issue actions
@@ -517,10 +537,11 @@ Use an ORCHESTRATOR node when you need to:
 
 **Example: Workflow Coordination with Lease Management**
 
-```
+```python
+from omnibase_core.nodes import NodeOrchestrator
 from omnibase_core.models.model_action import ModelAction, EnumActionType
 
-class NodeWorkflowOrchestrator(NodeCoreBase):
+class NodeWorkflowOrchestrator(NodeOrchestrator):
     """Orchestrator with lease-based coordination."""
 
     async def execute_orchestration(self, contract):
@@ -556,9 +577,9 @@ class NodeWorkflowOrchestrator(NodeCoreBase):
 
 ### Real-World Examples
 
-```
+```python
 # Example 1: User registration workflow
-class NodeUserRegistrationOrchestrator(NodeCoreBase):
+class NodeUserRegistrationOrchestrator(NodeOrchestrator):
     """Orchestrate complete user registration flow."""
 
     def __init__(self, container: ModelONEXContainer):
@@ -608,7 +629,7 @@ class NodeUserRegistrationOrchestrator(NodeCoreBase):
         )
 
 # Example 2: Parallel data fetching
-class NodeDataAggregatorOrchestrator(NodeCoreBase):
+class NodeDataAggregatorOrchestrator(NodeOrchestrator):
     """Fetch and combine data from multiple sources in parallel."""
 
     def __init__(self, container: ModelONEXContainer):
@@ -660,7 +681,9 @@ class NodeDataAggregatorOrchestrator(NodeCoreBase):
 ### Key Patterns
 
 **Sequential Workflow**:
-```
+```python
+from omnibase_core.nodes import ModelOrchestratorOutput
+
 async def process(self, input_data):
     """Execute steps in sequence with dependency management."""
     # Step 1
@@ -676,7 +699,10 @@ async def process(self, input_data):
 ```
 
 **Parallel Workflow**:
-```
+```python
+import asyncio
+from omnibase_core.nodes import ModelOrchestratorOutput
+
 async def process(self, input_data):
     """Execute independent operations in parallel."""
     # All these can run concurrently
@@ -690,7 +716,10 @@ async def process(self, input_data):
 ```
 
 **Error Recovery**:
-```
+```python
+from omnibase_core.nodes import ModelOrchestratorOutput
+from omnibase_core.errors import ModelOnexError
+
 async def process(self, input_data):
     """Workflow with error handling and compensation."""
     try:
@@ -724,7 +753,7 @@ Use this table to choose the right node type:
 
 ## Decision Flowchart
 
-```
+```text
 Start: What does this node need to do?
 │
 ├─ Interact with external systems? ────────────────────────────────▶ EFFECT
@@ -744,7 +773,7 @@ Start: What does this node need to do?
 
 ### Pattern 1: Fetch-Transform-Save
 
-```
+```python
 # EFFECT: Fetch from API
 fetched = await effect_fetch.process(input)
 
@@ -760,7 +789,7 @@ result = await orchestrator.process(input)
 
 ### Pattern 2: Parallel Fetch-Merge
 
-```
+```python
 # EFFECT: Fetch from multiple sources (parallel)
 source_a, source_b, source_c = await asyncio.gather(
     effect_a.process(input),
@@ -777,7 +806,7 @@ result = await orchestrator.process(input)
 
 ### Pattern 3: Validate-Process-Aggregate
 
-```
+```python
 # COMPUTE: Validate input
 validated = await compute_validate.process(input)
 
@@ -805,17 +834,19 @@ result = await orchestrator.process(input)
 - **Key trait**: Deterministic, no side effects
 - **Example**: Validation, price calculation
 
-### REDUCER Node
-- **Purpose**: Data aggregation & state management
-- **Use when**: Combining or summarizing data, FSM state transitions
-- **Key trait**: Pure FSM pattern ⭐ (fold, merge, accumulate for legacy)
-- **Example**: Order processing FSM, statistics, data merging
+### REDUCER Node (v0.4.0 PRIMARY)
+- **Purpose**: FSM-driven state management
+- **Use when**: State transitions, FSM patterns, aggregation
+- **Key trait**: Pure FSM with intent emission
+- **Import**: `from omnibase_core.nodes import NodeReducer`
+- **Example**: Order processing FSM, event reduction
 
-### ORCHESTRATOR Node
-- **Purpose**: Workflow coordination
-- **Use when**: Managing multi-step processes
-- **Key trait**: Coordinates other nodes
-- **Example**: User registration flow
+### ORCHESTRATOR Node (v0.4.0 PRIMARY)
+- **Purpose**: Workflow-driven coordination
+- **Use when**: Multi-step workflows, lease-based coordination
+- **Key trait**: ModelAction with lease management
+- **Import**: `from omnibase_core.nodes import NodeOrchestrator`
+- **Example**: User registration flow, parallel orchestration
 
 ## What's Next?
 
@@ -900,25 +931,27 @@ flowchart TD
 
 ## Quick Reference
 
-```
-# RECOMMENDED: Use service wrappers for production
+```python
+# v0.4.0 PRIMARY NODE IMPLEMENTATIONS (top-level API)
+from omnibase_core.nodes import NodeEffect, NodeCompute, NodeReducer, NodeOrchestrator
+
+# Example: FSM-driven REDUCER (PRIMARY)
+class MyOrderReducer(NodeReducer):
+    """FSM reducer with intent emission."""
+    def _apply_fsm_transition(self, state, action, payload):
+        # Pure state transition logic
+        return FSMTransitionResult(new_state=new_state, intents=intents)
+
+# Example: Workflow-driven ORCHESTRATOR (PRIMARY)
+class MyWorkflowOrchestrator(NodeOrchestrator):
+    """Orchestrator with lease-based coordination."""
+    async def execute_orchestration(self, contract):
+        # Workflow coordination with ModelAction
+        return result
+
+# SERVICE WRAPPERS: For production with standard mixins
 from omnibase_core.models.service.model_service_effect import ModelServiceEffect
 from omnibase_core.models.service.model_service_compute import ModelServiceCompute
 from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
 from omnibase_core.models.service.model_service_orchestrator import ModelServiceOrchestrator
-
-class MyProductionService(ModelServiceCompute):
-    """Production-ready COMPUTE node with standard mixins."""
-    async def process(self, input_data):
-        # Your business logic here
-        return self.calculate(input_data)
-
-# ADVANCED: Custom nodes only when needed
-from omnibase_core.infrastructure.node_core_base import NodeCoreBase
-
-class MyCustomNode(NodeCoreBase):
-    """Custom node with specialized composition."""
-    async def process(self, input_data):
-        # Specialized implementation
-        return custom_logic(input_data)
 ```

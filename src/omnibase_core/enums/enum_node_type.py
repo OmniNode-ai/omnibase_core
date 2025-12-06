@@ -225,7 +225,7 @@ class EnumNodeType(str, Enum):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 context={
                     "node_type": str(node_type),
-                    "available_types": [str(k) for k in _KIND_MAP.keys()],
+                    "available_types": [str(k) for k in _KIND_MAP],
                 },
             ) from e
         else:
@@ -368,7 +368,7 @@ class EnumNodeType(str, Enum):
 # defined at runtime and verified by tests. See CLAUDE.md section "Node
 # Classification Enums: EnumNodeKind vs EnumNodeType" for architectural context.
 _populate_kind_map()
-setattr(EnumNodeType, "_KIND_MAP", _KIND_MAP)  # noqa: B010
+setattr(EnumNodeType, "_KIND_MAP", _KIND_MAP)
 
 # Export for use
 __all__ = ["EnumNodeType"]

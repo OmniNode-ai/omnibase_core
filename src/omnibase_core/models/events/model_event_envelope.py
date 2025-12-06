@@ -1,4 +1,4 @@
-from typing import Generic, Optional, TypeVar, cast
+from typing import cast
 
 from pydantic import BaseModel, Field
 
@@ -11,10 +11,8 @@ from uuid import UUID, uuid4
 
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 
-T = TypeVar("T")
 
-
-class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
+class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
     """
     ONEX-compliant envelope wrapper for all events.
 
@@ -331,7 +329,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         """
         lazy_payload = self.lazy_string_conversion(
             cast(
-                Optional[BaseModel],
+                "BaseModel | None",
                 self.payload if hasattr(self.payload, "model_dump") else None,
             ),
             "payload",

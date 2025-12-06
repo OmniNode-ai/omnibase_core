@@ -389,12 +389,16 @@ class ModelRegistryHealthReport(BaseModel):
             availability_sla=(
                 "met"
                 if availability >= 99.0
-                else "at_risk" if availability >= 95.0 else "violated"
+                else "at_risk"
+                if availability >= 95.0
+                else "violated"
             ),
             reliability_sla=(
                 "met"
                 if reliability >= 0.95
-                else "at_risk" if reliability >= 0.85 else "violated"
+                else "at_risk"
+                if reliability >= 0.85
+                else "violated"
             ),
             performance_sla=self._check_performance_sla(),
             overall_compliance=(

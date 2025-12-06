@@ -85,9 +85,7 @@ class ModelEventMetadata(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
+        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def get_id(self) -> str:
@@ -120,9 +118,7 @@ class ModelEventMetadata(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
+        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
 

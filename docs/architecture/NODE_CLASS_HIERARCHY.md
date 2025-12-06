@@ -1,9 +1,11 @@
 # Node Class Hierarchy Guide
 
-**Version**: 1.0.0
-**Last Updated**: 2025-01-19
+**Version**: 1.3.1
+**Last Updated**: 2025-12-06
 **Status**: ✅ Complete
 **Correlation ID**: `a3c8f7d4-2b5e-4a19-9f3a-8d6e1c4b7a2f`
+
+> **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed. Legacy imperative implementations have been removed.
 
 ---
 
@@ -41,7 +43,7 @@ omnibase_core provides **three tiers** of node base classes, each optimized for 
 
 ### The Hierarchy
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │  Tier 1: ModelService* Wrappers (RECOMMENDED)           │
 │  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
@@ -137,15 +139,14 @@ Each tier inherits from the one below, **adding features without removing flexib
 
 **File**: `src/your_project/nodes/node_price_calculator_compute.py`
 
-```
+```python
 """Price calculator using Tier 1 ModelServiceCompute wrapper."""
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_compute_input import ModelComputeInput
-from omnibase_core.models.model_compute_output import ModelComputeOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.nodes import ModelComputeInput, ModelComputeOutput
 
 
 class NodePriceCalculatorCompute(ModelServiceCompute):
@@ -261,15 +262,14 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
 
 **File**: `src/your_project/nodes/node_database_writer_effect.py`
 
-```
+```python
 """Database writer using Tier 1 ModelServiceEffect wrapper."""
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_effect_input import ModelEffectInput
-from omnibase_core.models.model_effect_output import ModelEffectOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.nodes import ModelEffectInput, ModelEffectOutput
 
 
 class NodeDatabaseWriterEffect(ModelServiceEffect):
@@ -357,12 +357,14 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 
 ### Testing Tier 1 Nodes
 
-```
+```python
 """Test ModelServiceCompute node."""
 
 import pytest
+
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_compute_input import ModelComputeInput
+from omnibase_core.nodes import ModelComputeInput
+
 from your_project.nodes.node_price_calculator_compute import NodePriceCalculatorCompute
 
 
@@ -461,16 +463,14 @@ async def test_caching(calculator):
 
 ### Complete Example: Custom COMPUTE Node
 
-```
+```python
 """Custom COMPUTE node with selective mixin composition."""
 
-from omnibase_core.nodes.node_compute import NodeCompute
+from omnibase_core.nodes import NodeCompute, ModelComputeInput, ModelComputeOutput
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 # Note: Intentionally NOT including MixinCaching for this use case
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_compute_input import ModelComputeInput
-from omnibase_core.models.model_compute_output import ModelComputeOutput
 
 
 class NodeCustomAnalyticsCompute(
@@ -534,14 +534,12 @@ class NodeCustomAnalyticsCompute(
 
 ### Complete Example: Custom EFFECT Node
 
-```
+```python
 """Custom EFFECT node with retry-focused composition."""
 
-from omnibase_core.nodes.node_effect import NodeEffect
+from omnibase_core.nodes import NodeEffect, ModelEffectInput, ModelEffectOutput
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_effect_input import ModelEffectInput
-from omnibase_core.models.model_effect_output import ModelEffectOutput
 
 
 class NodeCustomApiClientEffect(
@@ -604,7 +602,7 @@ class NodeCustomApiClientEffect(
 
 When building Tier 2 nodes, **order matters** in MRO:
 
-```
+```python
 # ✅ CORRECT - Service mode first, then base node, then features
 class MyNode(
     MixinNodeService,     # 1. Service mode (if needed)
@@ -684,7 +682,7 @@ class MyNode(
 
 ### Complete Example: Custom Node Type
 
-```
+```python
 """Custom VALIDATOR node type using NodeCoreBase."""
 
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -818,7 +816,7 @@ class NodeCustomValidator(NodeCoreBase):
 
 To add features, **compose with mixins manually**. This pattern forms the foundation for ONEX's upcoming declarative node architecture (v0.4.0), where nodes define their behavior through configuration rather than inheritance. See [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md#declarative-patterns) for the declarative approach.
 
-```
+```python
 """NodeCoreBase with manual mixin composition."""
 
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -859,7 +857,7 @@ class NodeCustomValidatorWithFeatures(
 
 ### Visual Decision Tree
 
-```
+```text
 START: What are you building?
 │
 ├─ Standard production node? ───────────────────────┐
@@ -983,7 +981,7 @@ Ask yourself these questions in order:
 
 **Steps**:
 
-```
+```python
 # BEFORE: NodeCoreBase (Tier 3)
 class MyNode(NodeCoreBase):
     def __init__(self, container):
@@ -1005,7 +1003,7 @@ class MyNode(NodeCompute):
 
 **Steps**:
 
-```
+```python
 # BEFORE: NodeCompute with manual mixins (Tier 2)
 class MyNode(
     NodeCompute,
@@ -1034,7 +1032,7 @@ class MyNode(ModelServiceCompute):
 
 **Steps**:
 
-```
+```python
 # BEFORE: ModelServiceCompute (Tier 1 - fixed composition)
 class MyNode(ModelServiceCompute):
     # Includes: NodeService, HealthCheck, Caching, Metrics
@@ -1060,7 +1058,7 @@ class MyNode(
 
 **Steps**:
 
-```
+```python
 # BEFORE: NodeCompute (Tier 2 - COMPUTE semantics)
 class MyNode(NodeCompute):
     # Has caching, parallel processing
@@ -1110,7 +1108,7 @@ When migrating between tiers:
 
 **Solution**: **Tier 1 - ModelServiceCompute**
 
-```
+```python
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
 
 class NodeMcpCalculatorCompute(ModelServiceCompute):
@@ -1143,8 +1141,8 @@ class NodeMcpCalculatorCompute(ModelServiceCompute):
 
 **Solution**: **Tier 2 - NodeEffect + Custom Mixins**
 
-```
-from omnibase_core.nodes.node_effect import NodeEffect
+```python
+from omnibase_core.nodes import NodeEffect
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 
 class NodeHighPerfApiEffect(
@@ -1179,8 +1177,8 @@ class NodeHighPerfApiEffect(
 
 **Solution**: **Tier 2 - NodeCompute + Selective Mixins**
 
-```
-from omnibase_core.nodes.node_compute import NodeCompute
+```python
+from omnibase_core.nodes import NodeCompute
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 
@@ -1211,7 +1209,7 @@ class NodeRealtimeAnalyticsCompute(
 
 **Solution**: **Tier 3 - NodeCoreBase**
 
-```
+```python
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 
 class NodeCustomValidator(NodeCoreBase):
@@ -1241,7 +1239,7 @@ class NodeCustomValidator(NodeCoreBase):
 
 **Solution**: **Tier 1 - ModelServiceEffect**
 
-```
+```python
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
 
 class NodeDatabaseWriterEffect(ModelServiceEffect):
@@ -1285,7 +1283,7 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 
 ### Decision Flowchart Summary
 
-```
+```text
 ┌─────────────────────────────────────┐
 │  Is it EFFECT/COMPUTE/REDUCER/ORCH? │
 └───────────┬─────────────────────────┘
@@ -1385,40 +1383,59 @@ The node class hierarchy is used across the ONEX ecosystem:
 
 ---
 
-## Naming Convention Migration (v0.4.0)
+## Naming Convention Migration (v0.4.0) - COMPLETED
 
-In v0.4.0, declarative nodes become the default implementation. Legacy imperative nodes move to `nodes/legacy/` with a `Legacy` suffix.
+As of v0.4.0, the declarative nodes ARE the default implementation. The "Declarative" suffix has been removed because these ARE the standard now.
 
-### Migration Table
+### Node Classes (v0.4.0+)
 
-The table below shows the transition from current (pre-v0.4.0) naming to the new (v0.4.0+) naming convention:
+| Node Type | Class | Location | Pattern |
+|-----------|-------|----------|---------|
+| **Reducer** | `NodeReducer` | `nodes/node_reducer.py` | FSM-driven |
+| **Orchestrator** | `NodeOrchestrator` | `nodes/node_orchestrator.py` | Workflow-driven |
+| **Compute** | `NodeCompute` | `nodes/node_compute.py` | Contract-based |
+| **Effect** | `NodeEffect` | `nodes/node_effect.py` | Transaction-based |
 
-| Status | Current Name (pre-v0.4.0) | New Name (v0.4.0+) | Location After Refactoring |
-|--------|---------------------------|--------------------|-----------------------------|
-| Rename | `NodeCompute` | `NodeComputeLegacy` | `nodes/legacy/node_compute_legacy.py` |
-| Rename | `NodeEffect` | `NodeEffectLegacy` | `nodes/legacy/node_effect_legacy.py` |
-| Rename | `NodeReducer` | `NodeReducerLegacy` | `nodes/legacy/node_reducer_legacy.py` |
-| Rename | `NodeOrchestrator` | `NodeOrchestratorLegacy` | `nodes/legacy/node_orchestrator_legacy.py` |
-| Promote | `NodeReducerDeclarative` | `NodeReducer` | `nodes/node_reducer.py` |
-| Promote | `NodeOrchestratorDeclarative` | `NodeOrchestrator` | `nodes/node_orchestrator.py` |
-| New | *(does not exist yet)* | `NodeCompute` | `nodes/node_compute.py` (declarative) |
-| New | *(does not exist yet)* | `NodeEffect` | `nodes/node_effect.py` (declarative) |
+### Key Points
 
-**Status Legend**:
-- **Rename**: Existing class moves to legacy location with new suffix
-- **Promote**: Existing declarative class becomes the default implementation
-- **New**: Class to be created in v0.4.0 (declarative implementation)
+- **`NodeReducer`** and **`NodeOrchestrator`** are FSM/workflow-driven by default
+- **No "Declarative" suffix** - these ARE the standard implementations
+- **All nodes use declarative YAML contracts**
 
-**Import Changes**:
-- Default imports (`from omnibase_core.nodes import NodeCompute`) resolve to declarative implementations
-- Legacy imports require explicit path: `from omnibase_core.nodes.legacy import NodeComputeLegacy`
+### Import Examples
 
-**Deprecation Timeline**: Legacy nodes deprecated in v0.4.0, removed in v1.0.0.
+```python
+# v0.4.0+ Top-Level API (RECOMMENDED)
+from omnibase_core.nodes import (
+    NodeCompute,
+    NodeEffect,
+    NodeOrchestrator,
+    NodeReducer,
+    # Input/Output models also available from top-level
+    ModelComputeInput,
+    ModelComputeOutput,
+    ModelEffectInput,
+    ModelEffectOutput,
+    ModelOrchestratorInput,
+    ModelOrchestratorOutput,
+    ModelReducerInput,
+    ModelReducerOutput,
+)
+```
+
+### Import Patterns
+
+| Pattern | Import | Status |
+|---------|--------|--------|
+| **Top-level API** | `from omnibase_core.nodes import NodeReducer, ...` | **RECOMMENDED** |
+| **Direct module** | `from omnibase_core.nodes.node_reducer import NodeReducer` | Supported (internal) |
+
+**Note**: Legacy imperative nodes were removed in v0.4.0. All nodes now use declarative YAML contracts.
 
 See [MVP_PLAN.md](../MVP_PLAN.md) for full migration details.
 
 ---
 
 **Correlation ID**: `a3c8f7d4-2b5e-4a19-9f3a-8d6e1c4b7a2f`
-**Document Version**: 1.2.0
-**Last Updated**: 2025-12-03
+**Document Version**: 1.3.1
+**Last Updated**: 2025-12-06

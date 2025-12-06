@@ -1,8 +1,21 @@
 # ONEX Four-Node Architecture Documentation
 
+> **Version**: 0.4.0
+> **Last Updated**: 2025-12-05
+> **Status**: Production
+
 ## Overview
 
 The ONEX Four-Node Architecture is a foundational design pattern that provides structured, scalable, and maintainable microservice organization. Each node has specific responsibilities within the processing pipeline, enabling clear separation of concerns and optimal system performance.
+
+### v0.4.0 Changes
+
+In v0.4.0, the node architecture has been modernized:
+
+- **NodeReducer**: Now FSM-driven via `MixinFSMExecution` (primary implementation)
+- **NodeOrchestrator**: Now workflow-driven via `MixinWorkflowExecution` (primary implementation)
+- **Legacy Implementations Removed**: Legacy node classes have been fully deleted (no deprecation period)
+- **Naming**: The "Declarative" suffix has been removed - FSM/workflow nodes ARE the standard implementation
 
 ## Architecture Pattern
 
@@ -296,184 +309,134 @@ class DataTransformationComputeService(NodeCompute):
 
 ### 3. REDUCER Node
 
-**Primary Responsibility**: State aggregation and pure FSM transitions
+**Primary Responsibility**: FSM-driven state management and pure state transitions
 
 **Key Functions**:
-- Pure state transitions following FSM pattern: δ(state, action) → (new_state, intents[])
-- Data aggregation and summarization without side effects
+- Pure state transitions following FSM pattern: `delta(state, event) -> (new_state, intents[])`
+- State aggregation and summarization without side effects
 - Intent emission for all external operations
-- Result consolidation from multiple sources
-- Incremental processing support
+- YAML-driven state machine definitions
+- Terminal state detection and state history tracking
 
 **Design Principles**:
 - **Pure FSM Pattern**: No mutable state, no direct side effects
 - **Intent-Based Side Effects**: Emit intents instead of executing effects
-- Maintain consistent state across operations
-- Support both batch and streaming processing
-- Optimize for memory efficiency
+- **YAML-Driven**: State transitions defined declaratively in contracts
 - Deterministic state transitions for testability
+- Zero custom code required for standard use cases
+
+**v0.4.0 Implementation**: `NodeReducer` with `MixinFSMExecution`
+
+The primary implementation uses FSM subcontracts for state management. All state
+transitions, conditions, and actions are defined in YAML contracts.
+
+**Import Path**:
+```python
+from omnibase_core.nodes.node_reducer import NodeReducer
+from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
+```
 
 **Implementation Example**:
 
-```
+```python
 from omnibase_core.nodes.node_reducer import NodeReducer
-from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-class DataAggregationReducerService(NodeReducer):
+class NodeMetricsAggregationReducer(NodeReducer):
     """
-    REDUCER node for data aggregation and state management.
+    FSM-driven reducer node for metrics aggregation.
 
-    Consolidates processed data into aggregated results with support
-    for streaming updates and transactional consistency.
+    Zero custom Python code required - all state transitions defined
+    declaratively in YAML contract with FSM subcontract.
+
+    Example YAML Contract:
+        ```yaml
+        state_transitions:
+          state_machine_name: metrics_aggregation_fsm
+          initial_state: idle
+          states:
+            - state_name: idle
+              entry_actions: []
+              exit_actions: []
+            - state_name: collecting
+              entry_actions: ["start_collection"]
+              exit_actions: ["finalize_collection"]
+            - state_name: aggregating
+              entry_actions: ["begin_aggregation"]
+              exit_actions: []
+            - state_name: completed
+              is_terminal: true
+          transitions:
+            - from_state: idle
+              to_state: collecting
+              trigger: collect_metrics
+              conditions:
+                - expression: "data_sources min_length 1"
+                  required: true
+            - from_state: collecting
+              to_state: aggregating
+              trigger: start_aggregation
+            - from_state: aggregating
+              to_state: completed
+              trigger: complete
+          terminal_states: ["completed"]
+        ```
     """
 
-    def __init__(self, container: ModelONEXContainer):
+    def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
-        self.state_manager = container.get_service("ProtocolStateManager")
-        self.transaction_manager = container.get_service("ProtocolTransactionManager")
+        # FSM contract auto-loaded from node contract if present
+        # No additional initialization needed for FSM-driven nodes
 
-    async def execute_reduction(self, contract: ModelContractReducer) -> ModelReducerOutput:
-        """
-        Execute data reduction and aggregation based on contract specification.
 
-        Args:
-            contract: Reducer contract with aggregation specifications
+# Usage Example:
+async def example_fsm_reducer_usage():
+    from omnibase_core.models.model_reducer_input import ModelReducerInput
+    from omnibase_core.enums.enum_reducer_types import EnumReductionType
 
-        Returns:
-            ModelReducerOutput: Aggregated results with state information
+    # Create node from container
+    node = NodeMetricsAggregationReducer(container)
 
-        Raises:
-            StateConsistencyError: If state consistency cannot be maintained
-            TransactionError: If transaction management fails
-            ModelOnexError: If reduction operation fails
-        """
-        transaction_id = None
+    # Initialize FSM state (if not auto-initialized from contract)
+    # node.initialize_fsm_state(fsm_contract, context={"batch_size": 1000})
 
-        try:
-            # Start transaction if configured
-            if contract.transaction_config:
-                transaction_id = await self.transaction_manager.begin_transaction(
-                    contract.correlation_id
-                )
-
-            # Load existing state
-            current_state = await self.state_manager.get_state(
-                contract.correlation_id,
-                contract.reduction_config.state_key
-            )
-
-            # Perform reduction operation
-            if contract.streaming_config and contract.streaming_config.enabled:
-                result = await self._execute_streaming_reduction(contract, current_state)
-            else:
-                result = await self._execute_batch_reduction(contract, current_state)
-
-            # Update state with results
-            await self.state_manager.update_state(
-                contract.correlation_id,
-                contract.reduction_config.state_key,
-                result.aggregated_state
-            )
-
-            # Create backup if configured
-            if contract.backup_config:
-                await self._create_state_backup(contract, result)
-
-            # Commit transaction
-            if transaction_id:
-                await self.transaction_manager.commit_transaction(transaction_id)
-
-            return ModelReducerOutput(
-                correlation_id=contract.correlation_id,
-                aggregated_data=result.aggregated_data,
-                state_metadata=result.state_metadata,
-                reduction_metrics={
-                    "records_processed": result.records_processed,
-                    "reduction_ratio": result.reduction_ratio,
-                    "state_size": len(result.aggregated_state)
-                }
-            )
-
-        except Exception as e:
-            # Rollback transaction on error
-            if transaction_id:
-                await self.transaction_manager.rollback_transaction(transaction_id)
-            raise ModelOnexError(
-                message="Reduction operation failed",
-                correlation_id=contract.correlation_id
-            ) from e
-
-    async def _execute_streaming_reduction(self, contract: ModelContractReducer, current_state):
-        """Execute reduction with streaming data support."""
-        streaming_config = contract.streaming_config
-        reduction_config = contract.reduction_config
-
-        aggregator = StreamingAggregator(
-            aggregation_method=reduction_config.aggregation_method,
-            chunk_size=streaming_config.chunk_size,
-            current_state=current_state
-        )
-
-        async for data_chunk in self._stream_input_data(contract.input_data, streaming_config):
-            chunk_result = await aggregator.process_chunk(data_chunk)
-
-            # Update progress tracking
-            await self._update_progress(contract.correlation_id, chunk_result.progress)
-
-            # Handle memory management
-            if chunk_result.memory_usage > contract.memory_management.buffer_size_mb * 0.8:
-                await aggregator.flush_intermediate_results()
-
-        return await aggregator.finalize()
-
-    async def _execute_batch_reduction(self, contract: ModelContractReducer, current_state):
-        """Execute reduction in batch mode."""
-        reduction_config = contract.reduction_config
-
-        # Apply aggregation method
-        if reduction_config.aggregation_method == "sum":
-            result = self._sum_aggregation(contract.input_data, current_state)
-        elif reduction_config.aggregation_method == "average":
-            result = self._average_aggregation(contract.input_data, current_state)
-        elif reduction_config.aggregation_method == "count":
-            result = self._count_aggregation(contract.input_data, current_state)
-        elif reduction_config.aggregation_method == "custom":
-            result = await self._custom_aggregation(contract.input_data, current_state, reduction_config)
-        else:
-            raise ValueError(f"Unsupported aggregation method: {reduction_config.aggregation_method}")
-
-        return BatchReductionResult(
-            aggregated_data=result,
-            aggregated_state=self._merge_state(current_state, result),
-            records_processed=len(contract.input_data),
-            reduction_ratio=self._calculate_reduction_ratio(contract.input_data, result)
-        )
-
-    async def _create_state_backup(self, contract: ModelContractReducer, result):
-        """Create backup of aggregated state."""
-        backup_config = contract.backup_config
-        backup_data = {
-            "timestamp": datetime.now(UTC),
-            "correlation_id": contract.correlation_id,
-            "aggregated_state": result.aggregated_state,
-            "backup_metadata": {
-                "version": backup_config.version,
-                "backup_type": backup_config.backup_type
-            }
+    # Execute transition via process method
+    input_data = ModelReducerInput(
+        data=[...],
+        reduction_type=EnumReductionType.AGGREGATE,
+        metadata={
+            "trigger": "collect_metrics",
+            "data_sources": ["db1", "db2", "api"],
         }
+    )
 
-        await self.state_manager.create_backup(
-            backup_config.backup_location,
-            backup_data
-        )
+    result = await node.process(input_data)
+    print(f"New state: {result.metadata['fsm_state']}")
+    print(f"Intents emitted: {len(result.intents)}")
+
+    # Check current state
+    current = node.get_current_state()
+    history = node.get_state_history()
+    is_done = node.is_complete()
 ```
+
+**Key Features** (v0.4.0):
+- Pure FSM pattern: `(state, event) -> (new_state, intents[])`
+- All side effects emitted as intents for Effect nodes
+- Complete Pydantic validation for contracts
+- Zero custom code - entirely YAML-driven
+- State persistence when enabled in contract
+- Entry/exit actions for states
+- Conditional transitions with expression evaluation
+- Wildcard transitions for error handling
+- Terminal state detection
 
 **Best Practices**:
-- Implement transactional consistency where required
-- Use appropriate data structures for aggregation operations
-- Provide incremental processing capabilities
-- Monitor memory usage during aggregation
-- Support both batch and streaming processing modes
+- Define state machines declaratively in YAML contracts
+- Use FSM subcontracts for all state management
+- Emit intents for side effects rather than direct execution
+- Test pure FSM transitions without mocking external dependencies
+- Use terminal states to signal workflow completion
 
 ## ModelIntent Architecture
 
@@ -891,258 +854,157 @@ def execute_reduction(self, contract):
 
 ### 4. ORCHESTRATOR Node
 
-**Primary Responsibility**: Workflow coordination and service orchestration
+**Primary Responsibility**: Workflow-driven coordination and service orchestration
 
 **Key Functions**:
-- Service coordination and dependency management
-- Workflow execution control
-- Event-driven processing coordination
-- Resource allocation and management
-- Cross-service communication
+- Workflow coordination with declarative definitions
+- Dependency-aware execution with topological ordering
+- Sequential, parallel, and batch execution modes
+- Action emission for deferred execution
+- Cycle detection in workflow graphs
 
 **Design Principles**:
-- Centralized coordination logic
-- Event-driven architecture support
-- Fault tolerance and recovery
-- Service discovery and health monitoring
-- Scalable workflow management
+- **YAML-Driven**: Workflow definitions declared in contracts
+- **Action-Based**: Emit actions rather than execute directly
+- Dependency-aware topological ordering
+- Fault tolerance through declarative retry policies
+- Zero custom code for standard workflows
+
+**v0.4.0 Implementation**: `NodeOrchestrator` with `MixinWorkflowExecution`
+
+The primary implementation uses workflow definitions for coordination. All workflow
+steps, dependencies, and execution modes are defined in YAML contracts.
+
+**Import Path**:
+```python
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
+```
 
 **Implementation Example**:
 
-```
+```python
+from uuid import uuid4
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-from omnibase_core.models.contracts.model_contract_orchestrator import ModelContractOrchestrator
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
+    ModelWorkflowDefinition,
+)
 
-class WorkflowOrchestratorService(NodeOrchestrator):
+class NodeDataPipelineOrchestrator(NodeOrchestrator):
     """
-    ORCHESTRATOR node for workflow coordination and service management.
+    Workflow-driven orchestrator node for data pipeline coordination.
 
-    Coordinates execution across multiple services with support for complex
-    workflow patterns, dependency management, and fault tolerance.
+    Zero custom Python code required - all coordination logic defined
+    declaratively in YAML contract with workflow definition.
+
+    Example YAML Contract:
+        ```yaml
+        workflow_coordination:
+          workflow_definition:
+            workflow_metadata:
+              workflow_name: data_processing_pipeline
+              workflow_version: "1.0.0"
+              execution_mode: parallel
+              description: "Multi-stage data processing workflow"
+
+            execution_graph:
+              nodes:
+                - node_id: "fetch_data"
+                  node_type: effect
+                  description: "Fetch data from sources"
+                - node_id: "validate_schema"
+                  node_type: compute
+                  description: "Validate data schema"
+                - node_id: "enrich_data"
+                  node_type: compute
+                  description: "Enrich with additional fields"
+                - node_id: "persist_results"
+                  node_type: effect
+                  description: "Save to database"
+
+            coordination_rules:
+              parallel_execution_allowed: true
+              failure_recovery_strategy: retry
+              max_retries: 3
+              timeout_ms: 300000
+        ```
     """
 
-    def __init__(self, container: ModelONEXContainer):
+    def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
-        self.service_registry = container.get_service("ProtocolServiceRegistry")
-        self.event_bus = container.get_service("ProtocolEventBus")
-        self.health_monitor = container.get_service("ProtocolHealthMonitor")
+        # Workflow definition auto-loaded from node contract if present
+        # No additional initialization needed for workflow-driven nodes
 
-    async def execute_orchestration(self, contract: ModelContractOrchestrator) -> ModelOrchestratorOutput:
-        """
-        Execute workflow orchestration based on contract specification.
 
-        Args:
-            contract: Orchestrator contract with workflow and dependency specifications
+# Usage Example:
+async def example_workflow_orchestrator_usage():
+    from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
+    from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 
-        Returns:
-            ModelOrchestratorOutput: Orchestration results with execution metadata
+    # Create node from container
+    node = NodeDataPipelineOrchestrator(container)
 
-        Raises:
-            DependencyResolutionError: If required dependencies are not available
-            WorkflowExecutionError: If workflow execution fails
-            ModelOnexError: If orchestration fails
-        """
-        workflow_id = str(uuid4())
+    # CRITICAL: Set workflow definition (required before processing)
+    # This can be done via:
+    # 1. Auto-loading from contract YAML (recommended)
+    # 2. Manual assignment: node.workflow_definition = ModelWorkflowDefinition(...)
 
-        try:
-            # Validate service dependencies
-            await self._validate_dependencies(contract.dependency_resolution)
+    # Define workflow steps as dicts
+    fetch_step_id = uuid4()
+    process_step_id = uuid4()
 
-            # Initialize workflow execution context
-            execution_context = await self._initialize_execution_context(contract, workflow_id)
+    steps_config = [
+        {
+            "step_id": fetch_step_id,
+            "step_name": "Fetch Data",
+            "step_type": "effect",
+            "timeout_ms": 10000,
+        },
+        {
+            "step_id": process_step_id,
+            "step_name": "Process Data",
+            "step_type": "compute",
+            "depends_on": [fetch_step_id],
+            "timeout_ms": 15000,
+        },
+    ]
 
-            # Execute workflow based on coordination pattern
-            if contract.workflow_config.coordination_type == EnumWorkflowCoordination.SEQUENTIAL:
-                result = await self._execute_sequential_workflow(contract, execution_context)
-            elif contract.workflow_config.coordination_type == EnumWorkflowCoordination.PARALLEL:
-                result = await self._execute_parallel_workflow(contract, execution_context)
-            elif contract.workflow_config.coordination_type == EnumWorkflowCoordination.PIPELINE:
-                result = await self._execute_pipeline_workflow(contract, execution_context)
-            elif contract.workflow_config.coordination_type == EnumWorkflowCoordination.EVENT_DRIVEN:
-                result = await self._execute_event_driven_workflow(contract, execution_context)
-            else:
-                raise ValueError(f"Unsupported coordination type: {contract.workflow_config.coordination_type}")
+    # Execute workflow via process method
+    input_data = ModelOrchestratorInput(
+        workflow_id=uuid4(),
+        steps=steps_config,
+        execution_mode=EnumExecutionMode.PARALLEL,
+    )
 
-            # Handle lifecycle completion
-            await self._finalize_workflow(contract, execution_context, result)
+    result = await node.process(input_data)
+    print(f"Status: {result.execution_status}")
+    print(f"Completed steps: {len(result.completed_steps)}")
+    print(f"Actions emitted: {len(result.actions_emitted)}")
 
-            return ModelOrchestratorOutput(
-                correlation_id=contract.correlation_id,
-                workflow_id=workflow_id,
-                orchestration_result=result,
-                execution_metadata={
-                    "total_services": len(contract.dependency_resolution),
-                    "execution_time": result.total_execution_time,
-                    "success_rate": result.success_rate,
-                    "coordination_type": contract.workflow_config.coordination_type
-                }
-            )
-
-        except Exception as e:
-            await self._handle_orchestration_failure(contract, workflow_id, e)
-            raise ModelOnexError(
-                message="Workflow orchestration failed",
-                correlation_id=contract.correlation_id
-            ) from e
-
-    async def _execute_sequential_workflow(self, contract: ModelContractOrchestrator, execution_context):
-        """Execute workflow with sequential service coordination."""
-        results = []
-        total_execution_time = 0
-
-        for step in execution_context.workflow_steps:
-            start_time = time.time()
-
-            try:
-                # Execute service call
-                service = self.service_registry.get_service(step.service_name)
-                step_result = await service.execute(step.parameters)
-
-                # Update execution context with results
-                execution_context.update_step_result(step.step_id, step_result)
-
-                # Record success
-                step_execution_time = time.time() - start_time
-                total_execution_time += step_execution_time
-
-                results.append(WorkflowStepResult(
-                    step_id=step.step_id,
-                    result=step_result,
-                    execution_time=step_execution_time,
-                    status="completed"
-                ))
-
-                # Publish step completion event
-                await self.event_bus.publish(WorkflowStepCompletedEvent(
-                    workflow_id=execution_context.workflow_id,
-                    step_id=step.step_id,
-                    correlation_id=contract.correlation_id
-                ))
-
-            except Exception as e:
-                # Handle step failure based on conflict resolution configuration
-                failure_action = await self._resolve_step_failure(
-                    contract.conflict_resolution, step, e
-                )
-
-                if failure_action == "abort":
-                    raise WorkflowExecutionError(f"Step {step.step_id} failed: {e}") from e
-                elif failure_action == "skip":
-                    results.append(WorkflowStepResult(
-                        step_id=step.step_id,
-                        result=None,
-                        execution_time=time.time() - start_time,
-                        status="skipped",
-                        error=str(e)
-                    ))
-                elif failure_action == "retry":
-                    # Implement retry logic
-                    retry_result = await self._retry_step(step, contract.conflict_resolution.retry_config)
-                    results.append(retry_result)
-
-        return SequentialWorkflowResult(
-            step_results=results,
-            total_execution_time=total_execution_time,
-            success_rate=len([r for r in results if r.status == "completed"]) / len(results)
-        )
-
-    async def _execute_parallel_workflow(self, contract: ModelContractOrchestrator, execution_context):
-        """Execute workflow with parallel service coordination."""
-        # Group steps by dependency levels
-        dependency_levels = self._analyze_step_dependencies(execution_context.workflow_steps)
-
-        results = []
-        total_execution_time = 0
-        start_time = time.time()
-
-        for level_steps in dependency_levels:
-            # Execute all steps in this level concurrently
-            level_tasks = []
-            for step in level_steps:
-                service = self.service_registry.get_service(step.service_name)
-                task = asyncio.create_task(
-                    service.execute(step.parameters),
-                    name=f"step_{step.step_id}"
-                )
-                level_tasks.append((step, task))
-
-            # Wait for all tasks in this level to complete
-            level_results = await asyncio.gather(*[task for _, task in level_tasks], return_exceptions=True)
-
-            # Process results and handle exceptions
-            for (step, task), result in zip(level_tasks, level_results):
-                if isinstance(result, Exception):
-                    # Handle step failure
-                    failure_action = await self._resolve_step_failure(
-                        contract.conflict_resolution, step, result
-                    )
-                    if failure_action == "abort":
-                        # Cancel remaining tasks
-                        for _, remaining_task in level_tasks:
-                            if not remaining_task.done():
-                                remaining_task.cancel()
-                        raise WorkflowExecutionError(f"Step {step.step_id} failed: {result}") from result
-                else:
-                    # Record successful result
-                    execution_context.update_step_result(step.step_id, result)
-                    results.append(WorkflowStepResult(
-                        step_id=step.step_id,
-                        result=result,
-                        status="completed"
-                    ))
-
-        total_execution_time = time.time() - start_time
-
-        return ParallelWorkflowResult(
-            step_results=results,
-            total_execution_time=total_execution_time,
-            parallelism_achieved=len(max(dependency_levels, key=len)),
-            success_rate=len([r for r in results if r.status == "completed"]) / len(results)
-        )
-
-    async def _validate_dependencies(self, dependencies: List[ModelDependency]):
-        """Validate all required dependencies are available and healthy."""
-        for dependency in dependencies:
-            if dependency.dependency_type == EnumDependencyType.REQUIRED:
-                # Check service availability
-                service_health = await self.health_monitor.check_service_health(
-                    dependency.service_name
-                )
-                if not service_health.is_healthy:
-                    raise DependencyResolutionError(
-                        f"Required dependency {dependency.service_name} is not healthy"
-                    )
-
-                # Check version compatibility
-                if dependency.version_constraint:
-                    service_version = await self.service_registry.get_service_version(
-                        dependency.service_name
-                    )
-                    if not self._check_version_compatibility(service_version, dependency.version_constraint):
-                        raise DependencyResolutionError(
-                            f"Version incompatibility for {dependency.service_name}: "
-                            f"required {dependency.version_constraint}, found {service_version}"
-                        )
-
-    async def _resolve_step_failure(self, conflict_resolution: ModelConflictResolutionConfig,
-                                  step: WorkflowStep, error: Exception) -> str:
-        """Resolve step failure based on configuration."""
-        if error.__class__.__name__ in conflict_resolution.retry_conditions:
-            if conflict_resolution.retry_enabled and step.retry_count < conflict_resolution.max_retries:
-                return "retry"
-
-        if conflict_resolution.continue_on_error:
-            return "skip"
-        else:
-            return "abort"
+    # Validate workflow before execution
+    errors = await node.validate_contract()
+    if errors:
+        print(f"Contract validation failed: {errors}")
 ```
+
+**Key Features** (v0.4.0):
+- Pure workflow pattern: `(definition, steps) -> (result, actions[])`
+- Actions emitted for deferred execution by target nodes
+- Complete Pydantic validation for contracts
+- Zero custom code - entirely YAML-driven
+- Sequential/parallel/batch execution modes
+- Dependency-aware execution with topological ordering
+- Cycle detection in workflow graphs
+- Disabled step handling
+- Action metadata tracking
 
 **Best Practices**:
-- Implement comprehensive dependency validation
-- Support multiple workflow coordination patterns
-- Provide detailed execution monitoring and logging
-- Handle failures gracefully with appropriate recovery strategies
-- Use event-driven patterns for loose coupling
+- Define workflows declaratively in YAML contracts
+- Use workflow definitions for all coordination logic
+- Emit actions for cross-node operations rather than direct calls
+- Leverage dependency resolution for execution ordering
+- Use execution modes appropriate to workflow requirements
 
 ## ModelAction Architecture
 
@@ -1933,6 +1795,17 @@ class TestPipelineIntegration(unittest.TestCase):
         self.assertIsNotNone(final_result.orchestration_result)
 ```
 
+## Node Type Summary (v0.4.0)
+
+| Node Type | Implementation | Key Pattern |
+|-----------|----------------|-------------|
+| **EFFECT** | `NodeEffect` | External I/O |
+| **COMPUTE** | `NodeCompute` | Data Processing |
+| **REDUCER** | `NodeReducer` + `MixinFSMExecution` | FSM State Management |
+| **ORCHESTRATOR** | `NodeOrchestrator` + `MixinWorkflowExecution` | Workflow Coordination |
+
+---
+
 ## Best Practices Summary
 
 ### Architecture Principles
@@ -1957,3 +1830,16 @@ class TestPipelineIntegration(unittest.TestCase):
 5. **Resource Tests**: Test resource management and cleanup
 
 This architecture documentation provides comprehensive coverage of the ONEX Four-Node pattern with zero tolerance for incomplete specifications. All components are fully documented with examples, best practices, and implementation guidelines.
+
+---
+
+**Document Version**: 0.4.0
+**Last Updated**: 2025-12-05
+**Primary Maintainer**: ONEX Framework Team
+
+**Related Documentation**:
+- [Node Building Guide](../guides/node-building/README.md)
+- [Node Class Hierarchy](NODE_CLASS_HIERARCHY.md)
+- [Migration Guide](../guides/MIGRATING_TO_DECLARATIVE_NODES.md)
+- [Pure FSM Reducer Pattern](../patterns/PURE_FSM_REDUCER_PATTERN.md)
+- [Declarative Workflow Architecture](DECLARATIVE_WORKFLOW_FINDINGS.md)

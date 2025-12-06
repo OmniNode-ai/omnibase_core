@@ -75,9 +75,9 @@ class TestEnumCliStatus:
         """Test that the enum has the expected number of members."""
         expected_count = 6
         actual_count = len(list(EnumCliStatus))
-        assert (
-            actual_count == expected_count
-        ), f"Expected {expected_count} members, got {actual_count}"
+        assert actual_count == expected_count, (
+            f"Expected {expected_count} members, got {actual_count}"
+        )
 
     def test_enum_member_uniqueness(self):
         """Test that all enum members have unique values."""

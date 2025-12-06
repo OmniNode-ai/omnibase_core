@@ -1,7 +1,6 @@
 from typing import overload
 from uuid import UUID
 
-from omnibase_core.protocols import ProtocolSupportedMetadataType
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -13,6 +12,7 @@ from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
+from omnibase_core.protocols import ProtocolSupportedMetadataType
 from omnibase_core.types.constraints import BasicValueType
 from omnibase_core.types.typed_dict_metadata_dict import TypedDictMetadataDict
 

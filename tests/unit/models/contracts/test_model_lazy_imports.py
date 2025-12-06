@@ -380,9 +380,9 @@ class TestLazyLoadingBehavior:
         ]
 
         # Should be empty (no imports at module level)
-        assert (
-            len(contract_modules) == 0
-        ), f"Contract modules imported at module level: {contract_modules}"
+        assert len(contract_modules) == 0, (
+            f"Contract modules imported at module level: {contract_modules}"
+        )
 
     def test_imports_occur_only_on_demand(self):
         """Test that imports only occur when contracts are actually requested."""
@@ -460,9 +460,9 @@ class TestPerformanceOptimization:
             if "model_contract_" in key and "model_lazy_imports" not in key
         ]
 
-        assert (
-            len(contract_modules) == 0
-        ), f"Import cascade detected: {contract_modules}"
+        assert len(contract_modules) == 0, (
+            f"Import cascade detected: {contract_modules}"
+        )
 
     def test_functools_cache_reduces_repeated_loading(self):
         """Test that functools.cache reduces repeated loading overhead."""

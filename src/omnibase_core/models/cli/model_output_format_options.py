@@ -22,15 +22,12 @@ from omnibase_core.models.infrastructure.model_value import ModelValue
 
 # Removed Any import - using object for ONEX compliance
 
-# Decorator to allow dict[str, Any] usage with justification
-F = TypeVar("F", bound=Callable[..., object])
-
 # Type alias for CLI option values - simplified to avoid primitive soup
 CliOptionValueType = object
 T = TypeVar("T", str, int, bool)  # Keep for generic methods
 
 
-def allow_dict_any(func: F) -> F:
+def allow_dict_any[F: Callable[..., object]](func: F) -> F:
     """
     Decorator to allow dict[str, Any] usage in specific functions.
 
@@ -211,7 +208,11 @@ class ModelOutputFormatOptions(BaseModel):
 
     def get_custom_option(self, key: str, default: T) -> T:
         """Get a custom format option with type safety."""
-        return cast(T, self.custom_options.get(key, default))
+        model_value = self.custom_options.get(key)
+        if model_value is None:
+            return default
+        # Extract underlying raw_value from ModelValue wrapper
+        return cast(T, model_value.raw_value)
 
     @classmethod
     @allow_dict_any

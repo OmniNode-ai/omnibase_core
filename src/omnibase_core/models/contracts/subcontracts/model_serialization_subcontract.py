@@ -110,9 +110,7 @@ class ModelSerializationSubcontract(BaseModel):
         normalized = v.lower().strip()
 
         if normalized not in allowed_formats:
-            msg = (
-                f"serialization_format must be one of {allowed_formats}, " f"got '{v}'"
-            )
+            msg = f"serialization_format must be one of {allowed_formats}, got '{v}'"
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

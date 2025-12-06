@@ -646,7 +646,7 @@ class ModelPermission(BaseModel):
             # Treat as prefix match (e.g., "10.0.0" matches "10.0.0.x")
             return ip_address.startswith(cidr + ".")
 
-        network, prefix_len = cidr.split("/")
+        network, _ = cidr.split("/")
         return ip_address.startswith(network.rsplit(".", 1)[0])
 
     def _evaluate_simple_condition(

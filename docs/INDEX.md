@@ -63,15 +63,16 @@ omnibase_core/docs/
 | 7 | [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md) | Common patterns library | 20 min | ✅ Complete |
 | 8 | [Common Pitfalls](guides/node-building/08_COMMON_PITFALLS.md) | What to avoid | 15 min | ✅ Complete |
 | 9 | [Testing Intent Publisher](guides/node-building/09_TESTING_INTENT_PUBLISHER.md) | Testing with MixinIntentPublisher | 20 min | ✅ Complete |
-| 10 | [Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md) | Agent-friendly templates | 15 min | 🚧 Coming Soon |
+| 10 | [Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md) | Agent-friendly templates | 15 min | ✅ Excellent |
 
-**Progress**: 8 of 10 complete (80%) - Phase 2 Complete
+**Progress**: 10 of 10 complete (100%)
 
 ### Other Guides
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [**Mixin-Subcontract Mapping**](guides/MIXIN_SUBCONTRACT_MAPPING.md) | Relationship between mixins and subcontracts ⭐ **NEW** | ✅ Complete |
+| [**Migrating to Declarative Nodes**](guides/MIGRATING_TO_DECLARATIVE_NODES.md) | Migration guide for v0.4.0 FSM/workflow-driven nodes ⭐ **v0.4.0** | ✅ Complete |
+| [**Mixin-Subcontract Mapping**](guides/MIXIN_SUBCONTRACT_MAPPING.md) | Relationship between mixins and subcontracts | ✅ Complete |
 | [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
 
 ### Manifest Models
@@ -241,7 +242,7 @@ omnibase_core/docs/
 ### Agent-Friendly Resources
 
 - **[Node Building Guide](guides/node-building/README.md)** - Structured, parseable, step-by-step
-- **[Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md)** - Copy-paste ready templates (coming soon)
+- **[Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md)** - Copy-paste ready templates
 - **[Node Templates](guides/templates/COMPUTE_NODE_TEMPLATE.md)** - Production-ready reference implementations
 
 ### Agent Workflow
@@ -250,9 +251,9 @@ omnibase_core/docs/
 2. Read [Node Types](guides/node-building/02_NODE_TYPES.md) to choose type
 3. Follow type-specific tutorial:
    - [COMPUTE](guides/node-building/03_COMPUTE_NODE_TUTORIAL.md) ✅
-   - [EFFECT](guides/node-building/04_EFFECT_NODE_TUTORIAL.md) (coming soon)
-   - [REDUCER](guides/node-building/05_REDUCER_NODE_TUTORIAL.md) (coming soon)
-   - [ORCHESTRATOR](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) (coming soon)
+   - [EFFECT](guides/node-building/04_EFFECT_NODE_TUTORIAL.md) ✅
+   - [REDUCER](guides/node-building/05_REDUCER_NODE_TUTORIAL.md) ✅
+   - [ORCHESTRATOR](guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md) ✅
 4. Use [Patterns Catalog](guides/node-building/07_PATTERNS_CATALOG.md) for common patterns
 5. Test with [Testing Guide](guides/TESTING_GUIDE.md)
 
@@ -264,31 +265,24 @@ omnibase_core/docs/
 
 | Category | Complete | In Progress | Planned | Total |
 |----------|----------|-------------|---------|-------|
-| **Getting Started** | 0 | 0 | 3 | 3 |
-| **Node Building** | 4 | 0 | 7 | 11 |
-| **Architecture** | 3 | 0 | 2 | 5 |
-| **Reference** | 9 | 0 | 4 | 13 |
+| **Getting Started** | 3 | 0 | 0 | 3 |
+| **Node Building** | 10 | 0 | 0 | 10 |
+| **Architecture** | 12 | 0 | 0 | 12 |
+| **Reference** | 13 | 0 | 0 | 13 |
 | **Specialized** | 11 | 0 | 0 | 11 |
-| **TOTAL** | **27** | **0** | **16** | **43** |
+| **TOTAL** | **49** | **0** | **0** | **49** |
 
-**Overall Progress**: 63% complete (27/43 documents)
+**Overall Progress**: 100% complete (49/49 documents)
 
 ### Priority Items
 
-**High Priority** (needed first):
-- ✅ Node Building Guide foundations (4/11 complete)
-- 🚧 Getting Started guides (0/3)
-- 🚧 Development Workflow guide
-- 🚧 Testing Guide
-
-**Medium Priority**:
-- Architecture deep dives
-- API reference documentation
-- Additional tutorials
-
-**Low Priority**:
-- Advanced patterns
-- Specialized topics
+**Completed**:
+- ✅ Node Building Guide (10/10 complete)
+- ✅ Getting Started guides (3/3 complete)
+- ✅ Architecture documentation (12/12 complete)
+- ✅ Testing Guide
+- ✅ All node tutorials (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)
+- ✅ Agent Templates (AI-optimized node templates)
 
 ---
 
@@ -341,7 +335,7 @@ omnibase_core/docs/
 
 - **Documentation Issues**: File an issue in the repository
 - **Questions**: Check existing documentation first, then ask
-- **Contributions**: See [Contributing Guide](../CONTRIBUTING.md) (coming soon)
+- **Contributions**: See [Contributing Guide](../CONTRIBUTING.md)
 
 ---
 
@@ -355,9 +349,9 @@ See [Documentation Architecture](architecture/DOCUMENTATION_ARCHITECTURE.md) for
 
 ---
 
-**Last Updated**: 2025-01-18
-**Documentation Version**: 1.0.0
-**Framework Version**: omnibase_core 2.0+
+**Last Updated**: 2025-12-06
+**Documentation Version**: 1.1.0
+**Framework Version**: omnibase_core 0.4.0+
 
 ---
 

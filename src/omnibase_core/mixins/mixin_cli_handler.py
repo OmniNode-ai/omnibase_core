@@ -1,4 +1,4 @@
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -19,12 +19,8 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-# Type variables for input/output states
-InputStateT = TypeVar("InputStateT")
-OutputStateT = TypeVar("OutputStateT")
 
-
-class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
+class MixinCLIHandler[InputStateT, OutputStateT]:
     """
     Mixin that provides CLI handling capabilities to tool nodes.
 
@@ -314,9 +310,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             )
             return 130
 
-        except (
-            Exception
-        ) as e:  # fallback-ok: CLI handler returns error exit code with logging, appropriate for CLI
+        except Exception as e:  # fallback-ok: CLI handler returns error exit code with logging, appropriate for CLI
             emit_log_event(
                 LogLevel.ERROR,
                 f"Tool execution failed: {e}",
@@ -339,7 +333,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             annotations = self.process.__annotations__
             if "input_state" in annotations:
                 input_class = annotations["input_state"]
-                return cast(InputStateT, input_class(**data))
+                return cast("InputStateT", input_class(**data))
 
         # Fallback - return data as-is
         return data  # type: ignore[return-value]

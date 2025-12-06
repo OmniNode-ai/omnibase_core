@@ -259,14 +259,14 @@ class TestEnumConfigTypeCategoryMethods:
                 EnumConfigType.CUSTOM_CONFIG,
                 EnumConfigType.UNKNOWN_CONFIG,
             ]:
-                assert (
-                    sum(categories) == 0
-                ), f"{config} should not belong to any category"
+                assert sum(categories) == 0, (
+                    f"{config} should not belong to any category"
+                )
             else:
                 # All other configs should belong to exactly one category
-                assert (
-                    sum(categories) == 1
-                ), f"{config} should belong to exactly one category, found {sum(categories)}"
+                assert sum(categories) == 1, (
+                    f"{config} should belong to exactly one category, found {sum(categories)}"
+                )
 
 
 class TestEnumConfigTypeIntegration:

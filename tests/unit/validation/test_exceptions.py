@@ -211,9 +211,9 @@ class TestExceptionDocumentation:
 
         for exc_class in exceptions:
             assert exc_class.__doc__ is not None
-            assert (
-                len(exc_class.__doc__.strip()) > 0
-            ), f"{exc_class.__name__} missing docstring"
+            assert len(exc_class.__doc__.strip()) > 0, (
+                f"{exc_class.__name__} missing docstring"
+            )
 
     def test_exception_docstrings_describe_purpose(self):
         """Test that exception docstrings describe their purpose."""

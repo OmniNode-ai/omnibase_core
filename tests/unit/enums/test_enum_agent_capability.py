@@ -113,9 +113,9 @@ class TestEnumAgentCapabilityInstanceMethods:
         ]
 
         for capability in code_capabilities:
-            assert (
-                capability.is_code_related() is True
-            ), f"{capability} should be code-related"
+            assert capability.is_code_related() is True, (
+                f"{capability} should be code-related"
+            )
 
     def test_is_code_related_false_cases(self):
         """Test is_code_related returns False for non-code capabilities."""
@@ -128,9 +128,9 @@ class TestEnumAgentCapabilityInstanceMethods:
         ]
 
         for capability in non_code_capabilities:
-            assert (
-                capability.is_code_related() is False
-            ), f"{capability} should not be code-related"
+            assert capability.is_code_related() is False, (
+                f"{capability} should not be code-related"
+            )
 
     def test_is_code_related_prefix_matching(self):
         """Test that is_code_related uses prefix matching (starts with 'code_')."""
@@ -151,9 +151,9 @@ class TestEnumAgentCapabilityInstanceMethods:
         ]
 
         for capability in large_model_capabilities:
-            assert (
-                capability.requires_large_model() is True
-            ), f"{capability} should require large model"
+            assert capability.requires_large_model() is True, (
+                f"{capability} should require large model"
+            )
 
     def test_requires_large_model_false_cases(self):
         """Test requires_large_model returns False for capabilities that don't need it."""
@@ -165,9 +165,9 @@ class TestEnumAgentCapabilityInstanceMethods:
         ]
 
         for capability in small_model_capabilities:
-            assert (
-                capability.requires_large_model() is False
-            ), f"{capability} should not require large model"
+            assert capability.requires_large_model() is False, (
+                f"{capability} should not require large model"
+            )
 
     def test_combined_method_logic(self):
         """Test combined logic of is_code_related and requires_large_model."""
@@ -296,9 +296,9 @@ class TestEnumAgentCapabilityEdgeCases:
         code_related = [c for c in EnumAgentCapability if c.is_code_related()]
 
         for capability in code_related:
-            assert capability.value.startswith(
-                "code_"
-            ), f"{capability} is code-related but doesn't have 'code_' prefix"
+            assert capability.value.startswith("code_"), (
+                f"{capability} is code-related but doesn't have 'code_' prefix"
+            )
 
 
 class TestEnumAgentCapabilityComprehensiveScenarios:

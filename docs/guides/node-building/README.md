@@ -1,12 +1,30 @@
 # Node Building Guide
 
 **Status**: Active
+**Version**: v0.4.0
 **Target Audience**: Developers and AI agents building ONEX nodes
-**Prerequisites**: Python 3.11+, Poetry, Basic async/await understanding
+**Prerequisites**: Python 3.12+, Poetry, Basic async/await understanding
 
 ## Overview
 
 This comprehensive guide teaches you how to build production-ready nodes for the ONEX framework. Whether you're a human developer or an AI agent, you'll learn the patterns, practices, and principles for creating robust, scalable nodes.
+
+### v0.4.0 Architecture Update
+
+As of v0.4.0, the ONEX node architecture has been streamlined:
+
+- **`NodeReducer`** and **`NodeOrchestrator`** are now the PRIMARY implementations (FSM/workflow-driven)
+- The "Declarative" suffix has been removed - these ARE the standard
+- Legacy imperative implementations have been **removed** (no deprecation period)
+
+**Import paths**:
+```python
+# Primary implementations (recommended)
+from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator
+
+# Note: Legacy implementations have been removed in v0.4.0
+# All nodes must use the FSM/workflow-driven implementations above
+```
 
 ## What You'll Learn
 
@@ -73,7 +91,7 @@ Before building nodes, ensure you have:
 
 ### Required
 
-- **Python 3.11+**: `python --version`
+- **Python 3.12+**: `python --version`
 - **Poetry**: `poetry --version`
 - **omnibase_core installed**: `poetry add omnibase_core` (or local editable install)
 - **Basic async/await knowledge**: Understanding of Python async patterns
@@ -89,9 +107,9 @@ Before building nodes, ensure you have:
 
 Verify your environment:
 
-```
+```bash
 # Check Python version
-python --version  # Should be 3.11+
+python --version  # Should be 3.12+
 
 # Check Poetry
 poetry --version  # Should be 1.0+
@@ -99,8 +117,8 @@ poetry --version  # Should be 1.0+
 # Install omnibase_core (if not already installed)
 poetry add omnibase_core
 
-# Verify installation
-poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ omnibase_core ready!')"
+# Verify installation (v0.4.0+ with primary node implementations)
+poetry run python -c "from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator; print('✓ omnibase_core ready!')"
 ```
 
 ## Learning Path
@@ -179,7 +197,8 @@ your_project/
 │       │   ├── __init__.py
 │       │   ├── node_data_processor_compute.py
 │       │   ├── node_api_client_effect.py
-│       │   └── node_aggregator_reducer.py
+│       │   ├── node_aggregator_reducer.py      # Uses NodeReducer (FSM-driven)
+│       │   └── node_workflow_orchestrator.py   # Uses NodeOrchestrator (workflow-driven)
 │       ├── models/                   # Your models
 │       └── enums/                    # Your enums
 └── tests/
@@ -187,6 +206,8 @@ your_project/
         ├── test_node_data_processor.py
         └── test_node_api_client.py
 ```
+
+> **Note**: As of v0.4.0, `NodeReducer` and `NodeOrchestrator` are the primary FSM/workflow-driven implementations. Use these for new nodes.
 
 ## Getting Help
 

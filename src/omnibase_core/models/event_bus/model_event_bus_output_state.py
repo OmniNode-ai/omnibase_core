@@ -292,7 +292,9 @@ class ModelEventBusOutputState(BaseModel):
             health_score=(
                 100.0
                 if self.is_successful()
-                else 50.0 if self.is_warning_only() else 0.0
+                else 50.0
+                if self.is_warning_only()
+                else 0.0
             ),
             custom_metrics={
                 "status": ModelMetricValue(

@@ -475,9 +475,9 @@ class TestZeroImportTimeLoading:
         ]
 
         # Should be empty (no imports at module level)
-        assert (
-            len(contract_modules) == 0
-        ), f"Contract modules imported at module level: {contract_modules}"
+        assert len(contract_modules) == 0, (
+            f"Contract modules imported at module level: {contract_modules}"
+        )
 
     def test_imports_occur_only_on_demand(self):
         """Test that imports only occur when contracts are actually requested."""

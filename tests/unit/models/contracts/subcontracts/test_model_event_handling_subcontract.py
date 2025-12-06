@@ -628,9 +628,9 @@ class TestModelEventHandlingSubcontractDocumentation:
         fields = ModelEventHandlingSubcontract.model_fields
 
         for field_name, field_info in fields.items():
-            assert (
-                field_info.description is not None
-            ), f"Field {field_name} missing description"
-            assert (
-                len(field_info.description) > 0
-            ), f"Field {field_name} has empty description"
+            assert field_info.description is not None, (
+                f"Field {field_name} missing description"
+            )
+            assert len(field_info.description) > 0, (
+                f"Field {field_name} has empty description"
+            )

@@ -14,11 +14,9 @@ Design Principles:
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from typing import (
     TYPE_CHECKING,
-    Awaitable,
-    Callable,
-    Generic,
     Literal,
     Protocol,
     TypeVar,
@@ -34,10 +32,6 @@ from omnibase_core.protocols.base import (
     ProtocolSemVer,
     T_co,
 )
-
-if TYPE_CHECKING:
-    pass
-
 
 # =============================================================================
 # Type Variables
@@ -310,7 +304,7 @@ class ProtocolEventBus(Protocol):
 
 
 @runtime_checkable
-class ProtocolEventEnvelope(Protocol, Generic[T_co]):
+class ProtocolEventEnvelope[T_co](Protocol):
     """
     Protocol defining the minimal interface for event envelopes.
 

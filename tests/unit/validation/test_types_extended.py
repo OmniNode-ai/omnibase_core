@@ -391,7 +391,7 @@ def func(x: Union[str, int  # Missing closing bracket
             return original_open(*args, **kwargs)
 
         with patch("builtins.open", side_effect=mock_open):
-            union_count, issues, patterns = validate_union_usage_file(test_file)
+            union_count, issues, _ = validate_union_usage_file(test_file)
 
         # Should handle gracefully
         assert union_count == 0
@@ -403,7 +403,7 @@ def func(x: Union[str, int  # Missing closing bracket
         # Write binary data that can't be decoded as UTF-8
         test_file.write_bytes(b"\xff\xfe\xfd\xfc")
 
-        union_count, issues, patterns = validate_union_usage_file(test_file)
+        union_count, issues, _ = validate_union_usage_file(test_file)
 
         # Should handle gracefully
         assert union_count == 0
@@ -494,7 +494,7 @@ def func(x: Union[str, None]) -> None:
 """,
         )
 
-        union_count, issues, patterns = validate_union_usage_file(test_file)
+        union_count, issues, _ = validate_union_usage_file(test_file)
 
         assert union_count >= 1
         assert len(issues) >= 1

@@ -20,7 +20,7 @@ TEST SCENARIOS (Agent Errors):
 4. Agent sends mixed-type arrays
 """
 
-from typing import Any, Generic, Literal, TypeVar
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -123,10 +123,8 @@ ModelSchemaValue.model_rebuild()
 # Generic[T] Approach - Alternative Implementation
 # ============================================================================
 
-T = TypeVar("T")
 
-
-class ModelSchemaValueGeneric(BaseModel, Generic[T]):
+class ModelSchemaValueGeneric[T](BaseModel):
     """Generic approach to schema values."""
 
     value: T

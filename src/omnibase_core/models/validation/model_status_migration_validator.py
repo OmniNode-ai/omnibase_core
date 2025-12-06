@@ -55,7 +55,6 @@ class ModelEnumStatusMigrationValidator:
             migrator = ModelEnumStatusMigrator()
 
             if old_enum_name.lower() == "enumstatus":
-
                 general_migrated = migrator.migrate_general_status(old_value)
                 result["success"] = True
                 result["migrated_value"] = general_migrated.value
@@ -72,7 +71,6 @@ class ModelEnumStatusMigrationValidator:
                     )
 
             if old_enum_name.lower() == "enumexecutionstatus":
-
                 execution_migrated = migrator.migrate_execution_status(old_value)
                 result["success"] = True
                 result["migrated_value"] = execution_migrated.value
@@ -89,7 +87,6 @@ class ModelEnumStatusMigrationValidator:
                     )
 
             if old_enum_name.lower() == "enumscenariostatus":
-
                 scenario_migrated = migrator.migrate_scenario_status(old_value)
                 result["success"] = True
                 result["migrated_value"] = scenario_migrated.value
@@ -109,7 +106,6 @@ class ModelEnumStatusMigrationValidator:
                 "enumfunctionstatus",
                 "enummetadatanodestatus",
             ]:
-
                 function_migrated = migrator.migrate_function_status(old_value)
                 result["success"] = True
                 result["migrated_value"] = function_migrated.value

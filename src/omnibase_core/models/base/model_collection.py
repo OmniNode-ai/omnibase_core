@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Generic, TypeVar
-
 """
 Base Collection Model.
 
@@ -18,11 +16,8 @@ from pydantic import BaseModel
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-# Generic type variable for the items this collection contains
-T = TypeVar("T")
 
-
-class ModelBaseCollection(ABC, BaseModel, Generic[T]):
+class ModelBaseCollection[T](ABC, BaseModel):
     """Abstract base class for typed collections."""
 
     @abstractmethod

@@ -58,9 +58,9 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.nodes.node_reducer import NodeReducer
 
 
-class ModelServiceReducer(
+class ModelServiceReducer[T_Input, T_Output](
     MixinNodeService,
-    NodeReducer,
+    NodeReducer[T_Input, T_Output],
     MixinHealthCheck,
     MixinCaching,
     MixinMetrics,

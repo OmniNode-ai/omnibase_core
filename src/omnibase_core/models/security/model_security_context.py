@@ -58,7 +58,7 @@ class ModelSecurityContext(BaseModel):
             return None
         from typing import cast
 
-        return cls.model_validate(cast(dict[str, Any], data))
+        return cls.model_validate(cast("dict[str, Any]", data))
 
     @field_serializer("auth_timestamp", "token_expires_at")
     def serialize_datetime(self, value: datetime | None) -> str | None:

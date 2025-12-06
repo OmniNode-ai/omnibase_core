@@ -179,9 +179,7 @@ class ModelCliCommandRegistry(BaseModel):
 
             return commands_discovered
 
-        except (
-            Exception
-        ):  # fallback-ok: resilient discovery, invalid contract shouldn't break entire discovery
+        except Exception:  # fallback-ok: resilient discovery, invalid contract shouldn't break entire discovery
             return 0
 
     def _create_command_from_contract(
@@ -255,9 +253,7 @@ class ModelCliCommandRegistry(BaseModel):
                 category=category,
             )
 
-        except (
-            Exception
-        ):  # fallback-ok: malformed command data should return None, caller checks for None
+        except Exception:  # fallback-ok: malformed command data should return None, caller checks for None
             return None
 
     def clear(self) -> None:

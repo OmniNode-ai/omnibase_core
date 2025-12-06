@@ -664,9 +664,9 @@ class TestModelActionConfigParameterDocumentation:
         schema = ModelActionConfigParameter.model_json_schema()
 
         for field_name, field_info in schema.get("properties", {}).items():
-            assert (
-                "description" in field_info
-            ), f"Field {field_name} missing description"
+            assert "description" in field_info, (
+                f"Field {field_name} missing description"
+            )
 
     def test_required_fields_documented(self):
         """Test required fields are properly documented in schema."""

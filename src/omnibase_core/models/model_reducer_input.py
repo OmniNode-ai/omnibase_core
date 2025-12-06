@@ -8,7 +8,7 @@ Author: ONEX Framework Team
 """
 
 from datetime import datetime
-from typing import Any, Generic, TypeVar
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -19,10 +19,8 @@ from omnibase_core.enums.enum_reducer_types import (
     EnumStreamingMode,
 )
 
-T_Input = TypeVar("T_Input")
 
-
-class ModelReducerInput(BaseModel, Generic[T_Input]):
+class ModelReducerInput[T_Input](BaseModel):
     """
     Input model for NodeReducer operations.
 

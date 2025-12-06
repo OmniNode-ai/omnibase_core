@@ -418,7 +418,7 @@ class ModelPermissionConstraints(BaseModel):
         if "/" not in cidr:
             return ip_address == cidr
 
-        network, prefix_len = cidr.split("/")
+        network, _ = cidr.split("/")
         # Simplified check - in production use ipaddress module
         return ip_address.startswith(network.rsplit(".", 1)[0])
 

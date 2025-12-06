@@ -71,9 +71,9 @@ class TestEnumRegistryStatus:
         """Test that the enum has the expected number of members."""
         expected_count = 5
         actual_count = len(list(EnumRegistryStatus))
-        assert (
-            actual_count == expected_count
-        ), f"Expected {expected_count} members, got {actual_count}"
+        assert actual_count == expected_count, (
+            f"Expected {expected_count} members, got {actual_count}"
+        )
 
     def test_enum_member_uniqueness(self):
         """Test that all enum members have unique values."""
@@ -163,9 +163,9 @@ class TestEnumRegistryStatus:
         all_statuses = operational_statuses | transitional_statuses
         actual_statuses = set(EnumRegistryStatus)
 
-        assert (
-            all_statuses == actual_statuses
-        ), "Registry status categorization is complete"
+        assert all_statuses == actual_statuses, (
+            "Registry status categorization is complete"
+        )
 
     def test_status_severity_levels(self):
         """Test that registry statuses can be categorized by severity."""
@@ -185,9 +185,9 @@ class TestEnumRegistryStatus:
         all_statuses = good_statuses | warning_statuses | critical_statuses
         actual_statuses = set(EnumRegistryStatus)
 
-        assert (
-            all_statuses == actual_statuses
-        ), "All registry statuses are categorized by severity"
+        assert all_statuses == actual_statuses, (
+            "All registry statuses are categorized by severity"
+        )
 
     def test_enum_case_sensitivity(self):
         """Test that enum values are case sensitive."""

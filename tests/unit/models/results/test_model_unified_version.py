@@ -362,9 +362,9 @@ class TestModelUnifiedVersionTypeSafety:
         # Check that no field uses Any type
         for field_name, field_type in hints.items():
             type_str = str(field_type)
-            assert (
-                "typing.Any" not in type_str or "None" in type_str
-            ), f"Field {field_name} uses Any type: {type_str}"
+            assert "typing.Any" not in type_str or "None" in type_str, (
+                f"Field {field_name} uses Any type: {type_str}"
+            )
 
     def test_version_fields_use_model_semver(self):
         """Test that version fields use ModelSemVer type."""

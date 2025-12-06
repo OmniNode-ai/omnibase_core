@@ -193,10 +193,9 @@ class ModelNodeTimestamps(BaseModel):
                     # by attempting to iterate with items() or checking __iter__
                     try:
                         # Try dict-like access first
-                        if hasattr(value, "items") and callable(value.items):
-                            metadata[field] = value
-                        # Check for list-like behavior
-                        elif hasattr(value, "__iter__") and not hasattr(value, "items"):
+                        if (hasattr(value, "items") and callable(value.items)) or (
+                            hasattr(value, "__iter__") and not hasattr(value, "items")
+                        ):
                             metadata[field] = value
                         else:
                             metadata[field] = str(value)

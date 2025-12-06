@@ -18,15 +18,6 @@ from typing import Any, Literal, cast
 import yaml
 from pydantic import ValidationError
 
-from omnibase_core.protocols import (
-    ProtocolArchitectureCompliance,
-    ProtocolComplianceReport,
-    ProtocolComplianceRule,
-    ProtocolComplianceViolation,
-    ProtocolONEXStandards,
-    ProtocolValidationResult,
-)
-
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
@@ -40,6 +31,14 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.validation.model_contract_validation_result import (
     ModelContractValidationResult,
+)
+from omnibase_core.protocols import (
+    ProtocolArchitectureCompliance,
+    ProtocolComplianceReport,
+    ProtocolComplianceRule,
+    ProtocolComplianceViolation,
+    ProtocolONEXStandards,
+    ProtocolValidationResult,
 )
 
 # Validation constants
@@ -517,7 +516,7 @@ class ProtocolContractValidator:
     ) -> None:
         """Validate model fields against contract specifications."""
         model_name = model_class["name"]
-        fields = cast(list[dict[str, Any]], model_class.get("fields", []))
+        fields = cast("list[dict[str, Any]]", model_class.get("fields", []))
 
         # Check if this is the input or output model
         input_model = contract_data.get("input_model", "")

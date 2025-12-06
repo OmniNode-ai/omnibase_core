@@ -7,7 +7,7 @@ Part of the ModelFunctionNode restructuring to reduce excessive string fields.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from hashlib import md5
+from hashlib import sha256
 from typing import Any
 from uuid import UUID
 
@@ -197,7 +197,8 @@ class ModelFunctionNodeMetadata(BaseModel):
             dependency_uuid = UUID(dependency)
         except ValueError:
             # If not a valid UUID string, generate one from the hash of the string
-            hash_hex = md5(dependency.encode()).hexdigest()
+            # Use SHA-256 for security (MD5 is deprecated) and take first 32 chars for UUID
+            hash_hex = sha256(dependency.encode()).hexdigest()[:32]
             dependency_uuid = UUID(hash_hex)
         self.relationships.add_dependency(dependency_uuid)
 
@@ -208,7 +209,8 @@ class ModelFunctionNodeMetadata(BaseModel):
             function_uuid = UUID(function_name)
         except ValueError:
             # If not a valid UUID string, generate one from the hash of the string
-            hash_hex = md5(function_name.encode()).hexdigest()
+            # Use SHA-256 for security (MD5 is deprecated) and take first 32 chars for UUID
+            hash_hex = sha256(function_name.encode()).hexdigest()[:32]
             function_uuid = UUID(hash_hex)
         self.relationships.add_related_function(function_uuid)
 
@@ -366,9 +368,7 @@ class ModelFunctionNodeMetadata(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
+        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def serialize(self) -> dict[str, Any]:
@@ -381,9 +381,7 @@ class ModelFunctionNodeMetadata(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
+        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
 

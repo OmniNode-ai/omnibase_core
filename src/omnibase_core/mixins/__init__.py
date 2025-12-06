@@ -38,6 +38,7 @@ from omnibase_core.mixins.mixin_event_driven_node import MixinEventDrivenNode
 from omnibase_core.mixins.mixin_event_handler import MixinEventHandler
 from omnibase_core.mixins.mixin_event_listener import MixinEventListener
 from omnibase_core.mixins.mixin_fail_fast import MixinFailFast
+from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.mixins.mixin_hash_computation import MixinHashComputation
 from omnibase_core.mixins.mixin_health_check import (
     MixinHealthCheck,
@@ -68,6 +69,7 @@ from omnibase_core.mixins.mixin_request_response_introspection import (
 from omnibase_core.mixins.mixin_serializable import MixinSerializable
 from omnibase_core.mixins.mixin_service_registry import MixinServiceRegistry
 from omnibase_core.mixins.mixin_tool_execution import MixinToolExecution
+from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
 from omnibase_core.mixins.mixin_yaml_serialization import MixinYAMLSerialization
 
 __all__ = [
@@ -82,6 +84,7 @@ __all__ = [
     "MixinEventHandler",
     "MixinEventListener",
     "MixinFailFast",
+    "MixinFSMExecution",
     "MixinHealthCheck",
     "MixinHybridExecution",
     "MixinIntrospectFromContract",
@@ -94,6 +97,7 @@ __all__ = [
     "MixinRequestResponseIntrospection",
     "MixinServiceRegistry",
     "MixinToolExecution",
+    "MixinWorkflowExecution",
     "MixinEventBus",
     "MixinCompletionData",
     "MixinLogData",

@@ -1,5 +1,3 @@
-from typing import TypeVar
-
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
@@ -29,13 +27,10 @@ from omnibase_core.models.utils import ModelYamlOption, ModelYamlValue
 # Type-safe YAML-serializable data structures using discriminated union
 
 
-T = TypeVar("T", bound=BaseModel)
-
-
 # Removed _load_yaml_content function - YAML loading now handled by Pydantic model from_yaml methods
 
 
-def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
+def load_and_validate_yaml_model[T: BaseModel](path: Path, model_cls: type[T]) -> T:
     """
     Load a YAML file and validate it against the provided Pydantic model class.
     Returns the validated model instance.
@@ -124,7 +119,7 @@ def load_and_validate_yaml_model(path: Path, model_cls: type[T]) -> T:
 # load_yaml_as_generic function removed - ModelGenericYaml anti-pattern eliminated
 
 
-def load_yaml_content_as_model(content: str, model_cls: type[T]) -> T:
+def load_yaml_content_as_model[T: BaseModel](content: str, model_cls: type[T]) -> T:
     """
     Load YAML content from a string and validate against a Pydantic model.
 
@@ -253,7 +248,7 @@ def _dump_yaml_content(
                 cause=e,
             )
 
-        return cast(str, yaml_str)
+        return cast("str", yaml_str)
     except yaml.YAMLError as e:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.CONVERSION_ERROR,

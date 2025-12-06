@@ -67,9 +67,9 @@ class TestModelTimeoutPerformance:
         access_time = self.time_operation(access_warning_threshold, 100)
 
         # Should be very fast due to caching (< 1ms average)
-        assert (
-            access_time < 0.001
-        ), f"Warning threshold access ({access_time:.6f}s) should be very fast due to caching"
+        assert access_time < 0.001, (
+            f"Warning threshold access ({access_time:.6f}s) should be very fast due to caching"
+        )
 
     def test_extension_limit_caching(self):
         """Test that extension_limit_seconds caching improves performance."""
@@ -87,9 +87,9 @@ class TestModelTimeoutPerformance:
         access_time = self.time_operation(access_extension_limit, 100)
 
         # Should be very fast due to caching (< 1ms average)
-        assert (
-            access_time < 0.001
-        ), f"Extension limit access ({access_time:.6f}s) should be very fast due to caching"
+        assert access_time < 0.001, (
+            f"Extension limit access ({access_time:.6f}s) should be very fast due to caching"
+        )
 
     def test_runtime_category_calculation_caching(self):
         """Test that runtime category calculations are cached effectively."""
@@ -105,9 +105,9 @@ class TestModelTimeoutPerformance:
         creation_time = self.time_operation(create_from_category, 10)
 
         # Should be fast due to LRU caching
-        assert (
-            creation_time < 0.01
-        ), f"Runtime category calculation ({creation_time:.6f}s) should be fast due to LRU caching"
+        assert creation_time < 0.01, (
+            f"Runtime category calculation ({creation_time:.6f}s) should be fast due to LRU caching"
+        )
 
     def test_cache_invalidation_on_metadata_change(self):
         """Test that cache is properly invalidated when metadata changes."""
@@ -154,12 +154,12 @@ class TestModelTimeoutPerformance:
         deserialize_time = self.time_operation(deserialize, 50)
 
         # Both operations should be reasonably fast
-        assert (
-            serialize_time < 0.01
-        ), f"Serialization ({serialize_time:.6f}s) should be fast"
-        assert (
-            deserialize_time < 0.01
-        ), f"Deserialization ({deserialize_time:.6f}s) should be fast"
+        assert serialize_time < 0.01, (
+            f"Serialization ({serialize_time:.6f}s) should be fast"
+        )
+        assert deserialize_time < 0.01, (
+            f"Deserialization ({deserialize_time:.6f}s) should be fast"
+        )
 
     @pytest.mark.parametrize(
         "category",
@@ -188,9 +188,9 @@ class TestModelTimeoutPerformance:
         cached_time = self.time_operation(cached_call, 10)
 
         # Cached calls should be faster
-        assert (
-            cached_time < first_time
-        ), f"Cached call ({cached_time:.6f}s) should be faster than first call ({first_time:.6f}s)"
+        assert cached_time < first_time, (
+            f"Cached call ({cached_time:.6f}s) should be faster than first call ({first_time:.6f}s)"
+        )
 
     def test_property_access_patterns(self):
         """Test common property access patterns for performance."""
@@ -217,9 +217,9 @@ class TestModelTimeoutPerformance:
         access_time = self.time_operation(access_all_properties, 50)
 
         # Should be fast due to caching optimizations
-        assert (
-            access_time < 0.005
-        ), f"Property access pattern ({access_time:.6f}s) should be optimized"
+        assert access_time < 0.005, (
+            f"Property access pattern ({access_time:.6f}s) should be optimized"
+        )
 
     def test_memory_usage_optimization(self):
         """Test that optimizations don't create excessive memory overhead."""

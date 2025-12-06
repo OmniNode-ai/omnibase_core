@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Generic, TypeVar
+from typing import Any
 
 from pydantic import Field
 
@@ -14,8 +14,6 @@ repetitive patterns while maintaining type safety.
 """
 
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -23,11 +21,8 @@ from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-# Type variable for contained value
-T = TypeVar("T")
 
-
-class ModelContainer(BaseModel, Generic[T]):
+class ModelContainer[T](BaseModel):
     """
     Generic container for single values with metadata and validation.
 

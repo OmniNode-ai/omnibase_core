@@ -87,14 +87,14 @@ class TestEnumSeverityLevel:
 
         for alias, expected_level in aliases.items():
             actual_level = EnumSeverityLevel.from_string(alias)
-            assert (
-                actual_level == expected_level
-            ), f"Expected {alias} -> {expected_level}, got {actual_level}"
+            assert actual_level == expected_level, (
+                f"Expected {alias} -> {expected_level}, got {actual_level}"
+            )
             # Test case insensitive
             actual_upper = EnumSeverityLevel.from_string(alias.upper())
-            assert (
-                actual_upper == expected_level
-            ), f"Expected {alias.upper()} -> {expected_level}, got {actual_upper}"
+            assert actual_upper == expected_level, (
+                f"Expected {alias.upper()} -> {expected_level}, got {actual_upper}"
+            )
 
     def test_from_string_fallback(self):
         """Test from_string method fallback behavior."""

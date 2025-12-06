@@ -75,9 +75,9 @@ class TestEnumScenarioStatus:
         """Test that the enum has the expected number of members."""
         expected_count = 6
         actual_count = len(list(EnumScenarioStatus))
-        assert (
-            actual_count == expected_count
-        ), f"Expected {expected_count} members, got {actual_count}"
+        assert actual_count == expected_count, (
+            f"Expected {expected_count} members, got {actual_count}"
+        )
 
     def test_enum_member_uniqueness(self):
         """Test that all enum members have unique values."""
@@ -171,9 +171,9 @@ class TestEnumScenarioStatus:
         all_states = initial_states | pending_states | active_states | final_states
         actual_states = set(EnumScenarioStatus)
 
-        assert (
-            all_states == actual_states
-        ), "Scenario status lifecycle categorization is complete"
+        assert all_states == actual_states, (
+            "Scenario status lifecycle categorization is complete"
+        )
 
     def test_scenario_status_execution_outcomes(self):
         """Test categorization by execution outcomes."""
@@ -198,9 +198,9 @@ class TestEnumScenarioStatus:
         )
         actual_states = set(EnumScenarioStatus)
 
-        assert (
-            all_outcomes == actual_states
-        ), "All scenario statuses are categorized by outcome"
+        assert all_outcomes == actual_states, (
+            "All scenario statuses are categorized by outcome"
+        )
 
     def test_is_final_state_logic(self):
         """Test logic for determining if a status represents a final state."""

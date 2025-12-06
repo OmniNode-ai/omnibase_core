@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-from typing import Generic
 
 from pydantic import Field
 
@@ -23,7 +22,7 @@ from omnibase_core.types.constraints import SimpleValueType
 # Use consolidated SimpleValueType instead of redundant TypeVar
 
 
-class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
+class ModelTypedMetrics[SimpleValueType](BaseModel):
     """Generic metrics model replacing type-specific variants.
     Implements Core protocols:
     - ProtocolMetadataProvider: Metadata management capabilities
@@ -163,9 +162,7 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (
-            Exception
-        ):  # fallback-ok: protocol method contract requires bool return - False indicates metadata update failed safely
+        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates metadata update failed safely
             return False
 
     def serialize(self) -> dict[str, Any]:
@@ -178,9 +175,7 @@ class ModelTypedMetrics(BaseModel, Generic[SimpleValueType]):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (
-            Exception
-        ):  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
+        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
             return False
 
 

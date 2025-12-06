@@ -44,9 +44,9 @@ class TestNodesModuleImports:
         assert hasattr(NodeCompute, "process"), "NodeCompute should have process method"
         assert hasattr(NodeEffect, "process"), "NodeEffect should have process method"
         assert hasattr(NodeReducer, "process"), "NodeReducer should have process method"
-        assert hasattr(
-            NodeOrchestrator, "process"
-        ), "NodeOrchestrator should have process method"
+        assert hasattr(NodeOrchestrator, "process"), (
+            "NodeOrchestrator should have process method"
+        )
 
     def test_nodes_compute_io_models_import(self) -> None:
         """Verify COMPUTE node I/O models are importable."""
@@ -54,9 +54,9 @@ class TestNodesModuleImports:
 
         # Should be types (Pydantic models)
         assert isinstance(ModelComputeInput, type), "ModelComputeInput should be a type"
-        assert isinstance(
-            ModelComputeOutput, type
-        ), "ModelComputeOutput should be a type"
+        assert isinstance(ModelComputeOutput, type), (
+            "ModelComputeOutput should be a type"
+        )
 
     def test_nodes_effect_io_models_import(self) -> None:
         """Verify EFFECT node I/O models are importable."""
@@ -72,30 +72,30 @@ class TestNodesModuleImports:
 
         # Should be types (Pydantic models)
         assert isinstance(ModelReducerInput, type), "ModelReducerInput should be a type"
-        assert isinstance(
-            ModelReducerOutput, type
-        ), "ModelReducerOutput should be a type"
+        assert isinstance(ModelReducerOutput, type), (
+            "ModelReducerOutput should be a type"
+        )
 
     def test_nodes_orchestrator_io_models_import(self) -> None:
         """Verify ORCHESTRATOR node I/O models are importable."""
         from omnibase_core.nodes import ModelOrchestratorInput, ModelOrchestratorOutput
 
         # Should be types (Pydantic models)
-        assert isinstance(
-            ModelOrchestratorInput, type
-        ), "ModelOrchestratorInput should be a type"
-        assert isinstance(
-            ModelOrchestratorOutput, type
-        ), "ModelOrchestratorOutput should be a type"
+        assert isinstance(ModelOrchestratorInput, type), (
+            "ModelOrchestratorInput should be a type"
+        )
+        assert isinstance(ModelOrchestratorOutput, type), (
+            "ModelOrchestratorOutput should be a type"
+        )
 
     def test_nodes_effect_transaction_model_import(self) -> None:
         """Verify ModelEffectTransaction is importable from nodes for type hints."""
         from omnibase_core.nodes import ModelEffectTransaction
 
         # Should be a type (for rollback failure callback type hints)
-        assert isinstance(
-            ModelEffectTransaction, type
-        ), "ModelEffectTransaction should be a type"
+        assert isinstance(ModelEffectTransaction, type), (
+            "ModelEffectTransaction should be a type"
+        )
 
     def test_nodes_all_io_models_combined_import(self) -> None:
         """Verify all I/O models can be imported together without conflicts."""
@@ -140,78 +140,63 @@ class TestNodesModuleImports:
             EnumWorkflowState,
         )
 
-        assert isinstance(
-            EnumActionType, EnumMeta
-        ), "EnumActionType should be an enum type"
-        assert isinstance(
-            EnumBranchCondition, EnumMeta
-        ), "EnumBranchCondition should be an enum type"
-        assert isinstance(
-            EnumExecutionMode, EnumMeta
-        ), "EnumExecutionMode should be an enum type"
-        assert isinstance(
-            EnumWorkflowState, EnumMeta
-        ), "EnumWorkflowState should be an enum type"
-        assert isinstance(
-            EnumConflictResolution, EnumMeta
-        ), "EnumConflictResolution should be an enum type"
-        assert isinstance(
-            EnumReductionType, EnumMeta
-        ), "EnumReductionType should be an enum type"
-        assert isinstance(
-            EnumStreamingMode, EnumMeta
-        ), "EnumStreamingMode should be an enum type"
+        assert isinstance(EnumActionType, EnumMeta), (
+            "EnumActionType should be an enum type"
+        )
+        assert isinstance(EnumBranchCondition, EnumMeta), (
+            "EnumBranchCondition should be an enum type"
+        )
+        assert isinstance(EnumExecutionMode, EnumMeta), (
+            "EnumExecutionMode should be an enum type"
+        )
+        assert isinstance(EnumWorkflowState, EnumMeta), (
+            "EnumWorkflowState should be an enum type"
+        )
+        assert isinstance(EnumConflictResolution, EnumMeta), (
+            "EnumConflictResolution should be an enum type"
+        )
+        assert isinstance(EnumReductionType, EnumMeta), (
+            "EnumReductionType should be an enum type"
+        )
+        assert isinstance(EnumStreamingMode, EnumMeta), (
+            "EnumStreamingMode should be an enum type"
+        )
 
 
 @pytest.mark.unit
 class TestNodesDeclarativeImports:
     """Verify declarative node class imports.
 
-    NOTE: NodeReducerDeclarative and NodeOrchestratorDeclarative exist in the
-    codebase but are NOT currently exported from omnibase_core.nodes.__init__.py.
+    NOTE: NodeReducer and NodeOrchestrator are the primary declarative node classes.
+    They are exported from omnibase_core.nodes.__init__.py.
 
-    These tests document the expected future API. Once these classes are added
-    to the public API, these tests can be updated to verify actual imports.
+    These tests verify the classes are properly exported and importable.
     """
 
-    def test_declarative_classes_exist_but_not_exported(self) -> None:
-        """Document that declarative classes exist but are not currently exported.
+    def test_declarative_classes_exist_and_exported(self) -> None:
+        """Verify declarative classes exist and are exported from nodes module.
 
-        This test verifies the classes exist at their source locations,
-        documenting them for future public API inclusion.
+        This test verifies the classes exist at their source locations
+        and are part of the public API.
         """
-        # These classes exist but are not exported from nodes.__init__.py
-        from omnibase_core.nodes.node_orchestrator_declarative import (
-            NodeOrchestratorDeclarative,
-        )
-        from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
+        # These classes should be exported from nodes.__init__.py
+        from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+        from omnibase_core.nodes.node_reducer import NodeReducer
 
-        assert isinstance(NodeReducerDeclarative, type)
-        assert isinstance(NodeOrchestratorDeclarative, type)
+        assert isinstance(NodeReducer, type)
+        assert isinstance(NodeOrchestrator, type)
 
-    @pytest.mark.xfail(
-        reason="NodeReducerDeclarative not yet exported from nodes module"
-    )
-    def test_nodes_reducer_declarative_import(self) -> None:
-        """Verify NodeReducerDeclarative is importable from nodes module.
+    def test_nodes_reducer_import(self) -> None:
+        """Verify NodeReducer is importable from nodes module."""
+        from omnibase_core.nodes import NodeReducer
 
-        EXPECTED: This import should work once the class is added to __all__.
-        """
-        from omnibase_core.nodes import NodeReducerDeclarative
+        assert isinstance(NodeReducer, type)
 
-        assert isinstance(NodeReducerDeclarative, type)
+    def test_nodes_orchestrator_import(self) -> None:
+        """Verify NodeOrchestrator is importable from nodes module."""
+        from omnibase_core.nodes import NodeOrchestrator
 
-    @pytest.mark.xfail(
-        reason="NodeOrchestratorDeclarative not yet exported from nodes module"
-    )
-    def test_nodes_orchestrator_declarative_import(self) -> None:
-        """Verify NodeOrchestratorDeclarative is importable from nodes module.
-
-        EXPECTED: This import should work once the class is added to __all__.
-        """
-        from omnibase_core.nodes import NodeOrchestratorDeclarative
-
-        assert isinstance(NodeOrchestratorDeclarative, type)
+        assert isinstance(NodeOrchestrator, type)
 
 
 @pytest.mark.unit
@@ -244,20 +229,20 @@ class TestInfrastructureModuleImports:
         assert issubclass(NodeCoreBase, ABC), "NodeCoreBase should be an ABC"
 
         # They are sibling classes (neither inherits from the other)
-        assert not issubclass(
-            NodeCoreBase, NodeBase
-        ), "NodeCoreBase should not inherit from NodeBase"
-        assert not issubclass(
-            NodeBase, NodeCoreBase
-        ), "NodeBase should not inherit from NodeCoreBase"
+        assert not issubclass(NodeCoreBase, NodeBase), (
+            "NodeCoreBase should not inherit from NodeBase"
+        )
+        assert not issubclass(NodeBase, NodeCoreBase), (
+            "NodeBase should not inherit from NodeCoreBase"
+        )
 
     def test_infrastructure_circuit_breaker_import(self) -> None:
         """Verify ModelCircuitBreaker is importable from infrastructure."""
         from omnibase_core.infrastructure import ModelCircuitBreaker
 
-        assert isinstance(
-            ModelCircuitBreaker, type
-        ), "ModelCircuitBreaker should be a type"
+        assert isinstance(ModelCircuitBreaker, type), (
+            "ModelCircuitBreaker should be a type"
+        )
 
     def test_infrastructure_compute_cache_import(self) -> None:
         """Verify ModelComputeCache is importable from infrastructure."""
@@ -269,9 +254,9 @@ class TestInfrastructureModuleImports:
         """Verify ModelEffectTransaction is importable from infrastructure."""
         from omnibase_core.infrastructure import ModelEffectTransaction
 
-        assert isinstance(
-            ModelEffectTransaction, type
-        ), "ModelEffectTransaction should be a type"
+        assert isinstance(ModelEffectTransaction, type), (
+            "ModelEffectTransaction should be a type"
+        )
 
     def test_infrastructure_all_models_combined_import(self) -> None:
         """Verify all infrastructure models can be imported together."""
@@ -413,18 +398,18 @@ class TestNodesModuleAllExports:
             "ModelOrchestratorOutput",
         ]
         for model_name in expected_models:
-            assert (
-                model_name in nodes.__all__
-            ), f"{model_name} should be in nodes.__all__"
+            assert model_name in nodes.__all__, (
+                f"{model_name} should be in nodes.__all__"
+            )
 
     def test_nodes_module_all_exports_are_accessible(self) -> None:
         """Verify all items in __all__ are actually importable."""
         from omnibase_core import nodes
 
         for export_name in nodes.__all__:
-            assert hasattr(
-                nodes, export_name
-            ), f"{export_name} in __all__ but not accessible"
+            assert hasattr(nodes, export_name), (
+                f"{export_name} in __all__ but not accessible"
+            )
             export_obj = getattr(nodes, export_name)
             assert export_obj is not None, f"{export_name} is None"
 
@@ -437,9 +422,9 @@ class TestInfrastructureModuleAllExports:
         """Verify infrastructure module has __all__ defined."""
         from omnibase_core import infrastructure
 
-        assert hasattr(
-            infrastructure, "__all__"
-        ), "infrastructure module should define __all__"
+        assert hasattr(infrastructure, "__all__"), (
+            "infrastructure module should define __all__"
+        )
         assert isinstance(infrastructure.__all__, list), "__all__ should be a list"
 
     def test_infrastructure_module_all_contains_base_classes(self) -> None:
@@ -448,9 +433,9 @@ class TestInfrastructureModuleAllExports:
 
         expected_bases = ["NodeBase", "NodeCoreBase"]
         for base_name in expected_bases:
-            assert (
-                base_name in infrastructure.__all__
-            ), f"{base_name} should be in infrastructure.__all__"
+            assert base_name in infrastructure.__all__, (
+                f"{base_name} should be in infrastructure.__all__"
+            )
 
     def test_infrastructure_module_all_contains_infrastructure_models(self) -> None:
         """Verify __all__ contains infrastructure model classes."""
@@ -462,18 +447,18 @@ class TestInfrastructureModuleAllExports:
             "ModelEffectTransaction",
         ]
         for model_name in expected_models:
-            assert (
-                model_name in infrastructure.__all__
-            ), f"{model_name} should be in infrastructure.__all__"
+            assert model_name in infrastructure.__all__, (
+                f"{model_name} should be in infrastructure.__all__"
+            )
 
     def test_infrastructure_module_all_exports_are_accessible(self) -> None:
         """Verify all items in __all__ are actually importable."""
         from omnibase_core import infrastructure
 
         for export_name in infrastructure.__all__:
-            assert hasattr(
-                infrastructure, export_name
-            ), f"{export_name} in __all__ but not accessible"
+            assert hasattr(infrastructure, export_name), (
+                f"{export_name} in __all__ but not accessible"
+            )
             export_obj = getattr(infrastructure, export_name)
             assert export_obj is not None, f"{export_name} is None"
 
@@ -490,9 +475,9 @@ class TestImportPathConsistency:
         from omnibase_core.nodes import ModelEffectTransaction as NodesEffectTransaction
 
         # Should be the exact same class
-        assert (
-            NodesEffectTransaction is InfraEffectTransaction
-        ), "ModelEffectTransaction from nodes and infrastructure should be identical"
+        assert NodesEffectTransaction is InfraEffectTransaction, (
+            "ModelEffectTransaction from nodes and infrastructure should be identical"
+        )
 
     def test_node_classes_inherit_from_infrastructure_bases(self) -> None:
         """Verify node classes properly inherit from infrastructure base classes."""
@@ -505,15 +490,15 @@ class TestImportPathConsistency:
         )
 
         # All node classes should inherit from NodeCoreBase
-        assert issubclass(
-            NodeCompute, NodeCoreBase
-        ), "NodeCompute should inherit from NodeCoreBase"
-        assert issubclass(
-            NodeEffect, NodeCoreBase
-        ), "NodeEffect should inherit from NodeCoreBase"
-        assert issubclass(
-            NodeReducer, NodeCoreBase
-        ), "NodeReducer should inherit from NodeCoreBase"
-        assert issubclass(
-            NodeOrchestrator, NodeCoreBase
-        ), "NodeOrchestrator should inherit from NodeCoreBase"
+        assert issubclass(NodeCompute, NodeCoreBase), (
+            "NodeCompute should inherit from NodeCoreBase"
+        )
+        assert issubclass(NodeEffect, NodeCoreBase), (
+            "NodeEffect should inherit from NodeCoreBase"
+        )
+        assert issubclass(NodeReducer, NodeCoreBase), (
+            "NodeReducer should inherit from NodeCoreBase"
+        )
+        assert issubclass(NodeOrchestrator, NodeCoreBase), (
+            "NodeOrchestrator should inherit from NodeCoreBase"
+        )

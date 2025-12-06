@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Generic, TypeVar
 
 from pydantic import Field, ValidationInfo, field_validator
 
@@ -24,10 +23,8 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
 
-T = TypeVar("T", int, float)
 
-
-class ModelTimeBased(BaseModel, Generic[T]):
+class ModelTimeBased[T: (int, float)](BaseModel):
     """
     Universal time-based model replacing Duration, Timeout, and timing aspects.
 

@@ -265,16 +265,16 @@ def second_function():
 
         # First violation should be on line 7 (the actual parse call)
         first_violation = validator.ast_violations[0]
-        assert (
-            first_violation.line_number == 7
-        ), f"Expected line 7, got {first_violation.line_number}"
+        assert first_violation.line_number == 7, (
+            f"Expected line 7, got {first_violation.line_number}"
+        )
         assert "1.0.0" in first_violation.suggestion
 
         # Second violation should be on line 12
         second_violation = validator.ast_violations[1]
-        assert (
-            second_violation.line_number == 12
-        ), f"Expected line 12, got {second_violation.line_number}"
+        assert second_violation.line_number == 12, (
+            f"Expected line 12, got {second_violation.line_number}"
+        )
         assert "2.1.3" in second_violation.suggestion
 
     def test_detects_parse_semver_from_string_function(self, tmp_path: Path) -> None:
@@ -300,9 +300,9 @@ def get_version():
         validator.validate_python_file(test_file)
 
         # Should detect violation
-        assert (
-            len(validator.ast_violations) == 1
-        ), "Should detect parse_semver_from_string() with string literal"
+        assert len(validator.ast_violations) == 1, (
+            "Should detect parse_semver_from_string() with string literal"
+        )
 
         violation = validator.ast_violations[0]
         assert violation.violation_type == "semantic_version_string_literal_in_call"

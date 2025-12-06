@@ -672,9 +672,9 @@ class TestFixtureValidation:
 
                 if python_files:
                     success = detector.validate_all_python_files(python_files)
-                    assert (
-                        success is True
-                    ), f"Valid fixtures should pass validation. Errors: {detector.errors}"
+                    assert success is True, (
+                        f"Valid fixtures should pass validation. Errors: {detector.errors}"
+                    )
 
     def test_invalid_fixtures_trigger_violations(self):
         """Test that invalid fixtures trigger backward compatibility violations."""
@@ -687,12 +687,12 @@ class TestFixtureValidation:
             if compat_fixture.exists():
                 detector = BackwardCompatibilityDetector()
                 result = detector.validate_python_file(compat_fixture)
-                assert (
-                    result is False
-                ), "Backward compatibility fixture should trigger violations"
-                assert (
-                    len(detector.errors) > 0
-                ), "Should detect backward compatibility patterns"
+                assert result is False, (
+                    "Backward compatibility fixture should trigger violations"
+                )
+                assert len(detector.errors) > 0, (
+                    "Should detect backward compatibility patterns"
+                )
 
 
 if __name__ == "__main__":

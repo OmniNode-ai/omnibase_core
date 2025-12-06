@@ -81,8 +81,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
                 except ValueError:
                     valid_values = [e.value for e in EnumActionCategory]
                     message = (
-                        f"Invalid category value: {v}. "
-                        f"Must be one of {valid_values}"
+                        f"Invalid category value: {v}. Must be one of {valid_values}"
                     )
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
