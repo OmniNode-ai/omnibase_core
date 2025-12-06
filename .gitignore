@@ -1,34 +1,51 @@
-# Byte-compiled / optimized / DLL files
+# =============================================================================
+# omnibase_core .gitignore
+# =============================================================================
+# This file specifies patterns for files that Git should ignore.
+# Organized into logical sections for clarity and maintainability.
+# Last updated: 2025-12-06
+# =============================================================================
+
+# =============================================================================
+# PYTHON BYTECODE & COMPILATION
+# =============================================================================
+# Python bytecode caches (generated on import)
 __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
+# C extension shared objects
 *.so
 
-# Distribution / packaging
-.Python
+# Cython debug symbols
+cython_debug/
+
+# =============================================================================
+# PYTHON PACKAGING & DISTRIBUTION
+# =============================================================================
+# Build artifacts
 build/
-develop-eggs/
 dist/
+sdist/
+wheels/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Legacy packaging formats
+.Python
+develop-eggs/
 downloads/
 eggs/
 .eggs/
 lib/
 lib64/
 parts/
-sdist/
 var/
-wheels/
 share/python-wheels/
-*.egg-info/
 .installed.cfg
-*.egg
-MANIFEST
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+# PyInstaller artifacts
 *.manifest
 *.spec
 
@@ -36,142 +53,174 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
+# =============================================================================
+# VIRTUAL ENVIRONMENTS
+# =============================================================================
+# Standard virtual environment directories
+.venv/
+venv/
+env/
+ENV/
 
-# ONEX cache directories
-.onex_cache/
-.pytest_cache/
-.testmondata
-cover/
+# Backup virtual environments
+env.bak/
+venv.bak/
 
-# Translations
-*.mo
-*.pot
+# PEP 582 local packages (pyflow, pdm)
+__pypackages__/
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+# =============================================================================
+# DEPENDENCY MANAGEMENT
+# =============================================================================
+# Poetry: We COMMIT poetry.lock for reproducible CI builds
+# (uncomment to ignore if treating as library)
+#poetry.lock
 
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# UV
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
+# UV lock file (uncommit if needed for reproducibility)
 #uv.lock
 
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock  # COMMITTED: We commit poetry.lock for reproducible CI builds
-
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/latest/usage/project/#working-with-version-control
+# PDM configuration (project-specific, not version-controlled)
 .pdm.toml
 .pdm-python
 .pdm-build/
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
+# PyPI upload configuration (contains credentials)
+.pypirc
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+# =============================================================================
+# TESTING & COVERAGE
+# =============================================================================
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+coverage.json
+*.cover
+*.py,cover
+cover/
 
-# SageMath parsed files
-*.sage.py
+# Test runners
+.tox/
+.nox/
+.cache
+.pytest_cache/
+.hypothesis/
+.testmondata
+.test_durations
+nosetests.xml
+junit-*.xml
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+# ONEX-specific test caches
+.onex_cache/
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
+# =============================================================================
+# TYPE CHECKING & LINTING
+# =============================================================================
+# mypy cache and daemon
 .mypy_cache/
 .dmypy.json
 dmypy.json
+mypy_*.txt
 
 # Pyre type checker
 .pyre/
 
-# pytype static type analyzer
+# pytype static analyzer
 .pytype/
 
-# Cython debug symbols
-cython_debug/
+# Ruff linter cache
+.ruff_cache/
 
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
+# =============================================================================
+# IDE & EDITOR SETTINGS
+# =============================================================================
+# JetBrains IDEs (PyCharm, IntelliJ)
 .idea/
 
-# ONEX Quality Reports and Metrics
+# Visual Studio Code
+.vscode/
+
+# Spyder IDE
+.spyderproject
+.spyproject
+
+# Rope refactoring tool
+.ropeproject
+
+# IPython/Jupyter
+.ipynb_checkpoints
+profile_default/
+ipython_config.py
+
+# =============================================================================
+# AI CODING ASSISTANTS
+# =============================================================================
+# Claude Code (local settings and session data)
+.claude/
+*.db
+*.sqlite
+*.db-wal
+*.db-shm
+*.sqlite-journal
+session-*.json
+*auto-save*.json
+*-metrics.json
+*system-metrics.json
+
+# Other AI IDE tools
+.codanna/
+.serena/
+.cursor/
+.hive-mind/
+.swarm/
+.claude-flow/
+claude-flow.config.json
+
+# =============================================================================
+# OPERATING SYSTEM FILES
+# =============================================================================
+# macOS
+.DS_Store
+
+# =============================================================================
+# ENVIRONMENT & SECRETS
+# =============================================================================
+# Environment files (may contain secrets)
+.env
+.env.*
+!.env.example
+
+# Secrets directory (Docker runtime)
+secrets/
+
+# =============================================================================
+# LOGS & TEMPORARY FILES
+# =============================================================================
+# Log files
+*.log
+logs/
+
+# Temporary files and caches
+tmp/
+
+# =============================================================================
+# DOCUMENTATION BUILD ARTIFACTS
+# =============================================================================
+# Sphinx documentation build
+docs/_build/
+
+# mkdocs site output
+/site
+
+# Archived/private documentation (not for public repo)
+docs_archived/
+docs_private/
+
+# =============================================================================
+# PROJECT-SPECIFIC: ONEX/OMNIBASE
+# =============================================================================
+# Quality reports and metrics (generated, not committed)
 .github/quality_*.json
 .github/quality_*.md
 .github/last_quality_scan.json
@@ -179,115 +228,73 @@ cython_debug/
 code_quality_report.json
 code_quality_report.md
 
-# Validation and test result files (should not be committed)
+# Validation and test result files (CI-generated)
 *_validation_results.json
 *_go_no_go_results.json
 container_security_validation.json
-phase*_*.json
-PHASE*_*.md
-DESIGN_*.md
-PR_DESCRIPTION.md
 
-# Ruff stuff:
-.ruff_cache/
-
-# PyPI configuration file
-.pypirc
-
-# Project-specific
-/backups
-/reports
-reports/
+# Analysis reports (generated)
+/backups/
+/reports/
 *_report*.json
 *_analysis*.json
 *_errors*.txt
-mypy_*.txt
-
-# OmniBase / ONEX .gitignore
-
-# Virtual environments
-.venv/
-venv/
-ENV/
-env.bak/
-
-# VS Code
-.vscode/
-
-# MacOS
-.DS_Store
-
-# Env files
-.env
-.env.*
-
-# Misc
-*.log
-
-# OmniBase/ONEX specific
-# (add any project-specific ignores here)
 
 # Docker runtime data directories
 data/
-logs/
 generated/
-reports/
-secrets/
 
-# Legacy files exclusion pattern:
-# - /legacy/ : Ignore any root-level legacy directory (e.g., /legacy/) which may contain
-#              old, deprecated, or sensitive files that should not be tracked
-# - !/src/omnibase_core/nodes/legacy/ : EXCEPTION - preserve the nodes/legacy/ directory
-#              which contains backwards-compatible node implementations for migration support
-#              (e.g., NodeBaseLegacy, legacy effect/reducer base classes)
+# Legacy directory handling:
+#   - /legacy/ at repo root: Deprecated files, not tracked
+#   - src/omnibase_core/nodes/legacy/: PRESERVED for migration support
 /legacy/
 !/src/omnibase_core/nodes/legacy/
 
-# Private documentation (not for public repository)
-docs_private/
+# =============================================================================
+# DEVELOPMENT TEMPORARY FILES
+# =============================================================================
+# Phase documentation (temporary planning files at repo root)
+# Pattern: phase1_*.json, PHASE2_*.md, etc.
+phase*_*.json
+PHASE*_*.md
 
-# Optimization cache files
-.onex_cache/
-docs_archived/
+# Temporary design/implementation docs (at repo root only)
+# These patterns only match files at repo root to avoid catching
+# legitimate documentation in subdirectories
+/DESIGN_*.md
+/PR_DESCRIPTION.md
+/TEMP_*.md
+/REFACTORING_EXAMPLE.py
+/examples_*.py
+/factory_pattern_analysis.md
+/migration_guide_*.md
 
-# Temporary files and caches
-tmp/
+# =============================================================================
+# FRAMEWORK-SPECIFIC (OPTIONAL - UNCOMMENT IF USING)
+# =============================================================================
+# Django (uncomment if using Django components)
+#db.sqlite3
+#db.sqlite3-journal
+#local_settings.py
 
-# AI IDE tools (entire directories ignored)
-.codanna/
-.serena/
-.cursor/
+# Flask (uncomment if using Flask components)
+#instance/
+#.webassets-cache
 
-# AI Tools and Generated Content
-.hive-mind/
-.swarm/
-.claude-flow/
-claude-flow.config.json
+# Celery (uncomment if using Celery)
+#celerybeat-schedule
+#celerybeat.pid
 
-# Claude Code settings (personal/local configuration)
-.claude/
-.claude/settings.local.json
+# Scrapy (uncomment if using Scrapy)
+#.scrapy
 
-# Claude Code database files (session state, metrics, auto-saves)
-*.db
-*.sqlite
-*.db-wal
-*.db-shm
-*.sqlite-journal
-*system-metrics.json
-*-metrics.json
-session-*.json
-*auto-save*.json
+# SageMath (uncomment if using SageMath)
+#*.sage.py
 
-# Development and Analysis Documents (temporary files)
-*_ANALYSIS.md
-*_SUMMARY.md
-*_GUIDE.md
-TEMP_*IMPLEMENTATION*.md
-REFACTORING_EXAMPLE.py
-examples_*.py
-factory_pattern_analysis.md
-migration_guide_*.md
-coverage.json
-.test_durations
-junit-*.xml
+# Translations (uncomment if using i18n)
+#*.mo
+#*.pot
+
+# PyBuilder (uncomment if using PyBuilder)
+#.pybuilder/
+#target/

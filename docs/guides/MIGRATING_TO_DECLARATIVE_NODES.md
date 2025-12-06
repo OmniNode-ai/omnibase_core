@@ -31,7 +31,7 @@ This guide shows how to migrate existing code-based reducer and orchestrator nod
 
 ### Implementation Status
 
-**✅ Production-Ready** (as of omnibase_core v0.3.2, 2025-11-16)
+**✅ Production-Ready** (as of omnibase_core v0.4.0)
 
 All 4 phases of declarative node implementation are complete:
 
@@ -698,30 +698,26 @@ from omnibase_core.nodes import (
     EnumReductionType, EnumConflictResolution, EnumStreamingMode,  # Reducer
     EnumExecutionMode, EnumWorkflowState, EnumActionType, EnumBranchCondition,  # Orchestrator
 )
-
-# Legacy imports (deprecated - emit deprecation warnings)
-from omnibase_core.nodes.legacy import NodeReducerLegacy, NodeOrchestratorLegacy
 ```
 
-| Node Type | v0.4.0 Import Path | Legacy Import Path (Deprecated) |
+| Node Type | v0.4.0 Import Path | Notes |
 |-----------|--------------------|---------------------------------|
-| **Compute** | `from omnibase_core.nodes import NodeCompute` | N/A (unchanged) |
-| **Effect** | `from omnibase_core.nodes import NodeEffect` | N/A (unchanged) |
-| **Reducer** | `from omnibase_core.nodes import NodeReducer` | `from omnibase_core.nodes.legacy import NodeReducerLegacy` |
-| **Orchestrator** | `from omnibase_core.nodes import NodeOrchestrator` | `from omnibase_core.nodes.legacy import NodeOrchestratorLegacy` |
+| **Compute** | `from omnibase_core.nodes import NodeCompute` | Unchanged |
+| **Effect** | `from omnibase_core.nodes import NodeEffect` | Unchanged |
+| **Reducer** | `from omnibase_core.nodes import NodeReducer` | FSM-driven (formerly `NodeReducerDeclarative`) |
+| **Orchestrator** | `from omnibase_core.nodes import NodeOrchestrator` | Workflow-driven (formerly `NodeOrchestratorDeclarative`) |
 
-**Deprecation Warnings**: When using legacy imports from `omnibase_core.nodes.legacy`, Python will emit a `DeprecationWarning`:
+### Migration from Pre-v0.4.0 Code
 
-```text
-DeprecationWarning: NodeReducerLegacy is deprecated and will be removed in v0.5.0.
-Use NodeReducer from omnibase_core.nodes instead.
-```
-
-To suppress these warnings during migration, you can use:
+If you have code using the old "Declarative" suffix names, update your imports:
 
 ```python
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning, module="omnibase_core.nodes.legacy")
+# Old (pre-v0.4.0) - no longer available
+# from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
+# from omnibase_core.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
+
+# New (v0.4.0+) - use these instead
+from omnibase_core.nodes import NodeReducer, NodeOrchestrator
 ```
 
-**Note**: Legacy imports are provided for backwards compatibility during the migration period and will be removed in v0.5.0. All nodes now use declarative YAML contracts by default.
+**Note**: The legacy non-declarative node implementations have been removed in v0.4.0. All nodes now use declarative YAML contracts by default. If your code was using custom code-based reducer or orchestrator nodes, follow the migration examples in this guide to convert them to declarative YAML contracts.

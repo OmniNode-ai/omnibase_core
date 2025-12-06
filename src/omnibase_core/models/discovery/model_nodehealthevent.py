@@ -7,6 +7,7 @@ from pydantic import Field, field_validator
 from omnibase_core.constants.event_types import NODE_HEALTH_EVENT
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.health.model_health_metrics import ModelHealthMetrics
+from omnibase_core.utils.util_hash import deterministic_error_code
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
@@ -214,7 +215,8 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             last_error_timestamp=datetime.now(),
             custom_metrics={
                 "status": 0.0,
-                "error_code": hash(error_message) % 1000 / 1000.0,
+                # Use deterministic hash for consistent error codes across Python sessions
+                "error_code": deterministic_error_code(error_message),
             },
         )
         return cls(

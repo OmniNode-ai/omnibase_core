@@ -16,25 +16,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **WARNING**: This is a major release with significant breaking changes. Please review the migration guide before upgrading.
 
-### Breaking Changes
+### BREAKING CHANGES
 
-#### Overview
+This release implements **hard removal** of legacy node classes. Unlike a typical deprecation cycle (Phase 1: soft deprecation with warnings, Phase 2: removal), this release proceeds directly to removal based on internal adoption metrics showing zero external usage of legacy patterns.
 
-This release completes the transition to declarative YAML-driven node architecture. The following changes require code updates:
+#### Why Hard Removal Instead of Soft Deprecation?
+
+1. **Internal-Only Usage**: Legacy node patterns (`NodeReducerLegacy`, `NodeOrchestratorLegacy`) were only used internally during development
+2. **Clean Architecture**: Maintaining dual implementations (legacy + declarative) adds maintenance burden and confusion
+3. **Clear Migration Path**: Full migration guide available with step-by-step instructions
+4. **Version Boundary**: Major version bump (0.3.x -> 0.4.0) signals breaking changes per SemVer
+
+#### Breaking Changes Summary
 
 | Change | Impact | Migration Effort |
 |--------|--------|------------------|
-| Legacy node classes removed | High - Code will fail to import | Update imports (5 min) |
-| Import paths changed | High - Code will fail to import | Update imports (5 min) |
-| FSM-driven NodeReducer is now default | Medium - API changes | Review FSM patterns (30 min) |
-| Workflow-driven NodeOrchestrator is now default | Medium - API changes | Review workflow patterns (30 min) |
+| Legacy node classes removed | **HIGH** - Code will fail to import | Update imports (5 min) |
+| Import paths changed | **HIGH** - Code will fail to import | Update imports (5 min) |
+| FSM-driven NodeReducer is now default | **MEDIUM** - API changes | Review FSM patterns (30 min) |
+| Workflow-driven NodeOrchestrator is now default | **MEDIUM** - API changes | Review workflow patterns (30 min) |
+| Error recovery patterns changed | **MEDIUM** - Error handling changes | Review error patterns (15 min) |
 
-#### Legacy Node Removal
-- **REMOVED**: `NodeReducerLegacy` and `NodeOrchestratorLegacy` have been **permanently removed** (not deprecated)
+#### Legacy Node Removal (HARD REMOVAL)
+
+- **REMOVED**: `NodeReducerLegacy` and `NodeOrchestratorLegacy` have been **permanently removed**
 - **REMOVED**: The entire `nodes/legacy/` directory has been deleted
-- **REMOVED**: All backward compatibility imports for legacy node types no longer function
-- **Impact**: Any code importing from `omnibase_core.nodes.legacy` will fail immediately
-- **Migration**: Update all imports to use the new unified import paths (see Changed section below)
+- **REMOVED**: All backward compatibility imports for legacy node types
+- **NO DEPRECATION PERIOD**: These classes were removed without a deprecation warning phase
+- **Impact**: Any code importing from `omnibase_core.nodes.legacy` will raise `ModuleNotFoundError`
+- **Migration**: Update all imports to use the new unified import paths (see Migration Guide section below)
 
 #### Import Path Changes
 - **BREAKING**: All nodes must now be imported from `omnibase_core.nodes`
@@ -109,25 +119,122 @@ This release completes the transition to declarative YAML-driven node architectu
 - **Legacy state management**: Direct state mutation patterns removed from Reducer nodes
 - **Legacy workflow patterns**: Non-lease-based orchestration removed
 
-#### Error Recovery Changes
+#### Error Recovery Changes (BREAKING)
 
-The error recovery system has been updated to align with the declarative architecture:
+The error recovery system has been **significantly changed** to align with the declarative architecture. **Existing error handling code will need to be rewritten.**
 
-- **Reducer Nodes**: Error recovery now occurs through FSM transitions rather than imperative catch blocks
-  - **Before**: `try/except` blocks with direct state mutation
-  - **After**: Wildcard transitions (`from_state: "*"`) handle errors declaratively
-  - Errors trigger `ModelIntent` emission for recovery actions
+##### What Changed
 
-- **Orchestrator Nodes**: Error recovery uses workflow-level failure strategies
-  - **Before**: Custom Python error handling in each step
-  - **After**: `failure_recovery_strategy` in YAML contract (retry, skip, abort)
-  - Actions include `lease_id` and `epoch` for idempotent retries
+| Aspect | Before (v0.3.x) | After (v0.4.0) |
+|--------|----------------|----------------|
+| **Reducer Error Handling** | `try/except` blocks with direct state mutation | FSM wildcard transitions (`from_state: "*"`) |
+| **Orchestrator Error Handling** | Custom Python error handling per step | YAML `failure_recovery_strategy` (retry/skip/abort) |
+| **Error State Transitions** | Imperative code sets error state | Declarative FSM transitions via `ModelIntent` |
+| **Retry Logic** | Custom retry loops in Python | Lease-based idempotent retries with `lease_id` + `epoch` |
 
-- **Migration**: Review error handling code and convert to:
-  - FSM error states and transitions for Reducer nodes
-  - Workflow `coordination_rules.failure_recovery_strategy` for Orchestrator nodes
+##### Reducer Nodes - Error Recovery Migration
 
-### Migration Guide (v0.3.x → v0.4.0)
+**Before (v0.3.x)** - Imperative error handling:
+```python
+class MyReducer(NodeReducerLegacy):  # No longer exists!
+    async def process(self, input_data):
+        try:
+            result = await self.do_work()
+            self.state = "completed"
+        except Exception as e:
+            self.state = "failed"  # Direct state mutation
+            self.error = str(e)
+            raise
+```
+
+**After (v0.4.0)** - Declarative FSM transitions:
+```yaml
+# In your YAML contract
+transitions:
+  - from_state: "*"           # Wildcard: catches errors from ANY state
+    to_state: failed
+    trigger: error_occurred
+    actions:
+      - action_name: "log_error"
+        action_type: "logging"
+      - action_name: "emit_failure_event"
+        action_type: "event"
+```
+
+```python
+class MyReducer(NodeReducer):  # Now uses FSM-driven base class
+    pass  # Error handling is declarative via YAML
+```
+
+##### Orchestrator Nodes - Error Recovery Migration
+
+**Before (v0.3.x)** - Per-step error handling:
+```python
+class MyOrchestrator(NodeOrchestratorLegacy):  # No longer exists!
+    async def process(self, input_data):
+        try:
+            await self.step1()
+        except Exception:
+            await self.retry_step1()  # Custom retry logic
+```
+
+**After (v0.4.0)** - Workflow-level failure strategy:
+```yaml
+# In your YAML contract
+coordination_rules:
+  failure_recovery_strategy: retry  # Options: retry, skip, abort
+  max_retries: 3
+  retry_backoff_ms: 1000
+```
+
+Actions now include `lease_id` and `epoch` for idempotent retries, preventing duplicate execution.
+
+##### Migration Checklist for Error Handling
+
+- [ ] Remove all `try/except` blocks that mutate state directly in Reducer nodes
+- [ ] Add FSM wildcard transitions (`from_state: "*"`) for error handling
+- [ ] Remove custom retry loops in Orchestrator nodes
+- [ ] Configure `failure_recovery_strategy` in YAML workflow contracts
+- [ ] Verify `ModelIntent` emission replaces direct error state mutations
+- [ ] Test error recovery paths with the new declarative patterns
+
+### Deprecation Strategy
+
+> **IMPORTANT**: This release uses **hard removal** rather than the typical soft deprecation approach.
+
+#### What This Means
+
+| Approach | Typical Deprecation | v0.4.0 Approach |
+|----------|---------------------|-----------------|
+| **Phase 1** | Soft deprecation - old code works but emits warnings | **SKIPPED** |
+| **Phase 2** | Hard removal - old code fails to import | **IMPLEMENTED** |
+| **Timeline** | Usually 1-2 minor versions for warnings | Immediate removal |
+
+#### Why No Soft Deprecation?
+
+1. **No External Users**: Legacy node patterns were internal-only during the declarative architecture development
+2. **Clean Major Version**: v0.4.0 is a major architectural change - ideal time for breaking changes
+3. **Migration Simplicity**: Single migration target (`NodeReducer`, `NodeOrchestrator`) is clearer than dual paths
+4. **Maintenance Burden**: Supporting both legacy and declarative patterns would complicate the codebase
+
+#### What If I Need More Time?
+
+If your project heavily depends on legacy patterns:
+
+1. **Pin Version**: Stay on `omnibase_core==0.3.x` until ready to migrate
+2. **Follow Guide**: Use the comprehensive migration guide below
+3. **Incremental Migration**: Migrate one node at a time, not all at once
+4. **Request Support**: Open a GitHub issue if you encounter migration blockers
+
+#### Future Deprecation Policy
+
+Starting with v0.4.0, the project will follow standard deprecation cycles for public APIs:
+- **Phase 1 (Minor Version)**: Add deprecation warnings, mark as deprecated in docs
+- **Phase 2 (Next Major Version)**: Remove deprecated functionality
+
+---
+
+### Migration Guide (v0.3.x to v0.4.0)
 
 > **Estimated Migration Time**: 30-60 minutes for typical projects
 >

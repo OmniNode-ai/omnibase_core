@@ -1,6 +1,6 @@
 # Declarative Workflow Architecture - Findings and Recommendations
 
-> **Date**: 2025-12-05
+> **Date**: 2025-12-06
 > **Version**: v0.4.0
 > **Correlation ID**: `doc-review-declarative-workflows-2025-11-16`
 > **Status**: COMPLETED - DECLARATIVE NODES ARE NOW PRIMARY
@@ -324,8 +324,22 @@ class MixinWorkflowExecution:
 **Current (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` ARE the declarative implementations
 
 ```python
-# Current pattern (v0.4.0) - RECOMMENDED - Use top-level API
-from omnibase_core.nodes import NodeReducer, NodeOrchestrator
+# v0.4.0+ RECOMMENDED: Top-level API
+from omnibase_core.nodes import (
+    NodeCompute,
+    NodeEffect,
+    NodeOrchestrator,
+    NodeReducer,
+    # Input/Output models also available
+    ModelComputeInput,
+    ModelComputeOutput,
+    ModelEffectInput,
+    ModelEffectOutput,
+    ModelOrchestratorInput,
+    ModelOrchestratorOutput,
+    ModelReducerInput,
+    ModelReducerOutput,
+)
 
 class NodeMyReducer(NodeReducer):
     """Reducer with FSM-driven execution by default."""
@@ -336,7 +350,15 @@ class NodeMyOrchestrator(NodeOrchestrator):
     pass  # All logic from YAML contract
 ```
 
-**Note**: The top-level import `from omnibase_core.nodes import ...` is the recommended pattern. All four node types (`NodeCompute`, `NodeEffect`, `NodeReducer`, `NodeOrchestrator`) are available from this single import.
+**Import Patterns**:
+
+| Pattern | Import | Status |
+|---------|--------|--------|
+| **Top-level API** | `from omnibase_core.nodes import NodeReducer, ...` | **RECOMMENDED** |
+| **Direct module** | `from omnibase_core.nodes.node_reducer import NodeReducer` | Supported (internal) |
+| **Legacy package** | `from omnibase_core.nodes.legacy import ...` | **DEPRECATED** (v0.4.0) |
+
+**Note**: The top-level import `from omnibase_core.nodes import ...` is the recommended pattern. All four node types (`NodeCompute`, `NodeEffect`, `NodeReducer`, `NodeOrchestrator`) and their input/output models are available from this single import.
 
 ---
 
@@ -522,7 +544,7 @@ The omnibase_core codebase has **excellent infrastructure** for declarative work
 
 ---
 
-**Last Updated**: 2025-12-05
+**Last Updated**: 2025-12-06
 **Version**: v0.4.0
 **Status**: COMPLETED - Declarative nodes are now the primary implementations
 **Related Documents**:

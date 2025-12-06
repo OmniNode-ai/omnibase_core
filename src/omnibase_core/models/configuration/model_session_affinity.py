@@ -11,6 +11,16 @@ ModelSessionAffinity - Session affinity configuration for load balancing
 
 Session affinity model for configuring sticky sessions and client-to-node
 routing persistence in load balancing systems.
+
+Hash Algorithm Security Notes:
+    - SHA-256 (default): Recommended for all new implementations
+    - SHA-512: Stronger security for high-sensitivity environments
+    - MD5: DEPRECATED - Only supported for legacy compatibility, emits DeprecationWarning
+    - SHA-1: DEPRECATED - Only supported for legacy compatibility, emits DeprecationWarning
+
+    When using deprecated hash algorithms (MD5/SHA-1), the system will emit
+    warnings at runtime. These algorithms have known cryptographic weaknesses
+    and should not be used in new implementations.
 """
 
 
@@ -75,7 +85,12 @@ class ModelSessionAffinity(BaseModel):
 
     hash_algorithm: str = Field(
         default="sha256",
-        description="Hash algorithm for IP/header hashing (sha256 recommended, md5/sha1 deprecated)",
+        description=(
+            "Hash algorithm for IP/header hashing. "
+            "SHA-256 (default) or SHA-512 recommended. "
+            "MD5 and SHA-1 are DEPRECATED and emit warnings at runtime - "
+            "use only for legacy compatibility."
+        ),
         pattern="^(md5|sha1|sha256|sha512)$",
     )
 

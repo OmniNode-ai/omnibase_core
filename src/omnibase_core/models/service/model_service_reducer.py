@@ -50,8 +50,6 @@ Included Capabilities:
 Node Type: Reducer (Aggregation, state management, persistence)
 """
 
-from typing import Generic
-
 from omnibase_core.mixins.mixin_caching import MixinCaching
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
@@ -68,7 +66,6 @@ class ModelServiceReducer(
     MixinHealthCheck,
     MixinCaching,
     MixinMetrics,
-    Generic[T_Input, T_Output],
 ):
     """
     Standard Reducer Node Service following ONEX model naming conventions.

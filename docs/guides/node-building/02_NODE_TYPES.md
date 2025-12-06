@@ -59,8 +59,10 @@ Use an EFFECT node when you need to:
 ### Real-World Examples
 
 ```python
+from omnibase_core.nodes import NodeEffect, ModelEffectInput, ModelEffectOutput
+
 # Example 1: Database read operation
-class NodeUserFetcherEffect(NodeCoreBase):
+class NodeUserFetcherEffect(NodeEffect):
     """Fetch user data from database."""
 
     async def process(
@@ -83,7 +85,7 @@ class NodeUserFetcherEffect(NodeCoreBase):
         )
 
 # Example 2: External API call
-class NodeWeatherFetcherEffect(NodeCoreBase):
+class NodeWeatherFetcherEffect(NodeEffect):
     """Fetch weather data from external API."""
 
     async def process(
@@ -177,8 +179,10 @@ Use a COMPUTE node when you need to:
 ### Real-World Examples
 
 ```python
+from omnibase_core.nodes import NodeCompute, ModelComputeInput, ModelComputeOutput
+
 # Example 1: Data validation
-class NodeDataValidatorCompute(NodeCoreBase):
+class NodeDataValidatorCompute(NodeCompute):
     """Validate data structure and business rules."""
 
     async def process(
@@ -206,7 +210,7 @@ class NodeDataValidatorCompute(NodeCoreBase):
         )
 
 # Example 2: Price calculation
-class NodePriceCalculatorCompute(NodeCoreBase):
+class NodePriceCalculatorCompute(NodeCompute):
     """Calculate total price with tax and discounts."""
 
     async def process(
@@ -370,16 +374,18 @@ class NodeOrderProcessingReducer(NodeReducer):
 
 ---
 
-### Legacy Aggregation Patterns
+### Aggregation Operations (Secondary Use Case)
 
-> **Note**: The following patterns use the legacy aggregation-focused approach which has been removed from the codebase. New implementations should use the Pure FSM pattern above. See [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md) for migration guidance.
+> **v0.4.0 Note**: While `NodeReducer` is now primarily FSM-driven, it still supports aggregation operations as a secondary use case. The examples below demonstrate aggregation patterns that can be implemented within the FSM framework. For pure aggregation without FSM state management, consider whether a `NodeCompute` might be more appropriate.
 
-#### Real-World Examples (Legacy)
+#### Aggregation Examples
 
 ```python
+from omnibase_core.nodes import NodeReducer, ModelReducerInput, ModelReducerOutput
+
 # Example 1: Aggregate user statistics
-class NodeUserStatsReducer(NodeCoreBase):
-    """Aggregate user activity statistics."""
+class NodeUserStatsReducer(NodeReducer):
+    """Aggregate user activity statistics using FSM-driven reducer."""
 
     async def process(
         self,
@@ -415,8 +421,8 @@ class NodeUserStatsReducer(NodeCoreBase):
         )
 
 # Example 2: Merge data from multiple sources
-class NodeDataMergerReducer(NodeCoreBase):
-    """Merge user data from multiple systems."""
+class NodeDataMergerReducer(NodeReducer):
+    """Merge user data from multiple systems using FSM-driven reducer."""
 
     async def process(
         self,

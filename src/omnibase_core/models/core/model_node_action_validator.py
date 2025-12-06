@@ -14,6 +14,7 @@ from omnibase_core.models.core.model_action_validation_result import (
 )
 from omnibase_core.models.core.model_node_action import ModelNodeAction
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from omnibase_core.utils.util_hash import deterministic_hash
 
 
 class ModelNodeActionValidator:
@@ -83,8 +84,14 @@ class ModelNodeActionValidator:
         return result
 
     def _get_action_cache_key(self, action: ModelNodeAction) -> str:
-        """Generate a cache key for action validation."""
-        return f"{action.action_name}:{action.action_type}:{hash(str(action.model_dump()))}"
+        """Generate a deterministic cache key for action validation.
+
+        Uses SHA-256 instead of Python's built-in hash() for determinism
+        across Python sessions (hash() varies with PYTHONHASHSEED).
+        """
+        action_content = str(action.model_dump())
+        content_hash = deterministic_hash(action_content)
+        return f"{action.action_name}:{action.action_type}:{content_hash}"
 
     def _cache_validation_result(
         self,

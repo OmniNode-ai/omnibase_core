@@ -1,7 +1,7 @@
 # Node Class Hierarchy Guide
 
-**Version**: 1.3.0
-**Last Updated**: 2025-12-05
+**Version**: 1.3.1
+**Last Updated**: 2025-12-06
 **Status**: ✅ Complete
 **Correlation ID**: `a3c8f7d4-2b5e-4a19-9f3a-8d6e1c4b7a2f`
 
@@ -142,12 +142,11 @@ Each tier inherits from the one below, **adding features without removing flexib
 ```python
 """Price calculator using Tier 1 ModelServiceCompute wrapper."""
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_compute_input import ModelComputeInput
-from omnibase_core.models.model_compute_output import ModelComputeOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.nodes import ModelComputeInput, ModelComputeOutput
 
 
 class NodePriceCalculatorCompute(ModelServiceCompute):
@@ -266,12 +265,11 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
 ```python
 """Database writer using Tier 1 ModelServiceEffect wrapper."""
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_effect_input import ModelEffectInput
-from omnibase_core.models.model_effect_output import ModelEffectOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.nodes import ModelEffectInput, ModelEffectOutput
 
 
 class NodeDatabaseWriterEffect(ModelServiceEffect):
@@ -363,8 +361,10 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 """Test ModelServiceCompute node."""
 
 import pytest
+
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.model_compute_input import ModelComputeInput
+from omnibase_core.nodes import ModelComputeInput
+
 from your_project.nodes.node_price_calculator_compute import NodePriceCalculatorCompute
 
 
@@ -1411,10 +1411,7 @@ from omnibase_core.nodes import (
     NodeEffect,
     NodeOrchestrator,
     NodeReducer,
-)
-
-# Input/Output models also available from top-level
-from omnibase_core.nodes import (
+    # Input/Output models also available from top-level
     ModelComputeInput,
     ModelComputeOutput,
     ModelEffectInput,
@@ -1426,12 +1423,20 @@ from omnibase_core.nodes import (
 )
 ```
 
-**Note**: Legacy imperative nodes were removed in v0.4.0. All nodes now use declarative YAML contracts.
+### Import Patterns
+
+| Pattern | Import | Status |
+|---------|--------|--------|
+| **Top-level API** | `from omnibase_core.nodes import NodeReducer, ...` | **RECOMMENDED** |
+| **Direct module** | `from omnibase_core.nodes.node_reducer import NodeReducer` | Supported (internal) |
+| **Legacy package** | `from omnibase_core.nodes.legacy import ...` | **DEPRECATED** (v0.4.0) |
+
+**Note**: Legacy imperative nodes were removed in v0.4.0. All nodes now use declarative YAML contracts. The `omnibase_core.nodes.legacy` package is deprecated and will be removed in a future release.
 
 See [MVP_PLAN.md](../MVP_PLAN.md) for full migration details.
 
 ---
 
 **Correlation ID**: `a3c8f7d4-2b5e-4a19-9f3a-8d6e1c4b7a2f`
-**Document Version**: 1.3.0
-**Last Updated**: 2025-12-05
+**Document Version**: 1.3.1
+**Last Updated**: 2025-12-06
