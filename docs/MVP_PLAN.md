@@ -34,8 +34,8 @@
 - ✅ Issue 2.2: NodeOrchestratorDeclarative renamed to NodeOrchestrator (primary workflow-driven)
 
 ### What v0.4.0 Changes
-- Legacy nodes moved to `nodes/legacy/` namespace with deprecation warnings
-- Declarative nodes become the default exports
+- **Legacy nodes HARD DELETED** (not moved to legacy namespace - decision changed due to no existing users)
+- Declarative nodes become the ONLY exports (`NodeReducer`, `NodeOrchestrator`)
 - Contract adapters and validators formalized
 - Strict purity enforcement via CI
 
@@ -56,7 +56,7 @@
 - [ ] All behavior equivalence tests pass
 - [ ] All contracts have fingerprints
 - [ ] No infra imports in core
-- [ ] Legacy imports only under `nodes/legacy/`
+- [x] Legacy imports removed (hard deletion - no `nodes/legacy/` namespace exists)
 - [ ] Contract validator + adapters have >90% coverage
 - [ ] `SIMULATE_LEGACY_REMOVAL=true` runs cleanly
 
@@ -324,9 +324,10 @@ May change in minor versions. Document usage if depending on these.
 
 | Module | Reason |
 |--------|--------|
-| `omnibase_core.nodes.legacy.*` | Deprecated, removed in v1.0.0 |
 | `omnibase_core._internal.*` | Implementation details |
 | `omnibase_core.*.impl_*` | Private implementations |
+
+> **Note**: The originally planned `omnibase_core.nodes.legacy.*` namespace was never created. Legacy nodes were hard deleted in v0.4.0 due to no existing users.
 
 ---
 
@@ -484,7 +485,7 @@ All CI checks must pass before cutting v0.4.0. This table consolidates CI-relate
 | No top-level executable code | No module-level side effects | New | 0 | Yes |
 | Import-time purity scan | No sys, asyncio loops, threading, multiprocessing, path ops | New | 0 | Yes |
 | Private symbol leak check | No `_private` objects in `__all__` | New | 7 | Yes |
-| Legacy import isolation | No legacy imports outside nodes/legacy/ | New | 7 | Yes |
+| Legacy import isolation | N/A - legacy nodes hard deleted, no legacy namespace exists | New | 7 | Yes |
 
 ---
 
@@ -710,13 +711,17 @@ Nodes are being reorganized but the meta-model they adhere to is not defined. Wi
 **Dependencies**: Phase 0 complete
 **Related docs**: `PROJECT_REFACTORING_PLAN.md`, `ARCHITECTURE_EVOLUTION_OVERVIEW.md`
 
-> **Scope Boundary**: Mixin classification (R/H/D) and migration of mixins to NodeRuntime/infra are **post-v0.4.0** work tracked under Future issues F.1-F.4. Phase 1 only moves existing node implementations to `legacy/` namespace.
+> **SUPERSEDED (v0.4.0)**: This phase was originally planned to move legacy nodes to a `nodes/legacy/` namespace with deprecation warnings. However, after confirming there were **no existing users** of the legacy node implementations, the decision was made to **hard delete** the legacy code entirely. The issues below are retained for historical reference but are no longer applicable.
 >
-> **Behavioral Guarantee**: Through v0.4.0, **legacy and declarative nodes MUST remain behaviorally equivalent** for all supported contracts. This is the primary acceptance bar for PR review.
+> **What Actually Happened**:
+> - Legacy nodes (`NodeReducerLegacy`, `NodeOrchestratorLegacy`) were **never created**
+> - The `nodes/legacy/` namespace was **never created**
+> - Declarative nodes (`NodeReducer`, `NodeOrchestrator`) became the ONLY implementations
+> - See `CHANGELOG.md` v0.4.0 for the "Implementation Note: Hard Deletion" section
 
-### Epic: Move Legacy Nodes to Legacy Namespace
+~~### Epic: Move Legacy Nodes to Legacy Namespace~~ (SUPERSEDED)
 
-Move current mixin-based node implementations to a `legacy/` namespace, making room for declarative implementations.
+~~Move current mixin-based node implementations to a `legacy/` namespace, making room for declarative implementations.~~ **This was replaced by hard deletion.**
 
 #### Issue 1.1: Create nodes/legacy/ directory structure
 

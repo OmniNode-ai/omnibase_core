@@ -700,7 +700,6 @@ If you have code using old import patterns, update your imports:
 # Old patterns (removed in v0.4.0) - will cause ImportError
 # from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
 # from omnibase_core.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
-# from omnibase_core.nodes.legacy import NodeOrchestratorLegacy
 
 # v0.4.0 - use these instead
 from omnibase_core.nodes import NodeReducer, NodeOrchestrator

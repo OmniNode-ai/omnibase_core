@@ -14,7 +14,7 @@ In v0.4.0, the node architecture has been modernized:
 
 - **NodeReducer**: Now FSM-driven via `MixinFSMExecution` (primary implementation)
 - **NodeOrchestrator**: Now workflow-driven via `MixinWorkflowExecution` (primary implementation)
-- **Legacy Implementations**: `NodeReducerLegacy` and `NodeOrchestratorLegacy` available in `nodes/legacy/` for backwards compatibility
+- **Legacy Implementations Removed**: Legacy node classes have been fully deleted (no deprecation period)
 - **Naming**: The "Declarative" suffix has been removed - FSM/workflow nodes ARE the standard implementation
 
 ## Architecture Pattern
@@ -1795,84 +1795,14 @@ class TestPipelineIntegration(unittest.TestCase):
         self.assertIsNotNone(final_result.orchestration_result)
 ```
 
-## Legacy Implementations (v0.4.0)
+## Node Type Summary (v0.4.0)
 
-For backwards compatibility, legacy implementations of REDUCER and ORCHESTRATOR nodes
-are available in `omnibase_core.nodes.legacy`:
-
-### NodeReducerLegacy
-
-**Location**: `omnibase_core.nodes.legacy.node_reducer_legacy`
-
-**Status**: Deprecated in v0.4.0
-
-**Purpose**: Imperative reducer implementation with custom reduction functions.
-
-**When to Use**:
-- Migrating existing code that uses custom reduction logic
-- When FSM-based state management is not appropriate
-- Complex streaming scenarios requiring fine-grained control
-
-**Migration Path**: See `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`
-
-```python
-# Legacy usage (deprecated)
-from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
-
-class MyLegacyReducer(NodeReducerLegacy):
-    def __init__(self, container: ModelONEXContainer) -> None:
-        super().__init__(container)
-        # Register custom reduction functions
-        self.register_reduction_function(
-            EnumReductionType.AGGREGATE,
-            self._custom_aggregate
-        )
-```
-
-### NodeOrchestratorLegacy
-
-**Location**: `omnibase_core.nodes.legacy.node_orchestrator_legacy`
-
-**Status**: Deprecated in v0.4.0
-
-**Purpose**: Imperative orchestrator with direct action execution.
-
-**When to Use**:
-- Migrating existing code with custom workflow logic
-- When declarative workflows are too restrictive
-- Complex conditional branching requiring custom condition functions
-
-**Migration Path**: See `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`
-
-```python
-# Legacy usage (deprecated)
-from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy
-
-class MyLegacyOrchestrator(NodeOrchestratorLegacy):
-    def __init__(self, container: ModelONEXContainer) -> None:
-        super().__init__(container)
-        # Register custom condition functions
-        self.register_condition_function(
-            "custom_condition",
-            self._evaluate_custom_condition
-        )
-```
-
-### Node Type Summary (v0.4.0)
-
-| Node Type | Primary Implementation | Legacy Implementation | Key Pattern |
-|-----------|------------------------|----------------------|-------------|
-| **EFFECT** | `NodeEffect` | `NodeEffectLegacy` | External I/O |
-| **COMPUTE** | `NodeCompute` | `NodeComputeLegacy` | Data Processing |
-| **REDUCER** | `NodeReducer` + `MixinFSMExecution` | `NodeReducerLegacy` | FSM State Management |
-| **ORCHESTRATOR** | `NodeOrchestrator` + `MixinWorkflowExecution` | `NodeOrchestratorLegacy` | Workflow Coordination |
-
-### Migration Recommendations
-
-1. **New Projects**: Always use primary implementations (`NodeReducer`, `NodeOrchestrator`)
-2. **Existing Projects**: Plan migration to primary implementations for v0.5.0
-3. **Complex Scenarios**: Evaluate if FSM/workflow patterns can replace custom logic
-4. **Gradual Migration**: Legacy and primary implementations can coexist during migration
+| Node Type | Implementation | Key Pattern |
+|-----------|----------------|-------------|
+| **EFFECT** | `NodeEffect` | External I/O |
+| **COMPUTE** | `NodeCompute` | Data Processing |
+| **REDUCER** | `NodeReducer` + `MixinFSMExecution` | FSM State Management |
+| **ORCHESTRATOR** | `NodeOrchestrator` + `MixinWorkflowExecution` | Workflow Coordination |
 
 ---
 

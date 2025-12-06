@@ -34,7 +34,7 @@ This release implements the **Node Architecture Overhaul**, promoting declarativ
 |--------|--------|------------------|
 | "Declarative" suffix removed | **HIGH** - Class names changed | Update imports (5 min) |
 | Import paths changed | **HIGH** - Old paths removed | Update imports (5 min) |
-| Legacy nodes removed | **HIGH** - Must migrate to FSM/workflow patterns | See migration guide (30-60 min) |
+| Legacy nodes hard deleted | **HIGH** - Must migrate to FSM/workflow patterns (no deprecation period) | See migration guide (30-60 min) |
 | FSM-driven NodeReducer is now default | **MEDIUM** - API behavior changes | Review FSM patterns (30 min) |
 | Workflow-driven NodeOrchestrator is now default | **MEDIUM** - API behavior changes | Review workflow patterns (30 min) |
 | Error recovery patterns changed | **MEDIUM** - Error handling is now declarative | Review error patterns (15 min) |
@@ -102,10 +102,10 @@ from omnibase_core.infrastructure.nodes.node_orchestrator_declarative import Nod
 
 ### Removed
 
-#### Legacy Node Implementations
-- **`NodeOrchestratorLegacy`**: Removed in favor of workflow-driven `NodeOrchestrator`
-- **`NodeReducerLegacy`**: Removed in favor of FSM-driven `NodeReducer`
-- **Legacy namespace**: The `omnibase_core.nodes.legacy` namespace has been removed
+#### Legacy Node Implementations (Hard Deletion - No Deprecation Period)
+- **`NodeOrchestratorLegacy`**: Fully deleted in favor of workflow-driven `NodeOrchestrator`
+- **`NodeReducerLegacy`**: Fully deleted in favor of FSM-driven `NodeReducer`
+- **Legacy namespace**: The `omnibase_core.nodes.legacy` namespace does not exist and was never created
 
 #### Legacy Patterns (No Longer Supported)
 - **Imperative state management**: Direct state mutation in Reducer nodes (use FSM transitions instead)

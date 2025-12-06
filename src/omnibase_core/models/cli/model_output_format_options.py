@@ -212,7 +212,7 @@ class ModelOutputFormatOptions(BaseModel):
         if model_value is None:
             return default
         # Extract underlying raw_value from ModelValue wrapper
-        return cast("T", model_value.raw_value)
+        return cast(T, model_value.raw_value)
 
     @classmethod
     @allow_dict_any
@@ -269,7 +269,7 @@ class ModelOutputFormatOptions(BaseModel):
 
         # Convert known fields using registry
         kwargs_dict: TypedDictOutputFormatOptionsKwargs = cast(
-            "TypedDictOutputFormatOptionsKwargs",
+            TypedDictOutputFormatOptionsKwargs,
             registry.convert_data(data),
         )
 

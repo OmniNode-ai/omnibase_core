@@ -5,7 +5,7 @@
 > **Status**: ✅ **ALL PHASES COMPLETE** - Declarative nodes are now PRIMARY implementations
 > **Correlation ID**: `impl-plan-declarative-onex-2025-11-16`
 
-> **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed because these ARE the standard. Legacy imperative implementations have been moved to `nodes/legacy/`.
+> **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed because these ARE the standard. Legacy imperative implementations have been **hard deleted** (no deprecation period, no `nodes/legacy/` namespace).
 
 ---
 
@@ -17,7 +17,7 @@
 | **Phase 2: Workflow Execution** | ✅ **COMPLETE** | 100% | `58a3972` | workflow_executor.py, mixin_workflow_execution.py, tests |
 | **Phase 3: Declarative Nodes** | ✅ **COMPLETE** | 100% | `588529f` | `node_reducer.py`, `node_orchestrator.py` (now primary) |
 | **Phase 4: Migration and Examples** | ✅ **COMPLETE** | 100% | `5cac29c` | Example YAMLs, migration guide |
-| **Phase 5: Naming Cleanup** | ✅ **COMPLETE** | 100% | v0.4.0 | Removed "Declarative" suffix, moved legacy to `nodes/legacy/` |
+| **Phase 5: Naming Cleanup** | ✅ **COMPLETE** | 100% | v0.4.0 | Removed "Declarative" suffix, hard deleted legacy nodes |
 
 **Total Implementation**: 5,000+ lines of production code, 2,300+ lines of tests, 900+ lines of documentation.
 
@@ -1462,9 +1462,8 @@ class NodePipelineOrchestrator(NodeOrchestrator):
     """Orchestrator with workflow-driven execution by default!"""
     pass  # All logic from YAML contract
 
-# Legacy imports (for backwards compatibility only)
-from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
-from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy
+# Note: Legacy imports have been removed in v0.4.0
+# All nodes must use the FSM/workflow-driven implementations above
 ```
 
 **Or compose with additional mixins:**
@@ -2199,10 +2198,8 @@ Primary Node Classes (v0.4.0):
 │   ├── node_reducer.py              # PRIMARY FSM-driven reducer (was NodeReducerDeclarative)
 │   ├── node_orchestrator.py         # PRIMARY workflow-driven orchestrator (was NodeOrchestratorDeclarative)
 │   ├── node_compute.py              # Primary compute node
-│   ├── node_effect.py               # Primary effect node
-│   └── legacy/                      # Backwards compatibility
-│       ├── node_reducer_legacy.py   # Legacy imperative reducer
-│       └── node_orchestrator_legacy.py # Legacy imperative orchestrator
+│   └── node_effect.py               # Primary effect node
+    # Note: Legacy implementations have been removed in v0.4.0
 
 Implementation Components:
 ├── src/omnibase_core/

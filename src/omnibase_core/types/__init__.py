@@ -160,6 +160,9 @@ from .typed_dict_performance_update_data import TypedDictPerformanceUpdateData
 from .typed_dict_property_metadata import TypedDictPropertyMetadata
 from .typed_dict_quality_data import TypedDictQualityData
 from .typed_dict_quality_update_data import TypedDictQualityUpdateData
+
+# Schema reference types
+from .typed_dict_ref_parts import TypedDictRefParts
 from .typed_dict_resource_usage import TypedDictResourceUsage
 from .typed_dict_result_factory_kwargs import TypedDictResultFactoryKwargs
 from .typed_dict_security_context import TypedDictSecurityContext
@@ -312,6 +315,8 @@ __all__ = [
     "TypedDictQualityUpdateData",
     "TypedDictStatusMigrationResult",
     "TypedDictTimestampData",
+    # Schema reference types
+    "TypedDictRefParts",
     # Converter functions
     "convert_stats_to_typed_dict",
     "convert_health_to_typed_dict",

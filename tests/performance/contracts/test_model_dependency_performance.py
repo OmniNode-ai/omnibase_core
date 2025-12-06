@@ -24,6 +24,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 class TestModelDependencyPerformance:
     """Performance benchmarks for dependency validation operations."""
 
+    @pytest.mark.performance
     @pytest.mark.skip(
         reason="Pattern _CAMEL_TO_SNAKE_PATTERN removed in PR to reduce memory footprint"
     )
@@ -84,6 +85,7 @@ class TestModelDependencyPerformance:
         print(f"✅ Module regex performance: {avg_module_time_us:.2f}μs per match")
         print(f"✅ Snake case conversion: {avg_snake_time_us:.2f}μs per conversion")
 
+    @pytest.mark.performance
     def test_security_validation_performance(self):
         """Test performance of security validation checks."""
         # Security violation patterns (should be fast to reject)
@@ -152,6 +154,7 @@ class TestModelDependencyPerformance:
             f"✅ Security rejections: {rejected_count} of {len(malicious_modules) * 1000}"
         )
 
+    @pytest.mark.performance
     def test_dependency_creation_performance(self):
         """Test performance of dependency object creation and validation."""
         # Test data for dependency creation
@@ -207,6 +210,7 @@ class TestModelDependencyPerformance:
             f"✅ Total creation time: {creation_time:.2f}s for {created_count} dependencies"
         )
 
+    @pytest.mark.performance
     def test_onex_pattern_validation_performance(self):
         """Test performance of ONEX naming pattern validation."""
         # Protocol dependencies (should match patterns)
@@ -274,6 +278,7 @@ class TestModelDependencyPerformance:
         print(f"✅ ONEX pattern validation: {avg_pattern_time_ms:.3f}ms per check")
         print(f"✅ Pattern matches: {pattern_matches} of {6000} total checks")
 
+    @pytest.mark.performance
     def test_large_dependency_set_performance(self):
         """Test performance with large sets of dependencies."""
         num_dependencies = 5000
@@ -349,6 +354,7 @@ class TestModelDependencyPerformance:
             f"📊 Types: {protocol_count} protocol, {service_count} service, {external_count} external"
         )
 
+    @pytest.mark.performance
     def test_memory_efficiency(self):
         """Test memory efficiency of dependency objects."""
         import sys
@@ -428,6 +434,7 @@ class TestModelDependencyPerformance:
 
         tracemalloc.stop()
 
+    @pytest.mark.performance
     @pytest.mark.slow
     def test_stress_validation_performance(self):
         """Stress test validation under high load."""
@@ -436,9 +443,9 @@ class TestModelDependencyPerformance:
 
         num_threads = 20
         deps_per_thread = 500
-        results = queue.Queue()
+        results: queue.Queue[tuple[int, int, int, float]] = queue.Queue()
 
-        def stress_validation(thread_id: int):
+        def stress_validation(thread_id: int) -> None:
             """Perform stress validation in a thread."""
             start_time = time.perf_counter()
             successes = 0
@@ -484,7 +491,7 @@ class TestModelDependencyPerformance:
         # Collect results
         total_successes = 0
         total_failures = 0
-        max_thread_time = 0
+        max_thread_time: float = 0.0
 
         while not results.empty():
             _, successes, failures, thread_time = results.get()

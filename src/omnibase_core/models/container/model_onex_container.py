@@ -283,7 +283,7 @@ class ModelONEXContainer:
                 )
 
                 # Use object cast since T is a TypeVar resolved at runtime
-                typed_service = cast("T", service_instance)
+                typed_service = cast(T, service_instance)
                 return typed_service
 
             except Exception as registry_error:
@@ -361,7 +361,7 @@ class ModelONEXContainer:
             )
 
             # Use object cast since T is a TypeVar resolved at runtime
-            legacy_service = cast("T", service_instance)
+            legacy_service = cast(T, service_instance)
             return legacy_service
 
         except Exception as e:

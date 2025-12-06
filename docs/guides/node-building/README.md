@@ -15,17 +15,15 @@ As of v0.4.0, the ONEX node architecture has been streamlined:
 
 - **`NodeReducer`** and **`NodeOrchestrator`** are now the PRIMARY implementations (FSM/workflow-driven)
 - The "Declarative" suffix has been removed - these ARE the standard
-- Legacy imperative implementations are available in `nodes/legacy/` for backwards compatibility:
-  - `NodeReducerLegacy` - Legacy imperative reducer
-  - `NodeOrchestratorLegacy` - Legacy imperative orchestrator
+- Legacy imperative implementations have been **removed** (no deprecation period)
 
 **Import paths**:
 ```python
 # Primary implementations (recommended)
 from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator
 
-# Legacy implementations (backwards compatibility only)
-from omnibase_core.nodes.legacy import NodeReducerLegacy, NodeOrchestratorLegacy
+# Note: Legacy implementations have been removed in v0.4.0
+# All nodes must use the FSM/workflow-driven implementations above
 ```
 
 ## What You'll Learn
@@ -215,7 +213,7 @@ your_project/
 
 - **Documentation Issues**: File an issue in the repository
 - **Pattern Questions**: Check [Patterns Catalog](07_PATTERNS_CATALOG.md)
-- **Code Examples**: See `src/omnibase_core/nodes/` for real implementations (primary) or `src/omnibase_core/nodes/legacy/` for legacy implementations
+- **Code Examples**: See `src/omnibase_core/nodes/` for real implementations
 - **Testing Help**: See [Testing Guide](../TESTING_GUIDE.md)
 
 ## Contributing
