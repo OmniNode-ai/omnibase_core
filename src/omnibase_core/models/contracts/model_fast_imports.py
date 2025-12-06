@@ -88,7 +88,7 @@ class ModelFastContractFactory:
         module = importlib.import_module(module_path)
 
         # Get the class from the module
-        contract_class = cast(type["ModelContractBase"], getattr(module, class_name))
+        contract_class = cast("type[ModelContractBase]", getattr(module, class_name))
 
         # Cache for future use
         self._contract_cache[cache_key] = contract_class
@@ -102,28 +102,28 @@ class ModelFastContractFactory:
     def get_compute(self) -> type["ModelContractCompute"]:
         """Get ModelContractCompute with zero-import-time loading."""
         return cast(
-            type["ModelContractCompute"],
+            "type[ModelContractCompute]",
             self._import_contract("compute", "ModelContractCompute"),
         )
 
     def get_effect(self) -> type["ModelContractEffect"]:
         """Get ModelContractEffect with zero-import-time loading."""
         return cast(
-            type["ModelContractEffect"],
+            "type[ModelContractEffect]",
             self._import_contract("effect", "ModelContractEffect"),
         )
 
     def get_reducer(self) -> type["ModelContractReducer"]:
         """Get ModelContractReducer with zero-import-time loading."""
         return cast(
-            type["ModelContractReducer"],
+            "type[ModelContractReducer]",
             self._import_contract("reducer", "ModelContractReducer"),
         )
 
     def get_orchestrator(self) -> type["ModelContractOrchestrator"]:
         """Get ModelContractOrchestrator with zero-import-time loading."""
         return cast(
-            type["ModelContractOrchestrator"],
+            "type[ModelContractOrchestrator]",
             self._import_contract("orchestrator", "ModelContractOrchestrator"),
         )
 

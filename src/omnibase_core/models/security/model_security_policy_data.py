@@ -28,7 +28,7 @@ class ModelSecurityPolicyData(BaseModel):
     ) -> dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None]:
         """Get policy data as a regular dictionary for current standards."""
         return cast(
-            dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None],
+            "dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None]",
             self.typed_data.to_python_dict(),
         )
 
@@ -63,7 +63,7 @@ class ModelSecurityPolicyData(BaseModel):
         """
 
         return cast(
-            str | int | float | bool | list[Any] | dict[str, Any] | None,
+            "str | int | float | bool | list[Any] | dict[str, Any] | None",
             self.typed_data.get_value(key, default),
         )
 

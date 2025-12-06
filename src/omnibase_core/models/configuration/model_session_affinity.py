@@ -1,3 +1,5 @@
+import hashlib
+import warnings
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -162,9 +164,6 @@ class ModelSessionAffinity(BaseModel):
         """Calculate target node based on affinity key"""
         if not affinity_key or not available_nodes:
             return None
-
-        import hashlib
-        import warnings
 
         # Create hash of affinity key
         if self.hash_algorithm == "md5":

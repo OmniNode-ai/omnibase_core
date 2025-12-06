@@ -28,15 +28,15 @@ class ModelStorageHealthStatus(BaseModel):
 
     is_connected: bool = Field(description="Whether backend is connected")
 
-    total_capacity_mb: Optional[int] = Field(
+    total_capacity_mb: int | None = Field(
         description="Total storage capacity in MB", default=None
     )
 
-    used_capacity_mb: Optional[int] = Field(
+    used_capacity_mb: int | None = Field(
         description="Used storage capacity in MB", default=None
     )
 
-    available_capacity_mb: Optional[int] = Field(
+    available_capacity_mb: int | None = Field(
         description="Available storage capacity in MB", default=None
     )
 
@@ -46,13 +46,13 @@ class ModelStorageHealthStatus(BaseModel):
         description="When health was last checked", default_factory=datetime.now
     )
 
-    average_response_time_ms: Optional[int] = Field(
+    average_response_time_ms: int | None = Field(
         description="Average response time in milliseconds", default=None
     )
 
     error_rate_percent: float = Field(description="Error rate percentage", default=0.0)
 
-    status_message: Optional[str] = Field(
+    status_message: str | None = Field(
         description="Detailed status message", default=None
     )
 

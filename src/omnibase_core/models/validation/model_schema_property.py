@@ -29,9 +29,9 @@ class ModelSchemaProperty(BaseModel):
     default: str | int | float | bool | list[Any] | dict[str, Any] | None = None
     enum: list[str | int | float | bool] | None = None
     format: str | None = None
-    items: Optional[ModelSchemaProperty] = None
-    properties: Optional[ModelSchemaPropertiesModel] = None
-    required: Optional[ModelRequiredFieldsModel] = None
+    items: ModelSchemaProperty | None = None
+    properties: ModelSchemaPropertiesModel | None = None
+    required: ModelRequiredFieldsModel | None = None
     model_config = {"arbitrary_types_allowed": True, "extra": "allow"}
 
 

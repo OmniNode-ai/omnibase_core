@@ -18,10 +18,6 @@ from typing import TYPE_CHECKING, Protocol, TypeVar, runtime_checkable
 
 from omnibase_core.protocols.base import ContextValue
 
-if TYPE_CHECKING:
-    pass
-
-
 # =============================================================================
 # Type Variables
 # =============================================================================

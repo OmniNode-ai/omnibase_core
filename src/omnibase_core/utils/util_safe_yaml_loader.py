@@ -253,7 +253,7 @@ def _dump_yaml_content(
                 cause=e,
             )
 
-        return cast(str, yaml_str)
+        return cast("str", yaml_str)
     except yaml.YAMLError as e:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.CONVERSION_ERROR,

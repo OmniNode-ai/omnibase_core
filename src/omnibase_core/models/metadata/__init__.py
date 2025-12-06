@@ -12,10 +12,10 @@ Models for metadata collection, analytics, and field information.
 
 from typing import TYPE_CHECKING
 
+from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+
 # Import ProtocolSupportedMetadataType from Core-native protocols
 from omnibase_core.protocols import ProtocolSupportedMetadataType
-
-from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.types.typed_dict_analytics_summary_data import (
     TypedDictAnalyticsSummaryData,
 )

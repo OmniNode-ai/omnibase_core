@@ -210,7 +210,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         self,
         name: str,
         tool_data: Any,
-        tool_info: Optional[ModelMetadataToolInfo] = None,
+        tool_info: ModelMetadataToolInfo | None = None,
     ) -> bool:
         """
         Add a tool to the collection with enhanced metadata tracking.
@@ -292,7 +292,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         """Get a tool by name."""
         return self.root.get(name)
 
-    def get_tool_info(self, name: str) -> Optional[ModelMetadataToolInfo]:
+    def get_tool_info(self, name: str) -> ModelMetadataToolInfo | None:
         """Get enhanced tool information."""
         tool_info_data = self.root.get("_tool_info", {}).get(name)
         if tool_info_data:
@@ -316,7 +316,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         name: str,
         success: bool,
         processing_time_ms: float = 0.0,
-        error_msg: Optional[str] = None,
+        error_msg: str | None = None,
     ) -> None:
         """Record tool usage for analytics."""
         tool_info = self.get_tool_info(name)
@@ -410,7 +410,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         self,
         name: str,
         reason: str = "",
-        replacement: Optional[str] = None,
+        replacement: str | None = None,
     ) -> bool:
         """Mark a tool as deprecated."""
         tool_info = self.get_tool_info(name)

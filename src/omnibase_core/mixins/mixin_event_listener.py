@@ -713,7 +713,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                             "result_type": type(result).__name__,
                         },
                     )
-                    return cast(InputStateT, result)
+                    return cast("InputStateT", result)
                 # Try to extract dict from model
                 if data is not None and hasattr(data, "model_dump"):
                     dict_data = data.model_dump()
@@ -723,14 +723,14 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
                         "✅ EVENT_TO_INPUT_STATE: Created input state from model_dump",
                         {"node_name": self.get_node_name()},
                     )
-                    return cast(InputStateT, result)
+                    return cast("InputStateT", result)
                 result = input_state_class(data=data)
                 emit_log_event(
                     LogLevel.DEBUG,
                     "✅ EVENT_TO_INPUT_STATE: Created input state with data wrapper",
                     {"node_name": self.get_node_name()},
                 )
-                return cast(InputStateT, result)
+                return cast("InputStateT", result)
             except Exception as e:
                 emit_log_event(
                     LogLevel.ERROR,

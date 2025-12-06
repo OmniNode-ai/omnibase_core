@@ -46,7 +46,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
         """Convert string node_id to UUID if needed."""
         if isinstance(v, str):
             return uuid_from_string(v, namespace="node")
-        return cast(UUID, v)
+        return cast("UUID", v)
 
     @field_validator("health_metrics", mode="before")
     @classmethod
@@ -82,7 +82,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
                 custom_metrics={"status": status},
             )
 
-        return cast(ModelHealthMetrics, v)
+        return cast("ModelHealthMetrics", v)
 
     @classmethod
     def create_healthy_report(

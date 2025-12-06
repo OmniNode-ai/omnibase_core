@@ -144,7 +144,7 @@ class ModelResult(
                 EnumCoreErrorCode.VALIDATION_ERROR,
                 "Success result has None value",
             )
-        return cast(T, self.value)
+        return cast("T", self.value)
 
     def unwrap_or(self, default: T) -> T:
         """Unwrap the value or return default if error."""
@@ -154,7 +154,7 @@ class ModelResult(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
-            return cast(T, self.value)
+            return cast("T", self.value)
         return default
 
     def unwrap_or_else(self, f: Callable[[E], T]) -> T:
@@ -165,7 +165,7 @@ class ModelResult(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
-            return cast(T, self.value)
+            return cast("T", self.value)
         if self.error is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -193,7 +193,7 @@ class ModelResult(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Success result has None value",
             )
-        return cast(T, self.value)
+        return cast("T", self.value)
 
     def map(self, f: Callable[[T], U]) -> ModelResult[U, object]:
         """
@@ -264,7 +264,7 @@ class ModelResult(
                     )
                 result = f(self.value)
                 # Cast to match the object return type signature
-                return cast(ModelResult[U, object], result)
+                return cast("ModelResult[U, object]", result)
             except Exception as e:
                 # fallback-ok: Monadic error handling - converting exceptions to error results
                 return ModelResult.err(e)
@@ -298,7 +298,7 @@ class ModelResult(
                 )
             result = f(self.error)
             # Cast to match the object return type signature
-            return cast(ModelResult[T, object], result)
+            return cast("ModelResult[T, object]", result)
         except Exception as e:
             # fallback-ok: Monadic error handling - converting exceptions to error results
             return ModelResult.err(e)

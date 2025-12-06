@@ -225,7 +225,7 @@ class EnumNodeType(str, Enum):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 context={
                     "node_type": str(node_type),
-                    "available_types": [str(k) for k in _KIND_MAP.keys()],
+                    "available_types": [str(k) for k in _KIND_MAP],
                 },
             ) from e
         else:

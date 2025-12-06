@@ -518,7 +518,7 @@ class NodeBase(
             # Check if tool supports async processing
             if hasattr(main_tool, "process_async"):
                 result = await main_tool.process_async(input_state)
-                return cast(T_OUTPUT_STATE, result)
+                return cast("T_OUTPUT_STATE", result)
             if hasattr(main_tool, "process"):
                 # Run sync process in thread pool to avoid blocking
                 result = await asyncio.get_running_loop().run_in_executor(
@@ -526,7 +526,7 @@ class NodeBase(
                     main_tool.process,
                     input_state,
                 )
-                return cast(T_OUTPUT_STATE, result)
+                return cast("T_OUTPUT_STATE", result)
             if hasattr(main_tool, "run"):
                 # Run sync run method in thread pool
                 result = await asyncio.get_running_loop().run_in_executor(
@@ -534,7 +534,7 @@ class NodeBase(
                     main_tool.run,
                     input_state,
                 )
-                return cast(T_OUTPUT_STATE, result)
+                return cast("T_OUTPUT_STATE", result)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process_async(), process(), or run() method",
@@ -612,7 +612,7 @@ class NodeBase(
         Default implementation returns empty state.
         Override in subclasses for custom initial state.
         """
-        return cast(ProtocolState, ModelState())
+        return cast("ProtocolState", ModelState())
 
     def dispatch(self, state: ProtocolState, action: ProtocolAction) -> ProtocolState:
         """

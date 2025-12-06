@@ -4,7 +4,7 @@ Computation Cache - Caching layer for expensive computations.
 Provides TTL-based caching with LRU eviction and memory management.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 
@@ -28,8 +28,8 @@ class ComputationCache:
 
         value, expiry, access_count = self._cache[cache_key]
 
-        # Check expiry
-        if datetime.now() > expiry:
+        # Check expiry (use UTC for consistent timezone-aware comparison)
+        if datetime.now(UTC) > expiry:
             del self._cache[cache_key]
             return None
 
@@ -49,7 +49,8 @@ class ComputationCache:
             self._evict_lru()
 
         ttl = ttl_minutes or self.default_ttl_minutes
-        expiry = datetime.now() + timedelta(minutes=ttl)
+        # Use UTC for consistent timezone-aware expiry times
+        expiry = datetime.now(UTC) + timedelta(minutes=ttl)
         self._cache[cache_key] = (value, expiry, 1)
 
     def _evict_lru(self) -> None:
@@ -67,7 +68,7 @@ class ComputationCache:
 
     def get_stats(self) -> dict[str, int]:
         """Get cache statistics."""
-        now = datetime.now()
+        now = datetime.now(UTC)
         expired_count = sum(1 for _, expiry, _ in self._cache.values() if expiry <= now)
 
         return {

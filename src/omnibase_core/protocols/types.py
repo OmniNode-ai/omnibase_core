@@ -24,10 +24,6 @@ from omnibase_core.protocols.base import (
     ProtocolSemVer,
 )
 
-if TYPE_CHECKING:
-    pass
-
-
 # =============================================================================
 # Identifiable Protocol
 # =============================================================================

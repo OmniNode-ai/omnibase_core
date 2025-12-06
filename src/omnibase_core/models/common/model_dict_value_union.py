@@ -134,7 +134,7 @@ class ModelDictValueUnion(BaseModel):
 
         # If value_type already specified, validate it's correct
         if "value_type" in data:
-            return cast(dict[str, Any], data)
+            return cast("dict[str, Any]", data)
 
         # Infer type from value
         value = data.get("value")
@@ -162,7 +162,7 @@ class ModelDictValueUnion(BaseModel):
                 },
             )
 
-        return cast(dict[str, Any], data)
+        return cast("dict[str, Any]", data)
 
     @model_validator(mode="after")
     def validate_value_type_match(self) -> ModelDictValueUnion:

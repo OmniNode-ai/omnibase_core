@@ -22,13 +22,13 @@ class ModelStorageResult(BaseModel):
 
     success: bool = Field(description="Whether the operation succeeded")
 
-    checkpoint_data: Optional[ModelCheckpointData] = Field(
+    checkpoint_data: ModelCheckpointData | None = Field(
         description="Checkpoint data (for retrieval operations)", default=None
     )
 
     operation_type: str = Field(description="Type of storage operation")
 
-    error_message: Optional[str] = Field(
+    error_message: str | None = Field(
         description="Error message if operation failed", default=None
     )
 

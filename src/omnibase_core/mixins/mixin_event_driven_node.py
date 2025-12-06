@@ -38,8 +38,6 @@ Usage:
 from typing import Any
 from uuid import UUID
 
-from omnibase_core.protocols import ProtocolEventBus, ProtocolSchemaLoader
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 # EnumToolNames removed - using direct string references
@@ -52,6 +50,7 @@ from omnibase_core.mixins.mixin_request_response_introspection import (
     MixinRequestResponseIntrospection,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.protocols import ProtocolEventBus, ProtocolSchemaLoader
 
 
 class MixinEventDrivenNode(

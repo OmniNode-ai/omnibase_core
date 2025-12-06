@@ -282,7 +282,7 @@ class ModelONEXContainer:
                     },
                 )
 
-                typed_service: T = cast(T, service_instance)
+                typed_service: T = cast("T", service_instance)
                 return typed_service
 
             except Exception as registry_error:
@@ -359,7 +359,7 @@ class ModelONEXContainer:
                 },
             )
 
-            legacy_service: T = cast(T, service_instance)
+            legacy_service: T = cast("T", service_instance)
             return legacy_service
 
         except Exception as e:

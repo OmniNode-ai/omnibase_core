@@ -701,10 +701,10 @@ class MixinEventBus(BaseModel, Generic[InputStateT, OutputStateT]):
             # Try to create input state from event data
             if hasattr(input_state_class, "from_event"):
                 result = input_state_class.from_event(event)
-                return cast(InputStateT, result)
+                return cast("InputStateT", result)
             # Create from event data directly
             result = input_state_class(**event_data)
-            return cast(InputStateT, result)
+            return cast("InputStateT", result)
 
         except Exception as e:
             self._log_error(

@@ -58,8 +58,13 @@ class ModelLoadBalancingParameters(BaseModel):
     # Hash parameters
     hash_algorithm: str = Field(
         default="fnv1a",
-        description="Hash algorithm for IP-based routing",
-        pattern="^(fnv1a|murmur3|xxhash|md5|sha1)$",
+        description=(
+            "Hash algorithm for IP-based routing. "
+            "Use fnv1a (default), murmur3, xxhash for performance-critical routing. "
+            "SHA-256/SHA-512 available for cryptographic security requirements. "
+            "MD5 and SHA-1 are DEPRECATED - use only for legacy compatibility."
+        ),
+        pattern="^(fnv1a|murmur3|xxhash|sha256|sha512|md5|sha1)$",
     )
     hash_virtual_nodes: int = Field(
         default=150,

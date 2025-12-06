@@ -113,6 +113,8 @@ class NodeWeatherFetcherEffect(NodeEffect):
 
 **Connection Pooling**:
 ```python
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
 def __init__(self, container: ModelONEXContainer):
     super().__init__(container)
     # Use connection pooling for efficiency
@@ -243,6 +245,9 @@ class NodePriceCalculatorCompute(NodeCompute):
 
 **Caching**:
 ```python
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes import ModelComputeOutput
+
 def __init__(self, container: ModelONEXContainer):
     super().__init__(container)
     # Cache expensive computations
@@ -268,6 +273,9 @@ async def process(self, input_data):
 
 **Parallel Processing**:
 ```python
+import asyncio
+from omnibase_core.nodes import ModelComputeOutput
+
 async def process(self, input_data):
     """Process items in parallel for performance."""
     items = input_data.items
@@ -376,7 +384,7 @@ class NodeOrderProcessingReducer(NodeReducer):
 
 ### Aggregation Operations (Secondary Use Case)
 
-> **v0.4.0 Note**: While `NodeReducer` is now primarily FSM-driven, it still supports aggregation operations as a secondary use case. The examples below demonstrate aggregation patterns that can be implemented within the FSM framework. For pure aggregation without FSM state management, consider whether a `NodeCompute` might be more appropriate.
+> **v0.4.0 Note**: `NodeReducer` is the primary implementation for FSM-driven state management. It also supports aggregation operations as a secondary use case. The examples below demonstrate aggregation patterns that can be implemented within the FSM framework. For pure aggregation without FSM state management, consider whether a `NodeCompute` might be more appropriate.
 
 #### Aggregation Examples
 
@@ -454,6 +462,8 @@ class NodeDataMergerReducer(NodeReducer):
 
 **Streaming Reduction**:
 ```python
+from omnibase_core.nodes import ModelReducerOutput
+
 async def process(self, input_data):
     """Process large dataset incrementally."""
     stream = input_data.data_stream
@@ -672,6 +682,8 @@ class NodeDataAggregatorOrchestrator(NodeOrchestrator):
 
 **Sequential Workflow**:
 ```python
+from omnibase_core.nodes import ModelOrchestratorOutput
+
 async def process(self, input_data):
     """Execute steps in sequence with dependency management."""
     # Step 1
@@ -688,6 +700,9 @@ async def process(self, input_data):
 
 **Parallel Workflow**:
 ```python
+import asyncio
+from omnibase_core.nodes import ModelOrchestratorOutput
+
 async def process(self, input_data):
     """Execute independent operations in parallel."""
     # All these can run concurrently
@@ -702,6 +717,9 @@ async def process(self, input_data):
 
 **Error Recovery**:
 ```python
+from omnibase_core.nodes import ModelOrchestratorOutput
+from omnibase_core.errors import ModelOnexError
+
 async def process(self, input_data):
     """Workflow with error handling and compensation."""
     try:

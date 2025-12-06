@@ -16,48 +16,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **WARNING**: This is a major release with significant breaking changes. Please review the migration guide before upgrading.
 
-### BREAKING CHANGES
+### ⚠️ BREAKING CHANGES
 
-This release implements **hard removal** of legacy node classes. Unlike a typical deprecation cycle (Phase 1: soft deprecation with warnings, Phase 2: removal), this release proceeds directly to removal based on internal adoption metrics showing zero external usage of legacy patterns.
+This release implements the **Node Architecture Overhaul**, promoting declarative (FSM/workflow-driven) node implementations as the primary classes. Legacy node implementations have been removed in favor of the new architecture.
 
-#### Why Hard Removal Instead of Soft Deprecation?
+#### Node Architecture Overhaul Summary
 
-1. **Internal-Only Usage**: Legacy node patterns (`NodeReducerLegacy`, `NodeOrchestratorLegacy`) were only used internally during development
-2. **Clean Architecture**: Maintaining dual implementations (legacy + declarative) adds maintenance burden and confusion
-3. **Clear Migration Path**: Full migration guide available with step-by-step instructions
-4. **Version Boundary**: Major version bump (0.3.x -> 0.4.0) signals breaking changes per SemVer
+**What Changed**:
+- `NodeReducerDeclarative` → `NodeReducer` (primary FSM-driven implementation)
+- `NodeOrchestratorDeclarative` → `NodeOrchestrator` (primary workflow-driven implementation)
+- The "Declarative" suffix has been removed - these ARE now the standard implementations
+- Legacy implementations (`NodeOrchestratorLegacy`, `NodeReducerLegacy`) have been removed
 
 #### Breaking Changes Summary
 
 | Change | Impact | Migration Effort |
 |--------|--------|------------------|
-| Legacy node classes removed | **HIGH** - Code will fail to import | Update imports (5 min) |
-| Import paths changed | **HIGH** - Code will fail to import | Update imports (5 min) |
-| FSM-driven NodeReducer is now default | **MEDIUM** - API changes | Review FSM patterns (30 min) |
-| Workflow-driven NodeOrchestrator is now default | **MEDIUM** - API changes | Review workflow patterns (30 min) |
-| Error recovery patterns changed | **MEDIUM** - Error handling changes | Review error patterns (15 min) |
-
-#### Legacy Node Removal (HARD REMOVAL)
-
-- **REMOVED**: `NodeReducerLegacy` and `NodeOrchestratorLegacy` have been **permanently removed**
-- **REMOVED**: The entire `nodes/legacy/` directory has been deleted
-- **REMOVED**: All backward compatibility imports for legacy node types
-- **NO DEPRECATION PERIOD**: These classes were removed without a deprecation warning phase
-- **Impact**: Any code importing from `omnibase_core.nodes.legacy` will raise `ModuleNotFoundError`
-- **Migration**: Update all imports to use the new unified import paths (see Migration Guide section below)
+| "Declarative" suffix removed | **HIGH** - Class names changed | Update imports (5 min) |
+| Import paths changed | **HIGH** - Old paths removed | Update imports (5 min) |
+| Legacy nodes removed | **HIGH** - Must migrate to FSM/workflow patterns | See migration guide (30-60 min) |
+| FSM-driven NodeReducer is now default | **MEDIUM** - API behavior changes | Review FSM patterns (30 min) |
+| Workflow-driven NodeOrchestrator is now default | **MEDIUM** - API behavior changes | Review workflow patterns (30 min) |
+| Error recovery patterns changed | **MEDIUM** - Error handling is now declarative | Review error patterns (15 min) |
 
 #### Import Path Changes
-- **BREAKING**: All nodes must now be imported from `omnibase_core.nodes`
-- **OLD** (no longer works):
-  ```python
-  from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
-  from omnibase_core.nodes.legacy.node_orchestrator_legacy import NodeOrchestratorLegacy
-  from omnibase_core.infrastructure.nodes.node_reducer_declarative import NodeReducerDeclarative
-  ```
-- **NEW** (required):
-  ```python
-  from omnibase_core.nodes import NodeReducer, NodeOrchestrator, NodeCompute, NodeEffect
-  ```
+
+**Primary Import Path**:
+```python
+from omnibase_core.nodes import NodeReducer, NodeOrchestrator, NodeCompute, NodeEffect
+```
+
+**Old Declarative Import Path** (no longer works):
+```python
+# These paths are removed - use omnibase_core.nodes instead
+from omnibase_core.infrastructure.nodes.node_reducer_declarative import NodeReducerDeclarative
+from omnibase_core.infrastructure.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
+```
 
 ### Changed
 
@@ -108,16 +102,19 @@ This release implements **hard removal** of legacy node classes. Unlike a typica
 
 ### Removed
 
-#### Legacy Infrastructure
-- **`nodes/legacy/` directory**: Entire directory removed from codebase
-- **`NodeReducerLegacy`**: Class permanently removed
-- **`NodeOrchestratorLegacy`**: Class permanently removed
-- **Legacy import paths**: All backward compatibility shims removed
+#### Legacy Node Implementations
+- **`NodeOrchestratorLegacy`**: Removed in favor of workflow-driven `NodeOrchestrator`
+- **`NodeReducerLegacy`**: Removed in favor of FSM-driven `NodeReducer`
+- **Legacy namespace**: The `omnibase_core.nodes.legacy` namespace has been removed
 
-#### Deprecated Patterns
-- **Non-declarative nodes**: Imperative node implementations no longer supported
-- **Legacy state management**: Direct state mutation patterns removed from Reducer nodes
-- **Legacy workflow patterns**: Non-lease-based orchestration removed
+#### Legacy Patterns (No Longer Supported)
+- **Imperative state management**: Direct state mutation in Reducer nodes (use FSM transitions instead)
+- **Custom error handling**: Per-step try/except blocks in Orchestrator nodes (use YAML `failure_recovery_strategy`)
+- **Non-lease-based orchestration**: Workflow patterns without `lease_id` and `epoch` (use ModelAction with lease semantics)
+
+#### Old Import Paths
+- **Declarative import paths**: `omnibase_core.infrastructure.nodes.node_*_declarative` paths removed
+- **Direct infrastructure imports**: Must use `omnibase_core.nodes` for primary implementations
 
 #### Error Recovery Changes (BREAKING)
 
@@ -136,7 +133,8 @@ The error recovery system has been **significantly changed** to align with the d
 
 **Before (v0.3.x)** - Imperative error handling:
 ```python
-class MyReducer(NodeReducerLegacy):  # No longer exists!
+# Legacy pattern (removed in v0.4.0)
+class MyReducer(NodeReducerBase):
     async def process(self, input_data):
         try:
             result = await self.do_work()
@@ -162,7 +160,8 @@ transitions:
 ```
 
 ```python
-class MyReducer(NodeReducer):  # Now uses FSM-driven base class
+# Recommended: Use FSM-driven base class
+class MyReducer(NodeReducer):
     pass  # Error handling is declarative via YAML
 ```
 
@@ -170,7 +169,8 @@ class MyReducer(NodeReducer):  # Now uses FSM-driven base class
 
 **Before (v0.3.x)** - Per-step error handling:
 ```python
-class MyOrchestrator(NodeOrchestratorLegacy):  # No longer exists!
+# Legacy pattern (removed in v0.4.0)
+class MyOrchestrator(NodeOrchestratorBase):
     async def process(self, input_data):
         try:
             await self.step1()
@@ -198,40 +198,6 @@ Actions now include `lease_id` and `epoch` for idempotent retries, preventing du
 - [ ] Verify `ModelIntent` emission replaces direct error state mutations
 - [ ] Test error recovery paths with the new declarative patterns
 
-### Deprecation Strategy
-
-> **IMPORTANT**: This release uses **hard removal** rather than the typical soft deprecation approach.
-
-#### What This Means
-
-| Approach | Typical Deprecation | v0.4.0 Approach |
-|----------|---------------------|-----------------|
-| **Phase 1** | Soft deprecation - old code works but emits warnings | **SKIPPED** |
-| **Phase 2** | Hard removal - old code fails to import | **IMPLEMENTED** |
-| **Timeline** | Usually 1-2 minor versions for warnings | Immediate removal |
-
-#### Why No Soft Deprecation?
-
-1. **No External Users**: Legacy node patterns were internal-only during the declarative architecture development
-2. **Clean Major Version**: v0.4.0 is a major architectural change - ideal time for breaking changes
-3. **Migration Simplicity**: Single migration target (`NodeReducer`, `NodeOrchestrator`) is clearer than dual paths
-4. **Maintenance Burden**: Supporting both legacy and declarative patterns would complicate the codebase
-
-#### What If I Need More Time?
-
-If your project heavily depends on legacy patterns:
-
-1. **Pin Version**: Stay on `omnibase_core==0.3.x` until ready to migrate
-2. **Follow Guide**: Use the comprehensive migration guide below
-3. **Incremental Migration**: Migrate one node at a time, not all at once
-4. **Request Support**: Open a GitHub issue if you encounter migration blockers
-
-#### Future Deprecation Policy
-
-Starting with v0.4.0, the project will follow standard deprecation cycles for public APIs:
-- **Phase 1 (Minor Version)**: Add deprecation warnings, mark as deprecated in docs
-- **Phase 2 (Next Major Version)**: Remove deprecated functionality
-
 ---
 
 ### Migration Guide (v0.3.x to v0.4.0)
@@ -243,8 +209,8 @@ Starting with v0.4.0, the project will follow standard deprecation cycles for pu
 #### Quick Migration Checklist
 
 - [ ] Update all node imports to use `omnibase_core.nodes`
-- [ ] Replace `NodeReducerLegacy` with `NodeReducer`
-- [ ] Replace `NodeOrchestratorLegacy` with `NodeOrchestrator`
+- [ ] Replace legacy reducer implementations with `NodeReducer`
+- [ ] Replace legacy orchestrator implementations with `NodeOrchestrator`
 - [ ] Convert imperative state management to FSM YAML contracts
 - [ ] Convert workflow coordination to workflow YAML contracts
 - [ ] Update error handling to use declarative patterns
@@ -252,18 +218,17 @@ Starting with v0.4.0, the project will follow standard deprecation cycles for pu
 
 #### Step 1: Update Imports
 ```python
-# Before (v0.3.x)
-from omnibase_core.nodes.legacy.node_reducer_legacy import NodeReducerLegacy
+# Before (v0.3.x) - Old declarative import paths
 from omnibase_core.infrastructure.nodes.node_reducer_declarative import NodeReducerDeclarative
 
-# After (v0.4.0)
+# After (v0.4.0) - Use primary implementation
 from omnibase_core.nodes import NodeReducer
 ```
 
 #### Step 2: Update Class Inheritance
 ```python
 # Before (v0.3.x)
-class MyReducer(NodeReducerLegacy):
+class MyReducer(NodeReducerBase):
     pass
 
 # After (v0.4.0)
@@ -279,7 +244,7 @@ class MyReducer(NodeReducer):
 #### Step 4: Update Error Handling
 ```python
 # Before (v0.3.x) - Imperative error handling
-class MyReducer(NodeReducerLegacy):
+class MyReducer(NodeReducerBase):
     async def process(self, input_data):
         try:
             result = await self.do_work()

@@ -1,10 +1,10 @@
-# Migrating to Declarative Nodes
+# Migrating to v0.4.0 Node Architecture
 
 **Version**: 0.4.0
 **Last Updated**: 2025-12-06
 **Correlation ID**: `dec-migration-guide-001`
 
-> **UPDATE (v0.4.0)**: The declarative node classes (`NodeReducer`, `NodeOrchestrator`) are now the **PRIMARY implementations**. The "Declarative" suffix has been removed because these ARE the standard. All nodes use declarative YAML contracts.
+> **BREAKING CHANGE (v0.4.0)**: Legacy node implementations have been **REMOVED**. `NodeReducer` and `NodeOrchestrator` are now the only implementations, using declarative YAML contracts. There is no deprecation period - direct migration is required.
 
 ## Table of Contents
 
@@ -16,12 +16,16 @@
 6. [Testing Your Migration](#testing-your-migration)
 7. [Troubleshooting](#troubleshooting)
 8. [Complete Examples](#complete-examples)
+9. [Import Path Changes Summary](#import-path-changes-summary)
+10. [Additional Resources](#additional-resources)
 
 ---
 
 ## Overview
 
-This guide shows how to migrate existing code-based reducer and orchestrator nodes to declarative YAML-driven nodes. The declarative approach enables:
+This guide shows how to migrate from code-based reducer and orchestrator patterns to the v0.4.0 declarative YAML-driven nodes. Legacy implementations have been removed - this migration is required for any code using the old patterns.
+
+The declarative approach enables:
 
 - **Zero Custom Code**: All logic defined in YAML contracts
 - **Type Safety**: Complete Pydantic validation
@@ -31,20 +35,18 @@ This guide shows how to migrate existing code-based reducer and orchestrator nod
 
 ### Implementation Status
 
-**✅ Production-Ready** (as of omnibase_core v0.4.0)
-
-All 4 phases of declarative node implementation are complete:
+**Production-Ready** (omnibase_core v0.4.0)
 
 | Component | Status | Details |
 |-----------|--------|---------|
-| **FSM Models** | ✅ Complete | ModelFSMSubcontract with full state machine support |
-| **Workflow Models** | ✅ Complete | ModelWorkflowDefinition with dependency resolution |
-| **FSM Runtime** | ✅ Complete | fsm_executor.py + MixinFSMExecution (548 lines, 18 tests) |
-| **Workflow Runtime** | ✅ Complete | workflow_executor.py + MixinWorkflowExecution |
-| **Declarative Base Classes** | ✅ Complete | `NodeReducer`, `NodeOrchestrator` (primary implementations) |
-| **Documentation** | ✅ Complete | Full tutorials and migration guides |
+| **FSM Models** | Complete | ModelFSMSubcontract with full state machine support |
+| **Workflow Models** | Complete | ModelWorkflowDefinition with dependency resolution |
+| **FSM Runtime** | Complete | fsm_executor.py + MixinFSMExecution |
+| **Workflow Runtime** | Complete | workflow_executor.py + MixinWorkflowExecution |
+| **Node Base Classes** | Complete | `NodeReducer` (FSM-driven), `NodeOrchestrator` (workflow-driven) |
+| **Legacy Code** | Removed | No legacy implementations available |
 
-**Ready for production use.** All code examples in this guide are functional and tested.
+All code examples in this guide are functional and tested.
 
 ### What Changes?
 
@@ -112,11 +114,11 @@ Convert your logic to YAML using the appropriate pattern:
 
 ### Step 4: Update Node Class
 
-Replace custom implementation with the primary declarative base class:
+Replace custom implementation with the new base class:
 - **Reducer**: Inherit from `NodeReducer` (from `omnibase_core.nodes`)
 - **Orchestrator**: Inherit from `NodeOrchestrator` (from `omnibase_core.nodes`)
 
-> **Note**: These are now the standard implementations. The "Declarative" suffix was removed in v0.4.0 because these ARE the standard.
+These are the only implementations available in v0.4.0. All nodes use declarative YAML contracts.
 
 ### Step 5: Test & Validate
 
@@ -221,11 +223,10 @@ class NodeMetricsAggregator(NodeReducer):
 from omnibase_core.nodes import NodeReducer
 
 class NodeMetricsAggregator(NodeReducer):
-    """Aggregates metrics using declarative FSM - NO custom code needed!"""
+    """Aggregates metrics using FSM - all logic driven by YAML contract."""
     pass  # All logic driven by YAML contract
 
-# Note: NodeReducer is now the primary implementation (FSM-driven by default).
-# All node classes are exported from omnibase_core.nodes for convenience.
+# NodeReducer is FSM-driven. All node classes are exported from omnibase_core.nodes.
 ```
 
 **YAML Contract (`contracts/metrics_aggregator.yaml`):**
@@ -415,11 +416,10 @@ class NodeDataPipeline(NodeOrchestrator):
 from omnibase_core.nodes import NodeOrchestrator
 
 class NodeDataPipeline(NodeOrchestrator):
-    """Data processing pipeline using declarative workflow - NO custom code needed!"""
+    """Data processing pipeline using workflow - all logic driven by YAML contract."""
     pass  # All logic driven by YAML contract
 
-# Note: NodeOrchestrator is now the primary implementation (workflow-driven by default).
-# All node classes are exported from omnibase_core.nodes for convenience.
+# NodeOrchestrator is workflow-driven. All node classes are exported from omnibase_core.nodes.
 ```
 
 **YAML Contract (`contracts/data_pipeline.yaml`):**
@@ -656,24 +656,9 @@ See the `examples/contracts/` directory for complete working examples:
 1. **Review Examples**: Study the complete YAML contracts in `examples/contracts/`
 2. **Identify Candidates**: Find reducer/orchestrator nodes to migrate
 3. **Create YAML**: Convert logic to FSM/workflow contracts
-4. **Update Classes**: Inherit from declarative base classes
+4. **Update Classes**: Inherit from the v0.4.0 base classes
 5. **Test**: Verify behavior matches original implementation
 6. **Deploy**: Replace code-based nodes with declarative versions
-
----
-
-## Additional Resources
-
-- **FSM Executor Documentation**: [`src/omnibase_core/utils/fsm_executor.py`](../../src/omnibase_core/utils/fsm_executor.py)
-- **Workflow Executor Documentation**: [`src/omnibase_core/utils/workflow_executor.py`](../../src/omnibase_core/utils/workflow_executor.py)
-- **Mixin Documentation**: [`src/omnibase_core/mixins/mixin_metadata.yaml`](../../src/omnibase_core/mixins/mixin_metadata.yaml)
-- **Implementation Plan**: [`docs/architecture/DECLARATIVE_IMPLEMENTATION_PLAN.md`](../architecture/DECLARATIVE_IMPLEMENTATION_PLAN.md)
-
----
-
-**Last Updated**: 2025-12-06
-**Version**: 0.4.0
-**Maintainer**: ONEX Framework Team
 
 ---
 
@@ -709,15 +694,44 @@ from omnibase_core.nodes import (
 
 ### Migration from Pre-v0.4.0 Code
 
-If you have code using the old "Declarative" suffix names, update your imports:
+If you have code using old import patterns, update your imports:
 
 ```python
-# Old (pre-v0.4.0) - no longer available
+# Old patterns (removed in v0.4.0) - will cause ImportError
 # from omnibase_core.nodes.node_reducer_declarative import NodeReducerDeclarative
 # from omnibase_core.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
+# from omnibase_core.nodes.legacy import NodeOrchestratorLegacy
 
-# New (v0.4.0+) - use these instead
+# v0.4.0 - use these instead
 from omnibase_core.nodes import NodeReducer, NodeOrchestrator
 ```
 
-**Note**: The legacy non-declarative node implementations have been removed in v0.4.0. All nodes now use declarative YAML contracts by default. If your code was using custom code-based reducer or orchestrator nodes, follow the migration examples in this guide to convert them to declarative YAML contracts.
+**Important Notes**:
+
+- Legacy node implementations have been **removed** - there is no `nodes/legacy/` module
+- `NodeCompute` and `NodeEffect` remain unchanged (no declarative variants existed)
+- `NodeReducer` is now FSM-driven via YAML contracts
+- `NodeOrchestrator` is now workflow-driven via YAML contracts
+
+**Required Migration Steps**:
+
+1. Update imports to use `from omnibase_core.nodes import NodeReducer, NodeOrchestrator`
+2. Convert custom state management logic to FSM YAML contracts (for reducers)
+3. Convert custom workflow logic to workflow YAML contracts (for orchestrators)
+4. Follow the examples in this guide to create declarative contracts
+5. Run tests to verify behavior matches the original implementation
+
+---
+
+## Additional Resources
+
+- **FSM Executor Documentation**: [`src/omnibase_core/utils/fsm_executor.py`](../../src/omnibase_core/utils/fsm_executor.py)
+- **Workflow Executor Documentation**: [`src/omnibase_core/utils/workflow_executor.py`](../../src/omnibase_core/utils/workflow_executor.py)
+- **Mixin Documentation**: [`src/omnibase_core/mixins/mixin_metadata.yaml`](../../src/omnibase_core/mixins/mixin_metadata.yaml)
+
+---
+
+**Last Updated**: 2025-12-06
+**Version**: 0.4.0
+**Maintainer**: ONEX Framework Team
+

@@ -981,7 +981,7 @@ Ask yourself these questions in order:
 
 **Steps**:
 
-```
+```python
 # BEFORE: NodeCoreBase (Tier 3)
 class MyNode(NodeCoreBase):
     def __init__(self, container):
@@ -1003,7 +1003,7 @@ class MyNode(NodeCompute):
 
 **Steps**:
 
-```
+```python
 # BEFORE: NodeCompute with manual mixins (Tier 2)
 class MyNode(
     NodeCompute,
@@ -1032,7 +1032,7 @@ class MyNode(ModelServiceCompute):
 
 **Steps**:
 
-```
+```python
 # BEFORE: ModelServiceCompute (Tier 1 - fixed composition)
 class MyNode(ModelServiceCompute):
     # Includes: NodeService, HealthCheck, Caching, Metrics
@@ -1058,7 +1058,7 @@ class MyNode(
 
 **Steps**:
 
-```
+```python
 # BEFORE: NodeCompute (Tier 2 - COMPUTE semantics)
 class MyNode(NodeCompute):
     # Has caching, parallel processing
@@ -1108,7 +1108,7 @@ When migrating between tiers:
 
 **Solution**: **Tier 1 - ModelServiceCompute**
 
-```
+```python
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
 
 class NodeMcpCalculatorCompute(ModelServiceCompute):
@@ -1209,7 +1209,7 @@ class NodeRealtimeAnalyticsCompute(
 
 **Solution**: **Tier 3 - NodeCoreBase**
 
-```
+```python
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 
 class NodeCustomValidator(NodeCoreBase):
@@ -1239,7 +1239,7 @@ class NodeCustomValidator(NodeCoreBase):
 
 **Solution**: **Tier 1 - ModelServiceEffect**
 
-```
+```python
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
 
 class NodeDatabaseWriterEffect(ModelServiceEffect):
@@ -1283,7 +1283,7 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 
 ### Decision Flowchart Summary
 
-```
+```text
 ┌─────────────────────────────────────┐
 │  Is it EFFECT/COMPUTE/REDUCER/ORCH? │
 └───────────┬─────────────────────────┘

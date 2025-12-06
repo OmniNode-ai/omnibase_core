@@ -45,33 +45,33 @@ class ModelEnvironmentAccessor(ModelFieldAccessor):
         try:
             # Type-specific coercion logic based on expected type
             if expected_type == str:
-                return cast(T, str(raw_value))
+                return cast("T", str(raw_value))
             if expected_type == int:
                 if isinstance(raw_value, (int, float)) or (
                     isinstance(raw_value, str) and raw_value.isdigit()
                 ):
-                    return cast(T, int(raw_value))
+                    return cast("T", int(raw_value))
             elif expected_type == float:
                 if isinstance(raw_value, (int, float)) or isinstance(raw_value, str):
-                    return cast(T, float(raw_value))
+                    return cast("T", float(raw_value))
             elif expected_type == bool:
                 if isinstance(raw_value, bool):
-                    return cast(T, raw_value)
+                    return cast("T", raw_value)
                 if isinstance(raw_value, str):
                     return cast(
-                        T,
+                        "T",
                         raw_value.lower() in ["true", "yes", "1", "on", "enabled"],
                     )
                 if isinstance(raw_value, (int, float)):
-                    return cast(T, bool(raw_value))
+                    return cast("T", bool(raw_value))
             elif expected_type == list[Any] or get_origin(expected_type) is list[Any]:
                 # Handle list[Any]types
                 if isinstance(raw_value, list):
-                    return cast(T, [str(item) for item in raw_value])
+                    return cast("T", [str(item) for item in raw_value])
                 if isinstance(raw_value, str):
                     # Support comma-separated values
                     return cast(
-                        T,
+                        "T",
                         [item.strip() for item in raw_value.split(",") if item.strip()],
                     )
             elif isinstance(raw_value, expected_type):

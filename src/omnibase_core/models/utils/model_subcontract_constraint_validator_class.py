@@ -93,7 +93,7 @@ class ModelSubcontractConstraintValidator:
         if isinstance(data, dict):
             # If it's already dict[str, ModelSchemaValue], return as-is
             if data and isinstance(next(iter(data.values())), ModelSchemaValue):
-                return cast(dict[str, ModelSchemaValue], data)
+                return cast("dict[str, ModelSchemaValue]", data)
             # Convert dict[str, object] to dict[str, ModelSchemaValue]
             return {k: ModelSchemaValue.from_value(v) for k, v in data.items()}
 

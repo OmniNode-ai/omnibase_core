@@ -123,7 +123,9 @@ class NodeCompute(NodeCoreBase):
         Raises:
             ModelOnexError: If computation fails or performance threshold exceeded
         """
-        start_time = time.time()
+        # Use time.perf_counter() for accurate duration measurement
+        # (monotonic, unaffected by system clock adjustments)
+        start_time = time.perf_counter()
 
         try:
             self._validate_compute_input(input_data)
@@ -155,7 +157,7 @@ class NodeCompute(NodeCoreBase):
                 result = await self._execute_sequential_computation(input_data)
                 parallel_used = False
 
-            processing_time = (time.time() - start_time) * 1000
+            processing_time = (time.perf_counter() - start_time) * 1000
 
             # Validate performance threshold
             if processing_time > self.performance_threshold_ms:
@@ -196,7 +198,7 @@ class NodeCompute(NodeCoreBase):
             )
 
         except Exception as e:
-            processing_time = (time.time() - start_time) * 1000
+            processing_time = (time.perf_counter() - start_time) * 1000
 
             self._update_specialized_metrics(
                 self.computation_metrics,

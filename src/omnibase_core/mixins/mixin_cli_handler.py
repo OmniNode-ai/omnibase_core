@@ -339,7 +339,7 @@ class MixinCLIHandler(Generic[InputStateT, OutputStateT]):
             annotations = self.process.__annotations__
             if "input_state" in annotations:
                 input_class = annotations["input_state"]
-                return cast(InputStateT, input_class(**data))
+                return cast("InputStateT", input_class(**data))
 
         # Fallback - return data as-is
         return data  # type: ignore[return-value]
