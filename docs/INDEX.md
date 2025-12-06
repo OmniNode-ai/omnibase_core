@@ -242,7 +242,7 @@ omnibase_core/docs/
 ### Agent-Friendly Resources
 
 - **[Node Building Guide](guides/node-building/README.md)** - Structured, parseable, step-by-step
-- **[Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md)** - Copy-paste ready templates (coming soon)
+- **[Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md)** - Copy-paste ready templates
 - **[Node Templates](guides/templates/COMPUTE_NODE_TEMPLATE.md)** - Production-ready reference implementations
 
 ### Agent Workflow
@@ -335,7 +335,7 @@ omnibase_core/docs/
 
 - **Documentation Issues**: File an issue in the repository
 - **Questions**: Check existing documentation first, then ask
-- **Contributions**: See [Contributing Guide](../CONTRIBUTING.md) (coming soon)
+- **Contributions**: See [Contributing Guide](../CONTRIBUTING.md)
 
 ---
 

@@ -12,7 +12,7 @@ The ONEX framework defines **four fundamental node types**, each designed for a 
 
 ## The Four Node Types
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                    ONEX Four-Node Architecture                 │
 ├────────────────────────────────────────────────────────────────┤
@@ -58,7 +58,7 @@ Use an EFFECT node when you need to:
 
 ### Real-World Examples
 
-```
+```python
 # Example 1: Database read operation
 class NodeUserFetcherEffect(NodeCoreBase):
     """Fetch user data from database."""
@@ -110,7 +110,7 @@ class NodeWeatherFetcherEffect(NodeCoreBase):
 ### Key Patterns
 
 **Connection Pooling**:
-```
+```python
 def __init__(self, container: ModelONEXContainer):
     super().__init__(container)
     # Use connection pooling for efficiency
@@ -119,7 +119,7 @@ def __init__(self, container: ModelONEXContainer):
 ```
 
 **Retry Logic**:
-```
+```python
 async def process(self, input_data):
     for attempt in range(3):  # Retry up to 3 times
         try:
@@ -131,7 +131,7 @@ async def process(self, input_data):
 ```
 
 **Idempotency**:
-```
+```python
 # Same input always produces same result (when possible)
 async def process(self, input_data):
     # Use idempotency key for operations
@@ -176,7 +176,7 @@ Use a COMPUTE node when you need to:
 
 ### Real-World Examples
 
-```
+```python
 # Example 1: Data validation
 class NodeDataValidatorCompute(NodeCoreBase):
     """Validate data structure and business rules."""
@@ -238,7 +238,7 @@ class NodePriceCalculatorCompute(NodeCoreBase):
 ### Key Patterns
 
 **Caching**:
-```
+```python
 def __init__(self, container: ModelONEXContainer):
     super().__init__(container)
     # Cache expensive computations
@@ -263,7 +263,7 @@ async def process(self, input_data):
 ```
 
 **Parallel Processing**:
-```
+```python
 async def process(self, input_data):
     """Process items in parallel for performance."""
     items = input_data.items
@@ -315,7 +315,7 @@ Use a REDUCER node when you need to:
 
 `NodeReducer` implements the **Pure Finite State Machine (FSM)** pattern with intent emission:
 
-```
+```text
 δ(state, action) → (new_state, intents[])
 ```
 
@@ -376,7 +376,7 @@ class NodeOrderProcessingReducer(NodeReducer):
 
 #### Real-World Examples (Legacy)
 
-```
+```python
 # Example 1: Aggregate user statistics
 class NodeUserStatsReducer(NodeCoreBase):
     """Aggregate user activity statistics."""
@@ -447,7 +447,7 @@ class NodeDataMergerReducer(NodeCoreBase):
 ### Key Patterns
 
 **Streaming Reduction**:
-```
+```python
 async def process(self, input_data):
     """Process large dataset incrementally."""
     stream = input_data.data_stream
@@ -464,7 +464,7 @@ async def process(self, input_data):
 ```
 
 **Conflict Resolution**:
-```
+```python
 def _resolve_conflict(self, value_a, value_b, field_name):
     """Resolve conflicts when merging data."""
     if field_name in self.priority_fields:
@@ -665,7 +665,7 @@ class NodeDataAggregatorOrchestrator(NodeOrchestrator):
 ### Key Patterns
 
 **Sequential Workflow**:
-```
+```python
 async def process(self, input_data):
     """Execute steps in sequence with dependency management."""
     # Step 1
@@ -681,7 +681,7 @@ async def process(self, input_data):
 ```
 
 **Parallel Workflow**:
-```
+```python
 async def process(self, input_data):
     """Execute independent operations in parallel."""
     # All these can run concurrently
@@ -695,7 +695,7 @@ async def process(self, input_data):
 ```
 
 **Error Recovery**:
-```
+```python
 async def process(self, input_data):
     """Workflow with error handling and compensation."""
     try:
@@ -729,7 +729,7 @@ Use this table to choose the right node type:
 
 ## Decision Flowchart
 
-```
+```text
 Start: What does this node need to do?
 │
 ├─ Interact with external systems? ────────────────────────────────▶ EFFECT
@@ -749,7 +749,7 @@ Start: What does this node need to do?
 
 ### Pattern 1: Fetch-Transform-Save
 
-```
+```python
 # EFFECT: Fetch from API
 fetched = await effect_fetch.process(input)
 
@@ -765,7 +765,7 @@ result = await orchestrator.process(input)
 
 ### Pattern 2: Parallel Fetch-Merge
 
-```
+```python
 # EFFECT: Fetch from multiple sources (parallel)
 source_a, source_b, source_c = await asyncio.gather(
     effect_a.process(input),
@@ -782,7 +782,7 @@ result = await orchestrator.process(input)
 
 ### Pattern 3: Validate-Process-Aggregate
 
-```
+```python
 # COMPUTE: Validate input
 validated = await compute_validate.process(input)
 

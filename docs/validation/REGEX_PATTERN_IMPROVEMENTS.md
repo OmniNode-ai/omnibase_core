@@ -227,7 +227,7 @@ class MyModel(BaseModel):
 
 ### After: Caught ✅
 
-```
+```text
 Line 3: Configuration allowing extra fields for compatibility - remove permissive configuration
 ```
 
@@ -245,7 +245,7 @@ class MyModel(BaseModel):
 
 ### After: Caught ✅
 
-```
+```text
 Line 3: Configuration allowing extra fields for compatibility - remove permissive configuration
 ```
 
@@ -262,7 +262,7 @@ class MyModel(BaseModel):
 
 ### After: Caught ✅
 
-```
+```text
 Line 3: Configuration allowing extra fields for compatibility - remove permissive configuration
 ```
 
@@ -330,7 +330,7 @@ If the improved patterns detect new violations:
 poetry run pytest tests/validation/test_backward_compat_patterns.py -v
 ```
 
-```
+```text
 ============================== 21 passed in 0.51s ===============================
 ```
 
@@ -340,7 +340,7 @@ poetry run pytest tests/validation/test_backward_compat_patterns.py -v
 poetry run python scripts/validation/validate-no-backward-compatibility.py --dir src/
 ```
 
-```
+```text
 ✅ Backward Compatibility Check PASSED (1,247 files checked)
 ```
 

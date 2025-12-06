@@ -243,7 +243,7 @@ secrets/
 /legacy/
 !/src/omnibase_core/nodes/legacy/
 
-#ignore private docs
+# Private documentation (not for public repository)
 docs_private/
 
 # Optimization cache files
@@ -267,6 +267,8 @@ claude-flow.config.json
 # Claude Code settings (personal/local configuration)
 .claude/
 .claude/settings.local.json
+
+# Claude Code database files (session state, metrics, auto-saves)
 *.db
 *.sqlite
 *.db-wal

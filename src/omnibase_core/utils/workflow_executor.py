@@ -7,6 +7,7 @@ No side effects - returns results and actions.
 Typing: Strongly typed with strategic Any usage where runtime flexibility required.
 """
 
+import asyncio
 import logging
 import time
 from collections import deque
@@ -459,8 +460,6 @@ async def _execute_parallel(
     workflow_id: UUID,
 ) -> WorkflowExecutionResult:
     """Execute workflow steps in parallel (respecting dependencies)."""
-    import asyncio
-
     completed_steps: list[str] = []
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
@@ -672,7 +671,7 @@ def _get_topological_order(
     # Build adjacency list and in-degree map
     step_ids = {step.step_id for step in workflow_steps}
     edges: dict[UUID, list[UUID]] = {step_id: [] for step_id in step_ids}
-    in_degree: dict[UUID, int] = {step_id: 0 for step_id in step_ids}
+    in_degree: dict[UUID, int] = dict.fromkeys(step_ids, 0)
 
     for step in workflow_steps:
         for dep_id in step.depends_on:

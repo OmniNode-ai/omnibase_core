@@ -14,7 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] - 2025-12-05
 
-### Breaking Changes ⚠️
+> **WARNING**: This is a major release with significant breaking changes. Please review the migration guide before upgrading.
+
+### Breaking Changes
+
+#### Overview
+
+This release completes the transition to declarative YAML-driven node architecture. The following changes require code updates:
+
+| Change | Impact | Migration Effort |
+|--------|--------|------------------|
+| Legacy node classes removed | High - Code will fail to import | Update imports (5 min) |
+| Import paths changed | High - Code will fail to import | Update imports (5 min) |
+| FSM-driven NodeReducer is now default | Medium - API changes | Review FSM patterns (30 min) |
+| Workflow-driven NodeOrchestrator is now default | Medium - API changes | Review workflow patterns (30 min) |
 
 #### Legacy Node Removal
 - **REMOVED**: `NodeReducerLegacy` and `NodeOrchestratorLegacy` have been **permanently removed** (not deprecated)
@@ -96,7 +109,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Legacy state management**: Direct state mutation patterns removed from Reducer nodes
 - **Legacy workflow patterns**: Non-lease-based orchestration removed
 
+#### Error Recovery Changes
+
+The error recovery system has been updated to align with the declarative architecture:
+
+- **Reducer Nodes**: Error recovery now occurs through FSM transitions rather than imperative catch blocks
+  - **Before**: `try/except` blocks with direct state mutation
+  - **After**: Wildcard transitions (`from_state: "*"`) handle errors declaratively
+  - Errors trigger `ModelIntent` emission for recovery actions
+
+- **Orchestrator Nodes**: Error recovery uses workflow-level failure strategies
+  - **Before**: Custom Python error handling in each step
+  - **After**: `failure_recovery_strategy` in YAML contract (retry, skip, abort)
+  - Actions include `lease_id` and `epoch` for idempotent retries
+
+- **Migration**: Review error handling code and convert to:
+  - FSM error states and transitions for Reducer nodes
+  - Workflow `coordination_rules.failure_recovery_strategy` for Orchestrator nodes
+
 ### Migration Guide (v0.3.x → v0.4.0)
+
+> **Estimated Migration Time**: 30-60 minutes for typical projects
+>
+> **Full Guide**: See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for comprehensive migration instructions with complete examples.
+
+#### Quick Migration Checklist
+
+- [ ] Update all node imports to use `omnibase_core.nodes`
+- [ ] Replace `NodeReducerLegacy` with `NodeReducer`
+- [ ] Replace `NodeOrchestratorLegacy` with `NodeOrchestrator`
+- [ ] Convert imperative state management to FSM YAML contracts
+- [ ] Convert workflow coordination to workflow YAML contracts
+- [ ] Update error handling to use declarative patterns
+- [ ] Run tests to verify behavior
 
 #### Step 1: Update Imports
 ```python
@@ -122,7 +167,27 @@ class MyReducer(NodeReducer):
 #### Step 3: Adopt FSM/Workflow Patterns
 - **Reducer nodes**: Implement `ModelIntent` emission instead of direct state updates
 - **Orchestrator nodes**: Use `ModelAction` with lease management for coordination
-- See `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md` for detailed examples
+- See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for detailed examples
+
+#### Step 4: Update Error Handling
+```python
+# Before (v0.3.x) - Imperative error handling
+class MyReducer(NodeReducerLegacy):
+    async def process(self, input_data):
+        try:
+            result = await self.do_work()
+            self.state = "completed"
+        except Exception as e:
+            self.state = "failed"
+            raise
+
+# After (v0.4.0) - Declarative error handling via YAML
+# In your contract.yaml:
+# transitions:
+#   - from_state: "*"
+#     to_state: failed
+#     trigger: error_occurred
+```
 
 ## [0.3.3] - 2025-11-19
 

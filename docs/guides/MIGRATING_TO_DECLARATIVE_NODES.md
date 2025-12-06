@@ -1,7 +1,7 @@
 # Migrating to Declarative Nodes
 
-**Version**: 2.0.0
-**Last Updated**: 2025-12-05
+**Version**: 0.4.0
+**Last Updated**: 2025-12-06
 **Correlation ID**: `dec-migration-guide-001`
 
 > **UPDATE (v0.4.0)**: The declarative node classes (`NodeReducer`, `NodeOrchestrator`) are now the **PRIMARY implementations**. The "Declarative" suffix has been removed because these ARE the standard. All nodes use declarative YAML contracts.
@@ -574,6 +574,7 @@ def test_orchestrator_workflow_execution():
 **Cause**: Node contract doesn't have `state_transitions` field
 
 **Solution**:
+
 ```python
 # Ensure your contract has FSM subcontract
 class MyNodeContract(BaseModel):
@@ -588,6 +589,7 @@ node.fsm_contract = ModelFSMSubcontract.parse_file("contract.yaml")
 **Cause**: Node contract doesn't have `workflow_coordination` field
 
 **Solution**:
+
 ```python
 # Ensure your contract has workflow coordination
 class MyNodeContract(BaseModel):
@@ -616,16 +618,17 @@ conditions:
 **Cause**: Workflow has circular dependencies
 
 **Solution**:
-```
+
+```yaml
 # Fix circular dependency
 nodes:
   - node_id: "step1"
     depends_on:
-      - step2  # ❌ Circular: step1 → step2 → step1
+      - step2  # Circular: step1 -> step2 -> step1 (WRONG)
 
 # Should be:
   - node_id: "step1"
-    depends_on: []  # ✅ No circular dependency
+    depends_on: []  # No circular dependency (CORRECT)
 ```
 
 ---
@@ -668,8 +671,8 @@ See the `examples/contracts/` directory for complete working examples:
 
 ---
 
-**Last Updated**: 2025-12-05
-**Version**: 2.0.0
+**Last Updated**: 2025-12-06
+**Version**: 0.4.0
 **Maintainer**: ONEX Framework Team
 
 ---
@@ -679,7 +682,7 @@ See the `examples/contracts/` directory for complete working examples:
 With v0.4.0, all node classes are exported from `omnibase_core.nodes`:
 
 ```python
-# Primary import (recommended)
+# Primary import (recommended) - v0.4.0 top-level API
 from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect
 
 # Also available: Input/Output models
@@ -695,13 +698,30 @@ from omnibase_core.nodes import (
     EnumReductionType, EnumConflictResolution, EnumStreamingMode,  # Reducer
     EnumExecutionMode, EnumWorkflowState, EnumActionType, EnumBranchCondition,  # Orchestrator
 )
+
+# Legacy imports (deprecated - emit deprecation warnings)
+from omnibase_core.nodes.legacy import NodeReducerLegacy, NodeOrchestratorLegacy
 ```
 
-| Node Type | Import Path |
-|-----------|-------------|
-| **Compute** | `from omnibase_core.nodes import NodeCompute` |
-| **Effect** | `from omnibase_core.nodes import NodeEffect` |
-| **Reducer** | `from omnibase_core.nodes import NodeReducer` |
-| **Orchestrator** | `from omnibase_core.nodes import NodeOrchestrator` |
+| Node Type | v0.4.0 Import Path | Legacy Import Path (Deprecated) |
+|-----------|--------------------|---------------------------------|
+| **Compute** | `from omnibase_core.nodes import NodeCompute` | N/A (unchanged) |
+| **Effect** | `from omnibase_core.nodes import NodeEffect` | N/A (unchanged) |
+| **Reducer** | `from omnibase_core.nodes import NodeReducer` | `from omnibase_core.nodes.legacy import NodeReducerLegacy` |
+| **Orchestrator** | `from omnibase_core.nodes import NodeOrchestrator` | `from omnibase_core.nodes.legacy import NodeOrchestratorLegacy` |
 
-**Note**: Legacy backwards compatibility imports were removed in v0.4.0. All nodes now use declarative YAML contracts by default.
+**Deprecation Warnings**: When using legacy imports from `omnibase_core.nodes.legacy`, Python will emit a `DeprecationWarning`:
+
+```text
+DeprecationWarning: NodeReducerLegacy is deprecated and will be removed in v0.5.0.
+Use NodeReducer from omnibase_core.nodes instead.
+```
+
+To suppress these warnings during migration, you can use:
+
+```python
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="omnibase_core.nodes.legacy")
+```
+
+**Note**: Legacy imports are provided for backwards compatibility during the migration period and will be removed in v0.5.0. All nodes now use declarative YAML contracts by default.
