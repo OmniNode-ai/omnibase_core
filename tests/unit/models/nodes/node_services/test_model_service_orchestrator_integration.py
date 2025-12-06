@@ -181,9 +181,9 @@ class TestMROCorrectness:
 
         # Verify no class appears twice in MRO (diamond problem indicator)
         class_names = [cls.__name__ for cls in mro]
-        assert len(class_names) == len(
-            set(class_names)
-        ), f"MRO contains duplicate classes: {class_names}"
+        assert len(class_names) == len(set(class_names)), (
+            f"MRO contains duplicate classes: {class_names}"
+        )
 
     def test_all_mixins_accessible(self, service_orchestrator):
         """Test that methods from all mixins are accessible."""
@@ -250,9 +250,9 @@ class TestMROCorrectness:
             service = ModelServiceOrchestrator(mock_container)
 
             # Verify that NodeOrchestrator.__init__ was called via super()
-            assert (
-                len(init_called) == 1
-            ), "NodeOrchestrator.__init__ should be called exactly once via super() chain"
+            assert len(init_called) == 1, (
+                "NodeOrchestrator.__init__ should be called exactly once via super() chain"
+            )
 
 
 class TestServiceModeEventBusIntegration:

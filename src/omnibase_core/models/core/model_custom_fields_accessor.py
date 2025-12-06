@@ -146,9 +146,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
                     self.string_fields[key] = str(value)
 
             return True
-        except (
-            Exception
-        ):  # fallback-ok: set_field method signature returns bool for success/failure rather than raising
+        except Exception:  # fallback-ok: set_field method signature returns bool for success/failure rather than raising
             return False
 
     def get_field(self, key: str, default: Any = None) -> Any:
@@ -190,9 +188,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
                 custom_fields = getattr(self, "custom_fields", {})
                 return custom_fields[key]
             return default
-        except (
-            Exception
-        ):  # fallback-ok: get_field returns default value on error for graceful field access
+        except Exception:  # fallback-ok: get_field returns default value on error for graceful field access
             return default
 
     def get_string(self, key: str, default: str = "") -> str:
@@ -305,9 +301,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
                 del custom_fields[key]
                 removed = True
             return removed
-        except (
-            Exception
-        ):  # fallback-ok: remove_field method signature returns bool for success/failure rather than raising
+        except Exception:  # fallback-ok: remove_field method signature returns bool for success/failure rather than raising
             return False
 
     def get_field_count(self) -> int:
@@ -522,9 +516,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
             # Since PrimitiveValueType is object, this is safe at runtime
             self.custom_fields[key] = raw_value
             return True
-        except (
-            Exception
-        ):  # fallback-ok: set_custom_field method signature returns bool for success/failure rather than raising
+        except Exception:  # fallback-ok: set_custom_field method signature returns bool for success/failure rather than raising
             return False
 
     def has_custom_field(self, key: str) -> bool:
@@ -546,9 +538,7 @@ class ModelCustomFieldsAccessor(ModelFieldAccessor, Generic[T]):
                 del self.custom_fields[key]
                 return True
             return False
-        except (
-            Exception
-        ):  # fallback-ok: remove_custom_field method signature returns bool for success/failure rather than raising
+        except Exception:  # fallback-ok: remove_custom_field method signature returns bool for success/failure rather than raising
             return False
 
     # Protocol method implementations

@@ -193,9 +193,9 @@ class TestInfrastructureExportTypes:
         """Verify ModelCircuitBreaker is a class."""
         from omnibase_core.infrastructure import ModelCircuitBreaker
 
-        assert isinstance(
-            ModelCircuitBreaker, type
-        ), "ModelCircuitBreaker must be a class"
+        assert isinstance(ModelCircuitBreaker, type), (
+            "ModelCircuitBreaker must be a class"
+        )
 
     def test_model_compute_cache_is_class(self) -> None:
         """Verify ModelComputeCache is a class."""
@@ -207,9 +207,9 @@ class TestInfrastructureExportTypes:
         """Verify ModelEffectTransaction is a class."""
         from omnibase_core.infrastructure import ModelEffectTransaction
 
-        assert isinstance(
-            ModelEffectTransaction, type
-        ), "ModelEffectTransaction must be a class"
+        assert isinstance(ModelEffectTransaction, type), (
+            "ModelEffectTransaction must be a class"
+        )
 
 
 @pytest.mark.unit
@@ -342,9 +342,9 @@ class TestAbstractMethodEnforcement:
 
         # Verify error message mentions abstract method
         error_message = str(exc_info.value)
-        assert (
-            "abstract" in error_message.lower() or "process" in error_message
-        ), f"TypeError should mention abstract method. Got: {error_message}"
+        assert "abstract" in error_message.lower() or "process" in error_message, (
+            f"TypeError should mention abstract method. Got: {error_message}"
+        )
 
     def test_node_core_base_process_is_abstract(self) -> None:
         """Verify the 'process' method is declared as abstract in NodeCoreBase.
@@ -412,9 +412,9 @@ class TestAbstractMethodEnforcement:
 
             # Verify process method exists and is not abstract
             process_method = getattr(node_class, "process", None)
-            assert (
-                process_method is not None
-            ), f"{node_class.__name__} must have a 'process' method"
+            assert process_method is not None, (
+                f"{node_class.__name__} must have a 'process' method"
+            )
 
             is_abstract = getattr(process_method, "__isabstractmethod__", False)
             assert not is_abstract, (
@@ -438,9 +438,9 @@ class TestAbstractMethodEnforcement:
 
         for node_class in node_classes:
             process_method = getattr(node_class, "process", None)
-            assert (
-                process_method is not None
-            ), f"{node_class.__name__} must have a 'process' method"
+            assert process_method is not None, (
+                f"{node_class.__name__} must have a 'process' method"
+            )
 
             # Check if the method is a coroutine function
             assert inspect.iscoroutinefunction(process_method), (
@@ -463,9 +463,9 @@ class TestAbstractMethodEnforcement:
             """A node that intentionally does not implement process."""
 
         # Verify the class is still abstract
-        assert inspect.isabstract(
-            IncompleteNode
-        ), "IncompleteNode should be abstract since it doesn't implement process"
+        assert inspect.isabstract(IncompleteNode), (
+            "IncompleteNode should be abstract since it doesn't implement process"
+        )
 
         # Verify instantiation raises TypeError
         mock_container = MagicMock()
@@ -473,9 +473,9 @@ class TestAbstractMethodEnforcement:
             IncompleteNode(mock_container)
 
         error_message = str(exc_info.value)
-        assert (
-            "process" in error_message
-        ), f"TypeError should mention missing 'process' method. Got: {error_message}"
+        assert "process" in error_message, (
+            f"TypeError should mention missing 'process' method. Got: {error_message}"
+        )
 
     def test_complete_node_implementation_can_be_instantiated(self) -> None:
         """Verify that a complete node implementation can be instantiated.
@@ -497,9 +497,9 @@ class TestAbstractMethodEnforcement:
                 return input_data
 
         # Verify the class is NOT abstract
-        assert not inspect.isabstract(
-            CompleteNode
-        ), "CompleteNode should not be abstract since it implements process"
+        assert not inspect.isabstract(CompleteNode), (
+            "CompleteNode should not be abstract since it implements process"
+        )
 
         # Verify instantiation works
         mock_container = MagicMock()

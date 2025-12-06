@@ -54,9 +54,9 @@ class TestLazyValidationLoading:
         validation_modules = [
             key for key in sys.modules if "omnibase_core.validation" in key
         ]
-        assert (
-            len(validation_modules) == 0
-        ), "Validation modules imported at module level (not lazy)"
+        assert len(validation_modules) == 0, (
+            "Validation modules imported at module level (not lazy)"
+        )
 
     def test_get_validation_suite_returns_correct_types(self):
         """Test that get_validation_suite returns ModelValidationResult, ModelValidationSuite, and validate_all."""
@@ -156,9 +156,9 @@ class TestLazyValidationLoading:
         ]
 
         # Should be minimal (not testing specific times, just that no cascade occurred)
-        assert (
-            len(validation_modules) == 0
-        ), f"Import cascade detected: {validation_modules}"
+        assert len(validation_modules) == 0, (
+            f"Import cascade detected: {validation_modules}"
+        )
 
     def test_multiple_calls_return_same_functions(self):
         """Test that multiple calls to lazy loaders return the same function instances."""

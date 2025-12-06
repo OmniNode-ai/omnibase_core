@@ -130,12 +130,12 @@ class ModelTest{i:04d}(BaseModel):
 
         # Performance assertions
         processing_time = end_time - start_time
-        assert (
-            processing_time < 30.0
-        ), f"Large file processing took {processing_time:.2f}s (should be < 30s)"
-        assert (
-            peak_memory < 500
-        ), f"Peak memory usage was {peak_memory:.1f}MB (should be < 500MB)"
+        assert processing_time < 30.0, (
+            f"Large file processing took {processing_time:.2f}s (should be < 30s)"
+        )
+        assert peak_memory < 500, (
+            f"Peak memory usage was {peak_memory:.1f}MB (should be < 500MB)"
+        )
         assert is_valid is True, "Large file should pass naming validation"
 
     def test_large_file_backward_compatibility_validation(
@@ -199,9 +199,9 @@ class ModelProcessor{i:03d}(BaseModel):
 
         # Performance assertions
         processing_time = end_time - start_time
-        assert (
-            processing_time < 45.0
-        ), f"Large file compatibility check took {processing_time:.2f}s"
+        assert processing_time < 45.0, (
+            f"Large file compatibility check took {processing_time:.2f}s"
+        )
         assert peak_memory < 200, f"Peak memory usage was {peak_memory:.1f}MB"
         assert is_valid is True, "Large file should pass compatibility validation"
 
@@ -281,9 +281,9 @@ outputs:
 
         # Performance assertions
         processing_time = end_time - start_time
-        assert (
-            processing_time < 10.0
-        ), f"Large YAML validation took {processing_time:.2f}s"
+        assert processing_time < 10.0, (
+            f"Large YAML validation took {processing_time:.2f}s"
+        )
         assert peak_memory < 100, f"Peak memory usage was {peak_memory:.1f}MB"
         assert len(errors) == 0, f"Large YAML should be valid, got errors: {errors}"
 
@@ -338,13 +338,13 @@ class ModelBatch{i:03d}(BaseModel):
         processing_time = end_time - start_time
         files_per_second = num_files / processing_time
 
-        assert (
-            processing_time < 60.0
-        ), f"Many files validation took {processing_time:.2f}s"
+        assert processing_time < 60.0, (
+            f"Many files validation took {processing_time:.2f}s"
+        )
         assert peak_memory < 300, f"Peak memory usage was {peak_memory:.1f}MB"
-        assert (
-            files_per_second > 2
-        ), f"Processing rate was {files_per_second:.1f} files/s (should be > 2)"
+        assert files_per_second > 2, (
+            f"Processing rate was {files_per_second:.1f} files/s (should be > 2)"
+        )
         assert is_valid is True, "All model files should pass validation"
 
     def test_many_yaml_files_validation(self, temp_repo, memory_monitor):
@@ -402,16 +402,16 @@ configuration:
         processing_time = end_time - start_time
         files_per_second = num_files / processing_time
 
-        assert (
-            processing_time < 30.0
-        ), f"Many YAML files validation took {processing_time:.2f}s"
+        assert processing_time < 30.0, (
+            f"Many YAML files validation took {processing_time:.2f}s"
+        )
         assert peak_memory < 150, f"Peak memory usage was {peak_memory:.1f}MB"
-        assert (
-            files_per_second > 2
-        ), f"Processing rate was {files_per_second:.1f} files/s"
-        assert (
-            total_errors == 0
-        ), f"All YAML files should be valid, got {total_errors} errors"
+        assert files_per_second > 2, (
+            f"Processing rate was {files_per_second:.1f} files/s"
+        )
+        assert total_errors == 0, (
+            f"All YAML files should be valid, got {total_errors} errors"
+        )
 
     def test_deep_directory_structure_performance(self, temp_repo, memory_monitor):
         """Test performance with deeply nested directory structures."""
@@ -452,9 +452,9 @@ class ModelLevel{level}Item{i}(BaseModel):
 
         # Performance assertions
         processing_time = end_time - start_time
-        assert (
-            processing_time < 45.0
-        ), f"Deep structure validation took {processing_time:.2f}s"
+        assert processing_time < 45.0, (
+            f"Deep structure validation took {processing_time:.2f}s"
+        )
         assert peak_memory < 200, f"Peak memory usage was {peak_memory:.1f}MB"
 
 
@@ -477,13 +477,13 @@ from pydantic import BaseModel
 
 class ModelMemoryTest{i:03d}(BaseModel):
     """Memory test model {i}."""
-    data: str = "{'x' * 1000}"  # Some data to consume memory
+    data: str = "{"x" * 1000}"  # Some data to consume memory
 '''
             for j in range(50):  # Add many methods
                 file_content += f'''
     def method_{j}(self) -> str:
         """Method {j} for memory testing."""
-        return "result_{j}_{'x' * 100}"
+        return "result_{j}_{"x" * 100}"
 '''
 
             test_file = models_dir / f"model_memory_test_{i:03d}.py"
@@ -501,9 +501,9 @@ class ModelMemoryTest{i:03d}(BaseModel):
         late_average = sum(memory_measurements[-5:]) / 5
         memory_growth = late_average - early_average
 
-        assert (
-            memory_growth < 50
-        ), f"Memory grew by {memory_growth:.1f}MB (should be < 50MB)"
+        assert memory_growth < 50, (
+            f"Memory grew by {memory_growth:.1f}MB (should be < 50MB)"
+        )
 
     def test_large_file_memory_limit(self, temp_repo):
         """Test that very large files are rejected to prevent memory issues."""
@@ -614,9 +614,9 @@ class ModelConcurrent{i:03d}(BaseModel):
         assert wall_time < 30.0, f"Concurrent validation took {wall_time:.2f}s"
         assert peak_memory < 300, f"Peak memory usage was {peak_memory:.1f}MB"
         assert total_errors == 0, "All files should pass validation"
-        assert (
-            efficiency > 1.5
-        ), f"Concurrent efficiency was {efficiency:.1f}x (should be > 1.5x)"
+        assert efficiency > 1.5, (
+            f"Concurrent efficiency was {efficiency:.1f}x (should be > 1.5x)"
+        )
 
 
 class TestScalabilityLimits:
@@ -657,9 +657,9 @@ class ModelScale{i:04d}(BaseModel):
 
         assert processing_time < 120.0, f"Scale test took {processing_time:.2f}s"
         assert peak_memory < 500, f"Peak memory usage was {peak_memory:.1f}MB"
-        assert (
-            files_per_second > 1
-        ), f"Processing rate was {files_per_second:.1f} files/s"
+        assert files_per_second > 1, (
+            f"Processing rate was {files_per_second:.1f} files/s"
+        )
         assert success is True, "All files should pass validation"
 
     def test_file_size_progression_performance(self, temp_repo, memory_monitor):
@@ -701,9 +701,9 @@ class ModelSize{size_factor}_{i:03d}(BaseModel):
             size_factor = [1, 2, 5, 10, 20][i]
 
             # Time should not scale worse than quadratically with size
-            assert (
-                scaling_factor < size_factor**1.5
-            ), f"Processing time scaling is too poor: {scaling_factor:.1f}x for {size_factor}x size"
+            assert scaling_factor < size_factor**1.5, (
+                f"Processing time scaling is too poor: {scaling_factor:.1f}x for {size_factor}x size"
+            )
 
 
 @pytest.mark.slow
@@ -739,9 +739,9 @@ class ModelDeepNested(BaseModel):
         validator.validate_naming_conventions()
         end_time = time.time()
 
-        assert (
-            end_time - start_time < 60.0
-        ), "Deep nesting validation should complete in reasonable time"
+        assert end_time - start_time < 60.0, (
+            "Deep nesting validation should complete in reasonable time"
+        )
 
     def test_files_with_complex_ast(self, temp_repo, memory_monitor):
         """Test files with complex AST structures."""

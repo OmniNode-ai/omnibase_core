@@ -65,9 +65,9 @@ class MyModel(BaseModel):
         extra = 'allow'  # backward compatibility
 """
         success, errors = self._validate_content(content)
-        assert (
-            not success
-        ), "Should detect extra='allow' with backward compatibility comment"
+        assert not success, (
+            "Should detect extra='allow' with backward compatibility comment"
+        )
         assert any("extra" in err.lower() for err in errors)
 
     def test_extra_allow_same_line_comment_before(self):
@@ -270,9 +270,9 @@ class MyModel(BaseModel):
         extra = 'allow'
 """
         success, errors = self._validate_content(content)
-        assert (
-            not success
-        ), "Should detect compatibility in docstring with extra='allow'"
+        assert not success, (
+            "Should detect compatibility in docstring with extra='allow'"
+        )
         # May be caught by docstring check or extra pattern check
 
     # --- SHOULD NOT CATCH (False Positive Prevention) ---

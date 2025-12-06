@@ -402,9 +402,9 @@ pg_connection_string = "postgres://dbuser:dbpass123@db.example.com/appdb"
         tree = ast.parse(code)
         validator.visit(tree)
 
-        assert (
-            len(validator.violations) == 3
-        ), "Should detect PostgreSQL connection strings"
+        assert len(validator.violations) == 3, (
+            "Should detect PostgreSQL connection strings"
+        )
 
     def test_detects_redis_connection_strings(self) -> None:
         """Test detection of Redis connection strings with passwords."""
@@ -435,9 +435,9 @@ mongo_connection_string = "mongodb://dbuser:dbpass@mongo.example.com:27017/prod"
 
         # Note: MongoDB connection strings will be detected because they contain
         # secret-like patterns (connection_string, database_url, etc.)
-        assert (
-            len(validator.violations) == 3
-        ), "Should detect MongoDB connection strings"
+        assert len(validator.violations) == 3, (
+            "Should detect MongoDB connection strings"
+        )
 
     def test_detects_mysql_connection_strings(self) -> None:
         """Test detection of MySQL connection strings."""

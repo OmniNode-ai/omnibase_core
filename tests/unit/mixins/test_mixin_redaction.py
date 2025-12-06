@@ -299,7 +299,9 @@ class TestRedactMethod:
             email: str
 
         model = TestModel(
-            username="user", password="secret", email="user@test.com"  # noqa: S106
+            username="user",
+            password="secret",
+            email="user@test.com",
         )
 
         redacted = model.redact()
@@ -317,7 +319,9 @@ class TestRedactMethod:
             password: str
 
         model = TestModel(
-            name="user", email="user@test.com", password="secret"  # noqa: S106
+            name="user",
+            email="user@test.com",
+            password="secret",  # noqa: S106
         )
 
         redacted = model.redact()
@@ -335,7 +339,9 @@ class TestRedactMethod:
             internal: str
 
         model = TestModel(
-            name="user", password="secret", internal="internal_data"  # noqa: S106
+            name="user",
+            password="secret",
+            internal="internal_data",
         )
 
         redacted = model.redact(exclude={"internal"})

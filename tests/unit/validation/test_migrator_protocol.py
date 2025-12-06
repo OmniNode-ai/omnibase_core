@@ -797,9 +797,9 @@ class TestProtocol(Protocol):
         plan = migrator.create_migration_plan(protocols=protocols)
 
         # Should have recommendation to resolve conflicts
-        assert any(
-            "conflict" in rec.lower() for rec in plan.recommendations
-        ), f"Expected conflict recommendation but got: {plan.recommendations}"
+        assert any("conflict" in rec.lower() for rec in plan.recommendations), (
+            f"Expected conflict recommendation but got: {plan.recommendations}"
+        )
 
     def test_find_import_references_with_unreadable_file(self, tmp_path: Path) -> None:
         """Test finding references handles unreadable files gracefully."""

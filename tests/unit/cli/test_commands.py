@@ -52,9 +52,9 @@ class TestGetVersion:
         version = get_version()
         assert isinstance(version, str)
         # Version should not be "unknown" when package is installed
-        assert (
-            version != "unknown"
-        ), "Version should not be 'unknown' when package is installed"
+        assert version != "unknown", (
+            "Version should not be 'unknown' when package is installed"
+        )
         # Version should be non-empty
         assert len(version) > 0, "Version string should have non-zero length"
 
@@ -93,9 +93,9 @@ class TestGetVersion:
             # Replace omnibase_core in sys.modules with our mock that has no __version__
             with patch.dict(sys.modules, {"omnibase_core": mock_module}):
                 version = get_version()
-                assert (
-                    version == "unknown"
-                ), f"Expected 'unknown' when all version methods fail, but got '{version}'"
+                assert version == "unknown", (
+                    f"Expected 'unknown' when all version methods fail, but got '{version}'"
+                )
 
 
 class TestPrintVersion:

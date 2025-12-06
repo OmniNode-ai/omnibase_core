@@ -196,9 +196,7 @@ contract_version:
 node_type: COMPUTE
 contract_id: large-contract
 operations:
-""" + "".join(
-            operations
-        )
+""" + "".join(operations)
 
         yaml_file.write_text(content)
 

@@ -3,8 +3,9 @@
 Tests deterministic hash functions for cache keys, UUIDs, jitter, and error codes.
 """
 
-import pytest
 from uuid import UUID
+
+import pytest
 
 from omnibase_core.utils.util_hash import (
     deterministic_cache_key,

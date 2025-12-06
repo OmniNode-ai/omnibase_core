@@ -6,7 +6,6 @@ Single source of truth for contract field names to avoid magic strings.
 
 # env-var-ok: constant definitions for contract fields, not environment variables
 
-
 # Core contract fields
 CONTRACT_VERSION = "contract_version"
 NODE_NAME = "node_name"

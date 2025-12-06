@@ -176,9 +176,9 @@ class TestNodesNodeClassesSnapshot:
         actual_exports = set(nodes.__all__)
         node_classes_in_exports = expected_node_classes & actual_exports
 
-        assert (
-            node_classes_in_exports == expected_node_classes
-        ), f"Missing node classes: {expected_node_classes - node_classes_in_exports}"
+        assert node_classes_in_exports == expected_node_classes, (
+            f"Missing node classes: {expected_node_classes - node_classes_in_exports}"
+        )
 
     @pytest.mark.unit
     def test_node_classes_are_types(self) -> None:
@@ -233,9 +233,9 @@ class TestNodesModelExportsSnapshot:
         actual_exports = set(nodes.__all__)
         models_in_exports = expected_models & actual_exports
 
-        assert (
-            models_in_exports == expected_models
-        ), f"Missing models: {expected_models - models_in_exports}"
+        assert models_in_exports == expected_models, (
+            f"Missing models: {expected_models - models_in_exports}"
+        )
 
     @pytest.mark.unit
     def test_model_classes_are_types(self) -> None:
@@ -306,9 +306,9 @@ class TestNodesEnumExportsSnapshot:
         actual_exports = set(nodes.__all__)
         enums_in_exports = expected_enums & actual_exports
 
-        assert (
-            enums_in_exports == expected_enums
-        ), f"Missing enums: {expected_enums - enums_in_exports}"
+        assert enums_in_exports == expected_enums, (
+            f"Missing enums: {expected_enums - enums_in_exports}"
+        )
 
     @pytest.mark.unit
     def test_enum_classes_are_enum_types(self) -> None:
@@ -325,9 +325,9 @@ class TestNodesEnumExportsSnapshot:
 
         for name in enum_names:
             obj = getattr(nodes, name)
-            assert hasattr(
-                obj, "__members__"
-            ), f"{name} should be an enum (have __members__), got {type(obj)}"
+            assert hasattr(obj, "__members__"), (
+                f"{name} should be an enum (have __members__), got {type(obj)}"
+            )
 
     @pytest.mark.unit
     def test_enum_classes_importable_directly(self) -> None:
@@ -401,14 +401,14 @@ class TestNodesModuleDocumentation:
     def test_nodes_docstring_mentions_version(self) -> None:
         """Test that docstring includes version information."""
         docstring = nodes.__doc__ or ""
-        assert (
-            "VERSION" in docstring or "1.0.0" in docstring
-        ), "nodes module docstring should mention version for stability guarantee"
+        assert "VERSION" in docstring or "1.0.0" in docstring, (
+            "nodes module docstring should mention version for stability guarantee"
+        )
 
     @pytest.mark.unit
     def test_nodes_docstring_mentions_stability(self) -> None:
         """Test that docstring includes stability guarantee."""
         docstring = nodes.__doc__ or ""
-        assert (
-            "STABILITY" in docstring or "frozen" in docstring.lower()
-        ), "nodes module docstring should mention stability guarantee"
+        assert "STABILITY" in docstring or "frozen" in docstring.lower(), (
+            "nodes module docstring should mention stability guarantee"
+        )

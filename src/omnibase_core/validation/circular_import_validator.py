@@ -159,9 +159,7 @@ class CircularImportValidator:
                     file_path=str(file_path),
                 )
 
-        except (
-            Exception
-        ) as e:  # fallback-ok: Import testing requires catching all exceptions to classify import failures
+        except Exception as e:  # fallback-ok: Import testing requires catching all exceptions to classify import failures
             # Unexpected errors
             return ModelModuleImportResult(
                 module_name=module_name,

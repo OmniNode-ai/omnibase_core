@@ -5,7 +5,6 @@ Hub Service Configuration Model - ONEX Standards Compliant.
 Strongly-typed model for service configuration in hubs.
 """
 
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_hub_http_endpoint import ModelHubHttpEndpoint

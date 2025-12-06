@@ -147,21 +147,21 @@ class TestModelServiceComputeIntegration:
         # Verify order: MixinNodeService should come before NodeCompute
         mixin_service_idx = class_names.index("MixinNodeService")
         node_compute_idx = class_names.index("NodeCompute")
-        assert (
-            mixin_service_idx < node_compute_idx
-        ), "MixinNodeService must come before NodeCompute in MRO"
+        assert mixin_service_idx < node_compute_idx, (
+            "MixinNodeService must come before NodeCompute in MRO"
+        )
 
         # Verify NodeCompute comes before MixinHealthCheck
         health_check_idx = class_names.index("MixinHealthCheck")
-        assert (
-            node_compute_idx < health_check_idx
-        ), "NodeCompute must come before MixinHealthCheck in MRO"
+        assert node_compute_idx < health_check_idx, (
+            "NodeCompute must come before MixinHealthCheck in MRO"
+        )
 
         # Verify MixinCaching is present (critical for Compute)
         caching_idx = class_names.index("MixinCaching")
-        assert (
-            health_check_idx < caching_idx
-        ), "MixinHealthCheck must come before MixinCaching in MRO"
+        assert health_check_idx < caching_idx, (
+            "MixinHealthCheck must come before MixinCaching in MRO"
+        )
 
     # Test 2: Service Mode + Caching Integration (CRITICAL)
     @pytest.mark.asyncio
@@ -612,9 +612,9 @@ class TestModelServiceComputeMRODetails:
 
         # Check for duplicate classes (would indicate diamond problem)
         mro_names = [cls.__name__ for cls in mro]
-        assert len(mro_names) == len(
-            set(mro_names)
-        ), "Duplicate classes in MRO - potential diamond problem"
+        assert len(mro_names) == len(set(mro_names)), (
+            "Duplicate classes in MRO - potential diamond problem"
+        )
 
         # Verify ABC is only once at the end
         abc_count = mro_names.count("ABC")

@@ -70,9 +70,9 @@ class ModelKubernetesTemplateGenerator:
                     limits["cpu"] = f"{int(self.config.resources.cpu_cores * 1000)}m"
                 resources["limits"] = limits
 
-            deployment["spec"]["template"]["spec"]["containers"][0][
-                "resources"
-            ] = resources
+            deployment["spec"]["template"]["spec"]["containers"][0]["resources"] = (
+                resources
+            )
 
         # Add health checks
         if self.config.health_check.enabled:
@@ -92,9 +92,9 @@ class ModelKubernetesTemplateGenerator:
 
         # Add service account
         if self.config.kubernetes_service_account:
-            deployment["spec"]["template"]["spec"][
-                "serviceAccountName"
-            ] = self.config.kubernetes_service_account
+            deployment["spec"]["template"]["spec"]["serviceAccountName"] = (
+                self.config.kubernetes_service_account
+            )
 
         return deployment
 

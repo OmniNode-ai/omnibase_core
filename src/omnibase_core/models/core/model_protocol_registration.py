@@ -5,7 +5,6 @@ Protocol Registration Model - ONEX Standards Compliant.
 Strongly-typed model for protocol registration entries in container.
 """
 
-
 from pydantic import BaseModel, Field
 
 

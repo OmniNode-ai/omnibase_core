@@ -72,12 +72,12 @@ class TestModelDependencyPerformance:
         avg_snake_time_us = (snake_time / (iterations * len(camel_cases))) * 1000000
 
         # Performance targets: <50 microseconds per operation
-        assert (
-            avg_module_time_us < 50
-        ), f"Module regex too slow: {avg_module_time_us:.2f}μs"
-        assert (
-            avg_snake_time_us < 50
-        ), f"Snake case regex too slow: {avg_snake_time_us:.2f}μs"
+        assert avg_module_time_us < 50, (
+            f"Module regex too slow: {avg_module_time_us:.2f}μs"
+        )
+        assert avg_snake_time_us < 50, (
+            f"Snake case regex too slow: {avg_snake_time_us:.2f}μs"
+        )
 
         print(f"✅ Module regex performance: {avg_module_time_us:.2f}μs per match")
         print(f"✅ Snake case conversion: {avg_snake_time_us:.2f}μs per conversion")
@@ -132,15 +132,15 @@ class TestModelDependencyPerformance:
         #   * System load from concurrent pytest-xdist workers
         # - Still catches actual regressions (>3.0s = >333μs per operation vs 140μs baseline)
         # - Per-operation threshold: 0.25ms (updated for parallel execution variance)
-        assert (
-            security_time < 3.0
-        ), f"Security validation too slow: {security_time:.2f}s (threshold: 3.0s for parallel execution)"
-        assert (
-            avg_security_time_ms < 0.25
-        ), f"Average security check too slow: {avg_security_time_ms:.3f}ms (threshold: 0.25ms for parallel execution)"
-        assert (
-            rejected_count >= 7000
-        ), f"Expected ≥7000 security rejections, got {rejected_count}"
+        assert security_time < 3.0, (
+            f"Security validation too slow: {security_time:.2f}s (threshold: 3.0s for parallel execution)"
+        )
+        assert avg_security_time_ms < 0.25, (
+            f"Average security check too slow: {avg_security_time_ms:.3f}ms (threshold: 0.25ms for parallel execution)"
+        )
+        assert rejected_count >= 7000, (
+            f"Expected ≥7000 security rejections, got {rejected_count}"
+        )
 
         print(f"✅ Security validation: {avg_security_time_ms:.3f}ms per check")
         print(
@@ -189,12 +189,12 @@ class TestModelDependencyPerformance:
         avg_creation_time_ms = (creation_time / created_count) * 1000
 
         # Performance targets
-        assert (
-            creation_time < 2.0
-        ), f"Dependency creation too slow: {creation_time:.2f}s"
-        assert (
-            avg_creation_time_ms < 0.5
-        ), f"Average creation too slow: {avg_creation_time_ms:.3f}ms"
+        assert creation_time < 2.0, (
+            f"Dependency creation too slow: {creation_time:.2f}s"
+        )
+        assert avg_creation_time_ms < 0.5, (
+            f"Average creation too slow: {avg_creation_time_ms:.3f}ms"
+        )
         assert created_count == 10000, f"Expected 10000 creations, got {created_count}"
 
         print(f"✅ Dependency creation: {avg_creation_time_ms:.3f}ms per dependency")
@@ -258,12 +258,12 @@ class TestModelDependencyPerformance:
 
         # Performance targets
         assert pattern_time < 1.0, f"Pattern validation too slow: {pattern_time:.2f}s"
-        assert (
-            avg_pattern_time_ms < 0.1
-        ), f"Average pattern check too slow: {avg_pattern_time_ms:.3f}ms"
-        assert (
-            pattern_matches >= 5000
-        ), f"Expected ≥5000 pattern matches, got {pattern_matches}"
+        assert avg_pattern_time_ms < 0.1, (
+            f"Average pattern check too slow: {avg_pattern_time_ms:.3f}ms"
+        )
+        assert pattern_matches >= 5000, (
+            f"Expected ≥5000 pattern matches, got {pattern_matches}"
+        )
 
         print(f"✅ ONEX pattern validation: {avg_pattern_time_ms:.3f}ms per check")
         print(f"✅ Pattern matches: {pattern_matches} of {6000} total checks")
@@ -338,7 +338,7 @@ class TestModelDependencyPerformance:
             f"✅ Large set creation: {creation_time:.2f}s for {num_dependencies} dependencies"
         )
         print(f"✅ Creation throughput: {throughput:.0f} dependencies/sec")
-        print(f"✅ Analysis time: {analysis_time*1000:.2f}ms")
+        print(f"✅ Analysis time: {analysis_time * 1000:.2f}ms")
         print(
             f"📊 Types: {protocol_count} protocol, {service_count} service, {external_count} external"
         )
@@ -391,12 +391,12 @@ class TestModelDependencyPerformance:
         # Memory efficiency targets
         # Note: Adjusted threshold to 1050KB to account for acceptable variance in memory measurements
         # across different Python versions and environments (original 1000KB was 0.7% under actual usage)
-        assert (
-            memory_per_dep_bytes < 2000
-        ), f"Memory per dependency too high: {memory_per_dep_bytes:.1f} bytes"
-        assert (
-            total_memory_kb < 1050
-        ), f"Total memory usage too high: {total_memory_kb:.1f} KB"
+        assert memory_per_dep_bytes < 2000, (
+            f"Memory per dependency too high: {memory_per_dep_bytes:.1f} bytes"
+        )
+        assert total_memory_kb < 1050, (
+            f"Total memory usage too high: {total_memory_kb:.1f} KB"
+        )
 
         print(f"✅ Memory per dependency: {memory_per_dep_bytes:.1f} bytes")
         print(
@@ -492,9 +492,9 @@ class TestModelDependencyPerformance:
         # Performance targets for stress test
         assert overall_time < 10.0, f"Stress test too slow: {overall_time:.2f}s"
         assert throughput > 1000, f"Stress throughput too low: {throughput:.1f} ops/sec"
-        assert (
-            total_successes > total_failures
-        ), f"Too many failures: {total_failures}/{total_ops}"
+        assert total_successes > total_failures, (
+            f"Too many failures: {total_failures}/{total_ops}"
+        )
 
         print(f"✅ Stress test: {throughput:.1f} ops/sec throughput")
         print(

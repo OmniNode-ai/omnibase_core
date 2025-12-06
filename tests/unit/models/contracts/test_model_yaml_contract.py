@@ -155,9 +155,9 @@ class TestDeprecationWarnings:
 
             # Verify deprecation warning was raised
             assert len(w) == 1, f"Expected 1 warning for '{legacy_value}', got {len(w)}"
-            assert issubclass(
-                w[0].category, DeprecationWarning
-            ), f"Expected DeprecationWarning, got {w[0].category}"
+            assert issubclass(w[0].category, DeprecationWarning), (
+                f"Expected DeprecationWarning, got {w[0].category}"
+            )
 
         # Verify the mapping is correct
         assert contract.node_type == expected_enum
@@ -189,9 +189,9 @@ class TestDeprecationWarnings:
                 for warning in w
                 if issubclass(warning.category, DeprecationWarning)
             ]
-            assert (
-                len(deprecation_warnings) == 0
-            ), f"Unexpected DeprecationWarning for '{generic_value}': {deprecation_warnings}"
+            assert len(deprecation_warnings) == 0, (
+                f"Unexpected DeprecationWarning for '{generic_value}': {deprecation_warnings}"
+            )
 
         # Verify the enum was correctly resolved
         assert contract.node_type == EnumNodeType[generic_value]
@@ -231,9 +231,9 @@ class TestDeprecationWarnings:
                 for warning in w
                 if issubclass(warning.category, DeprecationWarning)
             ]
-            assert (
-                len(deprecation_warnings) == 0
-            ), f"Unexpected DeprecationWarning for '{specific_type}': {deprecation_warnings}"
+            assert len(deprecation_warnings) == 0, (
+                f"Unexpected DeprecationWarning for '{specific_type}': {deprecation_warnings}"
+            )
 
         # Verify the enum was correctly resolved
         assert contract.node_type == EnumNodeType[specific_type]
@@ -264,15 +264,15 @@ class TestDeprecationWarnings:
             message = str(w[0].message)
 
             # Check that the message contains migration guidance
-            assert (
-                "deprecated" in message.lower()
-            ), f"Message should mention 'deprecated': {message}"
-            assert (
-                expected_replacement in message
-            ), f"Message should contain replacement '{expected_replacement}': {message}"
-            assert (
-                legacy_value in message
-            ), f"Message should contain original value '{legacy_value}': {message}"
+            assert "deprecated" in message.lower(), (
+                f"Message should mention 'deprecated': {message}"
+            )
+            assert expected_replacement in message, (
+                f"Message should contain replacement '{expected_replacement}': {message}"
+            )
+            assert legacy_value in message, (
+                f"Message should contain original value '{legacy_value}': {message}"
+            )
 
     def test_enum_value_direct_access_does_not_warn(self) -> None:
         """Direct access to EnumNodeType members should not emit warnings."""
@@ -296,9 +296,9 @@ class TestDeprecationWarnings:
                 for warning in w
                 if issubclass(warning.category, DeprecationWarning)
             ]
-            assert (
-                len(deprecation_warnings) == 0
-            ), f"Direct enum access should not warn: {deprecation_warnings}"
+            assert len(deprecation_warnings) == 0, (
+                f"Direct enum access should not warn: {deprecation_warnings}"
+            )
 
     def test_deprecation_warning_category_is_correct(self) -> None:
         """Verify the warning is specifically DeprecationWarning (not UserWarning etc.)."""
@@ -331,8 +331,8 @@ class TestDeprecationWarnings:
                     for warning in w
                     if issubclass(warning.category, DeprecationWarning)
                 ]
-                assert (
-                    len(deprecation_warnings) == 1
-                ), f"Expected 1 warning for '{value}', got {len(deprecation_warnings)}"
+                assert len(deprecation_warnings) == 1, (
+                    f"Expected 1 warning for '{value}', got {len(deprecation_warnings)}"
+                )
 
             assert contract.node_type == EnumNodeType.COMPUTE_GENERIC

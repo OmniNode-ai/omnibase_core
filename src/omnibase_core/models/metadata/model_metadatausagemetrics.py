@@ -114,9 +114,7 @@ class ModelMetadataUsageMetrics(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (
-            Exception
-        ):  # fallback-ok: protocol method contract requires bool return - False indicates metadata update failed safely
+        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates metadata update failed safely
             return False
 
     def serialize(self) -> dict[str, BasicValueType]:
@@ -129,7 +127,5 @@ class ModelMetadataUsageMetrics(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (
-            Exception
-        ):  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
+        except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates validation failed, no logging needed
             return False

@@ -172,21 +172,21 @@ class TestModelServiceReducerIntegration:
         # Verify order: MixinNodeService should come before NodeReducer
         mixin_service_idx = class_names.index("MixinNodeService")
         node_reducer_idx = class_names.index("NodeReducer")
-        assert (
-            mixin_service_idx < node_reducer_idx
-        ), "MixinNodeService must come before NodeReducer in MRO"
+        assert mixin_service_idx < node_reducer_idx, (
+            "MixinNodeService must come before NodeReducer in MRO"
+        )
 
         # Verify NodeReducer comes before MixinHealthCheck
         health_check_idx = class_names.index("MixinHealthCheck")
-        assert (
-            node_reducer_idx < health_check_idx
-        ), "NodeReducer must come before MixinHealthCheck in MRO"
+        assert node_reducer_idx < health_check_idx, (
+            "NodeReducer must come before MixinHealthCheck in MRO"
+        )
 
         # Verify MixinCaching is present (CRITICAL for Reducer)
         caching_idx = class_names.index("MixinCaching")
-        assert (
-            health_check_idx < caching_idx
-        ), "MixinHealthCheck must come before MixinCaching in MRO"
+        assert health_check_idx < caching_idx, (
+            "MixinHealthCheck must come before MixinCaching in MRO"
+        )
 
     # Test 2: Service Mode + Caching Integration (CRITICAL for reducers)
     @pytest.mark.asyncio
@@ -712,9 +712,9 @@ class TestModelServiceReducerMRODetails:
 
         # Check for duplicate classes (would indicate diamond problem)
         mro_names = [cls.__name__ for cls in mro]
-        assert len(mro_names) == len(
-            set(mro_names)
-        ), "Duplicate classes in MRO - potential diamond problem"
+        assert len(mro_names) == len(set(mro_names)), (
+            "Duplicate classes in MRO - potential diamond problem"
+        )
 
         # Verify ABC is only once at the end
         abc_count = mro_names.count("ABC")

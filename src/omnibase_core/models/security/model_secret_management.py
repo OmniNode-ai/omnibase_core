@@ -136,9 +136,7 @@ def get_security_recommendations(
 
         return [f"Unknown config type: {config_type}"]
 
-    except (
-        Exception
-    ) as e:  # fallback-ok: recommendations return error list, non-critical helper function
+    except Exception as e:  # fallback-ok: recommendations return error list, non-critical helper function
         return [f"Error getting recommendations: {e}"]
 
 

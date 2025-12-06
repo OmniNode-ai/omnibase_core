@@ -625,9 +625,9 @@ class TestFixtureValidation:
 
             if valid_contract.exists():
                 errors = validate_yaml_file(valid_contract)
-                assert (
-                    len(errors) == 0
-                ), f"Valid contract fixture should pass. Errors: {errors}"
+                assert len(errors) == 0, (
+                    f"Valid contract fixture should pass. Errors: {errors}"
+                )
 
     def test_invalid_fixtures_trigger_violations(self):
         """Test that invalid fixtures trigger YAML violations."""
@@ -640,9 +640,9 @@ class TestFixtureValidation:
             if malformed_contract.exists():
                 errors = validate_yaml_file(malformed_contract)
                 # Should detect either YAML parsing errors or missing required fields
-                assert (
-                    len(errors) > 0
-                ), "Malformed contract should trigger validation errors"
+                assert len(errors) > 0, (
+                    "Malformed contract should trigger validation errors"
+                )
 
     def test_edge_case_fixtures(self):
         """Test edge case fixtures."""

@@ -127,9 +127,9 @@ class TestEnumParameterType:
         for param_type in EnumParameterType:
             expected = param_type in null_support_types
             actual = EnumParameterType.supports_null(param_type)
-            assert (
-                actual == expected
-            ), f"{param_type} null support classification failed"
+            assert actual == expected, (
+                f"{param_type} null support classification failed"
+            )
 
     def test_str_representation(self):
         """Test string representation."""

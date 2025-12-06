@@ -354,7 +354,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
             for i, pattern in enumerate(patterns):
                 emit_log_event(
                     LogLevel.DEBUG,
-                    f"🔗 EVENT_LISTENER_LOOP: Subscribing to pattern {i+1}/{len(patterns)}",
+                    f"🔗 EVENT_LISTENER_LOOP: Subscribing to pattern {i + 1}/{len(patterns)}",
                     {
                         "node_name": self.get_node_name(),
                         "pattern": pattern,
@@ -384,7 +384,7 @@ class MixinEventListener(Generic[InputStateT, OutputStateT]):
 
                 emit_log_event(
                     LogLevel.INFO,
-                    f"✅ EVENT_LISTENER_LOOP: Successfully subscribed to pattern {i+1}/{len(patterns)}",
+                    f"✅ EVENT_LISTENER_LOOP: Successfully subscribed to pattern {i + 1}/{len(patterns)}",
                     {
                         "node_name": self.get_node_name(),
                         "pattern": pattern,

@@ -102,7 +102,9 @@ def string_to_uuid(value: str) -> UUID:
     return UUID(hash_hex)
 
 
-def deterministic_jitter(seed: str, base_delay: float, jitter_factor: float = 0.1) -> float:
+def deterministic_jitter(
+    seed: str, base_delay: float, jitter_factor: float = 0.1
+) -> float:
     """Calculate deterministic jitter for retry delays.
 
     Uses a deterministic hash to add jitter to delays, avoiding

@@ -432,9 +432,9 @@ class TestModelOnexResultTypeSafety:
         for field_name, field_type in hints.items():
             type_str = str(field_type)
             # Allow typing.Any in union with None, but not bare Any
-            assert (
-                "typing.Any" not in type_str or "None" in type_str
-            ), f"Field {field_name} uses Any type: {type_str}"
+            assert "typing.Any" not in type_str or "None" in type_str, (
+                f"Field {field_name} uses Any type: {type_str}"
+            )
 
     def test_messages_list_is_typed(self):
         """Test that messages list is properly typed."""

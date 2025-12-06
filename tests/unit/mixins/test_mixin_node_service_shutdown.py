@@ -123,12 +123,12 @@ class TestShutdownTiming:
         elapsed = time.time() - start_time
         threshold = get_timing_threshold()
         assert task_woke_up, "Task should have woken up"
-        assert (
-            elapsed < threshold
-        ), f"Expected immediate wakeup (<{threshold}s), got {elapsed:.2f}s"
-        assert (
-            wake_time < threshold
-        ), f"Task wait time should be <{threshold}s, got {wake_time:.2f}s"
+        assert elapsed < threshold, (
+            f"Expected immediate wakeup (<{threshold}s), got {elapsed:.2f}s"
+        )
+        assert wake_time < threshold, (
+            f"Task wait time should be <{threshold}s, got {wake_time:.2f}s"
+        )
 
     @pytest.mark.asyncio
     async def test_shutdown_event_not_set_waits_for_timeout(self) -> None:
@@ -144,9 +144,9 @@ class TestShutdownTiming:
         # Should have waited approximately the timeout duration
         # Upper bound varies: 0.5s locally, 2.0s in CI for scheduler delays
         threshold = get_timing_threshold()
-        assert (
-            0.4 < elapsed < threshold
-        ), f"Expected ~0.5s wait (<{threshold}s), got {elapsed:.2f}s"
+        assert 0.4 < elapsed < threshold, (
+            f"Expected ~0.5s wait (<{threshold}s), got {elapsed:.2f}s"
+        )
 
     @pytest.mark.asyncio
     async def test_mixin_health_monitor_immediate_wakeup(self) -> None:
@@ -215,9 +215,9 @@ class TestShutdownTiming:
         # Verify immediate wakeup (should be << 30 seconds)
         # Threshold varies: 0.5s locally for fast feedback, 2.0s in CI for stability
         threshold = get_timing_threshold()
-        assert (
-            elapsed < threshold
-        ), f"Health loop should respond to shutdown immediately (<{threshold}s), got {elapsed:.2f}s"
+        assert elapsed < threshold, (
+            f"Health loop should respond to shutdown immediately (<{threshold}s), got {elapsed:.2f}s"
+        )
 
     @pytest.mark.asyncio
     async def test_mixin_aclose_triggers_immediate_wakeup(self) -> None:
@@ -280,9 +280,9 @@ class TestShutdownTiming:
         # Verify the shutdown event was set quickly
         # Threshold varies: 0.5s locally for fast feedback, 2.0s in CI for stability
         threshold = get_timing_threshold()
-        assert (
-            elapsed < threshold
-        ), f"aclose() should complete quickly (<{threshold}s), got {elapsed:.2f}s"
+        assert elapsed < threshold, (
+            f"aclose() should complete quickly (<{threshold}s), got {elapsed:.2f}s"
+        )
         assert wait_completed.is_set(), "Waiting task should have completed"
 
     @pytest.mark.asyncio
@@ -332,9 +332,9 @@ class TestShutdownTiming:
         assert loop_iterations >= 1, "Service loop should have run at least once"
         # Threshold varies: 0.5s locally for fast feedback, 2.0s in CI for stability
         threshold = get_timing_threshold()
-        assert (
-            elapsed < threshold
-        ), f"Should exit within one loop iteration (<{threshold}s), got {elapsed:.2f}s"
+        assert elapsed < threshold, (
+            f"Should exit within one loop iteration (<{threshold}s), got {elapsed:.2f}s"
+        )
 
 
 class TestShutdownEventIntegration:
@@ -352,17 +352,17 @@ class TestShutdownEventIntegration:
         node._health_task = None
 
         # Verify event is not set initially
-        assert (
-            not node._shutdown_event.is_set()
-        ), "Shutdown event should not be set initially"
+        assert not node._shutdown_event.is_set(), (
+            "Shutdown event should not be set initially"
+        )
 
         # Stop service
         await node.stop_service_mode()
 
         # Verify event is now set
-        assert (
-            node._shutdown_event.is_set()
-        ), "Shutdown event should be set after stop_service_mode"
+        assert node._shutdown_event.is_set(), (
+            "Shutdown event should be set after stop_service_mode"
+        )
 
     @pytest.mark.asyncio
     async def test_shutdown_event_created_lazily(self) -> None:

@@ -69,9 +69,9 @@ class TestNodeComputeSignatureSnapshot:
 
         sig = inspect.signature(NodeCompute.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(
-            None
-        ), f"NodeCompute.__init__ should return None, got {sig.return_annotation}"
+        assert sig.return_annotation is None or sig.return_annotation is type(None), (
+            f"NodeCompute.__init__ should return None, got {sig.return_annotation}"
+        )
 
     @pytest.mark.unit
     def test_node_compute_init_container_type_annotation(self) -> None:
@@ -153,9 +153,9 @@ class TestNodeEffectSignatureSnapshot:
 
         sig = inspect.signature(NodeEffect.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(
-            None
-        ), f"NodeEffect.__init__ should return None, got {sig.return_annotation}"
+        assert sig.return_annotation is None or sig.return_annotation is type(None), (
+            f"NodeEffect.__init__ should return None, got {sig.return_annotation}"
+        )
 
     @pytest.mark.unit
     def test_node_effect_init_container_type_annotation(self) -> None:
@@ -220,9 +220,9 @@ class TestNodeReducerSignatureSnapshot:
 
         sig = inspect.signature(NodeReducer.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(
-            None
-        ), f"NodeReducer.__init__ should return None, got {sig.return_annotation}"
+        assert sig.return_annotation is None or sig.return_annotation is type(None), (
+            f"NodeReducer.__init__ should return None, got {sig.return_annotation}"
+        )
 
     @pytest.mark.unit
     def test_node_reducer_init_container_type_annotation(self) -> None:
@@ -287,9 +287,9 @@ class TestNodeOrchestratorSignatureSnapshot:
 
         sig = inspect.signature(NodeOrchestrator.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(
-            None
-        ), f"NodeOrchestrator.__init__ should return None, got {sig.return_annotation}"
+        assert sig.return_annotation is None or sig.return_annotation is type(None), (
+            f"NodeOrchestrator.__init__ should return None, got {sig.return_annotation}"
+        )
 
     @pytest.mark.unit
     def test_node_orchestrator_init_container_type_annotation(self) -> None:
@@ -360,9 +360,9 @@ class TestNodeCoreBaseSignatureSnapshot:
 
         # Handle both actual type and stringified annotation (PEP 563)
         valid_none_annotations = (None, type(None), "None")
-        assert (
-            sig.return_annotation in valid_none_annotations
-        ), f"NodeCoreBase.__init__ should return None, got {sig.return_annotation}"
+        assert sig.return_annotation in valid_none_annotations, (
+            f"NodeCoreBase.__init__ should return None, got {sig.return_annotation}"
+        )
 
 
 class TestNodeBaseSignatureSnapshot:
@@ -523,9 +523,9 @@ class TestNodeBaseSignatureSnapshot:
 
         # Handle both actual type and stringified annotation (PEP 563)
         valid_none_annotations = (None, type(None), "None")
-        assert (
-            sig.return_annotation in valid_none_annotations
-        ), f"NodeBase.__init__ should return None, got {sig.return_annotation}"
+        assert sig.return_annotation in valid_none_annotations, (
+            f"NodeBase.__init__ should return None, got {sig.return_annotation}"
+        )
 
     @pytest.mark.unit
     def test_node_base_init_contract_path_type_annotation(self) -> None:
@@ -573,9 +573,9 @@ class TestSignatureComprehensiveSummary:
 
         for node_class in node_classes:
             sig = inspect.signature(node_class.__init__)
-            assert (
-                "container" in sig.parameters
-            ), f"{node_class.__name__}.__init__ must have 'container' parameter"
+            assert "container" in sig.parameters, (
+                f"{node_class.__name__}.__init__ must have 'container' parameter"
+            )
 
     @pytest.mark.unit
     def test_four_node_container_param_first_after_self(self) -> None:
@@ -596,12 +596,12 @@ class TestSignatureComprehensiveSummary:
             sig = inspect.signature(node_class.__init__)
             params = list(sig.parameters.keys())
 
-            assert (
-                len(params) >= 2
-            ), f"{node_class.__name__}.__init__ must have at least self and container"
-            assert (
-                params[0] == "self"
-            ), f"{node_class.__name__}.__init__ first param must be 'self'"
+            assert len(params) >= 2, (
+                f"{node_class.__name__}.__init__ must have at least self and container"
+            )
+            assert params[0] == "self", (
+                f"{node_class.__name__}.__init__ first param must be 'self'"
+            )
             assert params[1] == "container", (
                 f"{node_class.__name__}.__init__ second param must be 'container', "
                 f"got '{params[1]}'"
@@ -622,9 +622,9 @@ class TestSignatureComprehensiveSummary:
 
         # NodeEffect should have on_rollback_failure
         effect_sig = inspect.signature(NodeEffect.__init__)
-        assert (
-            "on_rollback_failure" in effect_sig.parameters
-        ), "NodeEffect.__init__ must have 'on_rollback_failure' parameter"
+        assert "on_rollback_failure" in effect_sig.parameters, (
+            "NodeEffect.__init__ must have 'on_rollback_failure' parameter"
+        )
 
         # Other nodes should NOT have it
         other_classes = [NodeCompute, NodeOrchestrator, NodeReducer]
@@ -788,9 +788,9 @@ class TestNodeComputeProcessSignatureSnapshot:
         """
         from omnibase_core.nodes import NodeCompute
 
-        assert inspect.iscoroutinefunction(
-            NodeCompute.process
-        ), "NodeCompute.process must be an async method (coroutine function)"
+        assert inspect.iscoroutinefunction(NodeCompute.process), (
+            "NodeCompute.process must be an async method (coroutine function)"
+        )
 
 
 class TestNodeEffectProcessSignatureSnapshot:
@@ -870,9 +870,9 @@ class TestNodeEffectProcessSignatureSnapshot:
         """
         from omnibase_core.nodes import NodeEffect
 
-        assert inspect.iscoroutinefunction(
-            NodeEffect.process
-        ), "NodeEffect.process must be an async method (coroutine function)"
+        assert inspect.iscoroutinefunction(NodeEffect.process), (
+            "NodeEffect.process must be an async method (coroutine function)"
+        )
 
 
 class TestNodeReducerProcessSignatureSnapshot:
@@ -977,9 +977,9 @@ class TestNodeReducerProcessSignatureSnapshot:
         """
         from omnibase_core.nodes import NodeReducer
 
-        assert inspect.iscoroutinefunction(
-            NodeReducer.process
-        ), "NodeReducer.process must be an async method (coroutine function)"
+        assert inspect.iscoroutinefunction(NodeReducer.process), (
+            "NodeReducer.process must be an async method (coroutine function)"
+        )
 
 
 class TestNodeOrchestratorProcessSignatureSnapshot:
@@ -1059,9 +1059,9 @@ class TestNodeOrchestratorProcessSignatureSnapshot:
         """
         from omnibase_core.nodes import NodeOrchestrator
 
-        assert inspect.iscoroutinefunction(
-            NodeOrchestrator.process
-        ), "NodeOrchestrator.process must be an async method (coroutine function)"
+        assert inspect.iscoroutinefunction(NodeOrchestrator.process), (
+            "NodeOrchestrator.process must be an async method (coroutine function)"
+        )
 
 
 class TestProcessSignatureComprehensiveSummary:
@@ -1087,12 +1087,12 @@ class TestProcessSignatureComprehensiveSummary:
         node_classes = [NodeCompute, NodeEffect, NodeOrchestrator, NodeReducer]
 
         for node_class in node_classes:
-            assert hasattr(
-                node_class, "process"
-            ), f"{node_class.__name__} must have 'process' method"
-            assert callable(
-                node_class.process
-            ), f"{node_class.__name__}.process must be callable"
+            assert hasattr(node_class, "process"), (
+                f"{node_class.__name__} must have 'process' method"
+            )
+            assert callable(node_class.process), (
+                f"{node_class.__name__}.process must be callable"
+            )
 
     @pytest.mark.unit
     def test_all_process_methods_are_async(self) -> None:
@@ -1110,9 +1110,9 @@ class TestProcessSignatureComprehensiveSummary:
         node_classes = [NodeCompute, NodeEffect, NodeOrchestrator, NodeReducer]
 
         for node_class in node_classes:
-            assert inspect.iscoroutinefunction(
-                node_class.process
-            ), f"{node_class.__name__}.process must be async (coroutine function)"
+            assert inspect.iscoroutinefunction(node_class.process), (
+                f"{node_class.__name__}.process must be async (coroutine function)"
+            )
 
     @pytest.mark.unit
     def test_all_process_methods_have_input_data_param(self) -> None:
@@ -1131,9 +1131,9 @@ class TestProcessSignatureComprehensiveSummary:
 
         for node_class in node_classes:
             sig = inspect.signature(node_class.process)
-            assert (
-                "input_data" in sig.parameters
-            ), f"{node_class.__name__}.process must have 'input_data' parameter"
+            assert "input_data" in sig.parameters, (
+                f"{node_class.__name__}.process must have 'input_data' parameter"
+            )
 
     @pytest.mark.unit
     def test_process_signature_param_counts(self) -> None:
@@ -1188,9 +1188,9 @@ class TestProcessSignatureComprehensiveSummary:
 
         for node_class in node_classes:
             sig = inspect.signature(node_class.process)
-            assert (
-                sig.return_annotation is not inspect.Parameter.empty
-            ), f"{node_class.__name__}.process must have return type annotation"
+            assert sig.return_annotation is not inspect.Parameter.empty, (
+                f"{node_class.__name__}.process must have return type annotation"
+            )
 
     @pytest.mark.unit
     def test_process_input_params_have_type_annotations(self) -> None:
@@ -1211,6 +1211,6 @@ class TestProcessSignatureComprehensiveSummary:
         for node_class in node_classes:
             sig = inspect.signature(node_class.process)
             input_param = sig.parameters["input_data"]
-            assert (
-                input_param.annotation is not inspect.Parameter.empty
-            ), f"{node_class.__name__}.process input_data must have type annotation"
+            assert input_param.annotation is not inspect.Parameter.empty, (
+                f"{node_class.__name__}.process input_data must have type annotation"
+            )

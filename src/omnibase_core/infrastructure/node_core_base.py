@@ -256,7 +256,9 @@ class NodeCoreBase(ABC):
 
             # Calculate final metrics using perf_counter for accurate timing
             cleanup_time = (time.perf_counter() - start_time) * 1000
-            total_lifetime = (time.perf_counter() * 1000) - self.metrics["initialized_at_ms"]
+            total_lifetime = (time.perf_counter() * 1000) - self.metrics[
+                "initialized_at_ms"
+            ]
 
             # Emit final metrics
             final_metrics = {
@@ -318,7 +320,8 @@ class NodeCoreBase(ABC):
             "success_rate": success_rate,
             "error_rate": error_rate,
             # Use perf_counter for consistent uptime calculation (matches initialized_at_ms)
-            "uptime_ms": (time.perf_counter() * 1000) - self.metrics["initialized_at_ms"],
+            "uptime_ms": (time.perf_counter() * 1000)
+            - self.metrics["initialized_at_ms"],
             "node_health_score": max(0.0, 1.0 - error_rate),
         }
 

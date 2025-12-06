@@ -141,9 +141,9 @@ class TestMROCorrectness:
 
         # Verify no class appears twice in MRO (diamond problem indicator)
         class_names = [cls.__name__ for cls in mro]
-        assert len(class_names) == len(
-            set(class_names)
-        ), f"MRO contains duplicate classes: {class_names}"
+        assert len(class_names) == len(set(class_names)), (
+            f"MRO contains duplicate classes: {class_names}"
+        )
 
     def test_all_mixins_accessible(self, service_effect):
         """Test that methods from all mixins are accessible."""

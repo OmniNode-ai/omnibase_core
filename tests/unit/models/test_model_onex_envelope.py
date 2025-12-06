@@ -1618,12 +1618,12 @@ class TestModelOnexEnvelopeSuccessErrorValidation:
                 restored = ModelOnexEnvelope.model_validate_json(json_str)
 
             # Verify round-trip preserves values
-            assert (
-                restored.success == success_val
-            ), f"success mismatch for ({success_val}, {error_val})"
-            assert (
-                restored.error == error_val
-            ), f"error mismatch for ({success_val}, {error_val})"
+            assert restored.success == success_val, (
+                f"success mismatch for ({success_val}, {error_val})"
+            )
+            assert restored.error == error_val, (
+                f"error mismatch for ({success_val}, {error_val})"
+            )
 
 
 # =============================================================================

@@ -202,9 +202,9 @@ class TestIssue13LRUvsLFU:
         cache.put("key4", "value4")
 
         # Verify key3 was evicted (least frequently used)
-        assert (
-            cache.get("key3") is None
-        ), "LFU should evict key3 (least frequently used)"
+        assert cache.get("key3") is None, (
+            "LFU should evict key3 (least frequently used)"
+        )
 
         # Verify key1 and key2 are still cached
         assert cache.get("key1") == "value1", "key1 should still be cached"
@@ -242,9 +242,9 @@ class TestIssue13LRUvsLFU:
         # - key1 was accessed before key2 was added, so key1 is less recent
         # - key2 was added most recently, so it's more recent than key1
         # Therefore, key1 should be evicted
-        assert (
-            cache.get("key1") is None
-        ), "LRU should evict key1 (least recently used, despite high frequency)"
+        assert cache.get("key1") is None, (
+            "LRU should evict key1 (least recently used, despite high frequency)"
+        )
         assert cache.get("key2") == "value2", "key2 should still be cached"
         assert cache.get("key3") == "value3", "key3 should be cached"
 
@@ -275,12 +275,12 @@ class TestIssue13LRUvsLFU:
         cache.put("key3", "value3")
 
         # Verify key2 was evicted (least frequently used)
-        assert (
-            cache.get("key2") is None
-        ), "LFU should evict key2 (least frequently used)"
-        assert (
-            cache.get("key1") == "value1"
-        ), "key1 should still be cached (most frequently used)"
+        assert cache.get("key2") is None, (
+            "LFU should evict key2 (least frequently used)"
+        )
+        assert cache.get("key1") == "value1", (
+            "key1 should still be cached (most frequently used)"
+        )
         assert cache.get("key3") == "value3", "key3 should be cached"
 
     def test_fifo_evicts_oldest_insertion(self):
@@ -373,6 +373,6 @@ class TestCacheInternalStorage:
         _, _, order3 = cache._cache["key3"]
 
         assert order1 < order2 < order3, "FIFO should maintain insertion order"
-        assert all(
-            isinstance(o, int) for o in [order1, order2, order3]
-        ), "FIFO should use int for order"
+        assert all(isinstance(o, int) for o in [order1, order2, order3]), (
+            "FIFO should use int for order"
+        )

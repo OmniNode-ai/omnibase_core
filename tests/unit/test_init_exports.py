@@ -42,18 +42,18 @@ class TestInitExports:
 
         # No private modules (starting with _) should be in __all__
         for export in omnibase_core.__all__:
-            assert not export.startswith(
-                "_"
-            ), f"Private module {export} leaked in __all__"
+            assert not export.startswith("_"), (
+                f"Private module {export} leaked in __all__"
+            )
 
     def test_init_exports_are_accessible(self):
         """Test that all exports in __all__ are actually accessible."""
         import omnibase_core
 
         for export_name in omnibase_core.__all__:
-            assert hasattr(
-                omnibase_core, export_name
-            ), f"Export {export_name} not accessible"
+            assert hasattr(omnibase_core, export_name), (
+                f"Export {export_name} not accessible"
+            )
             export_obj = getattr(omnibase_core, export_name)
             assert export_obj is not None, f"Export {export_name} is None"
 
@@ -79,9 +79,9 @@ class TestInitImportPerformance:
 
         # Import should be fast (< 100ms for lazy loading)
         # This is a reasonable threshold for lazy loading
-        assert (
-            import_time_ms < 100
-        ), f"Import took {import_time_ms:.2f}ms (expected < 100ms)"
+        assert import_time_ms < 100, (
+            f"Import took {import_time_ms:.2f}ms (expected < 100ms)"
+        )
 
     def test_init_lazy_loading_delays_validation_imports(self):
         """Test that validation modules are not imported until accessed."""
@@ -101,9 +101,9 @@ class TestInitImportPerformance:
             for key in sys.modules
             if "omnibase_core.validation" in key and key != "omnibase_core"
         ]
-        assert (
-            len(validation_modules) == 0
-        ), f"Validation modules imported too early: {validation_modules}"
+        assert len(validation_modules) == 0, (
+            f"Validation modules imported too early: {validation_modules}"
+        )
 
         # Now access a validation function - should trigger lazy import
         _ = omnibase_core.validate_architecture
@@ -112,9 +112,9 @@ class TestInitImportPerformance:
         validation_modules = [
             key for key in sys.modules if "omnibase_core.validation" in key
         ]
-        assert (
-            len(validation_modules) > 0
-        ), "Lazy loading did not import validation modules"
+        assert len(validation_modules) > 0, (
+            "Lazy loading did not import validation modules"
+        )
 
 
 class TestInitCircularImports:

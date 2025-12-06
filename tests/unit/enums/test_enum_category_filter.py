@@ -39,9 +39,9 @@ class TestEnumCategoryFilter:
         for filter_type in EnumCategoryFilter:
             expected = filter_type in hierarchical_filters
             actual = EnumCategoryFilter.is_hierarchical(filter_type)
-            assert (
-                actual == expected
-            ), f"{filter_type} hierarchical classification failed"
+            assert actual == expected, (
+                f"{filter_type} hierarchical classification failed"
+            )
 
     def test_is_inclusive(self):
         """Test inclusive classification."""
@@ -92,9 +92,9 @@ class TestEnumCategoryFilter:
         for filter_type in EnumCategoryFilter:
             expected = filter_type != EnumCategoryFilter.ARCHIVED
             actual = EnumCategoryFilter.is_active_filter(filter_type)
-            assert (
-                actual == expected
-            ), f"{filter_type} active filter classification failed"
+            assert actual == expected, (
+                f"{filter_type} active filter classification failed"
+            )
 
     def test_str_representation(self):
         """Test string representation."""

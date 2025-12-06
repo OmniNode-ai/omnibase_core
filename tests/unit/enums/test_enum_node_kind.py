@@ -133,9 +133,9 @@ class TestEnumNodeKindHelperMethods:
         ]
 
         for node_kind in core_types:
-            assert (
-                EnumNodeKind.is_core_node_type(node_kind) is True
-            ), f"{node_kind} should be core node type"
+            assert EnumNodeKind.is_core_node_type(node_kind) is True, (
+                f"{node_kind} should be core node type"
+            )
 
     def test_is_core_node_type_for_non_core_types(self) -> None:
         """Test that non-core node types are correctly identified."""
@@ -155,9 +155,9 @@ class TestEnumNodeKindHelperMethods:
         ]
 
         for node_kind in non_infra_types:
-            assert (
-                EnumNodeKind.is_infrastructure_type(node_kind) is False
-            ), f"{node_kind} should not be infrastructure type"
+            assert EnumNodeKind.is_infrastructure_type(node_kind) is False, (
+                f"{node_kind} should not be infrastructure type"
+            )
 
 
 class TestEnumNodeKindSerialization:
@@ -221,9 +221,9 @@ class TestEnumNodeKindBehavior:
         """Test that the enum has the expected number of members."""
         expected_count = 5
         actual_count = len(list(EnumNodeKind))
-        assert (
-            actual_count == expected_count
-        ), f"Expected {expected_count} members, got {actual_count}"
+        assert actual_count == expected_count, (
+            f"Expected {expected_count} members, got {actual_count}"
+        )
 
     def test_enum_member_uniqueness(self) -> None:
         """Test that all enum members have unique values."""

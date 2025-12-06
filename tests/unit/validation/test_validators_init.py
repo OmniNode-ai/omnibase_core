@@ -90,9 +90,9 @@ class TestValidationPackageExports:
         assert "CircularImportValidator" in validation.__all__
         # Check that all expected exports are in __all__
         for export in expected_exports:
-            assert (
-                export in validation.__all__
-            ), f"{export} not found in validation.__all__"
+            assert export in validation.__all__, (
+                f"{export} not found in validation.__all__"
+            )
 
     def test_package_imports_work(self) -> None:
         """Test that package-level imports work correctly."""

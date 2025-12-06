@@ -30,29 +30,20 @@ repos:
         args: [--maxkb=1000]
 
   # ONEX Python Development Hooks (from shared templates)
-  # Order: black → isort → ruff → mypy (formatting before linting before type checking)
+  # Order: ruff format → ruff check → mypy (formatting before linting before type checking)
+  # Note: ruff replaces both black and isort (10-100x faster)
   - repo: local
     hooks:
-      - id: black-format
-        name: black (auto-format)
-        entry: poetry run black
+      - id: ruff-format
+        name: ruff format (auto-format)
+        entry: poetry run ruff format
         language: system
         types: [python]
-        args: [--line-length, "88", --target-version, py312]
         exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
         stages: [commit]
 
-      - id: isort-format
-        name: isort (auto-sort imports)
-        entry: poetry run isort
-        language: system
-        types: [python]
-        args: [--filter-files, --profile, black, --line-length, "88"]
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/)
-        stages: [commit]
-
       - id: ruff-fix
-        name: ruff (auto-fix linting issues)
+        name: ruff check (auto-fix linting + import sorting)
         entry: poetry run ruff check --fix
         language: system
         types: [python]

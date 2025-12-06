@@ -190,9 +190,7 @@ class ModelWorkflowParameters(BaseModel):
                     ):
                         setattr(self, key, value)
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
+        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
     def get_id(self) -> str:
@@ -224,9 +222,7 @@ class ModelWorkflowParameters(BaseModel):
                 if param.required and not param.name:
                     return False
             return True
-        except (
-            Exception
-        ):  # fallback-ok: Protocol method - graceful fallback for optional implementation
+        except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
 
