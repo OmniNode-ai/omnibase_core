@@ -261,6 +261,28 @@ class MyReducer(NodeReducerBase):
 #     trigger: error_occurred
 ```
 
+---
+
+### ⚠️ Implementation Note: Hard Deletion (Not Soft Deprecation)
+
+> **BREAKING CHANGE**: After reviewing the architecture and confirming that no users currently exist on the legacy node implementations, we pivoted from the originally planned Phase 1 (soft deprecation with warnings) directly to **hard deletion** of legacy nodes.
+
+**Why Hard Deletion Instead of Soft Deprecation?**
+
+1. **No Existing Users**: The legacy `NodeReducerLegacy` and `NodeOrchestratorLegacy` classes had no production usage
+2. **Cleaner Codebase**: Removing legacy code entirely eliminates maintenance burden and confusion
+3. **Simpler Migration**: Users only need to learn the new patterns, not navigate deprecated APIs
+4. **Reduced Risk**: No transition period means no risk of users depending on soon-to-be-removed code
+
+**What This Means for You**:
+
+- Legacy imports (`NodeReducerLegacy`, `NodeOrchestratorLegacy`) will **fail immediately** - no deprecation warnings
+- The `omnibase_core.nodes.legacy` namespace **does not exist**
+- All nodes must use FSM-driven (`NodeReducer`) or workflow-driven (`NodeOrchestrator`) patterns
+- See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for migration instructions
+
+---
+
 ## [0.3.3] - 2025-11-19
 
 ### Added

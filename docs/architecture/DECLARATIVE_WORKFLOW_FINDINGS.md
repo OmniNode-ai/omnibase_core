@@ -356,9 +356,8 @@ class NodeMyOrchestrator(NodeOrchestrator):
 |---------|--------|--------|
 | **Top-level API** | `from omnibase_core.nodes import NodeReducer, ...` | **RECOMMENDED** |
 | **Direct module** | `from omnibase_core.nodes.node_reducer import NodeReducer` | Supported (internal) |
-| **Legacy package** | `from omnibase_core.nodes.legacy import ...` | **DEPRECATED** (v0.4.0) |
 
-**Note**: The top-level import `from omnibase_core.nodes import ...` is the recommended pattern. All four node types (`NodeCompute`, `NodeEffect`, `NodeReducer`, `NodeOrchestrator`) and their input/output models are available from this single import.
+**Note**: The top-level import `from omnibase_core.nodes import ...` is the recommended pattern. All four node types (`NodeCompute`, `NodeEffect`, `NodeReducer`, `NodeOrchestrator`) and their input/output models are available from this single import. Legacy implementations were removed in v0.4.0.
 
 ---
 

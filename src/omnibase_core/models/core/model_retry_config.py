@@ -106,7 +106,8 @@ class ModelRetryConfig(BaseModel):
             delay = self.backoff_seconds * attempt_number
 
         # Add jitter to prevent thundering herd
-        # Uses deterministic jitter based on current time for reproducibility
+        # Uses hash-based jitter seeded by current time - deterministic per seed
+        # but not reproducible across calls since time.time() changes each call
         if include_jitter:
             jitter = deterministic_jitter(str(time.time()), delay, jitter_factor=0.1)
             delay += jitter

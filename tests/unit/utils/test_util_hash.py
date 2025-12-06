@@ -191,8 +191,8 @@ class TestDeterministicJitter:
         jitter_factor = 0.1
         for i in range(100):
             result = deterministic_jitter(f"seed_{i}", base_delay, jitter_factor)
-            # Jitter should be between -0.05 and 0.05 (half of 10% of base)
-            max_jitter = base_delay * jitter_factor * 0.5
+            # Jitter should be between -0.1 and 0.1 (jitter_factor * base_delay)
+            max_jitter = base_delay * jitter_factor
             assert -max_jitter <= result <= max_jitter
 
     def test_zero_base_delay(self) -> None:

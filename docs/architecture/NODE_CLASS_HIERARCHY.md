@@ -1429,9 +1429,8 @@ from omnibase_core.nodes import (
 |---------|--------|--------|
 | **Top-level API** | `from omnibase_core.nodes import NodeReducer, ...` | **RECOMMENDED** |
 | **Direct module** | `from omnibase_core.nodes.node_reducer import NodeReducer` | Supported (internal) |
-| **Legacy package** | `from omnibase_core.nodes.legacy import ...` | **DEPRECATED** (v0.4.0) |
 
-**Note**: Legacy imperative nodes were removed in v0.4.0. All nodes now use declarative YAML contracts. The `omnibase_core.nodes.legacy` package is deprecated and will be removed in a future release.
+**Note**: Legacy imperative nodes were removed in v0.4.0. All nodes now use declarative YAML contracts.
 
 See [MVP_PLAN.md](../MVP_PLAN.md) for full migration details.
 

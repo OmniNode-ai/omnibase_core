@@ -59,22 +59,24 @@ class ModelEnvironmentProperties(BaseModel):
 
         try:
             # Use ModelPropertyValue's type-safe accessors based on expected type
-            if expected_type == str:
-                return cast("T", prop_value.as_string())
-            if expected_type == int:
-                return cast("T", prop_value.as_int())
-            if expected_type == float:
-                return cast("T", prop_value.as_float())
-            if expected_type == bool:
-                return cast("T", prop_value.as_bool())
-            if expected_type == list[Any] or get_origin(expected_type) is list[Any]:
-                # Handle list[Any]types
+            # Use 'is' for type identity comparisons (PEP 8 compliant)
+            if expected_type is str:
+                return cast(T, prop_value.as_string())
+            if expected_type is int:
+                return cast(T, prop_value.as_int())
+            if expected_type is float:
+                return cast(T, prop_value.as_float())
+            if expected_type is bool:
+                return cast(T, prop_value.as_bool())
+            # Check for list types using get_origin for generic type aliases
+            if get_origin(expected_type) is list:
+                # Handle list types
                 if hasattr(prop_value, "value") and isinstance(prop_value.value, list):
-                    return cast("T", [str(item) for item in prop_value.value])
+                    return cast(T, [str(item) for item in prop_value.value])
                 # Try string conversion for comma-separated values
                 str_val = prop_value.as_string()
                 return cast(
-                    "T",
+                    T,
                     [item.strip() for item in str_val.split(",") if item.strip()],
                 )
             if hasattr(prop_value, "value") and isinstance(

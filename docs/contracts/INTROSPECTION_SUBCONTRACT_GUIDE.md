@@ -184,7 +184,7 @@ class MyNode(NodeCoreBase, MixinNodeIntrospection):
 | `include_contract` | `bool` | `true` | Contract details |
 | `include_input_schema` | `bool` | `true` | Input state schema |
 | `include_output_schema` | `bool` | `true` | Output state schema |
-| `include_cli_interface` | `bool` | `true` | CLI interface details |
+| `include_cli_interface` | `bool` | `true` | CLI details |
 | `export_json_schema` | `bool` | `true` | Export JSON schema |
 | `export_openapi_schema` | `bool` | `false` | Export OpenAPI schema |
 

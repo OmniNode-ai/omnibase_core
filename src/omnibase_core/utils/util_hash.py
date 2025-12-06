@@ -33,7 +33,7 @@ def deterministic_hash(value: str) -> str:
 
     Example:
         >>> deterministic_hash("my_cache_key")
-        'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+        '4f7af13edd932a4d13660d4a49003e7d6e258c4fd35917b472f971058e2f06f5'
     """
     return hashlib.sha256(value.encode()).hexdigest()
 
@@ -125,8 +125,9 @@ def deterministic_jitter(
     # Get a value between 0 and 1
     hash_int = deterministic_hash_int(seed)
     normalized = (hash_int % 1000) / 1000.0  # 0.0 to 0.999
-    # Convert to range -0.5 to 0.5, then scale by jitter_factor
-    jitter = base_delay * jitter_factor * (normalized - 0.5)
+    # Convert to range -1.0 to 1.0, then scale by jitter_factor
+    # This gives jitter in range [-jitter_factor * base_delay, +jitter_factor * base_delay]
+    jitter = base_delay * jitter_factor * (2.0 * normalized - 1.0)
     return jitter
 
 

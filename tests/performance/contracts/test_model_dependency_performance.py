@@ -19,6 +19,8 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.performance
+@pytest.mark.timeout(60)
 class TestModelDependencyPerformance:
     """Performance benchmarks for dependency validation operations."""
 
@@ -118,7 +120,10 @@ class TestModelDependencyPerformance:
                         rejected_count += 1
 
         security_time = time.perf_counter() - start_time
-        avg_security_time_ms = (security_time / len(malicious_modules) / 1000) * 1000
+        # Total operations: 1000 iterations x 9 malicious patterns = 9000 operations
+        # Convert to milliseconds: (total_seconds / total_operations) * 1000
+        total_security_operations = len(malicious_modules) * 1000
+        avg_security_time_ms = (security_time / total_security_operations) * 1000
 
         # Performance targets
         # Note: Threshold increased to 3.0s to account for parallel test execution variance:
@@ -252,9 +257,10 @@ class TestModelDependencyPerformance:
                     pattern_matches += 1
 
         pattern_time = time.perf_counter() - start_time
-        avg_pattern_time_ms = (
-            pattern_time / (len(protocol_deps) + len(other_deps)) / 1000
-        ) * 1000
+        # Total operations: 1000 iterations x 6 dependencies = 6000 operations
+        # Convert to milliseconds: (total_seconds / total_operations) * 1000
+        total_pattern_operations = (len(protocol_deps) + len(other_deps)) * 1000
+        avg_pattern_time_ms = (pattern_time / total_pattern_operations) * 1000
 
         # Performance targets
         assert pattern_time < 1.0, f"Pattern validation too slow: {pattern_time:.2f}s"

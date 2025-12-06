@@ -232,6 +232,7 @@ ignore = [
 "src/omnibase_core/mixins/__init__.py" = ["I001"]  # Import order to avoid circular dependencies
 "src/omnibase_core/infrastructure/node_base.py" = ["I001"]  # Import order to avoid circular dependencies
 "src/omnibase_core/models/container/model_onex_container.py" = ["I001"]  # Import order to avoid circular dependencies
+"src/omnibase_core/types/constraints.py" = ["I001"]  # Import order to avoid circular dependencies (lazy imports)
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]

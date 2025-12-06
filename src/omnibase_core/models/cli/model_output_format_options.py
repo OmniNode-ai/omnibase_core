@@ -211,7 +211,11 @@ class ModelOutputFormatOptions(BaseModel):
 
     def get_custom_option(self, key: str, default: T) -> T:
         """Get a custom format option with type safety."""
-        return cast("T", self.custom_options.get(key, default))
+        model_value = self.custom_options.get(key)
+        if model_value is None:
+            return default
+        # Extract underlying raw_value from ModelValue wrapper
+        return cast(T, model_value.raw_value)
 
     @classmethod
     @allow_dict_any
