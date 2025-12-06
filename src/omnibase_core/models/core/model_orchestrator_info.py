@@ -142,7 +142,7 @@ class ModelOrchestratorInfo(BaseModel):
     def from_dict(
         cls,
         data: dict[str, Any] | None,
-    ) -> Optional[ModelOrchestratorInfo]:
+    ) -> ModelOrchestratorInfo | None:
         """Create from dictionary for easy migration."""
         if data is None:
             return None

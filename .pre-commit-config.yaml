@@ -38,7 +38,7 @@ repos:
         entry: poetry run black
         language: system
         types: [python]
-        args: [--line-length, "88", --target-version, py311]
+        args: [--line-length, "88", --target-version, py312]
         exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
         stages: [commit]
 

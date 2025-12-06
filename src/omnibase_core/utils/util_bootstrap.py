@@ -207,7 +207,7 @@ def _get_fallback_service(protocol_type: type[T]) -> T | None:
     if hasattr(protocol_type, "__name__") and "Logger" in protocol_type.__name__:
         service = _get_minimal_logging_service()
         # Type narrowing: cast to T for type safety
-        return cast(T, service)
+        return cast("T", service)
 
     # No fallback available
     return None

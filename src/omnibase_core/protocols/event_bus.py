@@ -14,10 +14,9 @@ Design Principles:
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from typing import (
     TYPE_CHECKING,
-    Awaitable,
-    Callable,
     Generic,
     Literal,
     Protocol,
@@ -34,10 +33,6 @@ from omnibase_core.protocols.base import (
     ProtocolSemVer,
     T_co,
 )
-
-if TYPE_CHECKING:
-    pass
-
 
 # =============================================================================
 # Type Variables

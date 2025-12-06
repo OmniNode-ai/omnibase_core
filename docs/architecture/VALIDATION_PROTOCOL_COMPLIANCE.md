@@ -95,7 +95,7 @@ All existing methods remain unchanged and fully functional:
 
 ### Using ProtocolContractValidator
 
-```
+```python
 from omnibase_core.validation.contract_validator import ProtocolContractValidator
 from omnibase_spi.protocols.validation.protocol_compliance_validator import (
     ProtocolComplianceValidator
@@ -120,7 +120,7 @@ print(f"Valid: {result.is_valid}, Score: {result.score}")
 
 ### Using ModelProtocolAuditor
 
-```
+```python
 from omnibase_core.validation.auditor_protocol import ModelProtocolAuditor
 from omnibase_spi.protocols.validation.protocol_quality_validator import (
     ProtocolQualityValidator
@@ -162,7 +162,7 @@ print(f"Duplicates: {result.duplicates_found}")
 
 ### Running Tests
 
-```
+```bash
 # Run all validation tests (verify backward compatibility)
 poetry run pytest tests/unit/validation/ -v
 ```
@@ -205,7 +205,7 @@ Protocol method implementations will be added incrementally:
 
 No changes required! All existing code continues to work:
 
-```
+```python
 # This still works exactly as before
 validator = ProtocolContractValidator()
 result = validator.validate_contract_yaml(yaml_content)
@@ -213,7 +213,7 @@ result = validator.validate_contract_yaml(yaml_content)
 
 ### For New Code Using Protocols
 
-```
+```python
 # New code can use protocol types for flexibility
 from omnibase_spi.protocols.validation.protocol_compliance_validator import (
     ProtocolComplianceValidator
@@ -255,7 +255,7 @@ All changes are purely additive:
 ### Type Annotations
 
 Protocol attributes use union types with None to indicate optional dependencies:
-```
+```python
 self.onex_standards: ProtocolONEXStandards | None = None
 ```
 

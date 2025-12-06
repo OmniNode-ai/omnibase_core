@@ -211,7 +211,7 @@ class ModelOutputFormatOptions(BaseModel):
 
     def get_custom_option(self, key: str, default: T) -> T:
         """Get a custom format option with type safety."""
-        return cast(T, self.custom_options.get(key, default))
+        return cast("T", self.custom_options.get(key, default))
 
     @classmethod
     @allow_dict_any
@@ -268,7 +268,7 @@ class ModelOutputFormatOptions(BaseModel):
 
         # Convert known fields using registry
         kwargs_dict: TypedDictOutputFormatOptionsKwargs = cast(
-            TypedDictOutputFormatOptionsKwargs,
+            "TypedDictOutputFormatOptionsKwargs",
             registry.convert_data(data),
         )
 

@@ -69,7 +69,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         """Convert string node_id to UUID if needed."""
         if isinstance(v, str):
             return uuid_from_string(v, namespace="node")
-        return cast(UUID, v)
+        return cast("UUID", v)
 
     @classmethod
     def create_graceful_shutdown(

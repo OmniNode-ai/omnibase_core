@@ -91,7 +91,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         """Convert string node_id to UUID if needed."""
         if isinstance(v, str):
             return uuid_from_string(v, namespace="node")
-        return cast(UUID, v)
+        return cast("UUID", v)
 
     @field_validator("capabilities", mode="before")
     @classmethod
@@ -117,7 +117,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
                 version_introduced=ModelSemVer(major=1, minor=0, patch=0),
             )
 
-        return cast(ModelNodeCapability, v)
+        return cast("ModelNodeCapability", v)
 
     @classmethod
     def create_from_node_info(

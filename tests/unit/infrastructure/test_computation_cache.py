@@ -2,7 +2,7 @@
 Tests for ComputationCache - Caching layer for expensive computations.
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from omnibase_core.infrastructure.computation_cache import ComputationCache
 
@@ -76,8 +76,8 @@ class TestComputationCacheGet:
         """Test get() returns None and removes expired entry."""
         cache = ComputationCache()
 
-        # Manually create an expired entry
-        expired_time = datetime.now() - timedelta(minutes=1)
+        # Manually create an expired entry (use UTC for timezone-aware comparison)
+        expired_time = datetime.now(UTC) - timedelta(minutes=1)
         cache._cache["expired_key"] = ("value", expired_time, 1)
 
         result = cache.get("expired_key")
@@ -121,7 +121,7 @@ class TestComputationCachePut:
         cache.put("key", "value")
 
         _, expiry, _ = cache._cache["key"]
-        expected_expiry = datetime.now() + timedelta(minutes=30)
+        expected_expiry = datetime.now(UTC) + timedelta(minutes=30)
 
         # Allow 1 second tolerance for execution time
         assert abs((expiry - expected_expiry).total_seconds()) < 1
@@ -132,7 +132,7 @@ class TestComputationCachePut:
         cache.put("key", "value", ttl_minutes=60)
 
         _, expiry, _ = cache._cache["key"]
-        expected_expiry = datetime.now() + timedelta(minutes=60)
+        expected_expiry = datetime.now(UTC) + timedelta(minutes=60)
 
         # Allow 1 second tolerance
         assert abs((expiry - expected_expiry).total_seconds()) < 1
@@ -285,8 +285,8 @@ class TestComputationCacheGetStats:
         cache.put("valid1", "value1", ttl_minutes=60)
         cache.put("valid2", "value2", ttl_minutes=60)
 
-        # Manually add expired entries
-        expired_time = datetime.now() - timedelta(minutes=1)
+        # Manually add expired entries (use UTC for timezone-aware comparison)
+        expired_time = datetime.now(UTC) - timedelta(minutes=1)
         cache._cache["expired1"] = ("value", expired_time, 1)
         cache._cache["expired2"] = ("value", expired_time, 1)
 
@@ -303,8 +303,8 @@ class TestComputationCacheGetStats:
         # Valid entry
         cache.put("valid", "value", ttl_minutes=30)
 
-        # Expired entry
-        expired_time = datetime.now() - timedelta(minutes=1)
+        # Expired entry (use UTC for timezone-aware comparison)
+        expired_time = datetime.now(UTC) - timedelta(minutes=1)
         cache._cache["expired"] = ("value", expired_time, 1)
 
         stats = cache.get_stats()
@@ -373,8 +373,8 @@ class TestComputationCacheIntegration:
         """Test that TTL is properly enforced."""
         cache = ComputationCache(default_ttl_minutes=1)
 
-        # Add entry that will expire soon
-        expired_time = datetime.now() - timedelta(seconds=1)
+        # Add entry that will expire soon (use UTC for timezone-aware comparison)
+        expired_time = datetime.now(UTC) - timedelta(seconds=1)
         cache._cache["expired_key"] = ("value", expired_time, 1)
 
         # Try to get expired entry

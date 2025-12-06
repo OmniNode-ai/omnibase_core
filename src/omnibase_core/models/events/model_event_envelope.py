@@ -331,7 +331,7 @@ class ModelEventEnvelope(BaseModel, MixinLazyEvaluation, Generic[T]):
         """
         lazy_payload = self.lazy_string_conversion(
             cast(
-                Optional[BaseModel],
+                "BaseModel | None",
                 self.payload if hasattr(self.payload, "model_dump") else None,
             ),
             "payload",

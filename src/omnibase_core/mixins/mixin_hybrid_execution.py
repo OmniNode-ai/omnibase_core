@@ -239,7 +239,7 @@ class MixinHybridExecution(Generic[InputStateT, OutputStateT]):
 
             from typing import cast
 
-            return cast(OutputStateT, result)
+            return cast("OutputStateT", result)
 
         except (
             Exception

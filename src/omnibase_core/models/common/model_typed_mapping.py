@@ -136,7 +136,7 @@ class ModelTypedMapping(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Value for key '{key}' is not a string, got {container.type_name}",
             )
-        return cast(str, container.value)
+        return cast("str", container.value)
 
     def get_int(self, key: str, default: int | None = None) -> int | None:
         """Get an integer value with type safety."""
@@ -149,7 +149,7 @@ class ModelTypedMapping(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Value for key '{key}' is not an int, got {container.type_name}",
             )
-        return cast(int, container.value)
+        return cast("int", container.value)
 
     def get_bool(self, key: str, default: bool | None = None) -> bool | None:
         """Get a boolean value with type safety."""
@@ -162,7 +162,7 @@ class ModelTypedMapping(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Value for key '{key}' is not a bool, got {container.type_name}",
             )
-        return cast(bool, container.value)
+        return cast("bool", container.value)
 
     def has_key(self, key: str) -> bool:
         """Check if a key exists in the mapping."""

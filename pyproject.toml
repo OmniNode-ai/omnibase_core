@@ -265,6 +265,10 @@ extend_skip = [
 ]
 extend_skip_glob = ["tests/fixtures/validation/edge_cases/*.py"]
 
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
 [tool.mypy]
 plugins = ["pydantic.mypy"]
 python_version = "3.12"

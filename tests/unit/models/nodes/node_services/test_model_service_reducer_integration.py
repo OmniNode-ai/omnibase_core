@@ -7,7 +7,17 @@ Tests the integration of MixinNodeService with NodeReducer and supporting mixins
 - MixinMetrics
 
 Tests Method Resolution Order (MRO) correctness and mixin interaction patterns.
-Focuses on reducer-specific patterns: aggregation, state management, cache invalidation.
+Focuses on reducer-specific patterns: FSM state management, cache invalidation.
+
+v0.4.0 Architecture:
+    NodeReducer is now FSM-driven with:
+    - fsm_contract: ModelFSMSubcontract | None
+    - process(input_data: ModelReducerInput) -> ModelReducerOutput
+    - validate_contract() -> list[str]
+    - get_current_state() -> str | None
+    - get_state_history() -> list[str]
+    - is_complete() -> bool
+    - MixinFSMExecution methods: initialize_fsm_state(), execute_fsm_transition(), etc.
 """
 
 import inspect
@@ -528,7 +538,7 @@ class TestModelServiceReducerIntegration:
 
         Verifies:
         - MixinNodeService initialized
-        - NodeReducer initialized
+        - NodeReducer initialized (v0.4.0 FSM-driven)
         - MixinHealthCheck initialized
         - MixinCaching initialized (CRITICAL)
         - MixinMetrics initialized
@@ -540,10 +550,13 @@ class TestModelServiceReducerIntegration:
         assert hasattr(service, "_total_invocations")
         assert hasattr(service, "_shutdown_requested")
 
-        # Verify NodeReducer attributes
-        assert hasattr(service, "reduction_functions")
-        assert hasattr(service, "reduction_metrics")
-        assert hasattr(service, "active_windows")
+        # Verify NodeReducer attributes (v0.4.0 FSM-driven)
+        # Note: fsm_contract may be None if no contract is loaded
+        assert hasattr(service, "fsm_contract")
+        # FSM execution mixin methods
+        assert hasattr(service, "initialize_fsm_state")
+        assert hasattr(service, "execute_fsm_transition")
+        assert hasattr(service, "get_current_fsm_state")
 
         # Verify MixinHealthCheck attributes
         assert hasattr(service, "health_check")
@@ -596,7 +609,8 @@ class TestModelServiceReducerIntegration:
 
         # Verify service is functional (all mixins initialized)
         assert hasattr(service, "_service_running")
-        assert hasattr(service, "reduction_functions")
+        # v0.4.0: NodeReducer uses FSM-driven architecture with fsm_contract
+        assert hasattr(service, "fsm_contract")
         # Note: MixinCaching initialization may be optional depending on MRO
         # assert hasattr(service, "_cache_enabled")
 
@@ -608,7 +622,7 @@ class TestModelServiceReducerIntegration:
 
         Verifies:
         - MixinNodeService methods accessible
-        - NodeReducer methods accessible
+        - NodeReducer methods accessible (v0.4.0 FSM-driven)
         - MixinHealthCheck methods accessible
         - MixinCaching methods accessible (CRITICAL)
         - MixinMetrics methods accessible (if any)
@@ -623,13 +637,27 @@ class TestModelServiceReducerIntegration:
         assert callable(service_reducer.handle_tool_invocation)
         assert callable(service_reducer.get_service_health)
 
-        # NodeReducer methods
+        # NodeReducer methods (v0.4.0 FSM-driven)
         assert hasattr(service_reducer, "process")
-        assert hasattr(service_reducer, "register_reduction_function")
-        assert hasattr(service_reducer, "get_reduction_metrics")
+        assert hasattr(service_reducer, "validate_contract")
+        assert hasattr(service_reducer, "get_current_state")
+        assert hasattr(service_reducer, "get_state_history")
+        assert hasattr(service_reducer, "is_complete")
         assert callable(service_reducer.process)
-        assert callable(service_reducer.register_reduction_function)
-        assert callable(service_reducer.get_reduction_metrics)
+        assert callable(service_reducer.validate_contract)
+        assert callable(service_reducer.get_current_state)
+        assert callable(service_reducer.get_state_history)
+        assert callable(service_reducer.is_complete)
+
+        # MixinFSMExecution methods (inherited by NodeReducer)
+        assert hasattr(service_reducer, "initialize_fsm_state")
+        assert hasattr(service_reducer, "execute_fsm_transition")
+        assert hasattr(service_reducer, "get_current_fsm_state")
+        assert hasattr(service_reducer, "get_fsm_state_history")
+        assert callable(service_reducer.initialize_fsm_state)
+        assert callable(service_reducer.execute_fsm_transition)
+        assert callable(service_reducer.get_current_fsm_state)
+        assert callable(service_reducer.get_fsm_state_history)
 
         # MixinHealthCheck methods
         assert hasattr(service_reducer, "health_check")
@@ -707,9 +735,16 @@ class TestModelServiceReducerMRODetails:
         assert hasattr(service_class, "start_service_mode")
         assert hasattr(service_class, "stop_service_mode")
 
-        # NodeReducer methods
+        # NodeReducer methods (v0.4.0 FSM-driven)
         assert hasattr(service_class, "process")
-        assert hasattr(service_class, "register_reduction_function")
+        assert hasattr(service_class, "validate_contract")
+        assert hasattr(service_class, "get_current_state")
+        assert hasattr(service_class, "get_state_history")
+        assert hasattr(service_class, "is_complete")
+
+        # MixinFSMExecution methods (via NodeReducer)
+        assert hasattr(service_class, "initialize_fsm_state")
+        assert hasattr(service_class, "execute_fsm_transition")
 
         # MixinHealthCheck methods
         assert hasattr(service_class, "health_check")
@@ -732,7 +767,10 @@ class TestModelServiceReducerMRODetails:
 
         # Verify all mixin functionality is available
         assert service._service_running is False  # MixinNodeService
-        assert service.reduction_functions is not None  # NodeReducer
+        # v0.4.0: NodeReducer uses FSM-driven architecture with fsm_contract
+        assert hasattr(
+            service, "fsm_contract"
+        )  # NodeReducer (fsm_contract may be None)
         # Note: MixinCaching requires manual initialization in base ModelServiceReducer
         # assert service._cache_enabled is True  # MixinCaching
 

@@ -1,6 +1,6 @@
 # Quick Start Guide - omnibase_core
 
-**Status**: ✅ Complete
+**Status**: ✅ Complete (Updated for v0.4.0)
 **Estimated Time**: 10 minutes
 
 ## Your First 10 Minutes with ONEX
@@ -17,13 +17,15 @@ This guide gets you building ONEX nodes as quickly as possible. You'll create a 
 
 A simple COMPUTE node that doubles numbers - demonstrating how to use ONEX convenience wrappers with minimal boilerplate.
 
-## The Four Convenience Wrappers
+## The Four Node Types (v0.4.0)
 
-ONEX provides pre-configured convenience classes for each node type. These eliminate 80+ lines of boilerplate initialization:
+ONEX v0.4.0 provides four pre-configured node classes for each architectural role. These eliminate 80+ lines of boilerplate initialization:
+
+> **Note**: In v0.4.0, `NodeReducer` is FSM-driven (finite state machine) and `NodeOrchestrator` is workflow-driven. Legacy implementations are available in `omnibase_core.nodes.legacy` if needed.
 
 ### **NodeCompute** - Data Processing
-```
-from omnibase_core.nodes.node_compute import NodeCompute
+```python
+from omnibase_core.nodes import NodeCompute
 
 class NodeMyCompute(NodeCompute):
     async def process(self, input_data):
@@ -34,8 +36,8 @@ class NodeMyCompute(NodeCompute):
 **Includes**: Caching layer, parallel processing, computation registry, performance monitoring
 
 ### **NodeEffect** - External Interactions
-```
-from omnibase_core.nodes.node_effect import NodeEffect
+```python
+from omnibase_core.nodes import NodeEffect
 
 class NodeMyEffect(NodeEffect):
     async def process(self, input_data):
@@ -45,21 +47,21 @@ class NodeMyEffect(NodeEffect):
 
 **Includes**: Transaction management, circuit breakers, retry policies, file operations, event emission
 
-### **NodeReducer** - State Management
-```
-from omnibase_core.nodes.node_reducer import NodeReducer
+### **NodeReducer** - FSM-Driven State Management
+```python
+from omnibase_core.nodes import NodeReducer
 
 class NodeMyReducer(NodeReducer):
     async def process(self, input_data):
-        # Aggregate state, reduce data, manage FSM
+        # Aggregate state, reduce data, manage FSM transitions
         return result
 ```
 
-**Includes**: Streaming support, conflict resolution, reduction functions, batch processing
+**Includes**: FSM-driven state transitions, streaming support, conflict resolution, reduction functions, batch processing
 
-### **NodeOrchestrator** - Workflow Coordination
-```
-from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+### **NodeOrchestrator** - Workflow-Driven Coordination
+```python
+from omnibase_core.nodes import NodeOrchestrator
 
 class NodeMyOrchestrator(NodeOrchestrator):
     async def process(self, input_data):
@@ -67,7 +69,7 @@ class NodeMyOrchestrator(NodeOrchestrator):
         return result
 ```
 
-**Includes**: Action emission (thunks), dependency management, parallel coordination, load balancing
+**Includes**: Workflow-driven execution, action emission (thunks), dependency management, parallel coordination, load balancing
 
 ---
 
@@ -77,7 +79,7 @@ Let's build a simple number doubler using **NodeCompute** to see how easy it is.
 
 ## Step 1: Create Your Project
 
-```
+```bash
 # Create a new directory for your project
 mkdir my-first-onex-node
 cd my-first-onex-node
@@ -98,12 +100,13 @@ touch src/my_project/nodes/__init__.py
 
 **File**: `src/my_project/nodes/node_doubler_compute.py`
 
-```
+```python
 """A simple COMPUTE node that doubles numbers."""
 
-from typing import Dict, Any
-from omnibase_core.nodes.node_compute import NodeCompute
+from typing import Any, Dict
+
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes import NodeCompute
 
 
 class NodeDoublerCompute(NodeCompute):
@@ -155,9 +158,9 @@ class NodeDoublerCompute(NodeCompute):
         }
 ```
 
-> **💡 Why Use Convenience Wrappers?**
+> **💡 Why Use the Four Node Types?**
 >
-> ONEX provides four pre-configured convenience wrappers (**NodeCompute**, **NodeEffect**, **NodeReducer**, **NodeOrchestrator**):
+> ONEX v0.4.0 provides four pre-configured node classes (**NodeCompute**, **NodeEffect**, **NodeReducer**, **NodeOrchestrator**):
 > - ✅ Eliminate 80+ lines of boilerplate initialization
 > - ✅ Include all necessary mixins (caching, logging, metrics, error handling)
 > - ✅ Production-ready with best-practice patterns
@@ -166,8 +169,8 @@ class NodeDoublerCompute(NodeCompute):
 > **When to use each**:
 > - **NodeCompute**: Pure data processing (calculations, transformations, validations)
 > - **NodeEffect**: External interactions (APIs, databases, file systems, events)
-> - **NodeReducer**: State aggregation (streaming data, conflict resolution, FSM)
-> - **NodeOrchestrator**: Workflow coordination (multi-step workflows, dependencies, parallel execution)
+> - **NodeReducer**: FSM-driven state aggregation (streaming data, conflict resolution, state machines)
+> - **NodeOrchestrator**: Workflow-driven coordination (multi-step workflows, dependencies, parallel execution)
 >
 > For detailed guides on each type, see:
 > - [COMPUTE Tutorial](../guides/node-building/03_COMPUTE_NODE_TUTORIAL.md)
@@ -179,12 +182,13 @@ class NodeDoublerCompute(NodeCompute):
 
 **File**: `tests/test_doubler.py`
 
-```
+```python
 """Tests for the doubler compute node."""
 
 import pytest
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
 from my_project.nodes.node_doubler_compute import NodeDoublerCompute
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
 @pytest.fixture
@@ -252,7 +256,7 @@ async def test_non_numeric_value_raises_error(doubler_node):
 
 ## Step 4: Run Your Tests
 
-```
+```bash
 # Run the tests
 poetry run pytest tests/test_doubler.py -v
 
@@ -269,12 +273,13 @@ poetry run pytest tests/test_doubler.py -v
 
 **File**: `example_usage.py`
 
-```
+```python
 """Example usage of the doubler node."""
 
 import asyncio
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
 from my_project.nodes.node_doubler_compute import NodeDoublerCompute
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 
 async def main():
@@ -308,7 +313,7 @@ if __name__ == "__main__":
 
 Run it:
 
-```
+```bash
 poetry run python example_usage.py
 
 # Expected output:
@@ -322,9 +327,9 @@ poetry run python example_usage.py
 
 ## What Just Happened?
 
-You created a production-ready COMPUTE node with:
+You created a production-ready COMPUTE node with v0.4.0 architecture:
 
-- ✅ **Convenience Wrapper** - NodeCompute eliminates 80+ lines of boilerplate
+- ✅ **NodeCompute (v0.4.0)** - Pre-configured COMPUTE node eliminates 80+ lines of boilerplate
 - ✅ **Zero setup** - All mixins pre-configured (caching, logging, metrics, error handling)
 - ✅ **Built-in caching** - Automatic result caching for expensive computations
 - ✅ **Type safety** - Proper typing and validation
@@ -335,7 +340,7 @@ You created a production-ready COMPUTE node with:
 
 ## Key ONEX Concepts You Used
 
-1. **NodeCompute (Convenience Wrapper)** - Pre-configured COMPUTE node with caching and parallel processing
+1. **NodeCompute** - Pre-configured COMPUTE node with caching and parallel processing (v0.4.0)
 2. **Container Pattern** - Dependency injection via ModelONEXContainer
 3. **Async Processing** - Non-blocking computation with async/await
 4. **Error Handling** - Proper exception management
@@ -345,21 +350,23 @@ You created a production-ready COMPUTE node with:
 
 Choose your learning path:
 
-### 🚀 **Build Each Node Type** (Recommended)
+### **Build Each Node Type** (Recommended)
 
-Start building with the other convenience wrappers:
+Start building with the other v0.4.0 node types:
 
 1. **[EFFECT Tutorial](../guides/node-building/04_EFFECT_NODE_TUTORIAL.md)** - Build a file backup system
    - Learn: Transaction management, circuit breakers, retry policies
    - Use case: APIs, databases, file operations, event emission
 
 2. **[REDUCER Tutorial](../guides/node-building/05_REDUCER_NODE_TUTORIAL.md)** - Build a metrics aggregator
-   - Learn: Streaming data, conflict resolution, batch processing
+   - Learn: FSM-driven state transitions, streaming data, conflict resolution
    - Use case: State machines, data aggregation, reduce operations
+   - **v0.4.0**: Now FSM-driven (finite state machine based)
 
 3. **[ORCHESTRATOR Tutorial](../guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md)** - Build a workflow coordinator
-   - Learn: Action emission (thunks), dependency management, parallel execution
+   - Learn: Workflow-driven execution, action emission (thunks), dependency management
    - Use case: Multi-step workflows, coordinating multiple nodes
+   - **v0.4.0**: Now workflow-driven with declarative step definitions
 
 ### 📚 **Deep Dive**
 - [First Node Tutorial](FIRST_NODE.md) - Complete example with Pydantic models
@@ -371,7 +378,7 @@ Start building with the other convenience wrappers:
 
 ### Add Input/Output Models
 
-```
+```python
 from pydantic import BaseModel, Field
 
 class DoublerInput(BaseModel):
@@ -385,7 +392,7 @@ class DoublerOutput(BaseModel):
 
 ### Add Caching
 
-```
+```python
 def __init__(self, container: ModelONEXContainer):
     super().__init__(container)
     self._cache = {}  # Simple cache
@@ -402,7 +409,7 @@ async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
 
 ### Add Logging
 
-```
+```python
 import logging
 
 logger = logging.getLogger(__name__)
@@ -418,17 +425,17 @@ async def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
 
 ### Import Errors
 
-```
+```bash
 # Ensure you're in the virtual environment
 poetry shell
 
-# Check installation
-poetry run python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('OK')"
+# Check installation (v0.4.0 import style)
+poetry run python -c "from omnibase_core.nodes import NodeCompute; print('OK')"
 ```
 
 ### Test Failures
 
-```
+```bash
 # Run with verbose output
 poetry run pytest tests/test_doubler.py -vvs
 
@@ -438,7 +445,7 @@ poetry run pytest tests/test_doubler.py::test_double_positive_number -v
 
 ### Type Checking
 
-```
+```bash
 # Install mypy
 poetry add --group dev mypy
 
@@ -448,12 +455,12 @@ poetry run mypy src/my_project/nodes/node_doubler_compute.py
 
 ## Summary
 
-🎉 **Congratulations!** You've built your first ONEX node using convenience wrappers!
+**Congratulations!** You've built your first ONEX node using the v0.4.0 architecture!
 
 You now understand:
-- ✅ How to use **NodeCompute** convenience wrapper
+- ✅ How to use **NodeCompute** (v0.4.0 architecture)
 - ✅ The four node types (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)
-- ✅ What mixins each wrapper includes
+- ✅ FSM-driven **NodeReducer** and workflow-driven **NodeOrchestrator**
 - ✅ ONEX 4-node architecture patterns
 - ✅ Async processing with proper error handling
 - ✅ Testing strategies

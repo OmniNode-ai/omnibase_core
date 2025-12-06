@@ -252,7 +252,7 @@ def get_action_registry() -> ModelActionRegistry:
 
     try:
         container = get_model_onex_container_sync()
-        registry = cast(ModelActionRegistry, container.action_registry())
+        registry = cast("ModelActionRegistry", container.action_registry())
 
         # Auto-bootstrap if empty
         if len(registry.get_all_actions()) == 0:
@@ -279,7 +279,7 @@ def reset_action_registry() -> None:
 
     try:
         container = get_model_onex_container_sync()
-        registry = cast(ModelActionRegistry, container.action_registry())
+        registry = cast("ModelActionRegistry", container.action_registry())
         registry.clear()
     except Exception:
         # If container is not initialized, nothing to reset

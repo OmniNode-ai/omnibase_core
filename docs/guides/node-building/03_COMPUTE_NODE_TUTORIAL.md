@@ -91,7 +91,7 @@ poetry add --group dev pytest pytest-asyncio
 ### 3. Verify Installation
 
 ```
-poetry run python -c "from omnibase_core.infrastructure.node_core_base import NodeCoreBase; print('✓ Ready!')"
+poetry run python -c "from omnibase_core.nodes import NodeCompute; print('✓ Ready!')"
 ```
 
 ## Step 1: Define Input Model
@@ -524,12 +524,12 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
 | **Production Ready** | ✅ Yes | ⚠️ Requires configuration |
 | **Use Case** | 95% of applications | Custom mixin composition |
 
-### 🔧 ADVANCED: Using NodeCompute Base Class
+### ADVANCED: Using NodeCompute Base Class
 
 For **5% of use cases** where you need custom mixin composition:
 
 ```
-from omnibase_core.nodes.node_compute import NodeCompute
+from omnibase_core.nodes import NodeCompute
 from omnibase_core.mixins import MixinCustomBehavior
 
 class NodePriceCalculatorCompute(NodeCompute, MixinCustomBehavior):
@@ -893,7 +893,7 @@ You've successfully built a COMPUTE node! Now:
 ```
 # If you see import errors
 poetry install
-poetry run python -c "from omnibase_core.infrastructure.node_core_base import NodeCoreBase"
+poetry run python -c "from omnibase_core.nodes import NodeCompute"
 ```
 
 ### Type Checking Failures

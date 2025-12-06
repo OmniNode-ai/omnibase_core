@@ -71,7 +71,12 @@ import time
 from contextlib import asynccontextmanager
 
 from pydantic import ValidationError
-from omnibase_core.nodes.node_compute import NodeCompute
+# v0.4.0 unified node imports
+from omnibase_core.nodes import (
+    NodeCompute,
+    ModelComputeInput,
+    ModelComputeOutput,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_onex_warning import ModelONEXWarning
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer

@@ -247,7 +247,7 @@ class MixinDiscoveryResponder:
             # Extract event from envelope and cast to OnexEvent for type safety
             event = envelope.payload
             # Type cast for mypy - event is ModelOnexEvent after extraction
-            onex_event = cast(OnexEvent, event)
+            onex_event = cast("OnexEvent", event)
 
             # STRICT: Event must have event_type attribute
             if not hasattr(onex_event, "event_type"):

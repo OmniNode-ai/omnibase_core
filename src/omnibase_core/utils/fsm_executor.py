@@ -8,7 +8,7 @@ Typing: Strongly typed with strategic Any usage for runtime context flexibility.
 Context dictionaries use dict[str, Any] as they contain dynamic execution data.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -173,7 +173,7 @@ async def execute_transition(
                     "state": transition.to_state,
                     "previous_state": current_state,
                     "context": context,
-                    "timestamp": datetime.now().isoformat(),
+                    "timestamp": datetime.now(UTC).isoformat(),
                 },
                 priority=1,  # High priority for persistence
             )

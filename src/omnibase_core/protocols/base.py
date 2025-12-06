@@ -17,9 +17,6 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Literal, Protocol, TypeVar, runtime_checkable
 
-if TYPE_CHECKING:
-    pass
-
 # =============================================================================
 # Type Variables
 # =============================================================================

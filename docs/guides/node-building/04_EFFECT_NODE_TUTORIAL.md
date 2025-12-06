@@ -307,10 +307,9 @@ from uuid import UUID
 
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
-from omnibase_core.models.model_effect_input import ModelEffectInput
-from omnibase_core.models.model_effect_output import ModelEffectOutput
+from omnibase_core.nodes import ModelEffectInput, ModelEffectOutput
 from omnibase_core.enums.enum_effect_types import EnumEffectType
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -671,7 +670,7 @@ class NodeFileBackupEffect(ModelServiceEffect):
 For **5% of use cases** where you need custom mixin composition:
 
 ```
-from omnibase_core.nodes.node_effect import NodeEffect
+from omnibase_core.nodes import NodeEffect
 from omnibase_core.mixins import MixinCustomTransactions
 
 class NodeFileBackupEffect(NodeEffect, MixinCustomTransactions):
@@ -1007,6 +1006,6 @@ await node.transaction_context(operation_id)  # Transaction mgmt
 
 ---
 
-**Last Updated**: 2025-01-18
-**Framework Version**: omnibase_core 2.0+
-**Tutorial Status**: ✅ Complete
+**Last Updated**: 2025-12-05
+**Framework Version**: omnibase_core 0.4.0+
+**Tutorial Status**: Complete

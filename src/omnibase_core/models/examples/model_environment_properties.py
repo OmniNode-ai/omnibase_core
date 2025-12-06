@@ -60,21 +60,21 @@ class ModelEnvironmentProperties(BaseModel):
         try:
             # Use ModelPropertyValue's type-safe accessors based on expected type
             if expected_type == str:
-                return cast(T, prop_value.as_string())
+                return cast("T", prop_value.as_string())
             if expected_type == int:
-                return cast(T, prop_value.as_int())
+                return cast("T", prop_value.as_int())
             if expected_type == float:
-                return cast(T, prop_value.as_float())
+                return cast("T", prop_value.as_float())
             if expected_type == bool:
-                return cast(T, prop_value.as_bool())
+                return cast("T", prop_value.as_bool())
             if expected_type == list[Any] or get_origin(expected_type) is list[Any]:
                 # Handle list[Any]types
                 if hasattr(prop_value, "value") and isinstance(prop_value.value, list):
-                    return cast(T, [str(item) for item in prop_value.value])
+                    return cast("T", [str(item) for item in prop_value.value])
                 # Try string conversion for comma-separated values
                 str_val = prop_value.as_string()
                 return cast(
-                    T,
+                    "T",
                     [item.strip() for item in str_val.split(",") if item.strip()],
                 )
             if hasattr(prop_value, "value") and isinstance(

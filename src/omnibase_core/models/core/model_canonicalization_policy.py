@@ -33,4 +33,4 @@ class ModelCanonicalizationPolicy(BaseModel):
         """Apply canonicalization to body content."""
         from typing import cast
 
-        return cast(str, self.canonicalize_body(body))
+        return cast("str", self.canonicalize_body(body))

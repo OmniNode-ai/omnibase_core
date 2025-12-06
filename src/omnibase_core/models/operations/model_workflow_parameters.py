@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -195,10 +197,12 @@ class ModelWorkflowParameters(BaseModel):
 
     def get_id(self) -> str:
         """Get unique identifier (Identifiable protocol)."""
-        # Create deterministic ID from workflow parameters
+        # Create deterministic ID from workflow parameters using SHA256
         param_names = sorted(self.workflow_parameters.keys())
         if param_names:
-            return f"workflow_params_{hash('_'.join(param_names))}"
+            key_str = "_".join(param_names)
+            key_hash = hashlib.sha256(key_str.encode()).hexdigest()[:16]
+            return f"workflow_params_{key_hash}"
         raise ModelOnexError(
             message=f"{self.__class__.__name__} must have a valid ID field "
             f"(type_id, id, uuid, identifier, etc.). "

@@ -17,10 +17,6 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from omnibase_core.protocols.types import ProtocolNodeMetadataBlock
 
-if TYPE_CHECKING:
-    pass
-
-
 # =============================================================================
 # Schema Model Protocol
 # =============================================================================

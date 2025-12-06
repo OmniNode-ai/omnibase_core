@@ -75,12 +75,16 @@ from datetime import datetime
 from typing import Dict, List, Optional, Union, Any, Pattern, Callable
 from uuid import UUID, uuid4
 
-from omnibase_core.models.model_effect_input import ModelEffectInput
-from omnibase_core.models.model_effect_output import ModelEffectOutput
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
+# v0.4.0 unified node imports
+from omnibase_core.nodes import (
+    NodeEffect,
+    ModelEffectInput,
+    ModelEffectOutput,
+    ModelEffectTransaction,
+)
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer as ONEXContainer
 from omnibase_core.enums.node import EnumHealthStatus
-from omnibase_core.model.core.model_health_status import ModelHealthStatus
+from omnibase_core.models.health.model_health_status import ModelHealthStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -90,7 +94,7 @@ from .models.model_{MICROSERVICE_NAME}_config import Model{MICROSERVICE_NAME_PAS
 from .enums.enum_{MICROSERVICE_NAME}_operation_type import Enum{MICROSERVICE_NAME_PASCAL}OperationType
 
 
-class Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect(ModelServiceEffect):
+class Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect(NodeEffect):
     """
     {DOMAIN} {MICROSERVICE_NAME} Effect Node - ONEX 4-Node Architecture Implementation.
 
@@ -1094,7 +1098,9 @@ This EFFECT node provides {DOMAIN} {MICROSERVICE_NAME} capabilities as a special
 
 ## Quick Start
 
-```
+```python
+# v0.4.0 imports - use unified node imports
+from omnibase_core.nodes import NodeEffect, ModelEffectInput, ModelEffectOutput
 from {REPOSITORY_NAME}.nodes.node_{DOMAIN}_{MICROSERVICE_NAME}_effect import (
     Node{DOMAIN_PASCAL}{MICROSERVICE_NAME_PASCAL}Effect,
     Model{MICROSERVICE_NAME_PASCAL}Input,
@@ -1102,6 +1108,7 @@ from {REPOSITORY_NAME}.nodes.node_{DOMAIN}_{MICROSERVICE_NAME}_effect import (
 )
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from uuid import uuid4
+import time
 
 # Initialize node
 container = ModelONEXContainer()

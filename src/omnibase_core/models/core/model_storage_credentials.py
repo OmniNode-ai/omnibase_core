@@ -17,23 +17,23 @@ class ModelStorageCredentials(BaseModel):
     information for various storage systems.
     """
 
-    username: Optional[str] = Field(
+    username: str | None = Field(
         description="Username for authentication", default=None
     )
 
-    password: Optional[SecretStr] = Field(
+    password: SecretStr | None = Field(
         description="Password for authentication (secure)", default=None
     )
 
-    api_key: Optional[SecretStr] = Field(
+    api_key: SecretStr | None = Field(
         description="API key for authentication (secure)", default=None
     )
 
-    token: Optional[SecretStr] = Field(
+    token: SecretStr | None = Field(
         description="Bearer token for authentication (secure)", default=None
     )
 
-    connection_string: Optional[SecretStr] = Field(
+    connection_string: SecretStr | None = Field(
         description="Complete connection string (secure)", default=None
     )
 

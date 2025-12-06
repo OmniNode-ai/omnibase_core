@@ -38,7 +38,7 @@ class ModelStorageListResult(BaseModel):
 
     limit: int = Field(description="Limit used for this query", default=0)
 
-    error_message: Optional[str] = Field(
+    error_message: str | None = Field(
         description="Error message if operation failed", default=None
     )
 

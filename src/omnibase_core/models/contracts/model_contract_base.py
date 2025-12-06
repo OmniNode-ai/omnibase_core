@@ -183,7 +183,7 @@ class ModelContractBase(BaseModel, ABC):
         cls._validate_dependencies_basic_checks(v)
 
         # Cast to list[Any]after validation - we know it's a list[Any]after basic checks
-        validated_list = cast(list[object], v)
+        validated_list = cast("list[object]", v)
 
         # Delegate to batch processing
         return cls._validate_dependencies_batch_processing(validated_list)
@@ -306,19 +306,19 @@ class ModelContractBase(BaseModel, ABC):
         # Immediate rejection of invalid types with batch error messages
         if categorized["string_deps"] or categorized["invalid_deps"]:
             # Cast to expected types - we know string_deps contains strings
-            string_deps = cast(list[tuple[int, str]], categorized["string_deps"])
+            string_deps = cast("list[tuple[int, str]]", categorized["string_deps"])
             cls._raise_batch_validation_errors(string_deps, categorized["invalid_deps"])
 
         # Batch process valid ModelDependency instances
         result_deps: list[ModelDependency] = [
-            cast(ModelDependency, item) for _, item in categorized["model_deps"]
+            cast("ModelDependency", item) for _, item in categorized["model_deps"]
         ]
 
         # Batch convert dict dependencies to ModelDependency
         if categorized["dict_deps"]:
             # Cast to expected type - we know dict_deps contains dicts
             dict_deps = cast(
-                list[tuple[int, dict[str, object]]],
+                "list[tuple[int, dict[str, object]]]",
                 categorized["dict_deps"],
             )
             result_deps.extend(cls._batch_convert_dict_dependencies(dict_deps))

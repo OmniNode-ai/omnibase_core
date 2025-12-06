@@ -114,7 +114,17 @@ from contextlib import asynccontextmanager
 from enum import Enum
 
 from pydantic import ValidationError
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceOrchestrator
+# v0.4.0 unified node imports
+from omnibase_core.nodes import (
+    NodeOrchestrator,
+    ModelOrchestratorInput,
+    ModelOrchestratorOutput,
+    # Workflow-related enums for coordination
+    EnumActionType,
+    EnumBranchCondition,
+    EnumExecutionMode,
+    EnumWorkflowState,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.model_onex_warning import ModelONEXWarning
 from omnibase_core.utils.error_sanitizer import ErrorSanitizer
@@ -136,17 +146,22 @@ from .utils.workflow_scheduler import WorkflowScheduler
 
 
 class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(
-    ModelServiceOrchestrator[
+    NodeOrchestrator[
         Model{DomainCamelCase}{MicroserviceCamelCase}OrchestratorInput,
         Model{DomainCamelCase}{MicroserviceCamelCase}OrchestratorOutput,
         {DomainCamelCase}{MicroserviceCamelCase}OrchestratorConfig
     ],
     CircuitBreakerMixin
 ):
-    """ORCHESTRATOR node for {DOMAIN} {MICROSERVICE_NAME} workflow coordination.
+    """Workflow-driven ORCHESTRATOR node for {DOMAIN} {MICROSERVICE_NAME} coordination.
 
     This node provides comprehensive workflow orchestration services for {DOMAIN}
     domain operations, managing complex multi-step processes and node interactions.
+
+    v0.4.0 Architecture:
+    - NodeOrchestrator provides MixinWorkflowExecution for workflow-driven coordination
+    - Uses EnumActionType, EnumBranchCondition, EnumExecutionMode, EnumWorkflowState
+    - Lease-based ownership with optimistic concurrency control
 
     Key Features:
     - Sub-{PERFORMANCE_TARGET}ms workflow initiation
@@ -521,8 +536,8 @@ class Node{DomainCamelCase}{MicroserviceCamelCase}Orchestrator(
         Returns:
             ModelAction with lease_id and epoch for orchestrator ownership
         """
-        from omnibase_core.models.model_action import ModelAction
-        from omnibase_core.enums.enum_action_type import EnumActionType
+        # EnumActionType already imported from omnibase_core.nodes
+        from omnibase_core.models.orchestrator.model_action import ModelAction
 
         # Map step definition to action type
         action_type_mapping = {

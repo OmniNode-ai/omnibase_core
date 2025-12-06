@@ -278,7 +278,7 @@ class ProtocolMigrator:
         # Pre-migration steps
         steps.append(
             cast(
-                TypedDictMigrationStepDict,
+                "TypedDictMigrationStepDict",
                 {
                     "phase": "preparation",
                     "action": "backup_source",
@@ -290,7 +290,7 @@ class ProtocolMigrator:
 
         steps.append(
             cast(
-                TypedDictMigrationStepDict,
+                "TypedDictMigrationStepDict",
                 {
                     "phase": "preparation",
                     "action": "validate_spi_structure",
@@ -306,7 +306,7 @@ class ProtocolMigrator:
 
             steps.append(
                 cast(
-                    TypedDictMigrationStepDict,
+                    "TypedDictMigrationStepDict",
                     {
                         "phase": "migration",
                         "action": "migrate_protocol",
@@ -323,7 +323,7 @@ class ProtocolMigrator:
         # Post-migration steps
         steps.append(
             cast(
-                TypedDictMigrationStepDict,
+                "TypedDictMigrationStepDict",
                 {
                     "phase": "finalization",
                     "action": "update_imports",
@@ -335,7 +335,7 @@ class ProtocolMigrator:
 
         steps.append(
             cast(
-                TypedDictMigrationStepDict,
+                "TypedDictMigrationStepDict",
                 {
                     "phase": "finalization",
                     "action": "run_tests",

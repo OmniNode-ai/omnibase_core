@@ -19,7 +19,7 @@ class MixinLazyValue(Generic[T]):
         """
         self._func = func
         self._cache = cache
-        self._cached_value: Optional[T] = None
+        self._cached_value: T | None = None
         self._computed = False
 
     def get(self) -> T:
@@ -27,7 +27,7 @@ class MixinLazyValue(Generic[T]):
         if not self._computed or not self._cache:
             self._cached_value = self._func()
             self._computed = True
-        return cast(T, self._cached_value)
+        return cast("T", self._cached_value)
 
     def __call__(self) -> T:
         """Allow MixinLazyValue to be called directly."""

@@ -22,6 +22,7 @@ Author: ONEX Framework Team
 """
 
 import asyncio
+import hashlib
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -122,7 +123,9 @@ class NodeCompute(NodeCoreBase):
         Raises:
             ModelOnexError: If computation fails or performance threshold exceeded
         """
-        start_time = time.time()
+        # Use time.perf_counter() for accurate duration measurement
+        # (monotonic, unaffected by system clock adjustments)
+        start_time = time.perf_counter()
 
         try:
             self._validate_compute_input(input_data)
@@ -154,7 +157,7 @@ class NodeCompute(NodeCoreBase):
                 result = await self._execute_sequential_computation(input_data)
                 parallel_used = False
 
-            processing_time = (time.time() - start_time) * 1000
+            processing_time = (time.perf_counter() - start_time) * 1000
 
             # Validate performance threshold
             if processing_time > self.performance_threshold_ms:
@@ -195,7 +198,7 @@ class NodeCompute(NodeCoreBase):
             )
 
         except Exception as e:
-            processing_time = (time.time() - start_time) * 1000
+            processing_time = (time.perf_counter() - start_time) * 1000
 
             self._update_specialized_metrics(
                 self.computation_metrics,
@@ -356,9 +359,11 @@ class NodeCompute(NodeCoreBase):
             )
 
     def _generate_cache_key(self, input_data: ModelComputeInput[Any]) -> str:
-        """Generate cache key for computation input."""
+        """Generate deterministic cache key for computation input."""
         data_str = str(input_data.data)
-        return f"{input_data.computation_type}:{hash(data_str)}"
+        # Use hashlib for deterministic hashing across Python processes
+        data_hash = hashlib.sha256(data_str.encode()).hexdigest()
+        return f"{input_data.computation_type}:{data_hash}"
 
     def _supports_parallel_execution(self, input_data: ModelComputeInput[Any]) -> bool:
         """Check if computation supports parallel execution."""
@@ -402,7 +407,7 @@ class NodeCompute(NodeCoreBase):
                 context={"node_id": str(self.node_id)},
             )
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             self.thread_pool, computation_func, input_data.data
         )

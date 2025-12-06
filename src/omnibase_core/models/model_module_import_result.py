@@ -16,8 +16,8 @@ class ModelModuleImportResult:
 
     module_name: str
     status: EnumImportStatus
-    error_message: Optional[str] = None
-    file_path: Optional[str] = None
+    error_message: str | None = None
+    file_path: str | None = None
 
     @property
     def is_successful(self) -> bool:

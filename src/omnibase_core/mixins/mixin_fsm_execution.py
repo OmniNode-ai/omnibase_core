@@ -28,8 +28,7 @@ class MixinFSMExecution:
     custom code. State transitions are driven entirely by FSM subcontract.
 
     Usage:
-        # Note: Use NodeCoreBase for now. NodeReducerDeclarative coming in Phase 3.
-        class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
+        class NodeMyReducer(NodeReducer, MixinFSMExecution):
             # No custom FSM code needed - driven by YAML contract
             pass
 

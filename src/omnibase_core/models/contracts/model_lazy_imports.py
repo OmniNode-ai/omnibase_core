@@ -56,7 +56,7 @@ class ModelLazyContractLoader:
 
             module = import_module("omnibase_core.models.contracts.model_contract_base")
             self._cache["ModelContractBase"] = module.ModelContractBase
-        return cast(type["ModelContractBase"], self._cache["ModelContractBase"])
+        return cast("type[ModelContractBase]", self._cache["ModelContractBase"])
 
     @functools.cache
     def get_contract_compute(self) -> type["ModelContractCompute"]:
@@ -73,7 +73,7 @@ class ModelLazyContractLoader:
                 "omnibase_core.models.contracts.model_contract_compute"
             )
             self._cache["ModelContractCompute"] = module.ModelContractCompute
-        return cast(type["ModelContractCompute"], self._cache["ModelContractCompute"])
+        return cast("type[ModelContractCompute]", self._cache["ModelContractCompute"])
 
     @functools.cache
     def get_contract_effect(self) -> type["ModelContractEffect"]:
@@ -90,7 +90,7 @@ class ModelLazyContractLoader:
                 "omnibase_core.models.contracts.model_contract_effect"
             )
             self._cache["ModelContractEffect"] = module.ModelContractEffect
-        return cast(type["ModelContractEffect"], self._cache["ModelContractEffect"])
+        return cast("type[ModelContractEffect]", self._cache["ModelContractEffect"])
 
     @functools.cache
     def get_contract_reducer(self) -> type["ModelContractReducer"]:
@@ -107,7 +107,7 @@ class ModelLazyContractLoader:
                 "omnibase_core.models.contracts.model_contract_reducer"
             )
             self._cache["ModelContractReducer"] = module.ModelContractReducer
-        return cast(type["ModelContractReducer"], self._cache["ModelContractReducer"])
+        return cast("type[ModelContractReducer]", self._cache["ModelContractReducer"])
 
     @functools.cache
     def get_contract_orchestrator(self) -> type["ModelContractOrchestrator"]:
@@ -125,7 +125,7 @@ class ModelLazyContractLoader:
             )
             self._cache["ModelContractOrchestrator"] = module.ModelContractOrchestrator
         return cast(
-            type["ModelContractOrchestrator"],
+            "type[ModelContractOrchestrator]",
             self._cache["ModelContractOrchestrator"],
         )
 

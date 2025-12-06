@@ -2555,8 +2555,7 @@ mixin_fsm_execution:
   # Generated code patterns
   code_patterns:
     basic_usage: |
-      # Note: Use NodeCoreBase for now. NodeReducerDeclarative coming in Phase 3.
-      class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
+      class NodeMyReducer(NodeReducer, MixinFSMExecution):
           async def process(self, input_data):
               # FSM-driven processing
               result = await self.execute_fsm_transition(
@@ -2571,8 +2570,7 @@ mixin_fsm_execution:
               )
 
     with_validation: |
-      # Note: Use NodeCoreBase for now. NodeReducerDeclarative coming in Phase 3.
-      class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
+      class NodeMyReducer(NodeReducer, MixinFSMExecution):
           def __init__(self, container, contract):
               super().__init__(container)
               self.contract = contract
@@ -2592,8 +2590,7 @@ mixin_fsm_execution:
               return instance
 
     with_terminal_check: |
-      # Note: Use NodeCoreBase for now. NodeReducerDeclarative coming in Phase 3.
-      class NodeMyReducer(NodeCoreBase, MixinFSMExecution):
+      class NodeMyReducer(NodeReducer, MixinFSMExecution):
           async def process(self, input_data):
               # Execute transition
               result = await self.execute_fsm_transition(
@@ -2874,7 +2871,7 @@ mixin_workflow_execution:
   # Generated code patterns
   code_patterns:
     basic_usage: |
-      class NodeMyOrchestrator(NodeOrchestratorDeclarative, MixinWorkflowExecution):
+      class NodeMyOrchestrator(NodeOrchestrator, MixinWorkflowExecution):
           async def process(self, input_data):
               # Workflow-driven orchestration
               result = await self.execute_workflow_from_contract(
@@ -2890,21 +2887,28 @@ mixin_workflow_execution:
               )
 
     with_validation: |
-      class NodeMyOrchestrator(NodeOrchestratorDeclarative, MixinWorkflowExecution):
+      class NodeMyOrchestrator(NodeOrchestrator, MixinWorkflowExecution):
           def __init__(self, container, contract):
               super().__init__(container)
               self.contract = contract
 
+          @classmethod
+          async def create(cls, container, contract):
+              """Async factory for initialization with validation."""
+              instance = cls(container, contract)
+
               # Validate workflow contract
-              errors = await self.validate_workflow_contract(
-                  self.contract.workflow_coordination.workflow_definition,
+              errors = await instance.validate_workflow_contract(
+                  instance.contract.workflow_coordination.workflow_definition,
                   workflow_steps=[]  # Validate structure only
               )
               if errors:
                   raise ValidationError(f"Workflow invalid: {errors}")
 
+              return instance
+
     with_execution_order: |
-      class NodeMyOrchestrator(NodeOrchestratorDeclarative, MixinWorkflowExecution):
+      class NodeMyOrchestrator(NodeOrchestrator, MixinWorkflowExecution):
           def __init__(self, container, contract):
               super().__init__(container)
               self.contract = contract

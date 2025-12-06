@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -57,10 +58,10 @@ class MixinLazyEvaluation:
         """
         if key not in self._lazy_cache:
             self._lazy_cache[key] = MixinLazyValue(func, cache)
-        return cast(MixinLazyValue[T], self._lazy_cache[key])
+        return cast("MixinLazyValue[T]", self._lazy_cache[key])
 
     def lazy_model_dump(
-        self, exclude: Optional[set[str]] = None, by_alias: bool = False
+        self, exclude: set[str] | None = None, by_alias: bool = False
     ) -> MixinLazyValue[dict[str, JsonSerializable]]:
         """
         Create lazy model dump for Pydantic models.
@@ -81,12 +82,15 @@ class MixinLazyEvaluation:
                 EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
             )
 
-        cache_key = f"model_dump_{hash((tuple(exclude or set()), by_alias))}"
+        # Use deterministic hashing for cache key consistency across processes
+        key_str = f"{tuple(sorted(exclude or set()))}_{by_alias}"
+        key_hash = hashlib.sha256(key_str.encode()).hexdigest()
+        cache_key = f"model_dump_{key_hash}"
         return self.lazy_property(cache_key, _compute_dump)
 
     def lazy_serialize_nested(
-        self, obj: Optional[BaseModel], key: str
-    ) -> MixinLazyValue[Optional[dict[str, JsonSerializable]]]:
+        self, obj: BaseModel | None, key: str
+    ) -> MixinLazyValue[dict[str, JsonSerializable] | None]:
         """
         Create lazy serialization for nested objects.
 
@@ -98,13 +102,13 @@ class MixinLazyEvaluation:
             MixinLazyValue that serializes nested object when accessed
         """
 
-        def _serialize() -> Optional[dict[str, JsonSerializable]]:
+        def _serialize() -> dict[str, JsonSerializable] | None:
             return obj.model_dump() if obj else None
 
         return self.lazy_property(f"serialize_{key}", _serialize)
 
     def lazy_string_conversion(
-        self, obj: Optional[BaseModel], key: str
+        self, obj: BaseModel | None, key: str
     ) -> MixinLazyValue[str]:
         """
         Create lazy string conversion for nested objects.
@@ -124,7 +128,7 @@ class MixinLazyEvaluation:
 
         return self.lazy_property(f"str_{key}", _convert)
 
-    def invalidate_lazy_cache(self, pattern: Optional[str] = None) -> None:
+    def invalidate_lazy_cache(self, pattern: str | None = None) -> None:
         """
         Invalidate lazy cache entries.
 
@@ -169,7 +173,7 @@ class MixinLazyEvaluation:
 
 
 def lazy_cached(
-    cache_key: Optional[str] = None,
+    cache_key: str | None = None,
 ) -> Callable[[Callable[..., T]], Callable[..., MixinLazyValue[T]]]:
     """
     Decorator for creating lazy cached methods.
@@ -184,7 +188,13 @@ def lazy_cached(
             if not hasattr(self, "_lazy_cache"):
                 self._lazy_cache = {}
 
-            key = cache_key or f"{func.__name__}_{hash((args, tuple(kwargs.items())))}"
+            # Use deterministic hashing for cache key consistency across processes
+            if cache_key:
+                key = cache_key
+            else:
+                key_str = f"{func.__name__}_{args}_{sorted(kwargs.items())}"
+                key_hash = hashlib.sha256(key_str.encode()).hexdigest()
+                key = f"{func.__name__}_{key_hash}"
 
             if key not in self._lazy_cache:
 
@@ -193,7 +203,7 @@ def lazy_cached(
 
                 self._lazy_cache[key] = MixinLazyValue(compute)
 
-            return cast(MixinLazyValue[T], self._lazy_cache[key])
+            return cast("MixinLazyValue[T]", self._lazy_cache[key])
 
         return wrapper
 

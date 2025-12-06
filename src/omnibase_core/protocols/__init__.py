@@ -42,11 +42,6 @@ Migration from SPI:
 # =============================================================================
 
 from omnibase_core.protocols.base import (
-    # Type Variables
-    T,
-    T_co,
-    TImplementation,
-    TInterface,
     # Literal Types
     ContextValue,
     LiteralEventPriority,
@@ -67,12 +62,16 @@ from omnibase_core.protocols.base import (
     ProtocolModelJsonSerializable,
     ProtocolModelValidatable,
     ProtocolSemVer,
+    # Type Variables
+    T,
+    T_co,
+    TImplementation,
+    TInterface,
 )
 
 # =============================================================================
 # Container Module Exports
 # =============================================================================
-
 from omnibase_core.protocols.container import (
     ProtocolDependencyGraph,
     ProtocolInjectionContext,
@@ -89,9 +88,13 @@ from omnibase_core.protocols.container import (
 )
 
 # =============================================================================
+# Core Module Exports
+# =============================================================================
+from omnibase_core.protocols.core import ProtocolCanonicalSerializer
+
+# =============================================================================
 # Event Bus Module Exports
 # =============================================================================
-
 from omnibase_core.protocols.event_bus import (
     ProtocolAsyncEventBus,
     ProtocolEventBus,
@@ -106,9 +109,13 @@ from omnibase_core.protocols.event_bus import (
 )
 
 # =============================================================================
+# Schema Module Exports
+# =============================================================================
+from omnibase_core.protocols.schema import ProtocolSchemaLoader, ProtocolSchemaModel
+
+# =============================================================================
 # Types Module Exports
 # =============================================================================
-
 from omnibase_core.protocols.types import (
     ProtocolAction,
     ProtocolConfigurable,
@@ -134,21 +141,8 @@ from omnibase_core.protocols.types import (
 )
 
 # =============================================================================
-# Core Module Exports
-# =============================================================================
-
-from omnibase_core.protocols.core import ProtocolCanonicalSerializer
-
-# =============================================================================
-# Schema Module Exports
-# =============================================================================
-
-from omnibase_core.protocols.schema import ProtocolSchemaLoader, ProtocolSchemaModel
-
-# =============================================================================
 # Validation Module Exports
 # =============================================================================
-
 from omnibase_core.protocols.validation import (
     ProtocolArchitectureCompliance,
     ProtocolComplianceReport,
