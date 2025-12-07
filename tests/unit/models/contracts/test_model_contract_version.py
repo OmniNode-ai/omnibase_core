@@ -25,13 +25,13 @@ Requirements from CONTRACT_STABILITY_SPEC.md:
 import pytest
 from pydantic import ValidationError
 
-# Import path where the model will be implemented
-# This import WILL FAIL until ModelContractVersion is implemented (TDD approach)
 from omnibase_core.models.contracts.model_contract_version import (
     ModelContractVersion,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelContractVersionBasicConstruction:
     """Tests for ModelContractVersion basic construction and initialization."""
 
@@ -86,26 +86,27 @@ class TestModelContractVersionBasicConstruction:
         assert version.patch == 300
 
     def test_from_string_invalid_format_raises_error(self) -> None:
-        """Test from_string() raises error for invalid format."""
-        with pytest.raises(Exception):  # Could be ValidationError or ModelOnexError
+        """Test from_string() raises ModelOnexError for invalid format."""
+        with pytest.raises(ModelOnexError):
             ModelContractVersion.from_string("invalid")
 
     def test_from_string_incomplete_version_raises_error(self) -> None:
-        """Test from_string() raises error for incomplete version."""
-        with pytest.raises(Exception):
+        """Test from_string() raises ModelOnexError for incomplete version."""
+        with pytest.raises(ModelOnexError):
             ModelContractVersion.from_string("1.2")
 
     def test_from_string_extra_components_raises_error(self) -> None:
-        """Test from_string() raises error for extra components."""
-        with pytest.raises(Exception):
+        """Test from_string() raises ModelOnexError for extra components."""
+        with pytest.raises(ModelOnexError):
             ModelContractVersion.from_string("1.2.3.4")
 
     def test_from_string_non_numeric_raises_error(self) -> None:
-        """Test from_string() raises error for non-numeric values."""
-        with pytest.raises(Exception):
+        """Test from_string() raises ModelOnexError for non-numeric values."""
+        with pytest.raises(ModelOnexError):
             ModelContractVersion.from_string("a.b.c")
 
 
+@pytest.mark.unit
 class TestModelContractVersionValidation:
     """Tests for ModelContractVersion field validation."""
 
@@ -156,6 +157,7 @@ class TestModelContractVersionValidation:
             ModelContractVersion(major=None, minor=0, patch=0)  # type: ignore[arg-type]
 
 
+@pytest.mark.unit
 class TestModelContractVersionComparison:
     """Tests for ModelContractVersion comparison operations."""
 
@@ -268,6 +270,7 @@ class TestModelContractVersionComparison:
         assert v2 < v1
 
 
+@pytest.mark.unit
 class TestModelContractVersionSemverProgression:
     """Tests for semver progression methods."""
 
@@ -393,6 +396,7 @@ class TestModelContractVersionSemverProgression:
         assert bumped_patch is not version
 
 
+@pytest.mark.unit
 class TestModelContractVersionDowngradeProtection:
     """Tests for downgrade protection functionality."""
 
@@ -414,7 +418,7 @@ class TestModelContractVersionDowngradeProtection:
         """Test validate_progression() blocks downgrade by default."""
         v1 = ModelContractVersion(major=1, minor=0, patch=0)
         v2 = ModelContractVersion(major=0, minor=9, patch=0)
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             v2.validate_progression(from_version=v1)
         # Verify the error message mentions downgrade
         assert "downgrade" in str(exc_info.value).lower()
@@ -430,31 +434,32 @@ class TestModelContractVersionDowngradeProtection:
         """Test validate_progression() blocks major version downgrade."""
         v1 = ModelContractVersion(major=2, minor=0, patch=0)
         v2 = ModelContractVersion(major=1, minor=0, patch=0)
-        with pytest.raises(Exception):
+        with pytest.raises(ModelOnexError):
             v2.validate_progression(from_version=v1)
 
     def test_validate_progression_blocks_minor_downgrade(self) -> None:
         """Test validate_progression() blocks minor version downgrade."""
         v1 = ModelContractVersion(major=1, minor=5, patch=0)
         v2 = ModelContractVersion(major=1, minor=4, patch=0)
-        with pytest.raises(Exception):
+        with pytest.raises(ModelOnexError):
             v2.validate_progression(from_version=v1)
 
     def test_validate_progression_blocks_patch_downgrade(self) -> None:
         """Test validate_progression() blocks patch version downgrade."""
         v1 = ModelContractVersion(major=1, minor=0, patch=5)
         v2 = ModelContractVersion(major=1, minor=0, patch=4)
-        with pytest.raises(Exception):
+        with pytest.raises(ModelOnexError):
             v2.validate_progression(from_version=v1)
 
     def test_validate_progression_blocks_mixed_downgrade(self) -> None:
         """Test validate_progression() blocks mixed downgrade (higher minor but lower major)."""
         v1 = ModelContractVersion(major=2, minor=0, patch=0)
         v2 = ModelContractVersion(major=1, minor=99, patch=99)
-        with pytest.raises(Exception):
+        with pytest.raises(ModelOnexError):
             v2.validate_progression(from_version=v1)
 
 
+@pytest.mark.unit
 class TestModelContractVersionEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
@@ -496,7 +501,10 @@ class TestModelContractVersionEdgeCases:
         """Test that extra fields are forbidden (extra='forbid')."""
         with pytest.raises((ValidationError, TypeError)):
             ModelContractVersion(
-                major=1, minor=2, patch=3, extra_field="not allowed"  # type: ignore[call-arg]
+                major=1,
+                minor=2,
+                patch=3,
+                extra_field="not allowed",  # type: ignore[call-arg]
             )
 
     def test_comparison_with_non_version_returns_not_implemented(self) -> None:
@@ -514,6 +522,7 @@ class TestModelContractVersionEdgeCases:
             assert version.to_string() == "1.2.3"
 
 
+@pytest.mark.unit
 class TestModelContractVersionHashability:
     """Tests for hashability and use in sets/dicts."""
 
@@ -566,6 +575,7 @@ class TestModelContractVersionHashability:
         assert version_dict[v2] == "value"
 
 
+@pytest.mark.unit
 class TestModelContractVersionSerialization:
     """Tests for serialization and deserialization."""
 
@@ -616,6 +626,7 @@ class TestModelContractVersionSerialization:
         assert original == restored
 
 
+@pytest.mark.unit
 class TestModelContractVersionRepr:
     """Tests for __repr__ representation."""
 
@@ -627,6 +638,7 @@ class TestModelContractVersionRepr:
         assert "ModelContractVersion" in repr_str or "1" in repr_str
 
 
+@pytest.mark.unit
 class TestModelContractVersionVersionProgressionRules:
     """Tests for version progression rules from CONTRACT_STABILITY_SPEC.md."""
 
@@ -661,31 +673,38 @@ class TestModelContractVersionVersionProgressionRules:
         assert v_after.patch > v_before.patch
 
 
+@pytest.mark.unit
 class TestModelContractVersionFromSemver:
     """Tests for compatibility with ModelSemVer patterns."""
 
-    def test_from_string_with_prerelease_suffix_may_be_ignored(self) -> None:
-        """Test from_string() with prerelease suffix (if supported)."""
-        # Based on ModelSemVer, prerelease suffixes may be parsed but ignored
-        try:
-            version = ModelContractVersion.from_string("1.2.3-alpha")
-            assert version.major == 1
-            assert version.minor == 2
-            assert version.patch == 3
-        except Exception:
-            # If prerelease is not supported, that's also acceptable
-            pass
+    def test_from_string_with_prerelease_suffix_extracts_base_version(self) -> None:
+        """Test from_string() correctly parses prerelease suffix and extracts base version.
 
-    def test_from_string_with_build_metadata_may_be_ignored(self) -> None:
-        """Test from_string() with build metadata (if supported)."""
-        try:
-            version = ModelContractVersion.from_string("1.2.3+build")
-            assert version.major == 1
-            assert version.minor == 2
-            assert version.patch == 3
-        except Exception:
-            # If build metadata is not supported, that's also acceptable
-            pass
+        The implementation supports prerelease suffixes (e.g., -alpha, -beta.1) but
+        ignores them for version comparison purposes, extracting only the X.Y.Z portion.
+        """
+        version = ModelContractVersion.from_string("1.2.3-alpha")
+        assert version.major == 1
+        assert version.minor == 2
+        assert version.patch == 3
+
+    def test_from_string_with_build_metadata_extracts_base_version(self) -> None:
+        """Test from_string() correctly parses build metadata and extracts base version.
+
+        The implementation supports build metadata suffixes (e.g., +build, +20231215)
+        but ignores them for version comparison purposes, extracting only the X.Y.Z portion.
+        """
+        version = ModelContractVersion.from_string("1.2.3+build")
+        assert version.major == 1
+        assert version.minor == 2
+        assert version.patch == 3
+
+    def test_from_string_with_prerelease_and_build_metadata(self) -> None:
+        """Test from_string() with both prerelease and build metadata."""
+        version = ModelContractVersion.from_string("1.2.3-beta.1+build.456")
+        assert version.major == 1
+        assert version.minor == 2
+        assert version.patch == 3
 
 
 if __name__ == "__main__":

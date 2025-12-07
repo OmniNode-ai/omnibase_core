@@ -11,7 +11,6 @@ See: CONTRACT_STABILITY_SPEC.md for detailed specification.
 from __future__ import annotations
 
 import re
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -118,7 +117,9 @@ class ModelContractVersion(BaseModel):
             >>> ModelContractVersion.from_tuple((1, 2, 3))
             ModelContractVersion(major=1, minor=2, patch=3)
         """
-        return cls(major=version_tuple[0], minor=version_tuple[1], patch=version_tuple[2])
+        return cls(
+            major=version_tuple[0], minor=version_tuple[1], patch=version_tuple[2]
+        )
 
     def __eq__(self, other: object) -> bool:
         """Check equality with another ModelContractVersion."""
@@ -191,7 +192,9 @@ class ModelContractVersion(BaseModel):
             >>> ModelContractVersion(major=1, minor=2, patch=3).bump_patch()
             ModelContractVersion(major=1, minor=2, patch=4)
         """
-        return ModelContractVersion(major=self.major, minor=self.minor, patch=self.patch + 1)
+        return ModelContractVersion(
+            major=self.major, minor=self.minor, patch=self.patch + 1
+        )
 
     def is_upgrade_from(self, other: ModelContractVersion) -> bool:
         """
@@ -247,7 +250,7 @@ class ModelContractVersion(BaseModel):
             allow_downgrade: If True, allow downgrades without error
 
         Raises:
-            ValueError: If downgrade detected and allow_downgrade is False
+            ModelOnexError: If downgrade detected and allow_downgrade is False
 
         Example:
             >>> v2 = ModelContractVersion(major=2, minor=0, patch=0)
@@ -256,8 +259,11 @@ class ModelContractVersion(BaseModel):
             >>> v1.validate_progression(from_version=v2)  # Raises ValueError
         """
         if self.is_downgrade_from(from_version) and not allow_downgrade:
-            raise ValueError(
-                f"Version downgrade detected: {from_version} -> {self}. "
-                f"Downgrades are not allowed without explicit allow_downgrade=True. "
-                f"See CONTRACT_STABILITY_SPEC.md for versioning rules."
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=(
+                    f"Version downgrade detected: {from_version} -> {self}. "
+                    f"Downgrades are not allowed without explicit allow_downgrade=True. "
+                    f"See CONTRACT_STABILITY_SPEC.md for versioning rules."
+                ),
             )
