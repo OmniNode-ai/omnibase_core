@@ -97,6 +97,9 @@ def _get_error_type(error: ModelOnexError) -> str:
     return str(error.error_code)
 
 
+# TODO(v1.1): Extract path resolution to shared utility - duplicated in compute_transformations.py
+# Both resolve_mapping_path and transform_json_path implement similar path traversal logic.
+# Refactor to a common _resolve_path utility to reduce duplication and ensure consistent behavior.
 def resolve_mapping_path(
     path: str,
     input_data: Any,  # Any: accepts dict, Pydantic models, or other objects with attributes
@@ -376,6 +379,9 @@ def execute_pipeline_step(
         )
 
 
+# TODO(v1.1): Enforce pipeline_timeout_ms - currently declared in contract but not enforced.
+# Add asyncio.timeout or threading.Timer wrapper to abort pipeline if execution exceeds timeout.
+# See: docs/architecture/NODECOMPUTE_VERSIONING_ROADMAP.md
 def execute_compute_pipeline(
     contract: ModelComputeSubcontract,
     input_data: Any,  # Any: pipeline input can be any JSON-compatible or Pydantic model

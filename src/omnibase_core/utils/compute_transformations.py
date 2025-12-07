@@ -73,7 +73,7 @@ from omnibase_core.models.transformations.model_transform_unicode_config import 
 )
 from omnibase_core.models.transformations.types import ModelTransformationConfig
 
-# Note: Consider creating TransformationError for more specific error handling in v1.1.
+# TODO(v1.1): Create TransformationError for more specific error handling.
 # Currently uses ModelOnexError which is generic. A dedicated TransformationError would:
 # - Enable more precise error handling in pipeline execution
 # - Allow callers to distinguish transformation failures from other error types
@@ -83,7 +83,7 @@ from omnibase_core.models.transformations.types import ModelTransformationConfig
 
 def transform_identity(
     data: Any,  # Any: intentionally polymorphic - accepts any input type unchanged
-    config: None = None,  # Unused - included for registry handler signature consistency
+    config: Any = None,  # Any: unused but accepts any config for registry uniformity
 ) -> Any:  # Any: output type mirrors input type
     """
     Identity transformation - returns data unchanged.
@@ -96,8 +96,8 @@ def transform_identity(
 
     Args:
         data: Any input data to pass through unchanged.
-        config: Unused. Included for handler signature consistency with other
-            transformations (all handlers can be called with (data, config)).
+        config: Unused. Accepts any config type for uniform registry handler signature,
+            allowing the registry to call all handlers with `handler(data, config)`.
 
     Returns:
         The input data, unchanged.
@@ -108,6 +108,7 @@ def transform_identity(
         True
     """
     # config parameter is intentionally unused - exists for registry uniformity
+    del config  # Explicitly mark as unused to satisfy linters
     return data
 
 
@@ -445,15 +446,16 @@ def execute_transformation(
         >>> result
         'HELLO WORLD'
     """
-    if transformation_type == EnumTransformationType.IDENTITY:
-        return transform_identity(data, config=None)
-
     handler = TRANSFORMATION_REGISTRY.get(transformation_type)
     if handler is None:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message=f"Unknown transformation type: {transformation_type}",
         )
+
+    # IDENTITY is special - config is optional (ignored even if provided)
+    if transformation_type == EnumTransformationType.IDENTITY:
+        return handler(data, config)
 
     if config is None:
         raise ModelOnexError(

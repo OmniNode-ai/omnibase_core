@@ -349,6 +349,7 @@ class EnumTrimMode(str, Enum):
 ## Transformation Config Models
 
 All config models have:
+
 - `config_type` literal field for discriminated union
 - `model_config = ConfigDict(extra="forbid", frozen=True)`
 
@@ -486,6 +487,7 @@ Step 1 → Step 2 → Step 3 → ... → Step N → Output
 ```
 
 **Rules**:
+
 1. Steps execute in declaration order
 2. Each step receives output from previous step (or input for first step)
 3. Step results accumulate in `step_results` dict
@@ -494,6 +496,7 @@ Step 1 → Step 2 → Step 3 → ... → Step N → Output
 ### Abort on First Failure
 
 When any step fails:
+
 1. Current step is marked as failed
 2. **No subsequent steps execute**
 3. Pipeline result is marked as failed
@@ -571,6 +574,7 @@ v1.0 does **NOT** implement full JSONPath. This is intentional.
 **Validation**: Any unsupported path pattern is a **contract validation error** at load time.
 
 **Resolution**:
+
 ```python
 def resolve_path(path: str, input_data: Any, step_results: dict) -> Any:
     if path.startswith("$.input"):
@@ -596,6 +600,7 @@ The `IDENTITY` transformation is special - it has **no config**:
 - Useful as a no-op placeholder or for explicit passthrough steps
 
 **Example**:
+
 ```yaml
 - step_name: passthrough
   step_type: transformation
@@ -619,6 +624,7 @@ All pipeline artifacts are immutable after creation:
 | `ModelComputePipelineResult` | ✅ Yes | `frozen=True` |
 
 The executor may maintain internal mutable structures while running, but anything exposed outside the executor is frozen. This prevents:
+
 - Accidental mutation between steps
 - Mutation after pipeline completion
 - Race conditions in future parallel execution (v1.2+)
@@ -638,11 +644,13 @@ error_step: str | None = None
 ```
 
 **Why not enums in v1.0?**
+
 - Enums require defining a complete taxonomy upfront
 - v1.0 focuses on getting the pipeline mechanics right
 - String errors are sufficient for debugging
 
 **v1.1+ Upgrade Path**:
+
 - `EnumComputeErrorType` will be introduced in v1.1
 - `ModelComputeError` structured error model in v1.2
 - `ModelParallelStepError` for parallel step aggregation in v1.2
@@ -713,6 +721,7 @@ Format: `{name}_v{major}` (e.g., `text_processor_input_v1`)
 ### Validation Step Schema Resolution
 
 Within validation steps, `schema_ref` can use aliases:
+
 - `input_schema` → Resolves to `input_schema_ref`
 - `output_schema` → Resolves to `output_schema_ref`
 - Otherwise → Resolve from global schema registry
