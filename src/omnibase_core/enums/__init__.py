@@ -144,9 +144,6 @@ from .enum_orchestrator_types import (
 
 # Parameter and return type enums
 from .enum_parameter_type import EnumParameterType
-
-# Regex flag enums (contract-driven NodeCompute v1.0)
-from .enum_regex_flag import EnumRegexFlag
 from .enum_query_parameter_transformation_type import (
     EnumQueryParameterTransformationType,
 )
@@ -157,6 +154,9 @@ from .enum_reducer_types import (
     EnumReductionType,
     EnumStreamingMode,
 )
+
+# Regex flag enums (contract-driven NodeCompute v1.0)
+from .enum_regex_flag import EnumRegexFlag
 from .enum_registry_error_code import EnumRegistryErrorCode
 
 # Registry-related enums
@@ -191,11 +191,11 @@ from .enum_tool_category import EnumToolCategory
 from .enum_tool_status import EnumToolStatus
 from .enum_tool_type import EnumToolType
 
-# State management enums
-from .enum_transition_type import EnumTransitionType
-
 # Transformation types (contract-driven NodeCompute v1.0)
 from .enum_transformation_type import EnumTransformationType
+
+# State management enums
+from .enum_transition_type import EnumTransitionType
 
 # Tree sync enums
 from .enum_tree_sync_status import EnumTreeSyncStatus
