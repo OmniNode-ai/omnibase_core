@@ -25,12 +25,11 @@ Requirements from CONTRACT_STABILITY_SPEC.md:
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.contracts.model_contract_version import (
-    ModelContractVersion,
-)
+from omnibase_core.models.contracts import ModelContractVersion
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.timeout(30)
 @pytest.mark.unit
 class TestModelContractVersionBasicConstruction:
     """Tests for ModelContractVersion basic construction and initialization."""
@@ -118,42 +117,42 @@ class TestModelContractVersionValidation:
 
     def test_negative_major_raises_validation_error(self) -> None:
         """Test that negative major version raises ValidationError."""
-        with pytest.raises((ValidationError, Exception)):
+        with pytest.raises(ValidationError):
             ModelContractVersion(major=-1, minor=0, patch=0)
 
     def test_negative_minor_raises_validation_error(self) -> None:
         """Test that negative minor version raises ValidationError."""
-        with pytest.raises((ValidationError, Exception)):
+        with pytest.raises(ValidationError):
             ModelContractVersion(major=0, minor=-1, patch=0)
 
     def test_negative_patch_raises_validation_error(self) -> None:
         """Test that negative patch version raises ValidationError."""
-        with pytest.raises((ValidationError, Exception)):
+        with pytest.raises(ValidationError):
             ModelContractVersion(major=0, minor=0, patch=-1)
 
     def test_non_integer_major_raises_validation_error(self) -> None:
         """Test that non-integer major version raises ValidationError."""
-        with pytest.raises((ValidationError, TypeError)):
+        with pytest.raises(ValidationError):
             ModelContractVersion(major="1", minor=0, patch=0)  # type: ignore[arg-type]
 
     def test_non_integer_minor_raises_validation_error(self) -> None:
         """Test that non-integer minor version raises ValidationError."""
-        with pytest.raises((ValidationError, TypeError)):
+        with pytest.raises(ValidationError):
             ModelContractVersion(major=0, minor="1", patch=0)  # type: ignore[arg-type]
 
     def test_non_integer_patch_raises_validation_error(self) -> None:
         """Test that non-integer patch version raises ValidationError."""
-        with pytest.raises((ValidationError, TypeError)):
+        with pytest.raises(ValidationError):
             ModelContractVersion(major=0, minor=0, patch="1")  # type: ignore[arg-type]
 
     def test_float_major_raises_validation_error(self) -> None:
         """Test that float major version raises ValidationError."""
-        with pytest.raises((ValidationError, TypeError)):
+        with pytest.raises(ValidationError):
             ModelContractVersion(major=1.5, minor=0, patch=0)  # type: ignore[arg-type]
 
     def test_none_major_raises_validation_error(self) -> None:
         """Test that None major version raises ValidationError."""
-        with pytest.raises((ValidationError, TypeError)):
+        with pytest.raises(ValidationError):
             ModelContractVersion(major=None, minor=0, patch=0)  # type: ignore[arg-type]
 
 
@@ -482,24 +481,24 @@ class TestModelContractVersionEdgeCases:
     def test_frozen_model_cannot_be_modified(self) -> None:
         """Test that frozen model cannot be modified after creation."""
         version = ModelContractVersion(major=1, minor=2, patch=3)
-        with pytest.raises((AttributeError, ValidationError, TypeError)):
+        with pytest.raises(ValidationError):
             version.major = 2  # type: ignore[misc]
 
     def test_frozen_model_minor_cannot_be_modified(self) -> None:
         """Test that minor field cannot be modified after creation."""
         version = ModelContractVersion(major=1, minor=2, patch=3)
-        with pytest.raises((AttributeError, ValidationError, TypeError)):
+        with pytest.raises(ValidationError):
             version.minor = 5  # type: ignore[misc]
 
     def test_frozen_model_patch_cannot_be_modified(self) -> None:
         """Test that patch field cannot be modified after creation."""
         version = ModelContractVersion(major=1, minor=2, patch=3)
-        with pytest.raises((AttributeError, ValidationError, TypeError)):
+        with pytest.raises(ValidationError):
             version.patch = 10  # type: ignore[misc]
 
     def test_extra_fields_are_forbidden(self) -> None:
         """Test that extra fields are forbidden (extra='forbid')."""
-        with pytest.raises((ValidationError, TypeError)):
+        with pytest.raises(ValidationError):
             ModelContractVersion(
                 major=1,
                 minor=2,
@@ -674,6 +673,50 @@ class TestModelContractVersionVersionProgressionRules:
 
 
 @pytest.mark.unit
+class TestModelContractVersionFromTuple:
+    """Tests for from_tuple() factory method."""
+
+    def test_from_tuple_creates_version(self) -> None:
+        """Test from_tuple() creates version from valid tuple."""
+        version = ModelContractVersion.from_tuple((1, 2, 3))
+        assert version.major == 1
+        assert version.minor == 2
+        assert version.patch == 3
+
+    def test_from_tuple_with_zeros(self) -> None:
+        """Test from_tuple() with zero values."""
+        version = ModelContractVersion.from_tuple((0, 0, 0))
+        assert version.major == 0
+        assert version.minor == 0
+        assert version.patch == 0
+
+    def test_from_tuple_with_large_numbers(self) -> None:
+        """Test from_tuple() with large version numbers."""
+        version = ModelContractVersion.from_tuple((100, 200, 300))
+        assert version.major == 100
+        assert version.minor == 200
+        assert version.patch == 300
+
+    def test_from_tuple_too_few_elements_raises_error(self) -> None:
+        """Test from_tuple() raises ModelOnexError for tuple with fewer than 3 elements."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelContractVersion.from_tuple((1, 2))  # type: ignore[arg-type]
+        assert "exactly 3 elements" in str(exc_info.value)
+
+    def test_from_tuple_too_many_elements_raises_error(self) -> None:
+        """Test from_tuple() raises ModelOnexError for tuple with more than 3 elements."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelContractVersion.from_tuple((1, 2, 3, 4))  # type: ignore[arg-type]
+        assert "exactly 3 elements" in str(exc_info.value)
+
+    def test_from_tuple_empty_raises_error(self) -> None:
+        """Test from_tuple() raises ModelOnexError for empty tuple."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelContractVersion.from_tuple(())  # type: ignore[arg-type]
+        assert "exactly 3 elements" in str(exc_info.value)
+
+
+@pytest.mark.unit
 class TestModelContractVersionFromSemver:
     """Tests for compatibility with ModelSemVer patterns."""
 
@@ -705,7 +748,3 @@ class TestModelContractVersionFromSemver:
         assert version.major == 1
         assert version.minor == 2
         assert version.patch == 3
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])

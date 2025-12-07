@@ -75,7 +75,7 @@ from omnibase_core.models.transformations.model_mapping_config import ModelMappi
 from omnibase_core.models.transformations.model_validation_step_config import (
     ModelValidationStepConfig,
 )
-from omnibase_core.models.transformations.types import ModelTransformationConfig
+from omnibase_core.models.transformations.model_types import ModelTransformationConfig
 
 
 class ModelComputePipelineStep(BaseModel):

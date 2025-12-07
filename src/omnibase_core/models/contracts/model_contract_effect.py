@@ -35,7 +35,7 @@ from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.contracts.mixin_node_type_validator import (
+from omnibase_core.models.contracts.model_mixin_node_type_validator import (
     MixinNodeTypeValidator,
 )
 from omnibase_core.models.contracts.model_backup_config import ModelBackupConfig

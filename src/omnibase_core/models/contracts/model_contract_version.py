@@ -80,7 +80,7 @@ class ModelContractVersion(BaseModel):
             ModelContractVersion instance
 
         Raises:
-            ValueError: If version string format is invalid
+            ModelOnexError: If version string format is invalid
 
         Example:
             >>> ModelContractVersion.from_string("1.2.3")
@@ -113,10 +113,18 @@ class ModelContractVersion(BaseModel):
         Returns:
             ModelContractVersion instance
 
+        Raises:
+            ModelOnexError: If tuple does not have exactly 3 elements
+
         Example:
             >>> ModelContractVersion.from_tuple((1, 2, 3))
             ModelContractVersion(major=1, minor=2, patch=3)
         """
+        if len(version_tuple) != 3:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Version tuple must have exactly 3 elements, got {len(version_tuple)}",
+            )
         return cls(
             major=version_tuple[0], minor=version_tuple[1], patch=version_tuple[2]
         )
@@ -256,7 +264,7 @@ class ModelContractVersion(BaseModel):
             >>> v2 = ModelContractVersion(major=2, minor=0, patch=0)
             >>> v1 = ModelContractVersion(major=1, minor=0, patch=0)
             >>> v2.validate_progression(from_version=v1)  # OK
-            >>> v1.validate_progression(from_version=v2)  # Raises ValueError
+            >>> v1.validate_progression(from_version=v2)  # Raises ModelOnexError
         """
         if self.is_downgrade_from(from_version) and not allow_downgrade:
             raise ModelOnexError(

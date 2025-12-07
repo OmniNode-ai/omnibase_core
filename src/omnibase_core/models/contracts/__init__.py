@@ -14,7 +14,7 @@ from omnibase_core.models.service.model_external_service_config import (
 )
 
 from . import subcontracts
-from .mixin_node_type_validator import MixinNodeTypeValidator
+from .model_mixin_node_type_validator import MixinNodeTypeValidator
 from .model_action_emission_config import ModelActionEmissionConfig
 from .model_algorithm_config import ModelAlgorithmConfig
 from .model_algorithm_factor_config import ModelAlgorithmFactorConfig
