@@ -28,6 +28,7 @@ def service_effect(mock_container):
     return ModelServiceEffect(mock_container)
 
 
+@pytest.mark.unit
 class TestRetryCountTracking:
     """Test that retry_count is correctly tracked and returned."""
 

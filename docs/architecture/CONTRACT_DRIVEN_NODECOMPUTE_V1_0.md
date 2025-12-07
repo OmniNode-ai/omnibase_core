@@ -41,9 +41,21 @@ These principles apply to v1.0 and all future versions:
 1. **Zero Custom Code**: Developers inherit from `NodeCompute` without writing transformation logic
 2. **Pipeline-Driven**: Computations are sequences of named steps
 3. **Transformation Registry**: Built-in transformations only (no custom registration)
-4. **Pure Functions**: All execution logic in utility module for testability
+4. **Pure Functions**: All transformation and execution logic in utility module for testability
 5. **Typed Boundaries**: All public surfaces use Pydantic models
 6. **Deterministic**: Same input always produces same output
+
+### Thread Safety and State Management
+
+The core pipeline executor and transformation functions are designed to be **pure and stateless**:
+
+- All transformation functions (`transform_*`) operate only on their input parameters
+- Each `execute_compute_pipeline()` invocation operates on its own data without shared state
+- Safe for concurrent use from multiple threads
+
+**Known Limitation (v1.0)**: The validation step warning deduplication uses module-level state (`_validation_warning_emitted`) to prevent log spam. This is a minor exception to the pure function principle, affecting only warning output (not computation results). The pipeline execution itself remains deterministic and thread-safe.
+
+**TODO(v1.1)**: Refactor warning deduplication to use a context-based approach (e.g., per-execution context) rather than global state. See `compute_executor.py` for details.
 
 ---
 
@@ -561,9 +573,63 @@ v1.0 does **NOT** implement full JSONPath. This is intentional.
 | `$input` | Alias for `$.input` | `$input` |
 | `$.input.<field>` | Direct child field | `$.input.text` |
 | `$.input.<field>.<subfield>` | Nested fields | `$.input.options.mode` |
-| `$.steps.<step_name>.output` | Full output from previous step | `$.steps.trim.output` |
+| `$.steps.<step_name>` | Step output (shorthand) | `$.steps.trim` |
+| `$.steps.<step_name>.output` | Step output (explicit) | `$.steps.trim.output` |
 
-**Path Alias**: The shorthand `$input` is an alias for `$.input`. Both forms are supported and semantically equivalent. The canonical form is `$.input`, but `$input` is accepted for brevity in contracts.
+#### Path Aliases and Equivalences
+
+**Input Access Alias**:
+- `$input` is an alias for `$.input`
+- Both forms are semantically equivalent and access the full input object
+- The canonical form is `$.input`, but `$input` is accepted for brevity
+
+**Step Output Access**:
+- `$.steps.<name>` and `$.steps.<name>.output` are **equivalent**
+- Both return the step's output value
+- The shorthand form `$.steps.<name>` is the more common usage pattern
+- The explicit `.output` suffix is supported for clarity and forward compatibility
+
+**Forward Compatibility Note**: In v1.1+, step results may expose additional fields such as `.metadata` or `.duration_ms`. Using the explicit `.output` suffix future-proofs contracts against these additions.
+
+#### Path Resolution Examples
+
+```yaml
+# Example: Multi-step pipeline with path references
+pipeline:
+  - step_name: validate_input
+    step_type: validation
+    validation_config:
+      schema_ref: input_schema
+
+  - step_name: trim_text
+    step_type: transformation
+    transformation_type: trim
+    transformation_config:
+      mode: both
+
+  - step_name: normalize_case
+    step_type: transformation
+    transformation_type: case_conversion
+    transformation_config:
+      mode: lowercase
+
+  - step_name: build_result
+    step_type: mapping
+    mapping_config:
+      field_mappings:
+        # These are equivalent - both access the step's output:
+        normalized: "$.steps.normalize_case"           # Shorthand form
+        normalized_explicit: "$.steps.normalize_case.output"  # Explicit form
+
+        # These are equivalent - both access the input:
+        original: "$.input.text"      # Canonical form
+        original_alt: "$input.text"   # Shorthand alias (NOT RECOMMENDED)
+
+        # Nested input access:
+        options_mode: "$.input.options.mode"
+```
+
+**Best Practice**: Use `$.input` (canonical) and `$.steps.<name>` (shorthand) for consistency and readability.
 
 **NOT Supported in v1.0**:
 

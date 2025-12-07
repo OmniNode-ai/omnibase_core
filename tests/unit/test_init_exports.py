@@ -15,6 +15,7 @@ import time
 import pytest
 
 
+@pytest.mark.unit
 class TestInitExports:
     """Test __init__.py public API exports."""
 
@@ -58,6 +59,7 @@ class TestInitExports:
             assert export_obj is not None, f"Export {export_name} is None"
 
 
+@pytest.mark.unit
 class TestInitImportPerformance:
     """Test __init__.py import performance and lazy loading."""
 
@@ -117,6 +119,7 @@ class TestInitImportPerformance:
         )
 
 
+@pytest.mark.unit
 class TestInitCircularImports:
     """Test circular import prevention in __init__.py."""
 
@@ -148,6 +151,7 @@ class TestInitCircularImports:
         assert "has no attribute 'NonExistentAttribute'" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestInitValidationExports:
     """Test validation tool exports from __init__.py."""
 
@@ -201,6 +205,7 @@ class TestInitValidationExports:
         assert callable(validate_union_usage)
 
 
+@pytest.mark.unit
 class TestInitErrorExports:
     """Test error class exports from __init__.py."""
 
@@ -222,6 +227,7 @@ class TestInitErrorExports:
         assert issubclass(ModelOnexError, Exception)
 
 
+@pytest.mark.unit
 class TestInitLazyLoadingBehavior:
     """Test lazy loading behavior for different attributes."""
 
@@ -271,6 +277,7 @@ class TestInitLazyLoadingBehavior:
         assert Error1 is Error2
 
 
+@pytest.mark.unit
 class TestInitModuleDocstring:
     """Test __init__.py module documentation."""
 

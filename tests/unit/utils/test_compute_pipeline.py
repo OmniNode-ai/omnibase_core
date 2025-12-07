@@ -63,20 +63,20 @@ class TestTransformIdentity:
 
     def test_returns_same_value(self) -> None:
         """Test identity returns input unchanged."""
-        assert transform_identity("hello") == "hello"
-        assert transform_identity(123) == 123
-        assert transform_identity({"key": "value"}) == {"key": "value"}
-        assert transform_identity(None) is None
+        assert transform_identity("hello", None) == "hello"
+        assert transform_identity(123, None) == 123
+        assert transform_identity({"key": "value"}, None) == {"key": "value"}
+        assert transform_identity(None, None) is None
 
     def test_with_list(self) -> None:
         """Test identity with list input."""
         data = [1, 2, 3]
-        assert transform_identity(data) == [1, 2, 3]
+        assert transform_identity(data, None) == [1, 2, 3]
 
     def test_with_nested_structure(self) -> None:
         """Test identity with nested data structure."""
         data = {"outer": {"inner": [1, 2, {"deep": True}]}}
-        assert transform_identity(data) == data
+        assert transform_identity(data, None) == data
 
 
 @pytest.mark.unit

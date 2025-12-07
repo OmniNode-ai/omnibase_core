@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 import yaml
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -96,7 +97,7 @@ version: "1.0"
 operations: []
 """
 
-        with pytest.raises(Exception):  # Pydantic validation error
+        with pytest.raises(ValidationError):
             load_and_validate_yaml_model(yaml_content)
 
     def test_load_yaml_with_extra_fields(self) -> None:
@@ -125,14 +126,15 @@ another_extra: also_ignored
         yaml_content = ""
 
         # Empty YAML should fail validation
-        with pytest.raises(Exception):
+        with pytest.raises((ValidationError, TypeError)):
             load_and_validate_yaml_model(yaml_content)
 
     def test_load_yaml_whitespace_only(self) -> None:
         """Test loading whitespace-only YAML."""
         yaml_content = "   \n\t  \n  "
 
-        with pytest.raises(Exception):
+        # Tab characters in YAML can raise scanner errors
+        with pytest.raises((ValidationError, TypeError, yaml.YAMLError)):
             load_and_validate_yaml_model(yaml_content)
 
     def test_load_yaml_with_null_values(self) -> None:
@@ -143,7 +145,7 @@ contract_id: null
 operations: []
 """
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             load_and_validate_yaml_model(yaml_content)
 
 

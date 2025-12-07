@@ -115,7 +115,7 @@ def _validate_string_input(value: Any, transform_name: str) -> str:
     return value
 
 
-# TODO(v1.1): Create TransformationError for more specific error handling.
+# TODO(OMN-503): Create TransformationError for more specific error handling.
 # Currently uses ModelOnexError which is generic. A dedicated TransformationError would:
 # - Enable more precise error handling in pipeline execution
 # - Allow callers to distinguish transformation failures from other error types
@@ -125,7 +125,7 @@ def _validate_string_input(value: Any, transform_name: str) -> str:
 
 def transform_identity(
     data: Any,  # Any: intentionally polymorphic - accepts any input type unchanged
-    config: Any = None,  # Any: accepts any config type for uniform registry signature
+    config: None,  # None: IDENTITY requires no config; param exists for uniform registry signature
 ) -> Any:  # Any: output type mirrors input type
     """
     Identity transformation - returns data unchanged.
@@ -137,16 +137,17 @@ def transform_identity(
         This function is pure and stateless - safe for concurrent use.
 
     Note:
-        The signature uses `config: Any = None` to align with the TransformationHandler
-        type alias (Callable[..., Any]), maintaining uniform `handler(data, config)` call
-        pattern in the registry. The config parameter is ignored - IDENTITY transformation
-        requires no configuration. This is enforced at the contract level by
+        The signature uses `config: None` (required parameter, not defaulted) to align
+        with other TransformationHandler functions which all take `(data, config)`.
+        This maintains uniform `handler(data, config)` call pattern in the registry.
+        The config parameter must be None - IDENTITY transformation requires no
+        configuration. This is enforced at the contract level by
         ModelComputePipelineStep validation, which rejects any IDENTITY step that has
         transformation_config set.
 
     Args:
         data: Any input data to pass through unchanged.
-        config: Ignored. IDENTITY transformation requires no configuration.
+        config: Must be None. IDENTITY transformation requires no configuration.
             This parameter exists for uniform registry handler signature,
             allowing the registry to call all handlers with `handler(data, config)`.
 
@@ -154,7 +155,7 @@ def transform_identity(
         The input data, unchanged.
 
     Example:
-        >>> result = transform_identity({"key": "value"})
+        >>> result = transform_identity({"key": "value"}, None)
         >>> result == {"key": "value"}
         True
     """
@@ -357,6 +358,12 @@ def transform_unicode(data: str, config: ModelTransformUnicodeConfig) -> str:
     return unicodedata.normalize(config.form.value, data)
 
 
+# TODO(OMN-499): Consider using shared utility omnibase_core.utils.compute_path_resolver
+# The shared utility has resolve_path() which provides equivalent functionality.
+# This function could be replaced with a thin wrapper that extracts config.path:
+#   from omnibase_core.utils.compute_path_resolver import resolve_path
+#   def transform_json_path(data, config): return resolve_path(config.path, data)
+# See: compute_path_resolver.py for unified path resolution logic with EBNF grammar docs
 def transform_json_path(
     data: Any,  # Any: accepts dict, Pydantic models, or other objects with attributes
     config: ModelTransformJsonPathConfig,
@@ -531,11 +538,12 @@ def execute_transformation(
             },
         )
 
-    # IDENTITY requires no config (contract enforces transformation_config=None for IDENTITY)
-    if transformation_type == EnumTransformationType.IDENTITY:
-        return handler(data, None)
-
-    if config is None:
+    # Validate config requirements:
+    # - IDENTITY: config must be None (no configuration needed)
+    # - All others: config is required
+    # Contract-level validation (ModelComputePipelineStep) ensures IDENTITY steps
+    # never have transformation_config set, so config will be None here.
+    if transformation_type != EnumTransformationType.IDENTITY and config is None:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Configuration required for {transformation_type} transformation",
@@ -549,6 +557,8 @@ def execute_transformation(
             },
         )
 
+    # Uniform handler call - all handlers take (data, config)
+    # For IDENTITY, config is None; for others, config is the specific config type
     return handler(data, config)
 
 

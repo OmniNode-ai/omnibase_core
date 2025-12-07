@@ -181,7 +181,7 @@ class TestModelComputePipelineResult:
             output=None,
             success=False,
             metadata=metadata,
-            error_type="transformation_error",
+            error_type="compute_error",
             error_message="Invalid input type",
         )
 
@@ -191,7 +191,7 @@ class TestModelComputePipelineResult:
             processing_time_ms=3.5,
             steps_executed=["failing_step"],
             step_results={"failing_step": step_result},
-            error_type="transformation_error",
+            error_type="compute_error",
             error_message="Invalid input type",
             error_step="failing_step",
         )

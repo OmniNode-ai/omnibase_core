@@ -722,7 +722,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             LogLevel.ERROR,
             f"NodeBase initialization failed: {error!s}",
             {
-                "node_id": str(self.node_id) if hasattr(self, "node_id") else "unknown",
+                "node_id": str(self.node_id) if hasattr(self, "node_id") and self.node_id is not None else "unknown",
                 "contract_path": str(self._contract_path),
                 "error": str(error),
                 "error_type": type(error).__name__,

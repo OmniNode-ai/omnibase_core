@@ -1,6 +1,7 @@
 """Tests for ModelHealthMetric."""
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.models.health.model_health_metric import ModelHealthMetric
 
@@ -55,7 +56,7 @@ class TestModelHealthMetricValidation:
         )
 
         # Invalid trend
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelHealthMetric(
                 metric_name="test", current_value=50.0, unit="%", trend="invalid"
             )

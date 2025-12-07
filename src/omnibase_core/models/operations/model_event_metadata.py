@@ -45,7 +45,7 @@ class ModelEventMetadata(BaseModel):
 
     # Event processing
     processed: bool = Field(default=False, description="Whether event was processed")
-    processing_duration_ms: int = Field(default=0, description="Processing duration")
+    processing_duration_ms: int = Field(default=0, ge=0, description="Processing duration")
     retry_count: int = Field(default=0, description="Number of retry attempts")
 
     # Event routing
