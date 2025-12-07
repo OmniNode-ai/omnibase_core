@@ -1,16 +1,26 @@
 """Unit tests for Contract-Driven NodeCompute v1.0 compute models."""
+
 import pytest
 from pydantic import ValidationError
 from uuid import uuid4
 
-from omnibase_core.models.compute.model_compute_execution_context import ModelComputeExecutionContext
-from omnibase_core.models.compute.model_compute_step_metadata import ModelComputeStepMetadata
-from omnibase_core.models.compute.model_compute_step_result import ModelComputeStepResult
-from omnibase_core.models.compute.model_compute_pipeline_result import ModelComputePipelineResult
+from omnibase_core.models.compute.model_compute_execution_context import (
+    ModelComputeExecutionContext,
+)
+from omnibase_core.models.compute.model_compute_step_metadata import (
+    ModelComputeStepMetadata,
+)
+from omnibase_core.models.compute.model_compute_step_result import (
+    ModelComputeStepResult,
+)
+from omnibase_core.models.compute.model_compute_pipeline_result import (
+    ModelComputePipelineResult,
+)
 from omnibase_core.models.model_compute_output import ModelComputeOutput
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelComputeExecutionContext:
     """Tests for ModelComputeExecutionContext."""
 
@@ -51,6 +61,7 @@ class TestModelComputeExecutionContext:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelComputeStepMetadata:
     """Tests for ModelComputeStepMetadata."""
 
@@ -100,6 +111,7 @@ class TestModelComputeStepMetadata:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelComputeStepResult:
     """Tests for ModelComputeStepResult."""
 
@@ -146,6 +158,7 @@ class TestModelComputeStepResult:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelComputePipelineResult:
     """Tests for ModelComputePipelineResult."""
 
@@ -257,6 +270,7 @@ class TestModelComputePipelineResult:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelComputeOutput:
     """Tests for ModelComputeOutput."""
 

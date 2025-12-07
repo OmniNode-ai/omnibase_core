@@ -30,6 +30,15 @@ class ModelEventMetadata(BaseModel):
     - Identifiable: UUID-based identification
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
+
+    Mutability Note:
+        This model is intentionally mutable (not frozen) to support the execute()
+        protocol method which updates event processing state (processed, retry_count,
+        processing_duration_ms) during event handling. The validate_assignment=True
+        setting ensures type safety is maintained when fields are modified.
+
+        For thread-safe access in concurrent scenarios, callers should use appropriate
+        synchronization mechanisms or create immutable copies when sharing across threads.
     """
 
     event_id: UUID = Field(
@@ -45,8 +54,10 @@ class ModelEventMetadata(BaseModel):
 
     # Event processing
     processed: bool = Field(default=False, description="Whether event was processed")
-    processing_duration_ms: int = Field(default=0, ge=0, description="Processing duration")
-    retry_count: int = Field(default=0, description="Number of retry attempts")
+    processing_duration_ms: int = Field(
+        default=0, ge=0, description="Processing duration"
+    )
+    retry_count: int = Field(default=0, ge=0, description="Number of retry attempts")
 
     # Event routing
     target_handlers: dict[str, str] = Field(

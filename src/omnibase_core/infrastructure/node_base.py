@@ -81,6 +81,14 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
     - Correlation tracking for observability
     - Structured logging with provenance information
     - Signal orchestration for hub communication
+
+    **THREAD SAFETY AND STATE**:
+    - All mutable state is instance-level (no global mutable state)
+    - Contract loading uses instance-level caching via ProtocolContractLoader
+    - Each NodeBase instance maintains independent state (_container, _main_tool, etc.)
+    - Node instances should NOT be shared across threads without synchronization
+    - For concurrent execution, create separate NodeBase instances per thread
+    - See docs/guides/THREADING.md for complete thread safety guidelines
     """
 
     def __init__(
@@ -722,7 +730,9 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             LogLevel.ERROR,
             f"NodeBase initialization failed: {error!s}",
             {
-                "node_id": str(self.node_id) if hasattr(self, "node_id") and self.node_id is not None else "unknown",
+                "node_id": str(self.node_id)
+                if hasattr(self, "node_id") and self.node_id is not None
+                else "unknown",
                 "contract_path": str(self._contract_path),
                 "error": str(error),
                 "error_type": type(error).__name__,

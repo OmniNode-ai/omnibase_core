@@ -1,4 +1,5 @@
 """Unit tests for Contract-Driven NodeCompute v1.0 enums."""
+
 import pytest
 
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
@@ -10,6 +11,7 @@ from omnibase_core.enums.enum_trim_mode import EnumTrimMode
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestEnumComputeStepType:
     """Tests for EnumComputeStepType."""
 
@@ -30,6 +32,7 @@ class TestEnumComputeStepType:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestEnumTransformationType:
     """Tests for EnumTransformationType."""
 
@@ -53,6 +56,7 @@ class TestEnumTransformationType:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestEnumCaseMode:
     """Tests for EnumCaseMode."""
 
@@ -73,6 +77,7 @@ class TestEnumCaseMode:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestEnumRegexFlag:
     """Tests for EnumRegexFlag."""
 
@@ -93,6 +98,7 @@ class TestEnumRegexFlag:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestEnumUnicodeForm:
     """Tests for EnumUnicodeForm."""
 
@@ -114,6 +120,7 @@ class TestEnumUnicodeForm:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestEnumTrimMode:
     """Tests for EnumTrimMode."""
 

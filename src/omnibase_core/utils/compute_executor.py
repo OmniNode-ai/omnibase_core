@@ -210,7 +210,7 @@ def resolve_mapping_path(
             elif part.startswith("_"):
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Cannot access private attribute: '{part}'",
+                    message=f"Path '{path}' invalid: cannot access private attribute '{part}'",
                 )
             elif hasattr(current, part):
                 current = getattr(current, part)
@@ -259,7 +259,9 @@ def execute_mapping_step(
     step: ModelComputePipelineStep,
     input_data: Any,  # Any: accepts dict, Pydantic models, or other objects with attributes
     step_results: dict[str, ModelComputeStepResult],
-) -> dict[str, Any]:  # Returns dict with field mappings; values are Any based on resolved paths
+) -> dict[
+    str, Any
+]:  # Returns dict with field mappings; values are Any based on resolved paths
     """
     Execute a mapping step, building output from path expressions.
 
@@ -304,7 +306,8 @@ def execute_mapping_step(
 def execute_validation_step(
     step: ModelComputePipelineStep,
     data: Any,  # Any: validation accepts any data type for schema checking
-    schema_registry: dict[str, Any] | None = None,  # Any: schema definitions vary in structure
+    schema_registry: dict[str, Any]
+    | None = None,  # Any: schema definitions vary in structure
 ) -> Any:  # Any: returns input unchanged (v1.0 pass-through)
     """
     Execute a validation step against a schema.
@@ -341,7 +344,8 @@ def execute_validation_step(
             message="validation_config required for validation step",
         )
 
-    # TODO(OMN-500): Implement schema validation for validation steps
+    # TODO(OMN-500, v1.1): Implement schema validation for validation steps
+    # Target: v1.1 release
     # - Integrate with schema registry for schema resolution
     # - Support JSON Schema validation
     # - Add validation error messages with path information
@@ -373,7 +377,9 @@ def execute_pipeline_step(
     current_data: Any,  # Any: data flows through pipeline with varying types per step
     input_data: Any,  # Any: original input preserved for mapping step references
     step_results: dict[str, ModelComputeStepResult],
-) -> Any:  # Any: output type depends on step_type (transformation, mapping, or validation)
+) -> (
+    Any
+):  # Any: output type depends on step_type (transformation, mapping, or validation)
     """
     Execute a single pipeline step and return the result.
 
@@ -527,7 +533,9 @@ def execute_compute_pipeline(
                 metadata=ModelComputeStepMetadata(
                     duration_ms=step_duration,
                     transformation_type=(
-                        step.transformation_type.value if step.transformation_type else None
+                        step.transformation_type.value
+                        if step.transformation_type
+                        else None
                     ),
                 ),
             )
@@ -572,7 +580,9 @@ def execute_compute_pipeline(
                 metadata=ModelComputeStepMetadata(
                     duration_ms=step_duration,
                     transformation_type=(
-                        step.transformation_type.value if step.transformation_type else None
+                        step.transformation_type.value
+                        if step.transformation_type
+                        else None
                     ),
                 ),
                 error_type=_get_error_type(e),
@@ -617,7 +627,9 @@ def execute_compute_pipeline(
                 metadata=ModelComputeStepMetadata(
                     duration_ms=step_duration,
                     transformation_type=(
-                        step.transformation_type.value if step.transformation_type else None
+                        step.transformation_type.value
+                        if step.transformation_type
+                        else None
                     ),
                 ),
                 error_type="unexpected_error",

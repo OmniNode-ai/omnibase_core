@@ -60,6 +60,7 @@ class NestedObject:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestResolvePath:
     """Tests for resolve_path function (simple dot-notation paths)."""
 
@@ -176,6 +177,7 @@ class TestResolvePath:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestResolveInputPath:
     """Tests for resolve_input_path function ($.input prefix paths)."""
 
@@ -243,6 +245,7 @@ class TestResolveInputPath:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestResolveStepPath:
     """Tests for resolve_step_path function ($.steps prefix paths)."""
 
@@ -334,6 +337,7 @@ class TestResolveStepPath:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestResolvePipelinePath:
     """Tests for resolve_pipeline_path function (unified pipeline resolver)."""
 
@@ -396,6 +400,7 @@ class TestResolvePipelinePath:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestPathResolutionError:
     """Tests for PathResolutionError exception class."""
 
@@ -461,6 +466,7 @@ class TestPathResolutionError:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestEdgeCasesAndSecurity:
     """Tests for edge cases and security considerations."""
 
@@ -479,8 +485,8 @@ class TestEdgeCasesAndSecurity:
     def test_path_with_consecutive_dots(self) -> None:
         """Test path with consecutive dots (empty segments)."""
         data = {"field": "value"}
-        # Consecutive dots result in empty segments that are skipped
-        result = resolve_path("field", data)
+        # Consecutive dots (e.g., "field..") result in empty segments that are skipped
+        result = resolve_path("field..", data)
         assert result == "value"
 
     def test_path_with_trailing_dot(self) -> None:

@@ -1,4 +1,5 @@
 """Unit tests for Contract-Driven NodeCompute v1.0 transformation configs."""
+
 import pytest
 from pydantic import ValidationError
 
@@ -6,15 +7,29 @@ from omnibase_core.enums.enum_case_mode import EnumCaseMode
 from omnibase_core.enums.enum_regex_flag import EnumRegexFlag
 from omnibase_core.enums.enum_trim_mode import EnumTrimMode
 from omnibase_core.enums.enum_unicode_form import EnumUnicodeForm
-from omnibase_core.models.transformations.model_transform_regex_config import ModelTransformRegexConfig
-from omnibase_core.models.transformations.model_transform_case_config import ModelTransformCaseConfig
-from omnibase_core.models.transformations.model_transform_trim_config import ModelTransformTrimConfig
-from omnibase_core.models.transformations.model_transform_unicode_config import ModelTransformUnicodeConfig
-from omnibase_core.models.transformations.model_transform_json_path_config import ModelTransformJsonPathConfig
+from omnibase_core.models.transformations.model_transform_regex_config import (
+    ModelTransformRegexConfig,
+)
+from omnibase_core.models.transformations.model_transform_case_config import (
+    ModelTransformCaseConfig,
+)
+from omnibase_core.models.transformations.model_transform_trim_config import (
+    ModelTransformTrimConfig,
+)
+from omnibase_core.models.transformations.model_transform_unicode_config import (
+    ModelTransformUnicodeConfig,
+)
+from omnibase_core.models.transformations.model_transform_json_path_config import (
+    ModelTransformJsonPathConfig,
+)
 from omnibase_core.models.transformations.model_mapping_config import ModelMappingConfig
-from omnibase_core.models.transformations.model_validation_step_config import ModelValidationStepConfig
+from omnibase_core.models.transformations.model_validation_step_config import (
+    ModelValidationStepConfig,
+)
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelTransformRegexConfig:
     """Tests for ModelTransformRegexConfig."""
 
@@ -44,10 +59,12 @@ class TestModelTransformRegexConfig:
     def test_is_frozen(self) -> None:
         """Test that model is immutable."""
         config = ModelTransformRegexConfig(pattern=r"\d+")
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError, match="frozen"):
             config.pattern = r"\w+"  # type: ignore[misc]
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelTransformCaseConfig:
     """Tests for ModelTransformCaseConfig."""
 
@@ -73,6 +90,8 @@ class TestModelTransformCaseConfig:
             ModelTransformCaseConfig(mode=EnumCaseMode.UPPER, extra="bad")  # type: ignore[call-arg]
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelTransformTrimConfig:
     """Tests for ModelTransformTrimConfig."""
 
@@ -93,6 +112,8 @@ class TestModelTransformTrimConfig:
         assert config.mode == EnumTrimMode.RIGHT
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelTransformUnicodeConfig:
     """Tests for ModelTransformUnicodeConfig."""
 
@@ -113,6 +134,8 @@ class TestModelTransformUnicodeConfig:
         assert config.form == EnumUnicodeForm.NFKC
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelTransformJsonPathConfig:
     """Tests for ModelTransformJsonPathConfig."""
 
@@ -153,6 +176,8 @@ class TestModelTransformJsonPathConfig:
             ModelTransformJsonPathConfig(path="$.x", extra="bad")  # type: ignore[call-arg]
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelMappingConfig:
     """Tests for ModelMappingConfig."""
 
@@ -176,6 +201,8 @@ class TestModelMappingConfig:
             ModelMappingConfig(field_mappings={})
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelValidationStepConfig:
     """Tests for ModelValidationStepConfig."""
 

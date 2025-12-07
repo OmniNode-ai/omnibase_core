@@ -289,8 +289,8 @@ class EnumComputeStepType(str, Enum):
     VALIDATION = "validation"
     TRANSFORMATION = "transformation"
     MAPPING = "mapping"
-    # v1.2+: CONDITIONAL = "conditional"
-    # v1.2+: PARALLEL = "parallel"
+    # v1.1+: CONDITIONAL = "conditional"
+    # v1.1+: PARALLEL = "parallel"
 ```
 
 ### EnumTransformationType
@@ -569,12 +569,15 @@ v1.0 does **NOT** implement full JSONPath. This is intentional.
 
 | Pattern | Description | Example |
 |---------|-------------|---------|
-| `$.input` | Full input object | `$.input` |
-| `$input` | Alias for `$.input` | `$input` |
+| `$.input` | Full input object (canonical) | `$.input` |
+| `$input` | **Alias** for `$.input` (shorthand) | `$input` |
 | `$.input.<field>` | Direct child field | `$.input.text` |
+| `$input.<field>` | **Alias** for `$.input.<field>` | `$input.text` |
 | `$.input.<field>.<subfield>` | Nested fields | `$.input.options.mode` |
 | `$.steps.<step_name>` | Step output (shorthand) | `$.steps.trim` |
 | `$.steps.<step_name>.output` | Step output (explicit) | `$.steps.trim.output` |
+
+> **Note**: The `$input` alias (without the dot after `$`) is fully equivalent to `$.input`. Both forms work identically for accessing input data and its nested fields. Use whichever form your team prefers for consistency.
 
 #### Path Aliases and Equivalences
 
@@ -623,7 +626,7 @@ pipeline:
 
         # These are equivalent - both access the input:
         original: "$.input.text"      # Canonical form
-        original_alt: "$input.text"   # Shorthand alias (NOT RECOMMENDED)
+        original_alt: "$input.text"   # Shorthand alias (equally valid)
 
         # Nested input access:
         options_mode: "$.input.options.mode"
@@ -647,6 +650,10 @@ pipeline:
 
 ```python
 def resolve_path(path: str, input_data: Any, step_results: dict) -> Any:
+    # Handle $input alias (without dot) - normalize to $.input form
+    if path.startswith("$input"):
+        path = "$." + path[1:]  # Convert "$input" to "$.input"
+
     if path.startswith("$.input"):
         return resolve_json_path(path[7:], input_data)
     if path.startswith("$.steps."):
@@ -655,7 +662,8 @@ def resolve_path(path: str, input_data: Any, step_results: dict) -> Any:
         if step_name not in step_results:
             raise ModelOnexError(f"Step not found: {step_name}")
         result = step_results[step_name]
-        if len(parts) > 1 and parts[1] == "output":
+        # Both $.steps.<name> and $.steps.<name>.output return the output
+        if len(parts) == 1 or (len(parts) > 1 and parts[1] == "output"):
             return result.output
         raise ModelOnexError(f"Invalid path: {path}")
     raise ModelOnexError(f"Invalid path prefix: {path}")
@@ -987,7 +995,7 @@ class NodeTextProcessor(NodeCompute):
 
 ## References
 
-- **Full Vision**: [NODECOMPUTE_FULL_DESIGN_V1X_TARGET.md](./NODECOMPUTE_FULL_DESIGN_V1X_TARGET.md)
+<!-- TODO(v1.1+): Add link to NODECOMPUTE_FULL_DESIGN_V1X_TARGET.md when available -->
 - **Versioning Roadmap**: [NODECOMPUTE_VERSIONING_ROADMAP.md](./NODECOMPUTE_VERSIONING_ROADMAP.md)
 - **Example Contract**: [user_profile_normalizer.yaml](../../examples/contracts/compute/user_profile_normalizer.yaml)
 - **Linear Issue**: [OMN-465](https://linear.app/omninode/issue/OMN-465)

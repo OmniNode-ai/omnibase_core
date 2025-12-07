@@ -103,7 +103,7 @@ A feature graduates from "roadmap" to "implementation" only when:
 
 NodeCompute follows semantic versioning with platform-primitive semantics:
 
-```text
+```
 1.x.y
 | | |
 | | +-- Patch: Bug fixes, performance improvements (no API changes)
@@ -129,7 +129,7 @@ NodeCompute follows semantic versioning with platform-primitive semantics:
 
 ### Version Timeline (Tentative)
 
-```text
+```
 Milestone 1: v1.0 Implementation and Production Validation
 Milestone 2: v1.1 Design and Implementation (if warranted, after v1.0 production validation)
 Milestone 3: v1.2 Design and Implementation (if warranted, after v1.1 stabilization)
@@ -513,7 +513,7 @@ class ModelComputeCaching(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 ```
 
-**Cache Key Semantics:**
+**Cache Key Semantics (Pseudocode)**:
 
 ```python
 # Cache key derivation (v1.2)
@@ -725,12 +725,12 @@ class ModelComputeSubcontract(BaseModel):
 
 Schemas are frozen at contract load time:
 
-```python
-# At load time:
-# 1. Resolve input_schema_ref from registry
-# 2. Freeze resolved schema into contract
-# 3. Schema updates in registry have no effect on loaded contract
-# 4. New contracts get new schema version
+```
+At load time:
+1. Resolve input_schema_ref from registry
+2. Freeze resolved schema into contract
+3. Schema updates in registry have no effect on loaded contract
+4. New contracts get new schema version
 ```
 
 **Expanded Expression Language:**
@@ -876,7 +876,8 @@ Pipeline steps are static and defined at contract load time:
 
 All v1.0 contracts work unchanged in v1.1. New features are additive only.
 
-**Validation:**
+**Validation**:
+
 ```bash
 # Verify v1.0 contract still works
 poetry run pytest tests/contract_compatibility/test_v1_0_on_v1_1.py
@@ -895,7 +896,8 @@ poetry run pytest tests/contract_compatibility/test_v1_0_on_v1_1.py
 
 All v1.0 and v1.1 contracts work unchanged in v1.2. New fields have sensible defaults.
 
-**Validation:**
+**Validation**:
+
 ```bash
 # Verify v1.0 and v1.1 contracts still work
 poetry run pytest tests/contract_compatibility/test_v1_x_on_v1_2.py
@@ -914,7 +916,8 @@ poetry run pytest tests/contract_compatibility/test_v1_x_on_v1_2.py
 
 All v1.0, v1.1, and v1.2 contracts work unchanged in v1.3. Transformation version defaults to current version for existing contracts.
 
-**Validation:**
+**Validation**:
+
 ```bash
 # Verify all prior contracts still work
 poetry run pytest tests/contract_compatibility/test_v1_x_on_v1_3.py
@@ -924,7 +927,7 @@ poetry run pytest tests/contract_compatibility/test_v1_x_on_v1_3.py
 
 **Within 1.x:**
 
-```text
+```
 Any contract valid in v1.0 MUST be valid in v1.3
 Any contract valid in v1.0 MUST produce identical output in v1.3
 Any ledger entry from v1.0 MUST be replayable in v1.3
@@ -960,11 +963,12 @@ Major version releases will include:
 
 | Document | Description |
 |----------|-------------|
-| [NODECOMPUTE_FULL_DESIGN_V1X_TARGET.md](NODECOMPUTE_FULL_DESIGN_V1X_TARGET.md) | Full vision for 1.x (v1.3.1 target) |
 | [CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md](CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md) | v1.0 implementation specification |
-| [EXPRESSION_LANGUAGE_SPEC.md](EXPRESSION_LANGUAGE_SPEC.md) | ONEX Expression Language specification |
 | [SUBCONTRACT_ARCHITECTURE.md](SUBCONTRACT_ARCHITECTURE.md) | Subcontract pattern documentation |
 | [DECLARATIVE_IMPLEMENTATION_PLAN.md](DECLARATIVE_IMPLEMENTATION_PLAN.md) | Overall declarative node implementation |
+
+<!-- TODO(v1.1+): Add link to NODECOMPUTE_FULL_DESIGN_V1X_TARGET.md when available -->
+<!-- TODO(v1.1+): Add link to EXPRESSION_LANGUAGE_SPEC.md when available -->
 
 ### Linear Tickets
 

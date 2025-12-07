@@ -175,7 +175,9 @@ class ModelComputePipelineStep(BaseModel):
         """Ensure correct config is provided for step type."""
         if self.step_type == EnumComputeStepType.TRANSFORMATION:
             if self.transformation_type is None:
-                raise ValueError("transformation_type required for transformation steps")
+                raise ValueError(
+                    "transformation_type required for transformation steps"
+                )
             if (
                 self.transformation_config is None
                 and self.transformation_type != EnumTransformationType.IDENTITY

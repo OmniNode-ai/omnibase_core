@@ -34,6 +34,7 @@ See Also:
     - omnibase_core.nodes.node_compute: Base NodeCompute class
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
 """
+
 from collections import Counter
 from typing import Any
 from uuid import UUID, uuid4
@@ -139,7 +140,9 @@ class MixinComputeExecution:
         context = ModelComputeExecutionContext(
             operation_id=uuid4(),
             correlation_id=correlation_id,
-            node_id=str(self.node_id) if hasattr(self, "node_id") and self.node_id is not None else None,
+            node_id=str(self.node_id)
+            if hasattr(self, "node_id") and self.node_id is not None
+            else None,
         )
 
         # Execute pipeline (sync function, but wrapped for async compatibility)

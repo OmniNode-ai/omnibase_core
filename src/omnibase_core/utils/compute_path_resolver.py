@@ -536,7 +536,12 @@ def resolve_pipeline_path(
     _validate_path_start(path)
 
     # Handle input paths
-    if path == "$.input" or path == "$input" or path.startswith("$.input.") or path.startswith("$input."):
+    if (
+        path == "$.input"
+        or path == "$input"
+        or path.startswith("$.input.")
+        or path.startswith("$input.")
+    ):
         return resolve_input_path(path, input_data)
 
     # Handle step paths

@@ -125,7 +125,7 @@ def _validate_string_input(value: Any, transform_name: str) -> str:
 
 def transform_identity(
     data: Any,  # Any: intentionally polymorphic - accepts any input type unchanged
-    config: None,  # None: IDENTITY requires no config; param exists for uniform registry signature
+    config: ModelTransformationConfig | None,  # Aligned with other handlers for uniform registry usage
 ) -> Any:  # Any: output type mirrors input type
     """
     Identity transformation - returns data unchanged.
@@ -137,19 +137,23 @@ def transform_identity(
         This function is pure and stateless - safe for concurrent use.
 
     Note:
-        The signature uses `config: None` (required parameter, not defaulted) to align
-        with other TransformationHandler functions which all take `(data, config)`.
-        This maintains uniform `handler(data, config)` call pattern in the registry.
-        The config parameter must be None - IDENTITY transformation requires no
-        configuration. This is enforced at the contract level by
+        The signature uses `config: ModelTransformationConfig | None` to align with
+        other TransformationHandler functions which all take `(data, config)`. This
+        maintains uniform `handler(data, config)` call pattern in the registry and
+        enables safer type checking when handlers are stored in the registry.
+
+        The config parameter should be None for IDENTITY transformation - no
+        configuration is required or used. This is enforced at the contract level by
         ModelComputePipelineStep validation, which rejects any IDENTITY step that has
         transformation_config set.
 
     Args:
         data: Any input data to pass through unchanged.
-        config: Must be None. IDENTITY transformation requires no configuration.
+        config: Should be None. IDENTITY transformation requires no configuration.
             This parameter exists for uniform registry handler signature,
             allowing the registry to call all handlers with `handler(data, config)`.
+            The type allows ModelTransformationConfig for registry compatibility,
+            but IDENTITY steps should always pass None.
 
     Returns:
         The input data, unchanged.

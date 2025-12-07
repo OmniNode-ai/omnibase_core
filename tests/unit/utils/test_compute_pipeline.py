@@ -15,7 +15,9 @@ from omnibase_core.models.compute.model_compute_execution_context import (
 from omnibase_core.models.compute.model_compute_step_metadata import (
     ModelComputeStepMetadata,
 )
-from omnibase_core.models.compute.model_compute_step_result import ModelComputeStepResult
+from omnibase_core.models.compute.model_compute_step_result import (
+    ModelComputeStepResult,
+)
 from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step import (
     ModelComputePipelineStep,
 )
@@ -58,6 +60,7 @@ from omnibase_core.utils.compute_transformations import (
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestTransformIdentity:
     """Tests for identity transformation."""
 
@@ -80,6 +83,7 @@ class TestTransformIdentity:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestTransformRegex:
     """Tests for regex transformation."""
 
@@ -133,6 +137,7 @@ class TestTransformRegex:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestTransformCase:
     """Tests for case transformation."""
 
@@ -164,6 +169,7 @@ class TestTransformCase:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestTransformTrim:
     """Tests for trim transformation."""
 
@@ -195,6 +201,7 @@ class TestTransformTrim:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestTransformUnicode:
     """Tests for unicode normalization."""
 
@@ -221,6 +228,7 @@ class TestTransformUnicode:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestTransformJsonPath:
     """Tests for JSONPath extraction."""
 
@@ -257,6 +265,7 @@ class TestTransformJsonPath:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestExecuteTransformation:
     """Tests for execute_transformation dispatcher."""
 
@@ -297,6 +306,7 @@ class TestExecuteTransformation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(5)
 class TestResolveMappingPath:
     """Tests for resolve_mapping_path."""
 
