@@ -7,6 +7,7 @@ from omnibase_core.models.compute.model_compute_execution_context import ModelCo
 from omnibase_core.models.compute.model_compute_step_metadata import ModelComputeStepMetadata
 from omnibase_core.models.compute.model_compute_step_result import ModelComputeStepResult
 from omnibase_core.models.compute.model_compute_pipeline_result import ModelComputePipelineResult
+from omnibase_core.models.model_compute_output import ModelComputeOutput
 
 
 @pytest.mark.unit
@@ -39,6 +40,14 @@ class TestModelComputeExecutionContext:
         context = ModelComputeExecutionContext(operation_id=uuid4())
         with pytest.raises(ValidationError, match="frozen"):
             context.node_id = "modified"  # type: ignore[misc]
+
+    def test_extra_fields_rejected(self) -> None:
+        """Test that extra fields are rejected."""
+        with pytest.raises(ValidationError):
+            ModelComputeExecutionContext(
+                operation_id=uuid4(),
+                extra_field="invalid",  # type: ignore[call-arg]
+            )
 
 
 @pytest.mark.unit
@@ -80,6 +89,14 @@ class TestModelComputeStepMetadata:
         metadata = ModelComputeStepMetadata(duration_ms=10.0)
         with pytest.raises(ValidationError, match="frozen"):
             metadata.duration_ms = 20.0  # type: ignore[misc]
+
+    def test_extra_fields_rejected(self) -> None:
+        """Test that extra fields are rejected."""
+        with pytest.raises(ValidationError):
+            ModelComputeStepMetadata(
+                duration_ms=10.0,
+                extra_field="invalid",  # type: ignore[call-arg]
+            )
 
 
 @pytest.mark.unit
@@ -192,3 +209,140 @@ class TestModelComputePipelineResult:
         )
         with pytest.raises(ValidationError, match="frozen"):
             result.success = False  # type: ignore[misc]
+
+    def test_processing_time_ms_zero_allowed(self) -> None:
+        """Test that zero processing time is allowed."""
+        result = ModelComputePipelineResult(
+            success=True,
+            output="data",
+            processing_time_ms=0.0,
+            steps_executed=[],
+            step_results={},
+        )
+        assert result.processing_time_ms == 0.0
+
+    def test_processing_time_ms_negative_raises_error(self) -> None:
+        """Test that negative processing time raises validation error."""
+        with pytest.raises(ValidationError, match="greater than or equal to 0"):
+            ModelComputePipelineResult(
+                success=True,
+                output="data",
+                processing_time_ms=-1.0,
+                steps_executed=[],
+                step_results={},
+            )
+
+    def test_processing_time_ms_large_negative_raises_error(self) -> None:
+        """Test that large negative processing time raises validation error."""
+        with pytest.raises(ValidationError, match="greater than or equal to 0"):
+            ModelComputePipelineResult(
+                success=True,
+                output="data",
+                processing_time_ms=-999.99,
+                steps_executed=[],
+                step_results={},
+            )
+
+    def test_extra_fields_rejected(self) -> None:
+        """Test that extra fields are rejected."""
+        with pytest.raises(ValidationError):
+            ModelComputePipelineResult(
+                success=True,
+                output="data",
+                processing_time_ms=10.0,
+                steps_executed=[],
+                step_results={},
+                extra_field="invalid",  # type: ignore[call-arg]
+            )
+
+
+@pytest.mark.unit
+class TestModelComputeOutput:
+    """Tests for ModelComputeOutput."""
+
+    def test_create_minimal(self) -> None:
+        """Test creating output with minimal fields."""
+        op_id = uuid4()
+        output = ModelComputeOutput(
+            result="test_result",
+            operation_id=op_id,
+            computation_type="test_computation",
+            processing_time_ms=10.5,
+        )
+        assert output.result == "test_result"
+        assert output.operation_id == op_id
+        assert output.computation_type == "test_computation"
+        assert output.processing_time_ms == 10.5
+        assert output.cache_hit is False
+        assert output.parallel_execution_used is False
+        assert output.metadata == {}
+
+    def test_create_full(self) -> None:
+        """Test creating output with all fields."""
+        op_id = uuid4()
+        output = ModelComputeOutput(
+            result={"transformed": "data"},
+            operation_id=op_id,
+            computation_type="complex_transform",
+            processing_time_ms=25.3,
+            cache_hit=True,
+            parallel_execution_used=True,
+            metadata={"source": "test"},
+        )
+        assert output.result == {"transformed": "data"}
+        assert output.cache_hit is True
+        assert output.parallel_execution_used is True
+        assert output.metadata == {"source": "test"}
+
+    def test_processing_time_ms_zero_allowed(self) -> None:
+        """Test that zero processing time is allowed (e.g., cache hit)."""
+        output = ModelComputeOutput(
+            result="cached",
+            operation_id=uuid4(),
+            computation_type="test",
+            processing_time_ms=0.0,
+            cache_hit=True,
+        )
+        assert output.processing_time_ms == 0.0
+
+    def test_processing_time_ms_negative_raises_error(self) -> None:
+        """Test that negative processing time raises validation error."""
+        with pytest.raises(ValidationError, match="greater than or equal to 0"):
+            ModelComputeOutput(
+                result="test",
+                operation_id=uuid4(),
+                computation_type="test",
+                processing_time_ms=-1.0,
+            )
+
+    def test_processing_time_ms_large_negative_raises_error(self) -> None:
+        """Test that large negative processing time raises validation error."""
+        with pytest.raises(ValidationError, match="greater than or equal to 0"):
+            ModelComputeOutput(
+                result="test",
+                operation_id=uuid4(),
+                computation_type="test",
+                processing_time_ms=-999.99,
+            )
+
+    def test_is_frozen(self) -> None:
+        """Test that model is immutable."""
+        output = ModelComputeOutput(
+            result="test",
+            operation_id=uuid4(),
+            computation_type="test",
+            processing_time_ms=10.0,
+        )
+        with pytest.raises(ValidationError, match="frozen"):
+            output.result = "modified"  # type: ignore[misc]
+
+    def test_extra_fields_rejected(self) -> None:
+        """Test that extra fields are rejected."""
+        with pytest.raises(ValidationError):
+            ModelComputeOutput(
+                result="test",
+                operation_id=uuid4(),
+                computation_type="test",
+                processing_time_ms=10.0,
+                extra_field="invalid",  # type: ignore[call-arg]
+            )

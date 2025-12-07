@@ -74,4 +74,4 @@ class ModelComputeStepMetadata(BaseModel):
     duration_ms: float = Field(ge=0)
     transformation_type: str | None = None
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True)

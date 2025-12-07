@@ -92,4 +92,4 @@ class ModelComputeExecutionContext(BaseModel):
     correlation_id: UUID | None = None
     node_id: str | None = None
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True)

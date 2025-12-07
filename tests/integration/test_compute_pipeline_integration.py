@@ -12,9 +12,12 @@ These tests verify:
 5. Large data handling performance baseline
 """
 
+import concurrent.futures
+from uuid import uuid4
+
 import pytest
 
-from uuid import uuid4
+from tests.integration.conftest import ComputeContextFactory
 
 from omnibase_core.enums.enum_case_mode import EnumCaseMode
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
@@ -46,6 +49,9 @@ from omnibase_core.models.transformations.model_transform_trim_config import (
 from omnibase_core.models.transformations.model_transform_unicode_config import (
     ModelTransformUnicodeConfig,
 )
+from omnibase_core.models.transformations.model_validation_step_config import (
+    ModelValidationStepConfig,
+)
 from omnibase_core.utils.compute_executor import execute_compute_pipeline
 
 
@@ -55,16 +61,12 @@ class TestComputePipelineIntegration:
     """Integration tests for complete pipeline scenarios.
 
     Note: 60-second timeout protects against pipeline execution hangs.
+    Uses compute_execution_context_factory fixture for context creation.
     """
 
-    def _create_context(self) -> ModelComputeExecutionContext:
-        """Create a test execution context."""
-        return ModelComputeExecutionContext(
-            operation_id=uuid4(),
-            correlation_id=uuid4(),
-        )
-
-    def test_multi_step_pipeline_execution(self) -> None:
+    def test_multi_step_pipeline_execution(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline with multiple transformation steps chained together.
 
         Verifies that:
@@ -105,7 +107,7 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="  hello world  ",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -115,7 +117,9 @@ class TestComputePipelineIntegration:
         assert result.error_step is None
         assert result.error_message is None
 
-    def test_error_propagation_aborts_pipeline(self) -> None:
+    def test_error_propagation_aborts_pipeline(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that failure in middle step aborts the pipeline.
 
         Verifies abort-on-first-failure semantics:
@@ -155,7 +159,7 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data=12345,
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is False
@@ -170,7 +174,9 @@ class TestComputePipelineIntegration:
             or "str" in result.error_message.lower()
         )
 
-    def test_mapping_references_multiple_prior_steps(self) -> None:
+    def test_mapping_references_multiple_prior_steps(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test mapping step that references outputs from multiple prior steps.
 
         Verifies that:
@@ -207,7 +213,7 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="hello",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -215,7 +221,9 @@ class TestComputePipelineIntegration:
         assert result.output["original"] == "hello"
         assert result.output["transformed"] == "HELLO"
 
-    def test_disabled_steps_are_skipped(self) -> None:
+    def test_disabled_steps_are_skipped(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that disabled steps are properly skipped.
 
         Verifies that:
@@ -256,7 +264,7 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="Hello",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -264,7 +272,9 @@ class TestComputePipelineIntegration:
         assert "step2_disabled" not in result.steps_executed
         assert result.steps_executed == ["step1", "step3"]
 
-    def test_complex_pipeline_with_regex_and_unicode(self) -> None:
+    def test_complex_pipeline_with_regex_and_unicode(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test complex pipeline with regex and unicode normalization.
 
         Verifies that:
@@ -310,14 +320,16 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="  hello    world   test  ",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
         assert result.output == "HELLO WORLD TEST"
         assert len(result.steps_executed) == 3
 
-    def test_mapping_with_nested_input_access(self) -> None:
+    def test_mapping_with_nested_input_access(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test mapping step accessing nested fields in input.
 
         Verifies that:
@@ -355,7 +367,7 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data=input_data,
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -363,7 +375,9 @@ class TestComputePipelineIntegration:
         assert result.output["user_email"] == "john@example.com"
         assert result.output["full_input"] == input_data
 
-    def test_chained_transformations_with_intermediate_mapping(self) -> None:
+    def test_chained_transformations_with_intermediate_mapping(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline with transformations and intermediate mapping.
 
         Verifies complex data flow:
@@ -401,14 +415,16 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="Hello World",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
         assert result.output["upper_version"] == "HELLO WORLD"
         assert result.output["original"] == "Hello World"
 
-    def test_pipeline_timing_is_tracked(self) -> None:
+    def test_pipeline_timing_is_tracked(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that pipeline timing information is properly tracked.
 
         Verifies that:
@@ -442,7 +458,7 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="  hello  ",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -453,7 +469,9 @@ class TestComputePipelineIntegration:
             step_result = result.step_results[step_name]
             assert step_result.metadata.duration_ms >= 0
 
-    def test_empty_pipeline_returns_input_unchanged(self) -> None:
+    def test_empty_pipeline_returns_input_unchanged(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that empty pipeline returns input unchanged."""
         contract = ModelComputeSubcontract(
             operation_name="empty_pipeline",
@@ -466,19 +484,21 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data=input_data,
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
         assert result.output == input_data
         assert result.steps_executed == []
 
-    def test_regex_with_flags(self) -> None:
-        """Test regex transformation with various flags.
+    def test_regex_with_flags(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
+        """Test regex transformation with IGNORECASE flag.
 
         Verifies that:
-        - IGNORECASE flag works correctly
-        - Multiple regex operations can be chained
+        - IGNORECASE flag replaces all case variations
+        - Exactly 3 replacements occur (HELLO, hello, HeLLo)
         """
         contract = ModelComputeSubcontract(
             operation_name="regex_flags_test",
@@ -497,17 +517,23 @@ class TestComputePipelineIntegration:
             ],
         )
 
+        input_data = "HELLO World, hello friend, HeLLo there"
         result = execute_compute_pipeline(
             contract=contract,
-            input_data="HELLO World, hello friend, HeLLo there",
-            context=self._create_context(),
+            input_data=input_data,
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
-        # All variations of "hello" should be replaced with "hi"
+        # Verify exact output - all 3 case variations replaced
         assert result.output == "hi World, hi friend, hi there"
+        # Verify count: input has 3 "hello" variants, output has 3 "hi"
+        assert input_data.lower().count("hello") == 3
+        assert result.output.count("hi") == 3
 
-    def test_unicode_normalization_in_pipeline(self) -> None:
+    def test_unicode_normalization_in_pipeline(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test unicode normalization as part of a pipeline.
 
         Verifies that:
@@ -543,7 +569,7 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data=decomposed,
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -551,7 +577,9 @@ class TestComputePipelineIntegration:
         assert result.output == "CAF\xc9"  # CAFE with composed E-acute
 
     @pytest.mark.slow
-    def test_large_data_performance_baseline(self) -> None:
+    def test_large_data_performance_baseline(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline performance with larger data sets.
 
         Verifies that:
@@ -589,7 +617,7 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data=large_input,
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -599,7 +627,9 @@ class TestComputePipelineIntegration:
         assert result.processing_time_ms < 1000
 
     @pytest.mark.slow
-    def test_many_steps_pipeline(self) -> None:
+    def test_many_steps_pipeline(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline with many steps.
 
         Verifies that:
@@ -637,7 +667,7 @@ class TestComputePipelineIntegration:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="hello world",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -653,16 +683,12 @@ class TestComputePipelineErrorScenarios:
     """Integration tests for error handling scenarios.
 
     Note: 60-second timeout protects against pipeline execution hangs.
+    Uses compute_execution_context_factory fixture for context creation.
     """
 
-    def _create_context(self) -> ModelComputeExecutionContext:
-        """Create a test execution context."""
-        return ModelComputeExecutionContext(
-            operation_id=uuid4(),
-            correlation_id=uuid4(),
-        )
-
-    def test_invalid_regex_pattern_fails_gracefully(self) -> None:
+    def test_invalid_regex_pattern_fails_gracefully(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that invalid regex pattern causes proper failure."""
         contract = ModelComputeSubcontract(
             operation_name="invalid_regex",
@@ -683,14 +709,16 @@ class TestComputePipelineErrorScenarios:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="test input",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is False
         assert result.error_step == "bad_regex"
         assert result.error_message is not None
 
-    def test_missing_mapping_path_fails(self) -> None:
+    def test_missing_mapping_path_fails(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that referencing non-existent path in mapping fails."""
         contract = ModelComputeSubcontract(
             operation_name="missing_path",
@@ -711,14 +739,16 @@ class TestComputePipelineErrorScenarios:
         result = execute_compute_pipeline(
             contract=contract,
             input_data={"actual": "data"},
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is False
         assert result.error_step == "bad_mapping"
         assert result.error_message is not None
 
-    def test_referencing_nonexistent_step_fails(self) -> None:
+    def test_referencing_nonexistent_step_fails(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that referencing non-existent step in mapping fails."""
         contract = ModelComputeSubcontract(
             operation_name="missing_step",
@@ -739,7 +769,7 @@ class TestComputePipelineErrorScenarios:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="test",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is False
@@ -749,7 +779,9 @@ class TestComputePipelineErrorScenarios:
             or "not found" in result.error_message.lower()
         )
 
-    def test_type_mismatch_in_middle_step(self) -> None:
+    def test_type_mismatch_in_middle_step(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that type mismatch in middle of pipeline aborts correctly."""
         contract = ModelComputeSubcontract(
             operation_name="type_mismatch",
@@ -786,7 +818,7 @@ class TestComputePipelineErrorScenarios:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="test input",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is False
@@ -802,7 +834,9 @@ class TestComputePipelineContextTracking:
     Note: 60-second timeout protects against pipeline execution hangs.
     """
 
-    def test_context_ids_are_preserved(self) -> None:
+    def test_context_ids_are_preserved(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that operation and correlation IDs are available in context."""
         operation_id = uuid4()
         correlation_id = uuid4()
@@ -835,7 +869,9 @@ class TestComputePipelineContextTracking:
         # Context should be passed through (though we can't directly inspect it
         # from the result, we verify the pipeline executed successfully with it)
 
-    def test_context_without_correlation_id(self) -> None:
+    def test_context_without_correlation_id(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that context works without optional correlation ID."""
         context = ModelComputeExecutionContext(
             operation_id=uuid4(),
@@ -869,16 +905,12 @@ class TestComputePipelineSingleStepScenarios:
     """Integration tests for single-step pipeline edge cases.
 
     Note: 60-second timeout protects against pipeline execution hangs.
+    Uses compute_execution_context_factory fixture for context creation.
     """
 
-    def _create_context(self) -> ModelComputeExecutionContext:
-        """Create a test execution context."""
-        return ModelComputeExecutionContext(
-            operation_id=uuid4(),
-            correlation_id=uuid4(),
-        )
-
-    def test_single_transformation_step(self) -> None:
+    def test_single_transformation_step(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline with exactly one transformation step.
 
         Verifies that:
@@ -904,7 +936,7 @@ class TestComputePipelineSingleStepScenarios:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="hello",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -913,7 +945,9 @@ class TestComputePipelineSingleStepScenarios:
         assert result.steps_executed == ["only_step"]
         assert "only_step" in result.step_results
 
-    def test_single_mapping_step(self) -> None:
+    def test_single_mapping_step(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline with exactly one mapping step.
 
         Verifies that:
@@ -942,7 +976,7 @@ class TestComputePipelineSingleStepScenarios:
         result = execute_compute_pipeline(
             contract=contract,
             input_data=input_data,
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -950,7 +984,9 @@ class TestComputePipelineSingleStepScenarios:
         assert result.output["user_name"] == "Alice"
         assert len(result.steps_executed) == 1
 
-    def test_single_step_failure(self) -> None:
+    def test_single_step_failure(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline with single failing step.
 
         Verifies that:
@@ -977,7 +1013,7 @@ class TestComputePipelineSingleStepScenarios:
         result = execute_compute_pipeline(
             contract=contract,
             input_data=12345,
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is False
@@ -992,16 +1028,12 @@ class TestComputePipelineStepResultAccumulation:
     """Integration tests for step result accumulation and field mapping across steps.
 
     Note: 60-second timeout protects against pipeline execution hangs.
+    Uses compute_execution_context_factory fixture for context creation.
     """
 
-    def _create_context(self) -> ModelComputeExecutionContext:
-        """Create a test execution context."""
-        return ModelComputeExecutionContext(
-            operation_id=uuid4(),
-            correlation_id=uuid4(),
-        )
-
-    def test_step_results_accumulate_correctly(self) -> None:
+    def test_step_results_accumulate_correctly(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that all step results are accumulated and accessible.
 
         Verifies that:
@@ -1041,7 +1073,7 @@ class TestComputePipelineStepResultAccumulation:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="  hello world  ",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -1068,7 +1100,9 @@ class TestComputePipelineStepResultAccumulation:
         assert identity_result.output == "HELLO WORLD"
         assert identity_result.metadata.duration_ms >= 0
 
-    def test_mapping_references_all_prior_step_outputs(self) -> None:
+    def test_mapping_references_all_prior_step_outputs(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test mapping step that references outputs from ALL prior steps.
 
         Verifies that:
@@ -1114,7 +1148,7 @@ class TestComputePipelineStepResultAccumulation:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="Hello World",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -1123,7 +1157,9 @@ class TestComputePipelineStepResultAccumulation:
         assert result.output["uppercase"] == "HELLO WORLD"
         assert result.output["lowercase"] == "hello world"
 
-    def test_sequential_mappings_build_complex_structures(self) -> None:
+    def test_sequential_mappings_build_complex_structures(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test multiple mapping steps building complex nested structures.
 
         Verifies that:
@@ -1162,14 +1198,16 @@ class TestComputePipelineStepResultAccumulation:
         result = execute_compute_pipeline(
             contract=contract,
             input_data=input_data,
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
         assert result.output["level2_wrapper"]["level1_data"] == input_data
         assert result.output["original_preserved"] == input_data
 
-    def test_transformation_metadata_tracking(self) -> None:
+    def test_transformation_metadata_tracking(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test that transformation type metadata is correctly tracked per step.
 
         Verifies that:
@@ -1209,7 +1247,7 @@ class TestComputePipelineStepResultAccumulation:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="  hello  ",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -1230,16 +1268,12 @@ class TestComputePipelineAllStepTypes:
     """Integration tests covering all supported step types in various combinations.
 
     Note: 60-second timeout protects against pipeline execution hangs.
+    Uses compute_execution_context_factory fixture for context creation.
     """
 
-    def _create_context(self) -> ModelComputeExecutionContext:
-        """Create a test execution context."""
-        return ModelComputeExecutionContext(
-            operation_id=uuid4(),
-            correlation_id=uuid4(),
-        )
-
-    def test_all_transformation_types_in_pipeline(self) -> None:
+    def test_all_transformation_types_in_pipeline(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline using all major transformation types.
 
         Verifies that:
@@ -1300,14 +1334,16 @@ class TestComputePipelineAllStepTypes:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="  hello    world  ",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
         assert result.output == "HELLO WORLD"
         assert len(result.steps_executed) == 5
 
-    def test_mixed_step_types_transform_and_mapping(self) -> None:
+    def test_mixed_step_types_transform_and_mapping(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline mixing transformation and mapping steps.
 
         Verifies correct data flow between different step types.
@@ -1342,23 +1378,22 @@ class TestComputePipelineAllStepTypes:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="hello",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
         assert result.output["transformed"] == "HELLO"
         assert result.output["original"] == "hello"
 
-    def test_validation_step_passthrough(self) -> None:
+    def test_validation_step_passthrough(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test validation step in v1.0 (pass-through mode).
 
         Verifies that:
         - Validation step doesn't modify data in v1.0
         - Pipeline continues after validation
         """
-        from omnibase_core.models.transformations.model_validation_step_config import \
-            ModelValidationStepConfig
-
         contract = ModelComputeSubcontract(
             operation_name="validation_passthrough_test",
             operation_version="1.0.0",
@@ -1384,7 +1419,7 @@ class TestComputePipelineAllStepTypes:
         result = execute_compute_pipeline(
             contract=contract,
             input_data="hello",
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
@@ -1398,16 +1433,12 @@ class TestComputePipelineConcurrency:
     """Integration tests for concurrent pipeline execution scenarios.
 
     Note: 120-second timeout allows for concurrent execution overhead.
+    Uses compute_execution_context_factory fixture for context creation.
     """
 
-    def _create_context(self) -> ModelComputeExecutionContext:
-        """Create a test execution context."""
-        return ModelComputeExecutionContext(
-            operation_id=uuid4(),
-            correlation_id=uuid4(),
-        )
-
-    def test_concurrent_pipeline_executions(self) -> None:
+    def test_concurrent_pipeline_executions(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test multiple pipeline executions with different inputs concurrently.
 
         Verifies that:
@@ -1415,8 +1446,6 @@ class TestComputePipelineConcurrency:
         - Each execution produces correct output for its input
         - No shared state corruption occurs
         """
-        import concurrent.futures
-
         contract = ModelComputeSubcontract(
             operation_name="concurrent_test",
             operation_version="1.0.0",
@@ -1445,7 +1474,7 @@ class TestComputePipelineConcurrency:
             input_output_pair: tuple[str, str],
         ) -> tuple[bool, str, str]:
             input_data, expected = input_output_pair
-            context = self._create_context()
+            context = compute_execution_context_factory()
             result = execute_compute_pipeline(
                 contract=contract,
                 input_data=input_data,
@@ -1463,15 +1492,15 @@ class TestComputePipelineConcurrency:
             assert success is True
             assert actual == expected
 
-    def test_concurrent_different_pipelines(self) -> None:
+    def test_concurrent_different_pipelines(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test concurrent execution of different pipeline contracts.
 
         Verifies that:
         - Different contracts can execute concurrently
         - Each contract produces correct results
         """
-        import concurrent.futures
-
         contract_upper = ModelComputeSubcontract(
             operation_name="upper_pipeline",
             operation_version="1.0.0",
@@ -1539,16 +1568,12 @@ class TestComputePipelineEdgeCases:
     """Integration tests for pipeline edge cases and boundary conditions.
 
     Note: 60-second timeout protects against pipeline execution hangs.
+    Uses compute_execution_context_factory fixture for context creation.
     """
 
-    def _create_context(self) -> ModelComputeExecutionContext:
-        """Create a test execution context."""
-        return ModelComputeExecutionContext(
-            operation_id=uuid4(),
-            correlation_id=uuid4(),
-        )
-
-    def test_all_disabled_steps_returns_input(self) -> None:
+    def test_all_disabled_steps_returns_input(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline where all steps are disabled.
 
         Verifies that:
@@ -1585,14 +1610,16 @@ class TestComputePipelineEdgeCases:
         result = execute_compute_pipeline(
             contract=contract,
             input_data=input_data,
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
         assert result.output == input_data  # Unchanged
         assert result.steps_executed == []  # No steps executed
 
-    def test_special_characters_in_input(self) -> None:
+    def test_special_characters_in_input(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline handles special characters correctly.
 
         Verifies that:
@@ -1626,12 +1653,14 @@ class TestComputePipelineEdgeCases:
             result = execute_compute_pipeline(
                 contract=contract,
                 input_data=input_data,
-                context=self._create_context(),
+                context=compute_execution_context_factory(),
             )
             assert result.success is True
             assert result.output == input_data
 
-    def test_deeply_nested_input_data(self) -> None:
+    def test_deeply_nested_input_data(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline handles deeply nested input structures.
 
         Verifies that:
@@ -1663,14 +1692,16 @@ class TestComputePipelineEdgeCases:
         result = execute_compute_pipeline(
             contract=contract,
             input_data=deep_input,
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True
         assert result.output["deep_value"] == "found"
         assert result.output["full_input"] == deep_input
 
-    def test_null_and_empty_values_in_input(self) -> None:
+    def test_null_and_empty_values_in_input(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline handles None and empty values.
 
         Verifies that:
@@ -1705,12 +1736,14 @@ class TestComputePipelineEdgeCases:
             result = execute_compute_pipeline(
                 contract=contract,
                 input_data=input_data,
-                context=self._create_context(),
+                context=compute_execution_context_factory(),
             )
             assert result.success is True
             assert result.output == input_data
 
-    def test_large_list_input(self) -> None:
+    def test_large_list_input(
+        self, compute_execution_context_factory: ComputeContextFactory
+    ) -> None:
         """Test pipeline handles large list inputs.
 
         Verifies that:
@@ -1735,7 +1768,7 @@ class TestComputePipelineEdgeCases:
         result = execute_compute_pipeline(
             contract=contract,
             input_data=large_list,
-            context=self._create_context(),
+            context=compute_execution_context_factory(),
         )
 
         assert result.success is True

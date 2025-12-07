@@ -38,7 +38,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from omnibase_core.models.compute.model_compute_step_result import (
@@ -112,14 +112,14 @@ class ModelComputePipelineResult(BaseModel):
 
     success: bool
     output: Any  # Any: output type depends on pipeline configuration
-    processing_time_ms: float
+    processing_time_ms: float = Field(ge=0)
     steps_executed: list[str]
     step_results: dict[str, "ModelComputeStepResult"]
     error_type: str | None = None  # v1.0: Simple string
     error_message: str | None = None
     error_step: str | None = None
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
 
 # Import at runtime for forward ref resolution

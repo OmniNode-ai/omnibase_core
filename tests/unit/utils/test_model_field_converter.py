@@ -453,7 +453,8 @@ class TestModelFieldConverterRegistry:
         )
 
         # Should not be able to modify frozen dataclass
-        with pytest.raises(Exception):  # FrozenInstanceError in Python 3.11+
+        # FrozenInstanceError (Python 3.10+) is a subclass of AttributeError
+        with pytest.raises(AttributeError):
             converter.field_name = "modified"  # type: ignore[misc]
 
     def test_complex_conversion_workflow(self) -> None:

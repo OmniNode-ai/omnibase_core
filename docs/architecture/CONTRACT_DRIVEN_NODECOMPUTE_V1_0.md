@@ -70,8 +70,8 @@ These principles apply to v1.0 and all future versions:
 | **SPLIT/JOIN/TEMPLATE/TYPE_CONVERSION/SCHEMA_VALIDATE** | v1.1 | Start with minimal set; `SCHEMA_VALIDATE` transform duplicates `VALIDATION` step type |
 | **Caching** | v1.2 | Adds cache invalidation complexity |
 | **Detailed Error Enums** | v1.2 | Simple string `error_type` sufficient for v1.0 |
-| **Full Expression Language** | v1.2 | Only simple path expressions in v1.0 |
-| **FILTER/MAP/REDUCE/SORT** | v1.2 | Collection operations deferred until caching/observability in place |
+| **Full Expression Language** | v1.1/v1.3 | Basic expressions (equality, logical) in v1.1; arithmetic and functions in v1.3 |
+| **FILTER/MAP/REDUCE/SORT** | v1.1 (optional) | Collection operations added only if production feedback demonstrates need |
 | **Cancellation** | v1.3 | Requires cooperative cancellation infrastructure |
 | **Transformation Versioning** | v1.3 | Not needed until transformations evolve |
 
@@ -308,7 +308,7 @@ class EnumTransformationType(str, Enum):
     JSON_PATH = "json_path"
 
     # v1.1+: SPLIT, JOIN, TEMPLATE, TYPE_CONVERSION, SCHEMA_VALIDATE
-    # v1.2+: FILTER, MAP, REDUCE, SORT
+    # v1.1+ (optional): FILTER, MAP, REDUCE, SORT
 ```
 
 ### Supporting Enums

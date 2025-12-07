@@ -6,8 +6,8 @@ results with metadata including operation tracking, performance metrics, and
 cache/parallelism information.
 
 Thread Safety:
-    ModelComputeOutput is mutable by default. If thread-safety is needed,
-    treat instances as read-only after creation.
+    ModelComputeOutput is immutable (frozen=True) after creation, making it
+    thread-safe for concurrent read access from multiple threads or async tasks.
 
 Key Features:
     - Generic type parameter T_Output for type-safe result data
@@ -43,7 +43,7 @@ See Also:
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = [
     "ModelComputeOutput",
@@ -95,7 +95,9 @@ class ModelComputeOutput[T_Output](BaseModel):
     result: T_Output
     operation_id: UUID
     computation_type: str
-    processing_time_ms: float
+    processing_time_ms: float = Field(ge=0)
     cache_hit: bool = False
     parallel_execution_used: bool = False
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
