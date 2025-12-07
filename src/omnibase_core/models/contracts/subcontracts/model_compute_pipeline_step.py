@@ -36,9 +36,9 @@ Example YAML:
         # Transformation step
         - step_name: "normalize_text"
           step_type: "transformation"
-          transformation_type: "CASE_CONVERSION"
+          transformation_type: "case_conversion"
           transformation_config:
-            mode: "UPPER"
+            mode: "uppercase"
 
         # Mapping step
         - step_name: "build_output"

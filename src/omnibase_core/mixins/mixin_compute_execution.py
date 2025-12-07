@@ -140,9 +140,11 @@ class MixinComputeExecution:
         context = ModelComputeExecutionContext(
             operation_id=uuid4(),
             correlation_id=correlation_id,
-            node_id=str(self.node_id)
-            if hasattr(self, "node_id") and self.node_id is not None
-            else None,
+            node_id=(
+                str(self.node_id)
+                if hasattr(self, "node_id") and self.node_id is not None
+                else None
+            ),
         )
 
         # Execute pipeline (sync function, but wrapped for async compatibility)
@@ -197,7 +199,7 @@ class MixinComputeExecution:
         # Validate mapping paths reference existing steps
         executed_steps: set[str] = set()
         for step in contract.pipeline:
-            if step.mapping_config:
+            if step.mapping_config is not None:
                 for field, path in step.mapping_config.field_mappings.items():
                     if path.startswith("$.steps."):
                         # Extract step name from path

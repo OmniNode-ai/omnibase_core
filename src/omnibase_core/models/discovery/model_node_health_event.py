@@ -67,6 +67,7 @@ class ModelHealthMetrics(BaseModel):
     )
     health_check_duration_ms: float | None = Field(
         default=None,
+        ge=0,
         description="Duration of last health check in milliseconds",
     )
 

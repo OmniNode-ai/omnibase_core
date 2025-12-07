@@ -648,26 +648,37 @@ pipeline:
 
 **Resolution**:
 
-```python
-def resolve_path(path: str, input_data: Any, step_results: dict) -> Any:
-    # Handle $input alias (without dot) - normalize to $.input form
-    if path.startswith("$input"):
-        path = "$." + path[1:]  # Convert "$input" to "$.input"
+The actual implementation uses `resolve_pipeline_path()` from `compute_path_resolver.py`:
 
-    if path.startswith("$.input"):
-        return resolve_json_path(path[7:], input_data)
+```python
+def resolve_pipeline_path(
+    path: str,
+    input_data: Any,
+    step_results: dict[str, Any],
+) -> Any:
+    """
+    Main entry point for resolving paths in pipeline mapping steps.
+    Dispatches to resolve_input_path() or resolve_step_path() based on prefix.
+    """
+    _validate_path_start(path)  # Ensures path starts with "$"
+
+    # Handle input paths (including $input alias)
+    if path in ("$.input", "$input") or path.startswith(("$.input.", "$input.")):
+        return resolve_input_path(path, input_data)
+
+    # Handle step paths
     if path.startswith("$.steps."):
-        parts = path[8:].split(".", 1)
-        step_name = parts[0]
-        if step_name not in step_results:
-            raise ModelOnexError(f"Step not found: {step_name}")
-        result = step_results[step_name]
-        # Both $.steps.<name> and $.steps.<name>.output return the output
-        if len(parts) == 1 or (len(parts) > 1 and parts[1] == "output"):
-            return result.output
-        raise ModelOnexError(f"Invalid path: {path}")
-    raise ModelOnexError(f"Invalid path prefix: {path}")
+        return resolve_step_path(path, step_results)
+
+    # Invalid prefix
+    raise PathResolutionError(
+        message=f"Invalid path prefix: '{path}'. Must be '$.input', '$input', or '$.steps.<name>'",
+        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        path=path,
+    )
 ```
+
+See `src/omnibase_core/utils/compute_path_resolver.py` for the complete implementation including `resolve_input_path()` and `resolve_step_path()` helper functions.
 
 ### IDENTITY Transformation Rules
 

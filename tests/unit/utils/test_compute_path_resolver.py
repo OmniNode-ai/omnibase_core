@@ -483,10 +483,20 @@ class TestEdgeCasesAndSecurity:
             resolve_path("outer.inner", data)
 
     def test_path_with_consecutive_dots(self) -> None:
-        """Test path with consecutive dots (empty segments)."""
-        data = {"field": "value"}
-        # Consecutive dots (e.g., "field..") result in empty segments that are skipped
-        result = resolve_path("field..", data)
+        """Test path with consecutive dots (empty segments are skipped)."""
+        data = {"outer": {"inner": "value"}}
+        # Consecutive dots in middle of path (e.g., "outer..inner") result in
+        # empty segments that are skipped, equivalent to "outer.inner"
+        result = resolve_path("outer..inner", data)
+        assert result == "value"
+
+        # Multiple consecutive dots
+        result = resolve_path("outer...inner", data)
+        assert result == "value"
+
+        # Trailing consecutive dots
+        data_simple = {"field": "value"}
+        result = resolve_path("field..", data_simple)
         assert result == "value"
 
     def test_path_with_trailing_dot(self) -> None:

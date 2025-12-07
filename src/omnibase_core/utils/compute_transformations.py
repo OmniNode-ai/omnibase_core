@@ -356,7 +356,7 @@ def transform_unicode(data: str, config: ModelTransformUnicodeConfig) -> str:
         >>> config = ModelTransformUnicodeConfig(form=EnumUnicodeForm.NFC)
         >>> # Normalize a string with combining characters
         >>> transform_unicode("cafe\\u0301", config)  # e + combining acute
-        'cafe'  # Single precomposed character
+        'café'  # Single precomposed character (e with acute, U+00E9)
     """
     _validate_string_input(data, "NORMALIZE_UNICODE")
 
@@ -411,7 +411,7 @@ def transform_json_path(
     Example:
         >>> from omnibase_core.models.transformations import ModelTransformJsonPathConfig
         >>> data = {"user": {"name": "Alice", "profile": {"age": 30}}}
-        >>> config = ModelTransformJsonPathConfig(path="user.profile.age")
+        >>> config = ModelTransformJsonPathConfig(path="$.user.profile.age")
         >>> transform_json_path(data, config)
         30
     """

@@ -31,7 +31,7 @@ class ModelTraceData(BaseModel):
     )
     start_time: datetime = Field(description="Start timestamp")
     end_time: datetime = Field(description="End timestamp")
-    duration_ms: float = Field(description="Duration in milliseconds")
+    duration_ms: float = Field(ge=0, description="Duration in milliseconds")
     tags: dict[str, str] = Field(default_factory=dict, description="Trace tags")
     logs: list[str] = Field(default_factory=list, description="Trace log entries")
 
