@@ -63,7 +63,7 @@ See Also:
     - docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md: Full specification
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step import (
     ModelComputePipelineStep,
@@ -145,3 +145,37 @@ class ModelComputeSubcontract(BaseModel):
     pipeline_timeout_ms: int | None = Field(default=None, gt=0, le=3600000)
 
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+    @field_validator("pipeline")
+    @classmethod
+    def validate_unique_step_names(
+        cls, v: list[ModelComputePipelineStep]
+    ) -> list[ModelComputePipelineStep]:
+        """Validate that all pipeline step names are unique.
+
+        Each step in the pipeline must have a unique step_name to enable
+        unambiguous path references (e.g., $.steps.<step_name>.output).
+
+        Args:
+            v: List of pipeline steps to validate.
+
+        Returns:
+            The validated list of pipeline steps.
+
+        Raises:
+            ValueError: If duplicate step names are found.
+        """
+        if v:
+            step_names = [step.step_name for step in v]
+            if len(step_names) != len(set(step_names)):
+                # Find duplicates for better error message
+                seen: set[str] = set()
+                duplicates: list[str] = []
+                for name in step_names:
+                    if name in seen and name not in duplicates:
+                        duplicates.append(name)
+                    seen.add(name)
+                raise ValueError(
+                    f"Pipeline step names must be unique. Duplicates found: {duplicates}"
+                )
+        return v

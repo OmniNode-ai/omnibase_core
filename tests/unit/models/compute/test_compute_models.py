@@ -37,7 +37,7 @@ class TestModelComputeExecutionContext:
     def test_is_frozen(self) -> None:
         """Test that model is immutable."""
         context = ModelComputeExecutionContext(operation_id=uuid4())
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValidationError, match="frozen"):
             context.node_id = "modified"  # type: ignore[misc]
 
 
@@ -78,7 +78,7 @@ class TestModelComputeStepMetadata:
     def test_is_frozen(self) -> None:
         """Test that model is immutable."""
         metadata = ModelComputeStepMetadata(duration_ms=10.0)
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValidationError, match="frozen"):
             metadata.duration_ms = 20.0  # type: ignore[misc]
 
 
@@ -124,7 +124,7 @@ class TestModelComputeStepResult:
             output="data",
             metadata=metadata,
         )
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValidationError, match="frozen"):
             result.success = False  # type: ignore[misc]
 
 
@@ -190,5 +190,5 @@ class TestModelComputePipelineResult:
             steps_executed=[],
             step_results={},
         )
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValidationError, match="frozen"):
             result.success = False  # type: ignore[misc]

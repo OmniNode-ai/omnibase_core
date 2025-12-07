@@ -73,6 +73,48 @@ from omnibase_core.models.transformations.model_transform_unicode_config import 
 )
 from omnibase_core.models.transformations.types import ModelTransformationConfig
 
+
+def _validate_string_input(value: Any, transform_name: str) -> str:
+    """
+    Validate that input is a string type for string transformation functions.
+
+    This is a DRY helper function used by string transformations (REGEX,
+    CASE_CONVERSION, TRIM, NORMALIZE_UNICODE) to validate input type
+    before processing.
+
+    Thread Safety:
+        This function is pure and stateless - safe for concurrent use.
+
+    Args:
+        value: The input value to validate.
+        transform_name: Name of the transformation for error messaging
+            (e.g., "REGEX", "CASE_CONVERSION").
+
+    Returns:
+        The input value unchanged, typed as str.
+
+    Raises:
+        ModelOnexError: If value is not a string (VALIDATION_ERROR).
+
+    Example:
+        >>> data = _validate_string_input("hello", "CASE_CONVERSION")
+        >>> data
+        'hello'
+        >>> _validate_string_input(123, "CASE_CONVERSION")  # raises ModelOnexError
+    """
+    if not isinstance(value, str):
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"{transform_name} transformation requires string input, got {type(value).__name__}",
+            context={
+                "transform_type": transform_name,
+                "input_type": type(value).__name__,
+                "expected_type": "str",
+            },
+        )
+    return value
+
+
 # TODO(v1.1): Create TransformationError for more specific error handling.
 # Currently uses ModelOnexError which is generic. A dedicated TransformationError would:
 # - Enable more precise error handling in pipeline execution
@@ -83,7 +125,7 @@ from omnibase_core.models.transformations.types import ModelTransformationConfig
 
 def transform_identity(
     data: Any,  # Any: intentionally polymorphic - accepts any input type unchanged
-    config: None = None,  # None: IDENTITY must have no config per contract validation
+    config: Any = None,  # Any: accepts any config type for uniform registry signature
 ) -> Any:  # Any: output type mirrors input type
     """
     Identity transformation - returns data unchanged.
@@ -95,15 +137,16 @@ def transform_identity(
         This function is pure and stateless - safe for concurrent use.
 
     Note:
-        Unlike other transformation handlers, IDENTITY explicitly requires no config.
-        This is enforced at the contract level by ModelComputePipelineStep validation,
-        which rejects any IDENTITY step that has transformation_config set.
-        The signature uses `config: None = None` to align with this contract requirement
-        while maintaining uniform `handler(data, config)` call pattern in the registry.
+        The signature uses `config: Any = None` to align with the TransformationHandler
+        type alias (Callable[..., Any]), maintaining uniform `handler(data, config)` call
+        pattern in the registry. The config parameter is ignored - IDENTITY transformation
+        requires no configuration. This is enforced at the contract level by
+        ModelComputePipelineStep validation, which rejects any IDENTITY step that has
+        transformation_config set.
 
     Args:
         data: Any input data to pass through unchanged.
-        config: Must be None. IDENTITY transformation requires no configuration.
+        config: Ignored. IDENTITY transformation requires no configuration.
             This parameter exists for uniform registry handler signature,
             allowing the registry to call all handlers with `handler(data, config)`.
 
@@ -150,11 +193,7 @@ def transform_regex(data: str, config: ModelTransformRegexConfig) -> str:
         >>> transform_regex("Order 123 has 456 items", config)
         'Order NUM has NUM items'
     """
-    if not isinstance(data, str):
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=f"REGEX transformation requires string input, got {type(data).__name__}",
-        )
+    _validate_string_input(data, "REGEX")
 
     # Convert EnumRegexFlag to Python re flags
     flags = 0
@@ -172,6 +211,12 @@ def transform_regex(data: str, config: ModelTransformRegexConfig) -> str:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message=f"Invalid regex pattern: {e}",
+            context={
+                "transform_type": "REGEX",
+                "pattern": config.pattern,
+                "replacement": config.replacement,
+                "regex_error": str(e),
+            },
         ) from e
 
 
@@ -205,11 +250,7 @@ def transform_case(data: str, config: ModelTransformCaseConfig) -> str:
         >>> transform_case("hello world", config)
         'HELLO WORLD'
     """
-    if not isinstance(data, str):
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=f"CASE_CONVERSION transformation requires string input, got {type(data).__name__}",
-        )
+    _validate_string_input(data, "CASE_CONVERSION")
 
     if config.mode == EnumCaseMode.UPPER:
         return data.upper()
@@ -221,6 +262,10 @@ def transform_case(data: str, config: ModelTransformCaseConfig) -> str:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message=f"Unknown case mode: {config.mode}",
+            context={
+                "transform_type": "CASE_CONVERSION",
+                "mode": str(config.mode),
+            },
         )
 
 
@@ -255,11 +300,7 @@ def transform_trim(data: str, config: ModelTransformTrimConfig) -> str:
         >>> transform_trim("  hello world  ", config)
         'hello world'
     """
-    if not isinstance(data, str):
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=f"TRIM transformation requires string input, got {type(data).__name__}",
-        )
+    _validate_string_input(data, "TRIM")
 
     if config.mode == EnumTrimMode.BOTH:
         return data.strip()
@@ -271,6 +312,10 @@ def transform_trim(data: str, config: ModelTransformTrimConfig) -> str:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message=f"Unknown trim mode: {config.mode}",
+            context={
+                "transform_type": "TRIM",
+                "mode": str(config.mode),
+            },
         )
 
 
@@ -307,11 +352,7 @@ def transform_unicode(data: str, config: ModelTransformUnicodeConfig) -> str:
         >>> transform_unicode("cafe\\u0301", config)  # e + combining acute
         'cafe'  # Single precomposed character
     """
-    if not isinstance(data, str):
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=f"NORMALIZE_UNICODE transformation requires string input, got {type(data).__name__}",
-        )
+    _validate_string_input(data, "NORMALIZE_UNICODE")
 
     return unicodedata.normalize(config.form.value, data)
 
@@ -333,6 +374,13 @@ def transform_json_path(
         This implementation supports only simple dot-notation paths. Array indexing,
         wildcards, filters, and other advanced JSONPath features are deferred to v1.2.
 
+    Private Attribute Security:
+        For security reasons, private attributes (those starting with "_") are
+        blocked from path traversal when accessing object attributes. This prevents
+        exposure of internal implementation details through path expressions.
+        Dictionary keys starting with "_" ARE accessible since dictionaries
+        represent user data, not internal state.
+
     Args:
         data: The input data structure to navigate (dict, object, or nested structure).
         config: Configuration containing the path to extract:
@@ -345,7 +393,8 @@ def transform_json_path(
 
     Raises:
         ModelOnexError: If the path cannot be resolved (key missing, attribute not found)
-            or if attempting to access private attributes (those starting with "_").
+            or if attempting to access private attributes (those starting with "_")
+            on objects (not dictionaries).
 
     Example:
         >>> from omnibase_core.models.transformations import ModelTransformJsonPathConfig
@@ -379,6 +428,12 @@ def transform_json_path(
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,
                     message=f"Path '{config.path}' not found: key '{part}' missing",
+                    context={
+                        "transform_type": "JSON_PATH",
+                        "path": config.path,
+                        "missing_key": part,
+                        "available_keys": list(current.keys()) if current else [],
+                    },
                 )
             current = current[part]
         # Block private attribute access for security
@@ -386,6 +441,11 @@ def transform_json_path(
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Cannot access private attribute: '{part}'",
+                context={
+                    "transform_type": "JSON_PATH",
+                    "path": config.path,
+                    "private_attribute": part,
+                },
             )
         elif hasattr(current, part):
             current = getattr(current, part)
@@ -393,6 +453,12 @@ def transform_json_path(
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Path '{config.path}' not found: cannot access '{part}' on {type(current).__name__}",
+                context={
+                    "transform_type": "JSON_PATH",
+                    "path": config.path,
+                    "missing_attribute": part,
+                    "object_type": type(current).__name__,
+                },
             )
 
     return current
@@ -459,6 +525,10 @@ def execute_transformation(
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message=f"Unknown transformation type: {transformation_type}",
+            context={
+                "transform_type": str(transformation_type),
+                "available_types": [t.value for t in TRANSFORMATION_REGISTRY.keys()],
+            },
         )
 
     # IDENTITY requires no config (contract enforces transformation_config=None for IDENTITY)
@@ -469,6 +539,14 @@ def execute_transformation(
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Configuration required for {transformation_type} transformation",
+            context={
+                "transform_type": (
+                    transformation_type.value
+                    if hasattr(transformation_type, "value")
+                    else str(transformation_type)
+                ),
+                "input_type": type(data).__name__,
+            },
         )
 
     return handler(data, config)

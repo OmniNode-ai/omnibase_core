@@ -46,9 +46,13 @@ See Also:
 
 import logging
 import time
+import warnings
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+# Track if validation warning has been emitted for session deduplication
+_validation_warning_emitted = False
 
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -140,6 +144,13 @@ def resolve_mapping_path(
         convenience and is the more common usage pattern. The explicit `.output`
         suffix is supported for clarity and forward compatibility (v1.1+ may
         expose additional step result fields like `.metadata` or `.duration_ms`).
+
+    Private Attribute Security:
+        For security reasons, private attributes (those starting with "_") are
+        blocked from path traversal when accessing object attributes. This prevents
+        exposure of internal implementation details through path expressions.
+        Dictionary keys starting with "_" ARE accessible since dictionaries
+        represent user data, not internal state.
 
     Args:
         path: The path expression to resolve. Must start with "$".
@@ -324,16 +335,26 @@ def execute_validation_step(
             message="validation_config required for validation step",
         )
 
-    # TODO(v1.1): Implement actual schema validation against schema_ref
+    # TODO(v1.1): Implement schema validation for validation steps
     # - Integrate with schema registry for schema resolution
     # - Support JSON Schema validation
     # - Add validation error messages with path information
     # See: docs/architecture/NODECOMPUTE_VERSIONING_ROADMAP.md
 
-    # Log warning that validation is not yet implemented
-    logger.warning(
-        "Validation step '%s' is using pass-through mode (v1.0). "
-        "Schema validation will be implemented in v1.1.",
+    # Emit UserWarning once per session for validation steps
+    global _validation_warning_emitted
+    if not _validation_warning_emitted:
+        warnings.warn(
+            "Validation steps are pass-through in v1.0. "
+            "Schema validation will be implemented in v1.1.",
+            UserWarning,
+            stacklevel=2,
+        )
+        _validation_warning_emitted = True
+
+    # Log debug-level message for each step (for troubleshooting)
+    logger.debug(
+        "Validation step '%s' using pass-through mode (v1.0)",
         step.step_name,
     )
 
@@ -464,9 +485,24 @@ def execute_compute_pipeline(
 
     for step in contract.pipeline:
         if not step.enabled:
+            logger.debug(
+                "Skipping disabled step '%s' (operation_id=%s, correlation_id=%s)",
+                step.step_name,
+                context.operation_id,
+                context.correlation_id,
+            )
             continue
 
         step_start = time.perf_counter()
+
+        # Log step transition for observability
+        logger.debug(
+            "Executing step '%s' (type=%s, operation_id=%s, correlation_id=%s)",
+            step.step_name,
+            step.step_type.value if step.step_type else "unknown",
+            context.operation_id,
+            context.correlation_id,
+        )
 
         try:
             result_data = execute_pipeline_step(
@@ -494,9 +530,33 @@ def execute_compute_pipeline(
             steps_executed.append(step.step_name)
             current_data = result_data
 
+            logger.debug(
+                "Step '%s' completed successfully (duration_ms=%.2f, operation_id=%s)",
+                step.step_name,
+                step_duration,
+                context.operation_id,
+            )
+
         except ModelOnexError as e:
             step_duration = (time.perf_counter() - step_start) * 1000
             total_time = (time.perf_counter() - start_time) * 1000
+
+            # Log structured error for observability
+            error_code_str = (
+                e.error_code.value
+                if e.error_code is not None and hasattr(e.error_code, "value")
+                else str(e.error_code)
+            )
+            logger.warning(
+                "Pipeline step '%s' failed: %s (error_code=%s, operation_id=%s, "
+                "correlation_id=%s, step_type=%s)",
+                step.step_name,
+                e.message,
+                error_code_str,
+                context.operation_id,
+                context.correlation_id,
+                step.step_type.value if step.step_type else "unknown",
+            )
 
             # Record failed step
             step_result = ModelComputeStepResult(

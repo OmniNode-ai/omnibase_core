@@ -34,6 +34,7 @@ See Also:
     - omnibase_core.nodes.node_compute: Base NodeCompute class
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
 """
+from collections import Counter
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -183,11 +184,12 @@ class MixinComputeExecution:
         """
         errors: list[str] = []
 
-        # Check for duplicate step names
+        # Check for duplicate step names using Counter for O(n) performance
         step_names = [step.step_name for step in contract.pipeline]
-        if len(step_names) != len(set(step_names)):
-            duplicates = [name for name in step_names if step_names.count(name) > 1]
-            errors.append(f"Duplicate step names: {set(duplicates)}")
+        name_counts = Counter(step_names)
+        duplicates = {name for name, count in name_counts.items() if count > 1}
+        if duplicates:
+            errors.append(f"Duplicate step names: {duplicates}")
 
         # Validate mapping paths reference existing steps
         executed_steps: set[str] = set()

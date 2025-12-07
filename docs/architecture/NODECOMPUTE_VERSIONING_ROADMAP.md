@@ -130,13 +130,13 @@ NodeCompute follows semantic versioning with platform-primitive semantics:
 ### Version Timeline (Tentative)
 
 ```text
-Q1 2025: v1.0 Implementation and Production Validation
-Q2 2025: v1.1 Design and Implementation (if warranted)
-Q3 2025: v1.2 Design and Implementation (if warranted)
-Q4 2025: v1.3 Design and Implementation (if warranted)
+Milestone 1: v1.0 Implementation and Production Validation
+Milestone 2: v1.1 Design and Implementation (if warranted, after v1.0 production validation)
+Milestone 3: v1.2 Design and Implementation (if warranted, after v1.1 stabilization)
+Milestone 4: v1.3 Design and Implementation (if warranted, after v1.2 stabilization)
 ```
 
-**Note**: Each version's implementation depends on production feedback validating the need for additional complexity.
+**Note**: Each version's implementation depends on production feedback validating the need for additional complexity. Milestones are sequenced based on dependency completion rather than calendar dates.
 
 ---
 

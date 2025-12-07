@@ -12,9 +12,9 @@ These tests verify:
 5. Large data handling performance baseline
 """
 
-from uuid import uuid4
-
 import pytest
+
+from uuid import uuid4
 
 from omnibase_core.enums.enum_case_mode import EnumCaseMode
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
@@ -22,28 +22,40 @@ from omnibase_core.enums.enum_regex_flag import EnumRegexFlag
 from omnibase_core.enums.enum_transformation_type import EnumTransformationType
 from omnibase_core.enums.enum_trim_mode import EnumTrimMode
 from omnibase_core.enums.enum_unicode_form import EnumUnicodeForm
-from omnibase_core.models.compute.model_compute_execution_context import \
-    ModelComputeExecutionContext
-from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step import \
-    ModelComputePipelineStep
-from omnibase_core.models.contracts.subcontracts.model_compute_subcontract import \
-    ModelComputeSubcontract
-from omnibase_core.models.transformations.model_mapping_config import \
-    ModelMappingConfig
-from omnibase_core.models.transformations.model_transform_case_config import \
-    ModelTransformCaseConfig
-from omnibase_core.models.transformations.model_transform_regex_config import \
-    ModelTransformRegexConfig
-from omnibase_core.models.transformations.model_transform_trim_config import \
-    ModelTransformTrimConfig
-from omnibase_core.models.transformations.model_transform_unicode_config import \
-    ModelTransformUnicodeConfig
+from omnibase_core.models.compute.model_compute_execution_context import (
+    ModelComputeExecutionContext,
+)
+from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step import (
+    ModelComputePipelineStep,
+)
+from omnibase_core.models.contracts.subcontracts.model_compute_subcontract import (
+    ModelComputeSubcontract,
+)
+from omnibase_core.models.transformations.model_mapping_config import (
+    ModelMappingConfig,
+)
+from omnibase_core.models.transformations.model_transform_case_config import (
+    ModelTransformCaseConfig,
+)
+from omnibase_core.models.transformations.model_transform_regex_config import (
+    ModelTransformRegexConfig,
+)
+from omnibase_core.models.transformations.model_transform_trim_config import (
+    ModelTransformTrimConfig,
+)
+from omnibase_core.models.transformations.model_transform_unicode_config import (
+    ModelTransformUnicodeConfig,
+)
 from omnibase_core.utils.compute_executor import execute_compute_pipeline
 
 
 @pytest.mark.integration
+@pytest.mark.timeout(60)
 class TestComputePipelineIntegration:
-    """Integration tests for complete pipeline scenarios."""
+    """Integration tests for complete pipeline scenarios.
+
+    Note: 60-second timeout protects against pipeline execution hangs.
+    """
 
     def _create_context(self) -> ModelComputeExecutionContext:
         """Create a test execution context."""
@@ -492,11 +504,8 @@ class TestComputePipelineIntegration:
         )
 
         assert result.success is True
-        # All variations of "hello" should be replaced
-        assert (
-            "hello" not in result.output.lower()
-            or result.output == "hi World, hi friend, hi there"
-        )
+        # All variations of "hello" should be replaced with "hi"
+        assert result.output == "hi World, hi friend, hi there"
 
     def test_unicode_normalization_in_pipeline(self) -> None:
         """Test unicode normalization as part of a pipeline.
@@ -639,8 +648,12 @@ class TestComputePipelineIntegration:
 
 
 @pytest.mark.integration
+@pytest.mark.timeout(60)
 class TestComputePipelineErrorScenarios:
-    """Integration tests for error handling scenarios."""
+    """Integration tests for error handling scenarios.
+
+    Note: 60-second timeout protects against pipeline execution hangs.
+    """
 
     def _create_context(self) -> ModelComputeExecutionContext:
         """Create a test execution context."""
@@ -782,8 +795,12 @@ class TestComputePipelineErrorScenarios:
 
 
 @pytest.mark.integration
+@pytest.mark.timeout(60)
 class TestComputePipelineContextTracking:
-    """Integration tests for context and correlation ID tracking."""
+    """Integration tests for context and correlation ID tracking.
+
+    Note: 60-second timeout protects against pipeline execution hangs.
+    """
 
     def test_context_ids_are_preserved(self) -> None:
         """Test that operation and correlation IDs are available in context."""
@@ -847,8 +864,12 @@ class TestComputePipelineContextTracking:
 
 
 @pytest.mark.integration
+@pytest.mark.timeout(60)
 class TestComputePipelineSingleStepScenarios:
-    """Integration tests for single-step pipeline edge cases."""
+    """Integration tests for single-step pipeline edge cases.
+
+    Note: 60-second timeout protects against pipeline execution hangs.
+    """
 
     def _create_context(self) -> ModelComputeExecutionContext:
         """Create a test execution context."""
@@ -966,8 +987,12 @@ class TestComputePipelineSingleStepScenarios:
 
 
 @pytest.mark.integration
+@pytest.mark.timeout(60)
 class TestComputePipelineStepResultAccumulation:
-    """Integration tests for step result accumulation and field mapping across steps."""
+    """Integration tests for step result accumulation and field mapping across steps.
+
+    Note: 60-second timeout protects against pipeline execution hangs.
+    """
 
     def _create_context(self) -> ModelComputeExecutionContext:
         """Create a test execution context."""
@@ -1200,8 +1225,12 @@ class TestComputePipelineStepResultAccumulation:
 
 
 @pytest.mark.integration
+@pytest.mark.timeout(60)
 class TestComputePipelineAllStepTypes:
-    """Integration tests covering all supported step types in various combinations."""
+    """Integration tests covering all supported step types in various combinations.
+
+    Note: 60-second timeout protects against pipeline execution hangs.
+    """
 
     def _create_context(self) -> ModelComputeExecutionContext:
         """Create a test execution context."""
@@ -1364,8 +1393,12 @@ class TestComputePipelineAllStepTypes:
 
 
 @pytest.mark.integration
+@pytest.mark.timeout(120)
 class TestComputePipelineConcurrency:
-    """Integration tests for concurrent pipeline execution scenarios."""
+    """Integration tests for concurrent pipeline execution scenarios.
+
+    Note: 120-second timeout allows for concurrent execution overhead.
+    """
 
     def _create_context(self) -> ModelComputeExecutionContext:
         """Create a test execution context."""
@@ -1501,8 +1534,12 @@ class TestComputePipelineConcurrency:
 
 
 @pytest.mark.integration
+@pytest.mark.timeout(60)
 class TestComputePipelineEdgeCases:
-    """Integration tests for pipeline edge cases and boundary conditions."""
+    """Integration tests for pipeline edge cases and boundary conditions.
+
+    Note: 60-second timeout protects against pipeline execution hangs.
+    """
 
     def _create_context(self) -> ModelComputeExecutionContext:
         """Create a test execution context."""

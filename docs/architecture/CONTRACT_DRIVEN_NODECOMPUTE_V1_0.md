@@ -65,14 +65,15 @@ These principles apply to v1.0 and all future versions:
 
 | Feature | Deferred To | Rationale |
 |---------|-------------|-----------|
-| **Caching** | v1.1 | Adds cache invalidation complexity |
-| **Cancellation** | v1.1 | Requires cooperative cancellation infrastructure |
-| **Parallel Steps** | v1.2 | Merge semantics need careful design |
-| **Conditional Steps** | v1.2 | Expression language needs full spec |
+| **Conditional Steps** | v1.1 | Expression language needs full spec |
+| **Parallel Steps** | v1.1 | Merge semantics need careful design |
+| **SPLIT/JOIN/TEMPLATE/TYPE_CONVERSION/SCHEMA_VALIDATE** | v1.1 | Start with minimal set; `SCHEMA_VALIDATE` transform duplicates `VALIDATION` step type |
+| **Caching** | v1.2 | Adds cache invalidation complexity |
+| **Detailed Error Enums** | v1.2 | Simple string `error_type` sufficient for v1.0 |
 | **Full Expression Language** | v1.2 | Only simple path expressions in v1.0 |
-| **Transformation Versioning** | v1.2 | Not needed until transformations evolve |
-| **SPLIT/JOIN/FILTER/MAP/REDUCE/SORT/TEMPLATE/TYPE_CONVERSION/SCHEMA_VALIDATE** | v1.1+ | Start with minimal set; `SCHEMA_VALIDATE` transform duplicates `VALIDATION` step type |
-| **Detailed Error Enums** | v1.1 | Simple string `error_type` sufficient for v1.0 |
+| **FILTER/MAP/REDUCE/SORT** | v1.2 | Collection operations deferred until caching/observability in place |
+| **Cancellation** | v1.3 | Requires cooperative cancellation infrastructure |
+| **Transformation Versioning** | v1.3 | Not needed until transformations evolve |
 
 See [NODECOMPUTE_VERSIONING_ROADMAP.md](./NODECOMPUTE_VERSIONING_ROADMAP.md) for full roadmap.
 
@@ -557,9 +558,12 @@ v1.0 does **NOT** implement full JSONPath. This is intentional.
 | Pattern | Description | Example |
 |---------|-------------|---------|
 | `$.input` | Full input object | `$.input` |
+| `$input` | Alias for `$.input` | `$input` |
 | `$.input.<field>` | Direct child field | `$.input.text` |
 | `$.input.<field>.<subfield>` | Nested fields | `$.input.options.mode` |
 | `$.steps.<step_name>.output` | Full output from previous step | `$.steps.trim.output` |
+
+**Path Alias**: The shorthand `$input` is an alias for `$.input`. Both forms are supported and semantically equivalent. The canonical form is `$.input`, but `$input` is accepted for brevity in contracts.
 
 **NOT Supported in v1.0**:
 
@@ -919,6 +923,7 @@ class NodeTextProcessor(NodeCompute):
 
 - **Full Vision**: [NODECOMPUTE_FULL_DESIGN_V1X_TARGET.md](./NODECOMPUTE_FULL_DESIGN_V1X_TARGET.md)
 - **Versioning Roadmap**: [NODECOMPUTE_VERSIONING_ROADMAP.md](./NODECOMPUTE_VERSIONING_ROADMAP.md)
+- **Example Contract**: [user_profile_normalizer.yaml](../../examples/contracts/compute/user_profile_normalizer.yaml)
 - **Linear Issue**: [OMN-465](https://linear.app/omninode/issue/OMN-465)
 - **NodeReducer Pattern**: [node_reducer.py](../../src/omnibase_core/nodes/node_reducer.py)
 - **NodeOrchestrator Pattern**: [node_orchestrator.py](../../src/omnibase_core/nodes/node_orchestrator.py)

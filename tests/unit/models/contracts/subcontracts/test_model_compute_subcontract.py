@@ -174,3 +174,121 @@ class TestModelComputeSubcontractFrozen:
                 pipeline=[],
                 extra_field="invalid",  # type: ignore[call-arg]
             )
+
+
+@pytest.mark.unit
+class TestModelComputeSubcontractUniqueStepNames:
+    """Tests for unique step name validation."""
+
+    def test_unique_step_names_allowed(self) -> None:
+        """Test that unique step names are accepted."""
+        step1 = ModelComputePipelineStep(
+            step_name="step_one",
+            step_type=EnumComputeStepType.TRANSFORMATION,
+            transformation_type=EnumTransformationType.IDENTITY,
+        )
+        step2 = ModelComputePipelineStep(
+            step_name="step_two",
+            step_type=EnumComputeStepType.TRANSFORMATION,
+            transformation_type=EnumTransformationType.IDENTITY,
+        )
+        subcontract = ModelComputeSubcontract(
+            operation_name="test_op",
+            operation_version="1.0.0",
+            pipeline=[step1, step2],
+        )
+        assert len(subcontract.pipeline) == 2
+        assert subcontract.pipeline[0].step_name == "step_one"
+        assert subcontract.pipeline[1].step_name == "step_two"
+
+    def test_duplicate_step_names_raises_error(self) -> None:
+        """Test that duplicate step names raise validation error."""
+        step1 = ModelComputePipelineStep(
+            step_name="duplicate_name",
+            step_type=EnumComputeStepType.TRANSFORMATION,
+            transformation_type=EnumTransformationType.IDENTITY,
+        )
+        step2 = ModelComputePipelineStep(
+            step_name="duplicate_name",
+            step_type=EnumComputeStepType.TRANSFORMATION,
+            transformation_type=EnumTransformationType.IDENTITY,
+        )
+        with pytest.raises(ValidationError, match="step names must be unique"):
+            ModelComputeSubcontract(
+                operation_name="test_op",
+                operation_version="1.0.0",
+                pipeline=[step1, step2],
+            )
+
+    def test_multiple_duplicates_raises_error(self) -> None:
+        """Test that multiple duplicate step names raise validation error."""
+        steps = [
+            ModelComputePipelineStep(
+                step_name="dup1",
+                step_type=EnumComputeStepType.TRANSFORMATION,
+                transformation_type=EnumTransformationType.IDENTITY,
+            ),
+            ModelComputePipelineStep(
+                step_name="dup1",
+                step_type=EnumComputeStepType.TRANSFORMATION,
+                transformation_type=EnumTransformationType.IDENTITY,
+            ),
+            ModelComputePipelineStep(
+                step_name="dup2",
+                step_type=EnumComputeStepType.TRANSFORMATION,
+                transformation_type=EnumTransformationType.IDENTITY,
+            ),
+            ModelComputePipelineStep(
+                step_name="dup2",
+                step_type=EnumComputeStepType.TRANSFORMATION,
+                transformation_type=EnumTransformationType.IDENTITY,
+            ),
+        ]
+        with pytest.raises(ValidationError, match="step names must be unique"):
+            ModelComputeSubcontract(
+                operation_name="test_op",
+                operation_version="1.0.0",
+                pipeline=steps,
+            )
+
+    def test_empty_pipeline_allowed(self) -> None:
+        """Test that empty pipeline is allowed."""
+        subcontract = ModelComputeSubcontract(
+            operation_name="test_op",
+            operation_version="1.0.0",
+            pipeline=[],
+        )
+        assert subcontract.pipeline == []
+
+    def test_single_step_allowed(self) -> None:
+        """Test that single step pipeline is allowed."""
+        step = ModelComputePipelineStep(
+            step_name="only_step",
+            step_type=EnumComputeStepType.TRANSFORMATION,
+            transformation_type=EnumTransformationType.IDENTITY,
+        )
+        subcontract = ModelComputeSubcontract(
+            operation_name="test_op",
+            operation_version="1.0.0",
+            pipeline=[step],
+        )
+        assert len(subcontract.pipeline) == 1
+
+    def test_error_message_includes_duplicate_names(self) -> None:
+        """Test that error message includes the duplicate step names."""
+        step1 = ModelComputePipelineStep(
+            step_name="my_duplicate",
+            step_type=EnumComputeStepType.TRANSFORMATION,
+            transformation_type=EnumTransformationType.IDENTITY,
+        )
+        step2 = ModelComputePipelineStep(
+            step_name="my_duplicate",
+            step_type=EnumComputeStepType.TRANSFORMATION,
+            transformation_type=EnumTransformationType.IDENTITY,
+        )
+        with pytest.raises(ValidationError, match="my_duplicate"):
+            ModelComputeSubcontract(
+                operation_name="test_op",
+                operation_version="1.0.0",
+                pipeline=[step1, step2],
+            )
