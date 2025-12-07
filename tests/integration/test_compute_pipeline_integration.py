@@ -1,0 +1,814 @@
+"""
+Integration tests for contract-driven NodeCompute pipeline execution.
+
+Tests complete pipeline scenarios including multi-step execution,
+error propagation, and complex data flows.
+
+These tests verify:
+1. Full pipeline execution with multiple chained steps
+2. Error propagation and abort-on-first-failure semantics
+3. Mapping steps referencing multiple prior step outputs
+4. Disabled step handling
+5. Large data handling performance baseline
+"""
+
+from uuid import uuid4
+
+import pytest
+
+from omnibase_core.enums.enum_case_mode import EnumCaseMode
+from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
+from omnibase_core.enums.enum_regex_flag import EnumRegexFlag
+from omnibase_core.enums.enum_transformation_type import EnumTransformationType
+from omnibase_core.enums.enum_trim_mode import EnumTrimMode
+from omnibase_core.enums.enum_unicode_form import EnumUnicodeForm
+from omnibase_core.models.compute.model_compute_execution_context import (
+    ModelComputeExecutionContext,
+)
+from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step import (
+    ModelComputePipelineStep,
+)
+from omnibase_core.models.contracts.subcontracts.model_compute_subcontract import (
+    ModelComputeSubcontract,
+)
+from omnibase_core.models.transformations.model_mapping_config import (
+    ModelMappingConfig,
+)
+from omnibase_core.models.transformations.model_transform_case_config import (
+    ModelTransformCaseConfig,
+)
+from omnibase_core.models.transformations.model_transform_regex_config import (
+    ModelTransformRegexConfig,
+)
+from omnibase_core.models.transformations.model_transform_trim_config import (
+    ModelTransformTrimConfig,
+)
+from omnibase_core.models.transformations.model_transform_unicode_config import (
+    ModelTransformUnicodeConfig,
+)
+from omnibase_core.utils.compute_executor import execute_compute_pipeline
+
+
+class TestComputePipelineIntegration:
+    """Integration tests for complete pipeline scenarios."""
+
+    def _create_context(self) -> ModelComputeExecutionContext:
+        """Create a test execution context."""
+        return ModelComputeExecutionContext(
+            operation_id=uuid4(),
+            correlation_id=uuid4(),
+        )
+
+    def test_multi_step_pipeline_execution(self) -> None:
+        """Test pipeline with multiple transformation steps chained together.
+
+        Verifies that:
+        - Multiple steps execute in sequence
+        - Each step receives the output of the previous step
+        - Final output reflects all transformations
+        - All steps are tracked in steps_executed
+        """
+        # Create a pipeline: TRIM -> CASE_CONVERSION -> IDENTITY
+        contract = ModelComputeSubcontract(
+            operation_name="multi_step_test",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="trim_input",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.TRIM,
+                    transformation_config=ModelTransformTrimConfig(mode=EnumTrimMode.BOTH),
+                ),
+                ModelComputePipelineStep(
+                    step_name="uppercase",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.CASE_CONVERSION,
+                    transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+                ),
+                ModelComputePipelineStep(
+                    step_name="identity_pass",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="  hello world  ",
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        assert result.output == "HELLO WORLD"
+        assert len(result.steps_executed) == 3
+        assert result.steps_executed == ["trim_input", "uppercase", "identity_pass"]
+        assert result.error_step is None
+        assert result.error_message is None
+
+    def test_error_propagation_aborts_pipeline(self) -> None:
+        """Test that failure in middle step aborts the pipeline.
+
+        Verifies abort-on-first-failure semantics:
+        - Step 1 (IDENTITY) succeeds with integer input
+        - Step 2 (TRIM) fails because it requires string input
+        - Step 3 never executes
+        - Pipeline reports failure with correct error step
+        """
+        # Create a pipeline where step 2 will fail (integer input to TRIM)
+        contract = ModelComputeSubcontract(
+            operation_name="error_test",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="step1_identity",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+                # This will fail because step1 output is not a string
+                ModelComputePipelineStep(
+                    step_name="step2_trim_fails",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.TRIM,
+                    transformation_config=ModelTransformTrimConfig(mode=EnumTrimMode.BOTH),
+                ),
+                ModelComputePipelineStep(
+                    step_name="step3_never_reached",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+        )
+
+        # Pass integer to cause TRIM to fail (TRIM requires string input)
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data=12345,
+            context=self._create_context(),
+        )
+
+        assert result.success is False
+        assert result.error_step == "step2_trim_fails"
+        # step2_trim_fails is added to steps_executed even though it failed
+        assert "step2_trim_fails" in result.steps_executed
+        # step3 should never be executed
+        assert "step3_never_reached" not in result.steps_executed
+        assert result.error_message is not None
+        assert "string" in result.error_message.lower() or "str" in result.error_message.lower()
+
+    def test_mapping_references_multiple_prior_steps(self) -> None:
+        """Test mapping step that references outputs from multiple prior steps.
+
+        Verifies that:
+        - Mapping can reference $.input for original input
+        - Mapping can reference $.steps.<name>.output for step outputs
+        - Multiple fields can be constructed from different sources
+        """
+        contract = ModelComputeSubcontract(
+            operation_name="mapping_test",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="uppercase_name",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.CASE_CONVERSION,
+                    transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+                ),
+                # This step creates a mapping from prior step and input
+                ModelComputePipelineStep(
+                    step_name="combine_results",
+                    step_type=EnumComputeStepType.MAPPING,
+                    mapping_config=ModelMappingConfig(
+                        field_mappings={
+                            "original": "$.input",
+                            "transformed": "$.steps.uppercase_name.output",
+                        }
+                    ),
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="hello",
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        assert isinstance(result.output, dict)
+        assert result.output["original"] == "hello"
+        assert result.output["transformed"] == "HELLO"
+
+    def test_disabled_steps_are_skipped(self) -> None:
+        """Test that disabled steps are properly skipped.
+
+        Verifies that:
+        - Disabled steps don't execute
+        - Disabled steps don't appear in steps_executed
+        - Pipeline continues past disabled steps
+        - Output reflects only enabled transformations
+        """
+        contract = ModelComputeSubcontract(
+            operation_name="disabled_step_test",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="step1",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.CASE_CONVERSION,
+                    transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+                ),
+                ModelComputePipelineStep(
+                    step_name="step2_disabled",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.CASE_CONVERSION,
+                    transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.LOWER),
+                    enabled=False,
+                ),
+                ModelComputePipelineStep(
+                    step_name="step3",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="Hello",
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        assert result.output == "HELLO"  # Not "hello" - step2 was skipped
+        assert "step2_disabled" not in result.steps_executed
+        assert result.steps_executed == ["step1", "step3"]
+
+    def test_complex_pipeline_with_regex_and_unicode(self) -> None:
+        """Test complex pipeline with regex and unicode normalization.
+
+        Verifies that:
+        - Regex transformations work correctly
+        - Unicode normalization integrates with other steps
+        - Complex multi-step pipelines execute correctly
+        """
+        contract = ModelComputeSubcontract(
+            operation_name="complex_pipeline",
+            operation_version="1.0.0",
+            pipeline=[
+                # Step 1: Normalize multiple spaces to single space
+                ModelComputePipelineStep(
+                    step_name="normalize_spaces",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.REGEX,
+                    transformation_config=ModelTransformRegexConfig(
+                        pattern=r"\s+",
+                        replacement=" ",
+                    ),
+                ),
+                # Step 2: Trim whitespace
+                ModelComputePipelineStep(
+                    step_name="trim",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.TRIM,
+                    transformation_config=ModelTransformTrimConfig(mode=EnumTrimMode.BOTH),
+                ),
+                # Step 3: Convert to uppercase
+                ModelComputePipelineStep(
+                    step_name="uppercase",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.CASE_CONVERSION,
+                    transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="  hello    world   test  ",
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        assert result.output == "HELLO WORLD TEST"
+        assert len(result.steps_executed) == 3
+
+    def test_mapping_with_nested_input_access(self) -> None:
+        """Test mapping step accessing nested fields in input.
+
+        Verifies that:
+        - Mapping can access nested fields via $.input.field.subfield
+        - Complex input structures are properly traversed
+        """
+        contract = ModelComputeSubcontract(
+            operation_name="nested_mapping_test",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="extract_fields",
+                    step_type=EnumComputeStepType.MAPPING,
+                    mapping_config=ModelMappingConfig(
+                        field_mappings={
+                            "user_name": "$.input.user.name",
+                            "user_email": "$.input.user.email",
+                            "full_input": "$.input",
+                        }
+                    ),
+                ),
+            ],
+        )
+
+        input_data = {
+            "user": {
+                "name": "John Doe",
+                "email": "john@example.com",
+            },
+            "metadata": {
+                "created": "2024-01-01",
+            },
+        }
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data=input_data,
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        assert result.output["user_name"] == "John Doe"
+        assert result.output["user_email"] == "john@example.com"
+        assert result.output["full_input"] == input_data
+
+    def test_chained_transformations_with_intermediate_mapping(self) -> None:
+        """Test pipeline with transformations and intermediate mapping.
+
+        Verifies complex data flow:
+        1. Transform input to uppercase
+        2. Transform input to lowercase (on original input via mapping)
+        3. Combine both in final mapping
+        """
+        contract = ModelComputeSubcontract(
+            operation_name="chained_with_mapping",
+            operation_version="1.0.0",
+            pipeline=[
+                # Step 1: Uppercase transformation
+                ModelComputePipelineStep(
+                    step_name="to_upper",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.CASE_CONVERSION,
+                    transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+                ),
+                # Step 2: Create intermediate mapping preserving original
+                ModelComputePipelineStep(
+                    step_name="preserve_both",
+                    step_type=EnumComputeStepType.MAPPING,
+                    mapping_config=ModelMappingConfig(
+                        field_mappings={
+                            "upper_version": "$.steps.to_upper.output",
+                            "original": "$.input",
+                        }
+                    ),
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="Hello World",
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        assert result.output["upper_version"] == "HELLO WORLD"
+        assert result.output["original"] == "Hello World"
+
+    def test_pipeline_timing_is_tracked(self) -> None:
+        """Test that pipeline timing information is properly tracked.
+
+        Verifies that:
+        - Total processing time is recorded
+        - Individual step durations are recorded
+        - All timing values are non-negative
+        """
+        contract = ModelComputeSubcontract(
+            operation_name="timing_test",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="step1",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.CASE_CONVERSION,
+                    transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+                ),
+                ModelComputePipelineStep(
+                    step_name="step2",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.TRIM,
+                    transformation_config=ModelTransformTrimConfig(mode=EnumTrimMode.BOTH),
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="  hello  ",
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        assert result.processing_time_ms >= 0
+
+        # Check individual step timings
+        for step_name in ["step1", "step2"]:
+            step_result = result.step_results[step_name]
+            assert step_result.metadata.duration_ms >= 0
+
+    def test_empty_pipeline_returns_input_unchanged(self) -> None:
+        """Test that empty pipeline returns input unchanged."""
+        contract = ModelComputeSubcontract(
+            operation_name="empty_pipeline",
+            operation_version="1.0.0",
+            pipeline=[],
+        )
+
+        input_data = {"key": "value", "nested": {"data": 123}}
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data=input_data,
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        assert result.output == input_data
+        assert result.steps_executed == []
+
+    def test_regex_with_flags(self) -> None:
+        """Test regex transformation with various flags.
+
+        Verifies that:
+        - IGNORECASE flag works correctly
+        - Multiple regex operations can be chained
+        """
+        contract = ModelComputeSubcontract(
+            operation_name="regex_flags_test",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="case_insensitive_replace",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.REGEX,
+                    transformation_config=ModelTransformRegexConfig(
+                        pattern=r"hello",
+                        replacement="hi",
+                        flags=[EnumRegexFlag.IGNORECASE],
+                    ),
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="HELLO World, hello friend, HeLLo there",
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        # All variations of "hello" should be replaced
+        assert "hello" not in result.output.lower() or result.output == "hi World, hi friend, hi there"
+
+    def test_unicode_normalization_in_pipeline(self) -> None:
+        """Test unicode normalization as part of a pipeline.
+
+        Verifies that:
+        - Unicode normalization works correctly
+        - Can be combined with other transformations
+        """
+        contract = ModelComputeSubcontract(
+            operation_name="unicode_pipeline",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="normalize",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.NORMALIZE_UNICODE,
+                    transformation_config=ModelTransformUnicodeConfig(form=EnumUnicodeForm.NFC),
+                ),
+                ModelComputePipelineStep(
+                    step_name="uppercase",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.CASE_CONVERSION,
+                    transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+                ),
+            ],
+        )
+
+        # Use decomposed form (e + combining accent)
+        decomposed = "cafe\u0301"  # cafe with combining acute accent on e
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data=decomposed,
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        # Should be normalized and uppercased
+        assert result.output == "CAF\xc9"  # CAFE with composed E-acute
+
+    @pytest.mark.slow
+    def test_large_data_performance_baseline(self) -> None:
+        """Test pipeline performance with larger data sets.
+
+        Verifies that:
+        - Pipeline handles large inputs without issues
+        - Processing completes in reasonable time
+        - Output is correct for large data
+        """
+        # Create a simple pipeline
+        contract = ModelComputeSubcontract(
+            operation_name="performance_test",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="trim",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.TRIM,
+                    transformation_config=ModelTransformTrimConfig(mode=EnumTrimMode.BOTH),
+                ),
+                ModelComputePipelineStep(
+                    step_name="uppercase",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.CASE_CONVERSION,
+                    transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+                ),
+            ],
+        )
+
+        # Generate large input (100KB of text)
+        large_input = "  " + "a" * 100000 + "  "
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data=large_input,
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        assert len(result.output) == 100000
+        assert result.output == "A" * 100000
+        # Performance baseline: should complete in reasonable time (under 1 second)
+        assert result.processing_time_ms < 1000
+
+    @pytest.mark.slow
+    def test_many_steps_pipeline(self) -> None:
+        """Test pipeline with many steps.
+
+        Verifies that:
+        - Pipeline can handle many sequential steps
+        - All steps are tracked correctly
+        - Performance remains reasonable
+        """
+        # Create a pipeline with many identity steps
+        steps = []
+        for i in range(50):
+            steps.append(
+                ModelComputePipelineStep(
+                    step_name=f"step_{i:02d}",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                )
+            )
+
+        # Add a final transformation to verify data flows through
+        steps.append(
+            ModelComputePipelineStep(
+                step_name="final_uppercase",
+                step_type=EnumComputeStepType.TRANSFORMATION,
+                transformation_type=EnumTransformationType.CASE_CONVERSION,
+                transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+            )
+        )
+
+        contract = ModelComputeSubcontract(
+            operation_name="many_steps_test",
+            operation_version="1.0.0",
+            pipeline=steps,
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="hello world",
+            context=self._create_context(),
+        )
+
+        assert result.success is True
+        assert result.output == "HELLO WORLD"
+        assert len(result.steps_executed) == 51
+        # Performance: should complete quickly despite many steps
+        assert result.processing_time_ms < 500
+
+
+class TestComputePipelineErrorScenarios:
+    """Integration tests for error handling scenarios."""
+
+    def _create_context(self) -> ModelComputeExecutionContext:
+        """Create a test execution context."""
+        return ModelComputeExecutionContext(
+            operation_id=uuid4(),
+            correlation_id=uuid4(),
+        )
+
+    def test_invalid_regex_pattern_fails_gracefully(self) -> None:
+        """Test that invalid regex pattern causes proper failure."""
+        contract = ModelComputeSubcontract(
+            operation_name="invalid_regex",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="bad_regex",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.REGEX,
+                    transformation_config=ModelTransformRegexConfig(
+                        pattern=r"[invalid",  # Unclosed bracket
+                        replacement="x",
+                    ),
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="test input",
+            context=self._create_context(),
+        )
+
+        assert result.success is False
+        assert result.error_step == "bad_regex"
+        assert result.error_message is not None
+
+    def test_missing_mapping_path_fails(self) -> None:
+        """Test that referencing non-existent path in mapping fails."""
+        contract = ModelComputeSubcontract(
+            operation_name="missing_path",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="bad_mapping",
+                    step_type=EnumComputeStepType.MAPPING,
+                    mapping_config=ModelMappingConfig(
+                        field_mappings={
+                            "missing": "$.input.nonexistent.field",
+                        }
+                    ),
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data={"actual": "data"},
+            context=self._create_context(),
+        )
+
+        assert result.success is False
+        assert result.error_step == "bad_mapping"
+        assert result.error_message is not None
+
+    def test_referencing_nonexistent_step_fails(self) -> None:
+        """Test that referencing non-existent step in mapping fails."""
+        contract = ModelComputeSubcontract(
+            operation_name="missing_step",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="bad_mapping",
+                    step_type=EnumComputeStepType.MAPPING,
+                    mapping_config=ModelMappingConfig(
+                        field_mappings={
+                            "missing": "$.steps.nonexistent_step.output",
+                        }
+                    ),
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="test",
+            context=self._create_context(),
+        )
+
+        assert result.success is False
+        assert result.error_step == "bad_mapping"
+        assert "nonexistent_step" in result.error_message or "not found" in result.error_message.lower()
+
+    def test_type_mismatch_in_middle_step(self) -> None:
+        """Test that type mismatch in middle of pipeline aborts correctly."""
+        contract = ModelComputeSubcontract(
+            operation_name="type_mismatch",
+            operation_version="1.0.0",
+            pipeline=[
+                # Step 1: Create a mapping (outputs dict)
+                ModelComputePipelineStep(
+                    step_name="create_mapping",
+                    step_type=EnumComputeStepType.MAPPING,
+                    mapping_config=ModelMappingConfig(
+                        field_mappings={
+                            "value": "$.input",
+                        }
+                    ),
+                ),
+                # Step 2: Try to uppercase (expects string, gets dict)
+                ModelComputePipelineStep(
+                    step_name="uppercase_fails",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.CASE_CONVERSION,
+                    transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+                ),
+                # Step 3: Should never be reached
+                ModelComputePipelineStep(
+                    step_name="never_reached",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="test input",
+            context=self._create_context(),
+        )
+
+        assert result.success is False
+        assert result.error_step == "uppercase_fails"
+        assert "never_reached" not in result.steps_executed
+
+
+class TestComputePipelineContextTracking:
+    """Integration tests for context and correlation ID tracking."""
+
+    def test_context_ids_are_preserved(self) -> None:
+        """Test that operation and correlation IDs are available in context."""
+        operation_id = uuid4()
+        correlation_id = uuid4()
+
+        context = ModelComputeExecutionContext(
+            operation_id=operation_id,
+            correlation_id=correlation_id,
+            node_id="test-node-001",
+        )
+
+        contract = ModelComputeSubcontract(
+            operation_name="context_test",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="identity",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="test",
+            context=context,
+        )
+
+        assert result.success is True
+        # Context should be passed through (though we can't directly inspect it
+        # from the result, we verify the pipeline executed successfully with it)
+
+    def test_context_without_correlation_id(self) -> None:
+        """Test that context works without optional correlation ID."""
+        context = ModelComputeExecutionContext(
+            operation_id=uuid4(),
+            # correlation_id is optional
+        )
+
+        contract = ModelComputeSubcontract(
+            operation_name="minimal_context_test",
+            operation_version="1.0.0",
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="identity",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+        )
+
+        result = execute_compute_pipeline(
+            contract=contract,
+            input_data="test",
+            context=context,
+        )
+
+        assert result.success is True
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
