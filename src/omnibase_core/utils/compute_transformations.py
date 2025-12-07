@@ -125,7 +125,8 @@ def _validate_string_input(value: Any, transform_name: str) -> str:
 
 def transform_identity(
     data: Any,  # Any: intentionally polymorphic - accepts any input type unchanged
-    config: ModelTransformationConfig | None,  # Aligned with other handlers for uniform registry usage
+    config: ModelTransformationConfig
+    | None,  # Aligned with other handlers for uniform registry usage
 ) -> Any:  # Any: output type mirrors input type
     """
     Identity transformation - returns data unchanged.
