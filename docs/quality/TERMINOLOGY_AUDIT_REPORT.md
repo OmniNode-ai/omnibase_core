@@ -168,9 +168,9 @@ class NodeFileBackupEffect      ← Code
 - `CLAUDE.md:180-215` - Critical distinction highlighted
 - Multiple examples showing correct usage patterns
 
-✅ **Consistent Code Examples**:
-```
-# ✅ Correct - DI container in node constructor
+**Consistent Code Examples**:
+```python
+# Correct - DI container in node constructor
 def __init__(self, container: ModelONEXContainer):
     super().__init__(container)
 
@@ -202,8 +202,8 @@ config = ModelContainer.create(value="production")
 
 **Evidence**:
 
-✅ **Consistent Patterns**:
-```
+**Consistent Patterns**:
+```python
 # Get services by protocol interface (never by concrete class)
 event_bus = container.get_service("ProtocolEventBus")
 ```

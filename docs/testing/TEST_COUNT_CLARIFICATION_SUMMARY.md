@@ -20,7 +20,7 @@ The omnibase_core documentation contained multiple inconsistent and outdated tes
 
 ## Verified Actual Count
 
-```
+```bash
 $ poetry run pytest --collect-only -q 2>/dev/null | tail -n 1
 12198 tests collected in 20.10s
 ```
@@ -115,7 +115,7 @@ The 12,198 tests are distributed across:
 
 To verify the test count at any time:
 
-```
+```bash
 # Quick count (accurate)
 poetry run pytest --collect-only -q 2>/dev/null | tail -n 1
 

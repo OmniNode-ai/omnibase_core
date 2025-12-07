@@ -490,13 +490,21 @@ class TestEdgeCasesAndSecurity:
         result = resolve_path("outer..inner", data)
         assert result == "value"
 
-        # Multiple consecutive dots
+        # Multiple consecutive dots (3+ dots)
         result = resolve_path("outer...inner", data)
         assert result == "value"
 
         # Trailing consecutive dots
         data_simple = {"field": "value"}
         result = resolve_path("field..", data_simple)
+        assert result == "value"
+
+        # Leading consecutive dots (empty segments at start are skipped)
+        result = resolve_path("..outer.inner", data)
+        assert result == "value"
+
+        # Mixed: leading, middle, and trailing consecutive dots
+        result = resolve_path("..outer..inner..", data)
         assert result == "value"
 
     def test_path_with_trailing_dot(self) -> None:

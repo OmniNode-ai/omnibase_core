@@ -12,7 +12,7 @@ Event-driven architecture patterns for ONEX services using ModelEventEnvelope an
 
 All events use `ModelEventEnvelope` for consistent communication:
 
-```
+```python
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from uuid import UUID
 from datetime import datetime
@@ -29,7 +29,7 @@ envelope = ModelEventEnvelope(
 
 REDUCER nodes emit Intents instead of performing side effects:
 
-```
+```python
 def reduce_state(
     state: ModelState,
     action: ModelAction
@@ -54,7 +54,7 @@ def reduce_state(
 
 ### Pattern 1: Request-Response
 
-```
+```text
 ┌─────────┐     event      ┌─────────┐     event      ┌─────────┐
 │ Client  │ ──────────────> │  Node   │ ──────────────> │ Client  │
 └─────────┘                 └─────────┘                 └─────────┘
@@ -62,7 +62,7 @@ def reduce_state(
 
 ### Pattern 2: Publish-Subscribe
 
-```
+```text
 ┌─────────┐                 ┌─────────────┐
 │Publisher│ ───────────────>│  Event Bus  │
 └─────────┘                 └──────┬──────┘
@@ -77,7 +77,7 @@ def reduce_state(
 
 ### Pattern 3: Intent → Action Flow (Pure FSM)
 
-```
+```text
 ┌─────────┐   Action   ┌─────────┐  Intents  ┌────────┐
 │Orchestr │ ─────────> │ Reducer │ ────────> │ Effect │
 └─────────┘            └─────────┘           └────────┘
@@ -90,7 +90,7 @@ def reduce_state(
 
 ### Event Publishing
 
-```
+```python
 class MyNode(ModelServiceCompute):
     async def process(self, data: dict) -> dict:
         # Process data
@@ -111,7 +111,7 @@ class MyNode(ModelServiceCompute):
 
 ### Event Subscription
 
-```
+```python
 class MyNode(ModelServiceEffect):
     async def initialize(self):
         event_bus = self.container.get_service("ProtocolEventBus")
@@ -133,7 +133,7 @@ class MyNode(ModelServiceEffect):
 
 ### Intent Execution
 
-```
+```python
 class MyEffectNode(ModelServiceEffect):
     async def execute_intent(self, intent: ModelIntent):
         """Execute Intent from REDUCER."""
@@ -159,7 +159,7 @@ class MyEffectNode(ModelServiceEffect):
 
 ### 1. Use Correlation IDs
 
-```
+```python
 envelope = ModelEventEnvelope(
     event_type="DATA_PROCESSED",
     payload=data,
@@ -169,7 +169,7 @@ envelope = ModelEventEnvelope(
 
 ### 2. Type-Safe Event Types
 
-```
+```python
 class EnumEventType(str, Enum):
     DATA_PROCESSED = "data_processed"
     ERROR_OCCURRED = "error_occurred"
@@ -184,8 +184,8 @@ envelope = ModelEventEnvelope(
 
 ### 3. Structured Event Payloads
 
-```
-# ❌ Bad: Unstructured payload
+```python
+# Bad: Unstructured payload
 payload = {"data": "something", "other": 123}
 
 # ✅ Good: Pydantic model
@@ -198,7 +198,7 @@ payload = DataProcessedPayload(result="success", metrics={...})
 
 ## Testing Event-Driven Code
 
-```
+```python
 @pytest.mark.asyncio
 async def test_event_publishing():
     # Arrange

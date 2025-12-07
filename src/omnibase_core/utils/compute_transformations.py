@@ -56,22 +56,18 @@ from omnibase_core.enums.enum_transformation_type import EnumTransformationType
 from omnibase_core.enums.enum_trim_mode import EnumTrimMode
 from omnibase_core.enums.enum_unicode_form import EnumUnicodeForm
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.transformations.model_transform_case_config import (
-    ModelTransformCaseConfig,
-)
-from omnibase_core.models.transformations.model_transform_json_path_config import (
-    ModelTransformJsonPathConfig,
-)
-from omnibase_core.models.transformations.model_transform_regex_config import (
-    ModelTransformRegexConfig,
-)
-from omnibase_core.models.transformations.model_transform_trim_config import (
-    ModelTransformTrimConfig,
-)
-from omnibase_core.models.transformations.model_transform_unicode_config import (
-    ModelTransformUnicodeConfig,
-)
-from omnibase_core.models.transformations.types import ModelTransformationConfig
+from omnibase_core.models.transformations.model_transform_case_config import \
+    ModelTransformCaseConfig
+from omnibase_core.models.transformations.model_transform_json_path_config import \
+    ModelTransformJsonPathConfig
+from omnibase_core.models.transformations.model_transform_regex_config import \
+    ModelTransformRegexConfig
+from omnibase_core.models.transformations.model_transform_trim_config import \
+    ModelTransformTrimConfig
+from omnibase_core.models.transformations.model_transform_unicode_config import \
+    ModelTransformUnicodeConfig
+from omnibase_core.models.transformations.types import \
+    ModelTransformationConfig
 
 
 def _validate_string_input(value: Any, transform_name: str) -> str:
@@ -125,8 +121,9 @@ def _validate_string_input(value: Any, transform_name: str) -> str:
 
 def transform_identity(
     data: Any,  # Any: intentionally polymorphic - accepts any input type unchanged
-    config: ModelTransformationConfig
-    | None,  # Aligned with other handlers for uniform registry usage
+    config: (
+        ModelTransformationConfig | None
+    ),  # Aligned with other handlers for uniform registry usage
 ) -> Any:  # Any: output type mirrors input type
     """
     Identity transformation - returns data unchanged.
@@ -396,9 +393,10 @@ def transform_json_path(
     Args:
         data: The input data structure to navigate (dict, object, or nested structure).
         config: Configuration containing the path to extract:
-            - "field": Direct field access
-            - "field.subfield": Nested field access
-            - "$" or "$.field": JSONPath-style notation ($ is optional)
+            - "$": Root-level access (returns entire data)
+            - "$.field": Direct field access
+            - "$.field.subfield": Nested field access
+            Note: Path must start with "$" (validated by ModelTransformJsonPathConfig).
 
     Returns:
         The value found at the specified path.
