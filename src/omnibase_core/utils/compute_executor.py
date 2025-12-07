@@ -61,7 +61,9 @@ from omnibase_core.models.compute.model_compute_pipeline_result import (
 from omnibase_core.models.compute.model_compute_step_metadata import (
     ModelComputeStepMetadata,
 )
-from omnibase_core.models.compute.model_compute_step_result import ModelComputeStepResult
+from omnibase_core.models.compute.model_compute_step_result import (
+    ModelComputeStepResult,
+)
 from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step import (
     ModelComputePipelineStep,
 )
@@ -87,11 +89,18 @@ def _get_error_type(error: ModelOnexError) -> str:
         error: The ModelOnexError to extract the type from.
 
     Returns:
-        A string representation of the error type. Returns "transformation_error"
+        A string representation of the error type. Returns "compute_error"
         if no error code is present.
+
+    Note:
+        The default "compute_error" is a generic fallback for pipeline errors.
+        In v1.1+, this will be replaced with EnumComputeErrorType.
+        See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
     """
     if error.error_code is None:
-        return "transformation_error"
+        # TODO(v1.1): Replace with EnumComputeErrorType.COMPUTE_ERROR
+        # See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
+        return "compute_error"
     if hasattr(error.error_code, "value"):
         return str(error.error_code.value)
     return str(error.error_code)
@@ -119,7 +128,18 @@ def resolve_mapping_path(
         - $.input: Returns the full input object
         - $.input.<field>: Direct child field of input
         - $.input.<field>.<subfield>: Nested field access (unlimited depth)
-        - $.steps.<step_name>.output: Output from a previously executed step
+        - $.steps.<step_name>: Returns the step's output (shorthand, equivalent to .output)
+        - $.steps.<step_name>.output: Returns the step's output (explicit form)
+
+    Path Resolution Behavior:
+        For input paths ($.input), full nested access is supported to any depth.
+        For step paths ($.steps), only the step's output is accessible in v1.0.
+
+        Note: Both `$.steps.<name>` and `$.steps.<name>.output` return the step's
+        output value. The shorthand form (`$.steps.<name>`) is provided for
+        convenience and is the more common usage pattern. The explicit `.output`
+        suffix is supported for clarity and forward compatibility (v1.1+ may
+        expose additional step result fields like `.metadata` or `.duration_ms`).
 
     Args:
         path: The path expression to resolve. Must start with "$".
@@ -138,6 +158,9 @@ def resolve_mapping_path(
 
     Example:
         >>> step_results = {"normalize": ModelComputeStepResult(..., output="HELLO")}
+        >>> # Both forms are equivalent:
+        >>> resolve_mapping_path("$.steps.normalize", {}, step_results)
+        'HELLO'
         >>> resolve_mapping_path("$.steps.normalize.output", {}, step_results)
         'HELLO'
     """
@@ -196,11 +219,12 @@ def resolve_mapping_path(
         result = step_results[step_name]
 
         if len(parts) == 1:
-            # Return full step result
+            # Shorthand: $.steps.<name> returns output (convenience form)
             return result.output
 
         sub_path = parts[1]
         if sub_path == "output":
+            # Explicit: $.steps.<name>.output returns output (explicit form)
             return result.output
         else:
             raise ModelOnexError(
@@ -506,6 +530,19 @@ def execute_compute_pipeline(
         except Exception as e:
             step_duration = (time.perf_counter() - step_start) * 1000
             total_time = (time.perf_counter() - start_time) * 1000
+
+            # Log unexpected errors for observability
+            # TODO(v1.1): Wire context.correlation_id to structured logging
+            # See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
+            logger.exception(
+                "Unexpected error in pipeline step '%s': %s (type: %s, "
+                "operation_id: %s, correlation_id: %s)",
+                step.step_name,
+                str(e),
+                type(e).__name__,
+                context.operation_id,
+                context.correlation_id,
+            )
 
             step_result = ModelComputeStepResult(
                 step_name=step.step_name,

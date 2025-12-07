@@ -81,7 +81,7 @@ class TestModelComputeSubcontractTimeoutValidation:
         assert subcontract.pipeline_timeout_ms == 1000
 
     def test_timeout_large_value_allowed(self) -> None:
-        """Test that large timeout values are allowed."""
+        """Test that large timeout values are allowed (up to 1 hour)."""
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
             operation_version="1.0.0",
@@ -89,6 +89,26 @@ class TestModelComputeSubcontractTimeoutValidation:
             pipeline_timeout_ms=600000,  # 10 minutes
         )
         assert subcontract.pipeline_timeout_ms == 600000
+
+    def test_timeout_max_allowed(self) -> None:
+        """Test that maximum timeout (1 hour) is allowed."""
+        subcontract = ModelComputeSubcontract(
+            operation_name="test_op",
+            operation_version="1.0.0",
+            pipeline=[],
+            pipeline_timeout_ms=3600000,  # 1 hour (max allowed)
+        )
+        assert subcontract.pipeline_timeout_ms == 3600000
+
+    def test_timeout_exceeds_max_raises_error(self) -> None:
+        """Test that timeout exceeding 1 hour raises validation error."""
+        with pytest.raises(ValidationError, match="less than or equal to 3600000"):
+            ModelComputeSubcontract(
+                operation_name="test_op",
+                operation_version="1.0.0",
+                pipeline=[],
+                pipeline_timeout_ms=3600001,  # Just over 1 hour
+            )
 
     def test_timeout_one_allowed(self) -> None:
         """Test that timeout of 1ms is allowed."""

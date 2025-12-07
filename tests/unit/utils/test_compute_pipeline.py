@@ -375,8 +375,12 @@ class TestResolveMappingPath:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestExecuteComputePipeline:
-    """Tests for execute_compute_pipeline."""
+    """Tests for execute_compute_pipeline.
+
+    Note: 30-second timeout protects against pipeline execution hangs.
+    """
 
     def test_simple_pipeline(self) -> None:
         """Test executing a simple transformation pipeline."""

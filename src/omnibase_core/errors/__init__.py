@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING, Any
 # These symbols are re-exported via __all__ and resolved at runtime
 # through __getattr__ to avoid circular import dependencies.
 if TYPE_CHECKING:
+    from omnibase_core.errors.exception_compute_pipeline_error import (
+        ComputePipelineError,
+    )
     from omnibase_core.errors.runtime_errors import (
         ContractValidationError,
         EventBusError,
@@ -41,6 +44,7 @@ from omnibase_core.errors.error_codes import (
 # to avoid circular dependencies
 
 __all__ = [
+    "ComputePipelineError",
     "ContractValidationError",
     "EnumCLIExitCode",
     "EnumCoreErrorCode",
@@ -103,6 +107,13 @@ def __getattr__(name: str) -> Any:
         from omnibase_core.errors.runtime_errors import ContractValidationError
 
         return ContractValidationError
+    # Compute pipeline errors (OMN-465)
+    if name == "ComputePipelineError":
+        from omnibase_core.errors.exception_compute_pipeline_error import (
+            ComputePipelineError,
+        )
+
+        return ComputePipelineError
     # Raise standard AttributeError for unknown attributes
     # Cannot use ModelOnexError here as it would cause circular import
     raise AttributeError(  # error-ok: avoid circular import in lazy loader

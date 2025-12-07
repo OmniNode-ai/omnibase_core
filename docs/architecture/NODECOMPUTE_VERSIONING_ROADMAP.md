@@ -103,7 +103,7 @@ A feature graduates from "roadmap" to "implementation" only when:
 
 NodeCompute follows semantic versioning with platform-primitive semantics:
 
-```
+```text
 1.x.y
 | | |
 | | +-- Patch: Bug fixes, performance improvements (no API changes)
@@ -129,7 +129,7 @@ NodeCompute follows semantic versioning with platform-primitive semantics:
 
 ### Version Timeline (Tentative)
 
-```
+```text
 Q1 2025: v1.0 Implementation and Production Validation
 Q2 2025: v1.1 Design and Implementation (if warranted)
 Q3 2025: v1.2 Design and Implementation (if warranted)
@@ -924,7 +924,7 @@ poetry run pytest tests/contract_compatibility/test_v1_x_on_v1_3.py
 
 **Within 1.x:**
 
-```
+```text
 Any contract valid in v1.0 MUST be valid in v1.3
 Any contract valid in v1.0 MUST produce identical output in v1.3
 Any ledger entry from v1.0 MUST be replayable in v1.3

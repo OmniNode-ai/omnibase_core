@@ -98,8 +98,13 @@ def tool_invocation_event(service_compute):
     )
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeBasicInvocation:
-    """Test basic tool invocation handling."""
+    """Test basic tool invocation handling.
+
+    Note: 30-second timeout protects against service invocation hangs.
+    """
 
     @pytest.mark.asyncio
     async def test_basic_tool_invocation_handling(
@@ -221,6 +226,8 @@ class TestModelServiceComputeBasicInvocation:
         )
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeTargetValidation:
     """Test target node validation logic."""
 
@@ -260,6 +267,8 @@ class TestModelServiceComputeTargetValidation:
         assert service_compute._successful_invocations == 0
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeInputStateConversion:
     """Test event-to-input-state conversion."""
 
@@ -378,6 +387,8 @@ class TestModelServiceComputeInputStateConversion:
         assert input_state.tags == ["tag1", "tag2", "tag3"]
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeToolExecution:
     """Test tool execution via node.run()."""
 
@@ -488,6 +499,8 @@ class TestModelServiceComputeToolExecution:
         assert response_event.execution_time_ms > 0
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeResultSerialization:
     """Test result serialization."""
 
@@ -619,6 +632,8 @@ class TestModelServiceComputeResultSerialization:
         assert "valid result" in response_event.error.lower()
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeResponseEmission:
     """Test success and error response emission."""
 
@@ -678,6 +693,8 @@ class TestModelServiceComputeResponseEmission:
         assert service_compute._failed_invocations == 1
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeCorrelationTracking:
     """Test correlation ID tracking."""
 
@@ -705,6 +722,8 @@ class TestModelServiceComputeCorrelationTracking:
         assert response_event.correlation_id == expected_correlation_id
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeActiveInvocations:
     """Test active invocation tracking."""
 
@@ -757,6 +776,8 @@ class TestModelServiceComputeActiveInvocations:
         )
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeConcurrentInvocations:
     """Test concurrent invocation handling."""
 
@@ -810,6 +831,8 @@ class TestModelServiceComputeConcurrentInvocations:
         assert mock_event_bus.publish.call_count == num_invocations
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputePureFunctionSemantics:
     """Test compute-specific pure function semantics."""
 
@@ -852,6 +875,8 @@ class TestModelServiceComputePureFunctionSemantics:
             assert response.result == {"output": 84}
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeDeterministicOutput:
     """Test deterministic output verification."""
 

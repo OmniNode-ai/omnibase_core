@@ -83,7 +83,7 @@ from omnibase_core.models.transformations.types import ModelTransformationConfig
 
 def transform_identity(
     data: Any,  # Any: intentionally polymorphic - accepts any input type unchanged
-    config: Any = None,  # Any: unused but accepts any config for registry uniformity
+    config: None = None,  # None: IDENTITY must have no config per contract validation
 ) -> Any:  # Any: output type mirrors input type
     """
     Identity transformation - returns data unchanged.
@@ -94,9 +94,17 @@ def transform_identity(
     Thread Safety:
         This function is pure and stateless - safe for concurrent use.
 
+    Note:
+        Unlike other transformation handlers, IDENTITY explicitly requires no config.
+        This is enforced at the contract level by ModelComputePipelineStep validation,
+        which rejects any IDENTITY step that has transformation_config set.
+        The signature uses `config: None = None` to align with this contract requirement
+        while maintaining uniform `handler(data, config)` call pattern in the registry.
+
     Args:
         data: Any input data to pass through unchanged.
-        config: Unused. Accepts any config type for uniform registry handler signature,
+        config: Must be None. IDENTITY transformation requires no configuration.
+            This parameter exists for uniform registry handler signature,
             allowing the registry to call all handlers with `handler(data, config)`.
 
     Returns:
@@ -453,9 +461,9 @@ def execute_transformation(
             message=f"Unknown transformation type: {transformation_type}",
         )
 
-    # IDENTITY is special - config is optional (ignored even if provided)
+    # IDENTITY requires no config (contract enforces transformation_config=None for IDENTITY)
     if transformation_type == EnumTransformationType.IDENTITY:
-        return handler(data, config)
+        return handler(data, None)
 
     if config is None:
         raise ModelOnexError(

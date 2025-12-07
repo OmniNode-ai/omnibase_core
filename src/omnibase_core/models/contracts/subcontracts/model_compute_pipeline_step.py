@@ -4,6 +4,67 @@ A single step in the compute pipeline.
 This module defines the ModelComputePipelineStep model for v1.0 contract-driven
 NodeCompute pipelines. Each step represents a discrete operation in the
 sequential transformation pipeline.
+
+Step Types (v1.0):
+    VALIDATION:
+        Validates data against a schema. v1.0 implements pass-through behavior
+        while logging a warning. Full schema validation planned for v1.1.
+
+    TRANSFORMATION:
+        Applies a transformation function to the data. Supports multiple
+        transformation types: IDENTITY, REGEX, CASE_CONVERSION, TRIM,
+        NORMALIZE_UNICODE, and JSON_PATH.
+
+    MAPPING:
+        Builds a new data structure by combining values from the pipeline
+        input and/or previous step outputs using path expressions.
+
+Thread Safety:
+    ModelComputePipelineStep is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access.
+
+Configuration Requirements:
+    Each step type requires specific configuration fields:
+    - VALIDATION: validation_config (required)
+    - TRANSFORMATION: transformation_type (required), transformation_config
+      (required for all except IDENTITY, which must NOT have config)
+    - MAPPING: mapping_config (required)
+
+Example YAML:
+    .. code-block:: yaml
+
+        # Transformation step
+        - step_name: "normalize_text"
+          step_type: "transformation"
+          transformation_type: "CASE_CONVERSION"
+          transformation_config:
+            mode: "UPPER"
+
+        # Mapping step
+        - step_name: "build_output"
+          step_type: "mapping"
+          mapping_config:
+            field_mappings:
+              original_input: "$.input.text"
+              normalized: "$.steps.normalize_text.output"
+
+Example Python:
+    >>> from omnibase_core.models.contracts.subcontracts import ModelComputePipelineStep
+    >>> from omnibase_core.enums import EnumComputeStepType, EnumTransformationType
+    >>> from omnibase_core.models.transformations import ModelTransformCaseConfig
+    >>> from omnibase_core.enums import EnumCaseMode
+    >>>
+    >>> step = ModelComputePipelineStep(
+    ...     step_name="uppercase",
+    ...     step_type=EnumComputeStepType.TRANSFORMATION,
+    ...     transformation_type=EnumTransformationType.CASE_CONVERSION,
+    ...     transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+    ... )
+
+See Also:
+    - omnibase_core.models.contracts.subcontracts.model_compute_subcontract: Parent contract
+    - omnibase_core.utils.compute_executor.execute_pipeline_step: Step execution logic
+    - omnibase_core.enums.enum_compute_step_type: Step type enumeration
 """
 
 from pydantic import BaseModel, ConfigDict, model_validator
@@ -21,24 +82,73 @@ class ModelComputePipelineStep(BaseModel):
     """
     A single step in the compute pipeline.
 
-    v1.0 supports: VALIDATION, TRANSFORMATION, MAPPING
+    Represents one discrete operation in a sequential transformation pipeline.
+    v1.0 supports three step types: VALIDATION, TRANSFORMATION, and MAPPING.
 
-    Each step type requires its corresponding configuration:
-    - VALIDATION requires validation_config
-    - TRANSFORMATION requires transformation_type and transformation_config
-      (except IDENTITY which must NOT have transformation_config)
-    - MAPPING requires mapping_config
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it safe
+        for concurrent read access from multiple threads or async tasks.
 
-    NOTE: No per-step timeout in v1.0. Use pipeline_timeout_ms on contract.
+    Step Type Configuration:
+        Each step type requires specific configuration fields. The model validator
+        enforces these requirements at construction time:
+
+        VALIDATION:
+            - validation_config: Required. Specifies schema_ref for validation.
+
+        TRANSFORMATION:
+            - transformation_type: Required. Specifies which transformation to apply.
+            - transformation_config: Required for all types EXCEPT IDENTITY.
+              IDENTITY transformation MUST NOT have a config (enforced).
+
+        MAPPING:
+            - mapping_config: Required. Specifies field_mappings with path expressions.
+
+    Path Expression Syntax (for mapping_config):
+        - $.input: Full pipeline input
+        - $.input.<field>: Input field access
+        - $.steps.<step_name>.output: Previous step's output
 
     Attributes:
-        step_name: Unique name for this step within the pipeline.
-        step_type: The type of step (VALIDATION, TRANSFORMATION, MAPPING).
-        transformation_type: For TRANSFORMATION steps, the type of transformation.
-        transformation_config: For non-IDENTITY TRANSFORMATION steps, the config.
-        mapping_config: For MAPPING steps, the field mapping configuration.
-        validation_config: For VALIDATION steps, the validation configuration.
-        enabled: Whether this step is enabled. Defaults to True.
+        step_name: Unique identifier for this step within the pipeline. Used for
+            logging, error messages, and path references in subsequent steps
+            (e.g., "$.steps.step_name.output"). Must be unique across all steps.
+        step_type: The category of operation this step performs. One of:
+            VALIDATION, TRANSFORMATION, or MAPPING.
+        transformation_type: For TRANSFORMATION steps only. Specifies which
+            transformation function to apply. One of: IDENTITY, REGEX,
+            CASE_CONVERSION, TRIM, NORMALIZE_UNICODE, JSON_PATH.
+        transformation_config: Configuration for the transformation. Required
+            for all transformation types except IDENTITY (which must have None).
+            Type depends on transformation_type (e.g., ModelTransformCaseConfig
+            for CASE_CONVERSION).
+        mapping_config: For MAPPING steps only. Contains field_mappings dict
+            that specifies how to build the output structure from path expressions.
+        validation_config: For VALIDATION steps only. Contains schema_ref
+            for data validation. v1.0: schema not enforced, logs warning.
+        enabled: Whether this step should be executed. When False, the step
+            is skipped and the previous step's output (or input for first step)
+            passes through unchanged. Defaults to True.
+
+    Example:
+        >>> # TRANSFORMATION step with configuration
+        >>> step = ModelComputePipelineStep(
+        ...     step_name="normalize",
+        ...     step_type=EnumComputeStepType.TRANSFORMATION,
+        ...     transformation_type=EnumTransformationType.CASE_CONVERSION,
+        ...     transformation_config=ModelTransformCaseConfig(mode=EnumCaseMode.UPPER),
+        ... )
+        >>>
+        >>> # IDENTITY transformation (no config allowed)
+        >>> identity = ModelComputePipelineStep(
+        ...     step_name="passthrough",
+        ...     step_type=EnumComputeStepType.TRANSFORMATION,
+        ...     transformation_type=EnumTransformationType.IDENTITY,
+        ... )
+
+    Note:
+        Per-step timeout is not supported in v1.0. Use pipeline_timeout_ms on
+        the parent ModelComputeSubcontract for overall timeout control.
     """
 
     step_name: str

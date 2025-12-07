@@ -638,7 +638,7 @@ This sets up v1.2's replay/observability guarantees cleanly.
 v1.0 uses **string-only error types**:
 
 ```python
-error_type: str | None = None   # e.g., "validation_failed", "transformation_error"
+error_type: str | None = None   # e.g., "validation_failed", "compute_error", "unexpected_error"
 error_message: str | None = None
 error_step: str | None = None
 ```

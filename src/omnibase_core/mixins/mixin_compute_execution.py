@@ -34,16 +34,19 @@ See Also:
     - omnibase_core.nodes.node_compute: Base NodeCompute class
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
 """
-from typing import Any, TYPE_CHECKING
-from uuid import uuid4
+from typing import Any
+from uuid import UUID, uuid4
 
-from omnibase_core.models.compute.model_compute_execution_context import ModelComputeExecutionContext
-from omnibase_core.models.compute.model_compute_pipeline_result import ModelComputePipelineResult
-from omnibase_core.models.contracts.subcontracts.model_compute_subcontract import ModelComputeSubcontract
+from omnibase_core.models.compute.model_compute_execution_context import (
+    ModelComputeExecutionContext,
+)
+from omnibase_core.models.compute.model_compute_pipeline_result import (
+    ModelComputePipelineResult,
+)
+from omnibase_core.models.contracts.subcontracts.model_compute_subcontract import (
+    ModelComputeSubcontract,
+)
 from omnibase_core.utils.compute_executor import execute_compute_pipeline
-
-if TYPE_CHECKING:
-    from uuid import UUID
 
 
 class MixinComputeExecution:
@@ -82,13 +85,13 @@ class MixinComputeExecution:
     """
 
     # Type hints for attributes that should exist on the mixing class
-    node_id: "UUID"
+    node_id: UUID
 
     async def execute_contract_pipeline(
         self,
         contract: ModelComputeSubcontract,
         input_data: Any,  # Any: pipeline accepts dict, Pydantic model, or JSON-compatible data
-        correlation_id: "UUID | None" = None,
+        correlation_id: UUID | None = None,
     ) -> ModelComputePipelineResult:
         """
         Execute a contract-driven compute pipeline asynchronously.
@@ -135,7 +138,7 @@ class MixinComputeExecution:
         context = ModelComputeExecutionContext(
             operation_id=uuid4(),
             correlation_id=correlation_id,
-            node_id=str(self.node_id) if hasattr(self, 'node_id') else None,
+            node_id=str(self.node_id) if hasattr(self, "node_id") else None,
         )
 
         # Execute pipeline (sync function, but wrapped for async compatibility)

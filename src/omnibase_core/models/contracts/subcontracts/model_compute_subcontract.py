@@ -1,9 +1,66 @@
 """
 v1.0 Compute subcontract for sequential pipeline transformations.
 
-This module defines the ModelComputeSubcontract model which represents
-the complete compute contract for a NodeCompute node. It specifies
-the transformation pipeline with abort-on-first-failure semantics.
+This module defines the ModelComputeSubcontract model which represents the
+complete compute contract for a NodeCompute node. It specifies the transformation
+pipeline with abort-on-first-failure semantics, supporting deterministic and
+traceable data processing workflows.
+
+The compute subcontract is part of the ONEX contract system and defines:
+    - Pipeline identity (name, version, description)
+    - Schema references for input/output validation
+    - Sequential transformation steps
+    - Performance constraints (timeout)
+
+Thread Safety:
+    ModelComputeSubcontract is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access.
+
+Pipeline Execution Model:
+    Steps are executed sequentially in definition order. If any step fails,
+    the pipeline aborts immediately and returns the error. This ensures
+    consistent behavior and simplifies error handling.
+
+Example YAML Contract:
+    .. code-block:: yaml
+
+        compute_operations:
+          version: "1.0.0"
+          operation_name: "text_normalizer"
+          operation_version: "1.0.0"
+          description: "Normalize text input to uppercase trimmed format"
+          input_schema_ref: "schemas/text_input.json"
+          output_schema_ref: "schemas/text_output.json"
+          pipeline_timeout_ms: 5000
+          pipeline:
+            - step_name: "trim"
+              step_type: "transformation"
+              transformation_type: "TRIM"
+              transformation_config:
+                mode: "BOTH"
+            - step_name: "uppercase"
+              step_type: "transformation"
+              transformation_type: "CASE_CONVERSION"
+              transformation_config:
+                mode: "UPPER"
+
+Example Python Usage:
+    >>> from omnibase_core.models.contracts.subcontracts import ModelComputeSubcontract
+    >>> from omnibase_core.models.contracts.subcontracts import ModelComputePipelineStep
+    >>> from omnibase_core.enums import EnumComputeStepType, EnumTransformationType
+    >>>
+    >>> contract = ModelComputeSubcontract(
+    ...     operation_name="text_normalizer",
+    ...     operation_version="1.0.0",
+    ...     description="Normalize text to uppercase",
+    ...     pipeline=[...],  # List of ModelComputePipelineStep
+    ... )
+
+See Also:
+    - omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step: Step definitions
+    - omnibase_core.utils.compute_executor: Executes these contracts
+    - omnibase_core.mixins.mixin_compute_execution: Contract validation utilities
+    - docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md: Full specification
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -19,17 +76,55 @@ class ModelComputeSubcontract(BaseModel):
 
     Defines transformation pipelines with abort-on-first-failure semantics.
     Steps are executed sequentially in the order defined in the pipeline list.
-    If any step fails, the pipeline aborts and returns the error.
+    If any step fails, the pipeline aborts immediately and returns the error.
+
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it safe
+        for concurrent read access from multiple threads or async tasks.
+
+    Contract Versioning:
+        The version field tracks the subcontract schema version, not the operation
+        version. This allows schema evolution while maintaining backward compatibility
+        for contract parsing.
+
+    Schema References:
+        input_schema_ref and output_schema_ref are resolved at contract load time
+        (not at execution time). v1.0 logs a warning but does not enforce schema
+        validation - this is planned for v1.1.
 
     Attributes:
-        version: Semantic version of the subcontract schema. Defaults to "1.0.0".
-        operation_name: Name of the compute operation.
-        operation_version: Version of the compute operation.
-        description: Optional description of the compute operation.
-        input_schema_ref: Optional reference to input schema (resolved at load time).
-        output_schema_ref: Optional reference to output schema (resolved at load time).
-        pipeline: List of pipeline steps to execute sequentially.
-        pipeline_timeout_ms: Optional timeout for the entire pipeline in milliseconds.
+        version: Semantic version of the subcontract schema format. Defaults to
+            "1.0.0". Used for contract parser compatibility checking.
+        operation_name: Unique name identifying this compute operation. Should be
+            descriptive and follow naming conventions (e.g., "text_normalizer",
+            "user_data_validator").
+        operation_version: Semantic version of this operation implementation.
+            Allows multiple versions of the same operation to coexist.
+        description: Human-readable description of what this operation does.
+            Used for documentation and debugging. Defaults to empty string.
+        input_schema_ref: Optional reference to a JSON schema for input validation.
+            Path or URI to the schema definition. v1.0: resolved but not enforced.
+        output_schema_ref: Optional reference to a JSON schema for output validation.
+            Path or URI to the schema definition. v1.0: resolved but not enforced.
+        pipeline: Ordered list of pipeline steps to execute. Steps run sequentially
+            in list order. Each step must have a unique step_name within the pipeline.
+        pipeline_timeout_ms: Optional maximum execution time for the entire pipeline
+            in milliseconds. Must be > 0 and <= 3600000 (1 hour) if specified.
+            v1.0: declared but not enforced.
+
+    Example:
+        >>> # Minimal contract with identity transform
+        >>> contract = ModelComputeSubcontract(
+        ...     operation_name="echo",
+        ...     operation_version="1.0.0",
+        ...     pipeline=[
+        ...         ModelComputePipelineStep(
+        ...             step_name="identity",
+        ...             step_type=EnumComputeStepType.TRANSFORMATION,
+        ...             transformation_type=EnumTransformationType.IDENTITY,
+        ...         ),
+        ...     ],
+        ... )
     """
 
     # Identity
@@ -46,6 +141,7 @@ class ModelComputeSubcontract(BaseModel):
     pipeline: list[ModelComputePipelineStep]
 
     # v1.0 Performance (minimal)
-    pipeline_timeout_ms: int | None = Field(default=None, gt=0)
+    # Upper bound of 3600000ms (1 hour) prevents unreasonable timeout values
+    pipeline_timeout_ms: int | None = Field(default=None, gt=0, le=3600000)
 
     model_config = ConfigDict(extra="forbid", frozen=True)
