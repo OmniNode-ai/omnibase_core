@@ -56,18 +56,22 @@ from omnibase_core.enums.enum_transformation_type import EnumTransformationType
 from omnibase_core.enums.enum_trim_mode import EnumTrimMode
 from omnibase_core.enums.enum_unicode_form import EnumUnicodeForm
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.transformations.model_transform_case_config import \
-    ModelTransformCaseConfig
-from omnibase_core.models.transformations.model_transform_json_path_config import \
-    ModelTransformJsonPathConfig
-from omnibase_core.models.transformations.model_transform_regex_config import \
-    ModelTransformRegexConfig
-from omnibase_core.models.transformations.model_transform_trim_config import \
-    ModelTransformTrimConfig
-from omnibase_core.models.transformations.model_transform_unicode_config import \
-    ModelTransformUnicodeConfig
-from omnibase_core.models.transformations.types import \
-    ModelTransformationConfig
+from omnibase_core.models.transformations.model_transform_case_config import (
+    ModelTransformCaseConfig,
+)
+from omnibase_core.models.transformations.model_transform_json_path_config import (
+    ModelTransformJsonPathConfig,
+)
+from omnibase_core.models.transformations.model_transform_regex_config import (
+    ModelTransformRegexConfig,
+)
+from omnibase_core.models.transformations.model_transform_trim_config import (
+    ModelTransformTrimConfig,
+)
+from omnibase_core.models.transformations.model_transform_unicode_config import (
+    ModelTransformUnicodeConfig,
+)
+from omnibase_core.models.transformations.types import ModelTransformationConfig
 
 
 def _validate_string_input(value: Any, transform_name: str) -> str:

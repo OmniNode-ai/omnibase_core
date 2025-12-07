@@ -473,26 +473,26 @@ class TestEnumNodeKindPropertyBased:
         check_type_to_kind_mapping()
 
     def test_unknown_node_type_raises_error(self) -> None:
-        """Verify that UNKNOWN node type raises ModelOnexError when get_node_kind is called.
+        """Verify that UNKNOWN node type raises ValueError when get_node_kind is called.
 
         DESIGN DECISION: UNKNOWN intentionally has NO kind mapping because:
         - UNKNOWN semantically means "we don't know what this is"
         - Silently defaulting to COMPUTE would hide bugs in node classification
         - Callers must explicitly handle the UNKNOWN case with proper error handling
         - This forces explicit error handling rather than silent failures
+
+        NOTE: Uses ValueError instead of ModelOnexError to avoid enum->model import
+        (architectural violation: enums must not import models).
         """
         import pytest
 
         from omnibase_core.enums.enum_node_type import EnumNodeType
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-        with pytest.raises(ModelOnexError) as exc_info:
+        with pytest.raises(ValueError) as exc_info:
             EnumNodeType.get_node_kind(EnumNodeType.UNKNOWN)
 
         # Verify the error contains useful context
-        assert "UNKNOWN" in str(exc_info.value) or "UNKNOWN" in str(
-            exc_info.value.context
-        )
+        assert "UNKNOWN" in str(exc_info.value)
 
 
 if __name__ == "__main__":
