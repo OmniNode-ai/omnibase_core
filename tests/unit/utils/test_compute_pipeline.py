@@ -1,7 +1,8 @@
 """Unit tests for Contract-Driven NodeCompute v1.0 transformations and executor."""
 
-import pytest
 from uuid import uuid4
+
+import pytest
 
 from omnibase_core.enums.enum_case_mode import EnumCaseMode
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType

@@ -1,20 +1,21 @@
 """Unit tests for Contract-Driven NodeCompute v1.0 compute models."""
 
+from uuid import uuid4
+
 import pytest
 from pydantic import ValidationError
-from uuid import uuid4
 
 from omnibase_core.models.compute.model_compute_execution_context import (
     ModelComputeExecutionContext,
+)
+from omnibase_core.models.compute.model_compute_pipeline_result import (
+    ModelComputePipelineResult,
 )
 from omnibase_core.models.compute.model_compute_step_metadata import (
     ModelComputeStepMetadata,
 )
 from omnibase_core.models.compute.model_compute_step_result import (
     ModelComputeStepResult,
-)
-from omnibase_core.models.compute.model_compute_pipeline_result import (
-    ModelComputePipelineResult,
 )
 from omnibase_core.models.model_compute_output import ModelComputeOutput
 

@@ -115,7 +115,7 @@ class ModelComputeStepResult(BaseModel):
     step_name: str
     output: Any
     success: bool = True
-    metadata: "ModelComputeStepMetadata"
+    metadata: ModelComputeStepMetadata
     error_type: str | None = None  # v1.0: Simple string, not enum
     error_message: str | None = None
 
@@ -123,7 +123,7 @@ class ModelComputeStepResult(BaseModel):
 
 
 # Import at runtime for forward ref resolution
-from omnibase_core.models.compute.model_compute_step_metadata import (  # noqa: E402
+from omnibase_core.models.compute.model_compute_step_metadata import (
     ModelComputeStepMetadata,
 )
 

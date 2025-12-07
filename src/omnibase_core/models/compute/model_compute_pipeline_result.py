@@ -114,7 +114,7 @@ class ModelComputePipelineResult(BaseModel):
     output: Any  # Any: output type depends on pipeline configuration
     processing_time_ms: float = Field(ge=0)
     steps_executed: list[str]
-    step_results: dict[str, "ModelComputeStepResult"]
+    step_results: dict[str, ModelComputeStepResult]
     error_type: str | None = None  # v1.0: Simple string
     error_message: str | None = None
     error_step: str | None = None
@@ -123,7 +123,7 @@ class ModelComputePipelineResult(BaseModel):
 
 
 # Import at runtime for forward ref resolution
-from omnibase_core.models.compute.model_compute_step_result import (  # noqa: E402
+from omnibase_core.models.compute.model_compute_step_result import (
     ModelComputeStepResult,
 )
 

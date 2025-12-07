@@ -2,12 +2,12 @@
 
 import pytest
 
-from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
-from omnibase_core.enums.enum_transformation_type import EnumTransformationType
 from omnibase_core.enums.enum_case_mode import EnumCaseMode
+from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
 from omnibase_core.enums.enum_regex_flag import EnumRegexFlag
-from omnibase_core.enums.enum_unicode_form import EnumUnicodeForm
+from omnibase_core.enums.enum_transformation_type import EnumTransformationType
 from omnibase_core.enums.enum_trim_mode import EnumTrimMode
+from omnibase_core.enums.enum_unicode_form import EnumUnicodeForm
 
 
 @pytest.mark.unit

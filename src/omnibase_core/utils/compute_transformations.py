@@ -539,7 +539,7 @@ def execute_transformation(
             message=f"Unknown transformation type: {transformation_type}",
             context={
                 "transform_type": str(transformation_type),
-                "available_types": [t.value for t in TRANSFORMATION_REGISTRY.keys()],
+                "available_types": [t.value for t in TRANSFORMATION_REGISTRY],
             },
         )
 

@@ -17,8 +17,6 @@ from uuid import uuid4
 
 import pytest
 
-from tests.integration.conftest import ComputeContextFactory
-
 from omnibase_core.enums.enum_case_mode import EnumCaseMode
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
 from omnibase_core.enums.enum_regex_flag import EnumRegexFlag
@@ -53,6 +51,7 @@ from omnibase_core.models.transformations.model_validation_step_config import (
     ModelValidationStepConfig,
 )
 from omnibase_core.utils.compute_executor import execute_compute_pipeline
+from tests.integration.conftest import ComputeContextFactory
 
 
 @pytest.mark.integration
