@@ -7,7 +7,7 @@ in contract-driven NodeCompute v1.0.
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class ModelMappingConfig(BaseModel):
@@ -20,10 +20,18 @@ class ModelMappingConfig(BaseModel):
 
     Attributes:
         config_type: Discriminator field for union type resolution.
-        field_mappings: Dictionary mapping output field names to path expressions.
+        field_mappings: Dictionary mapping output field names to path expressions (must be non-empty).
     """
 
     config_type: Literal["mapping"] = "mapping"
     field_mappings: dict[str, str]
 
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+    @field_validator("field_mappings")
+    @classmethod
+    def validate_field_mappings(cls, v: dict[str, str]) -> dict[str, str]:
+        """Validate that field_mappings is not empty."""
+        if not v:
+            raise ValueError("field_mappings cannot be empty")
+        return v

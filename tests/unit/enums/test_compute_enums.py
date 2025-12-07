@@ -9,6 +9,7 @@ from omnibase_core.enums.enum_unicode_form import EnumUnicodeForm
 from omnibase_core.enums.enum_trim_mode import EnumTrimMode
 
 
+@pytest.mark.unit
 class TestEnumComputeStepType:
     """Tests for EnumComputeStepType."""
 
@@ -28,6 +29,7 @@ class TestEnumComputeStepType:
         assert len(EnumComputeStepType) == 3
 
 
+@pytest.mark.unit
 class TestEnumTransformationType:
     """Tests for EnumTransformationType."""
 
@@ -50,6 +52,7 @@ class TestEnumTransformationType:
         assert len(EnumTransformationType) == 6
 
 
+@pytest.mark.unit
 class TestEnumCaseMode:
     """Tests for EnumCaseMode."""
 
@@ -64,7 +67,12 @@ class TestEnumCaseMode:
         for member in EnumCaseMode:
             assert isinstance(member.value, str)
 
+    def test_member_count(self) -> None:
+        """Test expected number of members (3 case modes)."""
+        assert len(EnumCaseMode) == 3
 
+
+@pytest.mark.unit
 class TestEnumRegexFlag:
     """Tests for EnumRegexFlag."""
 
@@ -79,7 +87,12 @@ class TestEnumRegexFlag:
         for member in EnumRegexFlag:
             assert isinstance(member.value, str)
 
+    def test_member_count(self) -> None:
+        """Test expected number of members (3 regex flags)."""
+        assert len(EnumRegexFlag) == 3
 
+
+@pytest.mark.unit
 class TestEnumUnicodeForm:
     """Tests for EnumUnicodeForm."""
 
@@ -95,7 +108,12 @@ class TestEnumUnicodeForm:
         for member in EnumUnicodeForm:
             assert isinstance(member.value, str)
 
+    def test_member_count(self) -> None:
+        """Test expected number of members (4 Unicode forms)."""
+        assert len(EnumUnicodeForm) == 4
 
+
+@pytest.mark.unit
 class TestEnumTrimMode:
     """Tests for EnumTrimMode."""
 
@@ -109,3 +127,7 @@ class TestEnumTrimMode:
         """Test enum values are strings."""
         for member in EnumTrimMode:
             assert isinstance(member.value, str)
+
+    def test_member_count(self) -> None:
+        """Test expected number of members (3 trim modes)."""
+        assert len(EnumTrimMode) == 3

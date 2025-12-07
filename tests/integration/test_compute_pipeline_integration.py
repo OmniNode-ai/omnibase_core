@@ -49,6 +49,7 @@ from omnibase_core.models.transformations.model_transform_unicode_config import 
 from omnibase_core.utils.compute_executor import execute_compute_pipeline
 
 
+@pytest.mark.integration
 class TestComputePipelineIntegration:
     """Integration tests for complete pipeline scenarios."""
 
@@ -609,6 +610,7 @@ class TestComputePipelineIntegration:
         assert result.processing_time_ms < 500
 
 
+@pytest.mark.integration
 class TestComputePipelineErrorScenarios:
     """Integration tests for error handling scenarios."""
 
@@ -746,6 +748,7 @@ class TestComputePipelineErrorScenarios:
         assert "never_reached" not in result.steps_executed
 
 
+@pytest.mark.integration
 class TestComputePipelineContextTracking:
     """Integration tests for context and correlation ID tracking."""
 

@@ -156,7 +156,7 @@ v1.0 answers this question and nothing more. It proves that:
 ### What v1.0 Includes
 
 **Step Types (3):**
-- `VALIDATION` - Schema validation against input/output refs (uses `ModelValidationConfig`)
+- `VALIDATION` - Schema validation against input/output refs (uses `ModelValidationStepConfig`)
 - `TRANSFORMATION` - Apply a built-in transformation
 - `MAPPING` - Shape results using simple path expressions (JSONPath-like)
 
@@ -267,7 +267,7 @@ compute_operations:
 ### v1.0 Success Criteria
 
 - [ ] All 6 transformation types implemented with typed configs
-- [ ] VALIDATION step type uses `ModelValidationConfig` (not a transformation)
+- [ ] VALIDATION step type uses `ModelValidationStepConfig` (not a transformation)
 - [ ] Sequential pipeline execution works end-to-end
 - [ ] Schema validation at load time catches malformed contracts
 - [ ] Deterministic execution verified via property-based tests

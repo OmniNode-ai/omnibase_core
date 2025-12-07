@@ -122,6 +122,31 @@ class TestModelTransformJsonPathConfig:
         assert config.config_type == "json_path"
         assert config.path == "$.data.items"
 
+    def test_path_root_only(self) -> None:
+        """Test that root-only path is valid."""
+        config = ModelTransformJsonPathConfig(path="$")
+        assert config.path == "$"
+
+    def test_path_empty_raises_error(self) -> None:
+        """Test that empty path raises validation error."""
+        with pytest.raises(ValueError, match="path cannot be empty"):
+            ModelTransformJsonPathConfig(path="")
+
+    def test_path_whitespace_only_raises_error(self) -> None:
+        """Test that whitespace-only path raises validation error."""
+        with pytest.raises(ValueError, match="path cannot be empty"):
+            ModelTransformJsonPathConfig(path="   ")
+
+    def test_path_without_dollar_raises_error(self) -> None:
+        """Test that path not starting with $ raises validation error."""
+        with pytest.raises(ValueError, match="path must start with"):
+            ModelTransformJsonPathConfig(path="data.items")
+
+    def test_path_with_dot_but_no_dollar_raises_error(self) -> None:
+        """Test that path starting with dot raises validation error."""
+        with pytest.raises(ValueError, match="path must start with"):
+            ModelTransformJsonPathConfig(path=".data")
+
     def test_rejects_extra_fields(self) -> None:
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError):
@@ -143,10 +168,12 @@ class TestModelMappingConfig:
         assert len(config.field_mappings) == 2
         assert config.field_mappings["result"] == "$.steps.transform.output"
 
-    def test_empty_mappings(self) -> None:
-        """Test creating config with empty mappings."""
-        config = ModelMappingConfig(field_mappings={})
-        assert config.field_mappings == {}
+    def test_empty_mappings_raises_error(self) -> None:
+        """Test that empty field_mappings raises validation error."""
+        import pytest
+
+        with pytest.raises(ValueError, match="field_mappings cannot be empty"):
+            ModelMappingConfig(field_mappings={})
 
 
 class TestModelValidationStepConfig:

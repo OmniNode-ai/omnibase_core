@@ -1,5 +1,6 @@
 """Unit tests for Contract-Driven NodeCompute v1.0 compute models."""
 import pytest
+from pydantic import ValidationError
 from uuid import uuid4
 
 from omnibase_core.models.compute.model_compute_execution_context import ModelComputeExecutionContext
@@ -8,6 +9,7 @@ from omnibase_core.models.compute.model_compute_step_result import ModelComputeS
 from omnibase_core.models.compute.model_compute_pipeline_result import ModelComputePipelineResult
 
 
+@pytest.mark.unit
 class TestModelComputeExecutionContext:
     """Tests for ModelComputeExecutionContext."""
 
@@ -35,10 +37,11 @@ class TestModelComputeExecutionContext:
     def test_is_frozen(self) -> None:
         """Test that model is immutable."""
         context = ModelComputeExecutionContext(operation_id=uuid4())
-        with pytest.raises(Exception):  # ValidationError for frozen model
+        with pytest.raises(ValidationError):
             context.node_id = "modified"  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestModelComputeStepMetadata:
     """Tests for ModelComputeStepMetadata."""
 
@@ -57,13 +60,29 @@ class TestModelComputeStepMetadata:
         assert metadata.duration_ms == 25.3
         assert metadata.transformation_type == "case_conversion"
 
+    def test_duration_ms_zero_allowed(self) -> None:
+        """Test that zero duration is allowed."""
+        metadata = ModelComputeStepMetadata(duration_ms=0.0)
+        assert metadata.duration_ms == 0.0
+
+    def test_duration_ms_negative_raises_error(self) -> None:
+        """Test that negative duration raises validation error."""
+        with pytest.raises(ValidationError, match="greater than or equal to 0"):
+            ModelComputeStepMetadata(duration_ms=-1.0)
+
+    def test_duration_ms_large_negative_raises_error(self) -> None:
+        """Test that large negative duration raises validation error."""
+        with pytest.raises(ValidationError, match="greater than or equal to 0"):
+            ModelComputeStepMetadata(duration_ms=-999.99)
+
     def test_is_frozen(self) -> None:
         """Test that model is immutable."""
         metadata = ModelComputeStepMetadata(duration_ms=10.0)
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             metadata.duration_ms = 20.0  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestModelComputeStepResult:
     """Tests for ModelComputeStepResult."""
 
@@ -105,10 +124,11 @@ class TestModelComputeStepResult:
             output="data",
             metadata=metadata,
         )
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             result.success = False  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestModelComputePipelineResult:
     """Tests for ModelComputePipelineResult."""
 
@@ -170,5 +190,5 @@ class TestModelComputePipelineResult:
             steps_executed=[],
             step_results={},
         )
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             result.success = False  # type: ignore[misc]

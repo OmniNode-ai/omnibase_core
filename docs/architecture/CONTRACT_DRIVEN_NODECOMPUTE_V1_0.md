@@ -138,7 +138,7 @@ class ModelComputePipelineStep(BaseModel):
     mapping_config: "ModelMappingConfig | None" = None
 
     # For validation steps
-    validation_config: "ModelValidationConfig | None" = None
+    validation_config: "ModelValidationStepConfig | None" = None
 
     # Common options
     enabled: bool = True
@@ -429,13 +429,13 @@ class ModelTransformJsonPathConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 ```
 
-### ModelValidationConfig
+### ModelValidationStepConfig
 
 ```python
 from pydantic import BaseModel, ConfigDict
 from typing import Literal
 
-class ModelValidationConfig(BaseModel):
+class ModelValidationStepConfig(BaseModel):
     """
     Configuration for VALIDATION step type.
 
@@ -465,7 +465,7 @@ ModelTransformationConfig = Annotated[
         ModelTransformUnicodeConfig,
         ModelTransformJsonPathConfig,
         # IDENTITY has no config - handled separately
-        # VALIDATION uses ModelValidationConfig on step, not here
+        # VALIDATION uses ModelValidationStepConfig on step, not here
     ],
     Field(discriminator="config_type"),
 ]
@@ -479,7 +479,7 @@ ModelTransformationConfig = Annotated[
 
 v1.0 uses **strictly sequential execution**:
 
-```
+```text
 Step 1 → Step 2 → Step 3 → ... → Step N → Output
     ↓        ↓        ↓
   Result   Result   Result
@@ -500,7 +500,7 @@ When any step fails:
 4. All executed step results are preserved
 5. Error details recorded in `error_type`, `error_message`, `error_step`
 
-```
+```text
 Step 1: OK      → Result preserved
 Step 2: FAIL    → Error recorded, pipeline aborts
 Step 3: SKIPPED → Not executed
@@ -674,7 +674,7 @@ When `process(ModelComputeInput)` is called:
 
 ### Lifecycle
 
-```
+```text
 ┌─────────────────┐
 │  Contract Load  │──▶ Validates structure, resolves schemas
 └────────┬────────┘
@@ -741,7 +741,7 @@ compute_operations:
   pipeline_timeout_ms: 5000
 
   pipeline:
-    # Step 1: Validate input (uses ModelValidationConfig, NOT a transformation)
+    # Step 1: Validate input (uses ModelValidationStepConfig, NOT a transformation)
     - step_name: validate_input
       step_type: validation
       validation_config:
@@ -836,7 +836,7 @@ class NodeTextProcessor(NodeCompute):
 | ModelTransformTrimConfig | `models/transformations/model_transform_trim_config.py` | P0 |
 | ModelTransformUnicodeConfig | `models/transformations/model_transform_unicode_config.py` | P0 |
 | ModelTransformJsonPathConfig | `models/transformations/model_transform_json_path_config.py` | P0 |
-| ModelValidationConfig | `models/compute/model_validation_config.py` | P0 |
+| ModelValidationStepConfig | `models/transformations/model_validation_step_config.py` | P0 |
 | ModelMappingConfig | `models/transformations/model_mapping_config.py` | P0 |
 | ModelTransformationConfig | `models/transformations/types.py` | P0 |
 
@@ -876,7 +876,7 @@ class NodeTextProcessor(NodeCompute):
 
 - [ ] `ModelComputeSubcontract` validates contracts with `extra="forbid"`
 - [ ] All 6 transformation types implemented and tested (IDENTITY, REGEX, CASE_CONVERSION, TRIM, NORMALIZE_UNICODE, JSON_PATH)
-- [ ] VALIDATION step type uses separate `ModelValidationConfig` (not a transformation)
+- [ ] VALIDATION step type uses separate `ModelValidationStepConfig` (not a transformation)
 - [ ] Pipeline executes steps sequentially
 - [ ] Pipeline aborts on first failure
 - [ ] Mapping resolves `$.input` and `$.steps.<name>.output` paths

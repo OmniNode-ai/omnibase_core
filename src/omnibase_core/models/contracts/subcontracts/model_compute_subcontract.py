@@ -6,7 +6,7 @@ the complete compute contract for a NodeCompute node. It specifies
 the transformation pipeline with abort-on-first-failure semantics.
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step import (
     ModelComputePipelineStep,
@@ -46,6 +46,6 @@ class ModelComputeSubcontract(BaseModel):
     pipeline: list[ModelComputePipelineStep]
 
     # v1.0 Performance (minimal)
-    pipeline_timeout_ms: int | None = None
+    pipeline_timeout_ms: int | None = Field(default=None, gt=0)
 
     model_config = ConfigDict(extra="forbid", frozen=True)

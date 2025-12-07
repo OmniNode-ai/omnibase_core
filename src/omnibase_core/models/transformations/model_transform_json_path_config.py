@@ -7,7 +7,7 @@ in contract-driven NodeCompute v1.0.
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class ModelTransformJsonPathConfig(BaseModel):
@@ -16,10 +16,20 @@ class ModelTransformJsonPathConfig(BaseModel):
 
     Attributes:
         config_type: Discriminator field for union type resolution.
-        path: The JSONPath expression to extract data.
+        path: The JSONPath expression to extract data (must start with "$").
     """
 
     config_type: Literal["json_path"] = "json_path"
     path: str
 
     model_config = ConfigDict(extra="forbid", frozen=True)
+
+    @field_validator("path")
+    @classmethod
+    def validate_path(cls, v: str) -> str:
+        """Validate that path is non-empty and starts with '$'."""
+        if not v or not v.strip():
+            raise ValueError("path cannot be empty")
+        if not v.startswith("$"):
+            raise ValueError("path must start with '$'")
+        return v
