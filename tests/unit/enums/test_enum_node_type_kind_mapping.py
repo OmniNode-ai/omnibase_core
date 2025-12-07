@@ -483,7 +483,7 @@ class TestEnumNodeTypeKindMappingEdgeCases:
 
     def test_unknown_type_intentionally_unmapped(self) -> None:
         """
-        Verify that UNKNOWN node type raises ModelOnexError when get_node_kind is called.
+        Verify that UNKNOWN node type raises ValueError when get_node_kind is called.
 
         DESIGN DECISION - UNKNOWN intentionally has NO kind mapping because:
         - UNKNOWN semantically means "we don't know what this is"
@@ -491,24 +491,22 @@ class TestEnumNodeTypeKindMappingEdgeCases:
         - Callers must explicitly handle the UNKNOWN case with proper error handling
         - This forces explicit error handling rather than silent failures
 
+        NOTE: Uses ValueError instead of ModelOnexError to avoid enum->model import
+        (architectural violation: enums must not import models).
+
         This test ensures the design decision is preserved across refactoring.
         """
         # Skip this test if get_node_kind doesn't exist yet (pre-refactor state)
         if not hasattr(EnumNodeType, "get_node_kind"):
             pytest.skip("EnumNodeType.get_node_kind() not yet implemented")
 
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-        # UNKNOWN must raise ModelOnexError, NOT return a default kind
-        with pytest.raises(ModelOnexError) as exc_info:
+        # UNKNOWN must raise ValueError, NOT return a default kind
+        with pytest.raises(ValueError) as exc_info:
             EnumNodeType.get_node_kind(EnumNodeType.UNKNOWN)
 
         # Verify the error message contains useful context
-        error = exc_info.value
-        assert "UNKNOWN" in str(error) or (
-            error.context and "UNKNOWN" in str(error.context.get("node_type", ""))
-        ), (
-            f"Error message should mention UNKNOWN. Got: {error}, context: {error.context}"
+        assert "UNKNOWN" in str(exc_info.value), (
+            f"Error message should mention UNKNOWN. Got: {exc_info.value}"
         )
 
     def test_unknown_is_not_in_kind_map(self) -> None:
