@@ -7,6 +7,7 @@ Models for validating various contract formats and subcontract compositions.
 """
 
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
+from .model_contract_version import ModelContractVersion
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from omnibase_core.models.service.model_external_service_config import (
     ModelExternalServiceConfig,
@@ -57,6 +58,7 @@ __all__ = [
     "MixinNodeTypeValidator",
     # Foundation models
     "ModelContractBase",
+    "ModelContractVersion",
     "ModelDependency",
     # Primary contract models
     "ModelContractCompute",
