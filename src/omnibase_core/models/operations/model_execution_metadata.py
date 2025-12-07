@@ -78,8 +78,12 @@ class ModelExecutionMetadata(BaseModel):
     cpu_usage_percent: float = Field(default=0.0, description="CPU usage percentage")
 
     # Error information
-    error_count: int = Field(default=0, ge=0, description="Number of errors encountered")
-    warning_count: int = Field(default=0, ge=0, description="Number of warnings encountered")
+    error_count: int = Field(
+        default=0, ge=0, description="Number of errors encountered"
+    )
+    warning_count: int = Field(
+        default=0, ge=0, description="Number of warnings encountered"
+    )
 
     model_config = {
         "extra": "ignore",
