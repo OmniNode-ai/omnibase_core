@@ -23,6 +23,7 @@ from pathlib import Path
 from uuid import UUID
 
 import pytest
+from pydantic import ValidationError
 
 # Add src to path for direct imports
 src_path = Path(__file__).parent.parent.parent.parent.parent / "src"
@@ -150,7 +151,7 @@ class TestModelPermissionFieldValidation:
 
     def test_name_pattern_validation_invalid(self):
         """Test invalid name patterns."""
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             ModelPermission(
                 version=DEFAULT_VERSION,
                 name="123_invalid",

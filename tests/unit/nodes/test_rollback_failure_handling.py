@@ -20,6 +20,7 @@ from omnibase_core.models.model_effect_input import ModelEffectInput
 from omnibase_core.nodes.node_effect import NodeEffect
 
 
+@pytest.mark.unit
 class TestModelEffectTransactionRollbackFailures:
     """Test ModelEffectTransaction rollback failure handling."""
 
@@ -154,6 +155,7 @@ class TestModelEffectTransactionRollbackFailures:
         assert errors[0].__cause__ is original_error
 
 
+@pytest.mark.unit
 class TestNodeEffectRollbackFailures:
     """Test NodeEffect rollback failure handling and callbacks."""
 

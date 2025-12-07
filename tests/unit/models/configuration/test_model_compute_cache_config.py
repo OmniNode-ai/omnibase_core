@@ -13,6 +13,7 @@ from omnibase_core.models.configuration.model_compute_cache_config import (
 )
 
 
+@pytest.mark.unit
 class TestModelComputeCacheConfigInitialization:
     """Test ModelComputeCacheConfig initialization."""
 
@@ -47,6 +48,7 @@ class TestModelComputeCacheConfigInitialization:
         assert isinstance(config, BaseModel)
 
 
+@pytest.mark.unit
 class TestModelComputeCacheConfigValidation:
     """Test ModelComputeCacheConfig field validation."""
 
@@ -127,6 +129,7 @@ class TestModelComputeCacheConfigValidation:
         assert config.enable_stats is False
 
 
+@pytest.mark.unit
 class TestModelComputeCacheConfigSerialization:
     """Test ModelComputeCacheConfig serialization."""
 
@@ -184,6 +187,7 @@ class TestModelComputeCacheConfigSerialization:
         assert restored.enable_stats == original.enable_stats
 
 
+@pytest.mark.unit
 class TestModelComputeCacheConfigMethods:
     """Test ModelComputeCacheConfig methods."""
 
@@ -250,6 +254,7 @@ class TestModelComputeCacheConfigMethods:
         assert memory["max_memory_mb"] == 11.72  # 20% overhead
 
 
+@pytest.mark.unit
 class TestModelComputeCacheConfigEdgeCases:
     """Test cache config edge cases."""
 
@@ -286,6 +291,7 @@ class TestModelComputeCacheConfigEdgeCases:
         assert config.get_effective_ttl_seconds() == 0
 
 
+@pytest.mark.unit
 class TestModelComputeCacheConfigAttributes:
     """Test cache config attributes and metadata."""
 
@@ -338,6 +344,7 @@ class TestModelComputeCacheConfigAttributes:
         assert "ModelComputeCacheConfig" in repr_str
 
 
+@pytest.mark.unit
 class TestModelComputeCacheConfigProductionScenarios:
     """Test production deployment scenarios."""
 

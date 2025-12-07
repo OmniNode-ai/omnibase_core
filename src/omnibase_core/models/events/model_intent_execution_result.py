@@ -50,5 +50,6 @@ class ModelIntentExecutionResult(BaseModel):
     )
     execution_duration_ms: float | None = Field(
         default=None,
+        ge=0,
         description="How long execution took in milliseconds",
     )

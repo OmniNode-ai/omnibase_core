@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from pydantic import ValidationError
 
 from omnibase_core.validation.contracts import (
     load_and_validate_yaml_model,
@@ -35,7 +36,7 @@ description: "Test contract"
         """Test loading empty YAML."""
         yaml_content = ""
 
-        with pytest.raises(Exception):
+        with pytest.raises((ValidationError, TypeError)):
             load_and_validate_yaml_model(yaml_content)
 
     def test_load_invalid_yaml(self):
@@ -43,7 +44,7 @@ description: "Test contract"
         yaml_content = """
 invalid: [unclosed
 """
-        with pytest.raises(Exception):
+        with pytest.raises(yaml.YAMLError):
             load_and_validate_yaml_model(yaml_content)
 
 

@@ -16,6 +16,7 @@ class ModelValidationMetadata(BaseModel):
     )
     duration_ms: int | None = Field(
         default=None,
+        ge=0,
         description="Validation duration in milliseconds",
     )
     files_processed: int | None = Field(

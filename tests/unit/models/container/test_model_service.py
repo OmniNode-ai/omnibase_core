@@ -3,6 +3,7 @@
 from uuid import uuid4
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.models.container.model_service import ModelService
 
@@ -55,7 +56,7 @@ class TestModelService:
             service_type="compute",
         )
 
-        with pytest.raises(Exception):  # ValidationError for frozen model
+        with pytest.raises(ValidationError, match="frozen"):
             service.service_name = "modified"  # type: ignore[misc]
 
     def test_service_types(self):

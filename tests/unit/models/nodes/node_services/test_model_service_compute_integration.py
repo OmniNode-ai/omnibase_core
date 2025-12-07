@@ -70,6 +70,8 @@ class ComputeNodeForIntegrationTest(ModelServiceCompute):
         """Mock cleanup."""
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceComputeIntegration:
     """Integration tests for ModelServiceCompute with all mixins."""
 
@@ -596,6 +598,8 @@ class TestModelServiceComputeIntegration:
         assert "status" in health
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeMRODetails:
     """Detailed MRO and diamond problem tests."""
 

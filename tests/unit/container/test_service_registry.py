@@ -34,6 +34,7 @@ class TestServiceImplementation(ITestService):
         return f"Executed {self.name} (count: {self.execution_count})"
 
 
+@pytest.mark.unit
 class TestServiceRegistry:
     """Test suite for ServiceRegistry."""
 
@@ -393,6 +394,7 @@ class TestServiceRegistry:
         assert registration_after.access_count > initial_access_count
 
 
+@pytest.mark.unit
 class TestContainerIntegration:
     """Test container integration with ServiceRegistry."""
 

@@ -3,6 +3,7 @@ Test suite for MixinCompletionData.
 """
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.mixins.mixin_completion_data import MixinCompletionData
 
@@ -153,17 +154,17 @@ class TestMixinCompletionData:
         assert "tags" not in kwargs
 
     def test_mixin_completion_data_immutable(self):
-        """Test that MixinCompletionData is immutable."""
+        """Test that MixinCompletionData is immutable (frozen model)."""
         completion = MixinCompletionData(
             message="Test", success=True, code=200, tags=["test"]
         )
 
-        # Should not be able to modify fields (Pydantic ValidationError for frozen models)
-        with pytest.raises(Exception):  # ValidationError for frozen models
-            completion.message = "Modified"
+        # Should not be able to modify fields - frozen model raises ValidationError
+        with pytest.raises(ValidationError, match="frozen"):
+            completion.message = "Modified"  # type: ignore[misc]
 
-        with pytest.raises(Exception):  # ValidationError for frozen models
-            completion.success = False
+        with pytest.raises(ValidationError, match="frozen"):
+            completion.success = False  # type: ignore[misc]
 
     def test_mixin_completion_data_strict_types(self):
         """Test that MixinCompletionData enforces strict types."""

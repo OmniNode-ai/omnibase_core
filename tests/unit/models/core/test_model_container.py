@@ -180,7 +180,7 @@ class TestModelContainer:
             container_type="string_container",
         )
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(OnexError) as exc_info:
             container.map_value(lambda x: int(x))
 
         assert "Failed to map container value" in str(exc_info.value)
@@ -200,7 +200,7 @@ class TestModelContainer:
         """Test validation failure."""
         container = ModelContainer.create(value=-5, container_type="int_container")
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(OnexError) as exc_info:
             container.validate_with(lambda x: x > 0, "Number must be positive")
 
         assert "Number must be positive" in str(exc_info.value)
@@ -217,7 +217,7 @@ class TestModelContainer:
         def failing_validator(x: str) -> bool:
             raise ValueError("Validator crashed")
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(OnexError) as exc_info:
             container.validate_with(failing_validator)
 
         assert "Validation error:" in str(exc_info.value)

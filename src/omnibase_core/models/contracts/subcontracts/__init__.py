@@ -36,6 +36,8 @@ from .model_caching_subcontract import ModelCachingSubcontract
 from .model_circuit_breaker_subcontract import ModelCircuitBreakerSubcontract
 from .model_component_health import ModelComponentHealth
 from .model_component_health_collection import ModelComponentHealthCollection
+from .model_compute_pipeline_step import ModelComputePipelineStep
+from .model_compute_subcontract import ModelComputeSubcontract
 from .model_configuration_source import ModelConfigurationSource
 from .model_configuration_subcontract import ModelConfigurationSubcontract
 from .model_configuration_validation import ModelConfigurationValidation
@@ -110,6 +112,9 @@ __all__ = [
     "ModelCachePerformance",
     # Circuit breaker subcontracts
     "ModelCircuitBreakerSubcontract",
+    # Compute subcontracts and components
+    "ModelComputePipelineStep",
+    "ModelComputeSubcontract",
     # Configuration subcontracts and components
     "ModelConfigurationSubcontract",
     "ModelConfigurationSource",

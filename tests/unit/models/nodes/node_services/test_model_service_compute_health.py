@@ -128,6 +128,8 @@ def tool_invocation_event(node_id, correlation_id):
     )
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeHealthStatus:
     """Test cases for health status retrieval and metrics."""
 
@@ -235,6 +237,8 @@ class TestModelServiceComputeHealthStatus:
         assert health["success_rate"] == 1.0
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeHealthMonitoring:
     """Test cases for health monitoring loop."""
 
@@ -364,6 +368,8 @@ class TestModelServiceComputeHealthMonitoring:
         assert "Health check failed" in error_logs[0]
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceComputeGracefulShutdown:
     """Test cases for graceful shutdown."""
 
@@ -646,6 +652,8 @@ class TestModelServiceComputeGracefulShutdown:
         assert cleanup_called is True
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelServiceComputeHealthEdgeCases:
     """Test edge cases for health monitoring and shutdown."""
 

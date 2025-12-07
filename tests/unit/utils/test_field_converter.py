@@ -6,6 +6,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_field_converter import FieldConverter
 
 
+@pytest.mark.unit
 class TestFieldConverter:
     """Test FieldConverter functionality."""
 
