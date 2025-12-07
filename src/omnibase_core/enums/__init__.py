@@ -20,6 +20,9 @@ from .enum_authentication_method import EnumAuthenticationMethod
 from .enum_backoff_strategy import EnumBackoffStrategy
 from .enum_business_logic_pattern import EnumBusinessLogicPattern
 
+# Case mode enums (contract-driven NodeCompute v1.0)
+from .enum_case_mode import EnumCaseMode
+
 # Category filter enums
 from .enum_category_filter import EnumCategoryFilter
 
@@ -28,6 +31,9 @@ from .enum_cli_exit_code import EnumCLIExitCode
 
 # Computation and processing enums
 from .enum_computation_type import EnumComputationType
+
+# Compute step type enums (contract-driven NodeCompute v1.0)
+from .enum_compute_step_type import EnumComputeStepType
 from .enum_contract_compliance import EnumContractCompliance
 from .enum_coordination_mode import EnumCoordinationMode
 from .enum_core_error_code import (
@@ -138,6 +144,9 @@ from .enum_orchestrator_types import (
 
 # Parameter and return type enums
 from .enum_parameter_type import EnumParameterType
+
+# Regex flag enums (contract-driven NodeCompute v1.0)
+from .enum_regex_flag import EnumRegexFlag
 from .enum_query_parameter_transformation_type import (
     EnumQueryParameterTransformationType,
 )
@@ -185,8 +194,17 @@ from .enum_tool_type import EnumToolType
 # State management enums
 from .enum_transition_type import EnumTransitionType
 
+# Transformation types (contract-driven NodeCompute v1.0)
+from .enum_transformation_type import EnumTransformationType
+
 # Tree sync enums
 from .enum_tree_sync_status import EnumTreeSyncStatus
+
+# Trim mode enums (contract-driven NodeCompute v1.0)
+from .enum_trim_mode import EnumTrimMode
+
+# Unicode form enums (contract-driven NodeCompute v1.0)
+from .enum_unicode_form import EnumUnicodeForm
 
 # URI-related enums
 from .enum_uri_type import EnumUriType
@@ -318,6 +336,13 @@ __all__ = [
     "EnumOnexReplyStatus",
     # Computation and processing domain
     "EnumComputationType",
+    # Contract-driven NodeCompute v1.0 domain
+    "EnumCaseMode",
+    "EnumComputeStepType",
+    "EnumRegexFlag",
+    "EnumTransformationType",
+    "EnumTrimMode",
+    "EnumUnicodeForm",
     # Tool lifecycle domain
     "EnumToolStatus",
     "EnumBusinessLogicPattern",

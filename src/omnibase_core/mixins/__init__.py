@@ -24,6 +24,7 @@ from omnibase_core.mixins.mixin_canonical_serialization import (
     MixinCanonicalYAMLSerializer,
 )
 from omnibase_core.mixins.mixin_cli_handler import MixinCLIHandler
+from omnibase_core.mixins.mixin_compute_execution import MixinComputeExecution
 
 # Models and protocols extracted from mixin_event_bus
 from omnibase_core.mixins.mixin_completion_data import MixinCompletionData
@@ -74,6 +75,7 @@ from omnibase_core.mixins.mixin_yaml_serialization import MixinYAMLSerialization
 
 __all__ = [
     "MixinCanonicalYAMLSerializer",
+    "MixinComputeExecution",
     "MixinDiscoveryResponder",
     "MixinHashComputation",
     "MixinCLIHandler",

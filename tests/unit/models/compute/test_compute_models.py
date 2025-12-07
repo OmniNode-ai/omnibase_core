@@ -1,0 +1,174 @@
+"""Unit tests for Contract-Driven NodeCompute v1.0 compute models."""
+import pytest
+from uuid import uuid4
+
+from omnibase_core.models.compute.model_compute_execution_context import ModelComputeExecutionContext
+from omnibase_core.models.compute.model_compute_step_metadata import ModelComputeStepMetadata
+from omnibase_core.models.compute.model_compute_step_result import ModelComputeStepResult
+from omnibase_core.models.compute.model_compute_pipeline_result import ModelComputePipelineResult
+
+
+class TestModelComputeExecutionContext:
+    """Tests for ModelComputeExecutionContext."""
+
+    def test_create_minimal(self) -> None:
+        """Test creating context with minimal fields."""
+        op_id = uuid4()
+        context = ModelComputeExecutionContext(operation_id=op_id)
+        assert context.operation_id == op_id
+        assert context.correlation_id is None
+        assert context.node_id is None
+
+    def test_create_full(self) -> None:
+        """Test creating context with all fields."""
+        op_id = uuid4()
+        corr_id = uuid4()
+        context = ModelComputeExecutionContext(
+            operation_id=op_id,
+            correlation_id=corr_id,
+            node_id="test-node-123",
+        )
+        assert context.operation_id == op_id
+        assert context.correlation_id == corr_id
+        assert context.node_id == "test-node-123"
+
+    def test_is_frozen(self) -> None:
+        """Test that model is immutable."""
+        context = ModelComputeExecutionContext(operation_id=uuid4())
+        with pytest.raises(Exception):  # ValidationError for frozen model
+            context.node_id = "modified"  # type: ignore[misc]
+
+
+class TestModelComputeStepMetadata:
+    """Tests for ModelComputeStepMetadata."""
+
+    def test_create_minimal(self) -> None:
+        """Test creating metadata with minimal fields."""
+        metadata = ModelComputeStepMetadata(duration_ms=10.5)
+        assert metadata.duration_ms == 10.5
+        assert metadata.transformation_type is None
+
+    def test_create_full(self) -> None:
+        """Test creating metadata with all fields."""
+        metadata = ModelComputeStepMetadata(
+            duration_ms=25.3,
+            transformation_type="case_conversion",
+        )
+        assert metadata.duration_ms == 25.3
+        assert metadata.transformation_type == "case_conversion"
+
+    def test_is_frozen(self) -> None:
+        """Test that model is immutable."""
+        metadata = ModelComputeStepMetadata(duration_ms=10.0)
+        with pytest.raises(Exception):
+            metadata.duration_ms = 20.0  # type: ignore[misc]
+
+
+class TestModelComputeStepResult:
+    """Tests for ModelComputeStepResult."""
+
+    def test_create_success(self) -> None:
+        """Test creating successful step result."""
+        metadata = ModelComputeStepMetadata(duration_ms=5.0)
+        result = ModelComputeStepResult(
+            step_name="transform_case",
+            output="HELLO WORLD",
+            success=True,
+            metadata=metadata,
+        )
+        assert result.step_name == "transform_case"
+        assert result.output == "HELLO WORLD"
+        assert result.success is True
+        assert result.error_type is None
+        assert result.error_message is None
+
+    def test_create_failure(self) -> None:
+        """Test creating failed step result."""
+        metadata = ModelComputeStepMetadata(duration_ms=2.0)
+        result = ModelComputeStepResult(
+            step_name="validate_input",
+            output=None,
+            success=False,
+            metadata=metadata,
+            error_type="validation_error",
+            error_message="Input schema validation failed",
+        )
+        assert result.success is False
+        assert result.error_type == "validation_error"
+        assert result.error_message == "Input schema validation failed"
+
+    def test_is_frozen(self) -> None:
+        """Test that model is immutable."""
+        metadata = ModelComputeStepMetadata(duration_ms=5.0)
+        result = ModelComputeStepResult(
+            step_name="test",
+            output="data",
+            metadata=metadata,
+        )
+        with pytest.raises(Exception):
+            result.success = False  # type: ignore[misc]
+
+
+class TestModelComputePipelineResult:
+    """Tests for ModelComputePipelineResult."""
+
+    def test_create_success(self) -> None:
+        """Test creating successful pipeline result."""
+        metadata = ModelComputeStepMetadata(duration_ms=5.0)
+        step_result = ModelComputeStepResult(
+            step_name="step1",
+            output="result",
+            metadata=metadata,
+        )
+
+        result = ModelComputePipelineResult(
+            success=True,
+            output="final result",
+            processing_time_ms=15.5,
+            steps_executed=["step1"],
+            step_results={"step1": step_result},
+        )
+        assert result.success is True
+        assert result.output == "final result"
+        assert result.processing_time_ms == 15.5
+        assert result.steps_executed == ["step1"]
+        assert "step1" in result.step_results
+        assert result.error_type is None
+        assert result.error_step is None
+
+    def test_create_failure(self) -> None:
+        """Test creating failed pipeline result."""
+        metadata = ModelComputeStepMetadata(duration_ms=3.0)
+        step_result = ModelComputeStepResult(
+            step_name="failing_step",
+            output=None,
+            success=False,
+            metadata=metadata,
+            error_type="transformation_error",
+            error_message="Invalid input type",
+        )
+
+        result = ModelComputePipelineResult(
+            success=False,
+            output=None,
+            processing_time_ms=3.5,
+            steps_executed=["failing_step"],
+            step_results={"failing_step": step_result},
+            error_type="transformation_error",
+            error_message="Invalid input type",
+            error_step="failing_step",
+        )
+        assert result.success is False
+        assert result.error_step == "failing_step"
+
+    def test_is_frozen(self) -> None:
+        """Test that model is immutable."""
+        result = ModelComputePipelineResult(
+            success=True,
+            output="data",
+            processing_time_ms=10.0,
+            steps_executed=[],
+            step_results={},
+        )
+        with pytest.raises(Exception):
+            result.success = False  # type: ignore[misc]
