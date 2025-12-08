@@ -465,6 +465,234 @@ class TestActionTypes:
         assert EnumActionType.REDUCE in action_types
 
 
+class TestExecuteStepErrorHandling:
+    """Test error handling in parallel execution's execute_step function.
+
+    The execute_step inner function in _execute_parallel returns errors
+    in tuple format (step, None, exception) rather than propagating exceptions.
+    This enables safe parallel execution where one failing step doesn't cancel
+    sibling tasks.
+    """
+
+    @pytest.mark.asyncio
+    async def test_execute_parallel_captures_step_errors(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify that execute_step returns errors in tuple format for parallel execution.
+
+        When _create_action_for_step raises an exception, the step should:
+        1. Not propagate the exception (no asyncio.gather failure)
+        2. Appear in failed_steps list
+        3. Not appear in completed_steps list
+        4. Not emit an action for that step
+        """
+        from unittest.mock import patch
+
+        # Create a simple step that we'll force to fail
+        step_id = uuid4()
+        steps = [
+            ModelWorkflowStep(
+                step_id=step_id,
+                step_name="Failing Step",
+                step_type="effect",
+                enabled=True,
+            ),
+        ]
+
+        # Mock _create_action_for_step to raise an exception
+        with patch(
+            "omnibase_core.utils.workflow_executor._create_action_for_step"
+        ) as mock_create_action:
+            mock_create_action.side_effect = RuntimeError("Simulated action creation failure")
+
+            result = await execute_workflow(
+                simple_workflow_definition,
+                steps,
+                uuid4(),
+                execution_mode=EnumExecutionMode.PARALLEL,
+            )
+
+        # Verify the step failed but didn't crash the workflow
+        assert str(step_id) in result.failed_steps
+        assert str(step_id) not in result.completed_steps
+        assert len(result.actions_emitted) == 0
+        assert result.execution_status == EnumWorkflowState.FAILED
+
+    @pytest.mark.asyncio
+    async def test_execute_parallel_captures_onex_errors(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify that ModelOnexError is captured in tuple format with proper logging.
+
+        ModelOnexError should be handled specially with error code extraction.
+        """
+        from unittest.mock import patch
+
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        step_id = uuid4()
+        steps = [
+            ModelWorkflowStep(
+                step_id=step_id,
+                step_name="ONEX Error Step",
+                step_type="compute",
+                enabled=True,
+            ),
+        ]
+
+        # Mock _create_action_for_step to raise a ModelOnexError
+        with patch(
+            "omnibase_core.utils.workflow_executor._create_action_for_step"
+        ) as mock_create_action:
+            mock_create_action.side_effect = ModelOnexError(
+                message="Simulated ONEX error",
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                context={"test_key": "test_value"},
+            )
+
+            result = await execute_workflow(
+                simple_workflow_definition,
+                steps,
+                uuid4(),
+                execution_mode=EnumExecutionMode.PARALLEL,
+            )
+
+        # Verify the step failed gracefully
+        assert str(step_id) in result.failed_steps
+        assert str(step_id) not in result.completed_steps
+        assert len(result.actions_emitted) == 0
+        assert result.execution_status == EnumWorkflowState.FAILED
+
+    @pytest.mark.asyncio
+    async def test_execute_parallel_mixed_success_and_failure(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify parallel execution handles mixed success/failure correctly.
+
+        When some steps succeed and others fail in parallel:
+        1. Successful steps should complete and emit actions
+        2. Failed steps should be captured without crashing
+        3. Overall status should be FAILED due to any failures
+        """
+        from unittest.mock import patch
+
+        success_step_id = uuid4()
+        fail_step_id = uuid4()
+
+        # Two independent steps (no dependencies)
+        steps = [
+            ModelWorkflowStep(
+                step_id=success_step_id,
+                step_name="Success Step",
+                step_type="effect",
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=fail_step_id,
+                step_name="Fail Step",
+                step_type="compute",
+                enabled=True,
+            ),
+        ]
+
+        original_create_action = None
+
+        def selective_failure(step, workflow_id):
+            """Fail only for the 'Fail Step'."""
+            if step.step_id == fail_step_id:
+                raise ValueError("Intentional failure for testing")
+            # Call the real implementation for other steps
+            from omnibase_core.utils.workflow_executor import _create_action_for_step
+            return _create_action_for_step.__wrapped__(step, workflow_id)  # type: ignore[attr-defined]
+
+        # We need to capture the original function before patching
+        from omnibase_core.utils import workflow_executor
+
+        original_fn = workflow_executor._create_action_for_step
+
+        def mock_fn(step, workflow_id):
+            if step.step_id == fail_step_id:
+                raise ValueError("Intentional failure for testing")
+            return original_fn(step, workflow_id)
+
+        with patch.object(workflow_executor, "_create_action_for_step", side_effect=mock_fn):
+            result = await execute_workflow(
+                simple_workflow_definition,
+                steps,
+                uuid4(),
+                execution_mode=EnumExecutionMode.PARALLEL,
+            )
+
+        # Success step should complete
+        assert str(success_step_id) in result.completed_steps
+        # Fail step should be in failed_steps
+        assert str(fail_step_id) in result.failed_steps
+        # Should have one action (from success step)
+        assert len(result.actions_emitted) == 1
+        # Overall status is FAILED due to the failure
+        assert result.execution_status == EnumWorkflowState.FAILED
+
+    @pytest.mark.asyncio
+    async def test_execute_parallel_error_with_stop_action(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify that error_action='stop' stops workflow after current wave.
+
+        When a step fails with error_action='stop', the workflow should:
+        1. Complete the current wave of parallel steps
+        2. Not execute subsequent waves (remaining steps are NOT explicitly marked failed)
+        3. The workflow terminates early with FAILED status
+        """
+        from unittest.mock import patch
+
+        wave1_step_id = uuid4()
+        wave2_step_id = uuid4()
+
+        steps = [
+            ModelWorkflowStep(
+                step_id=wave1_step_id,
+                step_name="Wave 1 - Fails with Stop",
+                step_type="effect",
+                enabled=True,
+                error_action="stop",  # This should stop the workflow
+            ),
+            ModelWorkflowStep(
+                step_id=wave2_step_id,
+                step_name="Wave 2 - Should Not Run",
+                step_type="compute",
+                enabled=True,
+                depends_on=[wave1_step_id],  # Depends on wave 1
+            ),
+        ]
+
+        with patch(
+            "omnibase_core.utils.workflow_executor._create_action_for_step"
+        ) as mock_create_action:
+            mock_create_action.side_effect = RuntimeError("Simulated failure with stop")
+
+            result = await execute_workflow(
+                simple_workflow_definition,
+                steps,
+                uuid4(),
+                execution_mode=EnumExecutionMode.PARALLEL,
+            )
+
+        # Wave 1 step should fail
+        assert str(wave1_step_id) in result.failed_steps
+        # Wave 2 step should NOT be in completed_steps (it was never executed)
+        assert str(wave2_step_id) not in result.completed_steps
+        # No actions should be emitted (wave 1 failed before action creation)
+        assert len(result.actions_emitted) == 0
+        # Overall status should be FAILED
+        assert result.execution_status == EnumWorkflowState.FAILED
+        # Verify fewer steps were processed than total (workflow stopped early)
+        assert len(result.completed_steps) + len(result.failed_steps) < len(steps)
+
+
 class TestExecutionTimeTracking:
     """Test execution time tracking."""
 
