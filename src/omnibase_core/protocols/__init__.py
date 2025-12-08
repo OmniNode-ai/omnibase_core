@@ -14,11 +14,11 @@ Design Principles:
 
 Module Organization:
 - base.py: Common type aliases and base protocols (ContextValue, SemVer, etc.)
-- container.py: DI container and service registry protocols
-- event_bus.py: Event-driven messaging protocols
+- container/: DI container and service registry protocols (package)
+- event_bus/: Event-driven messaging protocols (package)
 - types.py: Type constraint protocols (Configurable, Executable, etc.)
 - core.py: Core operation protocols (CanonicalSerializer)
-- schema.py: Schema loading protocols
+- schema/: Schema loading protocols (package)
 - validation.py: Validation and compliance protocols
 
 Usage:

@@ -15,7 +15,7 @@ Design Principles:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Literal, Protocol, TypeVar, runtime_checkable
+from typing import Literal, TypeVar
 
 # =============================================================================
 # Type Variables
@@ -99,109 +99,21 @@ ProtocolDateTime = datetime
 
 
 # =============================================================================
-# Semantic Version Protocol
+# Protocol Imports
 # =============================================================================
 
-
-@runtime_checkable
-class ProtocolSemVer(Protocol):
-    """
-    Protocol for semantic version objects following SemVer specification.
-
-    Provides a structured approach to versioning with major, minor, and patch
-    components. Used throughout Core for protocol versioning, dependency
-    management, and compatibility checking.
-    """
-
-    major: int
-    minor: int
-    patch: int
-
-    def __str__(self) -> str:
-        """Return version string in 'major.minor.patch' format."""
-        ...
-
-
-# =============================================================================
-# Context Value Protocol (Core-native equivalent of SPI ContextValue)
-# =============================================================================
-
-
-@runtime_checkable
-class ProtocolContextValue(Protocol):
-    """
-    Protocol for context data values supporting validation and serialization.
-
-    Context values are type-safe containers for data passed between nodes
-    and services in the ONEX architecture.
-    """
-
-    async def validate_for_context(self) -> bool:
-        """Validate the value for context usage."""
-        ...
-
-    def serialize_for_context(self) -> dict[str, object]:
-        """Serialize the value for context transmission."""
-        ...
-
-    async def get_context_type_hint(self) -> str:
-        """Get the type hint for this context value."""
-        ...
-
-
-# Type alias for backwards compatibility and simpler usage
-ContextValue = ProtocolContextValue
-
-
-# =============================================================================
-# Core Protocol Markers (for runtime checkable interfaces)
-# =============================================================================
-
-
-@runtime_checkable
-class ProtocolHasModelDump(Protocol):
-    """
-    Protocol for objects that support Pydantic model_dump method.
-
-    This protocol ensures compatibility with Pydantic models and other
-    objects that provide dictionary serialization via model_dump.
-    """
-
-    def model_dump(
-        self, mode: str | None = None
-    ) -> dict[str, str | int | float | bool | list[object] | dict[str, object]]:
-        """Serialize the model to a dictionary."""
-        ...
-
-
-@runtime_checkable
-class ProtocolModelJsonSerializable(Protocol):
-    """
-    Protocol for values that can be JSON serialized.
-
-    Marker protocol for objects that can be safely serialized to JSON.
-    """
-
-    __omnibase_json_serializable_marker__: Literal[True]
-
-
-@runtime_checkable
-class ProtocolModelValidatable(Protocol):
-    """
-    Protocol for values that can validate themselves.
-
-    Provides self-validation interface for objects with built-in
-    validation logic.
-    """
-
-    def is_valid(self) -> bool:
-        """Check if the value is valid."""
-        ...
-
-    async def get_errors(self) -> list[str]:
-        """Get validation errors."""
-        ...
-
+from omnibase_core.protocols.base.protocol_context_value import (
+    ContextValue,
+    ProtocolContextValue,
+)
+from omnibase_core.protocols.base.protocol_has_model_dump import ProtocolHasModelDump
+from omnibase_core.protocols.base.protocol_model_json_serializable import (
+    ProtocolModelJsonSerializable,
+)
+from omnibase_core.protocols.base.protocol_model_validatable import (
+    ProtocolModelValidatable,
+)
+from omnibase_core.protocols.base.protocol_sem_ver import ProtocolSemVer
 
 # =============================================================================
 # Exports
