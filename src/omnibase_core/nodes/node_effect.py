@@ -208,10 +208,11 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         self._circuit_breakers.clear()
 
     async def _initialize_node_resources(self) -> None:
-        """Initialize effect-specific resources."""
-        # Circuit breakers are lazily initialized
-        # No additional resources needed for contract-driven execution
-        pass
+        """Initialize effect-specific resources.
+
+        Circuit breakers are lazily initialized on first use.
+        No additional resources needed for contract-driven execution.
+        """
 
     async def _cleanup_node_resources(self) -> None:
         """Cleanup effect-specific resources."""

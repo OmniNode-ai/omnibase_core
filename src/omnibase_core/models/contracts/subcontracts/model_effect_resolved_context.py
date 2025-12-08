@@ -17,6 +17,21 @@ These models are passed to specialized handlers after the executor resolves all
 template placeholders (${...}) from the configuration layer.
 
 ZERO TOLERANCE: No Any types allowed. No template placeholders in resolved values.
+
+Thread Safety:
+    All resolved context models are immutable (frozen=True) after creation,
+    making them thread-safe for concurrent read access. Handlers can safely
+    receive and process these contexts from multiple async tasks.
+
+See Also:
+    - :mod:`omnibase_core.models.contracts.subcontracts.model_effect_io_configs`:
+        IO configuration models with template placeholders
+    - :class:`MixinEffectExecution`: Mixin that performs template resolution
+    - :class:`NodeEffect`: The primary node using resolved contexts
+    - docs/architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md: Full specification
+    - docs/guides/THREADING.md: Thread safety guidelines
+
+Author: ONEX Framework Team
 """
 
 from typing import Literal
@@ -41,9 +56,20 @@ class ModelResolvedHttpContext(BaseModel):
     All template placeholders have been resolved by the effect executor.
     The handler receives fully-resolved values ready for execution.
 
+    Attributes:
+        handler_type: Discriminator field for HTTP handler type.
+        url: Fully resolved URL (no template placeholders).
+        method: HTTP method for the request (GET, POST, PUT, PATCH, DELETE).
+        headers: Resolved HTTP headers (all template values substituted).
+        body: Resolved request body (None for GET requests).
+        query_params: Resolved query parameters.
+        timeout_ms: Request timeout in milliseconds (1s - 10min).
+        follow_redirects: Whether to follow HTTP redirects.
+        verify_ssl: Whether to verify SSL certificates.
+
     Example resolved values:
-    - url: "https://api.example.com/users/123" (was: "${API_BASE}/users/${user_id}")
-    - headers: {"Authorization": "Bearer abc123"} (was: {"Authorization": "Bearer ${API_TOKEN}"})
+        - url: "https://api.example.com/users/123" (was: "${API_BASE}/users/${user_id}")
+        - headers: {"Authorization": "Bearer abc123"} (was: {"Authorization": "Bearer ${API_TOKEN}"})
     """
 
     handler_type: Literal[EnumEffectHandlerType.HTTP] = Field(
@@ -110,9 +136,19 @@ class ModelResolvedDbContext(BaseModel):
     All template placeholders have been resolved by the effect executor.
     Query parameters are resolved to actual values ready for execution.
 
+    Attributes:
+        handler_type: Discriminator field for database handler type.
+        operation: Database operation type (select, insert, update, delete, upsert, raw).
+        connection_name: Name of the database connection to use.
+        query: Fully resolved SQL query (no template placeholders).
+        params: Resolved query parameter values in order.
+        timeout_ms: Query timeout in milliseconds (1s - 10min).
+        fetch_size: Number of rows to fetch per batch (None for default).
+        read_only: Whether the operation is read-only (enables optimizations).
+
     Example resolved values:
-    - query: "SELECT * FROM users WHERE id = $1" (was: "${QUERY_TEMPLATE}")
-    - params: [123] (was: ["${user_id}"])
+        - query: "SELECT * FROM users WHERE id = $1" (was: "${QUERY_TEMPLATE}")
+        - params: [123] (was: ["${user_id}"])
     """
 
     handler_type: Literal[EnumEffectHandlerType.DB] = Field(
@@ -176,9 +212,19 @@ class ModelResolvedKafkaContext(BaseModel):
     All template placeholders have been resolved by the effect executor.
     Message payload and headers are ready for immediate publishing.
 
+    Attributes:
+        handler_type: Discriminator field for Kafka handler type.
+        topic: Kafka topic name.
+        partition_key: Resolved partition key for message ordering.
+        headers: Resolved Kafka message headers.
+        payload: Fully resolved message payload.
+        timeout_ms: Publish timeout in milliseconds (1s - 10min).
+        acks: Acknowledgment level (0=none, 1=leader, all=all replicas).
+        compression: Message compression algorithm.
+
     Example resolved values:
-    - topic: "user-events" (was: "${KAFKA_TOPIC_PREFIX}-events")
-    - payload: '{"user_id": 123}' (was: '{"user_id": ${user_id}}')
+        - topic: "user-events" (was: "${KAFKA_TOPIC_PREFIX}-events")
+        - payload: '{"user_id": 123}' (was: '{"user_id": ${user_id}}')
     """
 
     handler_type: Literal[EnumEffectHandlerType.KAFKA] = Field(
@@ -240,9 +286,20 @@ class ModelResolvedFilesystemContext(BaseModel):
     All template placeholders have been resolved by the effect executor.
     File paths and content are ready for immediate I/O operations.
 
+    Attributes:
+        handler_type: Discriminator field for filesystem handler type.
+        file_path: Fully resolved file path (no template placeholders).
+        operation: Filesystem operation type (read, write, delete, move, copy).
+        content: Resolved content for write operations.
+        timeout_ms: Operation timeout in milliseconds (1s - 10min).
+        atomic: Whether to use atomic write operations (write to temp, then rename).
+        create_dirs: Whether to create parent directories if they don't exist.
+        encoding: File encoding for text operations.
+        mode: Unix file mode (e.g., '0644') for created files.
+
     Example resolved values:
-    - file_path: "/data/exports/report_2024.csv" (was: "${DATA_DIR}/exports/${filename}")
-    - content: "id,name,value\\n123,test,100" (was: "${HEADER}\\n${ROW_DATA}")
+        - file_path: "/data/exports/report_2024.csv" (was: "${DATA_DIR}/exports/${filename}")
+        - content: "id,name,value\\n123,test,100" (was: "${HEADER}\\n${ROW_DATA}")
     """
 
     handler_type: Literal[EnumEffectHandlerType.FILESYSTEM] = Field(

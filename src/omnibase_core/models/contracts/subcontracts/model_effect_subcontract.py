@@ -76,16 +76,27 @@ Example Python Usage:
     ... )
 
 See Also:
-    - omnibase_core.models.contracts.subcontracts.model_effect_io_configs: IO configurations
-    - omnibase_core.models.contracts.model_effect_retry_config: Retry policies
+    - :mod:`omnibase_core.models.contracts.subcontracts.model_effect_io_configs`: IO configurations
+    - :mod:`omnibase_core.models.contracts.model_effect_retry_config`: Retry policies
+    - :class:`NodeEffect`: The primary node using this subcontract
+    - :class:`MixinEffectExecution`: Mixin providing effect execution logic
     - docs/architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md: Full specification
+    - examples/contracts/effect/: Example YAML contracts
+
+Author: ONEX Framework Team
 """
 
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from pydantic import (BaseModel, ConfigDict, Discriminator, Field,
-                      field_validator, model_validator)
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Discriminator,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
@@ -93,10 +104,12 @@ from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
 from omnibase_core.enums.enum_state_management import EnumIsolationLevel
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.contracts.model_effect_retry_config import \
-    ModelEffectRetryConfig
-from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import \
-    EffectIOConfig
+from omnibase_core.models.contracts.model_effect_retry_config import (
+    ModelEffectRetryConfig,
+)
+from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
+    EffectIOConfig,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -551,8 +564,11 @@ class ModelEffectOperation(BaseModel):
 
         # Import concrete types for type narrowing
         from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
-            ModelDbIOConfig, ModelFilesystemIOConfig, ModelHttpIOConfig,
-            ModelKafkaIOConfig)
+            ModelDbIOConfig,
+            ModelFilesystemIOConfig,
+            ModelHttpIOConfig,
+            ModelKafkaIOConfig,
+        )
 
         if handler_type == EnumEffectHandlerType.HTTP:
             # HTTP idempotency based on method

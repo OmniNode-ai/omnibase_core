@@ -40,10 +40,15 @@ Example:
     ...         return result
 
 See Also:
-    - omnibase_core.models.effect.model_effect_input: Input model
-    - omnibase_core.models.effect.model_effect_output: Output model
-    - omnibase_core.models.contracts.subcontracts.model_effect_io_configs: IO configs
+    - :mod:`omnibase_core.models.effect.model_effect_input`: Input model
+    - :mod:`omnibase_core.models.effect.model_effect_output`: Output model
+    - :mod:`omnibase_core.models.contracts.subcontracts.model_effect_io_configs`: IO configs
+    - :class:`ModelEffectSubcontract`: Effect contract specification
+    - :class:`NodeEffect`: The primary node using this mixin
     - docs/architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md: Full specification
+    - docs/guides/THREADING.md: Thread safety guidelines
+
+Author: ONEX Framework Team
 """
 
 import asyncio
@@ -211,7 +216,7 @@ class MixinEffectExecution:
         except Exception as e:
             transaction_state = EnumTransactionState.ROLLED_BACK
             raise ModelOnexError(
-                message=f"Effect execution failed: {str(e)}",
+                message=f"Effect execution failed: {e!s}",
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 context={"operation_id": str(operation_id)},
             ) from e
@@ -266,7 +271,7 @@ class MixinEffectExecution:
                 )
         except Exception as e:
             raise ModelOnexError(
-                message=f"Failed to parse io_config: {str(e)}",
+                message=f"Failed to parse io_config: {e!s}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
@@ -585,19 +590,19 @@ class MixinEffectExecution:
 
                     # Wait before retry
                     await asyncio.sleep(actual_delay_ms / 1000)
+                elif isinstance(e, ModelOnexError):
+                    # No more retries, raise the original error
+                    raise
                 else:
-                    # No more retries, raise the error
-                    if isinstance(e, ModelOnexError):
-                        raise
-                    else:
-                        raise ModelOnexError(
-                            message=f"Operation failed after {retry_count} retries",
-                            error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                            context={
-                                "operation_id": str(operation_id),
-                                "retries": retry_count,
-                            },
-                        ) from e
+                    # No more retries, wrap and raise
+                    raise ModelOnexError(
+                        message=f"Operation failed after {retry_count} retries",
+                        error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                        context={
+                            "operation_id": str(operation_id),
+                            "retries": retry_count,
+                        },
+                    ) from e
 
         # Should never reach here, but for type checking
         raise ModelOnexError(
@@ -650,7 +655,7 @@ class MixinEffectExecution:
 
         except Exception as e:
             raise ModelOnexError(
-                message=f"Handler execution failed: {str(e)}",
+                message=f"Handler execution failed: {e!s}",
                 error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
                 context={
                     "operation_id": str(input_data.operation_id),
@@ -800,7 +805,7 @@ class MixinEffectExecution:
                 raise
             except Exception as e:
                 raise ModelOnexError(
-                    message=f"Field extraction failed for {output_name}: {str(e)}",
+                    message=f"Field extraction failed for {output_name}: {e!s}",
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 ) from e
 
