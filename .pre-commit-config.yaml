@@ -15,10 +15,11 @@
 #
 # PRE-PUSH (comprehensive validation before sharing):
 #   - mypy type checking (~5-10s)
-#   - pytest smoke tests (~4-5 minutes)
 #   - validate-naming-conventions (~14s)
 #   - Complex pattern validations (union, pydantic, dict-any)
 #   - Documentation link validation
+#   - Protocol UUID enforcement (~6s)
+#   NOTE: Smoke tests removed - CI runs full 12k+ test suite
 #
 # USAGE:
 #   pre-commit install                    # Install pre-commit hooks
@@ -377,25 +378,9 @@ repos:
         always_run: true
         stages: [pre-push]  # Moved to pre-push: scans all markdown files
 
-      # Smoke tests - comprehensive validation before pushing
-      # Runs foundational tests (enums, errors) to catch regressions
-      # Full test suite (12k+ tests) runs in CI with parallel execution
-      - id: pytest-smoke-tests
-        name: Run Smoke Tests (enums + errors)
-        entry: poetry run pytest
-        language: system
-        pass_filenames: false
-        always_run: true
-        args:
-          - tests/unit/enums
-          - tests/unit/errors
-          - --maxfail=5
-          - -x
-          - --tb=short
-          - -q
-          - -p
-          - no:rerunfailures
-        stages: [pre-push]  # Moved to pre-push: ~4-5 minutes
+      # NOTE: Smoke tests removed (2025-12) - redundant with CI
+      # CI runs full 12k+ test suite with 20 parallel splits
+      # Removing saves ~4-5 minutes per push with no coverage loss
 
       # Protocol @runtime_checkable Validation
       # Ensures all Protocol classes have @runtime_checkable decorator
