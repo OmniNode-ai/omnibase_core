@@ -1,0 +1,482 @@
+---
+# Example: Contract-Driven NodeEffect - HTTP REST API Calls
+#
+# This example demonstrates the v1.0 NodeEffect contract-driven HTTP handler
+# for making REST API calls with retries, response extraction, and error handling.
+#
+# USE CASE: User Management API Integration
+# - Create new users via POST request
+# - Read user data via GET request
+# - Extract specific fields from responses
+# - Handle API errors gracefully with retries
+# - Use exponential backoff for rate limiting
+#
+# Node Implementation (minimal code needed):
+#   class NodeUserApiEffectNode(NodeEffect):
+#       pass  # All I/O logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - HTTP POST with JSON payload
+# - HTTP GET with path parameters
+# - Retry policy with exponential backoff and jitter
+# - Response field extraction using JSONPath
+# - Success code validation
+# - Operation timeout configuration
+# - Request/response observability
+#
+# v1.0 Contract Schema Version
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# EFFECT SUBCONTRACT: Defines external I/O operations
+# ---------------------------------------------------------------------------
+# The effect subcontract specifies sequential or concurrent external operations
+# that the NodeEffect will execute. Operations interact with external systems
+# like APIs, databases, message queues, or filesystems.
+
+effect_operations:
+  # Schema version for forward compatibility
+  version: "1.0.0"
+
+  # Execution mode: how operations are executed
+  # - sequential_abort: Execute in order, abort on first failure
+  # - sequential_continue: Execute in order, continue on failures
+  # - concurrent: Execute all operations in parallel
+  execution_mode: sequential_abort
+
+  # Operation-level timeout (milliseconds)
+  # Maximum time allowed for all operations combined
+  operation_timeout_ms: 30000
+
+  # ---------------------------------------------------------------------------
+  # OPERATIONS: Sequential list of I/O operations
+  # ---------------------------------------------------------------------------
+  # Each operation represents a single interaction with an external system.
+  # Operations are executed according to execution_mode.
+
+  operations:
+    # =========================================================================
+    # OPERATION 1: CREATE USER (HTTP POST)
+    # =========================================================================
+    # Creates a new user via REST API POST request with JSON payload.
+    # Demonstrates request body templating and response extraction.
+    #
+    # Handler Type: HTTP
+    # HTTP Method: POST
+    # Purpose: Create new user resource
+    # Input: User data from operation_data
+    # Output: Created user with ID
+
+    - operation_name: create_user
+      description: "Creates a new user account via API POST request"
+
+      # I/O configuration for HTTP handler
+      io_config:
+        handler_type: http
+
+        # HTTP-specific configuration
+        http_config:
+          # HTTP method for this operation
+          method: POST
+
+          # Target URL (supports templating from input data)
+          url: "https://api.example.com/v1/users"
+
+          # Request headers
+          headers:
+            Content-Type: "application/json"
+            Accept: "application/json"
+            # Authorization header can be templated from input
+            Authorization: "Bearer ${auth_token}"
+            # Custom correlation header for request tracing
+            X-Correlation-ID: "${correlation_id}"
+
+          # Request body template (JSON)
+          # Fields can reference input data using ${field_name} syntax
+          body_template: |
+            {
+              "email": "${email}",
+              "display_name": "${display_name}",
+              "role": "${role}",
+              "metadata": {
+                "source": "api_integration",
+                "created_by": "${created_by}"
+              }
+            }
+
+          # Query parameters (optional)
+          query_params:
+            # Include audit info in response
+            include_audit: "true"
+            # API version override
+            api_version: "2024-01"
+
+          # Request timeout (milliseconds)
+          timeout_ms: 5000
+
+          # Follow redirects (default: true)
+          follow_redirects: true
+
+          # Maximum number of redirects to follow
+          max_redirects: 5
+
+      # Retry policy for this operation
+      retry_policy:
+        enabled: true
+
+        # Maximum number of retry attempts
+        max_retries: 3
+
+        # Backoff strategy: exponential, linear, constant
+        backoff_strategy: exponential
+
+        # Initial delay before first retry (milliseconds)
+        initial_delay_ms: 1000
+
+        # Maximum delay between retries (milliseconds)
+        max_delay_ms: 10000
+
+        # Backoff multiplier (for exponential strategy)
+        # delay = initial_delay * (multiplier ^ attempt_number)
+        backoff_multiplier: 2.0
+
+        # Add random jitter to prevent thundering herd
+        jitter: true
+
+        # Jitter factor (0.0 to 1.0)
+        # Actual delay = delay ± (delay * jitter_factor)
+        jitter_factor: 0.1
+
+        # HTTP status codes that should trigger retry
+        retryable_status_codes:
+          - 408  # Request Timeout
+          - 429  # Too Many Requests (rate limiting)
+          - 500  # Internal Server Error
+          - 502  # Bad Gateway
+          - 503  # Service Unavailable
+          - 504  # Gateway Timeout
+
+      # Response handling configuration
+      response_handling:
+        # HTTP status codes considered successful
+        success_codes:
+          - 200  # OK
+          - 201  # Created
+          - 202  # Accepted
+
+        # Extract specific fields from response using JSONPath
+        # These fields will be available in the operation result
+        extract_fields:
+          # Extract the created user's ID
+          user_id: "$.id"
+          # Extract the created user's email
+          user_email: "$.email"
+          # Extract creation timestamp
+          created_at: "$.metadata.created_at"
+          # Extract nested field
+          audit_user: "$.audit.created_by"
+
+        # Store the entire response body (default: false)
+        # Useful for debugging or when you need the full response
+        store_full_response: true
+
+      # Circuit breaker configuration (optional)
+      circuit_breaker:
+        enabled: false
+        # Would configure failure threshold, timeout, etc. if enabled
+
+      # Observability configuration
+      observability:
+        # Enable request/response logging
+        log_requests: true
+        log_responses: true
+
+        # Log response bodies (can be verbose)
+        log_response_body: false
+
+        # Emit metrics for this operation
+        emit_metrics: true
+
+        # Metric labels
+        metric_labels:
+          operation: "create_user"
+          api: "user_management"
+          version: "v1"
+
+    # =========================================================================
+    # OPERATION 2: GET USER (HTTP GET)
+    # =========================================================================
+    # Retrieves user data via REST API GET request.
+    # Demonstrates path parameter templating and response validation.
+    #
+    # Handler Type: HTTP
+    # HTTP Method: GET
+    # Purpose: Read existing user resource
+    # Input: User ID from previous operation or input
+    # Output: Complete user object
+
+    - operation_name: get_user
+      description: "Retrieves user details by ID via API GET request"
+
+      io_config:
+        handler_type: http
+
+        http_config:
+          method: GET
+
+          # URL with path parameter templating
+          # ${user_id} will be replaced with actual value from input
+          url: "https://api.example.com/v1/users/${user_id}"
+
+          headers:
+            Accept: "application/json"
+            Authorization: "Bearer ${auth_token}"
+            X-Correlation-ID: "${correlation_id}"
+
+          # No body for GET requests
+          # body_template is omitted
+
+          query_params:
+            # Request additional related data
+            include: "profile,preferences,metadata"
+            # Fields to return (projection)
+            fields: "id,email,display_name,role,created_at"
+
+          timeout_ms: 3000
+
+      # Different retry policy for GET (can be more aggressive)
+      retry_policy:
+        enabled: true
+        max_retries: 5
+        backoff_strategy: exponential
+        initial_delay_ms: 500
+        max_delay_ms: 5000
+        backoff_multiplier: 2.0
+        jitter: true
+        jitter_factor: 0.15
+        retryable_status_codes:
+          - 429  # Rate limiting
+          - 500
+          - 502
+          - 503
+          - 504
+
+      response_handling:
+        success_codes:
+          - 200  # OK
+          - 304  # Not Modified (cached)
+
+        extract_fields:
+          # Extract all relevant user fields
+          user_id: "$.id"
+          email: "$.email"
+          display_name: "$.display_name"
+          role: "$.role"
+          created_at: "$.metadata.created_at"
+          updated_at: "$.metadata.updated_at"
+          # Extract nested preferences
+          theme: "$.preferences.theme"
+          notifications_enabled: "$.preferences.notifications.enabled"
+
+        store_full_response: true
+
+      observability:
+        log_requests: true
+        log_responses: true
+        log_response_body: false
+        emit_metrics: true
+        metric_labels:
+          operation: "get_user"
+          api: "user_management"
+          version: "v1"
+
+    # =========================================================================
+    # OPERATION 3: UPDATE USER STATUS (HTTP PATCH)
+    # =========================================================================
+    # Updates user status via REST API PATCH request.
+    # Demonstrates partial updates and idempotency.
+    #
+    # Handler Type: HTTP
+    # HTTP Method: PATCH
+    # Purpose: Update specific user fields
+    # Input: User ID and new status
+    # Output: Updated user object
+
+    - operation_name: update_user_status
+      description: "Updates user status field via API PATCH request"
+
+      io_config:
+        handler_type: http
+
+        http_config:
+          method: PATCH
+          url: "https://api.example.com/v1/users/${user_id}"
+
+          headers:
+            Content-Type: "application/json"
+            Accept: "application/json"
+            Authorization: "Bearer ${auth_token}"
+            X-Correlation-ID: "${correlation_id}"
+            # Idempotency key to prevent duplicate updates
+            X-Idempotency-Key: "${idempotency_key}"
+
+          # Partial update payload
+          body_template: |
+            {
+              "status": "${new_status}",
+              "updated_by": "${updated_by}",
+              "updated_reason": "${update_reason}"
+            }
+
+          timeout_ms: 5000
+
+      # Conservative retry policy for mutations
+      retry_policy:
+        enabled: true
+        # Fewer retries for mutations to prevent duplicates
+        max_retries: 2
+        backoff_strategy: exponential
+        initial_delay_ms: 2000
+        max_delay_ms: 8000
+        backoff_multiplier: 2.0
+        jitter: true
+        jitter_factor: 0.1
+        # Only retry on certain status codes for mutations
+        retryable_status_codes:
+          - 408  # Request Timeout
+          - 429  # Rate limiting (safe to retry with idempotency key)
+          - 502  # Bad Gateway
+          - 503  # Service Unavailable
+          - 504  # Gateway Timeout
+
+      response_handling:
+        success_codes:
+          - 200  # OK
+          - 204  # No Content
+
+        extract_fields:
+          user_id: "$.id"
+          status: "$.status"
+          updated_at: "$.metadata.updated_at"
+
+        store_full_response: true
+
+      observability:
+        log_requests: true
+        log_responses: true
+        emit_metrics: true
+        metric_labels:
+          operation: "update_user_status"
+          api: "user_management"
+          version: "v1"
+
+# ---------------------------------------------------------------------------
+# EXAMPLE INPUT/OUTPUT
+# ---------------------------------------------------------------------------
+# This section shows what input the effect operations expect and what output
+# they produce. Not part of the contract schema - just documentation.
+
+# Example Input (ModelEffectInput.operation_data):
+# {
+#   "email": "john.smith@example.com",
+#   "display_name": "John Smith",
+#   "role": "developer",
+#   "created_by": "admin_user",
+#   "auth_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+#   "correlation_id": "req_abc123xyz",
+#   "user_id": "usr_12345",  # For get/update operations
+#   "new_status": "active",
+#   "updated_by": "admin_user",
+#   "update_reason": "Account verification completed",
+#   "idempotency_key": "idem_xyz789"
+# }
+
+# Example Output (ModelEffectOutput.result_data):
+# {
+#   "operations": {
+#     "create_user": {
+#       "success": true,
+#       "status_code": 201,
+#       "extracted_fields": {
+#         "user_id": "usr_12345",
+#         "user_email": "john.smith@example.com",
+#         "created_at": "2024-12-08T12:00:00Z",
+#         "audit_user": "admin_user"
+#       },
+#       "full_response": { /* complete API response */ }
+#     },
+#     "get_user": {
+#       "success": true,
+#       "status_code": 200,
+#       "extracted_fields": {
+#         "user_id": "usr_12345",
+#         "email": "john.smith@example.com",
+#         "display_name": "John Smith",
+#         "role": "developer",
+#         "theme": "dark",
+#         "notifications_enabled": true
+#       }
+#     },
+#     "update_user_status": {
+#       "success": true,
+#       "status_code": 200,
+#       "extracted_fields": {
+#         "user_id": "usr_12345",
+#         "status": "active",
+#         "updated_at": "2024-12-08T12:01:00Z"
+#       }
+#     }
+#   }
+# }
+
+# ---------------------------------------------------------------------------
+# USAGE EXAMPLE
+# ---------------------------------------------------------------------------
+# How to use this contract with NodeEffect:
+#
+# from omnibase_core.nodes import NodeEffect
+# from omnibase_core.models import ModelEffectInput
+# import yaml
+#
+# # Load contract
+# with open("http_api_call.yaml") as f:
+#     contract_data = yaml.safe_load(f)
+#
+# # Create node (contract drives all I/O logic)
+# class NodeUserApiEffect(NodeEffect):
+#     pass
+#
+# node = NodeUserApiEffect(container, contract=contract_data)
+#
+# # Execute operations
+# input_data = ModelEffectInput(
+#     operation_data={
+#         "email": "john.smith@example.com",
+#         "display_name": "John Smith",
+#         "role": "developer",
+#         "created_by": "admin_user",
+#         "auth_token": "eyJhbGci...",
+#         "correlation_id": "req_abc123"
+#     }
+# )
+#
+# result = await node.process(input_data)
+# print(result.result_data["operations"]["create_user"]["extracted_fields"]["user_id"])
+
+# ---------------------------------------------------------------------------
+# CONTRACT METADATA
+# ---------------------------------------------------------------------------
+
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: "ONEX Framework Team"
+  description: |
+    Contract-driven effect operations for HTTP REST API integration.
+    Demonstrates POST/GET/PATCH methods with retries and response extraction.
+  tags:
+    - effect
+    - http
+    - rest-api
+    - user-management
+    - example
+  documentation_url: "https://docs.onex.ai/effect/http-api-call"

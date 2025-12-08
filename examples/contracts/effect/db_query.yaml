@@ -1,0 +1,578 @@
+---
+# Example: Contract-Driven NodeEffect - Database Operations
+#
+# This example demonstrates the v1.0 NodeEffect contract-driven database handler
+# for executing SQL queries with transactions, parameterization, and error handling.
+#
+# USE CASE: User Profile Database Operations
+# - Query user data with parameterized SELECT
+# - Insert new user records with transaction support
+# - Update existing records with optimistic locking
+# - Handle database errors and deadlocks with retries
+#
+# Node Implementation (minimal code needed):
+#   class NodeUserDbEffect(NodeEffect):
+#       pass  # All database logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - Parameterized SELECT queries (SQL injection prevention)
+# - INSERT with transaction support and RETURNING clause
+# - UPDATE with WHERE conditions and version checking
+# - Query parameter templating from input data
+# - Transaction isolation levels
+# - Deadlock retry handling
+# - Connection pooling configuration
+# - Result row extraction
+#
+# v1.0 Contract Schema Version
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# EFFECT SUBCONTRACT: Defines database operations
+# ---------------------------------------------------------------------------
+
+effect_operations:
+  version: "1.0.0"
+
+  # Execute operations sequentially with transaction semantics
+  execution_mode: sequential_abort
+
+  # Total timeout for all database operations
+  operation_timeout_ms: 30000
+
+  # ---------------------------------------------------------------------------
+  # OPERATIONS: Sequential list of database operations
+  # ---------------------------------------------------------------------------
+
+  operations:
+    # =========================================================================
+    # OPERATION 1: SELECT USER BY EMAIL (Parameterized Query)
+    # =========================================================================
+    # Retrieves user data using parameterized query to prevent SQL injection.
+    # Demonstrates safe parameter binding and result extraction.
+    #
+    # Handler Type: DB
+    # SQL Operation: SELECT
+    # Purpose: Read user by email with safe parameterization
+    # Input: Email address from operation_data
+    # Output: User record or null if not found
+
+    - operation_name: select_user_by_email
+      description: "Retrieves user by email using parameterized SELECT query"
+
+      # I/O configuration for database handler
+      io_config:
+        handler_type: db
+
+        # Database-specific configuration
+        db_config:
+          # SQL query with parameter placeholders
+          # Use $1, $2, ... for PostgreSQL
+          # Use ? for SQLite/MySQL
+          # Use :param_name for named parameters (if supported)
+          query: |
+            SELECT
+              id,
+              email,
+              display_name,
+              role,
+              status,
+              created_at,
+              updated_at,
+              version
+            FROM users
+            WHERE email = $1
+              AND deleted_at IS NULL
+            LIMIT 1
+
+          # Query parameters (bound safely to placeholders)
+          # Parameters are extracted from input data and bound in order
+          query_params:
+            # $1 = email parameter from operation_data
+            - param_name: "email"
+              source: "operation_data"
+              field: "email"
+              type: "string"
+
+          # Query type: SELECT, INSERT, UPDATE, DELETE, EXECUTE
+          query_type: SELECT
+
+          # Transaction configuration
+          transaction:
+            # Enable transaction for this operation
+            enabled: false  # SELECT typically doesn't need transaction
+
+            # Isolation level: READ_UNCOMMITTED, READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE
+            isolation_level: READ_COMMITTED
+
+            # Automatically commit on success
+            auto_commit: true
+
+            # Timeout for transaction (milliseconds)
+            timeout_ms: 5000
+
+          # Connection configuration
+          connection:
+            # Connection pool name (resolved from container)
+            pool_name: "user_db_pool"
+
+            # Connection timeout (milliseconds)
+            timeout_ms: 3000
+
+            # Use read replica for read-only queries (optional)
+            use_read_replica: true
+
+            # Maximum rows to fetch (prevent memory exhaustion)
+            max_rows: 1000
+
+          # Query timeout (milliseconds)
+          query_timeout_ms: 5000
+
+          # Prepared statement (improves performance for repeated queries)
+          use_prepared_statement: true
+
+      # Retry policy for database operations
+      retry_policy:
+        enabled: true
+        max_retries: 3
+        backoff_strategy: exponential
+        initial_delay_ms: 100
+        max_delay_ms: 2000
+        backoff_multiplier: 2.0
+        jitter: true
+        jitter_factor: 0.1
+
+        # Database error codes that should trigger retry
+        # These are PostgreSQL error codes
+        retryable_error_codes:
+          - "40001"  # Serialization failure
+          - "40P01"  # Deadlock detected
+          - "08000"  # Connection exception
+          - "08003"  # Connection does not exist
+          - "08006"  # Connection failure
+          - "57P03"  # Cannot connect now
+
+      # Response handling
+      response_handling:
+        # Extract specific fields from query result
+        extract_fields:
+          user_id: "$.id"
+          email: "$.email"
+          display_name: "$.display_name"
+          role: "$.role"
+          status: "$.status"
+          version: "$.version"
+
+        # Store full result set (all rows)
+        store_full_result: true
+
+        # Fail if query returns no rows
+        fail_on_empty: false
+
+      observability:
+        log_queries: true
+        log_parameters: false  # Don't log sensitive data
+        log_results: false
+        emit_metrics: true
+        metric_labels:
+          operation: "select_user_by_email"
+          table: "users"
+          query_type: "SELECT"
+
+    # =========================================================================
+    # OPERATION 2: INSERT NEW USER (Transactional Insert)
+    # =========================================================================
+    # Inserts a new user record with transaction support and RETURNING clause.
+    # Demonstrates safe parameter binding for INSERT and result extraction.
+    #
+    # Handler Type: DB
+    # SQL Operation: INSERT
+    # Purpose: Create new user record with transaction
+    # Input: User data from operation_data
+    # Output: Inserted user ID and metadata
+
+    - operation_name: insert_user
+      description: "Inserts new user with transaction support"
+
+      io_config:
+        handler_type: db
+
+        db_config:
+          # INSERT query with RETURNING clause to get generated values
+          query: |
+            INSERT INTO users (
+              email,
+              display_name,
+              role,
+              status,
+              password_hash,
+              created_at,
+              updated_at,
+              version
+            ) VALUES (
+              $1, $2, $3, $4, $5, NOW(), NOW(), 1
+            )
+            RETURNING id, created_at, version
+
+          # Multiple parameters for INSERT
+          query_params:
+            - param_name: "email"
+              source: "operation_data"
+              field: "email"
+              type: "string"
+
+            - param_name: "display_name"
+              source: "operation_data"
+              field: "display_name"
+              type: "string"
+
+            - param_name: "role"
+              source: "operation_data"
+              field: "role"
+              type: "string"
+              default: "user"  # Default value if not provided
+
+            - param_name: "status"
+              source: "operation_data"
+              field: "status"
+              type: "string"
+              default: "pending"
+
+            - param_name: "password_hash"
+              source: "operation_data"
+              field: "password_hash"
+              type: "string"
+
+          query_type: INSERT
+
+          # Transaction is CRITICAL for INSERT operations
+          transaction:
+            enabled: true
+            isolation_level: READ_COMMITTED
+            auto_commit: true
+            timeout_ms: 10000
+
+          connection:
+            pool_name: "user_db_pool"
+            timeout_ms: 3000
+            # INSERT must use write connection
+            use_read_replica: false
+
+          query_timeout_ms: 10000
+          use_prepared_statement: true
+
+      # Conservative retry for mutations
+      retry_policy:
+        enabled: true
+        max_retries: 2  # Fewer retries for mutations
+        backoff_strategy: exponential
+        initial_delay_ms: 500
+        max_delay_ms: 5000
+        backoff_multiplier: 2.0
+        jitter: true
+        jitter_factor: 0.15
+        retryable_error_codes:
+          - "40001"  # Serialization failure
+          - "40P01"  # Deadlock detected
+          # Do NOT retry on unique constraint violations (23505)
+
+      response_handling:
+        # Extract values from RETURNING clause
+        extract_fields:
+          user_id: "$.id"
+          created_at: "$.created_at"
+          version: "$.version"
+
+        store_full_result: true
+        # INSERT should return at least one row
+        fail_on_empty: true
+
+      observability:
+        log_queries: true
+        log_parameters: false  # Sensitive data (password_hash)
+        emit_metrics: true
+        metric_labels:
+          operation: "insert_user"
+          table: "users"
+          query_type: "INSERT"
+
+    # =========================================================================
+    # OPERATION 3: UPDATE USER STATUS (Optimistic Locking)
+    # =========================================================================
+    # Updates user status with version-based optimistic locking.
+    # Demonstrates conditional UPDATE with WHERE clause and version checking.
+    #
+    # Handler Type: DB
+    # SQL Operation: UPDATE
+    # Purpose: Update user status with concurrency control
+    # Input: User ID, new status, current version
+    # Output: Updated version number
+
+    - operation_name: update_user_status
+      description: "Updates user status with optimistic locking"
+
+      io_config:
+        handler_type: db
+
+        db_config:
+          # UPDATE with version check for optimistic locking
+          query: |
+            UPDATE users
+            SET
+              status = $1,
+              updated_at = NOW(),
+              version = version + 1
+            WHERE id = $2
+              AND version = $3
+              AND deleted_at IS NULL
+            RETURNING id, status, version, updated_at
+
+          query_params:
+            - param_name: "status"
+              source: "operation_data"
+              field: "new_status"
+              type: "string"
+
+            - param_name: "user_id"
+              source: "operation_data"
+              field: "user_id"
+              type: "uuid"
+
+            - param_name: "current_version"
+              source: "operation_data"
+              field: "current_version"
+              type: "integer"
+
+          query_type: UPDATE
+
+          transaction:
+            enabled: true
+            isolation_level: READ_COMMITTED
+            auto_commit: true
+            timeout_ms: 10000
+
+          connection:
+            pool_name: "user_db_pool"
+            timeout_ms: 3000
+            use_read_replica: false
+
+          query_timeout_ms: 10000
+          use_prepared_statement: true
+
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: exponential
+        initial_delay_ms: 500
+        max_delay_ms: 5000
+        backoff_multiplier: 2.0
+        jitter: true
+        jitter_factor: 0.1
+        retryable_error_codes:
+          - "40001"  # Serialization failure
+          - "40P01"  # Deadlock detected
+
+      response_handling:
+        extract_fields:
+          user_id: "$.id"
+          status: "$.status"
+          version: "$.version"
+          updated_at: "$.updated_at"
+
+        store_full_result: true
+        # If no rows updated, version mismatch occurred
+        fail_on_empty: true
+
+      observability:
+        log_queries: true
+        log_parameters: false
+        emit_metrics: true
+        metric_labels:
+          operation: "update_user_status"
+          table: "users"
+          query_type: "UPDATE"
+
+    # =========================================================================
+    # OPERATION 4: DELETE USER (Soft Delete)
+    # =========================================================================
+    # Soft deletes a user by setting deleted_at timestamp.
+    # Demonstrates DELETE-like operation using UPDATE.
+    #
+    # Handler Type: DB
+    # SQL Operation: UPDATE (soft delete)
+    # Purpose: Mark user as deleted without removing data
+    # Input: User ID
+    # Output: Deletion timestamp
+
+    - operation_name: soft_delete_user
+      description: "Soft deletes user by setting deleted_at timestamp"
+
+      io_config:
+        handler_type: db
+
+        db_config:
+          query: |
+            UPDATE users
+            SET
+              deleted_at = NOW(),
+              status = 'deleted',
+              updated_at = NOW(),
+              version = version + 1
+            WHERE id = $1
+              AND deleted_at IS NULL
+            RETURNING id, deleted_at, version
+
+          query_params:
+            - param_name: "user_id"
+              source: "operation_data"
+              field: "user_id"
+              type: "uuid"
+
+          query_type: UPDATE
+
+          transaction:
+            enabled: true
+            isolation_level: READ_COMMITTED
+            auto_commit: true
+            timeout_ms: 10000
+
+          connection:
+            pool_name: "user_db_pool"
+            timeout_ms: 3000
+            use_read_replica: false
+
+          query_timeout_ms: 10000
+          use_prepared_statement: true
+
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: exponential
+        initial_delay_ms: 500
+        max_delay_ms: 5000
+        backoff_multiplier: 2.0
+        jitter: true
+        retryable_error_codes:
+          - "40001"
+          - "40P01"
+
+      response_handling:
+        extract_fields:
+          user_id: "$.id"
+          deleted_at: "$.deleted_at"
+          version: "$.version"
+
+        store_full_result: true
+        fail_on_empty: false  # User may already be deleted
+
+      observability:
+        log_queries: true
+        log_parameters: false
+        emit_metrics: true
+        metric_labels:
+          operation: "soft_delete_user"
+          table: "users"
+          query_type: "UPDATE"
+
+# ---------------------------------------------------------------------------
+# EXAMPLE INPUT/OUTPUT
+# ---------------------------------------------------------------------------
+
+# Example Input (ModelEffectInput.operation_data):
+# {
+#   "email": "john.smith@example.com",
+#   "display_name": "John Smith",
+#   "role": "developer",
+#   "status": "active",
+#   "password_hash": "$2b$12$...",
+#   "user_id": "550e8400-e29b-41d4-a716-446655440000",
+#   "new_status": "suspended",
+#   "current_version": 5
+# }
+
+# Example Output (ModelEffectOutput.result_data):
+# {
+#   "operations": {
+#     "select_user_by_email": {
+#       "success": true,
+#       "rows_affected": 1,
+#       "extracted_fields": {
+#         "user_id": "550e8400-e29b-41d4-a716-446655440000",
+#         "email": "john.smith@example.com",
+#         "display_name": "John Smith",
+#         "role": "developer",
+#         "status": "active",
+#         "version": 5
+#       }
+#     },
+#     "insert_user": {
+#       "success": true,
+#       "rows_affected": 1,
+#       "extracted_fields": {
+#         "user_id": "660e8400-e29b-41d4-a716-446655440000",
+#         "created_at": "2024-12-08T12:00:00Z",
+#         "version": 1
+#       }
+#     },
+#     "update_user_status": {
+#       "success": true,
+#       "rows_affected": 1,
+#       "extracted_fields": {
+#         "user_id": "550e8400-e29b-41d4-a716-446655440000",
+#         "status": "suspended",
+#         "version": 6,
+#         "updated_at": "2024-12-08T12:01:00Z"
+#       }
+#     }
+#   }
+# }
+
+# ---------------------------------------------------------------------------
+# USAGE EXAMPLE
+# ---------------------------------------------------------------------------
+
+# from omnibase_core.nodes import NodeEffect
+# from omnibase_core.models import ModelEffectInput
+# import yaml
+#
+# # Load contract
+# with open("db_query.yaml") as f:
+#     contract_data = yaml.safe_load(f)
+#
+# # Create node
+# class NodeUserDbEffect(NodeEffect):
+#     pass
+#
+# node = NodeUserDbEffect(container, contract=contract_data)
+#
+# # Execute database operations
+# input_data = ModelEffectInput(
+#     operation_data={
+#         "email": "john.smith@example.com",
+#         "display_name": "John Smith",
+#         "role": "developer",
+#         "password_hash": "$2b$12$..."
+#     }
+# )
+#
+# result = await node.process(input_data)
+# print(result.result_data["operations"]["insert_user"]["extracted_fields"]["user_id"])
+
+# ---------------------------------------------------------------------------
+# CONTRACT METADATA
+# ---------------------------------------------------------------------------
+
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: "ONEX Framework Team"
+  description: |
+    Contract-driven database operations for user management.
+    Demonstrates SELECT/INSERT/UPDATE with transactions and optimistic locking.
+  tags:
+    - effect
+    - database
+    - sql
+    - postgresql
+    - user-management
+    - example
+  documentation_url: "https://docs.onex.ai/effect/db-query"

@@ -1,0 +1,650 @@
+---
+# Example: Contract-Driven NodeEffect - Filesystem Operations
+#
+# This example demonstrates the v1.0 NodeEffect contract-driven filesystem handler
+# for file operations with atomic writes, directory management, and error handling.
+#
+# USE CASE: Document Management System
+# - Write user documents with atomic operations
+# - Read document contents with encoding support
+# - Create directory structures for organization
+# - Move/rename files with conflict handling
+# - List directory contents with filtering
+# - Delete files with validation
+#
+# Node Implementation (minimal code needed):
+#   class NodeDocumentFilesystemEffect(NodeEffect):
+#       pass  # All filesystem logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - Atomic file writes (write-then-move pattern)
+# - File reading with encoding detection
+# - Directory creation with parent support
+# - File move/rename operations
+# - Directory listing with pattern matching
+# - File deletion with safety checks
+# - Path templating from input data
+# - Permission handling
+#
+# v1.0 Contract Schema Version
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# EFFECT SUBCONTRACT: Defines filesystem operations
+# ---------------------------------------------------------------------------
+
+effect_operations:
+  version: "1.0.0"
+
+  # Execute operations sequentially for proper dependency handling
+  # Example: Create directory → Write file → Read file
+  execution_mode: sequential_abort
+
+  # Total timeout for all filesystem operations
+  operation_timeout_ms: 30000
+
+  # ---------------------------------------------------------------------------
+  # OPERATIONS: Sequential list of filesystem operations
+  # ---------------------------------------------------------------------------
+
+  operations:
+    # =========================================================================
+    # OPERATION 1: CREATE DIRECTORY STRUCTURE
+    # =========================================================================
+    # Creates a directory structure for organizing documents.
+    # Demonstrates directory creation with parent support.
+    #
+    # Handler Type: Filesystem
+    # Operation: CREATE_DIRECTORY
+    # Purpose: Ensure target directory exists before writing files
+    # Input: Directory path from operation_data
+    # Output: Created directory path and metadata
+
+    - operation_name: create_user_directory
+      description: "Creates directory structure for user documents"
+
+      # I/O configuration for filesystem handler
+      io_config:
+        handler_type: filesystem
+
+        # Filesystem-specific configuration
+        filesystem_config:
+          # Operation type: READ, WRITE, DELETE, CREATE_DIRECTORY, MOVE, LIST
+          operation_type: CREATE_DIRECTORY
+
+          # Target path (supports templating)
+          # Template variables are replaced from operation_data
+          path: "/data/documents/${tenant_id}/users/${user_id}"
+
+          # Create parent directories if they don't exist
+          create_parents: true
+
+          # Directory permissions (Unix-style octal)
+          # 755 = rwxr-xr-x (owner: rwx, group: r-x, others: r-x)
+          permissions: "0755"
+
+          # Fail if directory already exists
+          fail_if_exists: false
+
+      # Minimal retry for filesystem operations
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: linear
+        initial_delay_ms: 100
+        max_delay_ms: 1000
+        backoff_multiplier: 1.5
+        jitter: false
+
+      response_handling:
+        extract_fields:
+          # Absolute path of created directory
+          directory_path: "$.path"
+          # Whether directory was created or already existed
+          created: "$.created"
+          # Directory metadata
+          permissions: "$.permissions"
+
+        store_full_response: true
+
+      observability:
+        log_operations: true
+        log_paths: true
+        emit_metrics: true
+        metric_labels:
+          operation: "create_user_directory"
+          operation_type: "CREATE_DIRECTORY"
+
+    # =========================================================================
+    # OPERATION 2: WRITE FILE (Atomic Write)
+    # =========================================================================
+    # Writes a file using atomic write-then-move pattern.
+    # Demonstrates safe file writing with encoding and permissions.
+    #
+    # Handler Type: Filesystem
+    # Operation: WRITE
+    # Purpose: Save document content atomically
+    # Input: File content and metadata from operation_data
+    # Output: Written file path and metadata
+
+    - operation_name: write_document
+      description: "Writes document file with atomic operation"
+
+      io_config:
+        handler_type: filesystem
+
+        filesystem_config:
+          operation_type: WRITE
+
+          # Target file path with templating
+          path: "/data/documents/${tenant_id}/users/${user_id}/${document_id}.json"
+
+          # File content (can be template or direct content)
+          # For JSON, YAML, or text files
+          content_template: |
+            {
+              "document_id": "${document_id}",
+              "title": "${document_title}",
+              "content": "${document_content}",
+              "author": "${author_id}",
+              "created_at": "${created_at}",
+              "metadata": {
+                "content_type": "${content_type}",
+                "size_bytes": ${size_bytes},
+                "checksum": "${checksum}",
+                "version": ${version}
+              }
+            }
+
+          # Content can also come directly from input field
+          # content_source: "operation_data"
+          # content_field: "document_content"
+
+          # File encoding
+          encoding: "utf-8"
+
+          # File permissions (Unix-style octal)
+          # 644 = rw-r--r-- (owner: rw, group: r, others: r)
+          permissions: "0644"
+
+          # Atomic write configuration
+          atomic_write:
+            # Enable atomic write (write to temp file, then move)
+            enabled: true
+
+            # Temporary file suffix
+            temp_suffix: ".tmp"
+
+            # Verify checksum after write (optional)
+            verify_checksum: true
+
+            # Checksum algorithm: md5, sha256, sha512
+            checksum_algorithm: "sha256"
+
+            # Expected checksum (from input data)
+            expected_checksum: "${checksum}"
+
+          # Backup configuration (optional)
+          backup:
+            # Create backup if file already exists
+            enabled: true
+
+            # Backup file suffix
+            backup_suffix: ".bak"
+
+            # Keep only N most recent backups
+            max_backups: 3
+
+          # Overwrite existing file
+          overwrite: true
+
+          # Fail if file already exists (requires overwrite=false)
+          fail_if_exists: false
+
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: linear
+        initial_delay_ms: 200
+        max_delay_ms: 2000
+        backoff_multiplier: 1.5
+        jitter: false
+
+      response_handling:
+        extract_fields:
+          file_path: "$.path"
+          size_bytes: "$.size_bytes"
+          checksum: "$.checksum"
+          created: "$.created"
+          overwritten: "$.overwritten"
+          backup_path: "$.backup_path"
+
+        store_full_response: true
+
+      observability:
+        log_operations: true
+        log_paths: true
+        log_content: false  # Don't log file content
+        emit_metrics: true
+        metric_labels:
+          operation: "write_document"
+          operation_type: "WRITE"
+
+    # =========================================================================
+    # OPERATION 3: READ FILE
+    # =========================================================================
+    # Reads a file with encoding detection and size limits.
+    # Demonstrates safe file reading with validation.
+    #
+    # Handler Type: Filesystem
+    # Operation: READ
+    # Purpose: Retrieve document content
+    # Input: File path from operation_data
+    # Output: File content and metadata
+
+    - operation_name: read_document
+      description: "Reads document file with encoding detection"
+
+      io_config:
+        handler_type: filesystem
+
+        filesystem_config:
+          operation_type: READ
+
+          # File path to read
+          path: "/data/documents/${tenant_id}/users/${user_id}/${document_id}.json"
+
+          # File encoding (auto-detect if not specified)
+          encoding: "utf-8"
+
+          # Read configuration
+          read_config:
+            # Maximum file size to read (prevent memory exhaustion)
+            max_size_bytes: 10485760  # 10MB
+
+            # Read mode: full, lines, chunks
+            mode: full
+
+            # For lines mode: line limit
+            # max_lines: 1000
+
+            # For chunks mode: chunk size
+            # chunk_size: 4096
+
+            # Verify checksum after read (optional)
+            verify_checksum: true
+            checksum_algorithm: "sha256"
+            expected_checksum: "${expected_checksum}"
+
+          # Fail if file doesn't exist
+          fail_if_not_exists: true
+
+      retry_policy:
+        enabled: true
+        max_retries: 3
+        backoff_strategy: linear
+        initial_delay_ms: 100
+        max_delay_ms: 1000
+        backoff_multiplier: 1.5
+        jitter: false
+
+      response_handling:
+        extract_fields:
+          file_path: "$.path"
+          content: "$.content"
+          size_bytes: "$.size_bytes"
+          checksum: "$.checksum"
+          encoding: "$.encoding"
+          modified_at: "$.modified_at"
+
+        store_full_response: true
+
+      observability:
+        log_operations: true
+        log_paths: true
+        log_content: false  # Don't log file content
+        emit_metrics: true
+        metric_labels:
+          operation: "read_document"
+          operation_type: "READ"
+
+    # =========================================================================
+    # OPERATION 4: MOVE FILE
+    # =========================================================================
+    # Moves or renames a file with conflict handling.
+    # Demonstrates file relocation and archiving patterns.
+    #
+    # Handler Type: Filesystem
+    # Operation: MOVE
+    # Purpose: Archive or reorganize documents
+    # Input: Source and destination paths from operation_data
+    # Output: New file path and metadata
+
+    - operation_name: archive_document
+      description: "Moves document to archive directory"
+
+      io_config:
+        handler_type: filesystem
+
+        filesystem_config:
+          operation_type: MOVE
+
+          # Source file path
+          path: "/data/documents/${tenant_id}/users/${user_id}/${document_id}.json"
+
+          # Move configuration
+          move_config:
+            # Destination path
+            destination: "/data/archives/${tenant_id}/users/${user_id}/${archive_year}/${document_id}.json"
+
+            # Create destination directory if it doesn't exist
+            create_destination_directory: true
+
+            # Overwrite destination if it exists
+            overwrite: false
+
+            # What to do if destination exists: fail, overwrite, rename
+            conflict_strategy: rename
+
+            # For rename strategy: suffix to add
+            rename_suffix: "_{counter}"
+
+            # Preserve file metadata (timestamps, permissions)
+            preserve_metadata: true
+
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: linear
+        initial_delay_ms: 200
+        max_delay_ms: 2000
+        backoff_multiplier: 1.5
+        jitter: false
+
+      response_handling:
+        extract_fields:
+          source_path: "$.source_path"
+          destination_path: "$.destination_path"
+          renamed: "$.renamed"
+          final_path: "$.final_path"
+
+        store_full_response: true
+
+      observability:
+        log_operations: true
+        log_paths: true
+        emit_metrics: true
+        metric_labels:
+          operation: "archive_document"
+          operation_type: "MOVE"
+
+    # =========================================================================
+    # OPERATION 5: LIST DIRECTORY
+    # =========================================================================
+    # Lists files in a directory with pattern matching and filtering.
+    # Demonstrates directory scanning with metadata collection.
+    #
+    # Handler Type: Filesystem
+    # Operation: LIST
+    # Purpose: Enumerate documents for user
+    # Input: Directory path from operation_data
+    # Output: List of files with metadata
+
+    - operation_name: list_user_documents
+      description: "Lists all documents in user directory"
+
+      io_config:
+        handler_type: filesystem
+
+        filesystem_config:
+          operation_type: LIST
+
+          # Directory path to list
+          path: "/data/documents/${tenant_id}/users/${user_id}"
+
+          # List configuration
+          list_config:
+            # Pattern matching (glob style)
+            pattern: "*.json"
+
+            # Recursive listing
+            recursive: false
+
+            # Include hidden files (starting with .)
+            include_hidden: false
+
+            # Include directories in listing
+            include_directories: false
+
+            # Sort order: name, size, modified_time
+            sort_by: modified_time
+
+            # Sort direction: asc, desc
+            sort_direction: desc
+
+            # Limit number of results
+            max_results: 100
+
+            # Collect file metadata
+            collect_metadata: true
+
+            # Metadata fields to collect
+            metadata_fields:
+              - size_bytes
+              - modified_at
+              - created_at
+              - permissions
+              - checksum
+
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: linear
+        initial_delay_ms: 100
+        max_delay_ms: 1000
+        backoff_multiplier: 1.5
+        jitter: false
+
+      response_handling:
+        extract_fields:
+          directory_path: "$.directory_path"
+          file_count: "$.file_count"
+          total_size_bytes: "$.total_size_bytes"
+          # files is an array of file metadata objects
+          files: "$.files"
+
+        store_full_response: true
+
+      observability:
+        log_operations: true
+        log_paths: true
+        emit_metrics: true
+        metric_labels:
+          operation: "list_user_documents"
+          operation_type: "LIST"
+
+    # =========================================================================
+    # OPERATION 6: DELETE FILE
+    # =========================================================================
+    # Deletes a file with safety checks and validation.
+    # Demonstrates safe file deletion with confirmation.
+    #
+    # Handler Type: Filesystem
+    # Operation: DELETE
+    # Purpose: Remove obsolete documents
+    # Input: File path from operation_data
+    # Output: Deletion confirmation
+
+    - operation_name: delete_document
+      description: "Deletes document file with safety checks"
+
+      io_config:
+        handler_type: filesystem
+
+        filesystem_config:
+          operation_type: DELETE
+
+          # File path to delete
+          path: "/data/documents/${tenant_id}/users/${user_id}/${document_id}.json"
+
+          # Delete configuration
+          delete_config:
+            # Verify file exists before deletion
+            verify_exists: true
+
+            # Verify file metadata matches expected values (optional)
+            verify_metadata:
+              enabled: true
+              # Expected file size (prevent accidental deletion of wrong file)
+              expected_size_bytes: ${expected_size}
+              # Expected checksum (ensure correct file)
+              expected_checksum: "${expected_checksum}"
+              checksum_algorithm: "sha256"
+
+            # Move to trash instead of permanent deletion (optional)
+            move_to_trash:
+              enabled: true
+              trash_directory: "/data/.trash/${tenant_id}"
+              # Auto-delete from trash after N days
+              retention_days: 30
+
+            # Fail if file doesn't exist
+            fail_if_not_exists: false
+
+      retry_policy:
+        enabled: true
+        max_retries: 1  # Minimal retry for deletion
+        backoff_strategy: linear
+        initial_delay_ms: 100
+        max_delay_ms: 500
+        jitter: false
+
+      response_handling:
+        extract_fields:
+          file_path: "$.path"
+          deleted: "$.deleted"
+          moved_to_trash: "$.moved_to_trash"
+          trash_path: "$.trash_path"
+
+        store_full_response: true
+
+      observability:
+        log_operations: true
+        log_paths: true
+        emit_metrics: true
+        metric_labels:
+          operation: "delete_document"
+          operation_type: "DELETE"
+
+# ---------------------------------------------------------------------------
+# EXAMPLE INPUT/OUTPUT
+# ---------------------------------------------------------------------------
+
+# Example Input (ModelEffectInput.operation_data):
+# {
+#   "tenant_id": "tenant_001",
+#   "user_id": "usr_12345",
+#   "document_id": "doc_abc123",
+#   "document_title": "Project Proposal",
+#   "document_content": "This is the document content...",
+#   "author_id": "usr_12345",
+#   "created_at": "2024-12-08T12:00:00Z",
+#   "content_type": "application/json",
+#   "size_bytes": 4096,
+#   "checksum": "abc123def456...",
+#   "version": 1,
+#   "archive_year": "2024",
+#   "expected_size": 4096,
+#   "expected_checksum": "abc123def456..."
+# }
+
+# Example Output (ModelEffectOutput.result_data):
+# {
+#   "operations": {
+#     "create_user_directory": {
+#       "success": true,
+#       "extracted_fields": {
+#         "directory_path": "/data/documents/tenant_001/users/usr_12345",
+#         "created": true,
+#         "permissions": "0755"
+#       }
+#     },
+#     "write_document": {
+#       "success": true,
+#       "extracted_fields": {
+#         "file_path": "/data/documents/tenant_001/users/usr_12345/doc_abc123.json",
+#         "size_bytes": 4096,
+#         "checksum": "abc123def456...",
+#         "created": true,
+#         "overwritten": false
+#       }
+#     },
+#     "read_document": {
+#       "success": true,
+#       "extracted_fields": {
+#         "file_path": "/data/documents/tenant_001/users/usr_12345/doc_abc123.json",
+#         "content": "{...}",
+#         "size_bytes": 4096,
+#         "checksum": "abc123def456..."
+#       }
+#     },
+#     "list_user_documents": {
+#       "success": true,
+#       "extracted_fields": {
+#         "directory_path": "/data/documents/tenant_001/users/usr_12345",
+#         "file_count": 15,
+#         "total_size_bytes": 61440,
+#         "files": [/* array of file metadata */]
+#       }
+#     }
+#   }
+# }
+
+# ---------------------------------------------------------------------------
+# USAGE EXAMPLE
+# ---------------------------------------------------------------------------
+
+# from omnibase_core.nodes import NodeEffect
+# from omnibase_core.models import ModelEffectInput
+# import yaml
+#
+# # Load contract
+# with open("filesystem_operations.yaml") as f:
+#     contract_data = yaml.safe_load(f)
+#
+# # Create node
+# class NodeDocumentFilesystemEffect(NodeEffect):
+#     pass
+#
+# node = NodeDocumentFilesystemEffect(container, contract=contract_data)
+#
+# # Execute filesystem operations
+# input_data = ModelEffectInput(
+#     operation_data={
+#         "tenant_id": "tenant_001",
+#         "user_id": "usr_12345",
+#         "document_id": "doc_abc123",
+#         "document_content": "This is the document content..."
+#     }
+# )
+#
+# result = await node.process(input_data)
+# print(result.result_data["operations"]["write_document"]["extracted_fields"]["file_path"])
+
+# ---------------------------------------------------------------------------
+# CONTRACT METADATA
+# ---------------------------------------------------------------------------
+
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: "ONEX Framework Team"
+  description: |
+    Contract-driven filesystem operations for document management.
+    Demonstrates atomic writes, reads, directory operations, and safe deletion.
+  tags:
+    - effect
+    - filesystem
+    - file-operations
+    - document-management
+    - example
+  documentation_url: "https://docs.onex.ai/effect/filesystem-operations"

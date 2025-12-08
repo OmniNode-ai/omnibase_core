@@ -1,0 +1,555 @@
+---
+# Example: Contract-Driven NodeEffect - Kafka Message Production
+#
+# This example demonstrates the v1.0 NodeEffect contract-driven Kafka handler
+# for producing messages to Kafka topics with partitioning, retries, and delivery guarantees.
+#
+# USE CASE: Event-Driven User Activity Tracking
+# - Publish user registration events to Kafka
+# - Publish user activity events with partitioning by user_id
+# - Publish audit log events with guaranteed delivery (acks=all)
+# - Handle broker failures with retries and timeout
+# - Support message headers for tracing and metadata
+#
+# Node Implementation (minimal code needed):
+#   class NodeUserEventsKafkaEffect(NodeEffect):
+#       pass  # All Kafka logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - Message production to multiple topics
+# - Partition key templating for consistent hashing
+# - Message header support for correlation/tracing
+# - Delivery guarantees (acks=all for durability)
+# - Compression (gzip, snappy, lz4, zstd)
+# - Idempotent producer configuration
+# - Retry policy for transient broker failures
+# - Message serialization (JSON, Avro, Protobuf)
+#
+# v1.0 Contract Schema Version
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# EFFECT SUBCONTRACT: Defines Kafka message production operations
+# ---------------------------------------------------------------------------
+
+effect_operations:
+  version: "1.0.0"
+
+  # Concurrent execution for independent message publishing
+  # Each operation publishes to a different topic
+  execution_mode: concurrent
+
+  # Total timeout for all Kafka operations
+  operation_timeout_ms: 30000
+
+  # ---------------------------------------------------------------------------
+  # OPERATIONS: Kafka message production operations
+  # ---------------------------------------------------------------------------
+
+  operations:
+    # =========================================================================
+    # OPERATION 1: PUBLISH USER REGISTRATION EVENT
+    # =========================================================================
+    # Publishes user registration event to Kafka topic with guaranteed delivery.
+    # Demonstrates message templating, headers, and durability guarantees.
+    #
+    # Handler Type: Kafka
+    # Operation: Produce
+    # Purpose: Publish user registration for downstream consumers
+    # Input: User data from operation_data
+    # Output: Message offset and partition
+
+    - operation_name: publish_user_registration
+      description: "Publishes user registration event to Kafka with acks=all"
+
+      # I/O configuration for Kafka handler
+      io_config:
+        handler_type: kafka
+
+        # Kafka-specific configuration
+        kafka_config:
+          # Producer configuration
+          producer:
+            # Kafka broker addresses
+            bootstrap_servers:
+              - "kafka-1.example.com:9092"
+              - "kafka-2.example.com:9092"
+              - "kafka-3.example.com:9092"
+
+            # Client ID for identification
+            client_id: "user-service-producer"
+
+            # Acknowledgment level for message durability
+            # acks=all: Leader AND all in-sync replicas must acknowledge
+            # acks=1: Only leader must acknowledge
+            # acks=0: No acknowledgment (fire and forget)
+            acks: all
+
+            # Enable idempotent producer (exactly-once semantics)
+            enable_idempotence: true
+
+            # Maximum in-flight requests per connection
+            # Must be <= 5 for idempotent producer
+            max_in_flight_requests_per_connection: 5
+
+            # Message compression (none, gzip, snappy, lz4, zstd)
+            compression_type: snappy
+
+            # Batching configuration for throughput
+            batch_size: 16384  # 16KB
+            linger_ms: 10  # Wait up to 10ms for batching
+
+            # Message timeout
+            request_timeout_ms: 30000
+
+            # Retry configuration (producer-level)
+            retries: 3
+            retry_backoff_ms: 100
+
+            # Security configuration (if needed)
+            security_protocol: SASL_SSL
+            sasl_mechanism: PLAIN
+            sasl_username: "${KAFKA_USERNAME}"
+            sasl_password: "${KAFKA_PASSWORD}"
+
+          # Message configuration
+          message:
+            # Target topic
+            topic: "user.events.registration"
+
+            # Partition key template (ensures same user goes to same partition)
+            # Uses consistent hashing for partitioning
+            partition_key: "${user_id}"
+
+            # Message value template (JSON)
+            # Will be serialized according to serialization format
+            value_template: |
+              {
+                "event_type": "user.registered",
+                "event_version": "1.0.0",
+                "timestamp": "${timestamp}",
+                "user_id": "${user_id}",
+                "email": "${email}",
+                "display_name": "${display_name}",
+                "role": "${role}",
+                "source": "user-service",
+                "metadata": {
+                  "registration_method": "${registration_method}",
+                  "referral_code": "${referral_code}",
+                  "ip_address": "${ip_address}",
+                  "user_agent": "${user_agent}"
+                }
+              }
+
+            # Message headers (key-value pairs)
+            # Useful for tracing, routing, and metadata
+            headers:
+              # Correlation ID for request tracing
+              X-Correlation-ID: "${correlation_id}"
+              # Event schema version
+              X-Schema-Version: "1.0.0"
+              # Event source service
+              X-Source-Service: "user-service"
+              # Event timestamp (ISO 8601)
+              X-Event-Timestamp: "${timestamp}"
+              # Idempotency key
+              X-Idempotency-Key: "${idempotency_key}"
+
+            # Message serialization format
+            # json: JSON serialization (default)
+            # avro: Apache Avro with schema registry
+            # protobuf: Protocol Buffers
+            # string: Plain text
+            serialization_format: json
+
+            # Schema registry configuration (for Avro/Protobuf)
+            schema_registry:
+              enabled: false
+              url: "https://schema-registry.example.com"
+              # Schema ID or subject name
+              schema_id: "user.events.registration-value"
+
+          # Partition configuration (optional)
+          partitioning:
+            # Partition selection strategy
+            # key_hash: Hash partition key (default)
+            # round_robin: Distribute evenly across partitions
+            # manual: Specify partition number explicitly
+            strategy: key_hash
+
+            # Manual partition number (if strategy=manual)
+            # partition: 0
+
+            # Custom partitioner class (advanced)
+            # partitioner_class: "com.example.CustomPartitioner"
+
+      # Retry policy for transient failures
+      retry_policy:
+        enabled: true
+        max_retries: 3
+        backoff_strategy: exponential
+        initial_delay_ms: 500
+        max_delay_ms: 5000
+        backoff_multiplier: 2.0
+        jitter: true
+        jitter_factor: 0.1
+
+        # Kafka error codes that should trigger retry
+        retryable_error_codes:
+          - "NETWORK_EXCEPTION"
+          - "NOT_LEADER_FOR_PARTITION"
+          - "REQUEST_TIMED_OUT"
+          - "BROKER_NOT_AVAILABLE"
+
+      # Response handling
+      response_handling:
+        # Extract message metadata from produce result
+        extract_fields:
+          # Partition where message was written
+          partition: "$.partition"
+          # Offset of the message in the partition
+          offset: "$.offset"
+          # Timestamp assigned by broker
+          timestamp: "$.timestamp"
+
+        # Store full response
+        store_full_response: true
+
+      observability:
+        log_messages: true
+        log_message_body: false  # Can be verbose
+        emit_metrics: true
+        metric_labels:
+          operation: "publish_user_registration"
+          topic: "user.events.registration"
+          event_type: "user.registered"
+
+    # =========================================================================
+    # OPERATION 2: PUBLISH USER ACTIVITY EVENT
+    # =========================================================================
+    # Publishes user activity events (login, logout, action) to Kafka.
+    # Demonstrates high-throughput fire-and-forget with batching.
+    #
+    # Handler Type: Kafka
+    # Operation: Produce
+    # Purpose: Track user activities for analytics
+    # Input: Activity data from operation_data
+    # Output: Message metadata (if acks enabled)
+
+    - operation_name: publish_user_activity
+      description: "Publishes user activity event for analytics"
+
+      io_config:
+        handler_type: kafka
+
+        kafka_config:
+          producer:
+            bootstrap_servers:
+              - "kafka-1.example.com:9092"
+              - "kafka-2.example.com:9092"
+              - "kafka-3.example.com:9092"
+            client_id: "user-service-activity-producer"
+
+            # Lower durability for high-throughput analytics
+            acks: 1  # Only leader acknowledgment needed
+
+            # Disable idempotence for higher throughput
+            enable_idempotence: false
+
+            compression_type: lz4  # Fast compression for analytics
+            batch_size: 65536  # 64KB batches for higher throughput
+            linger_ms: 50  # Wait longer for larger batches
+
+            request_timeout_ms: 10000
+            retries: 2
+            retry_backoff_ms: 100
+
+            security_protocol: SASL_SSL
+            sasl_mechanism: PLAIN
+            sasl_username: "${KAFKA_USERNAME}"
+            sasl_password: "${KAFKA_PASSWORD}"
+
+          message:
+            topic: "user.events.activity"
+
+            # Partition by user_id for ordered activity history
+            partition_key: "${user_id}"
+
+            value_template: |
+              {
+                "event_type": "user.activity",
+                "event_version": "1.0.0",
+                "timestamp": "${timestamp}",
+                "user_id": "${user_id}",
+                "activity_type": "${activity_type}",
+                "activity_data": {
+                  "action": "${action}",
+                  "resource": "${resource}",
+                  "result": "${result}"
+                },
+                "session_id": "${session_id}",
+                "ip_address": "${ip_address}"
+              }
+
+            headers:
+              X-Correlation-ID: "${correlation_id}"
+              X-Schema-Version: "1.0.0"
+              X-Event-Type: "activity"
+
+            serialization_format: json
+
+          partitioning:
+            strategy: key_hash
+
+      retry_policy:
+        enabled: true
+        max_retries: 2  # Fewer retries for analytics
+        backoff_strategy: linear
+        initial_delay_ms: 200
+        max_delay_ms: 2000
+        backoff_multiplier: 1.5
+        jitter: true
+
+      response_handling:
+        extract_fields:
+          partition: "$.partition"
+          offset: "$.offset"
+        store_full_response: false  # Minimize overhead
+
+      observability:
+        log_messages: false  # Too verbose for analytics
+        emit_metrics: true
+        metric_labels:
+          operation: "publish_user_activity"
+          topic: "user.events.activity"
+
+    # =========================================================================
+    # OPERATION 3: PUBLISH AUDIT LOG EVENT
+    # =========================================================================
+    # Publishes audit log events with maximum durability guarantees.
+    # Demonstrates acks=all, idempotence, and compliance requirements.
+    #
+    # Handler Type: Kafka
+    # Operation: Produce
+    # Purpose: Audit trail for compliance and security
+    # Input: Audit event data
+    # Output: Message metadata with full confirmation
+
+    - operation_name: publish_audit_log
+      description: "Publishes audit log event with guaranteed delivery"
+
+      io_config:
+        handler_type: kafka
+
+        kafka_config:
+          producer:
+            bootstrap_servers:
+              - "kafka-1.example.com:9092"
+              - "kafka-2.example.com:9092"
+              - "kafka-3.example.com:9092"
+            client_id: "user-service-audit-producer"
+
+            # Maximum durability for audit logs
+            acks: all
+
+            # Enable idempotence for exactly-once
+            enable_idempotence: true
+            max_in_flight_requests_per_connection: 5
+
+            # No compression for audit logs (prioritize integrity)
+            compression_type: none
+
+            # Smaller batches for lower latency
+            batch_size: 8192  # 8KB
+            linger_ms: 0  # Send immediately
+
+            request_timeout_ms: 30000
+            retries: 5  # More retries for audit logs
+            retry_backoff_ms: 200
+
+            security_protocol: SASL_SSL
+            sasl_mechanism: PLAIN
+            sasl_username: "${KAFKA_USERNAME}"
+            sasl_password: "${KAFKA_PASSWORD}"
+
+          message:
+            topic: "security.audit.logs"
+
+            # Partition by tenant_id for multi-tenant isolation
+            partition_key: "${tenant_id}"
+
+            value_template: |
+              {
+                "event_type": "audit.user.action",
+                "event_version": "1.0.0",
+                "timestamp": "${timestamp}",
+                "tenant_id": "${tenant_id}",
+                "user_id": "${user_id}",
+                "actor": {
+                  "id": "${actor_id}",
+                  "type": "${actor_type}",
+                  "ip_address": "${ip_address}",
+                  "user_agent": "${user_agent}"
+                },
+                "action": {
+                  "type": "${action_type}",
+                  "resource": "${resource}",
+                  "resource_id": "${resource_id}",
+                  "operation": "${operation}",
+                  "result": "${result}",
+                  "reason": "${reason}"
+                },
+                "metadata": {
+                  "correlation_id": "${correlation_id}",
+                  "session_id": "${session_id}",
+                  "request_id": "${request_id}"
+                }
+              }
+
+            headers:
+              X-Correlation-ID: "${correlation_id}"
+              X-Schema-Version: "1.0.0"
+              X-Event-Type: "audit"
+              X-Tenant-ID: "${tenant_id}"
+              X-Compliance-Required: "true"
+
+            serialization_format: json
+
+          partitioning:
+            strategy: key_hash
+
+      # Aggressive retry for audit logs
+      retry_policy:
+        enabled: true
+        max_retries: 5
+        backoff_strategy: exponential
+        initial_delay_ms: 1000
+        max_delay_ms: 10000
+        backoff_multiplier: 2.0
+        jitter: true
+        jitter_factor: 0.1
+
+      response_handling:
+        extract_fields:
+          partition: "$.partition"
+          offset: "$.offset"
+          timestamp: "$.timestamp"
+        store_full_response: true
+
+      observability:
+        log_messages: true
+        log_message_body: false
+        emit_metrics: true
+        metric_labels:
+          operation: "publish_audit_log"
+          topic: "security.audit.logs"
+          compliance: "true"
+
+# ---------------------------------------------------------------------------
+# EXAMPLE INPUT/OUTPUT
+# ---------------------------------------------------------------------------
+
+# Example Input (ModelEffectInput.operation_data):
+# {
+#   "user_id": "usr_12345",
+#   "email": "john.smith@example.com",
+#   "display_name": "John Smith",
+#   "role": "developer",
+#   "timestamp": "2024-12-08T12:00:00.000Z",
+#   "correlation_id": "req_abc123",
+#   "idempotency_key": "idem_xyz789",
+#   "registration_method": "email",
+#   "referral_code": "REF123",
+#   "ip_address": "192.168.1.100",
+#   "user_agent": "Mozilla/5.0...",
+#   "activity_type": "login",
+#   "action": "login",
+#   "resource": "api",
+#   "result": "success",
+#   "session_id": "sess_abc123",
+#   "tenant_id": "tenant_001",
+#   "actor_id": "usr_12345",
+#   "actor_type": "user",
+#   "action_type": "access",
+#   "resource_id": "user_12345",
+#   "operation": "read"
+# }
+
+# Example Output (ModelEffectOutput.result_data):
+# {
+#   "operations": {
+#     "publish_user_registration": {
+#       "success": true,
+#       "extracted_fields": {
+#         "partition": 3,
+#         "offset": 12345,
+#         "timestamp": 1702040400000
+#       }
+#     },
+#     "publish_user_activity": {
+#       "success": true,
+#       "extracted_fields": {
+#         "partition": 7,
+#         "offset": 98765
+#       }
+#     },
+#     "publish_audit_log": {
+#       "success": true,
+#       "extracted_fields": {
+#         "partition": 2,
+#         "offset": 54321,
+#         "timestamp": 1702040400000
+#       }
+#     }
+#   }
+# }
+
+# ---------------------------------------------------------------------------
+# USAGE EXAMPLE
+# ---------------------------------------------------------------------------
+
+# from omnibase_core.nodes import NodeEffect
+# from omnibase_core.models import ModelEffectInput
+# import yaml
+#
+# # Load contract
+# with open("kafka_produce.yaml") as f:
+#     contract_data = yaml.safe_load(f)
+#
+# # Create node
+# class NodeUserEventsKafkaEffect(NodeEffect):
+#     pass
+#
+# node = NodeUserEventsKafkaEffect(container, contract=contract_data)
+#
+# # Publish events to Kafka
+# input_data = ModelEffectInput(
+#     operation_data={
+#         "user_id": "usr_12345",
+#         "email": "john.smith@example.com",
+#         "timestamp": "2024-12-08T12:00:00.000Z",
+#         "correlation_id": "req_abc123"
+#     }
+# )
+#
+# result = await node.process(input_data)
+# print(result.result_data["operations"]["publish_user_registration"]["extracted_fields"]["offset"])
+
+# ---------------------------------------------------------------------------
+# CONTRACT METADATA
+# ---------------------------------------------------------------------------
+
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: "ONEX Framework Team"
+  description: |
+    Contract-driven Kafka message production for event-driven architecture.
+    Demonstrates registration events, activity tracking, and audit logs.
+  tags:
+    - effect
+    - kafka
+    - event-driven
+    - messaging
+    - audit
+    - example
+  documentation_url: "https://docs.onex.ai/effect/kafka-produce"

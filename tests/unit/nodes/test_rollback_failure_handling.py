@@ -17,7 +17,8 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_effect_transaction import (
     ModelEffectTransaction,
 )
-from omnibase_core.nodes.node_effect import NodeEffect
+# Use legacy NodeEffect for tests that depend on code-driven behavior
+from omnibase_core.nodes.legacy.node_effect_legacy import NodeEffectLegacy as NodeEffect
 
 
 @pytest.mark.unit
