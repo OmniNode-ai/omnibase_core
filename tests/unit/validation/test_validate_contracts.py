@@ -643,7 +643,7 @@ class TestExampleContractsValidation:
                 all_errors.append(f"{yaml_file.relative_to(example_path)}: {errors}")
 
         assert len(all_errors) == 0, (
-            f"Example contracts failed validation:\n" + "\n".join(all_errors)
+            "Example contracts failed validation:\n" + "\n".join(all_errors)
         )
 
     def test_example_contracts_have_required_fields(self):
