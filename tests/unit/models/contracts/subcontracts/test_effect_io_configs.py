@@ -8,7 +8,7 @@ and extra="forbid" configuration for all IO config models.
 import warnings
 
 import pytest
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
@@ -869,8 +869,6 @@ class TestEffectIOConfigUnion:
             "method": "GET",
         }
         # Pydantic should automatically select ModelHttpIOConfig
-        from pydantic import TypeAdapter
-
         adapter = TypeAdapter(EffectIOConfig)
         config = adapter.validate_python(data)
         assert isinstance(config, ModelHttpIOConfig)
@@ -884,8 +882,6 @@ class TestEffectIOConfigUnion:
             "connection_name": "db",
             "query_template": "SELECT 1",
         }
-        from pydantic import TypeAdapter
-
         adapter = TypeAdapter(EffectIOConfig)
         config = adapter.validate_python(data)
         assert isinstance(config, ModelDbIOConfig)
@@ -898,8 +894,6 @@ class TestEffectIOConfigUnion:
             "topic": "test-topic",
             "payload_template": "{}",
         }
-        from pydantic import TypeAdapter
-
         adapter = TypeAdapter(EffectIOConfig)
         config = adapter.validate_python(data)
         assert isinstance(config, ModelKafkaIOConfig)
@@ -913,8 +907,6 @@ class TestEffectIOConfigUnion:
             "operation": "read",
             "atomic": False,  # atomic=True only valid for write operations
         }
-        from pydantic import TypeAdapter
-
         adapter = TypeAdapter(EffectIOConfig)
         config = adapter.validate_python(data)
         assert isinstance(config, ModelFilesystemIOConfig)
@@ -926,8 +918,6 @@ class TestEffectIOConfigUnion:
             "handler_type": "invalid",
             "url_template": "https://api.example.com",
         }
-        from pydantic import TypeAdapter
-
         adapter = TypeAdapter(EffectIOConfig)
         with pytest.raises(ValidationError) as exc_info:
             adapter.validate_python(data)
@@ -969,8 +959,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_http_config_discriminated_from_dict(self) -> None:
         """Test HTTP config is correctly discriminated from dict data."""
-        from pydantic import TypeAdapter
-
         data = {
             "handler_type": "http",
             "url_template": "https://api.example.com/users",
@@ -984,8 +972,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_db_config_discriminated_from_dict(self) -> None:
         """Test DB config is correctly discriminated from dict data."""
-        from pydantic import TypeAdapter
-
         data = {
             "handler_type": "db",
             "operation": "select",
@@ -1001,8 +987,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_kafka_config_discriminated_from_dict(self) -> None:
         """Test Kafka config is correctly discriminated from dict data."""
-        from pydantic import TypeAdapter
-
         data = {
             "handler_type": "kafka",
             "topic": "user-events",
@@ -1015,8 +999,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_filesystem_config_discriminated_from_dict(self) -> None:
         """Test Filesystem config is correctly discriminated from dict data."""
-        from pydantic import TypeAdapter
-
         data = {
             "handler_type": "filesystem",
             "file_path_template": "/data/output/${input.filename}.json",
@@ -1029,8 +1011,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_invalid_handler_type_rejected(self) -> None:
         """Test invalid handler_type values are rejected."""
-        from pydantic import TypeAdapter
-
         data = {
             "handler_type": "invalid_type",
             "url_template": "https://api.example.com",
@@ -1044,8 +1024,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_uppercase_handler_type_rejected(self) -> None:
         """Test uppercase handler_type values are rejected (case-sensitive enum)."""
-        from pydantic import TypeAdapter
-
         data = {
             "handler_type": "HTTP",  # Should be lowercase "http"
             "url_template": "https://api.example.com",
@@ -1058,8 +1036,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_missing_handler_type_rejected(self) -> None:
         """Test missing handler_type field is rejected."""
-        from pydantic import TypeAdapter
-
         data = {
             "url_template": "https://api.example.com",
             "method": "GET",
@@ -1072,8 +1048,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_round_trip_http_serialization(self) -> None:
         """Test HTTP config round-trip serialization/deserialization."""
-        from pydantic import TypeAdapter
-
         original = ModelHttpIOConfig(
             url_template="https://api.example.com/users/${input.user_id}",
             method="POST",
@@ -1097,8 +1071,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_round_trip_db_serialization(self) -> None:
         """Test DB config round-trip serialization/deserialization."""
-        from pydantic import TypeAdapter
-
         original = ModelDbIOConfig(
             operation="select",
             connection_name="primary_db",
@@ -1119,8 +1091,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_round_trip_kafka_serialization(self) -> None:
         """Test Kafka config round-trip serialization/deserialization."""
-        from pydantic import TypeAdapter
-
         original = ModelKafkaIOConfig(
             topic="user-events",
             payload_template='{"user_id": "${input.user_id}"}',
@@ -1142,8 +1112,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_round_trip_filesystem_serialization(self) -> None:
         """Test Filesystem config round-trip serialization/deserialization."""
-        from pydantic import TypeAdapter
-
         original = ModelFilesystemIOConfig(
             file_path_template="/data/output/${input.date}/${input.filename}.json",
             operation="write",
@@ -1164,8 +1132,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_json_round_trip_all_types(self) -> None:
         """Test JSON serialization round-trip for all config types."""
-        from pydantic import TypeAdapter
-
         configs = [
             ModelHttpIOConfig(
                 url_template="https://api.example.com",
@@ -1202,8 +1168,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_enum_handler_type_directly(self) -> None:
         """Test using enum value directly in data dict."""
-        from pydantic import TypeAdapter
-
         data = {
             "handler_type": EnumEffectHandlerType.HTTP,
             "url_template": "https://api.example.com",
@@ -1215,8 +1179,6 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
     def test_mismatched_fields_for_handler_type_rejected(self) -> None:
         """Test that providing fields from wrong config type causes validation error."""
-        from pydantic import TypeAdapter
-
         # HTTP handler_type but with DB-specific fields
         data = {
             "handler_type": "http",
