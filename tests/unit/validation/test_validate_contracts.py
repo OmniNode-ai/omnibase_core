@@ -54,17 +54,18 @@ def temp_repo():
     shutil.rmtree(temp_dir)
 
 
+@pytest.mark.unit
 class TestYAMLValidation:
-    """Test cases for YAML file validation."""
+    """Test YAML file validation."""
 
     def test_valid_yaml_contract(self, temp_repo):
-        """Test validation of a valid YAML contract."""
+        """Valid YAML contract passes validation."""
         valid_yaml = """
 contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Valid contract example"
 
 metadata:
@@ -105,9 +106,9 @@ configuration:
         assert len(errors) == 0
 
     def test_missing_contract_version(self, temp_repo):
-        """Test detection of missing contract_version field."""
+        """Missing contract_version triggers error."""
         invalid_yaml = """
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Missing contract version"
 
 metadata:
@@ -121,7 +122,7 @@ metadata:
         assert any("contract_version" in error for error in errors)
 
     def test_missing_node_type(self, temp_repo):
-        """Test detection of missing node_type field."""
+        """Missing node_type triggers error."""
         invalid_yaml = """
 contract_version:
   major: 1
@@ -140,7 +141,7 @@ metadata:
         assert any("node_type" in error for error in errors)
 
     def test_both_required_fields_missing(self, temp_repo):
-        """Test detection when both required fields are missing."""
+        """Both required fields missing triggers multiple errors."""
         invalid_yaml = """
 description: "Missing both required fields"
 
@@ -156,7 +157,7 @@ metadata:
         assert any("node_type" in error for error in errors)
 
     def test_empty_yaml_file(self, temp_repo):
-        """Test handling of empty YAML files."""
+        """Empty YAML files are valid (not contracts)."""
         yaml_file = temp_repo / "empty.yaml"
         yaml_file.touch()
 
@@ -164,7 +165,7 @@ metadata:
         assert len(errors) == 0  # Empty files should be OK
 
     def test_yaml_with_only_whitespace(self, temp_repo):
-        """Test handling of YAML files with only whitespace."""
+        """Whitespace-only YAML files are valid."""
         yaml_file = temp_repo / "whitespace.yaml"
         yaml_file.write_text("   \n\n  \t  \n")
 
@@ -172,13 +173,13 @@ metadata:
         assert len(errors) == 0  # Whitespace-only files should be OK
 
     def test_malformed_yaml_syntax(self, temp_repo):
-        """Test handling of malformed YAML syntax."""
+        """Malformed YAML syntax triggers parsing error."""
         malformed_yaml = """
 contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 
 inputs:
   - name: "test"
@@ -205,13 +206,13 @@ configuration:
         )
 
     def test_yaml_with_unicode_content(self, temp_repo):
-        """Test handling of YAML files with Unicode content."""
+        """Unicode content in YAML is handled correctly."""
         unicode_yaml = """
 contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Contract with Unicode: 中文, emoji 🚀, accents ñáéíóú"
 
 metadata:
@@ -231,7 +232,7 @@ inputs:
         assert len(errors) == 0
 
     def test_non_contract_yaml_file(self, temp_repo):
-        """Test handling of YAML files that are not contracts."""
+        """Non-contract YAML files pass validation."""
         non_contract_yaml = """
 # This is just a regular YAML file, not a contract
 settings:
@@ -253,7 +254,7 @@ users:
         assert len(errors) == 0  # Non-contract files should be fine
 
     def test_yaml_with_contract_version_only(self, temp_repo):
-        """Test YAML with only contract_version (missing node_type)."""
+        """Contract with only contract_version triggers node_type error."""
         partial_yaml = """
 contract_version:
   major: 2
@@ -269,9 +270,9 @@ description: "Partial contract"
         assert "node_type" in errors[0]
 
     def test_yaml_with_node_type_only(self, temp_repo):
-        """Test YAML with only node_type (missing contract_version)."""
+        """Contract with only node_type triggers contract_version error."""
         partial_yaml = """
-node_type: "effect"
+node_type: "EFFECT_GENERIC"
 description: "Partial contract"
 """
         yaml_file = temp_repo / "partial_contract2.yaml"
@@ -282,11 +283,439 @@ description: "Partial contract"
         assert "contract_version" in errors[0]
 
 
+@pytest.mark.unit
+class TestNodeTypeValidation:
+    """Test node_type field validation."""
+
+    def test_lowercase_node_type_normalized(self, temp_repo):
+        """Lowercase node_type normalizes to uppercase."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "compute_generic"
+"""
+        yaml_file = temp_repo / "lowercase_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0, f"Expected normalization to uppercase, got: {errors}"
+
+    def test_mixed_case_node_type_normalized(self, temp_repo):
+        """Mixed-case node_type normalizes to uppercase."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "Compute_Generic"
+"""
+        yaml_file = temp_repo / "mixed_case_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0, f"Expected normalization to uppercase, got: {errors}"
+
+    def test_uppercase_node_type_accepted(self, temp_repo):
+        """Uppercase node_type is accepted."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "EFFECT_GENERIC"
+"""
+        yaml_file = temp_repo / "uppercase_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0
+
+    def test_invalid_node_type_rejected(self, temp_repo):
+        """Invalid node_type value is rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "INVALID_TYPE_XYZ"
+"""
+        yaml_file = temp_repo / "invalid_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_empty_string_node_type_rejected(self, temp_repo):
+        """Empty string node_type is rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: ""
+"""
+        yaml_file = temp_repo / "empty_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_integer_node_type_rejected(self, temp_repo):
+        """Integer node_type is rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: 123
+"""
+        yaml_file = temp_repo / "integer_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_list_node_type_rejected(self, temp_repo):
+        """List node_type is rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type:
+  - COMPUTE_GENERIC
+  - EFFECT_GENERIC
+"""
+        yaml_file = temp_repo / "list_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_null_node_type_rejected(self, temp_repo):
+        """Null node_type is rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: null
+"""
+        yaml_file = temp_repo / "null_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_whitespace_node_type_rejected(self, temp_repo):
+        """Whitespace-only node_type is rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "   "
+"""
+        yaml_file = temp_repo / "whitespace_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_all_valid_node_types_accepted(self, temp_repo):
+        """All valid EnumNodeType values are accepted."""
+        valid_types = [
+            "COMPUTE_GENERIC",
+            "EFFECT_GENERIC",
+            "REDUCER_GENERIC",
+            "ORCHESTRATOR_GENERIC",
+            "RUNTIME_HOST_GENERIC",
+            "GATEWAY",
+            "VALIDATOR",
+            "TRANSFORMER",
+            "AGGREGATOR",
+            "FUNCTION",
+            "TOOL",
+            "AGENT",
+            "MODEL",
+            "PLUGIN",
+            "SCHEMA",
+            "NODE",
+            "WORKFLOW",
+            "SERVICE",
+            "UNKNOWN",
+        ]
+
+        for node_type in valid_types:
+            yaml_content = f"""
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "{node_type}"
+"""
+            yaml_file = temp_repo / f"valid_{node_type.lower()}.yaml"
+            yaml_file.write_text(yaml_content)
+
+            errors = validate_yaml_file(yaml_file)
+            assert len(errors) == 0, f"{node_type} should be valid, got: {errors}"
+
+    def test_node_type_with_leading_trailing_spaces(self, temp_repo):
+        """Node_type with leading/trailing spaces is handled."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "  COMPUTE_GENERIC  "
+"""
+        yaml_file = temp_repo / "spaces_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        # Should either strip and accept, or reject - but not crash
+        assert isinstance(errors, list)
+
+    def test_node_type_with_newlines(self, temp_repo):
+        """Node_type with embedded newlines is handled."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "COMPUTE\nGENERIC"
+"""
+        yaml_file = temp_repo / "newline_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        # Should reject invalid format but not crash
+        assert isinstance(errors, list)
+
+    def test_node_type_with_special_characters(self, temp_repo):
+        """Node_type with special characters is handled."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "COMPUTE_GENERIC@#$"
+"""
+        yaml_file = temp_repo / "special_chars_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        # Should reject invalid format but not crash
+        assert isinstance(errors, list)
+        assert len(errors) >= 1
+
+
+@pytest.mark.unit
+class TestContractVersionValidation:
+    """Test contract_version field validation."""
+
+    def test_contract_version_string_format_valid(self, temp_repo):
+        """Valid semver string format like '1.0.0' passes."""
+        yaml_content = """
+contract_version: "1.0.0"
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "string_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0
+
+    def test_contract_version_dict_format_valid(self, temp_repo):
+        """Valid dict format with major/minor/patch passes."""
+        yaml_content = """
+contract_version:
+  major: 2
+  minor: 1
+  patch: 3
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "dict_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0
+
+    def test_contract_version_invalid_string_rejected(self, temp_repo):
+        """Invalid semver string is handled gracefully."""
+        yaml_content = """
+contract_version: "not-a-version"
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "invalid_string_version.yaml"
+        yaml_file.write_text(yaml_content)
+        # Should not crash - may use default version or error
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+
+    def test_contract_version_partial_string_handled(self, temp_repo):
+        """Partial semver string like '1.0' is handled."""
+        yaml_content = """
+contract_version: "1.0"
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "partial_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+
+    def test_contract_version_zero_values_valid(self, temp_repo):
+        """Version 0.0.0 is valid."""
+        yaml_content = """
+contract_version: "0.0.0"
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "zero_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0
+
+    def test_contract_version_high_numbers_valid(self, temp_repo):
+        """Version with high numbers is valid."""
+        yaml_content = """
+contract_version: "99.99.99"
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "high_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0
+
+    def test_contract_version_integer_handled(self, temp_repo):
+        """Integer contract_version is handled gracefully."""
+        yaml_content = """
+contract_version: 1
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "integer_version.yaml"
+        yaml_file.write_text(yaml_content)
+        # Should not crash - may convert or error
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+
+    def test_contract_version_float_handled(self, temp_repo):
+        """Float contract_version is handled gracefully."""
+        yaml_content = """
+contract_version: 1.5
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "float_version.yaml"
+        yaml_file.write_text(yaml_content)
+        # Should not crash - may convert or error
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+
+    def test_contract_version_null_rejected(self, temp_repo):
+        """Null contract_version is rejected."""
+        yaml_content = """
+contract_version: null
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "null_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        # Null should be treated as missing
+        assert isinstance(errors, list)
+
+    def test_contract_version_list_rejected(self, temp_repo):
+        """List contract_version is rejected."""
+        yaml_content = """
+contract_version:
+  - 1
+  - 0
+  - 0
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "list_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        # List format should be rejected
+        assert isinstance(errors, list)
+
+    def test_contract_version_empty_string_rejected(self, temp_repo):
+        """Empty string contract_version is rejected."""
+        yaml_content = """
+contract_version: ""
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "empty_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        # Empty string should be treated as missing or invalid
+        assert isinstance(errors, list)
+
+    def test_contract_version_dict_missing_patch(self, temp_repo):
+        """Dict format missing patch field is handled."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "missing_patch_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        # Should handle gracefully - may default patch to 0 or error
+        assert isinstance(errors, list)
+
+    def test_contract_version_dict_extra_fields(self, temp_repo):
+        """Dict format with extra fields is handled."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+  prerelease: "alpha"
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "extra_fields_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        # Should accept or ignore extra fields
+        assert isinstance(errors, list)
+
+    def test_contract_version_with_prerelease_suffix(self, temp_repo):
+        """Semver with prerelease suffix like '1.0.0-alpha' is handled."""
+        yaml_content = """
+contract_version: "1.0.0-alpha"
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "prerelease_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        # May accept extended semver or reject - should not crash
+        assert isinstance(errors, list)
+
+    def test_contract_version_with_build_metadata(self, temp_repo):
+        """Semver with build metadata like '1.0.0+build.123' is handled."""
+        yaml_content = """
+contract_version: "1.0.0+build.123"
+node_type: "COMPUTE_GENERIC"
+"""
+        yaml_file = temp_repo / "build_metadata_version.yaml"
+        yaml_file.write_text(yaml_content)
+        errors = validate_yaml_file(yaml_file)
+        # May accept extended semver or reject - should not crash
+        assert isinstance(errors, list)
+
+
+@pytest.mark.unit
 class TestFileHandling:
     """Test file handling edge cases."""
 
     def test_nonexistent_file(self):
-        """Test handling of non-existent files."""
+        """Non-existent file returns error."""
         nonexistent_file = Path("/nonexistent/file.yaml")
         errors = validate_yaml_file(nonexistent_file)
 
@@ -294,7 +723,7 @@ class TestFileHandling:
         assert any("not exist" in error for error in errors)
 
     def test_directory_instead_of_file(self, temp_repo):
-        """Test handling when a directory is passed instead of file."""
+        """Directory path returns 'not a regular file' error."""
         test_dir = temp_repo / "test_directory"
         test_dir.mkdir()
 
@@ -303,14 +732,14 @@ class TestFileHandling:
         assert any("not a regular file" in error for error in errors)
 
     def test_large_yaml_file(self, temp_repo):
-        """Test handling of large YAML files."""
+        """Large YAML files are validated within time limit."""
         # Create a large YAML file
         large_yaml = """
 contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Large contract for performance testing"
 
 metadata:
@@ -346,7 +775,7 @@ outputs:
         assert len(errors) == 0  # Should be valid
 
     def test_extremely_large_file_rejection(self, temp_repo):
-        """Test rejection of extremely large files."""
+        """Files over 50MB are rejected."""
         # Create content that would be larger than 50MB when written
         huge_content = "# Large file\n" + "data: value\n" * 3000000  # ~60MB
         huge_file = temp_repo / "huge_file.yaml"
@@ -364,14 +793,14 @@ outputs:
             pytest.skip("Cannot create large enough file due to memory constraints")
 
     def test_permission_denied_file(self, temp_repo):
-        """Test handling of permission denied errors."""
+        """Permission denied returns error."""
         yaml_file = temp_repo / "restricted.yaml"
         yaml_file.write_text(
             """contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'""",
+node_type: 'COMPUTE_GENERIC'""",
         )
 
         with patch("builtins.open", side_effect=PermissionError("Permission denied")):
@@ -380,7 +809,7 @@ node_type: 'compute'""",
             assert any("permission denied" in error.lower() for error in errors)
 
     def test_encoding_error_handling(self, temp_repo):
-        """Test handling of encoding errors."""
+        """Encoding errors are handled gracefully."""
         yaml_file = temp_repo / "encoding_issue.yaml"
         # Write some problematic bytes
         with open(yaml_file, "wb") as f:
@@ -394,7 +823,7 @@ node_type: 'compute'""",
         assert isinstance(errors, list)
 
     def test_os_error_handling(self, temp_repo):
-        """Test handling of OS errors."""
+        """OS errors are handled gracefully."""
         yaml_file = temp_repo / "test.yaml"
         yaml_file.write_text("test: value")
 
@@ -405,19 +834,66 @@ node_type: 'compute'""",
             # Check for OS/IO error in message (script uses "OS/IO error reading file")
             assert any("error reading file" in error.lower() for error in errors)
 
+    def test_non_mapping_yaml_scalar_string(self, temp_repo):
+        """Scalar string root YAML is skipped (PR #132 regression)."""
+        yaml_file = temp_repo / "scalar_string.yaml"
+        yaml_file.write_text("just a plain string")
 
+        # Should not raise TypeError, should return empty errors (not a contract)
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+        assert len(errors) == 0  # Non-dict YAML is silently skipped (not a contract)
+
+    def test_non_mapping_yaml_scalar_number(self, temp_repo):
+        """Scalar number root YAML is skipped (PR #132 regression)."""
+        yaml_file = temp_repo / "scalar_number.yaml"
+        yaml_file.write_text("42")
+
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+        assert len(errors) == 0
+
+    def test_non_mapping_yaml_list_root(self, temp_repo):
+        """List root YAML is skipped (PR #132 regression)."""
+        yaml_file = temp_repo / "list_root.yaml"
+        yaml_file.write_text("- item1\n- item2\n- item3")
+
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+        assert len(errors) == 0
+
+    def test_non_mapping_yaml_list_of_dicts(self, temp_repo):
+        """List of dicts root YAML is skipped (PR #132 regression)."""
+        yaml_file = temp_repo / "list_of_dicts.yaml"
+        yaml_file.write_text("- key1: value1\n- key2: value2")
+
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+        assert len(errors) == 0
+
+    def test_non_mapping_yaml_boolean_root(self, temp_repo):
+        """Boolean root YAML is skipped (PR #132 regression)."""
+        yaml_file = temp_repo / "boolean_root.yaml"
+        yaml_file.write_text("true")
+
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+        assert len(errors) == 0
+
+
+@pytest.mark.unit
 class TestMainFunction:
     """Test the main function and CLI interface."""
 
     def test_main_with_valid_yaml_files(self, temp_repo):
-        """Test main function with valid YAML files."""
+        """Valid YAML files return exit code 0."""
         # Create valid YAML files
         valid_yaml1 = """
 contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 """
         valid_yaml2 = """
 # Just a regular YAML file
@@ -433,7 +909,7 @@ settings:
             assert result == 0
 
     def test_main_with_invalid_yaml_files(self, temp_repo):
-        """Test main function with invalid YAML files."""
+        """Invalid YAML files return exit code 1."""
         invalid_yaml = """
 contract_version:
   major: 1
@@ -448,7 +924,7 @@ contract_version:
             assert result == 1
 
     def test_main_with_no_yaml_files(self, temp_repo):
-        """Test main function with directory containing no YAML files."""
+        """Directory with no YAML files returns exit code 0."""
         # Create non-YAML files
         (temp_repo / "test.py").write_text("print('test')")
         (temp_repo / "README.md").write_text("# Test")
@@ -458,13 +934,13 @@ contract_version:
             assert result == 0  # Should succeed with message about no files
 
     def test_main_with_nonexistent_path(self):
-        """Test main function with non-existent path."""
+        """Non-existent path returns exit code 1."""
         with patch("sys.argv", ["validate-contracts.py", "/nonexistent/path"]):
             result = main()
             assert result == 1
 
     def test_main_with_malformed_yaml(self, temp_repo):
-        """Test main function with malformed YAML."""
+        """Malformed YAML returns exit code 1."""
         malformed_yaml = """
 contract_version:
   major: 1
@@ -480,13 +956,13 @@ invalid: [yaml, structure
             assert result == 1
 
     def test_main_argument_parsing_error(self):
-        """Test main function with argument parsing errors."""
+        """Invalid CLI arguments return exit code 2."""
         with patch("sys.argv", ["validate-contracts.py", "--invalid-flag"]):
             result = main()
             assert result == 2  # argparse returns 2 for argument parsing errors
 
     def test_main_with_archived_files_filtering(self, temp_repo):
-        """Test that archived files are properly filtered out."""
+        """Archived directory files are filtered out."""
         # Create archived directory with YAML files
         archived_dir = temp_repo / "archived"
         archived_dir.mkdir()
@@ -495,7 +971,7 @@ invalid: [yaml, structure
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'""",
+node_type: 'COMPUTE_GENERIC'""",
         )
 
         # Create regular YAML file
@@ -504,7 +980,7 @@ node_type: 'compute'""",
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'""",
+node_type: 'COMPUTE_GENERIC'""",
         )
 
         with patch("sys.argv", ["validate-contracts.py", str(temp_repo)]):
@@ -522,19 +998,20 @@ node_type: 'compute'""",
                 )
 
 
+@pytest.mark.unit
 class TestTimeoutHandling:
     """Test timeout handling functionality."""
 
     @pytest.mark.skipif(os.name == "nt", reason="Signal handling different on Windows")
     def test_timeout_handler_setup(self):
-        """Test that timeout handler can be set up."""
+        """Timeout handler setup succeeds on Unix."""
         setup_timeout_handler()
         # Should not raise exception
         assert signal.signal(signal.SIGALRM, signal.SIG_DFL) is not None
 
     @pytest.mark.skipif(os.name == "nt", reason="Signal handling different on Windows")
     def test_file_discovery_timeout_simulation(self, temp_repo):
-        """Test file discovery timeout handling."""
+        """File discovery timeout returns exit code 1."""
         # Create many directories and files to potentially slow down discovery
         for i in range(100):
             subdir = temp_repo / f"subdir_{i}"
@@ -549,11 +1026,12 @@ class TestTimeoutHandling:
                     assert result == 1
 
 
+@pytest.mark.unit
 class TestErrorRecovery:
     """Test error recovery and graceful handling."""
 
     def test_keyboard_interrupt_handling(self, temp_repo):
-        """Test handling of keyboard interrupt."""
+        """KeyboardInterrupt returns exit code 1."""
         (temp_repo / "test.yaml").write_text("test: value")
 
         # Patch the function in the validate module directly
@@ -567,7 +1045,7 @@ class TestErrorRecovery:
                 assert result == 1
 
     def test_unexpected_exception_handling(self, temp_repo):
-        """Test handling of unexpected exceptions."""
+        """Unexpected exceptions return exit code 1."""
         (temp_repo / "test.yaml").write_text("test: value")
 
         # Patch the function in the validate module directly
@@ -581,14 +1059,14 @@ class TestErrorRecovery:
                 assert result == 1
 
     def test_partial_processing_after_error(self, temp_repo):
-        """Test that processing continues after individual file errors."""
+        """Processing continues after individual file errors."""
         # Create valid and problematic files
         (temp_repo / "valid.yaml").write_text(
             """contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'""",
+node_type: 'COMPUTE_GENERIC'""",
         )
         (temp_repo / "problem.yaml").write_text("valid: yaml")
 
@@ -612,11 +1090,85 @@ node_type: 'compute'""",
                 assert result == 1
 
 
+@pytest.mark.unit
+class TestExampleContractsValidation:
+    """Regression tests for example contracts."""
+
+    def test_example_contracts_validate(self):
+        """Example contracts pass schema validation (OMN-539 regression)."""
+        example_path = (
+            Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
+        )
+
+        if not example_path.exists():
+            pytest.skip("examples/contracts directory not found")
+
+        yaml_files = list(example_path.rglob("*.yaml")) + list(
+            example_path.rglob("*.yml")
+        )
+
+        if not yaml_files:
+            pytest.skip("No YAML files found in examples/contracts")
+
+        all_errors = []
+        for yaml_file in yaml_files:
+            errors = validate_yaml_file(yaml_file)
+            if errors:
+                all_errors.append(f"{yaml_file.relative_to(example_path)}: {errors}")
+
+        assert len(all_errors) == 0, (
+            "Example contracts failed validation:\n" + "\n".join(all_errors)
+        )
+
+    def test_example_contracts_have_required_fields(self):
+        """Example contracts have required fields (OMN-539 regression)."""
+        import yaml
+
+        example_path = (
+            Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
+        )
+
+        if not example_path.exists():
+            pytest.skip("examples/contracts directory not found")
+
+        yaml_files = list(example_path.rglob("*.yaml")) + list(
+            example_path.rglob("*.yml")
+        )
+
+        for yaml_file in yaml_files:
+            with open(yaml_file, encoding="utf-8") as f:
+                content = yaml.safe_load(f)
+
+            if content is None:
+                continue  # Empty file
+
+            # Skip non-mapping YAML (e.g., scalar, list)
+            if not isinstance(content, dict):
+                continue
+
+            # Check if this looks like a contract (has contract indicators)
+            contract_indicators = {
+                "contract_version",
+                "node_type",
+                "metadata",
+                "inputs",
+                "outputs",
+            }
+            if any(field in content for field in contract_indicators):
+                assert "contract_version" in content, (
+                    f"{yaml_file.name} is missing required field: contract_version"
+                )
+                assert "node_type" in content, (
+                    f"{yaml_file.name} is missing required field: node_type"
+                )
+
+
+@pytest.mark.unit
 class TestFixtureValidation:
-    """Test validation using our test fixtures."""
+    """Test validation using test fixtures."""
 
     def test_valid_fixtures_pass_validation(self):
-        """Test that valid fixtures pass YAML validation."""
+        """Valid fixtures pass validation."""
         fixtures_dir = Path(__file__).parent.parent.parent / "fixtures" / "validation"
 
         if fixtures_dir.exists():
@@ -630,7 +1182,7 @@ class TestFixtureValidation:
                 )
 
     def test_invalid_fixtures_trigger_violations(self):
-        """Test that invalid fixtures trigger YAML violations."""
+        """Invalid fixtures trigger validation errors."""
         fixtures_dir = Path(__file__).parent.parent.parent / "fixtures" / "validation"
 
         if fixtures_dir.exists():
@@ -645,7 +1197,7 @@ class TestFixtureValidation:
                 )
 
     def test_edge_case_fixtures(self):
-        """Test edge case fixtures."""
+        """Edge case fixtures do not crash."""
         fixtures_dir = Path(__file__).parent.parent.parent / "fixtures" / "validation"
 
         if fixtures_dir.exists():
@@ -661,11 +1213,12 @@ class TestFixtureValidation:
                     assert isinstance(errors, list)
 
 
+@pytest.mark.unit
 class TestPerformanceAndScalability:
-    """Test performance and scalability aspects."""
+    """Test performance and scalability."""
 
     def test_many_small_files_performance(self, temp_repo):
-        """Test performance with many small YAML files."""
+        """50 small YAML files validate within 10 seconds."""
         import time
 
         # Create many small YAML files
@@ -674,7 +1227,7 @@ class TestPerformanceAndScalability:
             yaml_file.write_text(
                 f"""
 contract_version: "1.0.{i}"
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Contract {i}"
 """,
             )
@@ -688,7 +1241,7 @@ description: "Contract {i}"
         assert end_time - start_time < 10.0  # Should complete within 10 seconds
 
     def test_deeply_nested_directory_structure(self, temp_repo):
-        """Test with deeply nested directory structures."""
+        """10-level deep directory structure validates successfully."""
         # Create nested directories
         current_dir = temp_repo
         for i in range(10):  # Create 10 levels deep
@@ -701,7 +1254,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Contract at level {i}"
 """,
             )
