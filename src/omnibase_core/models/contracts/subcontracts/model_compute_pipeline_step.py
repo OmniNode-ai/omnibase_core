@@ -72,10 +72,10 @@ from pydantic import BaseModel, ConfigDict, model_validator
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
 from omnibase_core.enums.enum_transformation_type import EnumTransformationType
 from omnibase_core.models.transformations.model_mapping_config import ModelMappingConfig
+from omnibase_core.models.transformations.model_types import ModelTransformationConfig
 from omnibase_core.models.transformations.model_validation_step_config import (
     ModelValidationStepConfig,
 )
-from omnibase_core.models.transformations.model_types import ModelTransformationConfig
 
 
 class ModelComputePipelineStep(BaseModel):

@@ -25,9 +25,6 @@ from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_type import EnumNodeType
-from omnibase_core.models.contracts.model_mixin_node_type_validator import (
-    MixinNodeTypeValidator,
-)
 from omnibase_core.models.contracts.model_action_emission_config import (
     ModelActionEmissionConfig,
 )
@@ -41,6 +38,9 @@ from omnibase_core.models.contracts.model_event_registry_config import (
 )
 from omnibase_core.models.contracts.model_event_subscription import (
     ModelEventSubscription,
+)
+from omnibase_core.models.contracts.model_mixin_node_type_validator import (
+    MixinNodeTypeValidator,
 )
 from omnibase_core.models.contracts.model_workflow_config import ModelWorkflowConfig
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor

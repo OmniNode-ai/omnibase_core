@@ -36,15 +36,15 @@ from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.contracts.model_mixin_node_type_validator import (
-    MixinNodeTypeValidator,
-)
 from omnibase_core.models.contracts.model_conflict_resolution_config import (
     ModelConflictResolutionConfig,
 )
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.contracts.model_memory_management_config import (
     ModelMemoryManagementConfig,
+)
+from omnibase_core.models.contracts.model_mixin_node_type_validator import (
+    MixinNodeTypeValidator,
 )
 from omnibase_core.models.contracts.model_reduction_config import ModelReductionConfig
 from omnibase_core.models.contracts.model_streaming_config import ModelStreamingConfig
