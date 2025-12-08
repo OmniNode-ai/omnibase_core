@@ -26,6 +26,10 @@
 # v1.0 Contract Schema Version
 # ============================================================================
 
+# Contract required fields
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: compute
+
 # ---------------------------------------------------------------------------
 # COMPUTE SUBCONTRACT: Defines the transformation pipeline
 # ---------------------------------------------------------------------------
