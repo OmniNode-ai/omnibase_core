@@ -1,9 +1,6 @@
 ---
 node_type: reducer
-contract_version:
-  major: 1
-  minor: 0
-  patch: 0
+contract_version: {major: 1, minor: 0, patch: 0}
 state_transitions:
   version:
     major: 1
