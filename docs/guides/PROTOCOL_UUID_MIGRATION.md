@@ -26,6 +26,93 @@
 
 ---
 
+## ModelNodeMetadataBlock Changes
+
+### New `uuid` Field Addition
+
+**PR #119** adds a new `uuid: UUID` field to `ModelNodeMetadataBlock` with `default_factory=uuid4`. This is an **ADDITIVE change** - a new field was added, not an existing field modified.
+
+#### Field Definition
+
+```python
+from uuid import UUID, uuid4
+from pydantic import BaseModel, Field
+
+class ModelNodeMetadataBlock(BaseModel):
+    # ... existing fields ...
+    uuid: UUID = Field(default_factory=uuid4)
+    # ... other fields ...
+```
+
+#### Change Characteristics
+
+| Characteristic | Value |
+|----------------|-------|
+| **Change Type** | ADDITIVE (new field) |
+| **Field Name** | `uuid` |
+| **Field Type** | `UUID` |
+| **Default** | `default_factory=uuid4` (auto-generates) |
+| **Required in Input** | No (has default) |
+| **Present in Output** | Yes (always) |
+
+#### Behavior Summary
+
+| Scenario | Behavior |
+|----------|----------|
+| **New instances** | UUID auto-generated via `default_factory` |
+| **Legacy data without `uuid`** | Pydantic auto-generates a new UUID during deserialization |
+| **Legacy data with `uuid` as string** | Pydantic converts string to UUID automatically |
+| **Explicit UUID provided** | Uses the provided UUID value |
+
+### Example: Legacy Data Handling
+
+```python
+from omnibase_core.models.core.model_node_metadata_block import ModelNodeMetadataBlock
+
+# Legacy data without uuid field (pre-migration)
+legacy_data = {
+    "name": "my-node",
+    "version": {"major": 1, "minor": 0, "patch": 0},
+    "author": "developer",
+    "created_at": "2024-01-01T00:00:00Z",
+    "last_modified_at": "2024-01-01T00:00:00Z",
+    "hash": "a" * 64,
+    "entrypoint": "python://main.py",
+    "namespace": "onex.tools.example"
+}
+
+# Pydantic auto-generates uuid via default_factory
+block = ModelNodeMetadataBlock(**legacy_data)
+assert block.uuid is not None  # New UUID generated automatically
+print(f"Generated UUID: {block.uuid}")  # e.g., UUID('550e8400-e29b-41d4-a716-446655440000')
+
+# The uuid field will be present in serialized output
+output = block.model_dump()
+assert "uuid" in output  # True - uuid is always in output
+```
+
+### Why This Is Backward Compatible for Reading
+
+1. **Pydantic Default Factory**: The `default_factory=uuid4` ensures missing fields get valid values automatically
+2. **No Required Field Change**: The `uuid` field is NOT required in the input data
+3. **Automatic Type Coercion**: Pydantic converts string UUIDs to UUID objects automatically
+4. **No Validation Failures**: Existing data without `uuid` will deserialize successfully
+
+### Impact on Downstream Consumers
+
+While **reading** legacy data is backward compatible, downstream consumers should be aware of these potential impacts:
+
+| Impact Area | Description | Action Required |
+|-------------|-------------|-----------------|
+| **Serialized Output** | Output now includes `uuid` field | Update schema expectations |
+| **Hash/Checksum Comparison** | Content hashes may differ due to new field | Update hash validation logic |
+| **Strict Schema Validation** | Validators may reject unknown `uuid` field | Update schema definitions |
+| **Field Ordering** | Serialization order may change | Update order-dependent logic |
+| **Data Size** | Serialized data is slightly larger | Usually negligible |
+| **Idempotency** | Re-serializing legacy data adds `uuid` | May affect round-trip comparisons |
+
+---
+
 ## Affected Protocols
 
 The following protocols have ID fields changed from `str` to `UUID`:
@@ -649,6 +736,255 @@ uuid_id.variant  # RFC_4122
 uuid_id.hex      # "550e8400e29b41d4a716446655440000"
 uuid_id.int      # Integer representation
 ```
+
+---
+
+## CI/CD Recommendations
+
+To catch UUID/str type mismatches early in the development lifecycle, consider adding protocol-specific type checking to your CI pipeline.
+
+### Mypy Strict Mode for Protocols
+
+Configure mypy with strict mode and Pydantic plugin support to catch type mismatches at build time:
+
+```toml
+# pyproject.toml
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = "your_project.protocols.*"
+disallow_untyped_defs = true
+warn_return_any = true
+```
+
+### Protocol-Specific Type Checks in CI
+
+Add a dedicated CI step to run strict type checking on protocol implementations:
+
+```bash
+# Run strict type checking specifically on protocols
+poetry run mypy src/your_project/protocols/ --strict
+
+# For omnibase_core specifically
+poetry run mypy src/omnibase_core/protocols/ --strict
+```
+
+### Benefits
+
+- **Early Detection**: Catches UUID/str mismatches at build time rather than runtime
+- **Protocol Compliance**: Ensures all protocol implementations match expected type signatures
+- **Regression Prevention**: Prevents accidental type regressions in future changes
+- **Documentation**: Type errors serve as documentation for required changes
+
+### Example CI Configuration
+
+```yaml
+# .github/workflows/type-check.yml
+name: Type Check
+
+on: [push, pull_request]
+
+jobs:
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          pip install poetry
+          poetry install
+      - name: Run mypy on protocols (strict)
+        run: poetry run mypy src/your_project/protocols/ --strict
+      - name: Run mypy on full codebase
+        run: poetry run mypy src/
+```
+
+### Recommended Mypy Settings for Protocol Enforcement
+
+For maximum type safety when implementing protocols with UUID fields:
+
+```toml
+# pyproject.toml - Additional strict settings
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+
+# Catch string/UUID mismatches
+disallow_any_generics = true
+disallow_subclassing_any = true
+
+# Ensure all protocol methods are properly typed
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+# Warn on potential type issues
+warn_return_any = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+# Treat warnings as errors in CI
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = "your_project.protocols.*"
+# Extra strict for protocol definitions
+disallow_any_explicit = true
+```
+
+---
+
+## Backward Compatibility Considerations
+
+This section addresses specific backward compatibility concerns for downstream consumers migrating to the UUID-based protocol definitions.
+
+### Hash Stability
+
+**Issue**: Content hashes computed before migration may not match hashes computed after migration.
+
+**Cause**: The new `uuid` field in `ModelNodeMetadataBlock` is included in serialized output, changing the content used for hash computation.
+
+**Impact**:
+- Existing content-based deduplication may fail
+- Cache invalidation based on content hashes will trigger
+- Integrity checks comparing pre- and post-migration hashes will fail
+
+**Mitigation Strategies**:
+
+```python
+from uuid import UUID
+from omnibase_core.models.core.model_node_metadata_block import ModelNodeMetadataBlock
+
+# Strategy 1: Exclude uuid from hash computation
+def compute_hash_excluding_uuid(block: ModelNodeMetadataBlock) -> str:
+    """Compute hash excluding the uuid field for backward compatibility."""
+    data = block.model_dump(exclude={"uuid"})
+    # Use your existing hash function on the filtered data
+    return compute_hash(data)
+
+# Strategy 2: Store and compare hashes separately
+def verify_with_migration_awareness(
+    block: ModelNodeMetadataBlock,
+    legacy_hash: str,
+    include_uuid: bool = False
+) -> bool:
+    """Verify hash with awareness of migration state."""
+    if include_uuid:
+        current_hash = compute_hash(block.model_dump())
+    else:
+        current_hash = compute_hash(block.model_dump(exclude={"uuid"}))
+    return current_hash == legacy_hash
+```
+
+### Schema Validation
+
+**Issue**: Strict schema validators may reject the new `uuid` field as an unknown property.
+
+**Cause**: JSON Schema validators configured with `additionalProperties: false` will fail when encountering the new `uuid` field.
+
+**Impact**:
+- API validation may reject valid `ModelNodeMetadataBlock` payloads
+- Integration tests with strict schema validation may fail
+- Third-party systems expecting exact schema match will error
+
+**Mitigation Strategies**:
+
+```python
+# Strategy 1: Update JSON Schema to include uuid field
+schema_update = {
+    "properties": {
+        # ... existing properties ...
+        "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the metadata block"
+        }
+    }
+}
+
+# Strategy 2: Configure validators to allow additional properties
+# In JSON Schema:
+# "additionalProperties": true
+
+# Strategy 3: Use Pydantic's model_json_schema() for accurate schema
+from omnibase_core.models.core.model_node_metadata_block import ModelNodeMetadataBlock
+
+# Generate accurate schema from the model
+current_schema = ModelNodeMetadataBlock.model_json_schema()
+```
+
+### Round-Trip Serialization
+
+**Issue**: Serializing legacy data and then deserializing produces different output than the original.
+
+**Cause**: The `uuid` field is auto-generated during deserialization and included in subsequent serialization.
+
+**Impact**:
+- `json.loads(json.dumps(data))` produces different results
+- Diff-based change detection may show false positives
+- Audit logs may show unexpected "changes" to uuid field
+
+**Example**:
+
+```python
+import json
+from omnibase_core.models.core.model_node_metadata_block import ModelNodeMetadataBlock
+
+# Original legacy data (no uuid)
+legacy_json = '{"name": "my-node", "version": {"major": 1, "minor": 0, "patch": 0}, ...}'
+
+# After round-trip through Pydantic
+block = ModelNodeMetadataBlock.model_validate_json(legacy_json)
+new_json = block.model_dump_json()
+
+# new_json now contains uuid field!
+# {"name": "my-node", "version": {...}, "uuid": "550e8400-...", ...}
+```
+
+**Mitigation Strategies**:
+
+```python
+# Strategy 1: Preserve original uuid if provided
+def preserve_uuid_on_roundtrip(
+    original_data: dict,
+    processed_block: ModelNodeMetadataBlock
+) -> dict:
+    """Preserve original uuid or exclude if not present."""
+    output = processed_block.model_dump()
+    if "uuid" not in original_data:
+        del output["uuid"]
+    return output
+
+# Strategy 2: Store uuid separately and merge back
+def roundtrip_with_uuid_tracking(data: dict) -> dict:
+    """Track whether uuid was originally present."""
+    had_uuid = "uuid" in data
+    block = ModelNodeMetadataBlock(**data)
+    output = block.model_dump()
+    if not had_uuid:
+        output.pop("uuid", None)
+    return output
+
+# Strategy 3: Use exclude parameter when uuid not needed
+block = ModelNodeMetadataBlock(**legacy_data)
+output_without_uuid = block.model_dump(exclude={"uuid"})
+```
+
+### Summary of Backward Compatibility
+
+| Concern | Breaking? | Mitigation Available |
+|---------|-----------|---------------------|
+| Reading legacy data | No | Automatic via `default_factory` |
+| Hash stability | Potentially | Exclude `uuid` from hash computation |
+| Schema validation | Potentially | Update schemas to include `uuid` |
+| Round-trip serialization | Yes | Exclude `uuid` or track presence |
+| Type annotations | Yes (for protocols) | Update to `UUID` type |
+| API signatures | Yes (for protocols) | Update parameter/return types |
 
 ---
 
