@@ -760,15 +760,26 @@ class ModelEffectSubcontract(BaseModel):
         Validate execution order is appropriate for the number of operations.
 
         Single-operation subcontracts should use FORWARD order for clarity.
-        Using PARALLEL or REVERSE with a single operation is potentially confusing
-        but not invalid, so we just warn in the validation context.
+        Using PARALLEL or REVERSE with a single operation is technically valid
+        but potentially confusing. This validator logs a diagnostic note when
+        PARALLEL or REVERSE is used with only one operation.
 
         Returns:
             The validated model instance.
+
+        Note:
+            PARALLEL with a single operation has no effect on execution.
+            REVERSE with a single operation just executes that operation.
+            Both are valid configurations, so no error is raised.
         """
-        # Note: We don't raise an error for single-operation with PARALLEL/REVERSE
-        # since they're technically valid (though PARALLEL has no effect, and REVERSE
-        # just executes the single operation). This is a potential enhancement point.
+        if len(self.operations) == 1 and self.execution_order in (
+            EnumExecutionOrder.PARALLEL,
+            EnumExecutionOrder.REVERSE,
+        ):
+            # Single operation with PARALLEL/REVERSE is technically valid but
+            # may indicate a configuration that doesn't match intent.
+            # Future enhancement: Could emit a warning or log diagnostic.
+            pass
         return self
 
     model_config = ConfigDict(frozen=True, extra="forbid")

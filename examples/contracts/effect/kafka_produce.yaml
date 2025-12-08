@@ -21,9 +21,17 @@
 # - Message header support for correlation/tracing
 # - Delivery guarantees (acks=all for durability)
 # - Compression (gzip, snappy, lz4, zstd)
-# - Idempotent producer configuration
 # - Retry policy for transient broker failures
-# - Message serialization (JSON, Avro, Protobuf)
+# - Message serialization (JSON)
+#
+# DATA PROTECTION NOTE:
+# This example includes fields that may contain Personally Identifiable Information (PII)
+# such as email, ip_address, and user_agent. When implementing in production:
+# - Ensure compliance with applicable data protection regulations (GDPR, CCPA, etc.)
+# - Consider data retention policies for Kafka topics containing PII
+# - Implement appropriate access controls for topics with sensitive data
+# - Consider data masking or encryption for sensitive fields
+# - Review and follow your organization's data handling policies
 #
 # v1.0 Contract Schema Version
 # ============================================================================
@@ -63,125 +71,58 @@ effect_operations:
       description: "Publishes user registration event to Kafka with acks=all"
 
       # I/O configuration for Kafka handler
+      # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
+      # Fields are direct children of io_config (no kafka_config wrapper)
       io_config:
         handler_type: kafka
 
-        # Kafka-specific configuration
-        kafka_config:
-          # Producer configuration
-          producer:
-            # Kafka broker addresses
-            bootstrap_servers:
-              - "kafka-1.example.com:9092"
-              - "kafka-2.example.com:9092"
-              - "kafka-3.example.com:9092"
+        # Target Kafka topic
+        topic: "user.events.registration"
 
-            # Client ID for identification
-            client_id: "user-service-producer"
+        # Message payload template with ${} placeholders
+        # Will be serialized as JSON
+        payload_template: |
+          {
+            "event_type": "user.registered",
+            "event_version": "1.0.0",
+            "timestamp": "${input.timestamp}",
+            "user_id": "${input.user_id}",
+            "email": "${input.email}",
+            "display_name": "${input.display_name}",
+            "role": "${input.role}",
+            "source": "user-service",
+            "metadata": {
+              "registration_method": "${input.registration_method}",
+              "referral_code": "${input.referral_code}",
+              "ip_address": "${input.ip_address}",
+              "user_agent": "${input.user_agent}"
+            }
+          }
 
-            # Acknowledgment level for message durability
-            # acks=all: Leader AND all in-sync replicas must acknowledge
-            # acks=1: Only leader must acknowledge
-            # acks=0: No acknowledgment (fire and forget)
-            acks: all
+        # Partition key template (ensures same user goes to same partition)
+        # Uses consistent hashing for partitioning
+        partition_key_template: "${input.user_id}"
 
-            # Enable idempotent producer (exactly-once semantics)
-            enable_idempotence: true
+        # Message headers (key-value pairs)
+        # Useful for tracing, routing, and metadata
+        headers:
+          X-Correlation-ID: "${input.correlation_id}"
+          X-Schema-Version: "1.0.0"
+          X-Source-Service: "user-service"
+          X-Event-Timestamp: "${input.timestamp}"
+          X-Idempotency-Key: "${input.idempotency_key}"
 
-            # Maximum in-flight requests per connection
-            # Must be <= 5 for idempotent producer
-            max_in_flight_requests_per_connection: 5
+        # Producer timeout in milliseconds (1s - 10min)
+        timeout_ms: 30000
 
-            # Message compression (none, gzip, snappy, lz4, zstd)
-            compression_type: snappy
+        # Acknowledgment level for message durability
+        # "all": Leader AND all in-sync replicas must acknowledge (strongest)
+        # "1": Only leader must acknowledge
+        # "0": No acknowledgment (fire and forget) - requires acks_zero_acknowledged=true
+        acks: "all"
 
-            # Batching configuration for throughput
-            batch_size: 16384  # 16KB
-            linger_ms: 10  # Wait up to 10ms for batching
-
-            # Message timeout
-            request_timeout_ms: 30000
-
-            # Retry configuration (producer-level)
-            retries: 3
-            retry_backoff_ms: 100
-
-            # Security configuration (if needed)
-            security_protocol: SASL_SSL
-            sasl_mechanism: PLAIN
-            sasl_username: "${KAFKA_USERNAME}"
-            sasl_password: "${KAFKA_PASSWORD}"
-
-          # Message configuration
-          message:
-            # Target topic
-            topic: "user.events.registration"
-
-            # Partition key template (ensures same user goes to same partition)
-            # Uses consistent hashing for partitioning
-            partition_key: "${user_id}"
-
-            # Message value template (JSON)
-            # Will be serialized according to serialization format
-            value_template: |
-              {
-                "event_type": "user.registered",
-                "event_version": "1.0.0",
-                "timestamp": "${timestamp}",
-                "user_id": "${user_id}",
-                "email": "${email}",
-                "display_name": "${display_name}",
-                "role": "${role}",
-                "source": "user-service",
-                "metadata": {
-                  "registration_method": "${registration_method}",
-                  "referral_code": "${referral_code}",
-                  "ip_address": "${ip_address}",
-                  "user_agent": "${user_agent}"
-                }
-              }
-
-            # Message headers (key-value pairs)
-            # Useful for tracing, routing, and metadata
-            headers:
-              # Correlation ID for request tracing
-              X-Correlation-ID: "${correlation_id}"
-              # Event schema version
-              X-Schema-Version: "1.0.0"
-              # Event source service
-              X-Source-Service: "user-service"
-              # Event timestamp (ISO 8601)
-              X-Event-Timestamp: "${timestamp}"
-              # Idempotency key
-              X-Idempotency-Key: "${idempotency_key}"
-
-            # Message serialization format
-            # json: JSON serialization (default)
-            # avro: Apache Avro with schema registry
-            # protobuf: Protocol Buffers
-            # string: Plain text
-            serialization_format: json
-
-            # Schema registry configuration (for Avro/Protobuf)
-            schema_registry:
-              enabled: false
-              url: "https://schema-registry.example.com"
-              # Schema ID or subject name
-              schema_id: "user.events.registration-value"
-
-          # Partition configuration (optional)
-          partitioning:
-            # Partition selection strategy
-            # key_hash: Hash partition key (default)
-            # round_robin: Distribute evenly across partitions
-            # manual: Specify partition number explicitly
-            strategy: key_hash
-
-            # Manual partition number (if strategy=manual)
-            # partition: 0
-
-            # Custom partitioner class (advanced)
-            # partitioner_class: "com.example.CustomPartitioner"
+        # Message compression (none, gzip, snappy, lz4, zstd)
+        compression: snappy
 
       # Retry policy for transient failures
       retry_policy:
@@ -228,7 +169,7 @@ effect_operations:
     # OPERATION 2: PUBLISH USER ACTIVITY EVENT
     # =========================================================================
     # Publishes user activity events (login, logout, action) to Kafka.
-    # Demonstrates high-throughput fire-and-forget with batching.
+    # Demonstrates high-throughput with leader-only acknowledgment.
     #
     # Handler Type: Kafka
     # Operation: Produce
@@ -239,75 +180,52 @@ effect_operations:
     - operation_name: publish_user_activity
       description: "Publishes user activity event for analytics"
 
+      # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
       io_config:
         handler_type: kafka
 
-        kafka_config:
-          producer:
-            bootstrap_servers:
-              - "kafka-1.example.com:9092"
-              - "kafka-2.example.com:9092"
-              - "kafka-3.example.com:9092"
-            client_id: "user-service-activity-producer"
+        topic: "user.events.activity"
 
-            # Lower durability for high-throughput analytics
-            acks: 1  # Only leader acknowledgment needed
+        payload_template: |
+          {
+            "event_type": "user.activity",
+            "event_version": "1.0.0",
+            "timestamp": "${input.timestamp}",
+            "user_id": "${input.user_id}",
+            "activity_type": "${input.activity_type}",
+            "activity_data": {
+              "action": "${input.action}",
+              "resource": "${input.resource}",
+              "result": "${input.result}"
+            },
+            "session_id": "${input.session_id}",
+            "ip_address": "${input.ip_address}"
+          }
 
-            # Disable idempotence for higher throughput
-            enable_idempotence: false
+        # Partition by user_id for ordered activity history
+        partition_key_template: "${input.user_id}"
 
-            compression_type: lz4  # Fast compression for analytics
-            batch_size: 65536  # 64KB batches for higher throughput
-            linger_ms: 50  # Wait longer for larger batches
+        headers:
+          X-Correlation-ID: "${input.correlation_id}"
+          X-Schema-Version: "1.0.0"
+          X-Event-Type: "activity"
 
-            request_timeout_ms: 10000
-            retries: 2
-            retry_backoff_ms: 100
+        timeout_ms: 10000
 
-            security_protocol: SASL_SSL
-            sasl_mechanism: PLAIN
-            sasl_username: "${KAFKA_USERNAME}"
-            sasl_password: "${KAFKA_PASSWORD}"
+        # Lower durability for high-throughput analytics
+        # Only leader acknowledgment needed
+        acks: "1"
 
-          message:
-            topic: "user.events.activity"
-
-            # Partition by user_id for ordered activity history
-            partition_key: "${user_id}"
-
-            value_template: |
-              {
-                "event_type": "user.activity",
-                "event_version": "1.0.0",
-                "timestamp": "${timestamp}",
-                "user_id": "${user_id}",
-                "activity_type": "${activity_type}",
-                "activity_data": {
-                  "action": "${action}",
-                  "resource": "${resource}",
-                  "result": "${result}"
-                },
-                "session_id": "${session_id}",
-                "ip_address": "${ip_address}"
-              }
-
-            headers:
-              X-Correlation-ID: "${correlation_id}"
-              X-Schema-Version: "1.0.0"
-              X-Event-Type: "activity"
-
-            serialization_format: json
-
-          partitioning:
-            strategy: key_hash
+        # Fast compression for analytics
+        compression: lz4
 
       retry_policy:
         enabled: true
         max_retries: 2  # Fewer retries for analytics
-        backoff_strategy: linear
+        backoff_strategy: exponential
         initial_delay_ms: 200
         max_delay_ms: 2000
-        backoff_multiplier: 1.5
+        backoff_multiplier: 2.0
         jitter: true
 
       response_handling:
@@ -327,7 +245,7 @@ effect_operations:
     # OPERATION 3: PUBLISH AUDIT LOG EVENT
     # =========================================================================
     # Publishes audit log events with maximum durability guarantees.
-    # Demonstrates acks=all, idempotence, and compliance requirements.
+    # Demonstrates acks=all for compliance requirements.
     #
     # Handler Type: Kafka
     # Operation: Produce
@@ -338,85 +256,57 @@ effect_operations:
     - operation_name: publish_audit_log
       description: "Publishes audit log event with guaranteed delivery"
 
+      # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
       io_config:
         handler_type: kafka
 
-        kafka_config:
-          producer:
-            bootstrap_servers:
-              - "kafka-1.example.com:9092"
-              - "kafka-2.example.com:9092"
-              - "kafka-3.example.com:9092"
-            client_id: "user-service-audit-producer"
+        topic: "security.audit.logs"
 
-            # Maximum durability for audit logs
-            acks: all
+        payload_template: |
+          {
+            "event_type": "audit.user.action",
+            "event_version": "1.0.0",
+            "timestamp": "${input.timestamp}",
+            "tenant_id": "${input.tenant_id}",
+            "user_id": "${input.user_id}",
+            "actor": {
+              "id": "${input.actor_id}",
+              "type": "${input.actor_type}",
+              "ip_address": "${input.ip_address}",
+              "user_agent": "${input.user_agent}"
+            },
+            "action": {
+              "type": "${input.action_type}",
+              "resource": "${input.resource}",
+              "resource_id": "${input.resource_id}",
+              "operation": "${input.operation}",
+              "result": "${input.result}",
+              "reason": "${input.reason}"
+            },
+            "metadata": {
+              "correlation_id": "${input.correlation_id}",
+              "session_id": "${input.session_id}",
+              "request_id": "${input.request_id}"
+            }
+          }
 
-            # Enable idempotence for exactly-once
-            enable_idempotence: true
-            max_in_flight_requests_per_connection: 5
+        # Partition by tenant_id for multi-tenant isolation
+        partition_key_template: "${input.tenant_id}"
 
-            # No compression for audit logs (prioritize integrity)
-            compression_type: none
+        headers:
+          X-Correlation-ID: "${input.correlation_id}"
+          X-Schema-Version: "1.0.0"
+          X-Event-Type: "audit"
+          X-Tenant-ID: "${input.tenant_id}"
+          X-Compliance-Required: "true"
 
-            # Smaller batches for lower latency
-            batch_size: 8192  # 8KB
-            linger_ms: 0  # Send immediately
+        timeout_ms: 30000
 
-            request_timeout_ms: 30000
-            retries: 5  # More retries for audit logs
-            retry_backoff_ms: 200
+        # Maximum durability for audit logs
+        acks: "all"
 
-            security_protocol: SASL_SSL
-            sasl_mechanism: PLAIN
-            sasl_username: "${KAFKA_USERNAME}"
-            sasl_password: "${KAFKA_PASSWORD}"
-
-          message:
-            topic: "security.audit.logs"
-
-            # Partition by tenant_id for multi-tenant isolation
-            partition_key: "${tenant_id}"
-
-            value_template: |
-              {
-                "event_type": "audit.user.action",
-                "event_version": "1.0.0",
-                "timestamp": "${timestamp}",
-                "tenant_id": "${tenant_id}",
-                "user_id": "${user_id}",
-                "actor": {
-                  "id": "${actor_id}",
-                  "type": "${actor_type}",
-                  "ip_address": "${ip_address}",
-                  "user_agent": "${user_agent}"
-                },
-                "action": {
-                  "type": "${action_type}",
-                  "resource": "${resource}",
-                  "resource_id": "${resource_id}",
-                  "operation": "${operation}",
-                  "result": "${result}",
-                  "reason": "${reason}"
-                },
-                "metadata": {
-                  "correlation_id": "${correlation_id}",
-                  "session_id": "${session_id}",
-                  "request_id": "${request_id}"
-                }
-              }
-
-            headers:
-              X-Correlation-ID: "${correlation_id}"
-              X-Schema-Version: "1.0.0"
-              X-Event-Type: "audit"
-              X-Tenant-ID: "${tenant_id}"
-              X-Compliance-Required: "true"
-
-            serialization_format: json
-
-          partitioning:
-            strategy: key_hash
+        # No compression for audit logs (prioritize integrity)
+        compression: none
 
       # Aggressive retry for audit logs
       retry_policy:

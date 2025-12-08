@@ -26,6 +26,15 @@
 # - Path templating from input data
 # - Permission handling
 #
+# DATA PROTECTION NOTE:
+# This example stores document content that may contain user-generated data.
+# When implementing in production:
+# - Ensure compliance with applicable data protection regulations (GDPR, CCPA, etc.)
+# - Implement appropriate filesystem access controls and permissions
+# - Consider encryption at rest for sensitive documents
+# - Implement proper backup and retention policies
+# - Review and follow your organization's data handling policies
+#
 # v1.0 Contract Schema Version
 # ============================================================================
 

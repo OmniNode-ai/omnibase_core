@@ -168,6 +168,30 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                 context={"node_id": str(self.node_id)},
             )
 
+        # Transform effect_subcontract.operations into operation_data format
+        # The mixin expects operations in input_data.operation_data["operations"]
+        if "operations" not in input_data.operation_data:
+            # Serialize subcontract operations to the format expected by the mixin
+            operations: list[dict[str, object]] = []
+            for op in self.effect_subcontract.operations:
+                op_dict: dict[str, object] = {
+                    "operation_name": op.operation_name,
+                    "io_config": (
+                        op.io_config.model_dump()
+                        if hasattr(op.io_config, "model_dump")
+                        else op.io_config
+                    ),
+                    "operation_timeout_ms": (
+                        op.operation_timeout_ms
+                        or self.effect_subcontract.default_retry_policy.max_delay_ms
+                    ),
+                }
+                operations.append(op_dict)
+
+            # Create new input_data with operations populated
+            updated_operation_data = {**input_data.operation_data, "operations": operations}
+            input_data = input_data.model_copy(update={"operation_data": updated_operation_data})
+
         # Delegate to mixin's execute_effect which handles:
         # - Sequential operation execution
         # - Template resolution
@@ -181,11 +205,11 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         """
         Get or create circuit breaker for an operation.
 
-        Circuit breakers are keyed by operation correlation_id and maintain
+        Circuit breakers are keyed by operation_id and maintain
         process-local state for failure tracking and recovery.
 
         Args:
-            operation_id: Operation identifier (typically correlation_id UUID)
+            operation_id: Unique identifier for the operation being protected
 
         Returns:
             ModelCircuitBreaker instance for the operation

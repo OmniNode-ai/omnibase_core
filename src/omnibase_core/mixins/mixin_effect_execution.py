@@ -128,11 +128,27 @@ class MixinEffectExecution:
         """
         Initialize effect execution mixin.
 
+        MRO Initialization:
+            This method uses cooperative multiple inheritance via super().__init__().
+            The mixing class (e.g., NodeEffect) should be listed BEFORE this mixin
+            in the inheritance chain to ensure proper MRO resolution.
+
+            Example correct order:
+                class MyEffectNode(NodeEffect, MixinEffectExecution):
+                    pass  # NodeEffect.__init__ called first, then mixin
+
+            The mixin initializes _circuit_breakers after calling super().__init__()
+            to ensure all base class initialization completes first. This is safe
+            because _circuit_breakers is only accessed by mixin methods, not by
+            the base class.
+
         Args:
-            **kwargs: Passed to super().__init__()
+            **kwargs: Passed to super().__init__() for cooperative MRO.
         """
         super().__init__(**kwargs)
         # Circuit breaker state: correlation_id -> ModelCircuitBreaker
+        # Initialized after super().__init__() to ensure base class setup completes first.
+        # Thread Safety: NOT thread-safe - see class docstring for details.
         self._circuit_breakers: dict[UUID, ModelCircuitBreaker] = {}
 
     async def execute_effect(self, input_data: ModelEffectInput) -> ModelEffectOutput:
@@ -143,14 +159,44 @@ class MixinEffectExecution:
         It orchestrates sequential operations with abort-on-first-failure
         semantics, retry policies, circuit breakers, and transaction management.
 
+        Operation Data Population (IMPORTANT):
+            This method expects operations to be provided in input_data.operation_data
+            under the "operations" key. The calling code (typically NodeEffect.process())
+            is responsible for populating this data, which may include:
+
+            1. Transforming effect_subcontract.operations into operation_data["operations"]
+            2. Merging runtime parameters with static contract definitions
+            3. Applying any preprocessing or validation
+
+            This design separates the MIXIN (execution logic) from the NODE (contract
+            binding). The mixin is contract-agnostic and works with raw operation_data,
+            while the node handles the contract-to-data transformation.
+
+            Expected operation_data structure:
+                {
+                    "operations": [
+                        {
+                            "io_config": {
+                                "handler_type": "http",
+                                "url_template": "...",
+                                ...
+                            },
+                            "operation_timeout_ms": 60000
+                        }
+                    ],
+                    ... # Additional context for template resolution
+                }
+
         Thread Safety:
             Not thread-safe due to circuit breaker state. Use from single
             thread or with explicit synchronization.
 
         Args:
-            input_data: Effect input containing operation configuration,
-                retry policies, circuit breaker settings, and transaction
-                configuration.
+            input_data: Effect input containing operation configuration in
+                operation_data["operations"], retry policies, circuit breaker
+                settings, and transaction configuration. The caller is
+                responsible for populating operation_data from effect_subcontract
+                or other sources.
 
         Returns:
             ModelEffectOutput containing operation result, transaction state,
@@ -164,7 +210,12 @@ class MixinEffectExecution:
         Example:
             >>> input_data = ModelEffectInput(
             ...     effect_type=EnumEffectType.API_CALL,
-            ...     operation_data={"url": "https://api.example.com"},
+            ...     operation_data={
+            ...         "operations": [{
+            ...             "io_config": {"handler_type": "http", "url_template": "..."},
+            ...             "operation_timeout_ms": 30000
+            ...         }]
+            ...     },
             ...     retry_enabled=True,
             ...     max_retries=3,
             ... )
@@ -422,12 +473,21 @@ class MixinEffectExecution:
             )
 
         elif isinstance(io_config, ModelFilesystemIOConfig):
+            # For filesystem operations, content is NOT resolved here.
+            # Write operation content should be provided in input_data.operation_data
+            # under a key like "file_content" or "content", and the handler is
+            # responsible for extracting it. This separation allows:
+            # 1. Large content to bypass template resolution overhead
+            # 2. Binary content that cannot be templated
+            # 3. Content from external sources (e.g., file uploads)
+            # The handler receives the full input_data.operation_data and can
+            # access content directly via context or by convention.
             return ModelResolvedFilesystemContext(
                 file_path=TEMPLATE_PATTERN.sub(
                     resolve_template, io_config.file_path_template
                 ),
                 operation=io_config.operation,
-                content=None,  # Content is resolved separately for write operations
+                content=None,  # Handler resolves content from input_data.operation_data
                 timeout_ms=io_config.timeout_ms,
                 atomic=io_config.atomic,
                 create_dirs=io_config.create_dirs,
@@ -518,6 +578,17 @@ class MixinEffectExecution:
             - Record success/failure after each attempt
             - Fast-fail if circuit is open
 
+        Retry Count Semantic:
+            The returned retry_count represents the number of FAILED ATTEMPTS
+            before success or final failure. Specifically:
+            - If operation succeeds on first try: retry_count = 0
+            - If operation fails once, succeeds on retry: retry_count = 1
+            - If operation fails all attempts: retry_count = max_retries + 1
+
+            This semantic counts "how many times did we fail" rather than
+            "how many retries did we perform", which is useful for metrics
+            and debugging to understand the reliability of the operation.
+
         Thread Safety:
             Not thread-safe due to circuit breaker state access.
 
@@ -527,7 +598,8 @@ class MixinEffectExecution:
             operation_timeout_ms: Overall operation timeout including all retries.
 
         Returns:
-            Tuple of (result, retry_count).
+            Tuple of (result, retry_count) where retry_count is the number of
+            failed attempts before success (0 if succeeded on first try).
 
         Raises:
             ModelOnexError: On operation failure or timeout.
@@ -619,9 +691,33 @@ class MixinEffectExecution:
         Execute single operation by dispatching to appropriate handler.
 
         Handler Dispatch:
-            - Handlers are resolved via container.get_service("ProtocolEffectHandler")
+            - Handlers are resolved via container.get_service() using protocol naming
+            - Protocol names follow pattern: "ProtocolEffectHandler_{TYPE}" where TYPE
+              is the uppercase handler type (HTTP, DB, KAFKA, FILESYSTEM)
             - Handlers receive fully-resolved context (no template placeholders)
             - Handlers return raw result (dict, list, string, etc.)
+
+        Handler Registration (IMPORTANT - Extensibility Point):
+            This mixin expects handlers to be registered in the container by the
+            implementing application. The handler protocols are NOT defined in
+            omnibase_core itself - they are an extensibility point.
+
+            To use this mixin, the implementing application MUST:
+            1. Define handler protocols (e.g., ProtocolEffectHandler_HTTP)
+            2. Implement handler classes that satisfy those protocols
+            3. Register handlers in the container before effect execution
+
+            Example registration in application code:
+                container.register_service(
+                    "ProtocolEffectHandler_HTTP",
+                    HttpEffectHandler()
+                )
+
+            Handler Protocol Contract:
+                async def execute(context: ResolvedIOContext) -> Any
+
+            If no handler is registered for a handler type, a ModelOnexError will
+            be raised with HANDLER_EXECUTION_ERROR code.
 
         Thread Safety:
             Thread-safe if handlers are thread-safe. Handlers should be
@@ -635,10 +731,14 @@ class MixinEffectExecution:
             Operation result (type depends on handler).
 
         Raises:
-            ModelOnexError: On handler execution failure.
+            ModelOnexError: On handler execution failure or if handler protocol
+                is not registered in the container.
         """
         try:
             # Resolve handler from container based on handler_type
+            # NOTE: Handler protocols (e.g., ProtocolEffectHandler_HTTP) are NOT defined
+            # in omnibase_core. They are an extensibility point - implementing applications
+            # must register their own handlers. See docstring for registration details.
             handler_type = resolved_context.handler_type
             handler_protocol = f"ProtocolEffectHandler_{handler_type.value.upper()}"
 

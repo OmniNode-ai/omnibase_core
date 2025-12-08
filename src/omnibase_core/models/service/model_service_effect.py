@@ -96,7 +96,7 @@ class ModelServiceEffect(  # type: ignore[misc]
     - Performance metrics (MixinMetrics)
 
     Method Resolution Order (MRO):
-        ModelServiceEffect → MixinNodeService → NodeEffect → MixinHealthCheck
+        ModelServiceEffect → MixinNodeService → NodeEffectLegacy → MixinHealthCheck
         → MixinEventBus → MixinMetrics → NodeCoreBase → ABC
 
     This composition is optimized for:

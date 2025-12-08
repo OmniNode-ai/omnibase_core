@@ -28,6 +28,17 @@
 # - Error handling and fallback strategies
 # - Rate limiting and throttling
 #
+# DATA PROTECTION NOTE:
+# This example includes fields that may contain Personally Identifiable Information (PII)
+# and Payment Card Industry (PCI) data such as customer_email, payment_method_token,
+# and transaction details. When implementing in production:
+# - Ensure PCI-DSS compliance for payment data handling
+# - Ensure compliance with applicable data protection regulations (GDPR, CCPA, etc.)
+# - Never log payment tokens, card details, or sensitive customer data
+# - Implement appropriate encryption for data in transit and at rest
+# - Follow tokenization best practices for payment methods
+# - Review and follow your organization's data handling and PCI compliance policies
+#
 # v1.0 Contract Schema Version
 # ============================================================================
 
@@ -105,63 +116,56 @@ effect_operations:
     - operation_name: process_payment
       description: "Processes payment through external gateway with full resilience"
 
+      # NOTE: Uses flat structure matching ModelHttpIOConfig schema
+      # Fields are direct children of io_config (no http_config wrapper)
       io_config:
         handler_type: http
 
-        http_config:
-          method: POST
-          url: "https://api.payment-gateway.example.com/v1/payments"
+        method: POST
 
-          headers:
-            Content-Type: "application/json"
-            Accept: "application/json"
-            Authorization: "Bearer ${payment_api_token}"
-            X-Correlation-ID: "${correlation_id}"
-            # Idempotency key for safe retries
-            X-Idempotency-Key: "${idempotency_key}"
-            # Request ID for tracing
-            X-Request-ID: "${request_id}"
-            # API version
-            X-API-Version: "2024-01"
+        url_template: "https://api.payment-gateway.example.com/v1/payments"
 
-          body_template: |
-            {
-              "amount": ${amount_cents},
-              "currency": "${currency}",
-              "payment_method": {
-                "type": "${payment_method_type}",
-                "token": "${payment_method_token}"
-              },
-              "customer": {
-                "id": "${customer_id}",
-                "email": "${customer_email}"
-              },
-              "order": {
-                "id": "${order_id}",
-                "description": "${order_description}"
-              },
-              "metadata": {
-                "tenant_id": "${tenant_id}",
-                "user_id": "${user_id}",
-                "correlation_id": "${correlation_id}"
-              }
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+          Authorization: "Bearer ${input.payment_api_token}"
+          X-Correlation-ID: "${input.correlation_id}"
+          # Idempotency key for safe retries
+          X-Idempotency-Key: "${input.idempotency_key}"
+          # Request ID for tracing
+          X-Request-ID: "${input.request_id}"
+          # API version
+          X-API-Version: "2024-01"
+
+        body_template: |
+          {
+            "amount": ${input.amount_cents},
+            "currency": "${input.currency}",
+            "payment_method": {
+              "type": "${input.payment_method_type}",
+              "token": "${input.payment_method_token}"
+            },
+            "customer": {
+              "id": "${input.customer_id}",
+              "email": "${input.customer_email}"
+            },
+            "order": {
+              "id": "${input.order_id}",
+              "description": "${input.order_description}"
+            },
+            "metadata": {
+              "tenant_id": "${input.tenant_id}",
+              "user_id": "${input.user_id}",
+              "correlation_id": "${input.correlation_id}"
             }
+          }
 
-          # Request timeout (shorter than operation timeout)
-          timeout_ms: 15000
+        # Request timeout (shorter than operation timeout)
+        timeout_ms: 15000
 
-          # Connection settings
-          connection:
-            # Connection timeout (time to establish connection)
-            connect_timeout_ms: 5000
+        follow_redirects: true
 
-            # Read timeout (time to receive response)
-            read_timeout_ms: 10000
-
-            # Connection pool settings
-            pool_size: 20
-            max_idle_connections: 10
-            idle_timeout_ms: 60000
+        verify_ssl: true
 
       # Circuit breaker for this specific operation
       circuit_breaker:
@@ -208,7 +212,7 @@ effect_operations:
 
         # Add jitter to prevent thundering herd
         jitter: true
-        jitter_factor: 0.2  # ±20% randomization
+        jitter_factor: 0.2  # +/-20% randomization
 
         # HTTP status codes that should trigger retry
         retryable_status_codes:
@@ -335,49 +339,56 @@ effect_operations:
     - operation_name: verify_payment_status
       description: "Verifies payment status with polling and resilience"
 
+      # NOTE: Uses flat structure matching ModelHttpIOConfig schema
       io_config:
         handler_type: http
 
-        http_config:
-          method: GET
-          # URL with transaction ID from previous operation
-          url: "https://api.payment-gateway.example.com/v1/payments/${transaction_id}"
+        method: GET
 
-          headers:
-            Accept: "application/json"
-            Authorization: "Bearer ${payment_api_token}"
-            X-Correlation-ID: "${correlation_id}"
-            X-Request-ID: "${request_id}"
+        # URL with transaction ID from previous operation
+        url_template: "https://api.payment-gateway.example.com/v1/payments/${input.transaction_id}"
 
-          timeout_ms: 10000
+        headers:
+          Accept: "application/json"
+          Authorization: "Bearer ${input.payment_api_token}"
+          X-Correlation-ID: "${input.correlation_id}"
+          X-Request-ID: "${input.request_id}"
 
-          # Polling configuration for async operations
-          polling:
-            enabled: true
+        # No body_template for GET requests
 
-            # Maximum polling attempts
-            max_attempts: 10
+        timeout_ms: 10000
 
-            # Polling interval (milliseconds)
-            interval_ms: 2000
+        follow_redirects: true
 
-            # Exponential backoff for polling
-            backoff_strategy: exponential
-            backoff_multiplier: 1.5
-            max_interval_ms: 10000
+        verify_ssl: true
 
-            # Stop polling conditions
-            stop_conditions:
-              # Stop if status is terminal
-              response_field_equals:
-                field: "$.status"
-                values:
-                  - "succeeded"
-                  - "failed"
-                  - "cancelled"
+      # Polling configuration for async operations (application-level, not in io_config)
+      polling:
+        enabled: true
 
-              # Stop if error occurred
-              response_has_error: true
+        # Maximum polling attempts
+        max_attempts: 10
+
+        # Polling interval (milliseconds)
+        interval_ms: 2000
+
+        # Exponential backoff for polling
+        backoff_strategy: exponential
+        backoff_multiplier: 1.5
+        max_interval_ms: 10000
+
+        # Stop polling conditions
+        stop_conditions:
+          # Stop if status is terminal
+          response_field_equals:
+            field: "$.status"
+            values:
+              - "succeeded"
+              - "failed"
+              - "cancelled"
+
+          # Stop if error occurred
+          response_has_error: true
 
       circuit_breaker:
         enabled: true
@@ -442,99 +453,49 @@ effect_operations:
     - operation_name: record_payment_transaction
       description: "Records payment in database with transaction and resilience"
 
+      # NOTE: Uses flat structure matching ModelDbIOConfig schema
+      # Fields are direct children of io_config (no db_config wrapper)
       io_config:
         handler_type: db
 
-        db_config:
-          query: |
-            INSERT INTO payment_transactions (
-              transaction_id,
-              order_id,
-              customer_id,
-              amount_cents,
-              currency,
-              status,
-              gateway_reference,
-              created_at,
-              completed_at,
-              metadata
-            ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-            )
-            RETURNING id, created_at
+        operation: insert
 
-          query_params:
-            - param_name: "transaction_id"
-              source: "previous_operation"
-              operation: "process_payment"
-              field: "transaction_id"
-              type: "string"
+        connection_name: "payment_db_pool"
 
-            - param_name: "order_id"
-              source: "operation_data"
-              field: "order_id"
-              type: "uuid"
+        query_template: |
+          INSERT INTO payment_transactions (
+            transaction_id,
+            order_id,
+            customer_id,
+            amount_cents,
+            currency,
+            status,
+            gateway_reference,
+            created_at,
+            completed_at,
+            metadata
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+          )
+          RETURNING id, created_at
 
-            - param_name: "customer_id"
-              source: "operation_data"
-              field: "customer_id"
-              type: "uuid"
+        # Parameters bound in order: $1=transaction_id, $2=order_id, etc.
+        # These reference data from previous operations and current input
+        query_params:
+          - "${previous.process_payment.transaction_id}"
+          - "${input.order_id}"
+          - "${input.customer_id}"
+          - "${previous.verify_payment_status.final_amount_cents}"
+          - "${input.currency}"
+          - "${previous.verify_payment_status.payment_status}"
+          - "${previous.process_payment.gateway_reference}"
+          - "${previous.process_payment.created_at}"
+          - "${previous.verify_payment_status.completed_at}"
+          - "${input.metadata}"
 
-            - param_name: "amount_cents"
-              source: "previous_operation"
-              operation: "verify_payment_status"
-              field: "final_amount_cents"
-              type: "integer"
+        timeout_ms: 15000
 
-            - param_name: "currency"
-              source: "operation_data"
-              field: "currency"
-              type: "string"
-
-            - param_name: "status"
-              source: "previous_operation"
-              operation: "verify_payment_status"
-              field: "payment_status"
-              type: "string"
-
-            - param_name: "gateway_reference"
-              source: "previous_operation"
-              operation: "process_payment"
-              field: "gateway_reference"
-              type: "string"
-
-            - param_name: "created_at"
-              source: "previous_operation"
-              operation: "process_payment"
-              field: "created_at"
-              type: "timestamp"
-
-            - param_name: "completed_at"
-              source: "previous_operation"
-              operation: "verify_payment_status"
-              field: "completed_at"
-              type: "timestamp"
-
-            - param_name: "metadata"
-              source: "operation_data"
-              field: "metadata"
-              type: "jsonb"
-
-          query_type: INSERT
-
-          transaction:
-            enabled: true
-            isolation_level: READ_COMMITTED
-            auto_commit: true
-            timeout_ms: 15000
-
-          connection:
-            pool_name: "payment_db_pool"
-            timeout_ms: 5000
-            use_read_replica: false
-
-          query_timeout_ms: 15000
-          use_prepared_statement: true
+        read_only: false
 
       circuit_breaker:
         enabled: true
@@ -560,7 +521,7 @@ effect_operations:
           record_id: "$.id"
           created_at: "$.created_at"
 
-        store_full_response: true
+        store_full_result: true
         fail_on_empty: true
 
       observability:
@@ -589,59 +550,40 @@ effect_operations:
     - operation_name: publish_payment_event
       description: "Publishes payment event to Kafka with guaranteed delivery"
 
+      # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
+      # Fields are direct children of io_config (no kafka_config wrapper)
       io_config:
         handler_type: kafka
 
-        kafka_config:
-          producer:
-            bootstrap_servers:
-              - "kafka-1.example.com:9092"
-              - "kafka-2.example.com:9092"
-            client_id: "payment-service-producer"
+        topic: "payments.events.completed"
 
-            # Maximum durability
-            acks: all
-            enable_idempotence: true
-            max_in_flight_requests_per_connection: 5
+        payload_template: |
+          {
+            "event_type": "payment.completed",
+            "event_version": "1.0.0",
+            "timestamp": "${input.timestamp}",
+            "transaction_id": "${previous.process_payment.transaction_id}",
+            "order_id": "${input.order_id}",
+            "customer_id": "${input.customer_id}",
+            "amount_cents": ${previous.verify_payment_status.final_amount_cents},
+            "currency": "${input.currency}",
+            "status": "${previous.verify_payment_status.payment_status}",
+            "correlation_id": "${input.correlation_id}"
+          }
 
-            compression_type: snappy
-            batch_size: 16384
-            linger_ms: 10
+        partition_key_template: "${input.customer_id}"
 
-            request_timeout_ms: 30000
-            retries: 5
-            retry_backoff_ms: 100
+        headers:
+          X-Correlation-ID: "${input.correlation_id}"
+          X-Event-Type: "payment.completed"
+          X-Idempotency-Key: "${input.idempotency_key}"
 
-            security_protocol: SASL_SSL
-            sasl_mechanism: PLAIN
-            sasl_username: "${KAFKA_USERNAME}"
-            sasl_password: "${KAFKA_PASSWORD}"
+        timeout_ms: 30000
 
-          message:
-            topic: "payments.events.completed"
+        # Maximum durability
+        acks: "all"
 
-            partition_key: "${customer_id}"
-
-            value_template: |
-              {
-                "event_type": "payment.completed",
-                "event_version": "1.0.0",
-                "timestamp": "${timestamp}",
-                "transaction_id": "${transaction_id}",
-                "order_id": "${order_id}",
-                "customer_id": "${customer_id}",
-                "amount_cents": ${amount_cents},
-                "currency": "${currency}",
-                "status": "${payment_status}",
-                "correlation_id": "${correlation_id}"
-              }
-
-            headers:
-              X-Correlation-ID: "${correlation_id}"
-              X-Event-Type: "payment.completed"
-              X-Idempotency-Key: "${idempotency_key}"
-
-            serialization_format: json
+        compression: snappy
 
       circuit_breaker:
         enabled: true
