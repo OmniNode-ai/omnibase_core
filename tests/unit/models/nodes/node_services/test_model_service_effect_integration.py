@@ -221,6 +221,7 @@ class TestMROCorrectness:
 
 
 @pytest.mark.unit
+@pytest.mark.integration
 @pytest.mark.timeout(60)
 class TestServiceModeEventBusIntegration:
     """Test integration between service mode and EventBus mixin."""
@@ -305,6 +306,7 @@ class TestServiceModeEventBusIntegration:
 
 
 @pytest.mark.unit
+@pytest.mark.integration
 @pytest.mark.timeout(60)
 class TestServiceModeHealthCheckIntegration:
     """Test integration between service mode and HealthCheck mixin."""
@@ -369,6 +371,7 @@ class TestServiceModeHealthCheckIntegration:
 
 
 @pytest.mark.unit
+@pytest.mark.integration
 @pytest.mark.timeout(60)
 class TestServiceModeMetricsIntegration:
     """Test integration between service mode and Metrics mixin."""
@@ -435,6 +438,7 @@ class TestServiceModeMetricsIntegration:
 
 
 @pytest.mark.unit
+@pytest.mark.integration
 @pytest.mark.timeout(60)
 class TestToolInvocationEventPublishing:
     """Test tool invocation and event publishing integration."""
@@ -488,6 +492,7 @@ class TestToolInvocationEventPublishing:
 
 
 @pytest.mark.unit
+@pytest.mark.integration
 @pytest.mark.timeout(60)
 class TestEffectSemanticsServiceMode:
     """Test effect semantics (transaction management) in service mode."""
@@ -565,6 +570,7 @@ class TestEffectSemanticsServiceMode:
 
 
 @pytest.mark.unit
+@pytest.mark.integration
 @pytest.mark.timeout(60)
 class TestCircuitBreakerServiceMode:
     """Test circuit breaker integration in service mode."""
@@ -624,6 +630,7 @@ class TestCircuitBreakerServiceMode:
 
 
 @pytest.mark.unit
+@pytest.mark.integration
 @pytest.mark.timeout(60)
 class TestRetryLogicServiceMode:
     """Test retry logic integration in service mode."""
@@ -678,6 +685,7 @@ class TestRetryLogicServiceMode:
 
 
 @pytest.mark.unit
+@pytest.mark.integration
 @pytest.mark.timeout(60)
 class TestEndToEndWorkflow:
     """Test full end-to-end service workflow."""

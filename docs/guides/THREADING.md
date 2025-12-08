@@ -139,20 +139,98 @@ compute_node.computation_cache = ThreadSafeComputeCache(
 
 **Important Atomicity Note**: While the `ThreadSafeComputeCache` wrapper makes individual `get()` and `put()` operations thread-safe, the common cache pattern of "check cache → compute if missing → cache result" requires special handling. For atomic compute-and-cache operations, use the `compute_if_absent()` method (shown above), which holds the lock during the entire check-compute-cache sequence. Alternatively, use Option 1 (per-thread instances) to avoid coordination overhead entirely.
 
-## NodeEffect Thread Safety
+## NodeEffect and MixinEffectExecution Thread Safety
 
-### Circuit Breakers
+⚠️ **CRITICAL**: NodeEffect instances contain circuit breaker state that is **NOT thread-safe**.
 
-Circuit breaker state is **NOT thread-safe**:
+### Thread Safety Matrix
 
+| Component | Thread-Safe? | Action Required |
+|-----------|-------------|-----------------|
+| `NodeEffect` | ❌ No | Use separate instances per thread |
+| `MixinEffectExecution._circuit_breakers` | ❌ No | Process-local, single-thread only |
+| `MixinEffectExecution` methods | ⚠️ Stateless | Safe if called with thread-safe inputs |
+| `ModelEffectSubcontract` | ✅ Yes | Immutable after creation |
+| `ModelEffectInput` / `ModelEffectOutput` | ✅ Yes | Frozen Pydantic models |
+| `EffectIOConfig` models | ✅ Yes | Frozen Pydantic models |
+| `ModelCircuitBreaker` | ❌ No | Use locks or thread-local instances |
+| `ModelEffectTransaction` | ❌ No | Never share across threads |
+
+### Why NodeEffect is NOT Thread-Safe
+
+**Circuit Breaker State**:
+- Circuit breakers are stored in `_circuit_breakers` instance dictionary
+- Keyed by `operation_id` (UUID) for per-operation failure tracking
+- State includes failure counters, timestamps, and state transitions
+- No synchronization primitives (by design for performance)
+
+**State Race Conditions**:
 - `failure_count` increments are not atomic
 - `last_failure_time` updates can race
 - Multiple threads may incorrectly trip/reset breaker state
+- Dictionary updates (`_circuit_breakers[op_id] = breaker`) are not atomic
 
-**Impact**: Under concurrent load, circuit breakers may:
-- Fail to trip when they should (missed failures)
-- Trip prematurely (double-counted failures)
-- Reset incorrectly (race on success counter)
+**Impact Under Concurrent Load**:
+- Circuit breakers may fail to trip when they should (missed failures)
+- Circuit breakers may trip prematurely (double-counted failures)
+- Circuit breakers may reset incorrectly (race on success counter)
+- State corruption can lead to incorrect open/closed/half-open transitions
+
+### Mixin Method Safety
+
+The `MixinEffectExecution` mixin methods are **stateless** and operate on passed arguments:
+- `execute_effect()` - Safe if inputs are thread-safe
+- `_resolve_io_context()` - Pure function, thread-safe
+- `_parse_io_config()` - Pure function, thread-safe
+- `_extract_field()` - Pure function, thread-safe
+
+**However**, these methods access `self._circuit_breakers`, making the **overall operation NOT thread-safe**.
+
+### Usage Patterns
+
+**❌ WRONG - Sharing NodeEffect Across Threads**
+
+```python
+# UNSAFE - Circuit breaker state will be corrupted
+node = NodeEffect(container)
+node.effect_subcontract = subcontract
+
+async def worker_1():
+    await node.process(input_1)  # Race on _circuit_breakers!
+
+async def worker_2():
+    await node.process(input_2)  # Race on _circuit_breakers!
+
+# Both threads share the same _circuit_breakers dict
+# Concurrent access will corrupt circuit breaker state
+```
+
+**✅ CORRECT - Separate Instance Per Thread**
+
+```python
+import threading
+from omnibase_core.nodes import NodeEffect
+
+# Thread-local storage for NodeEffect instances
+thread_local = threading.local()
+
+def get_effect_node(container, subcontract):
+    """Get or create thread-local NodeEffect instance."""
+    if not hasattr(thread_local, 'effect_node'):
+        node = NodeEffect(container)
+        node.effect_subcontract = subcontract
+        thread_local.effect_node = node
+    return thread_local.effect_node
+
+# Each thread gets its own instance with isolated circuit breaker state
+async def worker_1():
+    node = get_effect_node(my_container, my_subcontract)
+    await node.process(input_1)  # No race - separate instance
+
+async def worker_2():
+    node = get_effect_node(my_container, my_subcontract)
+    await node.process(input_2)  # No race - separate instance
+```
 
 ### Mitigation Options
 
@@ -160,9 +238,9 @@ Circuit breaker state is **NOT thread-safe**:
 
 Design effects to run sequentially using semaphores or queues:
 
-```
+```python
 import asyncio
-from omnibase_core.nodes.node_effect import NodeEffect
+from omnibase_core.nodes import NodeEffect
 
 class SingleThreadedEffectNode(NodeEffect):
     """NodeEffect that enforces sequential execution."""
@@ -177,13 +255,38 @@ class SingleThreadedEffectNode(NodeEffect):
             return await super().process(input_data)
 ```
 
-**Option 2: Per-Thread Circuit Breakers**
+**Option 2: Per-Thread NodeEffect Instances (Recommended)**
+
+Use thread-local storage to ensure each thread has its own NodeEffect:
+
+```python
+import threading
+from omnibase_core.nodes import NodeEffect
+
+# Thread-local storage
+thread_local = threading.local()
+
+def get_thread_local_effect(container, subcontract):
+    """Get or create thread-local NodeEffect instance."""
+    if not hasattr(thread_local, 'effect_node'):
+        node = NodeEffect(container)
+        node.effect_subcontract = subcontract
+        thread_local.effect_node = node
+    return thread_local.effect_node
+
+# Usage
+async def process_effect(input_data):
+    node = get_thread_local_effect(my_container, my_subcontract)
+    return await node.process(input_data)
+```
+
+**Option 3: Per-Thread Circuit Breakers (Advanced)**
 
 Use thread-local circuit breakers for isolated failure tracking:
 
-```
+```python
 import threading
-from omnibase_core.models.infrastructure.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 class ThreadLocalCircuitBreakerManager:
     """Manages thread-local circuit breakers."""
@@ -202,14 +305,14 @@ class ThreadLocalCircuitBreakerManager:
         return self._thread_local.breakers[service_name]
 ```
 
-**Option 3: Atomic Counters with Locks**
+**Option 4: Atomic Counters with Locks (Advanced)**
 
 Add synchronization to circuit breaker operations:
 
-```
+```python
 from threading import Lock
-from omnibase_core.models.infrastructure.model_circuit_breaker import ModelCircuitBreaker
-from omnibase_core.enums.enum_effect_types import EnumCircuitBreakerState
+from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 
 class ThreadSafeCircuitBreaker:
     """Thread-safe wrapper for ModelCircuitBreaker.
@@ -242,6 +345,13 @@ class ThreadSafeCircuitBreaker:
         with self._lock:
             return self._breaker.state
 ```
+
+### Architecture Reference
+
+For complete details on NodeEffect architecture and circuit breaker implementation:
+- [CONTRACT_DRIVEN_NODEEFFECT_V1_0.md](../architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md) - Full specification
+- [NodeEffect](../../src/omnibase_core/nodes/node_effect.py) - Implementation
+- [MixinEffectExecution](../../src/omnibase_core/mixins/mixin_effect_execution.py) - Execution mixin
 
 ## Transaction Thread Safety
 
@@ -500,10 +610,18 @@ See `tests/unit/test_thread_safety.py` for examples of:
 | ModelONEXContainer | ✅ Yes (read-only) | None needed after init |
 | ModelComputeOutput | ✅ Yes (frozen=True) | None needed |
 | ModelReducerOutput | ✅ Yes (frozen=True) | None needed |
+| ModelEffectInput/Output | ✅ Yes (frozen=True) | None needed |
+| EffectIOConfig models | ✅ Yes (frozen=True) | None needed |
 | ModelComputeCache | ❌ No | Use locks or thread-local instances |
 | ModelCircuitBreaker | ❌ No | Use locks or thread-local instances |
 | ModelEffectTransaction | ❌ No | Never share across threads |
 | NodeCompute instances | ❌ No | Thread-local instances or locked cache |
-| NodeEffect instances | ❌ No | Sequential execution or thread-local |
+| NodeEffect instances | ❌ No | Thread-local instances (recommended) |
+| MixinEffectExecution._circuit_breakers | ❌ No | Process-local, single-thread only |
 
 **Default Assumption**: Unless explicitly documented as thread-safe, assume components require synchronization for concurrent use.
+
+**Key References**:
+- NodeEffect: [node_effect.py](../../src/omnibase_core/nodes/node_effect.py)
+- MixinEffectExecution: [mixin_effect_execution.py](../../src/omnibase_core/mixins/mixin_effect_execution.py)
+- NodeEffect Architecture: [CONTRACT_DRIVEN_NODEEFFECT_V1_0.md](../architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md)

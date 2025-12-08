@@ -33,6 +33,8 @@
 # - Consider data masking or encryption for sensitive fields
 # - Review and follow your organization's data handling policies
 #
+# 📚 For comprehensive security guidance, see: SECURITY.md in this directory
+#
 # v1.0 Contract Schema Version
 # ============================================================================
 

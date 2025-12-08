@@ -134,17 +134,17 @@ class MixinEffectExecution:
             in the inheritance chain to ensure proper MRO resolution.
 
             Correct MRO order:
-                class MyEffectNode(NodeEffect, MixinEffectExecution):
-                    pass  # NodeEffect.__init__ called first via super(), then mixin
+                class NodeEffect(NodeCoreBase, MixinEffectExecution):
+                    pass  # NodeCoreBase.__init__ called first via super(), then mixin
 
             Incorrect MRO order (will likely fail):
-                class MyEffectNode(MixinEffectExecution, NodeEffect):
+                class NodeEffect(MixinEffectExecution, NodeCoreBase):
                     pass  # Mixin called first, may not have container initialized
 
             The MRO determines __init__ call order. With correct ordering:
-            1. MyEffectNode.__init__ calls super().__init__()
-            2. Python's MRO calls NodeEffect.__init__ (sets up container, node_id)
-            3. NodeEffect.__init__ calls super().__init__()
+            1. NodeEffect.__init__ calls super().__init__()
+            2. Python's MRO calls NodeCoreBase.__init__ (sets up container, node_id)
+            3. NodeCoreBase.__init__ calls super().__init__()
             4. MixinEffectExecution.__init__ is called (initializes _circuit_breakers)
             5. MixinEffectExecution calls super().__init__() (reaches object)
 
@@ -265,7 +265,8 @@ class MixinEffectExecution:
 
             # Parse operation configuration
             io_config = self._parse_io_config(operation_config)
-            operation_timeout_ms = operation_config.get("operation_timeout_ms", 60000)
+            # Default to 60000ms (60s) if not provided or None
+            operation_timeout_ms = operation_config.get("operation_timeout_ms") or 60000
 
             # Resolve IO context from templates
             resolved_context = self._resolve_io_context(io_config, input_data)
@@ -424,6 +425,9 @@ class MixinEffectExecution:
                 )
 
         # Resolve based on handler type
+        # NOTE: isinstance checks are required here (not duck typing) because io_config
+        # is a Pydantic discriminated union (EffectIOConfig). Type narrowing via isinstance
+        # allows proper access to model-specific attributes and mypy type checking.
         if isinstance(io_config, ModelHttpIOConfig):
             return ModelResolvedHttpContext(
                 url=TEMPLATE_PATTERN.sub(resolve_template, io_config.url_template),

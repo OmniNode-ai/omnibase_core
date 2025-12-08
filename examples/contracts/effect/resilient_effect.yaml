@@ -39,6 +39,8 @@
 # - Follow tokenization best practices for payment methods
 # - Review and follow your organization's data handling and PCI compliance policies
 #
+# 📚 For comprehensive security guidance, see: SECURITY.md in this directory
+#
 # v1.0 Contract Schema Version
 # ============================================================================
 

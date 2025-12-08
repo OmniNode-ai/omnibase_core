@@ -110,7 +110,7 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
     Thread Safety:
         - Circuit breaker state is process-local and NOT thread-safe
         - Each thread should have its own NodeEffect instance
-        - See docs/THREADING.md for guidelines
+        - See docs/guides/THREADING.md for guidelines
 
     See Also:
         - :class:`MixinEffectExecution`: Provides execute_effect() implementation
@@ -188,6 +188,7 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                     "operation_timeout_ms": (
                         op.operation_timeout_ms
                         or self.effect_subcontract.default_retry_policy.max_delay_ms
+                        or 30000  # Default 30s timeout if both are None
                     ),
                     # Include response handling for field extraction
                     "response_handling": (

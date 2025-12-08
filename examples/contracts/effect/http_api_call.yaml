@@ -32,6 +32,8 @@
 # - Consider data masking for sensitive fields in observability outputs
 # - Review and follow your organization's data handling policies
 #
+# 📚 For comprehensive security guidance, see: SECURITY.md in this directory
+#
 # v1.0 Contract Schema Version
 # ============================================================================
 
