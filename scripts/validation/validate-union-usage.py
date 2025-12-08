@@ -20,6 +20,16 @@ from typing import Any
 class UnionLegitimacyValidator:
     """Validates the legitimacy of union patterns based on ONEX standards."""
 
+    # Pre-compiled regex patterns for performance
+    # Pattern to match Field(..., discriminator="...") with flexible parameter order
+    FIELD_DISCRIMINATOR_PATTERN = re.compile(
+        r'Field\s*\([^)]*discriminator\s*=\s*["\'][^"\']+["\']'
+    )
+    # Pattern to match field_name: Literal["type1", "type2", ...]
+    LITERAL_DISCRIMINATOR_PATTERN = re.compile(r":\s*Literal\[([^\]]+)\]")
+    # Pattern to extract quoted string values from Literal types
+    LITERAL_VALUE_PATTERN = re.compile(r'["\'](\w+)["\']')
+
     def __init__(self):
         # Legitimate union patterns
         self.legitimate_patterns = {
@@ -127,15 +137,9 @@ class UnionLegitimacyValidator:
         has_companion_literal_discriminator = False
         if file_content:
             # Look for Field(discriminator="field_name") pattern near the union
-            import re
-
-            # Pattern to match Field(..., discriminator="...") with flexible parameter order
-            # Matches: Field(discriminator="...") or Field(..., discriminator="...") or Field(..., discriminator='...')
-            discriminator_pattern = (
-                r'Field\s*\([^)]*discriminator\s*=\s*["\'][^"\']+["\']'
-            )
+            # Uses pre-compiled FIELD_DISCRIMINATOR_PATTERN for performance
             has_field_discriminator = bool(
-                re.search(discriminator_pattern, file_content)
+                self.FIELD_DISCRIMINATOR_PATTERN.search(file_content)
             )
 
             # Check for companion Literal discriminator field in the file
@@ -143,22 +147,30 @@ class UnionLegitimacyValidator:
             # This detects patterns like:
             #   value: Union[bool, dict, float, int, list, str]
             #   value_type: Literal["bool", "dict", "float", "int", "list", "str"]
-            literal_discriminator_pattern = r":\s*Literal\[([^\]]+)\]"
-            literal_matches = re.findall(literal_discriminator_pattern, file_content)
+            # Uses pre-compiled LITERAL_DISCRIMINATOR_PATTERN for performance
+            literal_matches = self.LITERAL_DISCRIMINATOR_PATTERN.findall(file_content)
             for match in literal_matches:
                 # Extract literal string values from the match
-                literal_values = re.findall(r'["\'](\w+)["\']', match)
+                # Uses pre-compiled LITERAL_VALUE_PATTERN for performance
+                literal_values = self.LITERAL_VALUE_PATTERN.findall(match)
                 if literal_values:
                     # Normalize union type names for comparison
                     # Handle types like "dict[str, Any]" -> "dict", "list[Any]" -> "list"
                     union_type_names = set()
                     for t in pattern.types:
+                        # Defensive handling for edge cases
+                        if not t or not isinstance(t, str):
+                            continue
                         # Extract base type name (before [ if subscripted)
-                        base_type = t.split("[")[0].lower()
-                        union_type_names.add(base_type)
+                        base_type = t.split("[")[0].strip().lower()
+                        if base_type:  # Only add non-empty base types
+                            union_type_names.add(base_type)
 
                     # Convert literal values to lowercase for comparison
-                    literal_values_lower = {v.lower() for v in literal_values}
+                    # Defensive handling for edge cases in literal values
+                    literal_values_lower = {
+                        v.lower() for v in literal_values if v and isinstance(v, str)
+                    }
 
                     # If Literal values overlap significantly with union types, it's a discriminator
                     # Require at least 3 matching values OR majority match for smaller unions

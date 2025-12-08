@@ -13,7 +13,16 @@ Pydantic model for semantic versioning following SemVer specification.
 
 
 class ModelSemVer(BaseModel):
-    """Semantic version model following SemVer specification."""
+    """
+    Semantic version model following SemVer specification.
+
+    Preferred usage (structured format):
+        >>> version = ModelSemVer(major=1, minor=2, patch=3)
+        >>> assert str(version) == "1.2.3"
+
+    For parsing external input, use the parse() class method:
+        >>> version = ModelSemVer.parse("1.2.3")
+    """
 
     major: int = Field(ge=0, description="Major version number")
     minor: int = Field(ge=0, description="Minor version number")
@@ -100,15 +109,18 @@ class ModelSemVer(BaseModel):
         """
         Parse semantic version string into ModelSemVer (class method alias).
 
+        Note: For new code, prefer direct construction:
+            >>> version = ModelSemVer(major=1, minor=2, patch=3)
+
+        This method is primarily for parsing external input:
+            >>> version = ModelSemVer.parse("1.2.3")
+            >>> assert version.major == 1
+
         Args:
             version_str: Semantic version string (e.g., "1.2.3")
 
         Returns:
             ModelSemVer instance
-
-        Example:
-            >>> version = ModelSemVer.parse("1.2.3")
-            >>> assert version.major == 1
         """
         return parse_semver_from_string(version_str)
 

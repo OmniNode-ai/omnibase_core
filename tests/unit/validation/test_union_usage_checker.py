@@ -547,3 +547,393 @@ def func(x: str | int) -> None:
 
         # Different types
         assert pattern1 != pattern3
+
+
+class TestCompanionLiteralDiscriminatorDetection:
+    """Test companion Literal discriminator detection for discriminated unions.
+
+    Tests the new feature from PR #134 that detects patterns like:
+        value: Union[bool, dict, float, int, list, str]
+        value_type: Literal["bool", "dict", "float", "int", "list", "str"]
+
+    This tests the _is_discriminated_union method in UnionLegitimacyValidator.
+    """
+
+    def test_basic_companion_literal_detection(self):
+        """Test basic detection of companion Literal discriminator field."""
+        # Import the validation script classes
+        import sys
+        from pathlib import Path
+
+        # Add scripts path to import the validator
+        scripts_path = Path("/workspace/omnibase_core/scripts/validation")
+        sys.path.insert(0, str(scripts_path))
+
+        # Import using exec to avoid module naming issues
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "validate_union_usage",
+            scripts_path / "validate-union-usage.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        UnionPattern = module.UnionPattern
+        UnionLegitimacyValidator = module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        pattern = UnionPattern(
+            ["bool", "dict", "float", "int", "list", "str"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # File content with companion Literal discriminator
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, dict, float, int, list, str]
+    value_type: Literal["bool", "dict", "float", "int", "list", "str"]
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        assert result is True, "Should detect companion Literal discriminator"
+
+    def test_partial_overlap_insufficient_match(self):
+        """Test that partial overlap below threshold is not detected as discriminated."""
+        import sys
+        from pathlib import Path
+
+        scripts_path = Path("/workspace/omnibase_core/scripts/validation")
+        sys.path.insert(0, str(scripts_path))
+
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "validate_union_usage",
+            scripts_path / "validate-union-usage.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        UnionPattern = module.UnionPattern
+        UnionLegitimacyValidator = module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        # Union with 6 types
+        pattern = UnionPattern(
+            ["bool", "dict", "float", "int", "list", "str"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # Literal with only 1 matching type (below threshold of 3)
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, dict, float, int, list, str]
+    other_field: Literal["foo", "bar", "bool"]
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        # Should not detect as discriminated - only 1 overlap ("bool")
+        # Threshold is min(3, 6 // 2 + 1) = min(3, 4) = 3
+        assert result is False, "Should not detect with insufficient overlap"
+
+    def test_type_normalization_dict_with_type_params(self):
+        """Test that types like dict[str, Any] are normalized to 'dict' for comparison."""
+        import sys
+        from pathlib import Path
+
+        scripts_path = Path("/workspace/omnibase_core/scripts/validation")
+        sys.path.insert(0, str(scripts_path))
+
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "validate_union_usage",
+            scripts_path / "validate-union-usage.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        UnionPattern = module.UnionPattern
+        UnionLegitimacyValidator = module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        # Union with parameterized types (as they might appear from AST)
+        pattern = UnionPattern(
+            ["bool", "dict[str, Any]", "float", "int", "list[Any]", "str"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # Literal with base type names
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, dict[str, Any], float, int, list[Any], str]
+    value_type: Literal["bool", "dict", "float", "int", "list", "str"]
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        assert result is True, "Should normalize parameterized types for comparison"
+
+    def test_case_insensitive_matching(self):
+        """Test that type matching is case-insensitive."""
+        import sys
+        from pathlib import Path
+
+        scripts_path = Path("/workspace/omnibase_core/scripts/validation")
+        sys.path.insert(0, str(scripts_path))
+
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "validate_union_usage",
+            scripts_path / "validate-union-usage.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        UnionPattern = module.UnionPattern
+        UnionLegitimacyValidator = module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        # Union with lowercase type names
+        pattern = UnionPattern(
+            ["bool", "dict", "str", "int"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # Literal with same case (already lowercase)
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, dict, str, int]
+    value_type: Literal["bool", "dict", "str", "int"]
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        assert result is True, "Should match types case-insensitively"
+
+    def test_empty_literal_no_detection(self):
+        """Test that empty Literal field does not trigger detection."""
+        import sys
+        from pathlib import Path
+
+        scripts_path = Path("/workspace/omnibase_core/scripts/validation")
+        sys.path.insert(0, str(scripts_path))
+
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "validate_union_usage",
+            scripts_path / "validate-union-usage.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        UnionPattern = module.UnionPattern
+        UnionLegitimacyValidator = module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        pattern = UnionPattern(
+            ["bool", "dict", "str", "int"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # No file content with Literal
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, dict, str, int]
+    other_field: str
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        assert result is False, "Should not detect without Literal field"
+
+    def test_multiple_literals_one_matches(self):
+        """Test that detection works when one of multiple Literals matches."""
+        import sys
+        from pathlib import Path
+
+        scripts_path = Path("/workspace/omnibase_core/scripts/validation")
+        sys.path.insert(0, str(scripts_path))
+
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "validate_union_usage",
+            scripts_path / "validate-union-usage.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        UnionPattern = module.UnionPattern
+        UnionLegitimacyValidator = module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        pattern = UnionPattern(
+            ["bool", "dict", "str", "int"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # Multiple Literal fields, one matches
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, dict, str, int]
+    mode: Literal["read", "write"]
+    value_type: Literal["bool", "dict", "str", "int"]
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        assert result is True, "Should detect when one of multiple Literals matches"
+
+    def test_threshold_calculation_small_union(self):
+        """Test threshold calculation for small unions (< 6 types)."""
+        import sys
+        from pathlib import Path
+
+        scripts_path = Path("/workspace/omnibase_core/scripts/validation")
+        sys.path.insert(0, str(scripts_path))
+
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "validate_union_usage",
+            scripts_path / "validate-union-usage.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        UnionPattern = module.UnionPattern
+        UnionLegitimacyValidator = module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        # Small union with 3 types
+        # Threshold = min(3, 3 // 2 + 1) = min(3, 2) = 2
+        pattern = UnionPattern(
+            ["bool", "str", "int"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # Literal with 2 matching types (meets threshold of 2)
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, str, int]
+    value_type: Literal["bool", "str"]
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        assert result is True, "Should detect with 2 matching types for 3-type union"
+
+    def test_no_file_content_provided(self):
+        """Test behavior when no file content is provided."""
+        import sys
+        from pathlib import Path
+
+        scripts_path = Path("/workspace/omnibase_core/scripts/validation")
+        sys.path.insert(0, str(scripts_path))
+
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "validate_union_usage",
+            scripts_path / "validate-union-usage.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        UnionPattern = module.UnionPattern
+        UnionLegitimacyValidator = module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        pattern = UnionPattern(
+            ["bool", "dict", "str", "int"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # No file content
+        result = validator._is_discriminated_union(pattern, file_content=None)
+        assert result is False, "Should not detect without file content"
+
+    def test_integration_through_full_validation(self):
+        """Test companion Literal detection through full validation workflow."""
+        import sys
+        from pathlib import Path
+
+        scripts_path = Path("/workspace/omnibase_core/scripts/validation")
+        sys.path.insert(0, str(scripts_path))
+
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "validate_union_usage",
+            scripts_path / "validate-union-usage.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        UnionPattern = module.UnionPattern
+        UnionLegitimacyValidator = module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        pattern = UnionPattern(
+            ["bool", "dict", "float", "int", "list", "str"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # File content with companion Literal discriminator
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, dict, float, int, list, str]
+    value_type: Literal["bool", "dict", "float", "int", "list", "str"]
+"""
+
+        # Test through full validation
+        result = validator.validate_union_legitimacy(pattern, file_content)
+
+        assert result["is_legitimate"] is True
+        assert result["pattern_type"] == "discriminated"
+        assert result["confidence"] == 0.9
+
+    def test_single_quotes_in_literal(self):
+        """Test detection works with single-quoted Literal strings."""
+        import sys
+        from pathlib import Path
+
+        scripts_path = Path("/workspace/omnibase_core/scripts/validation")
+        sys.path.insert(0, str(scripts_path))
+
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "validate_union_usage",
+            scripts_path / "validate-union-usage.py",
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        UnionPattern = module.UnionPattern
+        UnionLegitimacyValidator = module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        pattern = UnionPattern(
+            ["bool", "dict", "str", "int"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # Using single quotes in Literal
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, dict, str, int]
+    value_type: Literal['bool', 'dict', 'str', 'int']
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        assert result is True, "Should detect with single-quoted Literal strings"
