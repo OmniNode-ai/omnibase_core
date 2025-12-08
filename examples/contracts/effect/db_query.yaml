@@ -108,26 +108,15 @@ effect_operations:
         # Enable read-only mode for SELECT queries (enables DB optimizations)
         read_only: true
 
-      # Retry policy for database operations
+      # Retry policy matching ModelEffectRetryConfig schema
+      # NOTE: Custom fields like retryable_error_codes are not part of the
+      # base retry config schema but may be extended by handlers
       retry_policy:
-        enabled: true
-        max_retries: 3
+        max_attempts: 4
         backoff_strategy: exponential
-        initial_delay_ms: 100
+        base_delay_ms: 100
         max_delay_ms: 2000
-        backoff_multiplier: 2.0
-        jitter: true
-        jitter_factor: 0.1
-
-        # Database error codes that should trigger retry
-        # These are PostgreSQL error codes
-        retryable_error_codes:
-          - "40001"  # Serialization failure
-          - "40P01"  # Deadlock detected
-          - "08000"  # Connection exception
-          - "08003"  # Connection does not exist
-          - "08006"  # Connection failure
-          - "57P03"  # Cannot connect now
+        jitter_enabled: true
 
       # Response handling
       response_handling:
@@ -210,19 +199,13 @@ effect_operations:
         read_only: false
 
       # Conservative retry for mutations
+      # NOTE: Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
-        enabled: true
-        max_retries: 2  # Fewer retries for mutations
+        max_attempts: 3  # Fewer retries for mutations
         backoff_strategy: exponential
-        initial_delay_ms: 500
+        base_delay_ms: 500
         max_delay_ms: 5000
-        backoff_multiplier: 2.0
-        jitter: true
-        jitter_factor: 0.15
-        retryable_error_codes:
-          - "40001"  # Serialization failure
-          - "40P01"  # Deadlock detected
-          # Do NOT retry on unique constraint violations (23505)
+        jitter_enabled: true
 
       response_handling:
         # Extract values from RETURNING clause
@@ -288,18 +271,13 @@ effect_operations:
 
         read_only: false
 
+      # Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
-        enabled: true
-        max_retries: 2
+        max_attempts: 3
         backoff_strategy: exponential
-        initial_delay_ms: 500
+        base_delay_ms: 500
         max_delay_ms: 5000
-        backoff_multiplier: 2.0
-        jitter: true
-        jitter_factor: 0.1
-        retryable_error_codes:
-          - "40001"  # Serialization failure
-          - "40P01"  # Deadlock detected
+        jitter_enabled: true
 
       response_handling:
         extract_fields:
@@ -362,17 +340,13 @@ effect_operations:
 
         read_only: false
 
+      # Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
-        enabled: true
-        max_retries: 2
+        max_attempts: 3
         backoff_strategy: exponential
-        initial_delay_ms: 500
+        base_delay_ms: 500
         max_delay_ms: 5000
-        backoff_multiplier: 2.0
-        jitter: true
-        retryable_error_codes:
-          - "40001"
-          - "40P01"
+        jitter_enabled: true
 
       response_handling:
         extract_fields:

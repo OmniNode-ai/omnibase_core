@@ -141,7 +141,9 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # Effect subcontract - set after construction or via contract loading
         object.__setattr__(self, "effect_subcontract", None)
 
-        # Process-local circuit breaker state keyed by operation correlation_id
+        # Process-local circuit breaker state keyed by operation_id
+        # (NOT correlation_id - operation_id is stable per operation definition,
+        # while correlation_id changes per request)
         # NOT thread-safe - each thread needs its own NodeEffect instance
         object.__setattr__(self, "_circuit_breakers", {})
 
@@ -170,12 +172,14 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
 
         # Transform effect_subcontract.operations into operation_data format
         # The mixin expects operations in input_data.operation_data["operations"]
+        # This transformation bridges the contract (YAML) and execution (mixin)
         if "operations" not in input_data.operation_data:
             # Serialize subcontract operations to the format expected by the mixin
             operations: list[dict[str, object]] = []
             for op in self.effect_subcontract.operations:
                 op_dict: dict[str, object] = {
                     "operation_name": op.operation_name,
+                    "description": op.description,
                     "io_config": (
                         op.io_config.model_dump()
                         if hasattr(op.io_config, "model_dump")
@@ -184,6 +188,12 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                     "operation_timeout_ms": (
                         op.operation_timeout_ms
                         or self.effect_subcontract.default_retry_policy.max_delay_ms
+                    ),
+                    # Include response handling for field extraction
+                    "response_handling": (
+                        op.response_handling.model_dump()
+                        if hasattr(op.response_handling, "model_dump")
+                        else {}
                     ),
                 }
                 operations.append(op_dict)

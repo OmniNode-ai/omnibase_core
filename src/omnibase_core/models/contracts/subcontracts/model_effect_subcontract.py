@@ -86,13 +86,11 @@ See Also:
 Author: ONEX Framework Team
 """
 
-from typing import Annotated
 from uuid import UUID, uuid4
 
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Discriminator,
     Field,
     field_validator,
     model_validator,
@@ -123,7 +121,17 @@ __all__ = [
 ]
 
 
-# Idempotency defaults by handler type and operation
+# Idempotency defaults by handler type and operation.
+#
+# Type Safety Note:
+# Keys correspond to EnumEffectHandlerType values (http, db, kafka, filesystem)
+# and inner keys match the Literal types in IO configs:
+#   - HTTP: Literal["GET", "POST", "PUT", "PATCH", "DELETE"] (ModelHttpIOConfig.method)
+#   - DB: Literal["select", "insert", "update", "delete", "upsert", "raw"] (ModelDbIOConfig.operation)
+#   - Filesystem: Literal["read", "write", "delete", "move", "copy"] (ModelFilesystemIOConfig.operation)
+#
+# Using string keys here rather than enum values for dict access simplicity.
+# The get_effective_idempotency() method handles type-safe access via isinstance checks.
 IDEMPOTENCY_DEFAULTS: dict[str, dict[str, bool]] = {
     "http": {
         "GET": True,
@@ -562,7 +570,13 @@ class ModelEffectOperation(BaseModel):
         # Compute default based on handler type
         handler_type = self.io_config.handler_type
 
-        # Import concrete types for type narrowing
+        # Import concrete types for type narrowing.
+        # NOTE: isinstance checks are required here for type narrowing because:
+        # 1. io_config is typed as a Union (EffectIOConfig), not a specific type
+        # 2. The discriminated union pattern requires runtime type checking to access
+        #    type-specific fields like 'method' (HTTP) or 'operation' (DB/Filesystem)
+        # 3. Duck-typing via hasattr() wouldn't provide mypy type narrowing
+        # 4. This is a standard Pydantic discriminated union access pattern
         from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
             ModelDbIOConfig,
             ModelFilesystemIOConfig,
@@ -754,32 +768,10 @@ class ModelEffectSubcontract(BaseModel):
                 )
         return v
 
-    @model_validator(mode="after")
-    def validate_execution_order_for_operation_count(self) -> "ModelEffectSubcontract":
-        """
-        Validate execution order is appropriate for the number of operations.
-
-        Single-operation subcontracts should use FORWARD order for clarity.
-        Using PARALLEL or REVERSE with a single operation is technically valid
-        but potentially confusing. This validator logs a diagnostic note when
-        PARALLEL or REVERSE is used with only one operation.
-
-        Returns:
-            The validated model instance.
-
-        Note:
-            PARALLEL with a single operation has no effect on execution.
-            REVERSE with a single operation just executes that operation.
-            Both are valid configurations, so no error is raised.
-        """
-        if len(self.operations) == 1 and self.execution_order in (
-            EnumExecutionOrder.PARALLEL,
-            EnumExecutionOrder.REVERSE,
-        ):
-            # Single operation with PARALLEL/REVERSE is technically valid but
-            # may indicate a configuration that doesn't match intent.
-            # Future enhancement: Could emit a warning or log diagnostic.
-            pass
-        return self
+    # NOTE: Single-operation subcontracts with PARALLEL or REVERSE execution_order
+    # are technically valid (PARALLEL has no effect, REVERSE just executes the
+    # single operation). No validation is performed since these configurations
+    # don't cause errors - they're just potentially confusing. Consider adding
+    # a diagnostic warning in a future version if this causes user confusion.
 
     model_config = ConfigDict(frozen=True, extra="forbid")

@@ -128,27 +128,46 @@ class MixinEffectExecution:
         """
         Initialize effect execution mixin.
 
-        MRO Initialization:
+        MRO Initialization Contract:
             This method uses cooperative multiple inheritance via super().__init__().
-            The mixing class (e.g., NodeEffect) should be listed BEFORE this mixin
+            The mixing class (e.g., NodeEffect) MUST be listed BEFORE this mixin
             in the inheritance chain to ensure proper MRO resolution.
 
-            Example correct order:
+            Correct MRO order:
                 class MyEffectNode(NodeEffect, MixinEffectExecution):
-                    pass  # NodeEffect.__init__ called first, then mixin
+                    pass  # NodeEffect.__init__ called first via super(), then mixin
 
-            The mixin initializes _circuit_breakers after calling super().__init__()
-            to ensure all base class initialization completes first. This is safe
-            because _circuit_breakers is only accessed by mixin methods, not by
-            the base class.
+            Incorrect MRO order (will likely fail):
+                class MyEffectNode(MixinEffectExecution, NodeEffect):
+                    pass  # Mixin called first, may not have container initialized
+
+            The MRO determines __init__ call order. With correct ordering:
+            1. MyEffectNode.__init__ calls super().__init__()
+            2. Python's MRO calls NodeEffect.__init__ (sets up container, node_id)
+            3. NodeEffect.__init__ calls super().__init__()
+            4. MixinEffectExecution.__init__ is called (initializes _circuit_breakers)
+            5. MixinEffectExecution calls super().__init__() (reaches object)
+
+            This ensures self.container and self.node_id exist before mixin methods
+            are called. The _circuit_breakers dict is initialized AFTER super().__init__()
+            to guarantee all base class attributes are available.
+
+        Thread Safety:
+            _circuit_breakers is instance-local state and NOT thread-safe.
+            Each NodeEffect instance with this mixin should be used from a
+            single thread or with explicit synchronization.
 
         Args:
             **kwargs: Passed to super().__init__() for cooperative MRO.
         """
+        # Call super().__init__() FIRST to complete all base class initialization.
+        # This ensures container and node_id are available on self.
         super().__init__(**kwargs)
-        # Circuit breaker state: correlation_id -> ModelCircuitBreaker
-        # Initialized after super().__init__() to ensure base class setup completes first.
+
+        # Circuit breaker state: operation_id -> ModelCircuitBreaker
+        # Initialized AFTER super().__init__() to ensure base class setup completes first.
         # Thread Safety: NOT thread-safe - see class docstring for details.
+        # Each operation_id gets its own circuit breaker instance.
         self._circuit_breakers: dict[UUID, ModelCircuitBreaker] = {}
 
     async def execute_effect(self, input_data: ModelEffectInput) -> ModelEffectOutput:
@@ -473,21 +492,35 @@ class MixinEffectExecution:
             )
 
         elif isinstance(io_config, ModelFilesystemIOConfig):
-            # For filesystem operations, content is NOT resolved here.
-            # Write operation content should be provided in input_data.operation_data
-            # under a key like "file_content" or "content", and the handler is
-            # responsible for extracting it. This separation allows:
-            # 1. Large content to bypass template resolution overhead
-            # 2. Binary content that cannot be templated
-            # 3. Content from external sources (e.g., file uploads)
-            # The handler receives the full input_data.operation_data and can
-            # access content directly via context or by convention.
+            # For filesystem write operations, content is extracted from input_data.operation_data.
+            # The content can be provided in multiple ways (in priority order):
+            # 1. "file_content" key in operation_data (preferred)
+            # 2. "content" key in operation_data (fallback)
+            # 3. None - handler may have alternative content source
+            #
+            # This design separates content from templates because:
+            # 1. Large content bypasses template resolution overhead
+            # 2. Binary content cannot be templated (use base64 encoding externally)
+            # 3. Content may come from external sources (e.g., file uploads, streams)
+            #
+            # For read/delete/move/copy operations, content is typically None as these
+            # operations don't require input content.
+            content: str | None = None
+            if io_config.operation == "write":
+                # Extract content from operation_data for write operations
+                content = context_data.get("file_content") or context_data.get(
+                    "content"
+                )
+                # If content is a template string, resolve it
+                if content and TEMPLATE_PATTERN.search(content):
+                    content = TEMPLATE_PATTERN.sub(resolve_template, content)
+
             return ModelResolvedFilesystemContext(
                 file_path=TEMPLATE_PATTERN.sub(
                     resolve_template, io_config.file_path_template
                 ),
                 operation=io_config.operation,
-                content=None,  # Handler resolves content from input_data.operation_data
+                content=content,
                 timeout_ms=io_config.timeout_ms,
                 atomic=io_config.atomic,
                 create_dirs=io_config.create_dirs,
@@ -647,6 +680,11 @@ class MixinEffectExecution:
 
             except Exception as e:
                 last_error = e
+                # Increment retry_count to track failed attempts
+                # retry_count represents "number of failed attempts before success or final failure"
+                # - First attempt fails: retry_count becomes 1
+                # - Second attempt (first retry) fails: retry_count becomes 2
+                # - etc.
                 retry_count += 1
 
                 # Record failure in circuit breaker
@@ -654,6 +692,7 @@ class MixinEffectExecution:
                     self._record_circuit_breaker_result(operation_id, success=False)
 
                 # Check if we should retry
+                # attempt is 0-indexed, so attempt < max_retries means we have retries left
                 if attempt < max_retries and input_data.retry_enabled:
                     # Exponential backoff with jitter
                     delay_ms = retry_delay_ms * (2**attempt)
@@ -667,12 +706,17 @@ class MixinEffectExecution:
                     raise
                 else:
                     # No more retries, wrap and raise
+                    # retry_count is total failed attempts (initial attempt + retries)
+                    # attempt is 0-indexed, so actual retries performed = attempt
                     raise ModelOnexError(
-                        message=f"Operation failed after {retry_count} retries",
+                        message=f"Operation failed after {retry_count} attempt(s) "
+                        f"({attempt} retry/retries)",
                         error_code=EnumCoreErrorCode.OPERATION_FAILED,
                         context={
                             "operation_id": str(operation_id),
-                            "retries": retry_count,
+                            "failed_attempts": retry_count,
+                            "retries_performed": attempt,
+                            "max_retries": max_retries,
                         },
                     ) from e
 
@@ -734,34 +778,50 @@ class MixinEffectExecution:
             ModelOnexError: On handler execution failure or if handler protocol
                 is not registered in the container.
         """
+        # Resolve handler from container based on handler_type
+        # NOTE: Handler protocols (e.g., ProtocolEffectHandler_HTTP) are NOT defined
+        # in omnibase_core. They are an extensibility point - implementing applications
+        # must register their own handlers. See docstring for registration details.
+        handler_type = resolved_context.handler_type
+        handler_protocol = f"ProtocolEffectHandler_{handler_type.value.upper()}"
+
+        # Attempt to resolve handler with explicit error for missing registration
         try:
-            # Resolve handler from container based on handler_type
-            # NOTE: Handler protocols (e.g., ProtocolEffectHandler_HTTP) are NOT defined
-            # in omnibase_core. They are an extensibility point - implementing applications
-            # must register their own handlers. See docstring for registration details.
-            handler_type = resolved_context.handler_type
-            handler_protocol = f"ProtocolEffectHandler_{handler_type.value.upper()}"
-
             handler = self.container.get_service(handler_protocol)
-
-            # Execute handler with resolved context
-            result = await handler.execute(resolved_context)
-
-            # Handler returns Any, validate it matches expected return type
-            if isinstance(result, (str, int, float, bool, dict, list, type(None))):
-                return result  # type: ignore[return-value]
-            # Convert other types to string representation
-            return str(result)
-
-        except Exception as e:
+        except Exception as resolve_error:
+            # Provide explicit guidance for handler registration
             raise ModelOnexError(
-                message=f"Handler execution failed: {e!s}",
+                message=f"Effect handler not registered: {handler_protocol}. "
+                f"Handler protocols are an extensibility point - implementing applications "
+                f"must register handlers via container.register_service('{handler_protocol}', handler_instance). "
+                f"See MixinEffectExecution._execute_operation docstring for details.",
                 error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
                 context={
                     "operation_id": str(input_data.operation_id),
-                    "handler_type": resolved_context.handler_type.value,
+                    "handler_type": handler_type.value,
+                    "handler_protocol": handler_protocol,
+                    "resolution_error": str(resolve_error),
                 },
-            ) from e
+            ) from resolve_error
+
+        # Execute handler with resolved context
+        try:
+            result = await handler.execute(resolved_context)
+        except Exception as exec_error:
+            raise ModelOnexError(
+                message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
+                error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
+                context={
+                    "operation_id": str(input_data.operation_id),
+                    "handler_type": handler_type.value,
+                },
+            ) from exec_error
+
+        # Handler returns Any, validate it matches expected return type
+        if isinstance(result, (str, int, float, bool, dict, list, type(None))):
+            return result  # type: ignore[return-value]
+        # Convert other types to string representation
+        return str(result)
 
     def _check_circuit_breaker(self, operation_id: UUID) -> bool:
         """

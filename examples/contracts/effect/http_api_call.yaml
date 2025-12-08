@@ -129,41 +129,15 @@ effect_operations:
         # WARNING: Setting to false is insecure for production
         verify_ssl: true
 
-      # Retry policy for this operation
+      # Retry policy matching ModelEffectRetryConfig schema
+      # NOTE: Exponential backoff uses base_delay_ms as the initial delay
+      # and doubles on each retry up to max_delay_ms
       retry_policy:
-        enabled: true
-
-        # Maximum number of retry attempts
-        max_retries: 3
-
-        # Backoff strategy: exponential, linear, constant
+        max_attempts: 4
         backoff_strategy: exponential
-
-        # Initial delay before first retry (milliseconds)
-        initial_delay_ms: 1000
-
-        # Maximum delay between retries (milliseconds)
+        base_delay_ms: 1000
         max_delay_ms: 10000
-
-        # Backoff multiplier (for exponential strategy)
-        # delay = initial_delay * (multiplier ^ attempt_number)
-        backoff_multiplier: 2.0
-
-        # Add random jitter to prevent thundering herd
-        jitter: true
-
-        # Jitter factor (0.0 to 1.0)
-        # Actual delay = delay +/- (delay * jitter_factor)
-        jitter_factor: 0.1
-
-        # HTTP status codes that should trigger retry
-        retryable_status_codes:
-          - 408  # Request Timeout
-          - 429  # Too Many Requests (rate limiting)
-          - 500  # Internal Server Error
-          - 502  # Bad Gateway
-          - 503  # Service Unavailable
-          - 504  # Gateway Timeout
+        jitter_enabled: true
 
       # Response handling configuration
       response_handling:
@@ -257,21 +231,13 @@ effect_operations:
         verify_ssl: true
 
       # Different retry policy for GET (can be more aggressive)
+      # Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
-        enabled: true
-        max_retries: 5
+        max_attempts: 6
         backoff_strategy: exponential
-        initial_delay_ms: 500
+        base_delay_ms: 500
         max_delay_ms: 5000
-        backoff_multiplier: 2.0
-        jitter: true
-        jitter_factor: 0.15
-        retryable_status_codes:
-          - 429  # Rate limiting
-          - 500
-          - 502
-          - 503
-          - 504
+        jitter_enabled: true
 
       response_handling:
         success_codes:
@@ -348,23 +314,14 @@ effect_operations:
         verify_ssl: true
 
       # Conservative retry policy for mutations
+      # Retry policy matching ModelEffectRetryConfig schema
+      # NOTE: Fewer retries for mutations to prevent duplicates
       retry_policy:
-        enabled: true
-        # Fewer retries for mutations to prevent duplicates
-        max_retries: 2
+        max_attempts: 3
         backoff_strategy: exponential
-        initial_delay_ms: 2000
+        base_delay_ms: 2000
         max_delay_ms: 8000
-        backoff_multiplier: 2.0
-        jitter: true
-        jitter_factor: 0.1
-        # Only retry on certain status codes for mutations
-        retryable_status_codes:
-          - 408  # Request Timeout
-          - 429  # Rate limiting (safe to retry with idempotency key)
-          - 502  # Bad Gateway
-          - 503  # Service Unavailable
-          - 504  # Gateway Timeout
+        jitter_enabled: true
 
       response_handling:
         success_codes:

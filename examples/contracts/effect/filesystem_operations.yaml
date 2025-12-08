@@ -73,37 +73,38 @@ effect_operations:
       description: "Creates directory structure for user documents"
 
       # I/O configuration for filesystem handler
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
+      # Fields are direct children of io_config (no filesystem_config wrapper)
       io_config:
         handler_type: filesystem
 
-        # Filesystem-specific configuration
-        filesystem_config:
-          # Operation type: READ, WRITE, DELETE, CREATE_DIRECTORY, MOVE, LIST
-          operation_type: CREATE_DIRECTORY
+        # File path template with ${} placeholders
+        # For directory creation, this is the directory path to create
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}"
 
-          # Target path (supports templating)
-          # Template variables are replaced from operation_data
-          path: "/data/documents/${tenant_id}/users/${user_id}"
+        # Operation type: read, write, delete, move, copy
+        # NOTE: Directory creation uses 'write' operation with create_dirs=true
+        operation: write
 
-          # Create parent directories if they don't exist
-          create_parents: true
+        # Timeout in milliseconds (1s - 10min)
+        timeout_ms: 5000
 
-          # Directory permissions (Unix-style octal)
-          # 755 = rwxr-xr-x (owner: rwx, group: r-x, others: r-x)
-          permissions: "0755"
+        # Create parent directories if they don't exist
+        create_dirs: true
 
-          # Fail if directory already exists
-          fail_if_exists: false
+        # File encoding (used for write operations)
+        encoding: "utf-8"
 
-      # Minimal retry for filesystem operations
+        # Atomic write disabled for directory creation
+        atomic: false
+
+      # Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
-        enabled: true
-        max_retries: 2
+        max_attempts: 3
         backoff_strategy: linear
-        initial_delay_ms: 100
+        base_delay_ms: 100
         max_delay_ms: 1000
-        backoff_multiplier: 1.5
-        jitter: false
+        jitter_enabled: false
 
       response_handling:
         extract_fields:
@@ -139,85 +140,38 @@ effect_operations:
     - operation_name: write_document
       description: "Writes document file with atomic operation"
 
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
       io_config:
         handler_type: filesystem
 
-        filesystem_config:
-          operation_type: WRITE
+        # File path template with ${} placeholders
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}/${input.document_id}.json"
 
-          # Target file path with templating
-          path: "/data/documents/${tenant_id}/users/${user_id}/${document_id}.json"
+        # Operation type: read, write, delete, move, copy
+        operation: write
 
-          # File content (can be template or direct content)
-          # For JSON, YAML, or text files
-          content_template: |
-            {
-              "document_id": "${document_id}",
-              "title": "${document_title}",
-              "content": "${document_content}",
-              "author": "${author_id}",
-              "created_at": "${created_at}",
-              "metadata": {
-                "content_type": "${content_type}",
-                "size_bytes": ${size_bytes},
-                "checksum": "${checksum}",
-                "version": ${version}
-              }
-            }
+        # Timeout in milliseconds
+        timeout_ms: 10000
 
-          # Content can also come directly from input field
-          # content_source: "operation_data"
-          # content_field: "document_content"
+        # Use atomic write (write to temp file, then rename)
+        atomic: true
 
-          # File encoding
-          encoding: "utf-8"
+        # Create parent directories if they don't exist
+        create_dirs: true
 
-          # File permissions (Unix-style octal)
-          # 644 = rw-r--r-- (owner: rw, group: r, others: r)
-          permissions: "0644"
+        # File encoding
+        encoding: "utf-8"
 
-          # Atomic write configuration
-          atomic_write:
-            # Enable atomic write (write to temp file, then move)
-            enabled: true
+        # File permission mode (e.g., '0644')
+        mode: "0644"
 
-            # Temporary file suffix
-            temp_suffix: ".tmp"
-
-            # Verify checksum after write (optional)
-            verify_checksum: true
-
-            # Checksum algorithm: md5, sha256, sha512
-            checksum_algorithm: "sha256"
-
-            # Expected checksum (from input data)
-            expected_checksum: "${checksum}"
-
-          # Backup configuration (optional)
-          backup:
-            # Create backup if file already exists
-            enabled: true
-
-            # Backup file suffix
-            backup_suffix: ".bak"
-
-            # Keep only N most recent backups
-            max_backups: 3
-
-          # Overwrite existing file
-          overwrite: true
-
-          # Fail if file already exists (requires overwrite=false)
-          fail_if_exists: false
-
+      # Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
-        enabled: true
-        max_retries: 2
+        max_attempts: 3
         backoff_strategy: linear
-        initial_delay_ms: 200
+        base_delay_ms: 200
         max_delay_ms: 2000
-        backoff_multiplier: 1.5
-        jitter: false
+        jitter_enabled: false
 
       response_handling:
         extract_fields:
@@ -254,48 +208,33 @@ effect_operations:
     - operation_name: read_document
       description: "Reads document file with encoding detection"
 
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
       io_config:
         handler_type: filesystem
 
-        filesystem_config:
-          operation_type: READ
+        # File path template with ${} placeholders
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}/${input.document_id}.json"
 
-          # File path to read
-          path: "/data/documents/${tenant_id}/users/${user_id}/${document_id}.json"
+        # Operation type: read, write, delete, move, copy
+        operation: read
 
-          # File encoding (auto-detect if not specified)
-          encoding: "utf-8"
+        # Timeout in milliseconds
+        timeout_ms: 5000
 
-          # Read configuration
-          read_config:
-            # Maximum file size to read (prevent memory exhaustion)
-            max_size_bytes: 10485760  # 10MB
+        # File encoding
+        encoding: "utf-8"
 
-            # Read mode: full, lines, chunks
-            mode: full
+        # Atomic and create_dirs not applicable for read operations
+        atomic: false
+        create_dirs: false
 
-            # For lines mode: line limit
-            # max_lines: 1000
-
-            # For chunks mode: chunk size
-            # chunk_size: 4096
-
-            # Verify checksum after read (optional)
-            verify_checksum: true
-            checksum_algorithm: "sha256"
-            expected_checksum: "${expected_checksum}"
-
-          # Fail if file doesn't exist
-          fail_if_not_exists: true
-
+      # Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
-        enabled: true
-        max_retries: 3
+        max_attempts: 4
         backoff_strategy: linear
-        initial_delay_ms: 100
+        base_delay_ms: 100
         max_delay_ms: 1000
-        backoff_multiplier: 1.5
-        jitter: false
+        jitter_enabled: false
 
       response_handling:
         extract_fields:
@@ -332,43 +271,36 @@ effect_operations:
     - operation_name: archive_document
       description: "Moves document to archive directory"
 
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
       io_config:
         handler_type: filesystem
 
-        filesystem_config:
-          operation_type: MOVE
+        # Source file path template
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}/${input.document_id}.json"
 
-          # Source file path
-          path: "/data/documents/${tenant_id}/users/${user_id}/${document_id}.json"
+        # Destination path template (required for move/copy operations)
+        destination_path_template: "/data/archives/${input.tenant_id}/users/${input.user_id}/${input.archive_year}/${input.document_id}.json"
 
-          # Move configuration
-          move_config:
-            # Destination path
-            destination: "/data/archives/${tenant_id}/users/${user_id}/${archive_year}/${document_id}.json"
+        # Operation type: read, write, delete, move, copy
+        operation: move
 
-            # Create destination directory if it doesn't exist
-            create_destination_directory: true
+        # Timeout in milliseconds
+        timeout_ms: 10000
 
-            # Overwrite destination if it exists
-            overwrite: false
+        # Create destination directory if it doesn't exist
+        create_dirs: true
 
-            # What to do if destination exists: fail, overwrite, rename
-            conflict_strategy: rename
+        # Atomic and encoding not applicable for move operations
+        atomic: false
+        encoding: "utf-8"
 
-            # For rename strategy: suffix to add
-            rename_suffix: "_{counter}"
-
-            # Preserve file metadata (timestamps, permissions)
-            preserve_metadata: true
-
+      # Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
-        enabled: true
-        max_retries: 2
+        max_attempts: 3
         backoff_strategy: linear
-        initial_delay_ms: 200
+        base_delay_ms: 200
         max_delay_ms: 2000
-        backoff_multiplier: 1.5
-        jitter: false
+        jitter_enabled: false
 
       response_handling:
         extract_fields:
@@ -402,57 +334,35 @@ effect_operations:
     - operation_name: list_user_documents
       description: "Lists all documents in user directory"
 
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
+      # For directory listing, use 'read' operation on directory path
       io_config:
         handler_type: filesystem
 
-        filesystem_config:
-          operation_type: LIST
+        # Directory path template to list
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}"
 
-          # Directory path to list
-          path: "/data/documents/${tenant_id}/users/${user_id}"
+        # Operation type: read, write, delete, move, copy
+        # NOTE: Directory listing uses 'read' operation on a directory path
+        operation: read
 
-          # List configuration
-          list_config:
-            # Pattern matching (glob style)
-            pattern: "*.json"
+        # Timeout in milliseconds
+        timeout_ms: 5000
 
-            # Recursive listing
-            recursive: false
+        # File encoding (not used for directory listing)
+        encoding: "utf-8"
 
-            # Include hidden files (starting with .)
-            include_hidden: false
+        # Not applicable for read operations
+        atomic: false
+        create_dirs: false
 
-            # Include directories in listing
-            include_directories: false
-
-            # Sort order: name, size, modified_time
-            sort_by: modified_time
-
-            # Sort direction: asc, desc
-            sort_direction: desc
-
-            # Limit number of results
-            max_results: 100
-
-            # Collect file metadata
-            collect_metadata: true
-
-            # Metadata fields to collect
-            metadata_fields:
-              - size_bytes
-              - modified_at
-              - created_at
-              - permissions
-              - checksum
-
+      # Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
-        enabled: true
-        max_retries: 2
+        max_attempts: 3
         backoff_strategy: linear
-        initial_delay_ms: 100
+        base_delay_ms: 100
         max_delay_ms: 1000
-        backoff_multiplier: 1.5
-        jitter: false
+        jitter_enabled: false
 
       response_handling:
         extract_fields:
@@ -487,46 +397,33 @@ effect_operations:
     - operation_name: delete_document
       description: "Deletes document file with safety checks"
 
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
       io_config:
         handler_type: filesystem
 
-        filesystem_config:
-          operation_type: DELETE
+        # File path template to delete
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}/${input.document_id}.json"
 
-          # File path to delete
-          path: "/data/documents/${tenant_id}/users/${user_id}/${document_id}.json"
+        # Operation type: read, write, delete, move, copy
+        operation: delete
 
-          # Delete configuration
-          delete_config:
-            # Verify file exists before deletion
-            verify_exists: true
+        # Timeout in milliseconds
+        timeout_ms: 5000
 
-            # Verify file metadata matches expected values (optional)
-            verify_metadata:
-              enabled: true
-              # Expected file size (prevent accidental deletion of wrong file)
-              expected_size_bytes: ${expected_size}
-              # Expected checksum (ensure correct file)
-              expected_checksum: "${expected_checksum}"
-              checksum_algorithm: "sha256"
+        # File encoding (not used for delete)
+        encoding: "utf-8"
 
-            # Move to trash instead of permanent deletion (optional)
-            move_to_trash:
-              enabled: true
-              trash_directory: "/data/.trash/${tenant_id}"
-              # Auto-delete from trash after N days
-              retention_days: 30
+        # Not applicable for delete operations
+        atomic: false
+        create_dirs: false
 
-            # Fail if file doesn't exist
-            fail_if_not_exists: false
-
+      # Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
-        enabled: true
-        max_retries: 1  # Minimal retry for deletion
+        max_attempts: 2  # Minimal retry for deletion
         backoff_strategy: linear
-        initial_delay_ms: 100
+        base_delay_ms: 100
         max_delay_ms: 500
-        jitter: false
+        jitter_enabled: false
 
       response_handling:
         extract_fields:
