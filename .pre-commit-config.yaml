@@ -370,6 +370,30 @@ repos:
           - no:rerunfailures
         stages: [pre-commit]
 
+      # Protocol @runtime_checkable Validation
+      # Ensures all Protocol classes have @runtime_checkable decorator
+      # Required for isinstance() checks and duck typing at runtime
+      - id: check-protocol-runtime-checkable
+        name: ONEX Protocol @runtime_checkable Validation
+        entry: poetry run python scripts/validation/check_protocol_runtime_checkable.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: ^src/omnibase_core/protocols/.*\.py$
+        stages: [pre-commit]
+
+      # Protocol __all__ Exports Validation
+      # Validates that protocol files have correct __all__ exports matching
+      # their Protocol class definitions
+      - id: check-protocol-exports
+        name: ONEX Protocol __all__ Exports Validation
+        entry: poetry run python scripts/check_protocol_exports.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: ^src/omnibase_core/protocols/.*\.py$
+        stages: [pre-commit]
+
       # Protocol UUID Enforcement (pre-push only)
       # Verifies protocol type annotations use UUID instead of str
       # Catches issues like OMN-536/OMN-542 before CI
