@@ -56,11 +56,14 @@ state_transitions:
         - cleanup_partial_load
       exit_actions:
         - clear_error_state
+      # Non-terminal to allow recovery via retry_loading (automatic) or force_reload (manual).
+      # See recovery_strategies section for detailed recovery documentation.
       is_terminal: false
       metadata:
         ui_color: '#EF4444'
         icon: x-circle
       version: {major: 1, minor: 0, patch: 0}
+      # state_type: error combined with recovery_enabled: true enables FSM recovery tracking
       state_type: error
   transitions:
     - transition_name: discover_contracts
@@ -148,6 +151,9 @@ state_transitions:
           timeout_ms: 1000
           version: {major: 1, minor: 0, patch: 0}
       version: {major: 1, minor: 0, patch: 0}
+    # Automatic recovery transition from error state.
+    # When retry_count >= 3, this transition is blocked and manual intervention is required.
+    # See recovery_strategies.max_retries_exhausted for operator guidance.
     - transition_name: retry_loading
       from_state: error
       to_state: loading
@@ -155,6 +161,8 @@ state_transitions:
       description: Retry loading contracts after error
       conditions:
         - condition_name: retries_remaining
+          # When this condition fails (retry_count >= 3), automatic recovery stops.
+          # Operators must use force_reload operation to continue recovery.
           expression: retry_count less_than 3
           required: true
           description: Maximum 3 retries allowed
@@ -176,12 +184,80 @@ state_transitions:
   error_states:
     - error
   persistence_enabled: true
+  # Recovery is enabled for the error state, allowing automatic retry transitions.
+  # The error state (state_type: error) combined with recovery_enabled: true means:
+  # 1. The FSM will attempt automatic recovery via retry_loading transition
+  # 2. Retry attempts are tracked via retry_count (max 3 attempts)
+  # 3. When retry_count >= 3, automatic recovery stops and manual intervention is required
   recovery_enabled: true
+  # Recovery strategies documentation for operators and monitoring systems.
+  # This section documents the expected behavior when automatic recovery fails.
+  recovery_strategies:
+    max_retries_exhausted:
+      # When retry_count reaches 3, the retry_loading transition condition fails
+      # and the FSM remains in the error state without automatic recovery.
+      description: >-
+        When retry_count reaches maximum (3), automatic recovery via retry_loading transition is blocked.
+        The FSM remains in error state awaiting manual intervention.
+      detection:
+        # How to detect this condition in monitoring systems
+        - condition: retry_count >= 3 AND current_state == error
+        - event: runtime.contracts.max_retries_exhausted
+        - metric: contract_registry_retry_exhausted_total
+      recommended_actions:
+        # Ordered list of recovery steps for operators
+        - step: 1
+          action: Check contract validation errors in application logs
+          command: "grep 'validation_failed\\|contract.*error' /var/log/onex/*.log"
+        - step: 2
+          action: Identify and fix invalid contract files
+          details: >-
+            Review emit_error_event and log_validation_errors output to identify which contracts failed
+            validation and why
+        - step: 3
+          action: Use force_reload operation after fixing issues
+          details: >-
+            The force_reload operation (defined in operations section) bypasses the retry_count check
+            and directly transitions to loading state
+        - step: 4
+          action: Monitor runtime.contracts.reload events for success
+          details: Subscribe to event bus for reload confirmation
+      escalation:
+        # When manual recovery attempts fail, escalate to these actions
+        - level: 1
+          trigger: force_reload fails after contract fixes
+          action: Alert operations team via paging system
+        - level: 2
+          trigger: Multiple force_reload attempts fail
+          action: Consider runtime restart with fresh contract discovery
+        - level: 3
+          trigger: Runtime restart fails to resolve
+          action: Engage platform engineering for infrastructure investigation
+    recovery_from_error:
+      # Documents the relationship between error state and recovery mechanisms
+      description: >-
+        The error state has is_terminal: false, allowing recovery transitions. This is intentional to
+        support both automatic retry and manual recovery paths.
+      automatic_recovery:
+        mechanism: retry_loading transition
+        max_attempts: 3
+        trigger: retry_load event
+        condition: retry_count less_than 3
+      manual_recovery:
+        mechanism: force_reload operation
+        requires_permission: true
+        bypasses_retry_limit: true
+        description: >-
+          Operators can invoke force_reload to reset the loading process regardless of retry_count. This
+          is the primary recovery path when automatic retries are exhausted.
   operations:
+    # Primary manual recovery operation when automatic retries are exhausted.
+    # Bypasses retry_count check by directly targeting loading state.
     - operation_name: force_reload
       description: Force reload all contracts from sources
       trigger: force_reload
       target_state: loading
+      # Permission required to prevent accidental triggering during production
       requires_permission: true
       is_destructive: false
       rollback_transitions:

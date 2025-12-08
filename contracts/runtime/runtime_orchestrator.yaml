@@ -27,6 +27,21 @@
 # │                                                                          │
 # └─────────────────────────────────────────────────────────────────────────┘
 #
+# Design Decisions:
+#
+# 1. RUNTIME EXCLUSION FROM HOT RELOAD
+#    Runtime contracts (contracts/runtime/**) are EXCLUDED from hot reload
+#    to prevent circular dependency: the runtime cannot reload its own definition
+#    while running. This is a fundamental bootstrapping constraint, similar to
+#    how an operating system kernel cannot hot-patch itself without a reboot.
+#    The ONEX runtime must be stopped and restarted to apply changes to its
+#    own contract definitions.
+#
+# 2. INTERNAL CONTRACT EXCLUSION
+#    Contracts prefixed with underscore (_*.yaml) are excluded as they are
+#    considered internal/partial contracts not meant for direct instantiation.
+#    These are typically fragments or templates used by other contracts.
+#
 # Node Implementation (NO custom code needed):
 #   from omnibase_core.nodes import NodeOrchestrator
 #   class NodeONEXRuntime(NodeOrchestrator):
@@ -74,7 +89,14 @@ workflow_coordination:
             contracts_dir: "${env.ONEX_CONTRACTS_DIR:./contracts}"
             pattern: "**/*.yaml"
             exclude_patterns:
+              # CRITICAL: Runtime contracts must be excluded from hot reload
+              # to prevent circular dependency. The runtime cannot reload its
+              # own contract definition while running - this is a bootstrapping
+              # constraint similar to how an OS kernel cannot update itself
+              # without a reboot. See "Design Decisions" in header comments.
               - "**/runtime/**"
+              # Internal/partial contracts not meant for direct instantiation.
+              # These are fragments or templates included by other contracts.
               - "**/_*.yaml"
             watch_mode: false
             scan_interval_ms: 300000
@@ -337,3 +359,42 @@ metadata:
     - lifecycle
   documentation_url: https://docs.onex.ai/runtime/orchestrator
   linear_ticket: OMN-467
+
+  # Design Decisions Documentation
+  # These decisions are architectural constraints that affect runtime behavior
+  design_decisions:
+    - decision: runtime_exclusion
+      rationale: |
+        Runtime contracts (contracts/runtime/**) are excluded from the contract
+        hot reload mechanism. This is a fundamental bootstrapping constraint:
+        the runtime orchestrator cannot reload its own definition while running.
+
+        Similar to how an operating system kernel cannot hot-patch itself without
+        a reboot, the ONEX runtime must be stopped and restarted to apply changes
+        to its own contract definitions.
+
+        This exclusion prevents:
+        1. Circular dependency during contract loading
+        2. Undefined behavior from partial runtime state during reload
+        3. Potential infinite recursion if runtime contracts trigger reloads
+      alternatives_considered:
+        - "Two-phase reload with runtime handoff (too complex for MVP)"
+        - "Versioned runtime contracts with migration (future consideration)"
+        - "Shadow runtime that takes over during reload (resource intensive)"
+      related_patterns:
+        - "OS kernel hot-patching constraints"
+        - "JVM class reloading limitations"
+        - "Database schema migration patterns"
+
+    - decision: internal_contract_exclusion
+      rationale: |
+        Contracts prefixed with underscore (_*.yaml) are treated as internal
+        or partial contracts not meant for direct instantiation. These serve
+        as building blocks or templates that are included by other contracts.
+
+        This follows common conventions from Python (_ prefix for private),
+        filesystem conventions (hidden files), and allows for contract
+        composition without polluting the registry with fragments.
+      alternatives_considered:
+        - "Separate 'fragments/' directory (adds complexity)"
+        - "Explicit 'fragment: true' field (requires schema changes)"

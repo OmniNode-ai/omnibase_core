@@ -83,6 +83,7 @@ python script.py                    # NEVER
 When spawning polymorphic agents or AI assistants:
 - **ALWAYS** instruct them to use `poetry run` for Python commands
 - **NEVER** allow direct pip or python execution
+- **NEVER** run `git commit` or `git push` in background mode - always foreground
 - Include explicit examples showing Poetry usage
 - Reference this CLAUDE.md for project-specific conventions
 

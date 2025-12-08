@@ -79,6 +79,19 @@ state_transitions:
       metadata:
         ui_color: '#6B7280'
         icon: stop-circle
+        idempotency_note: |
+          All entry_actions MUST be idempotent as this state can be reached
+          from ANY state via fatal_error or timeout wildcards (from_state: '*').
+
+          Idempotency guarantees for each action:
+          - release_all_resources: Safe to call multiple times (no-op if already released)
+          - disconnect_all_nodes: Safe to call on already-disconnected nodes
+          - emit_graph_stopped_event: Event bus handles duplicate events gracefully
+          - cleanup_graph_state: Clears state to empty (idempotent by design)
+
+          This is critical because wildcard transitions can trigger from any
+          non-terminal state, and the stopped state may be entered multiple
+          times during error recovery or restart scenarios.
       version: {major: 1, minor: 0, patch: 0}
       state_type: terminal
   transitions:
@@ -289,3 +302,168 @@ metadata:
     - runtime
     - lifecycle
   documentation_url: https://docs.onex.ai/reducers/node-graph
+
+# Testing Guidance for Wildcard Transitions
+# =========================================
+# This section documents required integration tests for wildcard transitions
+# (from_state: '*') which can trigger from any non-terminal state.
+testing_guidance:
+  wildcard_transition_safety:
+    description: |
+      Wildcard transitions (from_state: '*') are used for fatal_error and timeout
+      handling. These transitions bypass normal state flow and must be safe to
+      execute from ANY non-terminal state. The target state (stopped) must have
+      idempotent entry_actions since it can be reached via multiple paths.
+
+    applicable_transitions:
+      - fatal_error
+      - handle_timeout
+
+  integration_tests_required:
+    fatal_error_from_all_states:
+      description: Test fatal_error transition from each non-terminal state
+      priority: critical
+      test_cases:
+        - test_name: fatal_error_from_initializing
+          from_state: initializing
+          trigger: fatal_error
+          expected_outcome:
+            final_state: stopped
+            actions_executed:
+              - log_fatal_error
+              - emit_fatal_error_alert
+              - capture_error_diagnostics
+              - emergency_resource_cleanup
+            entry_actions_executed:
+              - release_all_resources
+              - disconnect_all_nodes
+              - emit_graph_stopped_event
+              - cleanup_graph_state
+            verification:
+              - All resources released (verify via resource tracker)
+              - Error logged with full context
+              - Graph state is clean
+
+        - test_name: fatal_error_from_wiring
+          from_state: wiring
+          trigger: fatal_error
+          expected_outcome:
+            final_state: stopped
+            verification:
+              - Partial wiring cleaned up
+              - Pending connections cancelled
+              - Error logged with wiring context
+
+        - test_name: fatal_error_from_running
+          from_state: running
+          trigger: fatal_error
+          expected_outcome:
+            final_state: stopped
+            verification:
+              - Health monitoring stopped
+              - All active nodes deactivated
+              - In-flight operations captured in error diagnostics
+
+        - test_name: fatal_error_from_draining
+          from_state: draining
+          trigger: fatal_error
+          expected_outcome:
+            final_state: stopped
+            verification:
+              - Drain aborted immediately
+              - Remaining work force-completed
+              - Drain timer cancelled
+
+    timeout_from_all_states:
+      description: Test timeout transition from each non-terminal state
+      priority: high
+      test_cases:
+        - test_name: timeout_from_initializing
+          from_state: initializing
+          trigger: timeout
+          expected_outcome:
+            final_state: stopped
+            verification:
+              - Timeout event logged with state context
+              - Initialization aborted cleanly
+
+        - test_name: timeout_from_wiring
+          from_state: wiring
+          trigger: timeout
+          expected_outcome:
+            final_state: stopped
+            verification:
+              - Timeout event logged
+              - Wiring operation aborted
+              - Partial connections cleaned up
+
+        - test_name: timeout_from_running
+          from_state: running
+          trigger: timeout
+          expected_outcome:
+            final_state: stopped
+            verification:
+              - Timeout alert emitted
+              - Running state cleanup performed
+
+        - test_name: timeout_from_draining
+          from_state: draining
+          trigger: timeout
+          expected_outcome:
+            final_state: stopped
+            verification:
+              - Drain timeout handled
+              - Remaining work force-stopped
+
+    idempotency_verification:
+      description: Verify entry_actions can be called multiple times safely
+      priority: critical
+      test_cases:
+        - test_name: double_fatal_error_idempotency
+          approach: |
+            Trigger fatal_error transition, then trigger it again before
+            entry_actions complete. Verify no exceptions, no resource leaks,
+            and final state is consistent.
+          verification:
+            - No exceptions thrown on second fatal_error
+            - Resources released exactly once (not double-freed)
+            - Graph state is clean after both transitions
+
+        - test_name: fatal_error_after_timeout
+          approach: |
+            Trigger timeout transition, then immediately trigger fatal_error.
+            Verify both transitions handled gracefully.
+          verification:
+            - Both transitions execute without conflict
+            - Final state is stopped
+            - All cleanup actions idempotent
+
+        - test_name: restart_after_fatal_error
+          approach: |
+            Trigger fatal_error to reach stopped state, then restart_graph
+            operation, then fatal_error again. Verify full cycle works.
+          verification:
+            - Graph can restart after fatal_error
+            - Second fatal_error works correctly
+            - No accumulated state between cycles
+
+    edge_cases:
+      description: Additional edge case tests for robustness
+      test_cases:
+        - test_name: fatal_error_with_pending_actions
+          description: |
+            Trigger fatal_error while transition actions from a previous
+            state change are still executing.
+          verification:
+            - Pending actions cancelled or completed
+            - No orphaned resources
+            - Consistent final state
+
+        - test_name: concurrent_timeout_and_fatal_error
+          description: |
+            Trigger both timeout and fatal_error simultaneously from
+            the same state.
+          verification:
+            - Only one transition executes
+            - No race conditions
+            - Consistent final state
