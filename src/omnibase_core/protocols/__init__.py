@@ -165,7 +165,7 @@ from omnibase_core.protocols.validation import (
 ProtocolDIServiceInstance = ProtocolServiceInstance
 ProtocolDIServiceMetadata = ProtocolServiceRegistrationMetadata
 
-# Type aliases for backwards compatibility
+# Convenience type aliases for cleaner imports
 Configurable = ProtocolConfigurable
 Executable = ProtocolExecutable
 Identifiable = ProtocolIdentifiable
@@ -258,7 +258,7 @@ __all__ = [
     "ProtocolMetadata",
     "ProtocolServiceMetadata",
     "ProtocolDiscoveryServiceInstance",
-    # Type Aliases (backwards compatibility)
+    # Convenience Type Aliases
     "Configurable",
     "Executable",
     "Identifiable",

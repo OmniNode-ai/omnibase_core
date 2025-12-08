@@ -8,7 +8,7 @@ class EnumHandlerType(str, Enum):
     they interact with. Used by the handler registry in omnibase_infra
     to organize and retrieve handlers.
 
-    Abstract Types (legacy, for backwards compatibility):
+    Abstract Types (foundational handler categories):
         EXTENSION: Handlers that work with file extensions
         SPECIAL: Handlers for special cases
         NAMED: Handlers identified by specific names
@@ -28,7 +28,7 @@ class EnumHandlerType(str, Enum):
         Added concrete handler types (HTTP, DATABASE, KAFKA, etc.)
     """
 
-    # Abstract/legacy types (backwards compatibility)
+    # Abstract types (foundational handler categories)
     EXTENSION = "extension"
     SPECIAL = "special"
     NAMED = "named"

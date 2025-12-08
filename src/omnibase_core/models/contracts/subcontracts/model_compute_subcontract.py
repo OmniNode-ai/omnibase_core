@@ -84,7 +84,7 @@ class ModelComputeSubcontract(BaseModel):
 
     Contract Versioning:
         The version field tracks the subcontract schema version, not the operation
-        version. This allows schema evolution while maintaining backward compatibility
+        version. This allows schema evolution while preserving existing contracts
         for contract parsing.
 
     Schema References:
