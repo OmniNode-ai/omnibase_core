@@ -4,6 +4,15 @@ Action Model - ONEX Standards Compliant.
 Orchestrator-issued Action with lease semantics for single-writer guarantees.
 Converted from NamedTuple to Pydantic BaseModel for better validation.
 
+Thread Safety:
+    ModelAction is immutable (frozen=True) after creation, making it thread-safe
+    for concurrent read access from multiple threads or async tasks. This follows
+    ONEX thread safety guidelines where action models are frozen to ensure lease
+    semantics and epoch tracking remain consistent during distributed coordination.
+
+    To create a modified copy (e.g., for retry with incremented retry_count):
+        new_action = action.model_copy(update={"retry_count": action.retry_count + 1})
+
 Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
 """
 
@@ -21,18 +30,49 @@ class ModelAction(BaseModel):
     Orchestrator-issued Action with lease management for single-writer semantics.
 
     Represents an Action emitted by the Orchestrator to Compute/Reducer nodes
-    with single-writer semantics enforced via lease_id and epoch.
+    with single-writer semantics enforced via lease_id and epoch. The lease_id
+    proves Orchestrator ownership, while epoch provides optimistic concurrency
+    control through monotonically increasing version numbers.
 
-    This model is immutable (frozen=True) for thread safety. Once created,
-    instances cannot be modified. Use model_copy() to create modified copies.
+    This model is immutable (frozen=True) after creation, making it thread-safe
+    for concurrent read access from multiple threads or async tasks. Unknown
+    fields are rejected (extra='forbid') to ensure strict schema compliance.
+
+    To modify a frozen instance, use model_copy():
+        >>> modified = action.model_copy(update={"priority": 5, "retry_count": 1})
+
+    Attributes:
+        action_id: Unique identifier for this action (auto-generated UUID).
+        action_type: Type of action for execution routing (required).
+        target_node_type: Target node type for action execution (1-100 chars, required).
+        payload: Action payload data (default empty dict).
+        dependencies: List of action IDs this action depends on (default empty list).
+        priority: Execution priority (1-10, higher = more urgent, default 1).
+        timeout_ms: Execution timeout (100-300000 ms, default 30000).
+        lease_id: Lease ID proving Orchestrator ownership (required).
+        epoch: Monotonically increasing version number (>= 0, required).
+        retry_count: Number of retry attempts on failure (0-10, default 0).
+        metadata: Additional metadata for action execution (default empty dict).
+        created_at: Timestamp when action was created (auto-generated).
+
+    Example:
+        >>> from uuid import uuid4
+        >>> from omnibase_core.enums.enum_workflow_execution import EnumActionType
+        >>> action = ModelAction(
+        ...     action_type=EnumActionType.INVOKE,
+        ...     target_node_type="compute",
+        ...     lease_id=uuid4(),
+        ...     epoch=1,
+        ...     priority=5,
+        ... )
 
     Converted from NamedTuple to Pydantic BaseModel for:
-    - Runtime validation
-    - Better type safety
-    - Serialization support
-    - Default value handling
-    - Lease validation
-    - Thread safety via immutability
+    - Runtime validation with constraint checking
+    - Better type safety via Pydantic's type coercion
+    - Serialization support (JSON, dict)
+    - Default value handling with factories
+    - Lease validation for single-writer semantics
+    - Thread safety via immutability (frozen=True)
     """
 
     action_id: UUID = Field(
