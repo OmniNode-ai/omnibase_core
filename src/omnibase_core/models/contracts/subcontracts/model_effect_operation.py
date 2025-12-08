@@ -1,0 +1,120 @@
+"""
+Effect Operation Model - ONEX Standards Compliant.
+
+VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
+Single effect operation definition with discriminated union IO config.
+The `io_config` field uses a discriminated union based on `handler_type`.
+This ensures type-safe validation at contract load time.
+
+Implements: OMN-524
+"""
+
+from typing import Annotated
+from uuid import UUID, uuid4
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.constants.constants_effect_idempotency import IDEMPOTENCY_DEFAULTS
+
+from .model_effect_circuit_breaker import ModelEffectCircuitBreaker
+from .model_effect_io_configs import (
+    EffectIOConfig,
+    ModelDbIOConfig,
+    ModelFilesystemIOConfig,
+    ModelHttpIOConfig,
+    ModelKafkaIOConfig,
+)
+from .model_effect_response_handling import ModelEffectResponseHandling
+from .model_effect_retry_policy import ModelEffectRetryPolicy
+
+__all__ = ["ModelEffectOperation"]
+
+
+class ModelEffectOperation(BaseModel):
+    """
+    Single effect operation definition with discriminated union IO config.
+
+    The `io_config` field uses a discriminated union based on `handler_type`.
+    This ensures type-safe validation at contract load time.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # Identity
+    operation_name: str = Field(..., min_length=1, max_length=100)
+    description: str | None = Field(default=None, max_length=500)
+
+    # Idempotency - CRITICAL for retry safety
+    idempotent: bool | None = Field(
+        default=None,
+        description="Override default idempotency. If None, uses handler/operation defaults.",
+    )
+
+    # Discriminated union IO config
+    io_config: Annotated[
+        ModelHttpIOConfig
+        | ModelDbIOConfig
+        | ModelKafkaIOConfig
+        | ModelFilesystemIOConfig,
+        Field(discriminator="handler_type"),
+    ]
+
+    # Response handling
+    response_handling: ModelEffectResponseHandling = Field(
+        default_factory=ModelEffectResponseHandling
+    )
+
+    # Resilience (can be overridden per-operation)
+    retry_policy: ModelEffectRetryPolicy | None = Field(default=None)
+    circuit_breaker: ModelEffectCircuitBreaker | None = Field(default=None)
+
+    # Correlation
+    correlation_id: UUID = Field(default_factory=uuid4)
+
+    # Operation-level timeout (guards against retry stacking)
+    operation_timeout_ms: int | None = Field(
+        default=None,
+        ge=1000,
+        le=600000,
+        description="Overall operation timeout including all retries. "
+        "If None, defaults to 60000ms (60s). "
+        "Prevents retry stacking from exceeding intended limits.",
+    )
+
+    @property
+    def handler_type(self) -> str:
+        """Extract handler type from IO config."""
+        return str(self.io_config.handler_type.value)
+
+    def get_effective_idempotency(self) -> bool:
+        """
+        Determine effective idempotency for this operation.
+
+        Priority:
+        1. Explicit `idempotent` field if set
+        2. Default based on handler_type and operation
+        """
+        if self.idempotent is not None:
+            return self.idempotent
+
+        handler = str(self.io_config.handler_type.value)
+        defaults = IDEMPOTENCY_DEFAULTS.get(handler, {})
+
+        # Extract operation type for lookup
+        if handler == "http":
+            op_type = self.io_config.method  # type: ignore[union-attr]
+        elif handler == "filesystem":
+            op_type = self.io_config.operation  # type: ignore[union-attr]
+        elif handler == "kafka":
+            op_type = "produce"
+        elif handler == "db":
+            # Use explicit operation type (no more query string parsing)
+            op_type = self.io_config.operation.upper()  # type: ignore[union-attr]
+            # 'raw' operations default to non-idempotent for safety
+            if op_type == "RAW":
+                return False
+        else:
+            return True  # Conservative default
+
+        return defaults.get(op_type, True)
