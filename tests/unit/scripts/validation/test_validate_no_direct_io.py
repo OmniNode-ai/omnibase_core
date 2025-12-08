@@ -35,6 +35,12 @@ import importlib.util
 spec = importlib.util.spec_from_file_location(
     "validate_no_direct_io", SCRIPTS_DIR / "validate-no-direct-io.py"
 )
+if spec is None:
+    raise ImportError(
+        f"Cannot find module at {SCRIPTS_DIR / 'validate-no-direct-io.py'}"
+    )
+if spec.loader is None:
+    raise ImportError("Module spec has no loader")
 validate_no_direct_io = importlib.util.module_from_spec(spec)
 # Add to sys.modules before exec to avoid dataclass issues
 sys.modules["validate_no_direct_io"] = validate_no_direct_io

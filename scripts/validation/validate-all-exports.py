@@ -300,27 +300,40 @@ def should_exclude_file(filepath: Path) -> bool:
 
     Returns:
         True if file should be excluded
+
+    Note:
+        Uses pathlib.Path.parts for cross-platform path matching,
+        ensuring compatibility with both Unix and Windows path separators.
     """
-    path_str = str(filepath)
+    # Get path parts for cross-platform directory matching
+    parts = filepath.parts
 
     # Exclude __init__.py files (they re-export from submodules)
     if filepath.name == "__init__.py":
         return True
 
     # Exclude test files
-    if "/tests/" in path_str or "test_" in filepath.name or "_test.py" in filepath.name:
+    if (
+        "tests" in parts
+        or filepath.name.startswith("test_")
+        or filepath.name.endswith("_test.py")
+    ):
         return True
 
     # Exclude archived directories
-    if "/archived/" in path_str or "/archive/" in path_str:
+    if "archived" in parts or "archive" in parts:
         return True
 
     # Exclude validation scripts themselves
-    if "/scripts/validation/" in path_str:
+    if "scripts" in parts and "validation" in parts:
         return True
 
-    # Exclude __pycache__ and hidden directories
-    if "/__pycache__/" in path_str or "/." in path_str:
+    # Exclude __pycache__ directories
+    if "__pycache__" in parts:
+        return True
+
+    # Exclude hidden directories (directories starting with '.')
+    if any(part.startswith(".") and part != "." for part in parts):
         return True
 
     return False
@@ -559,9 +572,11 @@ def main() -> int:
         )
         return 1
 
+    # Always print success message for consistency with sibling scripts
+    print()
+    print("SUCCESS: All __all__ exports are valid")
+
     if args.verbose:
-        print()
-        print("SUCCESS: All __all__ exports are valid")
         print()
         # Show files with __all__
         files_with_valid_all = [r for r in results if r.has_all and r.is_valid]

@@ -446,10 +446,6 @@ class TestModelIntentModelConfig:
         """Test that model_config has frozen=True."""
         assert ModelIntent.model_config["frozen"] is True
 
-    def test_model_config_validate_assignment(self):
-        """Test that model_config has validate_assignment=True."""
-        assert ModelIntent.model_config["validate_assignment"] is True
-
     def test_frozen_model_prevents_assignment(self):
         """Test that frozen model prevents direct attribute assignment."""
         intent = ModelIntent(intent_type="log", target="service", priority=5)

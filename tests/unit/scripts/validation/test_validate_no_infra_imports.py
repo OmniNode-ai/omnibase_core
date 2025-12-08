@@ -33,6 +33,14 @@ import importlib.util
 spec = importlib.util.spec_from_file_location(
     "validate_no_infra_imports", SCRIPTS_DIR / "validate-no-infra-imports.py"
 )
+if spec is None:
+    raise ImportError(
+        f"Could not load spec from {SCRIPTS_DIR / 'validate-no-infra-imports.py'}"
+    )
+if spec.loader is None:
+    raise ImportError(
+        f"Spec loader is None for {SCRIPTS_DIR / 'validate-no-infra-imports.py'}"
+    )
 validate_no_infra_imports = importlib.util.module_from_spec(spec)
 # Add to sys.modules before exec to avoid dataclass issues
 sys.modules["validate_no_infra_imports"] = validate_no_infra_imports
@@ -588,20 +596,24 @@ class TestMainFunction:
     def test_main_quiet_mode_with_violations(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """Test that --quiet flag still shows output for violations."""
+        """Test that --quiet flag suppresses output even with violations.
+
+        Quiet mode suppresses all report output but still returns correct exit code.
+        This is useful for pre-commit hooks where only the exit code matters.
+        """
         bad_file = tmp_path / "bad.py"
         bad_file.write_text("from omnibase_infra import kafka")
 
         with patch.object(
             sys, "argv", ["validate-no-infra-imports.py", "--quiet", str(tmp_path)]
         ):
-            main()
+            result = main()
 
         captured = capsys.readouterr()
-        # Quiet mode should still show report for violations
-        # Actually, looking at the code, quiet just suppresses the report entirely
-        # Let me check the actual behavior
-        # The quiet mode suppresses the report but doesn't change the exit code
+        # Quiet mode suppresses all output, including violation reports
+        assert captured.out == ""
+        # But the exit code should still indicate failure
+        assert result == 1
 
     def test_main_verbose_mode(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]

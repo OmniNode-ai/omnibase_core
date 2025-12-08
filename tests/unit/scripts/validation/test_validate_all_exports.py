@@ -33,9 +33,12 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 # Use importlib to avoid issues with hyphenated filename
 import importlib.util
 
-spec = importlib.util.spec_from_file_location(
-    "validate_all_exports", SCRIPTS_DIR / "validate-all-exports.py"
-)
+_script_path = SCRIPTS_DIR / "validate-all-exports.py"
+spec = importlib.util.spec_from_file_location("validate_all_exports", _script_path)
+if spec is None:
+    raise ImportError(f"Cannot find module at {_script_path}")
+if spec.loader is None:
+    raise ImportError(f"Module spec for {_script_path} has no loader")
 validate_all_exports = importlib.util.module_from_spec(spec)
 # Add to sys.modules before exec to avoid dataclass issues
 sys.modules["validate_all_exports"] = validate_all_exports
