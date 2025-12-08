@@ -8,6 +8,7 @@ union patterns, modern union syntax (|), and various AST node types.
 import ast
 import importlib.util
 import sys
+from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 
@@ -51,11 +52,15 @@ def validation_scripts_path() -> Path:
     Returns:
         Path to the scripts/validation directory.
     """
-    return Path("/workspace/omnibase_core/scripts/validation")
+    # Dynamically compute path relative to this test file
+    # tests/unit/validation/test_union_usage_checker.py -> project root
+    return Path(__file__).parent.parent.parent.parent / "scripts" / "validation"
 
 
 @pytest.fixture
-def union_validation_module(validation_scripts_path: Path) -> Any:
+def union_validation_module(
+    validation_scripts_path: Path,
+) -> Generator[Any, None, None]:
     """Load the validate-union-usage.py module for testing.
 
     This fixture handles the dynamic import of the validation script,
@@ -64,21 +69,27 @@ def union_validation_module(validation_scripts_path: Path) -> Any:
     Args:
         validation_scripts_path: Path to the validation scripts directory.
 
-    Returns:
+    Yields:
         The loaded module containing UnionPattern and UnionLegitimacyValidator.
     """
     # Ensure the scripts path is in sys.path
     scripts_path_str = str(validation_scripts_path)
-    if scripts_path_str not in sys.path:
+    path_was_added = scripts_path_str not in sys.path
+    if path_was_added:
         sys.path.insert(0, scripts_path_str)
 
-    spec = importlib.util.spec_from_file_location(
-        "validate_union_usage",
-        validation_scripts_path / "validate-union-usage.py",
-    )
-    module = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
-    spec.loader.exec_module(module)  # type: ignore[union-attr]
-    return module
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "validate_union_usage",
+            validation_scripts_path / "validate-union-usage.py",
+        )
+        module = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+        spec.loader.exec_module(module)  # type: ignore[union-attr]
+        yield module
+    finally:
+        # Clean up sys.path only if we added the path
+        if path_was_added and scripts_path_str in sys.path:
+            sys.path.remove(scripts_path_str)
 
 
 @pytest.fixture
@@ -632,12 +643,18 @@ def func(x: str | int) -> None:
         )  # Different order
         pattern3 = ModelUnionPattern(["str", "float"], 20, test_file_path)
 
-        # Same types (order doesn't matter due to sorting)
+        # Verify object identity: these are different instances
+        assert pattern1 is not pattern2
+        assert pattern1 is not pattern3
+        assert pattern2 is not pattern3
+
+        # Same types (order doesn't matter due to sorting) - value equality
         assert pattern1 == pattern2
         assert hash(pattern1) == hash(pattern2)
 
-        # Different types
+        # Different types - value inequality
         assert pattern1 != pattern3
+        assert hash(pattern1) != hash(pattern3)
 
 
 @pytest.mark.unit
@@ -889,3 +906,127 @@ class MyModel(BaseModel):
 
         result = legitimacy_validator._is_discriminated_union(pattern, file_content)
         assert result is True, "Should detect with single-quoted Literal strings"
+
+    def test_large_union_with_companion_literal(
+        self,
+        union_pattern_class: type,
+        legitimacy_validator: Any,
+        test_file_path: str,
+    ):
+        """Test detection works for large unions (> 10 types).
+
+        Verifies the threshold calculation works correctly for larger unions
+        where the minimum threshold of 3 is used.
+        """
+        # Large union with 12 types
+        large_types = [
+            "bool",
+            "dict",
+            "float",
+            "int",
+            "list",
+            "str",
+            "bytes",
+            "tuple",
+            "set",
+            "frozenset",
+            "complex",
+            "None",
+        ]
+        pattern = union_pattern_class(
+            large_types,
+            line=10,
+            file_path=test_file_path,
+        )
+
+        # Literal with 4 matching types (exceeds threshold of 3)
+        file_content = """
+class LargeModel(BaseModel):
+    value: Union[bool, dict, float, int, list, str, bytes, tuple, set, frozenset, complex, None]
+    value_type: Literal["bool", "dict", "float", "int"]
+"""
+
+        result = legitimacy_validator._is_discriminated_union(pattern, file_content)
+        assert result is True, "Should detect large union with sufficient overlap"
+
+    def test_whitespace_in_type_names(
+        self,
+        union_pattern_class: type,
+        legitimacy_validator: Any,
+        test_file_path: str,
+    ):
+        """Test that whitespace in type names is handled correctly.
+
+        The implementation uses .strip() to normalize whitespace, so types
+        with leading/trailing whitespace should still match.
+        """
+        # Types with potential whitespace (simulating edge case)
+        pattern = union_pattern_class(
+            ["bool", "dict", "str", "int"],
+            line=10,
+            file_path=test_file_path,
+        )
+
+        # Literal with matching types
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, dict, str, int]
+    value_type: Literal["bool", "dict", "str", "int"]
+"""
+
+        result = legitimacy_validator._is_discriminated_union(pattern, file_content)
+        assert result is True, "Should handle type names correctly"
+
+    def test_threshold_at_boundary(
+        self,
+        union_pattern_class: type,
+        legitimacy_validator: Any,
+        test_file_path: str,
+    ):
+        """Test threshold behavior at exact boundary.
+
+        For a 4-type union: threshold = min(3, 4 // 2 + 1) = min(3, 3) = 3
+        With exactly 3 matching, it should pass.
+        """
+        pattern = union_pattern_class(
+            ["bool", "dict", "str", "int"],
+            line=10,
+            file_path=test_file_path,
+        )
+
+        # Literal with exactly 3 matching types (at threshold)
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, dict, str, int]
+    value_type: Literal["bool", "dict", "str"]
+"""
+
+        result = legitimacy_validator._is_discriminated_union(pattern, file_content)
+        assert result is True, "Should detect at exact threshold boundary"
+
+    def test_threshold_one_below_boundary(
+        self,
+        union_pattern_class: type,
+        legitimacy_validator: Any,
+        test_file_path: str,
+    ):
+        """Test threshold behavior one below boundary.
+
+        For a 4-type union: threshold = min(3, 4 // 2 + 1) = min(3, 3) = 3
+        With only 2 matching, it should NOT pass.
+        """
+        pattern = union_pattern_class(
+            ["bool", "dict", "str", "int"],
+            line=10,
+            file_path=test_file_path,
+        )
+
+        # Literal with only 2 matching types (below threshold)
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, dict, str, int]
+    value_type: Literal["bool", "dict"]
+"""
+
+        result = legitimacy_validator._is_discriminated_union(pattern, file_content)
+        assert result is False, "Should not detect below threshold boundary"

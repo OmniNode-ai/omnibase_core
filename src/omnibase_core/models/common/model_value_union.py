@@ -38,6 +38,7 @@ This module is part of a carefully managed import chain to avoid circular depend
 
 Safe Runtime Imports (OK to import at module level):
     - Standard library modules only
+    - omnibase_core.enums modules
     - omnibase_core.errors modules
     - pydantic modules
 """
@@ -45,7 +46,7 @@ Safe Runtime Imports (OK to import at module level):
 from __future__ import annotations
 
 import math
-from typing import Any, Literal, Union
+from typing import Any, ClassVar, Literal, Union
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -84,8 +85,8 @@ class ModelValueUnion(BaseModel):
     """
 
     # Security constants - prevent DoS via large collections
-    MAX_LIST_SIZE: int = 10000
-    MAX_DICT_SIZE: int = 1000
+    MAX_LIST_SIZE: ClassVar[int] = 10000
+    MAX_DICT_SIZE: ClassVar[int] = 1000
 
     value: Union[bool, int, float, str, list[Any], dict[str, Any]] = Field(
         description="The actual value",

@@ -70,9 +70,11 @@ from __future__ import annotations
 
 import argparse
 import ast
+import json
 import re
 import sys
 from collections import Counter, defaultdict
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -296,15 +298,47 @@ class UnionLegitimacyValidator:
     def _is_discriminated_union(
         self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
-        """Check if this is a properly discriminated union with Literal discriminators."""
-        # Look for Literal types in the union
-        # Defensive: use _safe_str to handle None/non-string types gracefully
+        """Check if this is a properly discriminated union with Literal discriminators.
+
+        Detects several patterns indicating a discriminated union:
+
+        1. **Literal types in the union**: Direct ``Literal["..."]`` annotations
+        2. **Type/kind discriminator fields**: Fields containing "type" or "kind" with quotes
+        3. **Pydantic Field(discriminator=)**: Modern Pydantic discriminated union syntax
+        4. **Companion Literal discriminator**: A separate field with Literal values
+           matching the union types (e.g., ``value_type: Literal["bool", "str", ...]``)
+
+        Defensive Type Normalization
+        ----------------------------
+        When comparing union type names to Literal values, the following edge cases
+        are handled defensively:
+
+        1. **Empty type strings ("")**: Filtered via ``if not t`` check
+        2. **None values in types list**: Filtered via ``if not t`` check
+        3. **Non-string types**: Guarded by ``isinstance(t, str)`` check
+           (can occur with malformed AST or edge cases)
+        4. **Types with brackets but empty base ("[str]")**: Filtered by
+           checking ``if base_type:`` after split (e.g., "[str]".split("[")[0] = "")
+        5. **Leading/trailing whitespace ("  str  ")**: Normalized via ``.strip()``
+        6. **Subscripted types ("dict[str, Any]", "list[int]")**: Base type
+           extracted via ``.split("[")[0]`` (e.g., "dict[str, Any]" -> "dict")
+
+        All type names are lowercased for case-insensitive matching.
+
+        Args:
+            pattern: The UnionPattern to check for discriminator patterns.
+            file_content: Optional file content for context-aware detection
+                of Field(discriminator=) and companion Literal patterns.
+
+        Returns:
+            True if the union appears to be properly discriminated.
+        """
+        # Look for Literal types in the union (defensive: handle None/non-string)
         has_literal = any(
             self._safe_str(t) and "Literal[" in self._safe_str(t) for t in pattern.types
         )
 
-        # Check for discriminator-like patterns
-        # Defensive: use _safe_lower/_safe_str to handle None/non-string types
+        # Check for discriminator-like patterns (defensive: handle None/non-string)
         has_type_field = any(
             "type" in self._safe_lower(t) and '"' in self._safe_str(t)
             for t in pattern.types
@@ -319,93 +353,38 @@ class UnionLegitimacyValidator:
         has_companion_literal_discriminator = False
         if file_content:
             # Look for Field(discriminator="field_name") pattern near the union
-            # Uses pre-compiled FIELD_DISCRIMINATOR_PATTERN for performance
             has_field_discriminator = bool(
                 self.FIELD_DISCRIMINATOR_PATTERN.search(file_content)
             )
 
             # Check for companion Literal discriminator field in the file
             # Pattern: field_name: Literal["type1", "type2", ...] where types match union types
-            # This detects patterns like:
-            #   value: Union[bool, dict, float, int, list, str]
-            #   value_type: Literal["bool", "dict", "float", "int", "list", "str"]
-            # Uses pre-compiled LITERAL_DISCRIMINATOR_PATTERN for performance
             literal_matches = self.LITERAL_DISCRIMINATOR_PATTERN.findall(file_content)
             for match in literal_matches:
-                # Extract literal string values from the match
-                # Uses pre-compiled LITERAL_VALUE_PATTERN for performance
                 literal_values = self.LITERAL_VALUE_PATTERN.findall(match)
                 if literal_values:
-                    # ============================================================
-                    # Defensive Type Normalization for Union Pattern Comparison
-                    # ============================================================
-                    #
-                    # This block normalizes union type names and literal values for
-                    # case-insensitive comparison to detect companion literal
-                    # discriminator patterns.
-                    #
-                    # Edge Cases Handled:
-                    # -------------------
-                    # 1. Empty type strings (""):
-                    #    - `if not t` evaluates to False for empty strings
-                    #
-                    # 2. None values in types list:
-                    #    - `if not t` evaluates to False for None
-                    #
-                    # 3. Non-string types in types list:
-                    #    - `isinstance(t, str)` guards against non-string types
-                    #    - This can occur with malformed AST or edge cases
-                    #
-                    # 4. Types with brackets but empty base ("[str]"):
-                    #    - `if base_type:` filters out empty base types after split
-                    #    - e.g., "[str]".split("[")[0] = "" which is filtered
-                    #
-                    # 5. Leading/trailing whitespace ("  str  "):
-                    #    - `.strip()` normalizes whitespace
-                    #    - Whitespace-only strings become empty after strip
-                    #
-                    # 6. Subscripted types ("dict[str, Any]", "list[int]"):
-                    #    - `.split("[")[0]` extracts base type before bracket
-                    #    - e.g., "dict[str, Any]" -> "dict"
-                    #
-                    # Normalization:
-                    # --------------
-                    # - All type names are lowercased for case-insensitive matching
-                    # - Subscript parameters are stripped (dict[str, Any] -> dict)
-                    #
-                    # ============================================================
-
-                    # Normalize union type names for comparison
-                    # Handle types like "dict[str, Any]" -> "dict", "list[Any]" -> "list"
+                    # Normalize union type names: extract base type, strip whitespace, lowercase
                     union_type_names: set[str] = set()
                     for t in pattern.types:
-                        # Defensive handling: skip None, empty strings, non-strings
                         if not t or not isinstance(t, str):
-                            continue
-                        # Extract base type name (before [ if subscripted)
-                        # and normalize: strip whitespace, lowercase for comparison
+                            continue  # Skip None, empty, or non-string types
                         base_type = t.split("[")[0].strip().lower()
-                        # Only add non-empty base types (handles "[str]" -> "" case)
-                        if base_type:
+                        if base_type:  # Skip empty base types (e.g., "[str]" -> "")
                             union_type_names.add(base_type)
 
-                    # Convert literal values to lowercase for comparison
-                    # Defensive handling: skip None, empty strings, non-strings
+                    # Normalize literal values: lowercase, skip None/empty/non-string
                     literal_values_lower: set[str] = {
                         v.lower() for v in literal_values if v and isinstance(v, str)
                     }
 
-                    # If Literal values overlap significantly with union types, it's a discriminator
-                    # Require at least 3 matching values OR majority match for smaller unions
+                    # Require significant overlap: at least 3 matches OR majority for small unions
                     overlap = literal_values_lower & union_type_names
                     overlap_threshold = min(3, len(union_type_names) // 2 + 1)
                     if len(overlap) >= overlap_threshold:
                         has_companion_literal_discriminator = True
                         break
 
-        # Must have discriminator indicators and reasonable type count
-        # Relaxed type count limit for companion literal discriminators since they
-        # explicitly handle all types in the union
+        # Companion literal discriminators explicitly handle all types, so no type count limit
         if has_companion_literal_discriminator:
             return True
 
@@ -1569,9 +1548,6 @@ def export_legitimacy_report(
     python_files: list[Path],
 ) -> None:
     """Export a detailed legitimacy-based report to a file."""
-    import json
-    from datetime import datetime
-
     report = {
         "metadata": {
             "generated_at": datetime.now().isoformat(),
@@ -1731,9 +1707,6 @@ def export_detailed_report(
     python_files: list[Path],
 ) -> None:
     """Export a detailed report to a file."""
-    import json
-    from datetime import datetime
-
     report = {
         "metadata": {
             "generated_at": datetime.now().isoformat(),

@@ -46,7 +46,7 @@ Safe Runtime Imports (OK to import at module level):
 from __future__ import annotations
 
 import math
-from typing import Any, Literal, Union, cast
+from typing import Any, ClassVar, Literal, Union, cast
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -86,8 +86,8 @@ class ModelDictValueUnion(BaseModel):
     """
 
     # Security constants - prevent DoS via large collections
-    MAX_LIST_SIZE: int = 10000
-    MAX_DICT_SIZE: int = 1000
+    MAX_LIST_SIZE: ClassVar[int] = 10000
+    MAX_DICT_SIZE: ClassVar[int] = 1000
 
     # union-ok: discriminated_union - companion value_type Literal field provides type safety
     value: Union[bool, dict[str, Any], float, int, list[Any], str] = Field(
@@ -417,7 +417,19 @@ class ModelDictValueUnion(BaseModel):
 
     def get_as_dict(self) -> dict[str, Any]:
         """
-        Get value as dictionary.
+        Get value as dictionary with safe-access semantics.
+
+        Unlike the other get_as_* methods which raise ModelOnexError on type mismatch,
+        this method returns an empty dict for non-dict values. This intentional design
+        choice supports safe dict-operation chaining patterns common in extension/plugin
+        systems where dict access is frequent and the fallback to empty dict is the
+        natural default behavior (e.g., `value.get_as_dict().get("key", default)`).
+
+        For strict type checking that raises on type mismatch, use:
+            if value.is_dict():
+                d = value.get_as_dict()
+            else:
+                raise ModelOnexError(...)
 
         Returns:
             dict[str, Any]: The dictionary value, or empty dict if not a dict
@@ -426,7 +438,7 @@ class ModelDictValueUnion(BaseModel):
             >>> value = ModelDictValueUnion(value={"key": "value"})
             >>> assert value.get_as_dict() == {"key": "value"}
             >>> value = ModelDictValueUnion(value=42)
-            >>> assert value.get_as_dict() == {}
+            >>> assert value.get_as_dict() == {}  # Safe fallback, not an error
         """
         if self.is_dict():
             return self.value  # type: ignore[return-value]
@@ -543,8 +555,8 @@ class ModelDictValueUnion(BaseModel):
         """
         if not self.is_dict():
             return False
-        dict_value = self.get_as_dict()
-        return key in dict_value
+        # Direct access to self.value since we already verified is_dict()
+        return key in self.value  # type: ignore[operator]
 
     def get_dict_value(self, key: str, default: Any = None) -> Any:
         """
