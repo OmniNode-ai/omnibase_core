@@ -26,8 +26,8 @@
 # v1.0 Contract Schema Version
 # ============================================================================
 
-# Contract header - required for validation
-node_type: compute_generic
+# Contract required fields
+node_type: COMPUTE_GENERIC
 contract_version: {major: 1, minor: 0, patch: 0}
 
 # ---------------------------------------------------------------------------
@@ -350,7 +350,7 @@ compute:
 
 metadata:
   version: {major: 1, minor: 0, patch: 0}
-  author: "ONEX Framework Team"
+  author: ONEX Framework Team
   description: |
     Contract-driven compute pipeline for user profile normalization.
     Demonstrates all v1.0 step types and transformation types.
@@ -360,4 +360,4 @@ metadata:
     - normalization
     - user-profile
     - example
-  documentation_url: "https://docs.onex.ai/compute/user-profile-normalizer"
+  documentation_url: https://docs.onex.ai/compute/user-profile-normalizer
