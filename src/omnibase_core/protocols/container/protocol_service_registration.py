@@ -26,10 +26,6 @@ if TYPE_CHECKING:
         ProtocolServiceRegistrationMetadata,
     )
 
-# Service Health Status (alias for health status in registry context)
-ServiceHealthStatus = LiteralHealthStatus
-
-
 @runtime_checkable
 class ProtocolServiceRegistration(Protocol):
     """
@@ -47,7 +43,7 @@ class ProtocolServiceRegistration(Protocol):
     registration_status: Literal[
         "registered", "unregistered", "failed", "pending", "conflict", "invalid"
     ]
-    health_status: ServiceHealthStatus
+    health_status: LiteralHealthStatus
     registration_time: ProtocolDateTime
     last_access_time: ProtocolDateTime | None
     access_count: int
@@ -63,4 +59,4 @@ class ProtocolServiceRegistration(Protocol):
         ...
 
 
-__all__ = ["ProtocolServiceRegistration", "ServiceHealthStatus"]
+__all__ = ["ProtocolServiceRegistration"]

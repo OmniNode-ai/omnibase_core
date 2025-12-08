@@ -81,7 +81,6 @@ from omnibase_core.protocols.container import (
     ProtocolServiceRegistryConfig,
     ProtocolServiceRegistryStatus,
     ProtocolServiceValidator,
-    ServiceHealthStatus,
 )
 
 # =============================================================================
@@ -153,17 +152,6 @@ from omnibase_core.protocols.validation import (
 )
 
 # =============================================================================
-# Convenience Type Aliases (for cleaner imports)
-# =============================================================================
-
-# Shorter names for commonly used protocols
-Configurable = ProtocolConfigurable
-Executable = ProtocolExecutable
-Identifiable = ProtocolIdentifiable
-Nameable = ProtocolNameable
-Serializable = ProtocolSerializable
-
-# =============================================================================
 # All Exports
 # =============================================================================
 
@@ -199,7 +187,6 @@ __all__ = [
     # ==========================================================================
     # Container Module
     # ==========================================================================
-    "ServiceHealthStatus",
     "ProtocolServiceRegistrationMetadata",
     "ProtocolServiceDependency",
     "ProtocolServiceRegistration",
@@ -246,12 +233,6 @@ __all__ = [
     "ProtocolMetadata",
     "ProtocolServiceInstance",
     "ProtocolServiceMetadata",
-    # Convenience Type Aliases
-    "Configurable",
-    "Executable",
-    "Identifiable",
-    "Nameable",
-    "Serializable",
     # ==========================================================================
     # Core Module
     # ==========================================================================

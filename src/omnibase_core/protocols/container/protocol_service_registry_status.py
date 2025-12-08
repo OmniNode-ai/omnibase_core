@@ -19,10 +19,6 @@ from omnibase_core.protocols.base import (
     ProtocolDateTime,
 )
 
-# Service Health Status (alias for health status in registry context)
-ServiceHealthStatus = LiteralHealthStatus
-
-
 @runtime_checkable
 class ProtocolServiceRegistryStatus(Protocol):
     """
@@ -41,7 +37,7 @@ class ProtocolServiceRegistryStatus(Protocol):
     circular_dependencies: int
     lifecycle_distribution: dict[LiteralServiceLifecycle, int]
     scope_distribution: dict[LiteralInjectionScope, int]
-    health_summary: dict[ServiceHealthStatus, int]
+    health_summary: dict[LiteralHealthStatus, int]
     memory_usage_bytes: int | None
     average_resolution_time_ms: float | None
     last_updated: ProtocolDateTime

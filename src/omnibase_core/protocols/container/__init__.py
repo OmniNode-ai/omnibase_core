@@ -37,7 +37,6 @@ from omnibase_core.protocols.container.protocol_service_factory import (
 )
 from omnibase_core.protocols.container.protocol_service_registration import (
     ProtocolServiceRegistration,
-    ServiceHealthStatus,
 )
 from omnibase_core.protocols.container.protocol_service_registration_metadata import (
     ProtocolServiceRegistrationMetadata,
@@ -59,8 +58,6 @@ from omnibase_core.protocols.container.protocol_validation_result import (
 )
 
 __all__ = [
-    # Health Status
-    "ServiceHealthStatus",
     # Protocols
     "ProtocolServiceRegistrationMetadata",
     "ProtocolServiceDependency",
