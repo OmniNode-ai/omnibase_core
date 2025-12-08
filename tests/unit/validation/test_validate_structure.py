@@ -178,7 +178,28 @@ class TestOmniStructureValidator:
         assert "workflow_types.py" in naming_violations[0].message
 
     def test_protocol_location_validation_non_spi(self, temp_repo):
-        """Test that non-SPI repositories shouldn't have protocols directory."""
+        """Test that non-SPI/non-core repositories shouldn't have protocols directory.
+
+        Note: v0.3.6+ allows both omnibase_spi and omnibase_core to have protocols
+        due to dependency inversion (SPI now depends on Core, not vice versa).
+        Only other repositories should trigger violations.
+        """
+        # Use a third-party repo name that's NOT in PROTOCOL_ALLOWED_REPOS
+        other_repo_path = temp_repo / "src" / "omnibase_other"
+        other_repo_path.mkdir(parents=True)
+        (other_repo_path / "protocols").mkdir()
+
+        validator = OmniStructureValidator(str(temp_repo), "omnibase_other")
+        violations = validator.validate_all()
+
+        protocol_violations = [
+            v for v in violations if v.category == "Protocol Location"
+        ]
+        assert len(protocol_violations) == 1
+        assert "omnibase_spi" in protocol_violations[0].message
+
+    def test_protocol_location_validation_core_repo(self, temp_repo):
+        """Test that omnibase_core repository is allowed to have protocols (v0.3.6+)."""
         src_path = temp_repo / "src" / "omnibase_core"
         (src_path / "protocols").mkdir()
 
@@ -188,8 +209,7 @@ class TestOmniStructureValidator:
         protocol_violations = [
             v for v in violations if v.category == "Protocol Location"
         ]
-        assert len(protocol_violations) == 1
-        assert "omnibase_spi" in protocol_violations[0].message
+        assert len(protocol_violations) == 0
 
     def test_protocol_location_validation_spi_repo(self, temp_repo):
         """Test that omnibase_spi repository is allowed to have protocols."""

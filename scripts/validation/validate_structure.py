@@ -361,19 +361,25 @@ class OmniStructureValidator:
         """Validate protocol file locations."""
         protocols_path = self.src_path / "protocols"
 
-        if self.repo_name != "omnibase_spi" and protocols_path.exists():
+        # Protocol directories are allowed in:
+        # - omnibase_spi: Higher-level protocol abstractions
+        # - omnibase_core: Core-native protocols for self-contained operation (v0.3.6+)
+        # See CLAUDE.md: "dependency inversion - SPI now depends on Core, not vice versa"
+        PROTOCOL_ALLOWED_REPOS = {"omnibase_spi", "omnibase_core"}
+
+        if self.repo_name not in PROTOCOL_ALLOWED_REPOS and protocols_path.exists():
             self.violations.append(
                 StructureViolation(
                     level=ViolationLevel.ERROR,
                     category="Protocol Location",
-                    message="Only omnibase_spi should contain protocols directory",
+                    message="Only omnibase_spi and omnibase_core should contain protocols directory",
                     path=f"src/{self.repo_name}/protocols/",
-                    suggestion="Remove local protocols, import from omnibase_spi instead",
+                    suggestion="Remove local protocols, import from omnibase_spi or omnibase_core instead",
                 )
             )
 
-        # Count protocol files in non-SPI repositories
-        if self.repo_name != "omnibase_spi":
+        # Count protocol files in repositories that don't have explicit protocol allowance
+        if self.repo_name not in PROTOCOL_ALLOWED_REPOS:
             protocol_count = 0
             try:
                 for _root, dirs, files in os.walk(self.src_path):

@@ -25,8 +25,8 @@ from .model_transform_json_path_config import ModelTransformJsonPathConfig
 from .model_transform_regex_config import ModelTransformRegexConfig
 from .model_transform_trim_config import ModelTransformTrimConfig
 from .model_transform_unicode_config import ModelTransformUnicodeConfig
+from .model_types import ModelTransformationConfig
 from .model_validation_step_config import ModelValidationStepConfig
-from .types import ModelTransformationConfig
 
 __all__ = [
     "ModelTransformRegexConfig",

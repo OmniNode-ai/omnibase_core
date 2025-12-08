@@ -1,3 +1,4 @@
+---
 # ONEX Core Pre-commit Configuration
 # Uses shared ONEX hook templates to demonstrate ecosystem integration
 #
@@ -40,15 +41,17 @@ repos:
         language: system
         types: [python]
         exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
-        stages: [commit]
+        stages: [pre-commit]
 
       - id: ruff-fix
         name: ruff check (auto-fix linting + import sorting)
-        entry: poetry run ruff check --fix
+        entry: poetry run ruff check --fix --exit-non-zero-on-fix
         language: system
         types: [python]
         exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
-        stages: [commit]
+        stages: [pre-commit]
+        # Note: --exit-non-zero-on-fix ensures pre-commit fails if files were modified,
+        # forcing you to re-stage the changes. This keeps pre-commit and CI in sync.
 
       - id: mypy-type-check
         name: mypy (type checking - strict)
@@ -58,7 +61,7 @@ repos:
         args: [--show-error-codes, --no-error-summary]
         files: ^src/omnibase_core/.*\.py$
         exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
-        stages: [commit]
+        stages: [pre-commit]
 
       # Cleanup: Clear tmp/ directory before commits
       # Prevents accumulation of temporary files from custom commands
@@ -68,7 +71,7 @@ repos:
         language: system
         always_run: true
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]
 
   # ONEX Framework Validation (from shared templates)
   - repo: local

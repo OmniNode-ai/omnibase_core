@@ -71,7 +71,7 @@ from omnibase_core.models.transformations.model_transform_trim_config import (
 from omnibase_core.models.transformations.model_transform_unicode_config import (
     ModelTransformUnicodeConfig,
 )
-from omnibase_core.models.transformations.types import ModelTransformationConfig
+from omnibase_core.models.transformations.model_types import ModelTransformationConfig
 
 
 def _validate_string_input(value: Any, transform_name: str) -> str:
