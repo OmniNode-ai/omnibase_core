@@ -38,6 +38,17 @@
 # ============================================================================
 
 # ---------------------------------------------------------------------------
+# CONTRACT IDENTIFICATION
+# ---------------------------------------------------------------------------
+
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+node_type: effect
+
+# ---------------------------------------------------------------------------
 # EFFECT SUBCONTRACT: Defines external I/O operations
 # ---------------------------------------------------------------------------
 # The effect subcontract specifies sequential or concurrent external operations
@@ -46,7 +57,10 @@
 
 effect_operations:
   # Schema version for forward compatibility
-  version: "1.0.0"
+  version:
+    major: 1
+    minor: 0
+    patch: 0
 
   # Execution mode: how operations are executed
   # - sequential_abort: Execute in order, abort on first failure
@@ -349,14 +363,17 @@ effect_operations:
 # they produce. Not part of the contract schema - just documentation.
 
 # Example Input (ModelEffectInput.operation_data):
+# NOTE: All values below are PLACEHOLDER/TEST DATA only.
+# In production, use actual values from your environment and
+# never commit real tokens, credentials, or PII to version control.
 # {
-#   "email": "john.smith@example.com",
-#   "display_name": "John Smith",
+#   "email": "john.smith@example.com",       # PLACEHOLDER - use real email
+#   "display_name": "John Smith",            # PLACEHOLDER - use real name
 #   "role": "developer",
 #   "created_by": "admin_user",
-#   "auth_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+#   "auth_token": "<YOUR_JWT_TOKEN_HERE>",   # PLACEHOLDER - use real token (never commit!)
 #   "correlation_id": "req_abc123xyz",
-#   "user_id": "usr_12345",  # For get/update operations
+#   "user_id": "usr_12345",                  # PLACEHOLDER - use real user ID
 #   "new_status": "active",
 #   "updated_by": "admin_user",
 #   "update_reason": "Account verification completed",
@@ -421,13 +438,14 @@ effect_operations:
 # node = NodeUserApiEffect(container, contract=contract_data)
 #
 # # Execute operations
+# # NOTE: auth_token should be loaded from secure environment, never hardcoded
 # input_data = ModelEffectInput(
 #     operation_data={
 #         "email": "john.smith@example.com",
 #         "display_name": "John Smith",
 #         "role": "developer",
 #         "created_by": "admin_user",
-#         "auth_token": "eyJhbGci...",
+#         "auth_token": os.environ.get("API_AUTH_TOKEN"),  # Load from environment
 #         "correlation_id": "req_abc123"
 #     }
 # )

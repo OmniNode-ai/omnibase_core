@@ -1,12 +1,24 @@
 """Constants module for omnibase_core."""
 
-from omnibase_core.constants import constants_contract_fields
+from omnibase_core.constants import constants_contract_fields, constants_effect
 from omnibase_core.constants.constants_contract_fields import (
     BACKEND_KEY,
     CUSTOM_KEY,
     DEFAULT_PROCESSED_VALUE,
     INTEGRATION_KEY,
     PROCESSED_KEY,
+)
+from omnibase_core.constants.constants_effect import (
+    DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD,
+    DEFAULT_CIRCUIT_BREAKER_SUCCESS_THRESHOLD,
+    DEFAULT_CIRCUIT_BREAKER_TIMEOUT_MS,
+    DEFAULT_MAX_FIELD_EXTRACTION_DEPTH,
+    DEFAULT_MAX_RETRY_ATTEMPTS,
+    DEFAULT_OPERATION_TIMEOUT_MS,
+    DEFAULT_RETRY_BASE_DELAY_MS,
+    DEFAULT_RETRY_JITTER_FACTOR,
+    MIN_EFFECT_SUBCONTRACT_MINOR_VERSION,
+    SUPPORTED_EFFECT_SUBCONTRACT_MAJOR_VERSIONS,
 )
 from omnibase_core.constants.event_types import (
     NODE_FAILURE,
@@ -28,6 +40,7 @@ from omnibase_core.constants.event_types import (
 
 __all__ = [
     "constants_contract_fields",
+    "constants_effect",
     "normalize_legacy_event_type",
     # Event type constants
     "NODE_FAILURE",
@@ -50,4 +63,15 @@ __all__ = [
     "DEFAULT_PROCESSED_VALUE",
     "INTEGRATION_KEY",
     "PROCESSED_KEY",
+    # Effect execution constants
+    "DEFAULT_CIRCUIT_BREAKER_FAILURE_THRESHOLD",
+    "DEFAULT_CIRCUIT_BREAKER_SUCCESS_THRESHOLD",
+    "DEFAULT_CIRCUIT_BREAKER_TIMEOUT_MS",
+    "DEFAULT_MAX_FIELD_EXTRACTION_DEPTH",
+    "DEFAULT_MAX_RETRY_ATTEMPTS",
+    "DEFAULT_OPERATION_TIMEOUT_MS",
+    "DEFAULT_RETRY_BASE_DELAY_MS",
+    "DEFAULT_RETRY_JITTER_FACTOR",
+    "MIN_EFFECT_SUBCONTRACT_MINOR_VERSION",
+    "SUPPORTED_EFFECT_SUBCONTRACT_MAJOR_VERSIONS",
 ]

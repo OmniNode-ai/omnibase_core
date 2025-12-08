@@ -152,6 +152,7 @@ class TestOrchestratorWithIntentPublisher(MixinIntentPublisher):
 # ============================================================================
 
 
+@pytest.mark.integration
 class TestIntentPublisherIntegration:
     """Integration tests for intent publisher pattern."""
 

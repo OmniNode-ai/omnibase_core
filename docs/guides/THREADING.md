@@ -6,6 +6,38 @@ This document explains the concurrency model and thread safety guarantees for ON
 
 **Key Takeaway**: Most ONEX node components are **NOT thread-safe by default**. Careful synchronization is required for concurrent usage.
 
+## Thread Safety Warnings Summary
+
+This section consolidates all critical thread safety warnings for quick reference.
+
+### Critical Warnings
+
+| Component | Risk Level | Issue | Mitigation |
+|-----------|------------|-------|------------|
+| `NodeCompute` | High | Cache operations not atomic | Use thread-local instances or locked cache |
+| `NodeEffect` | Critical | Circuit breaker state corruption | Use thread-local instances (recommended) |
+| `NodeReducer` | High | FSM state is mutable | Use thread-local instances |
+| `NodeOrchestrator` | High | Workflow state is mutable | Use thread-local instances |
+| `ModelComputeCache` | High | LRU eviction races | Wrap with `threading.Lock` |
+| `ModelCircuitBreaker` | High | Counter/state races | Use locks or thread-local instances |
+| `ModelEffectTransaction` | Critical | Rollback assumes single-thread | Never share across threads |
+
+### Safe Components
+
+| Component | Notes |
+|-----------|-------|
+| `ModelONEXContainer` | Read-only after initialization |
+| Pydantic Models | Immutable after creation |
+| Input/Output Models | Frozen via Pydantic |
+| Stateless Mixin Methods | Safe if inputs are thread-safe |
+
+### Quick Decision Guide
+
+1. **Creating a multi-threaded service?** Use thread-local node instances (Option 1 patterns below)
+2. **Need shared state?** Add explicit synchronization with `threading.Lock`
+3. **Using asyncio only?** Single-threaded event loop avoids most races (but watch for `run_in_executor`)
+4. **Production deployment?** Complete the [Production Checklist](#production-checklist) at the end of this document
+
 ## NodeCompute Thread Safety
 
 ### Parallel Processing
@@ -18,14 +50,14 @@ This document explains the concurrency model and thread safety guarantees for ON
 
 ### Computation Cache
 
-**Current implementation: NOT thread-safe by default**
+#### Current Implementation: NOT Thread-Safe by Default
 
 The `ModelComputeCache` LRU cache operations are not atomic:
 - Concurrent `get()` calls can race with `put()` operations
 - LRU eviction logic can corrupt cache state under concurrent access
 - Access count updates are not atomic
 
-**Mitigation: Add threading.Lock for production use**
+#### Mitigation: Add threading.Lock for Production Use
 
 Example of thread-safe cache wrapper:
 
@@ -158,19 +190,22 @@ compute_node.computation_cache = ThreadSafeComputeCache(
 
 ### Why NodeEffect is NOT Thread-Safe
 
-**Circuit Breaker State**:
+#### Circuit Breaker State
+
 - Circuit breakers are stored in `_circuit_breakers` instance dictionary
 - Keyed by `operation_id` (UUID) for per-operation failure tracking
 - State includes failure counters, timestamps, and state transitions
 - No synchronization primitives (by design for performance)
 
-**State Race Conditions**:
+#### State Race Conditions
+
 - `failure_count` increments are not atomic
 - `last_failure_time` updates can race
 - Multiple threads may incorrectly trip/reset breaker state
 - Dictionary updates (`_circuit_breakers[op_id] = breaker`) are not atomic
 
-**Impact Under Concurrent Load**:
+#### Impact Under Concurrent Load
+
 - Circuit breakers may fail to trip when they should (missed failures)
 - Circuit breakers may trip prematurely (double-counted failures)
 - Circuit breakers may reset incorrectly (race on success counter)
@@ -497,7 +532,7 @@ def worker_thread(container):
 
 ### Node Instance Sharing
 
-**DO NOT share node instances across threads without careful analysis:**
+**DO NOT** share node instances across threads without careful analysis:
 
 ```python
 # UNSAFE - shared NodeCompute with cache races

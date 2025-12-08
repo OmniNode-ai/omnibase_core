@@ -69,8 +69,20 @@ class ModelEffectOutput(BaseModel):
             PENDING, etc.). Indicates whether the operation was successfully applied.
         processing_time_ms: Actual execution time in milliseconds. Includes all
             retries and transaction overhead.
-        retry_count: Number of retry attempts made before success or final failure.
-            Value of 0 indicates success on first attempt.
+        retry_count: Number of FAILED ATTEMPTS before success or final failure.
+            This semantic counts "how many times did we fail" rather than "how many
+            retries did we perform", which is useful for metrics and debugging to
+            understand the reliability of the operation.
+
+            Semantic definition:
+                - Success on first try: retry_count = 0
+                - Failed once, succeeded on retry: retry_count = 1
+                - Failed twice, succeeded on second retry: retry_count = 2
+                - Failed all attempts (max_retries exhausted): retry_count = max_retries + 1
+
+            Note: This differs from "retries_performed" which would be one less than
+            retry_count (since the first attempt isn't a "retry"). See the error
+            context in MixinEffectExecution._execute_with_retry for both values.
         side_effects_applied: List of side effect identifiers that were successfully
             applied. Useful for audit trails and debugging.
         rollback_operations: List of rollback operation identifiers if transaction
@@ -93,7 +105,12 @@ class ModelEffectOutput(BaseModel):
     effect_type: EnumEffectType
     transaction_state: EnumTransactionState
     processing_time_ms: float
-    retry_count: int = 0
+    retry_count: int = Field(
+        default=0,
+        ge=0,
+        description="Number of failed attempts before success or final failure. "
+        "0 = success on first try, 1 = failed once then succeeded, etc.",
+    )
     side_effects_applied: list[str] = Field(default_factory=list)
     rollback_operations: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)

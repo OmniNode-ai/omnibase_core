@@ -70,7 +70,7 @@ Example Python Usage:
     >>> contract = ModelEffectSubcontract(
     ...     version=ModelSemVer(major=1, minor=0, patch=0),
     ...     operation_name="user_creation_effect",
-    ...     operation_version="1.0.0",
+    ...     operation_version=ModelSemVer(major=1, minor=0, patch=0),
     ...     description="Create user via API",
     ...     operations=[...],  # List of ModelEffectOperation
     ... )
@@ -88,14 +88,12 @@ Author: ONEX Framework Team
 
 from uuid import UUID, uuid4
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    field_validator,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.constants.constants_effect import (
+    MIN_EFFECT_SUBCONTRACT_MINOR_VERSION,
+    SUPPORTED_EFFECT_SUBCONTRACT_MAJOR_VERSIONS,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
@@ -655,7 +653,7 @@ class ModelEffectSubcontract(BaseModel):
         >>> contract = ModelEffectSubcontract(
         ...     version=ModelSemVer(major=1, minor=0, patch=0),
         ...     operation_name="user_creation_flow",
-        ...     operation_version="1.0.0",
+        ...     operation_version=ModelSemVer(major=1, minor=0, patch=0),
         ...     description="Create user and publish events",
         ...     execution_order=EnumExecutionOrder.FORWARD,
         ...     operations=[...],
@@ -675,10 +673,8 @@ class ModelEffectSubcontract(BaseModel):
         description="Unique operation set name",
     )
 
-    operation_version: str = Field(
-        ...,
-        min_length=1,
-        max_length=50,
+    operation_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
         description="Operation implementation version",
     )
 
@@ -722,6 +718,76 @@ class ModelEffectSubcontract(BaseModel):
         default_factory=uuid4,
         description="Correlation ID for tracking related operations",
     )
+
+    @field_validator("version")
+    @classmethod
+    def validate_contract_version(cls, v: ModelSemVer) -> ModelSemVer:
+        """
+        Validate that the contract version is supported by this runtime.
+
+        Contract version validation ensures:
+        1. The major version is in the supported set (breaking changes)
+        2. The minor version meets the minimum requirements (feature availability)
+
+        This prevents runtime errors when loading contracts with incompatible
+        schema versions. Major version bumps indicate breaking changes that
+        require code updates. Minor version requirements ensure expected
+        features are available.
+
+        Args:
+            v: Semantic version of the subcontract.
+
+        Returns:
+            The validated version.
+
+        Raises:
+            ModelOnexError: If the version is not supported.
+
+        Example:
+            >>> # Valid version
+            >>> subcontract = ModelEffectSubcontract(
+            ...     version=ModelSemVer(major=1, minor=0, patch=0),
+            ...     operation_name="test",
+            ...     operation_version=ModelSemVer(major=1, minor=0, patch=0),
+            ...     operations=[...],
+            ... )
+            >>>
+            >>> # Invalid major version - raises ModelOnexError
+            >>> subcontract = ModelEffectSubcontract(
+            ...     version=ModelSemVer(major=99, minor=0, patch=0),  # Not supported
+            ...     ...
+            ... )
+        """
+        if v.major not in SUPPORTED_EFFECT_SUBCONTRACT_MAJOR_VERSIONS:
+            supported_versions = sorted(SUPPORTED_EFFECT_SUBCONTRACT_MAJOR_VERSIONS)
+            raise ModelOnexError(
+                message=f"Unsupported effect subcontract major version: {v.major}. "
+                f"Supported major versions: {supported_versions}. "
+                f"Please upgrade the contract or use a compatible runtime version.",
+                error_code=EnumCoreErrorCode.VERSION_INCOMPATIBLE,
+                context={
+                    "provided_version": str(v),
+                    "provided_major": v.major,
+                    "supported_major_versions": supported_versions,
+                },
+            )
+
+        # Check minimum minor version for the major version
+        if v.minor < MIN_EFFECT_SUBCONTRACT_MINOR_VERSION:
+            raise ModelOnexError(
+                message=f"Effect subcontract minor version {v.minor} is below minimum "
+                f"required version {MIN_EFFECT_SUBCONTRACT_MINOR_VERSION} for major "
+                f"version {v.major}. Some required features may be missing.",
+                error_code=EnumCoreErrorCode.VERSION_INCOMPATIBLE,
+                context={
+                    "provided_version": str(v),
+                    "provided_minor": v.minor,
+                    "minimum_minor": MIN_EFFECT_SUBCONTRACT_MINOR_VERSION,
+                    "major_version": v.major,
+                },
+            )
+
+        return v
 
     @field_validator("operations")
     @classmethod

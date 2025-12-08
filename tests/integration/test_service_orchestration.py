@@ -18,6 +18,7 @@ from omnibase_core.models.container.model_service import ModelService
 from omnibase_core.models.service.model_service_health import ModelServiceHealth
 
 
+@pytest.mark.integration
 class TestServiceHealthLifecycle:
     """Test complete service health monitoring lifecycle."""
 
@@ -149,6 +150,7 @@ class TestServiceHealthLifecycle:
             assert reliabilities[i] >= reliabilities[i + 1]
 
 
+@pytest.mark.integration
 class TestServiceSecurityAnalysis:
     """Test service security analysis features."""
 
@@ -227,6 +229,7 @@ class TestServiceSecurityAnalysis:
         )
 
 
+@pytest.mark.integration
 class TestServicePerformanceAnalysis:
     """Test service performance analysis features."""
 
@@ -297,6 +300,7 @@ class TestServicePerformanceAnalysis:
         assert service.get_uptime_human() == "5d"
 
 
+@pytest.mark.integration
 class TestServiceBusinessImpact:
     """Test business impact assessment features."""
 
@@ -337,6 +341,7 @@ class TestServiceBusinessImpact:
         assert impact.confidence_score == 1.0
 
 
+@pytest.mark.integration
 class TestServiceModelIntegration:
     """Test integration between ModelService and ModelServiceHealth."""
 
@@ -409,6 +414,7 @@ class TestServiceModelIntegration:
         assert updated_service.health_status == "healthy"
 
 
+@pytest.mark.integration
 class TestServiceValidationIntegration:
     """Test service validation across models."""
 
@@ -552,6 +558,7 @@ class TestServiceValidationIntegration:
                 )
 
 
+@pytest.mark.integration
 class TestEndToEndServiceWorkflow:
     """Test complete end-to-end service monitoring workflow."""
 

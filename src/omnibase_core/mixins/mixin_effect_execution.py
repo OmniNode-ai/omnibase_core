@@ -72,6 +72,11 @@ import time
 from typing import Any
 from uuid import UUID
 
+from omnibase_core.constants.constants_effect import (
+    DEFAULT_MAX_FIELD_EXTRACTION_DEPTH,
+    DEFAULT_OPERATION_TIMEOUT_MS,
+    DEFAULT_RETRY_JITTER_FACTOR,
+)
 from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumTransactionState
@@ -303,10 +308,10 @@ class MixinEffectExecution:
 
             # Parse operation configuration
             io_config = self._parse_io_config(operation_config)
-            # Default operation timeout: 30000ms (30s) as final fallback
-            # This matches the resolved context timeout defaults (30s) for consistency.
-            # Individual IO configs may specify their own timeout_ms values.
-            DEFAULT_OPERATION_TIMEOUT_MS = 30000
+            # Use default operation timeout from constants if not specified.
+            # DEFAULT_OPERATION_TIMEOUT_MS (30s) matches resolved context timeout
+            # defaults for consistency. Individual IO configs may specify their own
+            # timeout_ms values.
             operation_timeout_ms = (
                 operation_config.get("operation_timeout_ms")
                 or DEFAULT_OPERATION_TIMEOUT_MS
@@ -366,6 +371,10 @@ class MixinEffectExecution:
             raise ModelOnexError(
                 message="Missing io_config in operation",
                 error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+                context={
+                    "operation_config_keys": list(operation_config.keys()),
+                    "operation_name": operation_config.get("operation_name", "unknown"),
+                },
             )
 
         handler_type = io_config_data.get("handler_type")
@@ -383,11 +392,27 @@ class MixinEffectExecution:
                 raise ModelOnexError(
                     message=f"Unknown handler type: {handler_type}",
                     error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+                    context={
+                        "handler_type": handler_type,
+                        "supported_handlers": ["http", "db", "kafka", "filesystem"],
+                        "operation_name": operation_config.get(
+                            "operation_name", "unknown"
+                        ),
+                    },
                 )
+        except ModelOnexError:
+            raise
         except Exception as e:
             raise ModelOnexError(
                 message=f"Failed to parse io_config: {e!s}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "handler_type": handler_type,
+                    "operation_name": operation_config.get("operation_name", "unknown"),
+                    "io_config_keys": (
+                        list(io_config_data.keys()) if io_config_data else []
+                    ),
+                },
             ) from e
 
     def _resolve_io_context(
@@ -441,6 +466,11 @@ class MixinEffectExecution:
                     raise ModelOnexError(
                         message=f"Environment variable not found: {var_name}",
                         error_code=EnumCoreErrorCode.CONFIGURATION_NOT_FOUND,
+                        context={
+                            "variable_name": var_name,
+                            "placeholder": placeholder,
+                            "operation_id": str(input_data.operation_id),
+                        },
                     )
                 return value
 
@@ -454,18 +484,36 @@ class MixinEffectExecution:
                         raise ModelOnexError(
                             message=f"Secret not found: {secret_key}",
                             error_code=EnumCoreErrorCode.CONFIGURATION_NOT_FOUND,
+                            context={
+                                "secret_key": secret_key,
+                                "placeholder": placeholder,
+                                "operation_id": str(input_data.operation_id),
+                            },
                         )
                     return str(secret_value)
+                except ModelOnexError:
+                    raise
                 except Exception as e:
                     raise ModelOnexError(
                         message=f"Failed to resolve secret: {secret_key}",
                         error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                        context={
+                            "secret_key": secret_key,
+                            "placeholder": placeholder,
+                            "operation_id": str(input_data.operation_id),
+                            "error_type": type(e).__name__,
+                        },
                     ) from e
 
             else:
                 raise ModelOnexError(
                     message=f"Unknown template prefix: {placeholder}",
                     error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+                    context={
+                        "placeholder": placeholder,
+                        "supported_prefixes": ["input.", "env.", "secret."],
+                        "operation_id": str(input_data.operation_id),
+                    },
                 )
 
         # Resolve based on handler type
@@ -621,7 +669,10 @@ class MixinEffectExecution:
             )
 
     def _extract_field(
-        self, data: dict[str, Any], field_path: str, max_depth: int = 10
+        self,
+        data: dict[str, Any],
+        field_path: str,
+        max_depth: int | None = None,
     ) -> Any:
         """
         Extract nested field from data using dotpath notation.
@@ -629,18 +680,21 @@ class MixinEffectExecution:
         Security:
             Enforces a maximum traversal depth to prevent denial-of-service
             attacks via deeply nested or maliciously crafted field paths.
-            Default max_depth of 10 is sufficient for typical use cases while
-            preventing abuse.
+            Default max_depth (from DEFAULT_MAX_FIELD_EXTRACTION_DEPTH constant)
+            is sufficient for typical use cases while preventing abuse.
 
         Args:
             data: Source data dictionary.
             field_path: Dotted path like "user.id" or "config.timeout_ms".
-            max_depth: Maximum allowed path depth (default: 10). Paths deeper
-                than this limit will return None.
+            max_depth: Maximum allowed path depth. Defaults to
+                DEFAULT_MAX_FIELD_EXTRACTION_DEPTH (10). Paths deeper than
+                this limit will return None.
 
         Returns:
             Extracted value or None if not found or depth limit exceeded.
         """
+        if max_depth is None:
+            max_depth = DEFAULT_MAX_FIELD_EXTRACTION_DEPTH
         parts = field_path.split(".")
 
         # Enforce depth limit for security
@@ -803,9 +857,10 @@ class MixinEffectExecution:
                     # Exponential backoff with jitter
                     # Uses random.uniform() for proper randomness to prevent retry storms
                     # when multiple clients retry simultaneously (thundering herd problem).
-                    # Jitter adds 0-10% random variation to the base delay.
+                    # Jitter adds 0-10% random variation to the base delay (configurable
+                    # via DEFAULT_RETRY_JITTER_FACTOR constant).
                     delay_ms = retry_delay_ms * (2**attempt)
-                    jitter = delay_ms * 0.1  # 10% jitter range
+                    jitter = delay_ms * DEFAULT_RETRY_JITTER_FACTOR
                     actual_delay_ms = delay_ms + random.uniform(0, jitter)
 
                     # Wait before retry
@@ -1091,3 +1146,105 @@ class MixinEffectExecution:
                 ) from e
 
         return extracted
+
+    def get_registered_handlers(self) -> dict[str, bool]:
+        """
+        Get registration status of all known effect handler protocols.
+
+        This debugging utility helps diagnose handler registration issues by
+        checking which handlers are available in the container. Use this method
+        when effects fail with "handler not registered" errors.
+
+        Handler Protocol Names:
+            - ProtocolEffectHandler_HTTP: HTTP/REST API handler
+            - ProtocolEffectHandler_DB: Database query handler
+            - ProtocolEffectHandler_KAFKA: Kafka message producer handler
+            - ProtocolEffectHandler_FILESYSTEM: File system operations handler
+
+        Returns:
+            Dictionary mapping handler protocol names to registration status
+            (True if registered, False if not).
+
+        Example:
+            >>> handlers = node.get_registered_handlers()
+            >>> print(handlers)
+            {
+                'ProtocolEffectHandler_HTTP': True,
+                'ProtocolEffectHandler_DB': False,
+                'ProtocolEffectHandler_KAFKA': True,
+                'ProtocolEffectHandler_FILESYSTEM': False,
+            }
+            >>> # Identify missing handlers
+            >>> missing = [name for name, registered in handlers.items() if not registered]
+            >>> print(f"Missing handlers: {missing}")
+
+        Note:
+            This method is intended for debugging and diagnostics. In production,
+            ensure all required handlers are registered during application startup.
+
+        See Also:
+            - _execute_operation() for handler dispatch logic
+            - MixinEffectExecution docstring for handler registration examples
+        """
+        handler_protocols = [
+            "ProtocolEffectHandler_HTTP",
+            "ProtocolEffectHandler_DB",
+            "ProtocolEffectHandler_KAFKA",
+            "ProtocolEffectHandler_FILESYSTEM",
+        ]
+
+        registration_status: dict[str, bool] = {}
+
+        for protocol_name in handler_protocols:
+            try:
+                self.container.get_service(protocol_name)
+                registration_status[protocol_name] = True
+            except Exception:
+                registration_status[protocol_name] = False
+
+        return registration_status
+
+    def get_handler_registration_report(self) -> str:
+        """
+        Get a human-readable report of handler registration status.
+
+        Useful for debugging and logging when diagnosing effect execution issues.
+        Provides a formatted report with registration status and guidance for
+        missing handlers.
+
+        Returns:
+            Multi-line string report of handler registration status.
+
+        Example:
+            >>> print(node.get_handler_registration_report())
+            Effect Handler Registration Status:
+              [OK] ProtocolEffectHandler_HTTP: Registered
+              [MISSING] ProtocolEffectHandler_DB: Not registered
+              [OK] ProtocolEffectHandler_KAFKA: Registered
+              [MISSING] ProtocolEffectHandler_FILESYSTEM: Not registered
+
+            Missing handlers must be registered before use:
+              container.register_service("ProtocolEffectHandler_DB", YourDbHandler())
+              container.register_service("ProtocolEffectHandler_FILESYSTEM", YourFsHandler())
+        """
+        handlers = self.get_registered_handlers()
+        lines = ["Effect Handler Registration Status:"]
+
+        missing_handlers: list[str] = []
+
+        for protocol_name, registered in handlers.items():
+            if registered:
+                lines.append(f"  [OK] {protocol_name}: Registered")
+            else:
+                lines.append(f"  [MISSING] {protocol_name}: Not registered")
+                missing_handlers.append(protocol_name)
+
+        if missing_handlers:
+            lines.append("")
+            lines.append("Missing handlers must be registered before use:")
+            for handler in missing_handlers:
+                lines.append(
+                    f'  container.register_service("{handler}", YourHandler())'
+                )
+
+        return "\n".join(lines)

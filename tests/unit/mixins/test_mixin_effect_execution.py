@@ -1675,3 +1675,371 @@ class TestEdgeCases:
         # The error should be wrapped but the original should be in the chain
         # (because handler exception is wrapped in Handler execution failed)
         assert "Handler execution failed" in str(exc_info.value)
+
+
+class TestMixinEffectExecutionThreadSafety:
+    """Thread safety tests for MixinEffectExecution.
+
+    These tests verify that the mixin properly handles concurrent access
+    to shared state like circuit breakers.
+
+    See docs/guides/THREADING.md for complete thread safety guidance.
+    """
+
+    def test_circuit_breakers_dict_is_instance_specific(self) -> None:
+        """Test that each instance gets its own circuit breakers dictionary.
+
+        This is critical for thread safety - each node instance should have
+        its own circuit breakers to avoid cross-thread contamination.
+        """
+        container1 = MockContainer()
+        container2 = MockContainer()
+
+        node1 = TestNode(container=container1)
+        node2 = TestNode(container=container2)
+
+        # Each node should have its own circuit breakers dict
+        assert node1._circuit_breakers is not node2._circuit_breakers
+
+        # Adding to one should not affect the other
+        from uuid import uuid4
+
+        operation_id = uuid4()
+        node1._check_circuit_breaker(operation_id)
+
+        assert operation_id in node1._circuit_breakers
+        assert operation_id not in node2._circuit_breakers
+
+    def test_thread_local_node_instances_recommended_pattern(self) -> None:
+        """Demonstrate the recommended thread-local pattern for safe concurrent usage.
+
+        This test validates the pattern documented in docs/guides/THREADING.md:
+        each thread should create its own node instance to avoid race conditions.
+        """
+        import threading
+
+        container = MockContainer()
+        thread_local = threading.local()
+
+        def get_thread_local_node() -> TestNode:
+            """Get or create thread-local TestNode instance."""
+            if not hasattr(thread_local, "effect_node"):
+                thread_local.effect_node = TestNode(container=container)
+            return thread_local.effect_node
+
+        # Track instances created by each thread
+        instances: list[TestNode] = []
+        lock = threading.Lock()
+
+        def worker() -> None:
+            """Each thread gets its own node instance."""
+            node = get_thread_local_node()
+            with lock:
+                instances.append(node)
+
+        # Launch multiple threads
+        threads = []
+        num_threads = 3
+        for _ in range(num_threads):
+            thread = threading.Thread(target=worker)
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
+        # Each thread should have gotten a unique instance
+        instance_ids = [id(inst) for inst in instances]
+        assert len(instance_ids) == num_threads
+        assert len(set(instance_ids)) == num_threads, (
+            "Each thread should have a unique node instance for thread safety"
+        )
+
+    def test_circuit_breaker_state_isolation(self) -> None:
+        """Test that circuit breaker state is isolated per operation_id.
+
+        This ensures that different operations don't interfere with each other's
+        circuit breaker state, which is important for concurrent usage.
+        """
+        container = MockContainer()
+        node = TestNode(container=container)
+
+        from uuid import uuid4
+
+        # Create two different operation IDs
+        op_id_1 = uuid4()
+        op_id_2 = uuid4()
+
+        # Initialize circuit breakers for both
+        node._check_circuit_breaker(op_id_1)
+        node._check_circuit_breaker(op_id_2)
+
+        # Record failures for one operation
+        for _ in range(3):
+            node._record_circuit_breaker_result(op_id_1, success=False)
+
+        # Other operation should be unaffected
+        cb1 = node._circuit_breakers[op_id_1]
+        cb2 = node._circuit_breakers[op_id_2]
+
+        assert cb1.failure_count == 3
+        assert cb2.failure_count == 0
+
+
+class TestEffectContractYamlParsing:
+    """Tests for YAML effect contract parsing.
+
+    These tests verify that the example YAML contracts in examples/contracts/effect/
+    parse correctly and can be used to configure effect operations.
+
+    Tests validate:
+    - YAML syntax correctness
+    - IO configuration parsing for all handler types (HTTP, DB, Kafka, Filesystem)
+    - Retry policy configuration
+    - Circuit breaker configuration
+    - Response handling configuration
+    - Template variable syntax
+    """
+
+    @staticmethod
+    def _get_examples_dir() -> str:
+        """Get path to examples/contracts/effect directory."""
+        from pathlib import Path
+
+        # Navigate from tests/unit/mixins to project root
+        current_file = Path(__file__)
+        project_root = current_file.parent.parent.parent.parent
+        return str(project_root / "examples" / "contracts" / "effect")
+
+    def test_http_api_call_contract_parses_correctly(self) -> None:
+        """Test that http_api_call.yaml parses with valid effect_operations."""
+        from pathlib import Path
+
+        import yaml
+
+        contract_path = Path(self._get_examples_dir()) / "http_api_call.yaml"
+        if not contract_path.exists():
+            pytest.skip(f"Example contract not found: {contract_path}")
+
+        with open(contract_path) as f:
+            contract_data = yaml.safe_load(f)
+
+        # Verify structure
+        assert "effect_operations" in contract_data, "Missing effect_operations section"
+        effect_ops = contract_data["effect_operations"]
+
+        # Verify version
+        assert "version" in effect_ops, "Missing version in effect_operations"
+
+        # Verify operations array
+        assert "operations" in effect_ops, "Missing operations array"
+        assert len(effect_ops["operations"]) > 0, "Operations array should not be empty"
+
+        # Verify first operation has required fields
+        first_op = effect_ops["operations"][0]
+        assert "operation_name" in first_op, "Missing operation_name"
+        assert "io_config" in first_op, "Missing io_config"
+        assert first_op["io_config"]["handler_type"] == "http", (
+            "Handler type should be http"
+        )
+
+    def test_filesystem_operations_contract_parses_correctly(self) -> None:
+        """Test that filesystem_operations.yaml parses with valid effect_operations."""
+        from pathlib import Path
+
+        import yaml
+
+        contract_path = Path(self._get_examples_dir()) / "filesystem_operations.yaml"
+        if not contract_path.exists():
+            pytest.skip(f"Example contract not found: {contract_path}")
+
+        with open(contract_path) as f:
+            contract_data = yaml.safe_load(f)
+
+        # Verify structure
+        assert "effect_operations" in contract_data, "Missing effect_operations section"
+        effect_ops = contract_data["effect_operations"]
+
+        # Verify operations array
+        assert "operations" in effect_ops, "Missing operations array"
+        assert len(effect_ops["operations"]) > 0, "Operations array should not be empty"
+
+        # Verify filesystem operations have correct handler type
+        for op in effect_ops["operations"]:
+            assert op["io_config"]["handler_type"] == "filesystem", (
+                f"Handler type should be filesystem for operation: {op.get('operation_name')}"
+            )
+
+    def test_db_query_contract_parses_correctly(self) -> None:
+        """Test that db_query.yaml parses with valid effect_operations."""
+        from pathlib import Path
+
+        import yaml
+
+        contract_path = Path(self._get_examples_dir()) / "db_query.yaml"
+        if not contract_path.exists():
+            pytest.skip(f"Example contract not found: {contract_path}")
+
+        with open(contract_path) as f:
+            contract_data = yaml.safe_load(f)
+
+        # Verify structure
+        assert "effect_operations" in contract_data, "Missing effect_operations section"
+        effect_ops = contract_data["effect_operations"]
+
+        # Verify operations exist
+        assert "operations" in effect_ops, "Missing operations array"
+        assert len(effect_ops["operations"]) > 0, "Operations array should not be empty"
+
+        # Verify DB operations have correct handler type
+        for op in effect_ops["operations"]:
+            assert op["io_config"]["handler_type"] == "db", (
+                f"Handler type should be db for operation: {op.get('operation_name')}"
+            )
+
+    def test_kafka_produce_contract_parses_correctly(self) -> None:
+        """Test that kafka_produce.yaml parses with valid effect_operations."""
+        from pathlib import Path
+
+        import yaml
+
+        contract_path = Path(self._get_examples_dir()) / "kafka_produce.yaml"
+        if not contract_path.exists():
+            pytest.skip(f"Example contract not found: {contract_path}")
+
+        with open(contract_path) as f:
+            contract_data = yaml.safe_load(f)
+
+        # Verify structure
+        assert "effect_operations" in contract_data, "Missing effect_operations section"
+        effect_ops = contract_data["effect_operations"]
+
+        # Verify operations exist
+        assert "operations" in effect_ops, "Missing operations array"
+        assert len(effect_ops["operations"]) > 0, "Operations array should not be empty"
+
+        # Verify Kafka operations have correct handler type
+        for op in effect_ops["operations"]:
+            assert op["io_config"]["handler_type"] == "kafka", (
+                f"Handler type should be kafka for operation: {op.get('operation_name')}"
+            )
+
+    def test_resilient_effect_contract_parses_correctly(self) -> None:
+        """Test that resilient_effect.yaml parses with retry and circuit breaker config."""
+        from pathlib import Path
+
+        import yaml
+
+        contract_path = Path(self._get_examples_dir()) / "resilient_effect.yaml"
+        if not contract_path.exists():
+            pytest.skip(f"Example contract not found: {contract_path}")
+
+        with open(contract_path) as f:
+            contract_data = yaml.safe_load(f)
+
+        # Verify structure
+        assert "effect_operations" in contract_data, "Missing effect_operations section"
+        effect_ops = contract_data["effect_operations"]
+
+        # Verify operations exist
+        assert "operations" in effect_ops, "Missing operations array"
+
+        # Check for resilience configuration (retry_policy or circuit_breaker)
+        has_resilience_config = False
+        for op in effect_ops["operations"]:
+            if "retry_policy" in op or "circuit_breaker" in op:
+                has_resilience_config = True
+                break
+
+        # Also check for default policies at the effect_operations level
+        if (
+            "default_retry_policy" in effect_ops
+            or "default_circuit_breaker" in effect_ops
+        ):
+            has_resilience_config = True
+
+        assert has_resilience_config, (
+            "Resilient effect contract should have retry_policy or circuit_breaker configuration"
+        )
+
+    def test_all_example_contracts_parse_without_error(self) -> None:
+        """Test that all example YAML contracts parse without YAML syntax errors."""
+        from pathlib import Path
+
+        import yaml
+
+        examples_dir = Path(self._get_examples_dir())
+        if not examples_dir.exists():
+            pytest.skip(f"Examples directory not found: {examples_dir}")
+
+        yaml_files = list(examples_dir.glob("*.yaml"))
+        assert len(yaml_files) > 0, "No YAML files found in examples/contracts/effect/"
+
+        for yaml_file in yaml_files:
+            with open(yaml_file) as f:
+                try:
+                    data = yaml.safe_load(f)
+                    assert data is not None, f"Empty YAML file: {yaml_file.name}"
+                except yaml.YAMLError as e:
+                    pytest.fail(f"YAML parsing error in {yaml_file.name}: {e}")
+
+    def test_io_config_extraction_from_yaml_operation(
+        self, test_node: TestNode
+    ) -> None:
+        """Test that _parse_io_config correctly parses YAML-style operation configs."""
+        # Simulate a YAML operation config structure
+        yaml_operation = {
+            "operation_name": "test_http_call",
+            "io_config": {
+                "handler_type": "http",
+                "url_template": "https://api.example.com/v1/users/${input.user_id}",
+                "method": "GET",
+                "headers": {
+                    "Authorization": "Bearer ${secret.API_TOKEN}",
+                    "Content-Type": "application/json",
+                },
+                "timeout_ms": 5000,
+            },
+            "retry_policy": {
+                "max_attempts": 3,
+                "backoff_strategy": "exponential",
+                "base_delay_ms": 100,
+            },
+        }
+
+        # Test that io_config parses correctly
+        io_config = test_node._parse_io_config(yaml_operation)
+
+        from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
+            ModelHttpIOConfig,
+        )
+
+        assert isinstance(io_config, ModelHttpIOConfig)
+        assert (
+            io_config.url_template
+            == "https://api.example.com/v1/users/${input.user_id}"
+        )
+        assert io_config.method == "GET"
+        assert io_config.headers["Content-Type"] == "application/json"
+
+    def test_template_variables_in_yaml_configs(self, test_node: TestNode) -> None:
+        """Test that template variables in YAML configs resolve correctly."""
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/${input.version}/users/${input.user_id}",
+            method="GET",
+            headers={"X-Request-ID": "${input.request_id}"},
+        )
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={
+                "version": "v2",
+                "user_id": "12345",
+                "request_id": "req-abc-123",
+            },
+        )
+
+        result = test_node._resolve_io_context(io_config, input_data)
+
+        assert result.url == "https://api.example.com/v2/users/12345"
+        assert result.headers["X-Request-ID"] == "req-abc-123"

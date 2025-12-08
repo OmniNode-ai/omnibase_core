@@ -102,10 +102,16 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         node = NodeMyEffect(container)
         node.effect_subcontract = effect_subcontract  # Or auto-loaded from contract
 
-        # Execute effect
+        # Execute effect - effect_type and operation_data are required fields
         result = await node.process(ModelEffectInput(
             effect_type=EnumEffectType.API_CALL,
-            operation_data={"name": "John Doe"},
+            operation_data={
+                "name": "John Doe",
+                "email": "john@example.com",
+            },
+            retry_enabled=True,
+            max_retries=3,
+            timeout_ms=5000,
         ))
         ```
 
@@ -291,18 +297,27 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         Circuit breakers are keyed by operation_id and maintain
         process-local state for failure tracking and recovery.
 
+        Default Configuration:
+            Uses ModelCircuitBreaker.create_resilient() which provides production-ready
+            defaults (failure_threshold=10, success_threshold=5, timeout_seconds=120).
+            This aligns with MixinEffectExecution._check_circuit_breaker() for
+            consistent behavior between NodeEffect and the mixin.
+
         Args:
             operation_id: Unique identifier for the operation being protected
 
         Returns:
-            ModelCircuitBreaker instance for the operation
+            ModelCircuitBreaker instance for the operation with resilient defaults
 
         Note:
             Circuit breakers are NOT thread-safe. Each thread should use
             its own NodeEffect instance.
         """
         if operation_id not in self._circuit_breakers:
-            self._circuit_breakers[operation_id] = ModelCircuitBreaker()
+            # Use create_resilient() for production-ready defaults, matching mixin behavior
+            self._circuit_breakers[operation_id] = (
+                ModelCircuitBreaker.create_resilient()
+            )
         return self._circuit_breakers[operation_id]
 
     def reset_circuit_breakers(self) -> None:
@@ -314,10 +329,10 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         """
         self._circuit_breakers.clear()
 
-    async def _initialize_node_resources(self) -> None:
+    async def _initialize_node_resources(self) -> None:  # stub-ok
         """Initialize effect-specific resources.
 
-        Circuit breakers are lazily initialized on first use.
+        Circuit breakers are lazily initialized on first use via get_circuit_breaker().
         No additional resources needed for contract-driven execution.
         """
 

@@ -35,18 +35,24 @@ All examples follow the **contract-driven pattern**, where the YAML contract def
 
 **Key Features**:
 ```yaml
-http_config:
+# NOTE: io_config uses flat structure (no http_config wrapper)
+io_config:
+  handler_type: http
   method: POST
-  url: "https://api.example.com/v1/users"
+  url_template: "https://api.example.com/v1/users"
   body_template: |
     {
-      "email": "${email}",
-      "display_name": "${display_name}"
+      "email": "${input.email}",
+      "display_name": "${input.display_name}"
     }
 
+# Retry policy matching ModelEffectRetryConfig schema
 retry_policy:
+  max_attempts: 3
   backoff_strategy: exponential
-  jitter: true
+  base_delay_ms: 1000
+  max_delay_ms: 10000
+  jitter_enabled: true
 
 response_handling:
   extract_fields:
@@ -77,27 +83,33 @@ response_handling:
 
 **Key Features**:
 ```yaml
-db_config:
-  query: |
+# NOTE: io_config uses flat structure (no db_config wrapper)
+io_config:
+  handler_type: db
+  operation: select
+  connection_name: "user_db_pool"
+  query_template: |
     SELECT id, email, display_name
     FROM users
     WHERE email = $1
     LIMIT 1
 
+  # Query params bind to $1, $2, etc. in order
   query_params:
-    - param_name: "email"
-      source: "operation_data"
-      field: "email"
-      type: "string"
+    - "${input.email}"
 
-  transaction:
-    enabled: true
-    isolation_level: READ_COMMITTED
+  timeout_ms: 5000
+  read_only: true
 
+# Retry policy matching ModelEffectRetryConfig schema
+# NOTE: retryable_error_codes is not part of ModelEffectRetryConfig
+# but can be extended by handlers
 retry_policy:
-  retryable_error_codes:
-    - "40001"  # Serialization failure
-    - "40P01"  # Deadlock detected
+  max_attempts: 4
+  backoff_strategy: exponential
+  base_delay_ms: 100
+  max_delay_ms: 2000
+  jitter_enabled: true
 ```
 
 ---
@@ -123,23 +135,27 @@ retry_policy:
 
 **Key Features**:
 ```yaml
-kafka_config:
-  producer:
-    acks: all
-    enable_idempotence: true
-    compression_type: snappy
+# NOTE: io_config uses flat structure (no kafka_config wrapper)
+io_config:
+  handler_type: kafka
+  topic: "user.events.registration"
+  partition_key_template: "${input.user_id}"
+  payload_template: |
+    {
+      "event_type": "user.registered",
+      "user_id": "${input.user_id}",
+      "timestamp": "${input.timestamp}"
+    }
+  headers:
+    X-Correlation-ID: "${input.correlation_id}"
 
-  message:
-    topic: "user.events.registration"
-    partition_key: "${user_id}"
-    value_template: |
-      {
-        "event_type": "user.registered",
-        "user_id": "${user_id}",
-        "timestamp": "${timestamp}"
-      }
-    headers:
-      X-Correlation-ID: "${correlation_id}"
+  # Acknowledgment level: "0", "1", or "all"
+  acks: "all"
+
+  # Compression: none, gzip, snappy, lz4, zstd
+  compression: snappy
+
+  timeout_ms: 30000
 ```
 
 ---
@@ -169,18 +185,25 @@ kafka_config:
 
 **Key Features**:
 ```yaml
-filesystem_config:
-  operation_type: WRITE
-  path: "/data/documents/${tenant_id}/users/${user_id}/${document_id}.json"
+# NOTE: io_config uses flat structure (no filesystem_config wrapper)
+io_config:
+  handler_type: filesystem
+  operation: write
+  file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}/${input.document_id}.json"
 
-  atomic_write:
-    enabled: true
-    verify_checksum: true
-    checksum_algorithm: "sha256"
+  # Atomic write (write to temp, then rename)
+  atomic: true
 
-  backup:
-    enabled: true
-    max_backups: 3
+  # Create parent directories if needed
+  create_dirs: true
+
+  # File encoding
+  encoding: "utf-8"
+
+  # File permission mode
+  mode: "0644"
+
+  timeout_ms: 10000
 ```
 
 ---
@@ -208,35 +231,28 @@ filesystem_config:
 
 **Key Features**:
 ```yaml
-global_circuit_breaker:
+# Circuit breaker configuration matching ModelEffectCircuitBreaker schema
+circuit_breaker:
   enabled: true
   failure_threshold: 5
+  success_threshold: 2
   timeout_ms: 30000
-  half_open_max_requests: 2
+  half_open_requests: 2
 
-circuit_breaker:  # Per-operation
-  enabled: true
-  failure_threshold: 3
-  on_state_change:
-    emit_event: true
-    notify:
-      channels: [pagerduty, slack]
-
+# Retry policy matching ModelEffectRetryConfig schema
 retry_policy:
+  max_attempts: 4
   backoff_strategy: exponential
-  jitter: true
-  jitter_factor: 0.2
+  base_delay_ms: 1000
+  max_delay_ms: 10000
+  jitter_enabled: true
 
+# Observability configuration matching ModelEffectObservability schema
 observability:
-  log_timing: true
-  tracing:
-    enabled: true
-    service_name: "payment-service"
-  events:
-    on_start: {enabled: true}
-    on_success: {enabled: true}
-    on_failure: {enabled: true}
-    on_retry: {enabled: true}
+  log_request: true
+  log_response: true
+  emit_metrics: true
+  trace_propagation: true
 ```
 
 ---
@@ -260,32 +276,45 @@ effect_operations:
       description: "What this operation does"
 
       # Handler configuration (HTTP, DB, Kafka, Filesystem)
+      # NOTE: Uses flat structure - fields are direct children of io_config
+      # (no http_config, db_config, kafka_config, or filesystem_config wrapper)
       io_config:
         handler_type: http  # or db, kafka, filesystem
-        http_config:
-          # Handler-specific configuration
+        method: POST
+        url_template: "https://api.example.com/resource"
+        body_template: '{"key": "${input.value}"}'
+        timeout_ms: 5000
 
-      # Retry configuration
+      # Retry configuration matching ModelEffectRetryConfig schema
       retry_policy:
-        enabled: true
-        max_retries: 3
+        max_attempts: 3
         backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_enabled: true
 
-      # Circuit breaker (optional)
+      # Circuit breaker (optional) matching ModelEffectCircuitBreaker schema
       circuit_breaker:
         enabled: true
         failure_threshold: 5
+        success_threshold: 2
+        timeout_ms: 60000
+        half_open_requests: 1
 
-      # Response handling
+      # Response handling matching ModelEffectResponseHandling schema
       response_handling:
         success_codes: [200, 201]
         extract_fields:
           result_id: "$.id"
+        fail_on_empty: false
+        extraction_engine: jsonpath
 
-      # Observability
+      # Observability matching ModelEffectObservability schema
       observability:
-        log_requests: true
+        log_request: true
+        log_response: true
         emit_metrics: true
+        trace_propagation: true
 
 metadata:
   version: {major: 1, minor: 0, patch: 0}
@@ -348,13 +377,15 @@ node = NodeUserApiEffect(container, contract=contract_data)
 ### 4. Execute Operations
 
 ```python
+import os
 from omnibase_core.models import ModelEffectInput
 
+# NOTE: Load sensitive values from environment, never hardcode tokens
 input_data = ModelEffectInput(
     operation_data={
         "email": "john.smith@example.com",
         "display_name": "John Smith",
-        "auth_token": "eyJhbGci..."
+        "auth_token": os.environ.get("API_AUTH_TOKEN"),  # Load from secure env
     }
 )
 
@@ -389,23 +420,26 @@ circuit_breaker:
 
 ### Retry Policy
 
-Automatic retries with configurable backoff strategies:
+Automatic retries with configurable backoff strategies (matching ModelEffectRetryConfig schema):
 
 ```yaml
 retry_policy:
-  max_retries: 3
-  backoff_strategy: exponential  # or linear, constant
-  initial_delay_ms: 1000
-  max_delay_ms: 10000
-  backoff_multiplier: 2.0
-  jitter: true                   # Prevent thundering herd
-  jitter_factor: 0.1             # ±10% randomization
+  max_attempts: 3                 # Total attempts including first try
+  backoff_strategy: exponential   # or linear, fixed, random, fibonacci
+  base_delay_ms: 1000             # Initial delay between retries
+  max_delay_ms: 10000             # Maximum delay cap
+  jitter_enabled: true            # Prevent thundering herd
 ```
 
-**Backoff Strategies**:
-- **Exponential**: delay = initial_delay × (multiplier ^ attempt)
-- **Linear**: delay = initial_delay + (multiplier × attempt)
-- **Constant**: delay = initial_delay (fixed)
+**Backoff Strategies** (EnumRetryBackoffStrategy):
+- **exponential**: Exponentially increasing delay (recommended for most cases)
+- **linear**: Linearly increasing delay
+- **fixed**: Constant delay between retries
+- **random**: Random delay within range
+- **fibonacci**: Fibonacci sequence delays
+
+**Note**: The backoff calculation is handled internally by the retry handler.
+The `base_delay_ms` and `max_delay_ms` define the delay bounds.
 
 ### Timeouts
 
@@ -421,26 +455,18 @@ read_timeout_ms: 10000           # Response read timeout
 
 ### Observability
 
-Comprehensive monitoring and tracing:
+Comprehensive monitoring and tracing (matching ModelEffectObservability schema):
 
 ```yaml
 observability:
-  log_requests: true
-  log_responses: true
-  log_timing: true
-  emit_metrics: true
-
-  tracing:
-    enabled: true
-    service_name: "payment-service"
-    span_name: "process_payment"
-
-  events:
-    on_start: {enabled: true}
-    on_success: {enabled: true}
-    on_failure: {enabled: true}
-    on_retry: {enabled: true}
+  log_request: true          # Log outgoing requests (may contain sensitive data)
+  log_response: true         # Log responses (may contain sensitive data)
+  emit_metrics: true         # Emit performance and success metrics
+  trace_propagation: true    # Propagate distributed trace context
 ```
+
+**Security Warning**: Be careful with `log_request` and `log_response` as they may
+log sensitive data like authentication tokens, passwords, or PII.
 
 ## Best Practices
 
@@ -497,31 +523,39 @@ Never log sensitive information:
 
 ```yaml
 observability:
-  log_parameters: false        # Don't log password_hash, tokens
-  log_response_body: false     # May contain PII
-  log_message_body: false      # May contain sensitive data
+  log_request: false           # Don't log password_hash, tokens
+  log_response: false          # May contain PII
 ```
+
+**Note**: The ModelEffectObservability schema uses `log_request` and `log_response`
+boolean fields. Set both to `false` when handling sensitive data.
 
 ### 8. Use Transactions for Consistency
 
-Enable transactions for operations that must be atomic:
+Enable transactions for DB operations that must be atomic (ModelEffectTransactionConfig):
 
 ```yaml
-transaction:
+transaction_config:
   enabled: true
-  isolation_level: READ_COMMITTED
-  auto_commit: true
+  isolation_level: READ_COMMITTED  # or REPEATABLE_READ, SERIALIZABLE, READ_UNCOMMITTED
+  rollback_on_error: true
+  timeout_ms: 30000
 ```
+
+**Note**: Transaction configuration only applies to DB handler type.
 
 ### 9. Validate Responses
 
-Use schema validation to catch issues early:
+Use response handling configuration to catch issues early (ModelEffectResponseHandling):
 
 ```yaml
 response_handling:
-  validate_response:
-    enabled: true
-    schema_ref: "schemas/payment_response.json"
+  success_codes: [200, 201, 204]
+  extract_fields:
+    user_id: "$.id"
+    email: "$.email"
+  fail_on_empty: true           # Fail if response is empty/null
+  extraction_engine: jsonpath   # or jq, xpath
 ```
 
 ### 10. Add Correlation IDs
