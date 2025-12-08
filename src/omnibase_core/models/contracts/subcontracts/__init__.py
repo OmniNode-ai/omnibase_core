@@ -46,6 +46,24 @@ from .model_coordination_rules import ModelCoordinationRules
 from .model_data_grouping import ModelDataGrouping
 from .model_dependency_health import ModelDependencyHealth
 from .model_discovery_subcontract import ModelDiscoverySubcontract
+
+# Effect IO config imports (Contract-Driven NodeEffect v1.0)
+from .model_effect_io_configs import (
+    EffectIOConfig,
+    ModelDbIOConfig,
+    ModelFilesystemIOConfig,
+    ModelHttpIOConfig,
+    ModelKafkaIOConfig,
+)
+
+# Effect resolved context imports (Contract-Driven NodeEffect v1.0)
+from .model_effect_resolved_context import (
+    ModelResolvedDbContext,
+    ModelResolvedFilesystemContext,
+    ModelResolvedHttpContext,
+    ModelResolvedKafkaContext,
+    ResolvedIOContext,
+)
 from .model_event_bus_subcontract import ModelEventBusSubcontract
 from .model_event_definition import ModelEventDefinition
 from .model_event_handling_subcontract import ModelEventHandlingSubcontract
@@ -97,6 +115,18 @@ from .model_workflow_instance import ModelWorkflowInstance
 from .model_workflow_node import ModelWorkflowNode
 
 __all__ = [
+    # Effect IO config models (Contract-Driven NodeEffect v1.0)
+    "ModelHttpIOConfig",
+    "ModelDbIOConfig",
+    "ModelKafkaIOConfig",
+    "ModelFilesystemIOConfig",
+    "EffectIOConfig",
+    # Effect resolved context models (Contract-Driven NodeEffect v1.0)
+    "ModelResolvedHttpContext",
+    "ModelResolvedDbContext",
+    "ModelResolvedKafkaContext",
+    "ModelResolvedFilesystemContext",
+    "ResolvedIOContext",
     # Aggregation subcontracts and components
     "ModelAggregationSubcontract",
     "ModelAggregationFunction",

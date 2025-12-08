@@ -100,6 +100,8 @@ def tool_invocation_event(service_effect):
     )
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestMROCorrectness:
     """Test Method Resolution Order correctness for ModelServiceEffect."""
 
@@ -216,6 +218,8 @@ class TestMROCorrectness:
         assert isinstance(service._active_invocations, set)
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestServiceModeEventBusIntegration:
     """Test integration between service mode and EventBus mixin."""
 
@@ -298,6 +302,8 @@ class TestServiceModeEventBusIntegration:
         assert result is False
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestServiceModeHealthCheckIntegration:
     """Test integration between service mode and HealthCheck mixin."""
 
@@ -360,6 +366,8 @@ class TestServiceModeHealthCheckIntegration:
         assert health_after["active_invocations"] == 0
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestServiceModeMetricsIntegration:
     """Test integration between service mode and Metrics mixin."""
 
@@ -424,6 +432,8 @@ class TestServiceModeMetricsIntegration:
         assert metrics["transaction_management"]["active_transactions"] == 0.0
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestToolInvocationEventPublishing:
     """Test tool invocation and event publishing integration."""
 
@@ -475,6 +485,8 @@ class TestToolInvocationEventPublishing:
         assert "Test error" in published_event.error
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestEffectSemanticsServiceMode:
     """Test effect semantics (transaction management) in service mode."""
 
@@ -550,6 +562,8 @@ class TestEffectSemanticsServiceMode:
         assert effect_input.operation_id not in service_effect.active_transactions
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestCircuitBreakerServiceMode:
     """Test circuit breaker integration in service mode."""
 
@@ -607,6 +621,8 @@ class TestCircuitBreakerServiceMode:
             temp_path.unlink(missing_ok=True)
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestRetryLogicServiceMode:
     """Test retry logic integration in service mode."""
 
@@ -659,6 +675,8 @@ class TestRetryLogicServiceMode:
             assert delay1 >= 0.1  # 100ms
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestEndToEndWorkflow:
     """Test full end-to-end service workflow."""
 
@@ -776,6 +794,8 @@ class TestEndToEndWorkflow:
         assert len(service_effect._active_invocations) == 0
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestMixinMethodAccessibility:
     """Test that methods from all mixins are accessible and functional."""
 

@@ -130,6 +130,8 @@ def correlation_id() -> UUID:
 # ============================================================================
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestServiceHealthRetrieval:
     """Test health status retrieval functionality."""
 
@@ -324,6 +326,8 @@ class TestServiceHealthRetrieval:
 # ============================================================================
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestHealthMonitoringLoop:
     """Test health monitoring loop functionality."""
 
@@ -538,6 +542,8 @@ class TestHealthMonitoringLoop:
 # ============================================================================
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestGracefulShutdown:
     """Test graceful shutdown functionality."""
 
@@ -697,6 +703,8 @@ class TestGracefulShutdown:
 # ============================================================================
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestShutdownEventEmission:
     """Test shutdown event emission functionality."""
 
@@ -776,6 +784,8 @@ class TestShutdownEventEmission:
 # ============================================================================
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestShutdownCallbacks:
     """Test shutdown callback functionality."""
 
@@ -938,6 +948,8 @@ class TestShutdownCallbacks:
 # ============================================================================
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestSignalHandlers:
     """Test signal handler functionality."""
 
@@ -1054,6 +1066,8 @@ class TestSignalHandlers:
 # ============================================================================
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestShutdownIntegration:
     """Test integrated shutdown scenarios."""
 

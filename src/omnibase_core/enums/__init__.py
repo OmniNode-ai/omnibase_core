@@ -53,6 +53,7 @@ from .enum_detection_type import EnumDetectionType
 from .enum_discriminated_value_type import EnumDiscriminatedValueType
 
 # Effect-related enums (from nodes)
+from .enum_effect_handler_type import EnumEffectHandlerType
 from .enum_effect_types import (
     EnumCircuitBreakerState,
     EnumEffectType,
@@ -255,6 +256,7 @@ __all__ = [
     "EnumValidationRuleType",
     # Effect domain (from nodes)
     "EnumCircuitBreakerState",
+    "EnumEffectHandlerType",
     "EnumEffectType",
     "EnumTransactionState",
     # Execution domain

@@ -25,6 +25,8 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.service.model_service_effect import ModelServiceEffect
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceEffectToolInvocation:
     """Test tool invocation handling for ModelServiceEffect."""
 
@@ -615,6 +617,8 @@ class TestModelServiceEffectToolInvocation:
         assert service_node._total_invocations == 1
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceEffectEdgeCases:
     """Test edge cases for tool invocation handling."""
 
