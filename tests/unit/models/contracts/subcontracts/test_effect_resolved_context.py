@@ -50,7 +50,10 @@ class TestModelResolvedHttpContext:
         context = ModelResolvedHttpContext(
             url="https://api.example.com/users",
             method="POST",
-            headers={"Authorization": "Bearer token123", "Content-Type": "application/json"},
+            headers={
+                "Authorization": "Bearer token123",
+                "Content-Type": "application/json",
+            },
             body='{"name": "John", "email": "john@example.com"}',
             query_params={"page": "1", "limit": "10"},
             timeout_ms=60000,
@@ -121,9 +124,7 @@ class TestModelResolvedHttpContext:
 
     def test_frozen_prevents_modification(self) -> None:
         """Test that frozen=True prevents attribute modification."""
-        context = ModelResolvedHttpContext(
-            url="https://example.com", method="GET"
-        )
+        context = ModelResolvedHttpContext(url="https://example.com", method="GET")
 
         with pytest.raises(ValidationError):
             context.url = "https://other.com"  # type: ignore[misc]
@@ -489,7 +490,9 @@ class TestResolvedIOContextUnion:
         """Test handler type can be used for discrimination."""
         contexts: list[ResolvedIOContext] = [
             ModelResolvedHttpContext(url="https://example.com", method="GET"),
-            ModelResolvedDbContext(operation="select", connection_name="db", query="SELECT 1"),
+            ModelResolvedDbContext(
+                operation="select", connection_name="db", query="SELECT 1"
+            ),
             ModelResolvedKafkaContext(topic="events", payload="data"),
             ModelResolvedFilesystemContext(file_path="/test.txt", operation="read"),
         ]

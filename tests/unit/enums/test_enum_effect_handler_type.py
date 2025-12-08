@@ -57,7 +57,9 @@ class TestEnumEffectHandlerType:
         assert "kafka" in EnumEffectHandlerType
         assert "filesystem" in EnumEffectHandlerType
         assert "invalid" not in EnumEffectHandlerType
-        assert "database" not in EnumEffectHandlerType  # Note: it's "db", not "database"
+        assert (
+            "database" not in EnumEffectHandlerType
+        )  # Note: it's "db", not "database"
 
     def test_enum_comparison(self):
         """Test enum comparison with string values."""

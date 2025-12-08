@@ -460,7 +460,9 @@ class TestModelDbIOConfig:
             config = ModelDbIOConfig(
                 operation=operation,  # type: ignore[arg-type]
                 connection_name="db",
-                query_template="SELECT 1" if operation == "select" else "UPDATE t SET x = 1",
+                query_template="SELECT 1"
+                if operation == "select"
+                else "UPDATE t SET x = 1",
                 query_params=[],
                 read_only=False,
             )
@@ -658,8 +660,9 @@ class TestModelFilesystemIOConfig:
                     operation=op,  # type: ignore[arg-type]
                     atomic=True,
                 )
-            assert f"atomic=True is only valid for 'write' operations, not '{op}'" in str(
-                exc_info.value
+            assert (
+                f"atomic=True is only valid for 'write' operations, not '{op}'"
+                in str(exc_info.value)
             )
 
     def test_atomic_true_allowed_for_write(self) -> None:
@@ -765,9 +768,7 @@ class TestEffectIOConfigUnion:
     def test_union_type_is_correct(self) -> None:
         """Test that EffectIOConfig is a proper union type."""
         # Verify it's a Union by checking if we can create instances of each type
-        http = ModelHttpIOConfig(
-            url_template="https://example.com", method="GET"
-        )
+        http = ModelHttpIOConfig(url_template="https://example.com", method="GET")
         db = ModelDbIOConfig(
             operation="select",
             connection_name="db",
