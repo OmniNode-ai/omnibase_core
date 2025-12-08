@@ -668,6 +668,10 @@ class TestExampleContractsValidation:
             if content is None:
                 continue  # Empty file
 
+            # Skip non-mapping YAML (e.g., scalar, list)
+            if not isinstance(content, dict):
+                continue
+
             # Check if this looks like a contract (has contract indicators)
             contract_indicators = {
                 "contract_version",
