@@ -53,7 +53,9 @@ def sample_semver() -> ModelSemVer:
 
 
 @pytest.fixture
-def sample_service_metadata(valid_uuid: UUID, sample_semver: ModelSemVer) -> ModelServiceMetadata:
+def sample_service_metadata(
+    valid_uuid: UUID, sample_semver: ModelSemVer
+) -> ModelServiceMetadata:
     """Create sample service metadata with UUID field."""
     return ModelServiceMetadata(
         service_id=valid_uuid,
@@ -298,7 +300,10 @@ class TestTypeProtocolUUIDEnforcement:
 
         sig = inspect.signature(entity.get_validation_id)
         # Return annotation should be UUID
-        assert sig.return_annotation == UUID or str(sig.return_annotation) == "<class 'uuid.UUID'>"
+        assert (
+            sig.return_annotation == UUID
+            or str(sig.return_annotation) == "<class 'uuid.UUID'>"
+        )
 
     @pytest.mark.asyncio
     async def test_protocol_validatable_async_uuid_return(self) -> None:
