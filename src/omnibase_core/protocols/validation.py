@@ -15,6 +15,7 @@ Design Principles:
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol, TypeVar, runtime_checkable
+from uuid import UUID
 
 from omnibase_core.protocols.base import ContextValue
 
@@ -200,7 +201,7 @@ class ProtocolComplianceRule(Protocol):
     classification, and automated fix suggestions.
     """
 
-    rule_id: str
+    rule_id: UUID
     rule_name: str
     category: str
     severity: str

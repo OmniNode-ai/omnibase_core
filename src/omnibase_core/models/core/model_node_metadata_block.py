@@ -4,6 +4,7 @@ Node metadata block model.
 
 import enum
 from typing import Annotated, Any, ClassVar
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
@@ -72,6 +73,10 @@ class ModelNodeMetadataBlock(BaseModel):
     ONEX COMPLIANCE: All factory methods removed. Use direct Pydantic instantiation only.
     """
 
+    uuid: UUID = Field(
+        default_factory=uuid4,
+        description="Unique identifier for this node metadata block",
+    )
     metadata_version: Annotated[
         str,
         StringConstraints(min_length=1, pattern=r"^\d+\.\d+\.\d+$"),

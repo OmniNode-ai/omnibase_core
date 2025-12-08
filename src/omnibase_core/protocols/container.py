@@ -15,6 +15,7 @@ Design Principles:
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
+from uuid import UUID
 
 from omnibase_core.protocols.base import (
     ContextValue,
@@ -51,7 +52,7 @@ class ProtocolServiceRegistrationMetadata(Protocol):
     identification, versioning, and configuration.
     """
 
-    service_id: str
+    service_id: UUID
     service_name: str
     service_interface: str
     service_implementation: str
@@ -109,7 +110,7 @@ class ProtocolServiceRegistration(Protocol):
     including lifecycle management, dependency tracking, and health monitoring.
     """
 
-    registration_id: str
+    registration_id: UUID
     service_metadata: ProtocolServiceRegistrationMetadata
     lifecycle: LiteralServiceLifecycle
     scope: LiteralInjectionScope
@@ -147,8 +148,8 @@ class ProtocolServiceInstance(Protocol):
     lifecycle and usage tracking.
     """
 
-    instance_id: str
-    service_registration_id: str
+    instance_id: UUID
+    service_registration_id: UUID
     instance: Any
     lifecycle: LiteralServiceLifecycle
     scope: LiteralInjectionScope
@@ -181,7 +182,7 @@ class ProtocolDependencyGraph(Protocol):
     dependency chains, circular reference detection, and resolution ordering.
     """
 
-    service_id: str
+    service_id: UUID
     dependencies: list[str]
     dependents: list[str]
     depth_level: int
@@ -204,8 +205,8 @@ class ProtocolInjectionContext(Protocol):
     resolution status, error handling, and dependency path tracking.
     """
 
-    context_id: str
-    target_service_id: str
+    context_id: UUID
+    target_service_id: UUID
     scope: LiteralInjectionScope
     resolved_dependencies: dict[str, ContextValue]
     injection_time: ProtocolDateTime
@@ -229,7 +230,7 @@ class ProtocolServiceRegistryStatus(Protocol):
     including registration statistics, health monitoring, and performance metrics.
     """
 
-    registry_id: str
+    registry_id: UUID
     status: LiteralOperationStatus
     message: str
     total_registrations: int
@@ -382,7 +383,7 @@ class ProtocolServiceRegistry(Protocol):
         """Register a service factory."""
         ...
 
-    async def unregister_service(self, registration_id: str) -> bool:
+    async def unregister_service(self, registration_id: UUID) -> bool:
         """Unregister a service."""
         ...
 
@@ -417,7 +418,7 @@ class ProtocolServiceRegistry(Protocol):
         ...
 
     async def get_registration(
-        self, registration_id: str
+        self, registration_id: UUID
     ) -> ProtocolServiceRegistration | None:
         """Get registration by ID."""
         ...
@@ -433,13 +434,13 @@ class ProtocolServiceRegistry(Protocol):
         ...
 
     async def get_active_instances(
-        self, registration_id: str | None = None
+        self, registration_id: UUID | None = None
     ) -> list[ProtocolServiceInstance]:
         """Get active instances."""
         ...
 
     async def dispose_instances(
-        self, registration_id: str, scope: LiteralInjectionScope | None = None
+        self, registration_id: UUID, scope: LiteralInjectionScope | None = None
     ) -> int:
         """Dispose instances for a registration."""
         ...
@@ -457,7 +458,7 @@ class ProtocolServiceRegistry(Protocol):
         ...
 
     async def get_dependency_graph(
-        self, service_id: str
+        self, service_id: UUID
     ) -> ProtocolDependencyGraph | None:
         """Get dependency graph for a service."""
         ...
@@ -467,29 +468,29 @@ class ProtocolServiceRegistry(Protocol):
         ...
 
     async def validate_service_health(
-        self, registration_id: str
+        self, registration_id: UUID
     ) -> ProtocolValidationResult:
         """Validate service health."""
         ...
 
     async def update_service_configuration(
-        self, registration_id: str, configuration: dict[str, ContextValue]
+        self, registration_id: UUID, configuration: dict[str, ContextValue]
     ) -> bool:
         """Update service configuration."""
         ...
 
     async def create_injection_scope(
-        self, scope_name: str, parent_scope: str | None = None
-    ) -> str:
+        self, scope_name: str, parent_scope: UUID | None = None
+    ) -> UUID:
         """Create a new injection scope."""
         ...
 
-    async def dispose_injection_scope(self, scope_id: str) -> int:
+    async def dispose_injection_scope(self, scope_id: UUID) -> int:
         """Dispose an injection scope."""
         ...
 
     async def get_injection_context(
-        self, context_id: str
+        self, context_id: UUID
     ) -> ProtocolInjectionContext | None:
         """Get injection context."""
         ...

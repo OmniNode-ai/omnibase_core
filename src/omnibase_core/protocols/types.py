@@ -40,7 +40,7 @@ class ProtocolIdentifiable(Protocol):
     __omnibase_identifiable_marker__: Literal[True]
 
     @property
-    def id(self) -> str:
+    def id(self) -> UUID:
         """Get the object's unique identifier."""
         ...
 
@@ -144,7 +144,7 @@ class ProtocolValidatable(Protocol):
         """Get context for validation rules."""
         ...
 
-    async def get_validation_id(self) -> str:
+    async def get_validation_id(self) -> UUID:
         """Get unique identifier for validation reporting."""
         ...
 
@@ -264,7 +264,7 @@ class ProtocolNodeMetadataBlock(Protocol):
     versioning, and lifecycle information.
     """
 
-    uuid: str
+    uuid: UUID
     name: str
     description: str
     version: ProtocolSemVer
@@ -298,7 +298,7 @@ class ProtocolNodeMetadata(Protocol):
     distributed system.
     """
 
-    node_id: str
+    node_id: UUID
     node_type: str
     metadata: dict[str, ContextValue]
 

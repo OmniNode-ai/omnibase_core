@@ -14,6 +14,7 @@ Design Principles:
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from uuid import UUID
 
 from omnibase_core.protocols.types import ProtocolNodeMetadataBlock
 
@@ -31,7 +32,7 @@ class ProtocolSchemaModel(Protocol):
     schema information.
     """
 
-    schema_id: str
+    schema_id: UUID
     schema_type: str
     version: str
     definition: dict[str, object]

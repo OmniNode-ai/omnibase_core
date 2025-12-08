@@ -31,8 +31,9 @@ class ModelServiceMetadata(BaseModel):
 
     Example:
         ```python
+        from uuid import UUID
         metadata = ModelServiceMetadata(
-            service_id="logger-123",
+            service_id=UUID("12345678-1234-5678-1234-567812345678"),
             service_name="enhanced_logger",
             service_interface="ProtocolLogger",
             service_implementation="EnhancedLogger",
