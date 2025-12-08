@@ -9,6 +9,10 @@ Thread Safety:
     for concurrent read access from multiple threads or async tasks. This follows
     ONEX thread safety guidelines where action models are frozen to ensure lease
     semantics and epoch tracking remain consistent during distributed coordination.
+    Note that this provides shallow immutability - while the model's fields cannot
+    be reassigned, mutable field values (like dict/list contents) can still be
+    modified. For full thread safety with mutable nested data, use
+    model_copy(deep=True) to create independent copies.
 
     To create a modified copy (e.g., for retry with incremented retry_count):
         new_action = action.model_copy(update={"retry_count": action.retry_count + 1})
@@ -149,5 +153,4 @@ class ModelAction(BaseModel):
         extra="forbid",
         frozen=True,
         use_enum_values=False,
-        validate_assignment=True,
     )

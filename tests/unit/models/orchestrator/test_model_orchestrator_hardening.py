@@ -29,6 +29,8 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelActionHardening:
     """Tests for ModelAction frozen and extra=forbid."""
 
@@ -231,6 +233,8 @@ class TestModelActionHardening:
         assert original.action_type == modified.action_type  # Other fields preserved
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelWorkflowCoordinationSubcontractHardening:
     """Tests for ModelWorkflowCoordinationSubcontract frozen and extra=forbid."""
 

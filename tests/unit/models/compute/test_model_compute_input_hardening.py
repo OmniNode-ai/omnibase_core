@@ -119,9 +119,16 @@ class TestModelComputeInputHardening:
         # Create a deep copy
         copied = original.model_copy(deep=True)
 
-        # Verify they are equal but independent
+        # Verify they are equal
         assert original.data == copied.data
         assert original.operation_id == copied.operation_id
+
+        # Verify independence - modifying copy's nested data doesn't affect original
+        # NOTE: This is allowed because the model is frozen (field reassignment blocked)
+        # but the nested dict content is mutable (shallow immutability)
+        copied.data["nested"]["key"] = "modified"
+        assert original.data["nested"]["key"] == "value"  # Original unchanged
+        assert copied.data["nested"]["key"] == "modified"  # Copy was modified
 
     def test_multiple_extra_fields_all_rejected(self) -> None:
         """Verify multiple extra fields are all rejected."""

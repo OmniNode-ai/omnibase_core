@@ -26,6 +26,8 @@ from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelReducerInputHardening:
     """Tests for ModelReducerInput frozen and extra=forbid."""
 
@@ -114,6 +116,8 @@ class TestModelReducerInputHardening:
         assert config.get("extra") == "forbid"
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelReducerOutputHardening:
     """Tests for ModelReducerOutput frozen and extra=forbid."""
 
@@ -156,6 +160,8 @@ class TestModelReducerOutputHardening:
         assert config.get("extra") == "forbid"
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestModelIntentHardening:
     """Tests for ModelIntent frozen and extra=forbid."""
 

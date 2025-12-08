@@ -17,6 +17,10 @@ Design Pattern:
 Thread Safety:
     ModelIntent is immutable (frozen=True) after creation, making it
     thread-safe for concurrent read access from multiple threads or async tasks.
+    Note that this provides shallow immutability - while the model's fields cannot
+    be reassigned, mutable field values (like dict/list contents) can still be
+    modified. For full thread safety with mutable nested data, use
+    model_copy(deep=True) to create independent copies.
 
 Key Features:
     - Type-safe intent declaration with payload
@@ -126,5 +130,4 @@ class ModelIntent(BaseModel):
         extra="forbid",
         frozen=True,
         use_enum_values=False,
-        validate_assignment=True,
     )
