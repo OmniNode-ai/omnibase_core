@@ -26,7 +26,7 @@ from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
-# TypeVar exported for backwards compatibility and external use in type hints
+# TypeVar exported for external use in type hints
 MetricValueT = TypeVar("MetricValueT", str, int, float, bool)
 
 

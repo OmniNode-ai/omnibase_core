@@ -149,7 +149,7 @@ class ProtocolContextValue(Protocol):
         ...
 
 
-# Type alias for backwards compatibility and simpler usage
+# Convenience type alias for cleaner imports
 ContextValue = ProtocolContextValue
 
 

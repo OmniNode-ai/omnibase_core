@@ -29,7 +29,7 @@ from omnibase_core.protocols import (
     ProtocolWorkflowReducer,
 )
 
-# Alias for backwards compatibility
+# Alternative name for ProtocolWorkflowReducer
 WorkflowReducerInterface = ProtocolWorkflowReducer
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
