@@ -1,5 +1,5 @@
 ---
-node_type: reducer
+node_type: REDUCER_GENERIC
 contract_version: {major: 1, minor: 0, patch: 0}
 state_transitions:
   version: {major: 1, minor: 0, patch: 0}

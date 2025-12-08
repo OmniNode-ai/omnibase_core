@@ -64,7 +64,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Valid contract example"
 
 metadata:
@@ -107,7 +107,7 @@ configuration:
     def test_missing_contract_version(self, temp_repo):
         """Test detection of missing contract_version field."""
         invalid_yaml = """
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Missing contract version"
 
 metadata:
@@ -178,7 +178,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 
 inputs:
   - name: "test"
@@ -211,7 +211,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Contract with Unicode: 中文, emoji 🚀, accents ñáéíóú"
 
 metadata:
@@ -271,7 +271,7 @@ description: "Partial contract"
     def test_yaml_with_node_type_only(self, temp_repo):
         """Test YAML with only node_type (missing contract_version)."""
         partial_yaml = """
-node_type: "effect"
+node_type: "EFFECT_GENERIC"
 description: "Partial contract"
 """
         yaml_file = temp_repo / "partial_contract2.yaml"
@@ -310,7 +310,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Large contract for performance testing"
 
 metadata:
@@ -371,7 +371,7 @@ outputs:
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'""",
+node_type: 'COMPUTE_GENERIC'""",
         )
 
         with patch("builtins.open", side_effect=PermissionError("Permission denied")):
@@ -417,7 +417,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 """
         valid_yaml2 = """
 # Just a regular YAML file
@@ -495,7 +495,7 @@ invalid: [yaml, structure
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'""",
+node_type: 'COMPUTE_GENERIC'""",
         )
 
         # Create regular YAML file
@@ -504,7 +504,7 @@ node_type: 'compute'""",
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'""",
+node_type: 'COMPUTE_GENERIC'""",
         )
 
         with patch("sys.argv", ["validate-contracts.py", str(temp_repo)]):
@@ -588,7 +588,7 @@ class TestErrorRecovery:
   major: 1
   minor: 0
   patch: 0
-node_type: 'compute'""",
+node_type: 'COMPUTE_GENERIC'""",
         )
         (temp_repo / "problem.yaml").write_text("valid: yaml")
 
@@ -806,7 +806,7 @@ class TestPerformanceAndScalability:
             yaml_file.write_text(
                 f"""
 contract_version: "1.0.{i}"
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Contract {i}"
 """,
             )
@@ -833,7 +833,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Contract at level {i}"
 """,
             )

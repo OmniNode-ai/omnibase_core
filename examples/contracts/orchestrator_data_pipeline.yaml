@@ -18,7 +18,7 @@
 # - Sequential/parallel/batch execution modes
 
 # Contract Metadata
-node_type: orchestrator
+node_type: ORCHESTRATOR_GENERIC
 contract_version: {major: 1, minor: 0, patch: 0}
 
 # Workflow Coordination Subcontract

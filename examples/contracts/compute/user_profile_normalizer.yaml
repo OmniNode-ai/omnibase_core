@@ -27,7 +27,7 @@
 # ============================================================================
 
 # Contract required fields
-node_type: compute
+node_type: COMPUTE_GENERIC
 contract_version: {major: 1, minor: 0, patch: 0}
 
 # ---------------------------------------------------------------------------

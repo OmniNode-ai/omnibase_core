@@ -12,28 +12,34 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 
 class SimpleNodeType:
-    """Simple node type values for validation."""
+    """Simple node type values for validation.
+
+    Uses uppercase values aligned with EnumNodeType in omnibase_core.enums.enum_node_type.
+    No legacy/deprecated lowercase values - clean break for v0.4.0+.
+    """
 
     VALID_TYPES = {
-        "compute",
-        "gateway",
-        "orchestrator",
-        "reducer",
-        "effect",
-        "validator",
-        "transformer",
-        "aggregator",
-        "function",
-        "tool",
-        "agent",
-        "model",
-        "plugin",
-        "schema",
-        "node",
-        "workflow",
-        "service",
-        "compute_generic",
-        "unknown",
+        # Generic node types (one per EnumNodeKind)
+        "COMPUTE_GENERIC",
+        "EFFECT_GENERIC",
+        "REDUCER_GENERIC",
+        "ORCHESTRATOR_GENERIC",
+        "RUNTIME_HOST_GENERIC",
+        # Specific node implementation types
+        "GATEWAY",
+        "VALIDATOR",
+        "TRANSFORMER",
+        "AGGREGATOR",
+        "FUNCTION",
+        "TOOL",
+        "AGENT",
+        "MODEL",
+        "PLUGIN",
+        "SCHEMA",
+        "NODE",
+        "WORKFLOW",
+        "SERVICE",
+        "UNKNOWN",
     }
 
 
@@ -98,13 +104,17 @@ class SimpleYamlContract(BaseModel):
     @field_validator("node_type")
     @classmethod
     def validate_node_type(cls, value: str) -> str:
-        """Validate node_type field with simple validation."""
+        """Validate node_type field with simple validation.
+
+        Validates against uppercase EnumNodeType values. No legacy lowercase
+        values are accepted - this is a clean break for v0.4.0+.
+        """
         if not isinstance(value, str):
             raise ValueError("node_type must be a string")
 
-        value_lower = value.lower()
-        if value_lower in SimpleNodeType.VALID_TYPES:
-            return value_lower
+        value_upper = value.upper()
+        if value_upper in SimpleNodeType.VALID_TYPES:
+            return value_upper
 
         raise ValueError(
             f"Invalid node_type '{value}'. Must be one of: {', '.join(sorted(SimpleNodeType.VALID_TYPES))}"
