@@ -18,12 +18,25 @@ Dedicated subcontract model for workflow coordination functionality providing:
 This model is composed into node contracts that require workflow coordination functionality,
 providing clean separation between node logic and workflow coordination behavior.
 
+Thread Safety:
+    ModelWorkflowCoordinationSubcontract is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access from multiple threads or async
+    tasks. This follows ONEX thread safety guidelines where configuration models are
+    frozen to prevent race conditions during workflow coordination. Note that this
+    provides shallow immutability - while the model's fields cannot be reassigned,
+    mutable field values (like dict/list contents) can still be modified. For full
+    thread safety with mutable nested data, use model_copy(deep=True) to create
+    independent copies.
+
+    To modify configuration, create a new instance using model_copy():
+        new_config = existing_config.model_copy(update={"max_concurrent_workflows": 20})
+
 ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -36,6 +49,37 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
 
     Provides workflow orchestration, node coordination, and execution
     management capabilities specifically for ORCHESTRATOR nodes in the ONEX architecture.
+
+    This model is immutable (frozen=True) after creation, making it thread-safe
+    for concurrent read access from multiple threads or async tasks. Unknown
+    fields are rejected (extra='forbid') to ensure strict schema compliance.
+
+    To modify a frozen instance, use model_copy():
+        >>> modified = subcontract.model_copy(update={"max_concurrent_workflows": 20})
+
+    Attributes:
+        version: Model version (MUST be provided in YAML contract).
+        subcontract_name: Name of the subcontract (default: "workflow_coordination_subcontract").
+        subcontract_version: Version of the subcontract (MUST be provided in YAML contract).
+        applicable_node_types: Node types this subcontract applies to (default: ["ORCHESTRATOR"]).
+        max_concurrent_workflows: Maximum concurrent workflows (1-100, default 10).
+        default_workflow_timeout_ms: Default workflow timeout (60000-3600000 ms, default 600000).
+        node_coordination_timeout_ms: Node coordination timeout (5000-300000 ms, default 30000).
+        checkpoint_interval_ms: Checkpoint interval (10000-600000 ms, default 60000).
+        auto_retry_enabled: Whether automatic retry is enabled (default True).
+        parallel_execution_enabled: Whether parallel execution is enabled (default True).
+        workflow_persistence_enabled: Whether workflow state persistence is enabled (default True).
+        max_retries: Maximum retries for failed operations (0-10, default 3).
+        retry_delay_ms: Delay between retries (1000-60000 ms, default 2000).
+        exponential_backoff: Whether to use exponential backoff for retries (default True).
+
+    Example:
+        >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
+        >>> subcontract = ModelWorkflowCoordinationSubcontract(
+        ...     version=ModelSemVer(major=1, minor=0, patch=0),
+        ...     subcontract_version=ModelSemVer(major=1, minor=0, patch=0),
+        ...     max_concurrent_workflows=5,
+        ... )
 
     ZERO TOLERANCE: No Any types allowed in implementation.
     """
@@ -128,8 +172,8 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
         description="Whether to use exponential backoff for retries",
     )
 
-    model_config = {
-        "extra": "ignore",  # Allow extra fields from YAML contracts
-        "use_enum_values": False,  # Keep enum objects, don't convert to strings
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+    )
