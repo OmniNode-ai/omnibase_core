@@ -37,35 +37,39 @@ class ModelEventDescriptor(BaseModel):
 
     Examples:
         >>> from datetime import datetime
+        >>> from uuid import UUID
+        >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
         >>>
         >>> # Create a basic service registration event
         >>> event = ModelEventDescriptor(
-        ...     event_id="evt_reg_001",
+        ...     event_id=UUID("12345678-1234-5678-1234-567812345678"),
         ...     event_type=EnumEventType.SERVICE_REGISTRATION,
         ...     event_name="Register User Service",
-        ...     service_id="user_service_001",
+        ...     service_id=UUID("87654321-4321-8765-4321-876543218765"),
         ...     service_name="user-service",
-        ...     service_version="1.0.0",
+        ...     service_version=ModelSemVer(major=1, minor=0, patch=0),
         ...     discovery_phase=EnumDiscoveryPhase.PHASE_1_SIMPLE,
         ...     consul_service_name="onex-user-service",
-        ...     container_status=EnumServiceStatus.ACTIVE
+        ...     container_status=EnumServiceStatus.ACTIVE,
+        ...     event_schema_version=ModelSemVer(major=1, minor=0, patch=0)
         ... )
         >>>
         >>> # Event with Consul metadata
         >>> event_with_meta = ModelEventDescriptor(
-        ...     event_id="evt_disc_002",
+        ...     event_id=UUID("11111111-2222-3333-4444-555555555555"),
         ...     event_type=EnumEventType.SERVICE_DISCOVERY,
         ...     event_name="Discover Auth Services",
-        ...     service_id="auth_discovery",
+        ...     service_id=UUID("66666666-7777-8888-9999-000000000000"),
         ...     service_name="auth-discovery",
-        ...     service_version="2.1.0",
+        ...     service_version=ModelSemVer(major=2, minor=1, patch=0),
         ...     discovery_phase=EnumDiscoveryPhase.PHASE_2_AUTO_PROVISION,
         ...     consul_service_name="onex-auth-discovery",
         ...     consul_tags=["auth", "security", "oauth"],
         ...     consul_meta={"environment": "production", "region": "us-west-2"},
         ...     container_status=EnumServiceStatus.PROVISIONING,
         ...     health_check_endpoint="/health",
-        ...     service_endpoints={"api": "https://api.auth.example.com", "admin": "https://admin.auth.example.com"}
+        ...     service_endpoints={"api": "https://api.auth.example.com", "admin": "https://admin.auth.example.com"},
+        ...     event_schema_version=ModelSemVer(major=1, minor=0, patch=0)
         ... )
 
     Attributes:

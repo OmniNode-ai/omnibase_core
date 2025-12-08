@@ -44,8 +44,9 @@ class ModelServiceRegistration(BaseModel):
 
     Example:
         ```python
+        from uuid import UUID
         registration = ModelServiceRegistration(
-            registration_id="reg-123",
+            registration_id=UUID("12345678-1234-5678-1234-567812345678"),
             service_metadata=metadata,
             lifecycle="singleton",
             scope="global",
