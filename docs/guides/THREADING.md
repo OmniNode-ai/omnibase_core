@@ -312,7 +312,6 @@ Add synchronization to circuit breaker operations:
 ```python
 from threading import Lock
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
-from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 
 class ThreadSafeCircuitBreaker:
     """Thread-safe wrapper for ModelCircuitBreaker.
@@ -324,10 +323,10 @@ class ThreadSafeCircuitBreaker:
         self._breaker = ModelCircuitBreaker()
         self._lock = Lock()
 
-    def can_execute(self) -> bool:
-        """Thread-safe execution check."""
+    def should_allow_request(self) -> bool:
+        """Thread-safe request check."""
         with self._lock:
-            return self._breaker.can_execute()
+            return self._breaker.should_allow_request()
 
     def record_failure(self) -> None:
         """Thread-safe failure recording."""
@@ -340,8 +339,12 @@ class ThreadSafeCircuitBreaker:
             self._breaker.record_success()
 
     @property
-    def state(self) -> EnumCircuitBreakerState:
-        """Thread-safe state retrieval."""
+    def state(self) -> str:
+        """Thread-safe state retrieval.
+
+        Returns:
+            Current state: "closed", "open", or "half_open"
+        """
         with self._lock:
             return self._breaker.state
 ```

@@ -177,6 +177,20 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
             # Serialize subcontract operations to the format expected by the mixin
             operations: list[dict[str, object]] = []
             for op in self.effect_subcontract.operations:
+                # Timeout fallback chain:
+                # 1. Use operation-specific timeout if defined
+                # 2. Fall back to default_retry_policy.max_delay_ms as a heuristic
+                #    (max retry delay provides a reasonable upper bound for operation timeout)
+                # 3. Fall back to 30s as a safe default
+                # NOTE: max_delay_ms is semantically "max delay between retries", not
+                # "operation timeout", but we use it as a heuristic since operations
+                # that tolerate long retry delays typically also tolerate longer timeouts.
+                # For precise control, always set operation_timeout_ms explicitly.
+                timeout_ms = (
+                    op.operation_timeout_ms
+                    or self.effect_subcontract.default_retry_policy.max_delay_ms
+                    or 30000
+                )
                 op_dict: dict[str, object] = {
                     "operation_name": op.operation_name,
                     "description": op.description,
@@ -185,11 +199,7 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                         if hasattr(op.io_config, "model_dump")
                         else op.io_config
                     ),
-                    "operation_timeout_ms": (
-                        op.operation_timeout_ms
-                        or self.effect_subcontract.default_retry_policy.max_delay_ms
-                        or 30000  # Default 30s timeout if both are None
-                    ),
+                    "operation_timeout_ms": timeout_ms,
                     # Include response handling for field extraction
                     "response_handling": (
                         op.response_handling.model_dump()

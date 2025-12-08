@@ -699,8 +699,12 @@ class MixinEffectExecution:
                 # attempt is 0-indexed, so attempt < max_retries means we have retries left
                 if attempt < max_retries and input_data.retry_enabled:
                     # Exponential backoff with jitter
+                    # Jitter calculation: Uses time.time() % 1 (fractional seconds) instead of
+                    # random.uniform() to avoid adding a random module dependency. This provides
+                    # call-time-based variability in range [0, jitter) which is sufficient for
+                    # preventing retry storms while keeping the implementation minimal.
                     delay_ms = retry_delay_ms * (2**attempt)
-                    jitter = delay_ms * 0.1  # 10% jitter
+                    jitter = delay_ms * 0.1  # 10% jitter range
                     actual_delay_ms = delay_ms + (jitter * (time.time() % 1))
 
                     # Wait before retry
