@@ -118,12 +118,12 @@ class ModelOnexEnvelopeV1(BaseModel):
 
 
 # =============================================================================
-# Backwards Compatibility Notice
+# Version Notice
 # =============================================================================
 # DEPRECATED: Use ModelOnexEnvelope instead.
 #
-# ModelOnexEnvelopeV1 is maintained for backwards compatibility but new code
-# should use ModelOnexEnvelope which provides:
+# ModelOnexEnvelopeV1 is the original envelope format. New code should use
+# ModelOnexEnvelope which provides:
 # - Causation chain tracking (causation_id)
 # - Routing support (target_node, handler_type)
 # - Request/response pattern (is_response, success, error)

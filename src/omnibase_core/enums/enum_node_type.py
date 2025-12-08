@@ -78,7 +78,7 @@ def _populate_kind_map() -> None:
             EnumNodeType.WORKFLOW: EnumNodeKind.ORCHESTRATOR,
             # RUNTIME_HOST kind - runtime infrastructure
             EnumNodeType.RUNTIME_HOST_GENERIC: EnumNodeKind.RUNTIME_HOST,
-            # Generic types - map to COMPUTE by default for backward compatibility
+            # Generic types - default to COMPUTE as the most common processing behavior
             EnumNodeType.PLUGIN: EnumNodeKind.COMPUTE,
             EnumNodeType.SCHEMA: EnumNodeKind.COMPUTE,
             EnumNodeType.NODE: EnumNodeKind.COMPUTE,
@@ -336,8 +336,8 @@ class EnumNodeType(str, Enum):
 # EnumNodeKind until first use, breaking the circular import at module load time.
 #
 # WHY type: ignore IS ACCEPTABLE HERE:
-# The setattr() call dynamically attaches _KIND_MAP to the class for backward
-# compatibility with tests that access EnumNodeType._KIND_MAP directly. Mypy
+# The setattr() call dynamically attaches _KIND_MAP to the class for direct
+# test access where tests reference EnumNodeType._KIND_MAP as an attribute. Mypy
 # cannot statically verify dynamically attached attributes, so it may report
 # [attr-defined] errors. If such errors arise, `# type: ignore[attr-defined]`
 # suppression is acceptable because:
@@ -349,7 +349,7 @@ class EnumNodeType(str, Enum):
 # See CLAUDE.md section "Node Classification Enums" for architectural context.
 # ==============================================================================
 
-# Expose _KIND_MAP on the class for backward compatibility with tests.
+# Expose _KIND_MAP on the class for direct attribute access in tests.
 # Tests access EnumNodeType._KIND_MAP directly as an attribute.
 # We populate the mapping eagerly and attach it to the class.
 #
