@@ -16,7 +16,7 @@ Usage:
     from omnibase_core.protocols.container import (
         ProtocolServiceRegistry,
         ProtocolServiceRegistration,
-        ProtocolServiceInstance,
+        ProtocolManagedServiceInstance,
     )
 """
 
@@ -33,7 +33,7 @@ from omnibase_core.protocols.container.protocol_service_factory import (
     ProtocolServiceFactory,
 )
 from omnibase_core.protocols.container.protocol_service_instance import (
-    ProtocolServiceInstance,
+    ProtocolManagedServiceInstance,
 )
 from omnibase_core.protocols.container.protocol_service_registration import (
     ProtocolServiceRegistration,
@@ -65,7 +65,7 @@ __all__ = [
     "ProtocolServiceRegistrationMetadata",
     "ProtocolServiceDependency",
     "ProtocolServiceRegistration",
-    "ProtocolServiceInstance",
+    "ProtocolManagedServiceInstance",
     "ProtocolDependencyGraph",
     "ProtocolInjectionContext",
     "ProtocolServiceRegistryStatus",

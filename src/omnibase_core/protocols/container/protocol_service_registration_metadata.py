@@ -9,12 +9,9 @@ identification, versioning, and configuration.
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
+from uuid import UUID
 
-from omnibase_core.protocols.base import (
-    ContextValue,
-    ProtocolDateTime,
-    ProtocolSemVer,
-)
+from omnibase_core.protocols.base import ContextValue, ProtocolDateTime, ProtocolSemVer
 
 
 @runtime_checkable
@@ -26,7 +23,7 @@ class ProtocolServiceRegistrationMetadata(Protocol):
     identification, versioning, and configuration.
     """
 
-    service_id: str
+    service_id: UUID
     service_name: str
     service_interface: str
     service_implementation: str

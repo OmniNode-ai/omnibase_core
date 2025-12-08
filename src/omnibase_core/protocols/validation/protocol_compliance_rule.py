@@ -15,6 +15,7 @@ Design Principles:
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
+from uuid import UUID
 
 
 @runtime_checkable
@@ -26,7 +27,7 @@ class ProtocolComplianceRule(Protocol):
     classification, and automated fix suggestions.
     """
 
-    rule_id: str
+    rule_id: UUID
     rule_name: str
     category: str
     severity: str

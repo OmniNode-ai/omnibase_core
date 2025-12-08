@@ -14,6 +14,7 @@ Design Principles:
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
+from uuid import UUID
 
 
 @runtime_checkable
@@ -25,7 +26,7 @@ class ProtocolSchemaModel(Protocol):
     schema information.
     """
 
-    schema_id: str
+    schema_id: UUID
     schema_type: str
     version: str
     definition: dict[str, object]

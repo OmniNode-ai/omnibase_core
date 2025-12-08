@@ -10,10 +10,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
-from omnibase_core.protocols.base import (
-    ContextValue,
-    ProtocolSemVer,
-)
+from omnibase_core.protocols.base import ContextValue, ProtocolSemVer
 
 
 @runtime_checkable

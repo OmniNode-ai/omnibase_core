@@ -7,6 +7,7 @@ This module provides the protocol definition for objects that can be validated.
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
+from uuid import UUID
 
 from omnibase_core.protocols.base import ContextValue
 
@@ -24,7 +25,7 @@ class ProtocolValidatable(Protocol):
         """Get context for validation rules."""
         ...
 
-    async def get_validation_id(self) -> str:
+    async def get_validation_id(self) -> UUID:
         """Get unique identifier for validation reporting."""
         ...
 

@@ -7,6 +7,7 @@ This module provides the protocol definition for ONEX node metadata objects.
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
+from uuid import UUID
 
 from omnibase_core.protocols.base import ContextValue
 
@@ -20,7 +21,7 @@ class ProtocolNodeMetadata(Protocol):
     distributed system.
     """
 
-    node_id: str
+    node_id: UUID
     node_type: str
     metadata: dict[str, ContextValue]
 

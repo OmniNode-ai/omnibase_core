@@ -7,6 +7,7 @@ This module provides the protocol definition for node metadata block objects.
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
+from uuid import UUID
 
 from omnibase_core.protocols.base import ProtocolDateTime, ProtocolSemVer
 
@@ -20,7 +21,7 @@ class ProtocolNodeMetadataBlock(Protocol):
     versioning, and lifecycle information.
     """
 
-    uuid: str
+    uuid: UUID
     name: str
     description: str
     version: ProtocolSemVer

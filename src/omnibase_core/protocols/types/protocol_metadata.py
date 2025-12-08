@@ -8,11 +8,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from omnibase_core.protocols.base import (
-    ContextValue,
-    ProtocolDateTime,
-    ProtocolSemVer,
-)
+from omnibase_core.protocols.base import ContextValue, ProtocolDateTime, ProtocolSemVer
 
 
 @runtime_checkable

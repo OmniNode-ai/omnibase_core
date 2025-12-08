@@ -9,6 +9,7 @@ including registration statistics, health monitoring, and performance metrics.
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
+from uuid import UUID
 
 from omnibase_core.protocols.base import (
     LiteralHealthStatus,
@@ -31,7 +32,7 @@ class ProtocolServiceRegistryStatus(Protocol):
     including registration statistics, health monitoring, and performance metrics.
     """
 
-    registry_id: str
+    registry_id: UUID
     status: LiteralOperationStatus
     message: str
     total_registrations: int

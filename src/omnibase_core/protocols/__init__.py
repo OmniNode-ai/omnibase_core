@@ -41,8 +41,7 @@ Migration from SPI:
 # Base Module Exports
 # =============================================================================
 
-from omnibase_core.protocols.base import (
-    # Literal Types
+from omnibase_core.protocols.base import (  # Literal Types; Protocols; Type Variables
     ContextValue,
     LiteralEventPriority,
     LiteralHealthStatus,
@@ -55,14 +54,12 @@ from omnibase_core.protocols.base import (
     LiteralValidationLevel,
     LiteralValidationMode,
     LiteralValidationSeverity,
-    # Protocols
     ProtocolContextValue,
     ProtocolDateTime,
     ProtocolHasModelDump,
     ProtocolModelJsonSerializable,
     ProtocolModelValidatable,
     ProtocolSemVer,
-    # Type Variables
     T,
     T_co,
     TImplementation,
@@ -75,9 +72,9 @@ from omnibase_core.protocols.base import (
 from omnibase_core.protocols.container import (
     ProtocolDependencyGraph,
     ProtocolInjectionContext,
+    ProtocolManagedServiceInstance,
     ProtocolServiceDependency,
     ProtocolServiceFactory,
-    ProtocolServiceInstance,
     ProtocolServiceRegistration,
     ProtocolServiceRegistrationMetadata,
     ProtocolServiceRegistry,
@@ -130,14 +127,12 @@ from omnibase_core.protocols.types import (
     ProtocolNodeResult,
     ProtocolSchemaValue,
     ProtocolSerializable,
+    ProtocolServiceInstance,
     ProtocolServiceMetadata,
     ProtocolState,
     ProtocolSupportedMetadataType,
     ProtocolValidatable,
     ProtocolWorkflowReducer,
-)
-from omnibase_core.protocols.types import (
-    ProtocolServiceInstance as ProtocolDiscoveryServiceInstance,
 )
 
 # =============================================================================
@@ -161,9 +156,12 @@ from omnibase_core.protocols.validation import (
 # Compatibility Aliases (for migration from SPI)
 # =============================================================================
 
-# Container aliases
-ProtocolDIServiceInstance = ProtocolServiceInstance
+# Container aliases - ProtocolManagedServiceInstance is for DI container management
+# ProtocolServiceInstance (from types) is for service discovery
+ProtocolDIServiceInstance = ProtocolManagedServiceInstance
 ProtocolDIServiceMetadata = ProtocolServiceRegistrationMetadata
+# Legacy alias for backward compatibility
+ProtocolDiscoveryServiceInstance = ProtocolServiceInstance
 
 # Convenience type aliases for cleaner imports
 Configurable = ProtocolConfigurable
@@ -212,7 +210,7 @@ __all__ = [
     "ProtocolServiceRegistrationMetadata",
     "ProtocolServiceDependency",
     "ProtocolServiceRegistration",
-    "ProtocolServiceInstance",
+    "ProtocolManagedServiceInstance",
     "ProtocolDependencyGraph",
     "ProtocolInjectionContext",
     "ProtocolServiceRegistryStatus",
@@ -256,7 +254,9 @@ __all__ = [
     "ProtocolWorkflowReducer",
     "ProtocolState",
     "ProtocolMetadata",
+    "ProtocolServiceInstance",
     "ProtocolServiceMetadata",
+    # Legacy alias
     "ProtocolDiscoveryServiceInstance",
     # Convenience Type Aliases
     "Configurable",

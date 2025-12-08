@@ -1,14 +1,18 @@
 """
 Protocol for service registry managed instance information.
 
-This module provides the ProtocolServiceInstance protocol which
+This module provides the ProtocolManagedServiceInstance protocol which
 represents an active instance of a registered service with
 lifecycle and usage tracking.
+
+Note: This is distinct from ProtocolServiceInstance in protocols/types/
+which is used for service discovery and health monitoring at the network level.
 """
 
 from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
+from uuid import UUID
 
 from omnibase_core.protocols.base import (
     ContextValue,
@@ -19,16 +23,19 @@ from omnibase_core.protocols.base import (
 
 
 @runtime_checkable
-class ProtocolServiceInstance(Protocol):
+class ProtocolManagedServiceInstance(Protocol):
     """
     Protocol for service registry managed instance information.
 
-    Represents an active instance of a registered service with
-    lifecycle and usage tracking.
+    Represents an active instance of a registered service within the DI container
+    with lifecycle and usage tracking.
+
+    This protocol is for DI container-level service management. For network-level
+    service discovery, see ProtocolServiceInstance in protocols/types/.
     """
 
-    instance_id: str
-    service_registration_id: str
+    instance_id: UUID
+    service_registration_id: UUID
     instance: Any
     lifecycle: LiteralServiceLifecycle
     scope: LiteralInjectionScope
@@ -47,4 +54,4 @@ class ProtocolServiceInstance(Protocol):
         ...
 
 
-__all__ = ["ProtocolServiceInstance"]
+__all__ = ["ProtocolManagedServiceInstance"]

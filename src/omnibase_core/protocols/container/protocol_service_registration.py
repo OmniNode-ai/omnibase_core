@@ -9,6 +9,7 @@ including lifecycle management, dependency tracking, and health monitoring.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Protocol, runtime_checkable
+from uuid import UUID
 
 from omnibase_core.protocols.base import (
     LiteralHealthStatus,
@@ -38,7 +39,7 @@ class ProtocolServiceRegistration(Protocol):
     including lifecycle management, dependency tracking, and health monitoring.
     """
 
-    registration_id: str
+    registration_id: UUID
     service_metadata: ProtocolServiceRegistrationMetadata
     lifecycle: LiteralServiceLifecycle
     scope: LiteralInjectionScope

@@ -7,6 +7,7 @@ This module provides the protocol definition for objects that have an ID.
 from __future__ import annotations
 
 from typing import Literal, Protocol, runtime_checkable
+from uuid import UUID
 
 
 @runtime_checkable
@@ -20,7 +21,7 @@ class ProtocolIdentifiable(Protocol):
     __omnibase_identifiable_marker__: Literal[True]
 
     @property
-    def id(self) -> str:
+    def id(self) -> UUID:
         """Get the object's unique identifier."""
         ...
 
