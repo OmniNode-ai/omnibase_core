@@ -685,9 +685,9 @@ class ServiceRegistry:
         # Calculate distributions
         lifecycle_dist: dict[LiteralServiceLifecycle, int] = {}
         scope_dist: dict[LiteralInjectionScope, int] = {}
-        from omnibase_core.protocols import ServiceHealthStatus
+        from omnibase_core.protocols import LiteralHealthStatus
 
-        health_dist: dict[ServiceHealthStatus, int] = {}
+        health_dist: dict[LiteralHealthStatus, int] = {}
 
         for registration in self._registrations.values():
             # Lifecycle distribution

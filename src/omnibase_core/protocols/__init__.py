@@ -13,13 +13,13 @@ Design Principles:
 - Use forward references where needed to avoid circular imports
 
 Module Organization:
-- base.py: Common type aliases and base protocols (ContextValue, SemVer, etc.)
-- container.py: DI container and service registry protocols
-- event_bus.py: Event-driven messaging protocols
-- types.py: Type constraint protocols (Configurable, Executable, etc.)
+- base/: Common type aliases and base protocols (ContextValue, SemVer, etc.)
+- container/: DI container and service registry protocols
+- event_bus/: Event-driven messaging protocols
+- types/: Type constraint protocols (Configurable, Executable, etc.)
 - core.py: Core operation protocols (CanonicalSerializer)
-- schema.py: Schema loading protocols
-- validation.py: Validation and compliance protocols
+- schema/: Schema loading protocols
+- validation/: Validation and compliance protocols
 
 Usage:
     from omnibase_core.protocols import (
@@ -41,8 +41,7 @@ Migration from SPI:
 # Base Module Exports
 # =============================================================================
 
-from omnibase_core.protocols.base import (
-    # Literal Types
+from omnibase_core.protocols.base import (  # Literal Types; Protocols; Type Variables
     ContextValue,
     LiteralEventPriority,
     LiteralHealthStatus,
@@ -55,14 +54,12 @@ from omnibase_core.protocols.base import (
     LiteralValidationLevel,
     LiteralValidationMode,
     LiteralValidationSeverity,
-    # Protocols
     ProtocolContextValue,
     ProtocolDateTime,
     ProtocolHasModelDump,
     ProtocolModelJsonSerializable,
     ProtocolModelValidatable,
     ProtocolSemVer,
-    # Type Variables
     T,
     T_co,
     TImplementation,
@@ -75,16 +72,15 @@ from omnibase_core.protocols.base import (
 from omnibase_core.protocols.container import (
     ProtocolDependencyGraph,
     ProtocolInjectionContext,
+    ProtocolManagedServiceInstance,
     ProtocolServiceDependency,
     ProtocolServiceFactory,
-    ProtocolServiceInstance,
     ProtocolServiceRegistration,
     ProtocolServiceRegistrationMetadata,
     ProtocolServiceRegistry,
     ProtocolServiceRegistryConfig,
     ProtocolServiceRegistryStatus,
     ProtocolServiceValidator,
-    ServiceHealthStatus,
 )
 
 # =============================================================================
@@ -130,14 +126,12 @@ from omnibase_core.protocols.types import (
     ProtocolNodeResult,
     ProtocolSchemaValue,
     ProtocolSerializable,
+    ProtocolServiceInstance,
     ProtocolServiceMetadata,
     ProtocolState,
     ProtocolSupportedMetadataType,
     ProtocolValidatable,
     ProtocolWorkflowReducer,
-)
-from omnibase_core.protocols.types import (
-    ProtocolServiceInstance as ProtocolDiscoveryServiceInstance,
 )
 
 # =============================================================================
@@ -156,21 +150,6 @@ from omnibase_core.protocols.validation import (
     ProtocolValidationResult,
     ProtocolValidator,
 )
-
-# =============================================================================
-# Compatibility Aliases (for migration from SPI)
-# =============================================================================
-
-# Container aliases
-ProtocolDIServiceInstance = ProtocolServiceInstance
-ProtocolDIServiceMetadata = ProtocolServiceRegistrationMetadata
-
-# Convenience type aliases for cleaner imports
-Configurable = ProtocolConfigurable
-Executable = ProtocolExecutable
-Identifiable = ProtocolIdentifiable
-Nameable = ProtocolNameable
-Serializable = ProtocolSerializable
 
 # =============================================================================
 # All Exports
@@ -208,11 +187,10 @@ __all__ = [
     # ==========================================================================
     # Container Module
     # ==========================================================================
-    "ServiceHealthStatus",
     "ProtocolServiceRegistrationMetadata",
     "ProtocolServiceDependency",
     "ProtocolServiceRegistration",
-    "ProtocolServiceInstance",
+    "ProtocolManagedServiceInstance",
     "ProtocolDependencyGraph",
     "ProtocolInjectionContext",
     "ProtocolServiceRegistryStatus",
@@ -220,9 +198,6 @@ __all__ = [
     "ProtocolServiceFactory",
     "ProtocolServiceRegistryConfig",
     "ProtocolServiceRegistry",
-    # Container Aliases
-    "ProtocolDIServiceInstance",
-    "ProtocolDIServiceMetadata",
     # ==========================================================================
     # Event Bus Module
     # ==========================================================================
@@ -256,14 +231,8 @@ __all__ = [
     "ProtocolWorkflowReducer",
     "ProtocolState",
     "ProtocolMetadata",
+    "ProtocolServiceInstance",
     "ProtocolServiceMetadata",
-    "ProtocolDiscoveryServiceInstance",
-    # Convenience Type Aliases
-    "Configurable",
-    "Executable",
-    "Identifiable",
-    "Nameable",
-    "Serializable",
     # ==========================================================================
     # Core Module
     # ==========================================================================

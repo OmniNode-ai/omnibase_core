@@ -7,9 +7,9 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.protocols import (
+    LiteralHealthStatus,
     LiteralInjectionScope,
     LiteralServiceLifecycle,
-    ServiceHealthStatus,
 )
 
 from .model_service_metadata import ModelServiceMetadata
@@ -67,7 +67,7 @@ class ModelServiceRegistration(BaseModel):
         default="registered",
         description="Registration status",
     )
-    health_status: ServiceHealthStatus = Field(
+    health_status: LiteralHealthStatus = Field(
         default="healthy",
         description="Service health status",
     )
