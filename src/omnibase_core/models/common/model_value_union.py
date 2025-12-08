@@ -39,7 +39,7 @@ This module is part of a carefully managed import chain to avoid circular depend
 Safe Runtime Imports (OK to import at module level):
     - Standard library modules only
     - omnibase_core.enums modules
-    - omnibase_core.errors modules
+    - omnibase_core.models.errors modules
     - pydantic modules
 """
 

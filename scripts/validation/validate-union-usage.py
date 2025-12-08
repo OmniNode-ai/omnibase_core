@@ -74,6 +74,7 @@ import json
 import re
 import sys
 from collections import Counter, defaultdict
+from collections.abc import Sequence
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -192,7 +193,7 @@ class UnionLegitimacyValidator:
             value = str(value)
         return value.lower()
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Legitimate union patterns
         self.legitimate_patterns = {
             "optional": self._is_optional_pattern,
@@ -240,7 +241,7 @@ class UnionLegitimacyValidator:
             >>> result = validator.validate_union_legitimacy(pattern)
             >>> print(result["pattern_type"])  # "primitive_soup"
         """
-        result = {
+        result: dict[str, Any] = {
             "is_legitimate": False,
             "pattern_type": None,
             "issues": [],
@@ -288,21 +289,19 @@ class UnionLegitimacyValidator:
         # Look for Result[T, E] patterns or Result-like discriminated unions
         types = pattern.types
 
+        # Cache safe string conversions to avoid repeated calls in hot path
+        safe_types = [self._safe_str(t) for t in types]
+        safe_lower_types = [self._safe_lower(t) for t in types]
+
         # Direct Result type usage
-        # Defensive: use _safe_str to handle None/non-string types gracefully
-        if any(self._safe_str(t) and "Result[" in self._safe_str(t) for t in types):
+        # Defensive: use cached _safe_str values to handle None/non-string types gracefully
+        if any(t and "Result[" in t for t in safe_types):
             return True
 
         # Look for success/error discriminated union pattern
-        # Defensive: use _safe_lower to handle None/non-string types gracefully
-        has_success_variant = any(
-            "success" in self._safe_lower(t) or "ok" in self._safe_lower(t)
-            for t in types
-        )
-        has_error_variant = any(
-            "error" in self._safe_lower(t) or "err" in self._safe_lower(t)
-            for t in types
-        )
+        # Defensive: use cached _safe_lower values to handle None/non-string types gracefully
+        has_success_variant = any("success" in t or "ok" in t for t in safe_lower_types)
+        has_error_variant = any("error" in t or "err" in t for t in safe_lower_types)
 
         return has_success_variant and has_error_variant and len(types) == 2
 
@@ -344,19 +343,22 @@ class UnionLegitimacyValidator:
         Returns:
             True if the union appears to be properly discriminated.
         """
+        # Cache safe string conversions to avoid repeated calls in hot path
+        safe_types = [self._safe_str(t) for t in pattern.types]
+        safe_lower_types = [self._safe_lower(t) for t in pattern.types]
+
         # Look for Literal types in the union (defensive: handle None/non-string)
-        has_literal = any(
-            self._safe_str(t) and "Literal[" in self._safe_str(t) for t in pattern.types
-        )
+        has_literal = any(t and "Literal[" in t for t in safe_types)
 
         # Check for discriminator-like patterns (defensive: handle None/non-string)
+        # Use zip to pair safe_str and safe_lower for same index
         has_type_field = any(
-            "type" in self._safe_lower(t) and '"' in self._safe_str(t)
-            for t in pattern.types
+            "type" in lower_t and '"' in str_t
+            for str_t, lower_t in zip(safe_types, safe_lower_types, strict=True)
         )
         has_kind_field = any(
-            "kind" in self._safe_lower(t) and '"' in self._safe_str(t)
-            for t in pattern.types
+            "kind" in lower_t and '"' in str_t
+            for str_t, lower_t in zip(safe_types, safe_lower_types, strict=True)
         )
 
         # Check for Field(discriminator=) pattern in file content (modern Pydantic approach)
@@ -680,7 +682,7 @@ class UnionPattern:
         3
     """
 
-    def __init__(self, types: list[str], line: int, file_path: str):
+    def __init__(self, types: Sequence[str | None], line: int, file_path: str):
         """Initialize a UnionPattern instance with defensive type normalization.
 
         Args:
@@ -707,8 +709,9 @@ class UnionPattern:
             if t is None:
                 continue
             # Convert to string if not already (handles unexpected AST node types)
-            if not isinstance(t, str):
-                t = str(t)
+            # Note: defensive check for runtime safety even if type says str
+            if not isinstance(t, str):  # type: ignore[unreachable]
+                t = str(t)  # type: ignore[unreachable]
             # Skip empty or whitespace-only strings (malformed type annotations)
             if not t.strip():
                 continue
@@ -991,13 +994,13 @@ class UnionUsageChecker(ast.NodeVisitor):
             # This is a style suggestion, not a legitimacy issue
             # We'll handle this in a separate style checker if needed
 
-    def visit_Subscript(self, node):
+    def visit_Subscript(self, node: ast.Subscript) -> None:
         """Visit subscript nodes (e.g., Union[str, int])."""
         if isinstance(node.value, ast.Name) and node.value.id == "Union":
             self._process_union_types(node, node.slice, node.lineno)
         self.generic_visit(node)
 
-    def visit_BinOp(self, node):
+    def visit_BinOp(self, node: ast.BinOp) -> None:
         """Visit binary operation nodes (e.g., str | int | float)."""
         if isinstance(node.op, ast.BitOr):
             # Skip bitwise operations and set operations - only process type unions
@@ -1030,7 +1033,7 @@ class UnionUsageChecker(ast.NodeVisitor):
             True if likely a type union, False if likely bitwise/set operation.
         """
 
-        def has_attribute_access(n):
+        def has_attribute_access(n: ast.AST) -> bool:
             """Check if node involves attribute access (like re.FLAG)."""
             if isinstance(n, ast.Attribute):
                 return True
@@ -1038,7 +1041,7 @@ class UnionUsageChecker(ast.NodeVisitor):
                 return has_attribute_access(n.left) or has_attribute_access(n.right)
             return False
 
-        def has_variable_reference(n):
+        def has_variable_reference(n: ast.AST) -> bool:
             """Check if node is a variable reference (like set1)."""
             if isinstance(n, ast.Name):
                 # Simple heuristic: lowercase names are likely variables, not types
@@ -1077,7 +1080,7 @@ class UnionUsageChecker(ast.NodeVisitor):
         """
         types: list[str] = []
 
-        def collect_types(n):
+        def collect_types(n: ast.AST) -> None:
             if isinstance(n, ast.BinOp) and isinstance(n.op, ast.BitOr):
                 collect_types(n.left)
                 collect_types(n.right)
@@ -1428,11 +1431,11 @@ The validator focuses on type safety and semantic coherence rather than arbitrar
     total_unions = 0
     total_legitimate = 0
     total_invalid = 0
-    total_issues = []
-    all_patterns = []
-    all_legitimate_patterns = []
-    all_invalid_patterns = []
-    global_statistics = {}
+    total_issues: list[str] = []
+    all_patterns: list[UnionPattern] = []
+    all_legitimate_patterns: list[UnionPattern] = []
+    all_invalid_patterns: list[UnionPattern] = []
+    global_statistics: dict[str, int] = {}
 
     # Process all files
     for py_file in python_files:
@@ -1598,7 +1601,7 @@ def export_legitimacy_report(
     python_files: list[Path],
 ) -> None:
     """Export a detailed legitimacy-based report to a file."""
-    report = {
+    report: dict[str, Any] = {
         "metadata": {
             "generated_at": datetime.now().isoformat(),
             "total_files_scanned": len(python_files),
@@ -1757,7 +1760,7 @@ def export_detailed_report(
     python_files: list[Path],
 ) -> None:
     """Export a detailed report to a file."""
-    report = {
+    report: dict[str, Any] = {
         "metadata": {
             "generated_at": datetime.now().isoformat(),
             "total_files_scanned": len(python_files),

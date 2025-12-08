@@ -39,7 +39,8 @@ This module is part of a carefully managed import chain to avoid circular depend
 
 Safe Runtime Imports (OK to import at module level):
     - Standard library modules only
-    - omnibase_core.errors modules
+    - omnibase_core.enums modules
+    - omnibase_core.models.errors modules
     - pydantic modules
 """
 
@@ -129,6 +130,8 @@ class ModelDictValueUnion(BaseModel):
         """
         if not isinstance(data, dict):
             data = {"value": data}
+        else:
+            data = dict(data)  # Make a copy to avoid mutating input
 
         # If value_type already specified, validate it's correct
         if "value_type" in data:
@@ -580,8 +583,8 @@ class ModelDictValueUnion(BaseModel):
         """
         if not self.is_dict():
             return default
-        dict_value = self.get_as_dict()
-        return dict_value.get(key, default)
+        # Direct access since we verified is_dict()
+        return self.value.get(key, default)  # type: ignore[union-attr]
 
     # === Collection Helpers ===
 
