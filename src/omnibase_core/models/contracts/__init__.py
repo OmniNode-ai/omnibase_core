@@ -4,6 +4,7 @@ Contract Models
 Models for validating various contract formats and subcontract compositions.
 """
 
+from omnibase_core.mixins.mixin_node_type_validator import MixinNodeTypeValidator
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
@@ -37,7 +38,6 @@ from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig
 from .model_lifecycle_config import ModelLifecycleConfig
 from .model_memory_management_config import ModelMemoryManagementConfig
-from .model_mixin_node_type_validator import MixinNodeTypeValidator
 from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
 from .model_performance_requirements import ModelPerformanceRequirements

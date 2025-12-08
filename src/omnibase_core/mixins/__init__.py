@@ -62,6 +62,7 @@ from omnibase_core.mixins.mixin_log_data import MixinLogData
 from omnibase_core.mixins.mixin_node_executor import MixinNodeExecutor
 from omnibase_core.mixins.mixin_node_id_from_contract import MixinNodeIdFromContract
 from omnibase_core.mixins.mixin_node_lifecycle import MixinNodeLifecycle
+from omnibase_core.mixins.mixin_node_type_validator import MixinNodeTypeValidator
 from omnibase_core.mixins.mixin_node_setup import MixinNodeSetup
 from omnibase_core.mixins.mixin_redaction import MixinSensitiveFieldRedaction
 from omnibase_core.mixins.mixin_request_response_introspection import (
@@ -94,6 +95,7 @@ __all__ = [
     "MixinLazyEvaluation",
     "MixinNodeIdFromContract",
     "MixinNodeLifecycle",
+    "MixinNodeTypeValidator",
     "MixinNodeExecutor",
     "MixinNodeSetup",
     "MixinRequestResponseIntrospection",
