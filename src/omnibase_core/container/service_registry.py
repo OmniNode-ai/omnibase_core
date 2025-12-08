@@ -774,7 +774,7 @@ class ServiceRegistry:
         return True
 
     async def create_injection_scope(
-        self, scope_name: str, parent_scope: str | None = None
+        self, scope_name: str, parent_scope: UUID | None = None
     ) -> UUID:
         """
         Create injection scope (not implemented in v1.0).

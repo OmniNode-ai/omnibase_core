@@ -33,9 +33,10 @@ class ModelServiceInstance(BaseModel):
 
     Example:
         ```python
+        from uuid import UUID
         instance = ModelServiceInstance(
-            instance_id="inst-456",
-            service_registration_id="reg-123",
+            instance_id=UUID("12345678-1234-5678-1234-567812345678"),
+            service_registration_id=UUID("87654321-4321-8765-4321-876543218765"),
             instance=logger_instance,
             lifecycle="singleton",
             scope="global",
