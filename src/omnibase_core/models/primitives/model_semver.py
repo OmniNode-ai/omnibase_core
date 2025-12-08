@@ -1,9 +1,18 @@
+import re
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+# Pre-compiled SemVer pattern for performance
+# Basic SemVer regex pattern for major.minor.patch
+# Allows prerelease/metadata suffix (e.g., "1.2.3-alpha" or "1.2.3+build")
+# But ensures version ends after patch or has valid separator (-, +)
+_SEMVER_PATTERN = re.compile(
+    r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:[-+].*)?$"
+)
 
 """
 Semantic Version Model
@@ -101,7 +110,7 @@ class ModelSemVer(BaseModel):
         return self == other or self > other
 
     def __hash__(self) -> int:
-        """Hash function for use in sets and as dict[str, Any]keys."""
+        """Hash function for use in sets and as dict keys."""
         return hash((self.major, self.minor, self.patch))
 
     @classmethod
@@ -140,7 +149,8 @@ def default_model_version() -> ModelSemVer:
         ModelSemVer instance with major=1, minor=0, patch=0
 
     Example:
-        >>> version: ModelSemVer = Field(default_factory=default_model_version)
+        >>> class MyModel(BaseModel):
+        ...     version: ModelSemVer = Field(default_factory=default_model_version)
     """
     return ModelSemVer(major=1, minor=0, patch=0)
 
@@ -165,14 +175,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
         >>> version = parse_semver_from_string("1.2.3")
         >>> assert version.major == 1 and version.minor == 2 and version.patch == 3
     """
-    import re
-
-    # Basic SemVer regex pattern for major.minor.patch
-    # Allows prerelease/metadata suffix (e.g., "1.2.3-alpha" or "1.2.3+build")
-    # But ensures version ends after patch or has valid separator (-, +)
-    pattern = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:[-+].*)?$"
-
-    match = re.match(pattern, version_str)
+    match = _SEMVER_PATTERN.match(version_str)
     if not match:
         msg = f"Invalid semantic version format: {version_str}"
         raise ModelOnexError(

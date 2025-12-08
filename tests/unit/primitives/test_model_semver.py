@@ -461,6 +461,97 @@ class TestSemVerFieldAlias:
         assert version.major == 1
 
 
+class TestModelSemVerBackwardCompatibility:
+    """Test backward compatibility with older version patterns."""
+
+    def test_default_model_version_returns_1_0_0(self):
+        """Test default_model_version factory returns 1.0.0."""
+        from omnibase_core.models.primitives.model_semver import default_model_version
+
+        version = default_model_version()
+        assert version == ModelSemVer(major=1, minor=0, patch=0)
+        assert version.major == 1
+        assert version.minor == 0
+        assert version.patch == 0
+
+    def test_default_model_version_as_factory(self):
+        """Test default_model_version can be used as Pydantic Field default_factory."""
+        from pydantic import BaseModel, Field
+
+        from omnibase_core.models.primitives.model_semver import default_model_version
+
+        class TestModel(BaseModel):
+            version: ModelSemVer = Field(default_factory=default_model_version)
+
+        model = TestModel()
+        assert model.version == ModelSemVer(major=1, minor=0, patch=0)
+        assert str(model.version) == "1.0.0"
+
+    def test_default_model_version_returns_new_instance_each_call(self):
+        """Test default_model_version returns a new instance on each call."""
+        from omnibase_core.models.primitives.model_semver import default_model_version
+
+        v1 = default_model_version()
+        v2 = default_model_version()
+        # Should be equal but not the same object (frozen model)
+        assert v1 == v2
+        # Both should be 1.0.0
+        assert v1 == ModelSemVer(major=1, minor=0, patch=0)
+        assert v2 == ModelSemVer(major=1, minor=0, patch=0)
+
+    def test_version_round_trip_serialization(self):
+        """Test version survives JSON round-trip."""
+        version = ModelSemVer(major=2, minor=3, patch=4)
+        dumped = version.model_dump()
+        restored = ModelSemVer.model_validate(dumped)
+        assert version == restored
+        assert restored.major == 2
+        assert restored.minor == 3
+        assert restored.patch == 4
+
+    def test_version_json_round_trip_serialization(self):
+        """Test version survives full JSON string round-trip."""
+        import json
+
+        version = ModelSemVer(major=5, minor=6, patch=7)
+        json_str = version.model_dump_json()
+        data = json.loads(json_str)
+        restored = ModelSemVer.model_validate(data)
+        assert version == restored
+
+    def test_dict_vs_constructed_equality(self):
+        """Test dict-created and constructor-created versions are equal."""
+        from_dict = ModelSemVer.model_validate({"major": 1, "minor": 2, "patch": 3})
+        constructed = ModelSemVer(major=1, minor=2, patch=3)
+        assert from_dict == constructed
+        assert hash(from_dict) == hash(constructed)
+
+    def test_semver_field_alias_backward_compatibility(self):
+        """Test SemVerField type alias maintains backward compatibility."""
+        # SemVerField should be usable exactly like ModelSemVer
+        version: SemVerField = SemVerField(major=1, minor=2, patch=3)
+        assert isinstance(version, ModelSemVer)
+        assert version.major == 1
+        assert str(version) == "1.2.3"
+        # Verify it works in comparisons
+        assert version == ModelSemVer(major=1, minor=2, patch=3)
+
+    def test_semver_field_in_pydantic_model(self):
+        """Test SemVerField works as type annotation in Pydantic models."""
+        from pydantic import BaseModel
+
+        class ConfigModel(BaseModel):
+            api_version: SemVerField
+            min_version: SemVerField
+
+        config = ConfigModel(
+            api_version=ModelSemVer(major=2, minor=0, patch=0),
+            min_version=ModelSemVer(major=1, minor=5, patch=0),
+        )
+        assert config.api_version > config.min_version
+        assert str(config.api_version) == "2.0.0"
+
+
 class TestModelSemVerEdgeCases:
     """Test edge cases and boundary conditions."""
 

@@ -154,21 +154,62 @@ class UnionLegitimacyValidator:
                 # Uses pre-compiled LITERAL_VALUE_PATTERN for performance
                 literal_values = self.LITERAL_VALUE_PATTERN.findall(match)
                 if literal_values:
+                    # ============================================================
+                    # Defensive Type Normalization for Union Pattern Comparison
+                    # ============================================================
+                    #
+                    # This block normalizes union type names and literal values for
+                    # case-insensitive comparison to detect companion literal
+                    # discriminator patterns.
+                    #
+                    # Edge Cases Handled:
+                    # -------------------
+                    # 1. Empty type strings (""):
+                    #    - `if not t` evaluates to False for empty strings
+                    #
+                    # 2. None values in types list:
+                    #    - `if not t` evaluates to False for None
+                    #
+                    # 3. Non-string types in types list:
+                    #    - `isinstance(t, str)` guards against non-string types
+                    #    - This can occur with malformed AST or edge cases
+                    #
+                    # 4. Types with brackets but empty base ("[str]"):
+                    #    - `if base_type:` filters out empty base types after split
+                    #    - e.g., "[str]".split("[")[0] = "" which is filtered
+                    #
+                    # 5. Leading/trailing whitespace ("  str  "):
+                    #    - `.strip()` normalizes whitespace
+                    #    - Whitespace-only strings become empty after strip
+                    #
+                    # 6. Subscripted types ("dict[str, Any]", "list[int]"):
+                    #    - `.split("[")[0]` extracts base type before bracket
+                    #    - e.g., "dict[str, Any]" -> "dict"
+                    #
+                    # Normalization:
+                    # --------------
+                    # - All type names are lowercased for case-insensitive matching
+                    # - Subscript parameters are stripped (dict[str, Any] -> dict)
+                    #
+                    # ============================================================
+
                     # Normalize union type names for comparison
                     # Handle types like "dict[str, Any]" -> "dict", "list[Any]" -> "list"
-                    union_type_names = set()
+                    union_type_names: set[str] = set()
                     for t in pattern.types:
-                        # Defensive handling for edge cases
+                        # Defensive handling: skip None, empty strings, non-strings
                         if not t or not isinstance(t, str):
                             continue
                         # Extract base type name (before [ if subscripted)
+                        # and normalize: strip whitespace, lowercase for comparison
                         base_type = t.split("[")[0].strip().lower()
-                        if base_type:  # Only add non-empty base types
+                        # Only add non-empty base types (handles "[str]" -> "" case)
+                        if base_type:
                             union_type_names.add(base_type)
 
                     # Convert literal values to lowercase for comparison
-                    # Defensive handling for edge cases in literal values
-                    literal_values_lower = {
+                    # Defensive handling: skip None, empty strings, non-strings
+                    literal_values_lower: set[str] = {
                         v.lower() for v in literal_values if v and isinstance(v, str)
                     }
 
