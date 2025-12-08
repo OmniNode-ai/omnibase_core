@@ -94,9 +94,9 @@ class ModelHttpIOConfig(BaseModel):
 
     timeout_ms: int = Field(
         default=30000,
-        ge=100,
-        le=300000,
-        description="Request timeout in milliseconds (100ms - 5min)",
+        ge=1000,  # 1000ms = 1 second minimum for realistic production I/O
+        le=600000,  # 600000ms = 10 minutes maximum timeout
+        description="Request timeout in milliseconds (1s - 10min)",
     )
 
     follow_redirects: bool = Field(
@@ -198,9 +198,9 @@ class ModelDbIOConfig(BaseModel):
 
     timeout_ms: int = Field(
         default=30000,
-        ge=100,
-        le=300000,
-        description="Query timeout in milliseconds (100ms - 5min)",
+        ge=1000,  # 1000ms = 1 second minimum for realistic production I/O
+        le=600000,  # 600000ms = 10 minutes maximum timeout
+        description="Query timeout in milliseconds (1s - 10min)",
     )
 
     fetch_size: int | None = Field(
@@ -403,9 +403,9 @@ class ModelKafkaIOConfig(BaseModel):
 
     timeout_ms: int = Field(
         default=30000,
-        ge=100,
-        le=300000,
-        description="Producer timeout in milliseconds (100ms - 5min)",
+        ge=1000,  # 1000ms = 1 second minimum for realistic production I/O
+        le=600000,  # 600000ms = 10 minutes maximum timeout
+        description="Producer timeout in milliseconds (1s - 10min)",
     )
 
     acks: Literal["0", "1", "all"] = Field(
@@ -463,6 +463,38 @@ class ModelKafkaIOConfig(BaseModel):
                 )
         return self
 
+    @model_validator(mode="after")
+    def validate_acks_zero_acknowledged_only_for_acks_zero(
+        self,
+    ) -> "ModelKafkaIOConfig":
+        """
+        Prevent acks_zero_acknowledged=True when acks is not "0".
+
+        The acks_zero_acknowledged field is only meaningful when acks="0".
+        Setting it to True with acks="1" or acks="all" is a configuration error
+        that creates confusing state. This validator ensures consistent configuration.
+        """
+        if self.acks != "0" and self.acks_zero_acknowledged:
+            raise ModelOnexError(
+                message=f"acks_zero_acknowledged=True is only valid when acks='0', "
+                f"but acks='{self.acks}'. Set acks_zero_acknowledged=False or "
+                f"change acks to '0'.",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "acks_zero_acknowledged_semantics"
+                        ),
+                        "acks": ModelSchemaValue.from_value(self.acks),
+                        "acks_zero_acknowledged": ModelSchemaValue.from_value(
+                            self.acks_zero_acknowledged
+                        ),
+                    }
+                ),
+            )
+        return self
+
     model_config = ConfigDict(frozen=True, extra="forbid")
 
 
@@ -473,11 +505,22 @@ class ModelFilesystemIOConfig(BaseModel):
     Provides file path templating, operation type specification,
     and atomicity controls for filesystem operations.
 
-    Example:
+    For move/copy operations, both file_path_template (source) and
+    destination_path_template (target) are required.
+
+    Example (write):
         config = ModelFilesystemIOConfig(
             file_path_template="/data/output/${input.date}/${input.filename}.json",
             operation="write",
             atomic=True,
+            create_dirs=True,
+        )
+
+    Example (move):
+        config = ModelFilesystemIOConfig(
+            file_path_template="/data/inbox/${input.filename}",
+            destination_path_template="/data/archive/${input.date}/${input.filename}",
+            operation="move",
             create_dirs=True,
         )
     """
@@ -489,8 +532,15 @@ class ModelFilesystemIOConfig(BaseModel):
 
     file_path_template: str = Field(
         ...,
-        description="File path with ${} placeholders for variable substitution",
+        description="File path with ${} placeholders for variable substitution. "
+        "For move/copy operations, this is the source path.",
         min_length=1,
+    )
+
+    destination_path_template: str | None = Field(
+        default=None,
+        description="Destination path with ${} placeholders for move/copy operations. "
+        "Required for 'move' and 'copy' operations, ignored for other operations.",
     )
 
     operation: Literal["read", "write", "delete", "move", "copy"] = Field(
@@ -500,9 +550,9 @@ class ModelFilesystemIOConfig(BaseModel):
 
     timeout_ms: int = Field(
         default=30000,
-        ge=100,
-        le=300000,
-        description="Operation timeout in milliseconds (100ms - 5min)",
+        ge=1000,  # 1000ms = 1 second minimum for realistic production I/O
+        le=600000,  # 600000ms = 10 minutes maximum timeout
+        description="Operation timeout in milliseconds (1s - 10min)",
     )
 
     atomic: bool = Field(
@@ -544,6 +594,35 @@ class ModelFilesystemIOConfig(BaseModel):
                         "error_type": ModelSchemaValue.from_value("valueerror"),
                         "validation_context": ModelSchemaValue.from_value(
                             "atomic_operation_validation"
+                        ),
+                        "operation": ModelSchemaValue.from_value(self.operation),
+                    }
+                ),
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_destination_for_move_copy(self) -> "ModelFilesystemIOConfig":
+        """
+        Validate destination_path_template is required for move/copy operations.
+
+        Move and copy operations require both a source path (file_path_template)
+        and a destination path (destination_path_template). Without the destination,
+        the operation would fail at runtime.
+        """
+        operations_requiring_destination = {"move", "copy"}
+        if (
+            self.operation in operations_requiring_destination
+            and self.destination_path_template is None
+        ):
+            raise ModelOnexError(
+                message=f"destination_path_template is required for '{self.operation}' operations",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "destination_path_validation"
                         ),
                         "operation": ModelSchemaValue.from_value(self.operation),
                     }

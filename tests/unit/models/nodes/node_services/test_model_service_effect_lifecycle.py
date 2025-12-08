@@ -149,6 +149,7 @@ def correlation_id():
 
 # Test Classes
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceEffectInitialization:
     """Test service initialization and setup."""
 
@@ -197,6 +198,7 @@ class TestModelServiceEffectInitialization:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceEffectStartup:
     """Test service startup behavior."""
 
@@ -362,6 +364,7 @@ class TestModelServiceEffectStartup:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceEffectShutdown:
     """Test service shutdown behavior."""
 
@@ -456,6 +459,7 @@ class TestModelServiceEffectShutdown:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceEffectEventHandling:
     """Test event subscription and handling."""
 
@@ -542,6 +546,7 @@ class TestModelServiceEffectEventHandling:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceEffectHealthMonitoring:
     """Test health monitoring and reporting."""
 
@@ -588,6 +593,7 @@ class TestModelServiceEffectHealthMonitoring:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceEffectRestart:
     """Test service restart cycles."""
 
@@ -635,6 +641,7 @@ class TestModelServiceEffectRestart:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceEffectSignalHandling:
     """Test signal handler registration and behavior."""
 

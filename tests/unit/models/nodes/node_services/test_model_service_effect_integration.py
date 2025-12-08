@@ -101,6 +101,7 @@ def tool_invocation_event(service_effect):
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestMROCorrectness:
     """Test Method Resolution Order correctness for ModelServiceEffect."""
 
@@ -218,6 +219,7 @@ class TestMROCorrectness:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestServiceModeEventBusIntegration:
     """Test integration between service mode and EventBus mixin."""
 
@@ -301,6 +303,7 @@ class TestServiceModeEventBusIntegration:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestServiceModeHealthCheckIntegration:
     """Test integration between service mode and HealthCheck mixin."""
 
@@ -364,6 +367,7 @@ class TestServiceModeHealthCheckIntegration:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestServiceModeMetricsIntegration:
     """Test integration between service mode and Metrics mixin."""
 
@@ -429,6 +433,7 @@ class TestServiceModeMetricsIntegration:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestToolInvocationEventPublishing:
     """Test tool invocation and event publishing integration."""
 
@@ -481,6 +486,7 @@ class TestToolInvocationEventPublishing:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestEffectSemanticsServiceMode:
     """Test effect semantics (transaction management) in service mode."""
 
@@ -557,6 +563,7 @@ class TestEffectSemanticsServiceMode:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestCircuitBreakerServiceMode:
     """Test circuit breaker integration in service mode."""
 
@@ -615,6 +622,7 @@ class TestCircuitBreakerServiceMode:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestRetryLogicServiceMode:
     """Test retry logic integration in service mode."""
 
@@ -668,6 +676,7 @@ class TestRetryLogicServiceMode:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestEndToEndWorkflow:
     """Test full end-to-end service workflow."""
 
@@ -786,6 +795,7 @@ class TestEndToEndWorkflow:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestMixinMethodAccessibility:
     """Test that methods from all mixins are accessible and functional."""
 

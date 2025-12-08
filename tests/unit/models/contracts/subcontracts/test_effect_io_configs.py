@@ -22,6 +22,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelHttpIOConfig:
     """Tests for ModelHttpIOConfig model."""
 
@@ -90,38 +91,42 @@ class TestModelHttpIOConfig:
         assert config.body_template is None
 
     def test_timeout_bounds(self) -> None:
-        """Test timeout_ms bounds validation."""
-        # Valid minimum
+        """Test timeout_ms bounds validation.
+
+        Timeout bounds: 1000ms (1 second) minimum for realistic production I/O,
+        600000ms (10 minutes) maximum timeout.
+        """
+        # Valid minimum (1000ms = 1 second)
         config = ModelHttpIOConfig(
             url_template="https://api.example.com",
             method="GET",
-            timeout_ms=100,
+            timeout_ms=1000,
         )
-        assert config.timeout_ms == 100
+        assert config.timeout_ms == 1000
 
-        # Valid maximum
+        # Valid maximum (600000ms = 10 minutes)
         config = ModelHttpIOConfig(
             url_template="https://api.example.com",
             method="GET",
-            timeout_ms=300000,
+            timeout_ms=600000,
         )
-        assert config.timeout_ms == 300000
+        assert config.timeout_ms == 600000
 
-        # Below minimum
+        # Below minimum (999ms < 1000ms)
         with pytest.raises(ValidationError) as exc_info:
             ModelHttpIOConfig(
                 url_template="https://api.example.com",
                 method="GET",
-                timeout_ms=50,
+                timeout_ms=999,
             )
         assert "timeout_ms" in str(exc_info.value)
 
-        # Above maximum
+        # Above maximum (600001ms > 600000ms)
         with pytest.raises(ValidationError) as exc_info:
             ModelHttpIOConfig(
                 url_template="https://api.example.com",
                 method="GET",
-                timeout_ms=500000,
+                timeout_ms=600001,
             )
         assert "timeout_ms" in str(exc_info.value)
 
@@ -180,6 +185,7 @@ class TestModelHttpIOConfig:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelDbIOConfig:
     """Tests for ModelDbIOConfig model."""
 
@@ -471,6 +477,7 @@ class TestModelDbIOConfig:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelKafkaIOConfig:
     """Tests for ModelKafkaIOConfig model."""
 
@@ -583,8 +590,84 @@ class TestModelKafkaIOConfig:
             )
         assert "unknown_field" in str(exc_info.value)
 
+    def test_acks_zero_with_acknowledged_true_valid(self) -> None:
+        """Test acks='0' with acks_zero_acknowledged=True is valid."""
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            config = ModelKafkaIOConfig(
+                topic="test",
+                payload_template="{}",
+                acks="0",
+                acks_zero_acknowledged=True,
+            )
+            assert config.acks == "0"
+            assert config.acks_zero_acknowledged is True
+
+    def test_acks_zero_with_acknowledged_false_valid(self) -> None:
+        """Test acks='0' with acks_zero_acknowledged=False raises error (opt-in required)."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelKafkaIOConfig(
+                topic="test",
+                payload_template="{}",
+                acks="0",
+                acks_zero_acknowledged=False,
+            )
+        assert "acks_zero_acknowledged" in str(exc_info.value)
+        assert "explicit opt-in" in str(exc_info.value)
+
+    def test_acks_one_with_acknowledged_true_invalid(self) -> None:
+        """Test acks='1' with acks_zero_acknowledged=True is invalid."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelKafkaIOConfig(
+                topic="test",
+                payload_template="{}",
+                acks="1",
+                acks_zero_acknowledged=True,
+            )
+        assert "acks_zero_acknowledged=True is only valid when acks='0'" in str(
+            exc_info.value
+        )
+        assert "acks='1'" in str(exc_info.value)
+
+    def test_acks_all_with_acknowledged_true_invalid(self) -> None:
+        """Test acks='all' with acks_zero_acknowledged=True is invalid."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelKafkaIOConfig(
+                topic="test",
+                payload_template="{}",
+                acks="all",
+                acks_zero_acknowledged=True,
+            )
+        assert "acks_zero_acknowledged=True is only valid when acks='0'" in str(
+            exc_info.value
+        )
+        assert "acks='all'" in str(exc_info.value)
+
+    def test_acks_one_with_acknowledged_false_valid(self) -> None:
+        """Test acks='1' with acks_zero_acknowledged=False is valid (default case)."""
+        config = ModelKafkaIOConfig(
+            topic="test",
+            payload_template="{}",
+            acks="1",
+            acks_zero_acknowledged=False,
+        )
+        assert config.acks == "1"
+        assert config.acks_zero_acknowledged is False
+
+    def test_acks_all_with_acknowledged_false_valid(self) -> None:
+        """Test acks='all' with acks_zero_acknowledged=False is valid (default case)."""
+        config = ModelKafkaIOConfig(
+            topic="test",
+            payload_template="{}",
+            acks="all",
+            acks_zero_acknowledged=False,
+        )
+        assert config.acks == "all"
+        assert config.acks_zero_acknowledged is False
+
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelFilesystemIOConfig:
     """Tests for ModelFilesystemIOConfig model."""
 
@@ -607,10 +690,12 @@ class TestModelFilesystemIOConfig:
         """Test all valid operation types."""
         for op in ["read", "write", "delete", "move", "copy"]:
             # atomic=False for non-write operations (atomic=True only valid for write)
+            # destination_path_template required for move/copy operations
             config = ModelFilesystemIOConfig(
                 file_path_template="/path",
                 operation=op,  # type: ignore[arg-type]
                 atomic=(op == "write"),  # Only write supports atomic=True
+                destination_path_template="/dest" if op in ("move", "copy") else None,
             )
             assert config.operation == op
 
@@ -682,12 +767,97 @@ class TestModelFilesystemIOConfig:
                 file_path_template="/path",
                 operation=op,  # type: ignore[arg-type]
                 atomic=False,
+                destination_path_template="/dest" if op in ("move", "copy") else None,
             )
             assert config.atomic is False
             assert config.operation == op
 
+    def test_read_without_destination_valid(self) -> None:
+        """Test read operation without destination_path_template is valid."""
+        config = ModelFilesystemIOConfig(
+            file_path_template="/data/input.json",
+            operation="read",
+            atomic=False,
+        )
+        assert config.operation == "read"
+        assert config.destination_path_template is None
+
+    def test_write_without_destination_valid(self) -> None:
+        """Test write operation without destination_path_template is valid."""
+        config = ModelFilesystemIOConfig(
+            file_path_template="/data/output.json",
+            operation="write",
+            atomic=True,
+        )
+        assert config.operation == "write"
+        assert config.destination_path_template is None
+
+    def test_delete_without_destination_valid(self) -> None:
+        """Test delete operation without destination_path_template is valid."""
+        config = ModelFilesystemIOConfig(
+            file_path_template="/data/to_delete.json",
+            operation="delete",
+            atomic=False,
+        )
+        assert config.operation == "delete"
+        assert config.destination_path_template is None
+
+    def test_move_without_destination_invalid(self) -> None:
+        """Test move operation without destination_path_template raises error."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelFilesystemIOConfig(
+                file_path_template="/data/source.json",
+                operation="move",
+                atomic=False,
+            )
+        assert "destination_path_template is required for 'move' operations" in str(
+            exc_info.value
+        )
+
+    def test_copy_without_destination_invalid(self) -> None:
+        """Test copy operation without destination_path_template raises error."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelFilesystemIOConfig(
+                file_path_template="/data/source.json",
+                operation="copy",
+                atomic=False,
+            )
+        assert "destination_path_template is required for 'copy' operations" in str(
+            exc_info.value
+        )
+
+    def test_move_with_destination_valid(self) -> None:
+        """Test move operation with destination_path_template is valid."""
+        config = ModelFilesystemIOConfig(
+            file_path_template="/data/inbox/${input.filename}",
+            destination_path_template="/data/archive/${input.date}/${input.filename}",
+            operation="move",
+            atomic=False,
+            create_dirs=True,
+        )
+        assert config.operation == "move"
+        assert config.file_path_template == "/data/inbox/${input.filename}"
+        assert (
+            config.destination_path_template
+            == "/data/archive/${input.date}/${input.filename}"
+        )
+
+    def test_copy_with_destination_valid(self) -> None:
+        """Test copy operation with destination_path_template is valid."""
+        config = ModelFilesystemIOConfig(
+            file_path_template="/data/source/${input.filename}",
+            destination_path_template="/data/backup/${input.filename}",
+            operation="copy",
+            atomic=False,
+            create_dirs=True,
+        )
+        assert config.operation == "copy"
+        assert config.file_path_template == "/data/source/${input.filename}"
+        assert config.destination_path_template == "/data/backup/${input.filename}"
+
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestEffectIOConfigUnion:
     """Tests for discriminated union behavior."""
 
@@ -787,6 +957,7 @@ class TestEffectIOConfigUnion:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestEffectIOConfigDiscriminatedUnionIntegration:
     """
     Integration tests for EffectIOConfig discriminated union behavior.
@@ -1086,6 +1257,7 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestExportedFromSubcontracts:
     """Test that models are properly exported from subcontracts module."""
 

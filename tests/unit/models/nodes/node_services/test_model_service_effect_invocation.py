@@ -26,6 +26,7 @@ from omnibase_core.models.service.model_service_effect import ModelServiceEffect
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceEffectToolInvocation:
     """Test tool invocation handling for ModelServiceEffect."""
 
@@ -617,6 +618,7 @@ class TestModelServiceEffectToolInvocation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelServiceEffectEdgeCases:
     """Test edge cases for tool invocation handling."""
 

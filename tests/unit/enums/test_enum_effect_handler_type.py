@@ -12,6 +12,7 @@ from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestEnumEffectHandlerType:
     """Test cases for EnumEffectHandlerType enum."""
 
@@ -116,6 +117,7 @@ class TestEnumEffectHandlerType:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestEnumEffectHandlerTypePydanticIntegration:
     """Test Pydantic serialization compatibility."""
 
@@ -162,6 +164,7 @@ class TestEnumEffectHandlerTypePydanticIntegration:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestEnumEffectHandlerTypeExport:
     """Test enum is properly exported from omnibase_core.enums."""
 

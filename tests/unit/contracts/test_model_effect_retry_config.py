@@ -17,6 +17,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexE
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelEffectRetryConfigBasic:
     """Test basic retry configuration functionality."""
 
@@ -71,6 +72,7 @@ class TestModelEffectRetryConfigBasic:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelEffectRetryConfigEnumValidation:
     """Test EnumRetryBackoffStrategy enum validation."""
 
@@ -175,6 +177,7 @@ class TestModelEffectRetryConfigEnumValidation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelEffectRetryConfigValidation:
     """Test retry configuration validation rules."""
 
@@ -236,6 +239,7 @@ class TestModelEffectRetryConfigValidation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelEffectRetryConfigMaxDelayValidator:
     """Test max_delay_ms validator that enforces it must be greater than base_delay_ms."""
 
@@ -297,6 +301,7 @@ class TestModelEffectRetryConfigMaxDelayValidator:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelEffectRetryConfigCircuitBreaker:
     """Test circuit breaker configuration."""
 
@@ -323,6 +328,7 @@ class TestModelEffectRetryConfigCircuitBreaker:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelEffectRetryConfigSerialization:
     """Test retry configuration serialization."""
 
@@ -378,6 +384,7 @@ class TestModelEffectRetryConfigSerialization:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelEffectRetryConfigModelConfig:
     """Test model configuration settings."""
 
@@ -416,6 +423,7 @@ class TestModelEffectRetryConfigModelConfig:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelEffectRetryConfigEdgeCases:
     """Test edge cases and boundary conditions."""
 

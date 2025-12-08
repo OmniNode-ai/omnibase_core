@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -36,6 +37,9 @@ class ModelEventBusOutputState(BaseModel):
     - Business intelligence and analytics support
     - Factory methods for common scenarios
     """
+
+    # Pre-compiled regex pattern for error code validation
+    _ERROR_CODE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Z0-9_]+$")
 
     model_config = ConfigDict(validate_assignment=True, extra="forbid")
     version: ModelSemVer = Field(
@@ -148,9 +152,8 @@ class ModelEventBusOutputState(BaseModel):
         v = v.strip().upper()
         if not v:
             return None
-        import re
 
-        if not re.match("^[A-Z0-9_]+$", v):
+        if not cls._ERROR_CODE_PATTERN.match(v):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="error_code must contain only uppercase letters, numbers, and underscores",
@@ -292,9 +295,7 @@ class ModelEventBusOutputState(BaseModel):
             health_score=(
                 100.0
                 if self.is_successful()
-                else 50.0
-                if self.is_warning_only()
-                else 0.0
+                else 50.0 if self.is_warning_only() else 0.0
             ),
             custom_metrics={
                 "status": ModelMetricValue(

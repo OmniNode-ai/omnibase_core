@@ -25,6 +25,8 @@ from omnibase_core.models.contracts.subcontracts.model_effect_resolved_context i
 )
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelResolvedHttpContext:
     """Test ModelResolvedHttpContext creation and validation."""
 
@@ -97,29 +99,33 @@ class TestModelResolvedHttpContext:
             ModelResolvedHttpContext(url="", method="GET")
 
     def test_timeout_bounds(self) -> None:
-        """Test timeout_ms bounds validation."""
-        # Valid minimum
-        context = ModelResolvedHttpContext(
-            url="https://example.com", method="GET", timeout_ms=100
-        )
-        assert context.timeout_ms == 100
+        """Test timeout_ms bounds validation.
 
-        # Valid maximum (300000ms = 5 minutes, consistent with IO configs)
+        Timeout bounds: 1000ms (1 second) minimum for realistic production I/O,
+        600000ms (10 minutes) maximum timeout.
+        """
+        # Valid minimum (1000ms = 1 second)
         context = ModelResolvedHttpContext(
-            url="https://example.com", method="GET", timeout_ms=300000
+            url="https://example.com", method="GET", timeout_ms=1000
         )
-        assert context.timeout_ms == 300000
+        assert context.timeout_ms == 1000
 
-        # Below minimum
+        # Valid maximum (600000ms = 10 minutes, consistent with IO configs)
+        context = ModelResolvedHttpContext(
+            url="https://example.com", method="GET", timeout_ms=600000
+        )
+        assert context.timeout_ms == 600000
+
+        # Below minimum (999ms < 1000ms)
         with pytest.raises(ValidationError):
             ModelResolvedHttpContext(
-                url="https://example.com", method="GET", timeout_ms=99
+                url="https://example.com", method="GET", timeout_ms=999
             )
 
-        # Above maximum (300000ms)
+        # Above maximum (600001ms > 600000ms)
         with pytest.raises(ValidationError):
             ModelResolvedHttpContext(
-                url="https://example.com", method="GET", timeout_ms=300001
+                url="https://example.com", method="GET", timeout_ms=600001
             )
 
     def test_frozen_prevents_modification(self) -> None:
@@ -143,6 +149,8 @@ class TestModelResolvedHttpContext:
         assert "Extra inputs are not permitted" in str(exc_info.value)
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelResolvedDbContext:
     """Test ModelResolvedDbContext creation and validation."""
 
@@ -254,6 +262,8 @@ class TestModelResolvedDbContext:
         assert "Extra inputs are not permitted" in str(exc_info.value)
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelResolvedKafkaContext:
     """Test ModelResolvedKafkaContext creation and validation."""
 
@@ -357,6 +367,8 @@ class TestModelResolvedKafkaContext:
         assert "Extra inputs are not permitted" in str(exc_info.value)
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelResolvedFilesystemContext:
     """Test ModelResolvedFilesystemContext creation and validation."""
 
@@ -442,6 +454,8 @@ class TestModelResolvedFilesystemContext:
         assert "Extra inputs are not permitted" in str(exc_info.value)
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestResolvedIOContextUnion:
     """Test ResolvedIOContext union type behavior."""
 
@@ -507,6 +521,8 @@ class TestResolvedIOContextUnion:
         ]
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelSerializationDeserialization:
     """Test model serialization and deserialization."""
 
@@ -585,6 +601,8 @@ class TestModelSerializationDeserialization:
         assert restored.mode == original.mode
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -624,13 +642,17 @@ class TestEdgeCases:
         assert context.content is None
 
     def test_all_contexts_have_consistent_timeout_bounds(self) -> None:
-        """Test all contexts use same timeout bounds (100ms - 300000ms = 5min).
+        """Test all contexts use same timeout bounds (1000ms - 600000ms = 10min).
 
         Timeout bounds are consistent with IO configs to ensure resolved contexts
         can accept any valid timeout from the configuration layer.
+
+        Bounds:
+        - Minimum: 1000ms (1 second) for realistic production I/O
+        - Maximum: 600000ms (10 minutes) for long-running operations
         """
-        min_timeout = 100
-        max_timeout = 300000  # 5 minutes, consistent with IO configs
+        min_timeout = 1000  # 1000ms = 1 second minimum for realistic production I/O
+        max_timeout = 600000  # 600000ms = 10 minutes maximum timeout
 
         # HTTP
         http_ctx = ModelResolvedHttpContext(
