@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
 from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
@@ -532,8 +533,6 @@ class TestExecuteStepErrorHandling:
         ModelOnexError should be handled specially with error code extraction.
         """
         from unittest.mock import patch
-
-        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
         step_id = uuid4()
         steps = [

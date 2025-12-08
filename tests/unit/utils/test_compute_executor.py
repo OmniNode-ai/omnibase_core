@@ -27,7 +27,7 @@ from omnibase_core.utils.compute_executor import execute_compute_pipeline
 
 
 @pytest.mark.unit
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(10)
 class TestPipelineExecutorUnexpectedErrors:
     """Tests for unexpected error handling in execute_compute_pipeline.
 
@@ -35,7 +35,7 @@ class TestPipelineExecutorUnexpectedErrors:
     (not ModelOnexError) in result objects rather than propagating them.
     This enables orchestration layers to handle failures gracefully.
 
-    Note: 30-second timeout protects against pipeline execution hangs.
+    Note: 10-second timeout protects against pipeline execution hangs.
     """
 
     def test_unexpected_exception_sets_success_false(self) -> None:
