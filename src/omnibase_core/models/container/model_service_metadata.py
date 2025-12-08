@@ -1,4 +1,4 @@
-"""Service metadata model - implements ProtocolDIServiceMetadata."""
+"""Service metadata model - implements ProtocolServiceRegistrationMetadata."""
 
 from datetime import datetime
 from typing import Any
@@ -13,7 +13,7 @@ class ModelServiceMetadata(BaseModel):
     """
     Service registration metadata.
 
-    Implements ProtocolDIServiceMetadata from omnibase_spi.
+    Implements ProtocolServiceRegistrationMetadata.
     Provides comprehensive metadata for registered services including
     versioning, tagging, and configuration.
 

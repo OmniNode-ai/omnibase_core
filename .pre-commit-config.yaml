@@ -397,9 +397,52 @@ repos:
           - no:rerunfailures
         stages: [pre-push]  # Moved to pre-push: ~4-5 minutes
 
+      # Protocol @runtime_checkable Validation
+      # Ensures all Protocol classes have @runtime_checkable decorator
+      # Required for isinstance() checks and duck typing at runtime
+      - id: check-protocol-runtime-checkable
+        name: ONEX Protocol @runtime_checkable Validation
+        entry: poetry run python scripts/validation/check_protocol_runtime_checkable.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: ^src/omnibase_core/protocols/.*\.py$
+        stages: [pre-commit]
+
+      # Protocol __all__ Exports Validation
+      # Validates that protocol files have correct __all__ exports matching
+      # their Protocol class definitions
+      - id: check-protocol-exports
+        name: ONEX Protocol __all__ Exports Validation
+        entry: poetry run python scripts/check_protocol_exports.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: ^src/omnibase_core/protocols/.*\.py$
+        stages: [pre-commit]
+
+      # Protocol UUID Enforcement (pre-push only)
+      # Verifies protocol type annotations use UUID instead of str
+      # Catches issues like OMN-536/OMN-542 before CI
+      # ~6s runtime - acceptable for pre-push but too slow for every commit
+      - id: pytest-protocol-uuid-enforcement
+        name: Protocol UUID Enforcement Check
+        entry: poetry run pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        args:
+          - tests/unit/protocols/test_protocol_uuid_enforcement.py
+          - --maxfail=3
+          - -x
+          - --tb=short
+          - -q
+          - --timeout=30
+          - -p
+          - no:rerunfailures
+        stages: [pre-push]
+
 # Configuration
-# IMPORTANT: Install both pre-commit and pre-push hooks:
-#   pre-commit install && pre-commit install --hook-type pre-push
 default_install_hook_types: [pre-commit, pre-push]
 default_stages: [pre-commit]
 fail_fast: false

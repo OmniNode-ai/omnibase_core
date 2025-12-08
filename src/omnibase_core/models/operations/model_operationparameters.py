@@ -112,10 +112,6 @@ class ModelOperationParameters(BaseModel):
         Returns:
             True if validation passes, False otherwise.
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception:
-            # Graceful fallback for validation failures
-            return False
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
