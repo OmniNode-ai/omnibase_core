@@ -14,6 +14,7 @@ from omnibase_core.enums.enum_effect_types import EnumEffectType
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.effect.model_effect_input import ModelEffectInput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 # Use legacy NodeEffect for tests that depend on code-driven behavior
 from omnibase_core.nodes.legacy.node_effect_legacy import NodeEffectLegacy as NodeEffect
 

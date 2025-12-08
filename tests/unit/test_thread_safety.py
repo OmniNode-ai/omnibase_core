@@ -25,6 +25,7 @@ from omnibase_core.models.configuration.model_circuit_breaker import ModelCircui
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
 from omnibase_core.nodes.node_compute import NodeCompute
+
 # Use legacy NodeEffect for tests that depend on code-driven behavior
 from omnibase_core.nodes.legacy.node_effect_legacy import NodeEffectLegacy as NodeEffect
 
