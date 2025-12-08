@@ -217,8 +217,7 @@ class EnumNodeType(str, Enum):
         try:
             result = _KIND_MAP[node_type]
         except KeyError as e:
-            # Use ValueError instead of ModelOnexError to avoid enum->model import
-            # (architectural violation: enums must not import models)
+            # error-ok: enums cannot import models (circular import prevention)
             raise ValueError(
                 f"No kind mapping for node type '{node_type}'. "
                 f"Available types: {[str(k) for k in _KIND_MAP]}"
