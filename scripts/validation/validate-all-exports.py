@@ -14,16 +14,20 @@ Usage:
     poetry run python scripts/validation/validate-all-exports.py
     poetry run python scripts/validation/validate-all-exports.py --verbose
     poetry run python scripts/validation/validate-all-exports.py --warn-missing
+    poetry run python scripts/validation/validate-all-exports.py --fail-on-star
     poetry run python scripts/validation/validate-all-exports.py src/omnibase_core/models/
 
 Exit Codes:
     0: All validations passed
-    1: Validation errors found (items in __all__ but not defined)
+    1: Validation errors found (items in __all__ but not defined, or
+       star imports when --fail-on-star is used)
 
 Note:
     - __init__.py files are excluded (they re-export from submodules)
     - Test files are excluded
     - Files without __all__ are skipped (separate concern)
+    - Star imports (from x import *) are warned by default, use --fail-on-star
+      to treat them as errors since they make __all__ validation unreliable
 """
 
 from __future__ import annotations
@@ -35,6 +39,13 @@ from pathlib import Path
 from typing import NamedTuple
 
 
+class StarImportInfo(NamedTuple):
+    """Information about a star import in a file."""
+
+    module: str  # The module being imported from
+    line_no: int  # Line number of the import
+
+
 class ExportValidationResult(NamedTuple):
     """Result of validating a single file's __all__ exports."""
 
@@ -43,13 +54,22 @@ class ExportValidationResult(NamedTuple):
     all_exports: set[str]
     extra_exports: set[str]  # In __all__ but not defined - ERROR
     missing_exports: set[str]  # Defined but not in __all__ - WARNING (optional)
+    star_imports: list[StarImportInfo]  # Star imports found - WARNING
     has_all: bool
     is_valid: bool
     error: str | None
 
 
 class ModuleLevelDefinitionsFinder(ast.NodeVisitor):
-    """AST visitor to find all module-level definitions and imports."""
+    """AST visitor to find all module-level definitions and imports.
+
+    Note:
+        This visitor only processes module-level nodes. By not calling
+        generic_visit() in class/function visitors, we avoid recursing
+        into nested scopes where definitions would not be module-level.
+        This approach is simpler than tracking depth since we only care
+        about top-level definitions.
+    """
 
     def __init__(self) -> None:
         self.class_names: set[str] = set()
@@ -57,81 +77,84 @@ class ModuleLevelDefinitionsFinder(ast.NodeVisitor):
         self.constant_names: set[str] = set()
         self.import_names: set[str] = set()
         self.import_aliases: set[str] = set()
-        self._in_module_level: bool = True
-        self._depth: int = 0
+        self.star_imports: list[StarImportInfo] = []
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Record class definitions at module level."""
-        if self._depth == 0:
-            self.class_names.add(node.name)
-        # Don't recurse into class body for definitions
-        # (nested classes are not module-level)
+        """Record class definitions at module level.
+
+        Note: We don't call generic_visit() here because nested classes
+        within class bodies are not module-level definitions.
+        """
+        self.class_names.add(node.name)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        """Record function definitions at module level."""
-        if self._depth == 0:
-            self.function_names.add(node.name)
-        # Don't recurse into function body
+        """Record function definitions at module level.
+
+        Note: We don't call generic_visit() here because nested functions
+        within function bodies are not module-level definitions.
+        """
+        self.function_names.add(node.name)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        """Record async function definitions at module level."""
-        if self._depth == 0:
-            self.function_names.add(node.name)
-        # Don't recurse into function body
+        """Record async function definitions at module level.
+
+        Note: We don't call generic_visit() here because nested functions
+        within function bodies are not module-level definitions.
+        """
+        self.function_names.add(node.name)
 
     def visit_Assign(self, node: ast.Assign) -> None:
         """Record module-level assignments (constants, aliases)."""
-        if self._depth == 0:
-            for target in node.targets:
-                if isinstance(target, ast.Name):
-                    name = target.id
-                    # Skip __all__ and other dunder attributes
-                    if not name.startswith("__"):
-                        self.constant_names.add(name)
-        self.generic_visit(node)
-
-    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        """Record annotated assignments at module level."""
-        if self._depth == 0:
-            if isinstance(node.target, ast.Name):
-                name = node.target.id
+        for target in node.targets:
+            if isinstance(target, ast.Name):
+                name = target.id
+                # Skip __all__ and other dunder attributes
                 if not name.startswith("__"):
                     self.constant_names.add(name)
         self.generic_visit(node)
 
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        """Record annotated assignments at module level."""
+        if isinstance(node.target, ast.Name):
+            name = node.target.id
+            if not name.startswith("__"):
+                self.constant_names.add(name)
+        self.generic_visit(node)
+
     def visit_TypeAlias(self, node: ast.TypeAlias) -> None:
         """Record PEP 695 type alias statements (Python 3.12+)."""
-        if self._depth == 0:
-            # TypeAlias.name is an ast.Name node containing the alias name
-            if isinstance(node.name, ast.Name):
-                self.constant_names.add(node.name.id)
+        # TypeAlias.name is an ast.Name node containing the alias name
+        if isinstance(node.name, ast.Name):
+            self.constant_names.add(node.name.id)
         self.generic_visit(node)
 
     def visit_Import(self, node: ast.Import) -> None:
         """Record regular imports."""
-        if self._depth == 0:
-            for alias in node.names:
-                # Use alias name if present, otherwise use module name
-                name = alias.asname if alias.asname else alias.name
-                # For dotted imports like 'import os.path', only the first part
-                # is available without the alias
-                if "." in name and not alias.asname:
-                    name = name.split(".")[0]
-                self.import_names.add(name)
+        for alias in node.names:
+            # Use alias name if present, otherwise use module name
+            name = alias.asname if alias.asname else alias.name
+            # For dotted imports like 'import os.path', only the first part
+            # is available without the alias
+            if "." in name and not alias.asname:
+                name = name.split(".")[0]
+            self.import_names.add(name)
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Record from imports."""
-        if self._depth == 0:
-            for alias in node.names:
-                if alias.name == "*":
-                    # Star imports - we can't track these reliably
-                    continue
-                # Use alias name if present, otherwise use imported name
-                name = alias.asname if alias.asname else alias.name
-                self.import_names.add(name)
-                if alias.asname:
-                    self.import_aliases.add(alias.asname)
+        for alias in node.names:
+            if alias.name == "*":
+                # Track star imports - they make __all__ validation unreliable
+                module_name = node.module if node.module else "<relative>"
+                self.star_imports.append(
+                    StarImportInfo(module=module_name, line_no=node.lineno)
+                )
+                continue
+            # Use alias name if present, otherwise use imported name
+            name = alias.asname if alias.asname else alias.name
+            self.import_names.add(name)
+            if alias.asname:
+                self.import_aliases.add(alias.asname)
         self.generic_visit(node)
 
     @property
@@ -209,6 +232,7 @@ def validate_file(
                 all_exports=set(),
                 extra_exports=set(),
                 missing_exports=set(),
+                star_imports=defs_finder.star_imports,
                 has_all=False,
                 is_valid=True,  # Not having __all__ is not a validation error
                 error=None,
@@ -235,6 +259,7 @@ def validate_file(
             all_exports=all_exports,
             extra_exports=extra_exports,
             missing_exports=missing_exports,
+            star_imports=defs_finder.star_imports,
             has_all=True,
             is_valid=is_valid,
             error=None,
@@ -247,6 +272,7 @@ def validate_file(
             all_exports=set(),
             extra_exports=set(),
             missing_exports=set(),
+            star_imports=[],
             has_all=False,
             is_valid=False,
             error=f"Syntax error: {e}",
@@ -258,6 +284,7 @@ def validate_file(
             all_exports=set(),
             extra_exports=set(),
             missing_exports=set(),
+            star_imports=[],
             has_all=False,
             is_valid=False,
             error=f"Error: {e}",
@@ -354,6 +381,11 @@ def main() -> int:
         default=None,
         help="Source directory (default: src/omnibase_core/)",
     )
+    parser.add_argument(
+        "--fail-on-star",
+        action="store_true",
+        help="Treat star imports as errors (fail validation)",
+    )
 
     args = parser.parse_args()
 
@@ -394,6 +426,7 @@ def main() -> int:
     files_with_all = 0
     files_with_errors = 0
     files_with_warnings = 0
+    files_with_star_imports = 0
 
     for file_path in python_files:
         result = validate_file(file_path, warn_missing=args.warn_missing)
@@ -408,12 +441,18 @@ def main() -> int:
         if result.missing_exports:
             files_with_warnings += 1
 
+        if result.star_imports:
+            files_with_star_imports += 1
+
     # Report results
     invalid_results = [r for r in results if not r.is_valid and r.error is None]
     error_results = [r for r in results if r.error is not None]
     warning_results = [r for r in results if r.missing_exports]
+    star_import_results = [r for r in results if r.star_imports]
 
-    has_failures = bool(invalid_results or error_results)
+    # Star imports are errors if --fail-on-star, otherwise warnings
+    has_star_import_errors = args.fail_on_star and star_import_results
+    has_failures = bool(invalid_results or error_results or has_star_import_errors)
 
     if has_failures:
         print("__all__ Export Validation FAILED")
@@ -451,6 +490,42 @@ def main() -> int:
                 print(f"  {result.error}")
             print()
 
+        # Report star import errors (when --fail-on-star)
+        if has_star_import_errors:
+            print("ERRORS: Star imports make __all__ validation unreliable:")
+            print("-" * 60)
+            for result in star_import_results:
+                try:
+                    relative_path = result.file_path.relative_to(Path.cwd())
+                except ValueError:
+                    relative_path = result.file_path
+                print(f"\nFile: {relative_path}")
+                for star_import in result.star_imports:
+                    print(
+                        f"  Line {star_import.line_no}: "
+                        f"from {star_import.module} import *"
+                    )
+            print()
+
+    # Report star import warnings (when not --fail-on-star)
+    if star_import_results and not args.fail_on_star:
+        print("WARNINGS: Star imports found (use --fail-on-star to treat as errors):")
+        print("-" * 60)
+        for result in star_import_results:
+            try:
+                relative_path = result.file_path.relative_to(Path.cwd())
+            except ValueError:
+                relative_path = result.file_path
+            print(f"\nFile: {relative_path}")
+            for star_import in result.star_imports:
+                print(
+                    f"  Line {star_import.line_no}: from {star_import.module} import *"
+                )
+        print()
+        print("Note: Star imports make it impossible to reliably validate __all__.")
+        print("      Consider replacing with explicit imports.")
+        print()
+
     # Report warnings (optional - items defined but not in __all__)
     if args.warn_missing and warning_results:
         print("WARNINGS: Public names not in __all__:")
@@ -470,6 +545,9 @@ def main() -> int:
     print(f"  Total files scanned: {len(python_files)}")
     print(f"  Files with __all__: {files_with_all}")
     print(f"  Files with errors: {files_with_errors}")
+    if files_with_star_imports:
+        star_status = "errors" if args.fail_on_star else "warnings"
+        print(f"  Files with star imports ({star_status}): {files_with_star_imports}")
     if args.warn_missing:
         print(f"  Files with warnings: {files_with_warnings}")
 

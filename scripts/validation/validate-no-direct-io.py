@@ -168,11 +168,6 @@ class DirectIODetector(ast.NodeVisitor):
             return self.lines[lineno - 1].strip()
         return ""
 
-    def _has_bypass_comment(self, lineno: int) -> bool:
-        """Check if line has a bypass comment."""
-        line = self._get_line_content(lineno)
-        return any(pattern in line for pattern in BYPASS_PATTERNS)
-
     def _add_violation(
         self,
         lineno: int,
@@ -180,10 +175,7 @@ class DirectIODetector(ast.NodeVisitor):
         pattern_type: str,
         description: str,
     ) -> None:
-        """Add a violation if no bypass comment is present."""
-        if self._has_bypass_comment(lineno):
-            return
-
+        """Add a violation to the list."""
         code_snippet = self._get_line_content(lineno)
         self.violations.append(
             IOViolation(
@@ -306,8 +298,19 @@ class DirectIODetector(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _is_likely_path_object(self, node: ast.AST) -> bool:
-        """Check if node is likely a Path object."""
-        # Direct Path() call
+        """Check if node is likely a Path object.
+
+        This method uses conservative heuristics to minimize false positives:
+        - Direct Path() constructor calls are definite matches
+        - Chained Path methods (with_suffix, parent, etc.) indicate Path usage
+        - Variable names are only matched when they clearly indicate path objects
+          (e.g., file_path, config_dir) not just any name containing "path"
+
+        NOTE: This check is called in the context of visit_Call, meaning we're
+        already inside a method call like `node.read_text()`. The node parameter
+        is the object being called on, NOT a type annotation.
+        """
+        # Direct Path() call - definite match
         if isinstance(node, ast.Call):
             if isinstance(node.func, ast.Name) and node.func.id == "Path":
                 return True
@@ -319,37 +322,105 @@ class DirectIODetector(ast.NodeVisitor):
             ):
                 return True
 
+        # Chained method call (e.g., file_path.with_suffix().read_text())
+        # These are Path-specific methods that strongly indicate a Path object
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            path_methods = {"with_suffix", "with_name", "parent", "stem", "resolve"}
+            if node.func.attr in path_methods:
+                return True
+
         # Variable named with common path patterns
+        # Use conservative matching to reduce false positives:
+        # - Match names ending with _path, _file, _dir, _folder
+        # - Match compound names like filepath, dirpath
+        # - Match exact names like "path", "file", "directory"
+        # - Do NOT match partial matches like "xpath" or "filepath_validator"
         if isinstance(node, ast.Name):
             name_lower = node.id.lower()
-            path_indicators = ["path", "file", "dir", "folder"]
-            return any(indicator in name_lower for indicator in path_indicators)
+            # Exact match for simple names
+            if name_lower in {"path", "file", "directory", "folder", "dir"}:
+                return True
+            # Names ending with path indicators (most common pattern)
+            if name_lower.endswith(("_path", "_file", "_dir", "_folder", "_directory")):
+                return True
+            # Compound names without underscore (e.g., filepath, configdir)
+            # Only match specific known patterns to avoid false positives
+            compound_patterns = {
+                "filepath",
+                "dirpath",
+                "folderpath",
+                "configpath",
+                "basepath",
+                "rootpath",
+                "srcpath",
+                "configdir",
+                "basedir",
+                "rootdir",
+                "srcdir",
+                "configfile",
+                "basefile",
+                "rootfile",
+                "srcfile",
+            }
+            if name_lower in compound_patterns:
+                return True
 
         # Attribute access that might be a path
+        # Use the same conservative matching for attribute names
         if isinstance(node, ast.Attribute):
             attr_lower = node.attr.lower()
-            path_indicators = ["path", "file", "dir", "folder"]
-            return any(indicator in attr_lower for indicator in path_indicators)
-
-        # Chained method call (e.g., file_path.with_suffix())
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-            path_methods = {"with_suffix", "with_name", "parent", "stem"}
-            if node.func.attr in path_methods:
+            # Exact match for simple names
+            if attr_lower in {"path", "file", "directory", "folder", "dir"}:
+                return True
+            # Names ending with path indicators
+            if attr_lower.endswith(("_path", "_file", "_dir", "_folder", "_directory")):
+                return True
+            # Compound names without underscore (same logic as above)
+            compound_patterns = {
+                "filepath",
+                "dirpath",
+                "folderpath",
+                "configpath",
+                "basepath",
+                "rootpath",
+                "srcpath",
+                "configdir",
+                "basedir",
+                "rootdir",
+                "srcdir",
+                "configfile",
+                "basefile",
+                "rootfile",
+                "srcfile",
+            }
+            if attr_lower in compound_patterns:
                 return True
 
         return False
 
     def _is_network_module_call(self, node: ast.AST) -> bool:
-        """Check if node is a network module access."""
+        """Check if node is a network module access.
+
+        Handles both direct module access and aliased imports:
+        - `requests.get()` - direct module access
+        - `import requests as r; r.get()` - aliased import
+        - `from requests import get; get()` - from import (handled elsewhere)
+        """
         if isinstance(node, ast.Name):
-            return (
-                node.id in self.network_io_modules
-                or (node.id in self.imported_modules
-                and any(
-                    mod in self.imported_modules[node.id]
-                    for mod in self.network_io_modules
-                ))
-            )
+            # Direct module name match
+            if node.id in self.network_io_modules:
+                return True
+            # Check if this is an alias for a network module
+            if node.id in self.imported_modules:
+                original_module = self.imported_modules[node.id]
+                if any(mod in original_module for mod in self.network_io_modules):
+                    return True
+            # Check from_imports for aliased imports
+            if node.id in self.from_imports:
+                full_name = self.from_imports[node.id]
+                if any(mod in full_name for mod in self.network_io_modules):
+                    return True
+            return False
 
         if isinstance(node, ast.Attribute):
             if isinstance(node.value, ast.Name):
@@ -358,15 +429,27 @@ class DirectIODetector(ast.NodeVisitor):
         return False
 
     def _is_db_module_call(self, node: ast.AST) -> bool:
-        """Check if node is a database module access."""
+        """Check if node is a database module access.
+
+        Handles both direct module access and aliased imports:
+        - `asyncpg.connect()` - direct module access
+        - `import asyncpg as db; db.connect()` - aliased import
+        """
         if isinstance(node, ast.Name):
-            return (
-                node.id in self.db_modules
-                or (node.id in self.imported_modules
-                and any(
-                    mod in self.imported_modules[node.id] for mod in self.db_modules
-                ))
-            )
+            # Direct module name match
+            if node.id in self.db_modules:
+                return True
+            # Check if this is an alias for a database module
+            if node.id in self.imported_modules:
+                original_module = self.imported_modules[node.id]
+                if any(mod in original_module for mod in self.db_modules):
+                    return True
+            # Check from_imports for aliased imports
+            if node.id in self.from_imports:
+                full_name = self.from_imports[node.id]
+                if any(mod in full_name for mod in self.db_modules):
+                    return True
+            return False
 
         if isinstance(node, ast.Attribute):
             if isinstance(node.value, ast.Name):
@@ -375,15 +458,27 @@ class DirectIODetector(ast.NodeVisitor):
         return False
 
     def _is_mq_module_call(self, node: ast.AST) -> bool:
-        """Check if node is a message queue module access."""
+        """Check if node is a message queue module access.
+
+        Handles both direct module access and aliased imports:
+        - `confluent_kafka.Producer()` - direct module access
+        - `import confluent_kafka as kafka; kafka.Producer()` - aliased import
+        """
         if isinstance(node, ast.Name):
-            return (
-                node.id in self.mq_modules
-                or (node.id in self.imported_modules
-                and any(
-                    mod in self.imported_modules[node.id] for mod in self.mq_modules
-                ))
-            )
+            # Direct module name match
+            if node.id in self.mq_modules:
+                return True
+            # Check if this is an alias for a message queue module
+            if node.id in self.imported_modules:
+                original_module = self.imported_modules[node.id]
+                if any(mod in original_module for mod in self.mq_modules):
+                    return True
+            # Check from_imports for aliased imports
+            if node.id in self.from_imports:
+                full_name = self.from_imports[node.id]
+                if any(mod in full_name for mod in self.mq_modules):
+                    return True
+            return False
 
         if isinstance(node, ast.Attribute):
             if isinstance(node.value, ast.Name):
@@ -392,8 +487,15 @@ class DirectIODetector(ast.NodeVisitor):
         return False
 
     def check_file(self) -> list[IOViolation]:
-        """Parse and check the file for I/O violations."""
-        # Check for file-level bypass
+        """Parse and check the file for I/O violations.
+
+        Note:
+            Bypass comments (e.g., "# io-ok: reason") work at file-level only.
+            If any bypass pattern is found anywhere in the file, the entire
+            file is excluded from validation. This is simpler and more
+            predictable than line-level bypass tracking.
+        """
+        # Check for file-level bypass - if present, skip entire file
         if any(pattern in self.file_content for pattern in BYPASS_PATTERNS):
             return []
 
@@ -422,6 +524,7 @@ class DirectIOValidator:
         if file_path.name in ALLOWED_FILES:
             if self.verbose:
                 self.skipped_files.append(f"{file_path} (allowed file)")
+                print(f"  [SKIP] {file_path} (allowed file)")
             return True
 
         # Skip excluded directories
@@ -429,12 +532,26 @@ class DirectIOValidator:
             if excluded_dir in file_path.parts:
                 if self.verbose:
                     self.skipped_files.append(f"{file_path} (excluded directory)")
+                    print(f"  [SKIP] {file_path} (excluded directory: {excluded_dir})")
                 return True
+
+        if self.verbose:
+            print(f"  [CHECK] {file_path}")
 
         try:
             content = file_path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as e:
-            print(f"Warning: Could not read {file_path}: {e}", file=sys.stderr)
+            if self.verbose:
+                print(f"  [ERROR] Could not read {file_path}: {e}")
+            else:
+                print(f"Warning: Could not read {file_path}: {e}", file=sys.stderr)
+            return True
+
+        # Check for file-level bypass
+        if any(pattern in content for pattern in BYPASS_PATTERNS):
+            if self.verbose:
+                self.skipped_files.append(f"{file_path} (bypass comment)")
+                print(f"  [SKIP] {file_path} (bypass comment: io-ok)")
             return True
 
         self.checked_files += 1
@@ -442,15 +559,25 @@ class DirectIOValidator:
         file_violations = detector.check_file()
         self.violations.extend(file_violations)
 
+        if self.verbose and file_violations:
+            print(f"    -> Found {len(file_violations)} violation(s)")
+
         return len(file_violations) == 0
 
     def validate_directory(self, directory: Path) -> bool:
         """Validate all Python files in directory."""
+        if self.verbose:
+            print(f"Scanning directory: {directory}")
+            print()
+
         all_valid = True
 
         for py_file in sorted(directory.rglob("*.py")):
             if not self.validate_file(py_file):
                 all_valid = False
+
+        if self.verbose:
+            print()
 
         return all_valid
 

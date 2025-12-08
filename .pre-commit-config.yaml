@@ -204,6 +204,35 @@ repos:
         files: ^src/omnibase_core/(nodes|protocol|core).*\.py$
         stages: [pre-commit]
 
+      # Architectural Violation Detection (OMN-152, OMN-201)
+      # These hooks enforce ONEX 4-node architecture and dependency boundaries
+      - id: validate-no-direct-io
+        name: ONEX No Direct I/O in Declarative Nodes
+        entry: poetry run python scripts/validation/validate-no-direct-io.py
+        language: system
+        types: [python]
+        files: ^src/omnibase_core/nodes/
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: validate-all-exports
+        name: ONEX __all__ Exports Validation
+        entry: poetry run python scripts/validation/validate-all-exports.py
+        language: system
+        types: [python]
+        files: ^src/omnibase_core/
+        pass_filenames: true
+        stages: [pre-commit]
+
+      - id: validate-no-infra-imports
+        name: ONEX No omnibase_infra Imports
+        entry: poetry run python scripts/validation/validate-no-infra-imports.py
+        language: system
+        types: [python]
+        files: ^src/omnibase_core/
+        pass_filenames: true
+        stages: [pre-commit]
+
       - id: audit-optional-usage
         name: ONEX Optional Type Usage Audit
         entry: poetry run python scripts/validation/audit_optional.py

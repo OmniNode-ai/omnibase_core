@@ -13,18 +13,29 @@ Architectural Principle:
 - omnibase_core importing omnibase_infra creates circular dependencies
 
 Detected Anti-Patterns (using AST parsing for accuracy):
+
+Absolute imports:
 - `from omnibase_infra import ...`
 - `from omnibase_infra.module import ...`
 - `import omnibase_infra`
 - `import omnibase_infra.module`
 
+Relative imports (defense in depth):
+- `from ..omnibase_infra import ...`
+- `from . import omnibase_infra`
+- `from ...omnibase_infra.module import ...`
+
+Note: While relative imports from omnibase_core cannot actually reach
+omnibase_infra (they are separate packages), detecting these patterns
+provides defense in depth against accidental violations.
+
 Usage:
     # Directory mode (recursive scan)
-    python validate-no-infra-imports.py [path]
-    python validate-no-infra-imports.py src/omnibase_core
+    poetry run python scripts/validation/validate-no-infra-imports.py [path]
+    poetry run python scripts/validation/validate-no-infra-imports.py src/omnibase_core
 
     # Pre-commit mode (pass_filenames)
-    python validate-no-infra-imports.py file1.py file2.py ...
+    poetry run python scripts/validation/validate-no-infra-imports.py file1.py file2.py ...
 
 Exit Codes:
     0: No violations found
@@ -56,8 +67,9 @@ class InfraImportViolation:
     file_path: str
     line_no: int
     import_statement: str
-    import_type: str  # 'import' or 'from'
+    import_type: str  # 'import', 'from', or 'relative'
     module_path: str  # Full module path being imported
+    is_relative: bool = False  # True if this is a relative import
 
 
 class InfraImportVisitor(ast.NodeVisitor):
@@ -88,22 +100,77 @@ class InfraImportVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        """Check from ... import statements (e.g., from omnibase_infra import ...)."""
+        """Check from ... import statements (e.g., from omnibase_infra import ...).
+
+        Handles both absolute and relative imports:
+        - Absolute: from omnibase_infra import foo
+        - Relative: from ..omnibase_infra import foo (level > 0)
+        - Relative with names: from . import omnibase_infra
+        """
+        import_stmt = self._get_source_line(node.lineno)
+        is_relative = node.level > 0  # level > 0 means relative import
+
+        # Check the module path for absolute and some relative imports
         if node.module is not None:
             if node.module == TARGET_MODULE or node.module.startswith(
                 f"{TARGET_MODULE}."
             ):
-                # Get the actual source line for accurate reporting
-                import_stmt = self._get_source_line(node.lineno)
                 self.violations.append(
                     InfraImportViolation(
                         file_path=self.filename,
                         line_no=node.lineno,
                         import_statement=import_stmt,
-                        import_type="from",
+                        import_type="from" if not is_relative else "relative",
                         module_path=node.module,
+                        is_relative=is_relative,
                     )
                 )
+
+            # Check for relative imports like `from ..omnibase_infra import foo`
+            # The module might be just "omnibase_infra" with level > 0
+            elif is_relative:
+                # Check if the relative path could reference omnibase_infra
+                # e.g., from ..omnibase_infra import foo
+                if node.module == TARGET_MODULE or node.module.startswith(
+                    f"{TARGET_MODULE}."
+                ):
+                    self.violations.append(
+                        InfraImportViolation(
+                            file_path=self.filename,
+                            line_no=node.lineno,
+                            import_statement=import_stmt,
+                            import_type="relative",
+                            module_path=f"{'.' * node.level}{node.module}",
+                            is_relative=True,
+                        )
+                    )
+
+        # Check for `from . import omnibase_infra` pattern
+        # In this case, node.module is None but we import TARGET_MODULE as a name
+        for alias in node.names:
+            # Check if we're importing omnibase_infra directly
+            if alias.name == TARGET_MODULE or alias.name.startswith(
+                f"{TARGET_MODULE}."
+            ):
+                # Build the full import path representation
+                if node.module:
+                    full_path = f"{'.' * node.level}{node.module}.{alias.name}"
+                else:
+                    full_path = (
+                        f"{'.' * node.level}{alias.name}" if is_relative else alias.name
+                    )
+
+                self.violations.append(
+                    InfraImportViolation(
+                        file_path=self.filename,
+                        line_no=node.lineno,
+                        import_statement=import_stmt,
+                        import_type="from" if not is_relative else "relative",
+                        module_path=full_path,
+                        is_relative=is_relative,
+                    )
+                )
+
         self.generic_visit(node)
 
     def _get_source_line(self, line_no: int) -> str:
@@ -116,9 +183,11 @@ class InfraImportVisitor(ast.NodeVisitor):
 class InfraImportValidator:
     """Validates that omnibase_core does not import from omnibase_infra."""
 
-    def __init__(self) -> None:
+    def __init__(self, verbose: bool = False) -> None:
+        self.verbose = verbose
         self.violations: list[InfraImportViolation] = []
         self.checked_files = 0
+        self.skipped_files: list[str] = []
         self.errors: list[str] = []
 
     def validate_file(self, file_path: Path) -> bool:
@@ -133,7 +202,13 @@ class InfraImportValidator:
         """
         # Skip .pyi type stub files
         if file_path.suffix == ".pyi":
+            if self.verbose:
+                self.skipped_files.append(f"{file_path} (type stub)")
+                print(f"  [SKIP] {file_path} (type stub file)")
             return True
+
+        if self.verbose:
+            print(f"  [CHECK] {file_path}")
 
         try:
             with open(file_path, encoding="utf-8") as f:
@@ -150,6 +225,8 @@ class InfraImportValidator:
 
             if visitor.violations:
                 self.violations.extend(visitor.violations)
+                if self.verbose:
+                    print(f"    -> Found {len(visitor.violations)} violation(s)")
                 return False
 
             return True
@@ -158,15 +235,24 @@ class InfraImportValidator:
             # Report syntax errors but don't fail the validation
             # (let other tools like mypy handle syntax errors)
             line_info = f":{e.lineno}" if e.lineno else ""
-            self.errors.append(f"{file_path}{line_info}: Syntax error: {e.msg}")
+            error_msg = f"{file_path}{line_info}: Syntax error: {e.msg}"
+            self.errors.append(error_msg)
+            if self.verbose:
+                print(f"  [ERROR] {error_msg}")
             return True
 
         except UnicodeDecodeError as e:
-            self.errors.append(f"{file_path}: Encoding error: {e}")
+            error_msg = f"{file_path}: Encoding error: {e}"
+            self.errors.append(error_msg)
+            if self.verbose:
+                print(f"  [ERROR] {error_msg}")
             return True
 
         except OSError as e:
-            self.errors.append(f"{file_path}: Error reading file: {e}")
+            error_msg = f"{file_path}: Error reading file: {e}"
+            self.errors.append(error_msg)
+            if self.verbose:
+                print(f"  [ERROR] {error_msg}")
             return True
 
     def _discover_python_files(self, base_path: Path) -> Iterator[Path]:
@@ -219,10 +305,17 @@ class InfraImportValidator:
             self.errors.append(f"Path does not exist: {path}")
             return False
 
+        if self.verbose:
+            print(f"Scanning: {path}")
+            print()
+
         success = True
         for file_path in self._discover_python_files(path):
             if not self.validate_file(file_path):
                 success = False
+
+        if self.verbose:
+            print()
 
         return success
 
@@ -236,12 +329,22 @@ class InfraImportValidator:
         Returns:
             True if no violations found, False otherwise
         """
+        if self.verbose:
+            print(f"Validating {len(file_paths)} file(s)...")
+            print()
+
         success = True
         for file_path in file_paths:
             if file_path.suffix != ".py":
+                if self.verbose:
+                    print(f"  [SKIP] {file_path} (not a Python file)")
                 continue
             if not self.validate_file(file_path):
                 success = False
+
+        if self.verbose:
+            print()
+
         return success
 
     def generate_report(self) -> None:
@@ -283,7 +386,11 @@ class InfraImportValidator:
 
             print(f"  {relative_path}")
             for violation in sorted(file_violations, key=lambda v: v.line_no):
-                print(f"    Line {violation.line_no}: {violation.import_statement}")
+                relative_marker = " [relative]" if violation.is_relative else ""
+                print(
+                    f"    Line {violation.line_no}: "
+                    f"{violation.import_statement}{relative_marker}"
+                )
             print()
 
         # Print architectural guidance
@@ -338,7 +445,7 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    validator = InfraImportValidator()
+    validator = InfraImportValidator(verbose=args.verbose)
 
     # Determine paths to validate
     if args.paths:
