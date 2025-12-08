@@ -13,13 +13,12 @@
 #   - Security checks (secrets, env vars)
 #   - Fast pattern validations
 #
-# PRE-PUSH (quick validation before sharing):
+# PRE-PUSH (comprehensive validation before sharing):
 #   - mypy type checking (~5-10s)
+#   - pytest smoke tests (~4-5 minutes)
 #   - validate-naming-conventions (~14s)
+#   - Complex pattern validations (union, pydantic, dict-any)
 #   - Documentation link validation
-#
-# NOTE: AST-based validators (pydantic, union, dict-any, optional) now use
-# pass_filenames=true - they only check staged files, not entire codebase.
 #
 # USAGE:
 #   pre-commit install                    # Install pre-commit hooks
@@ -114,8 +113,7 @@ repos:
         pass_filenames: false
         files: ^src/.*\.py$
         exclude: ^(tests/|archive/|archived/|scripts/validation/).*\.py$
-        stages: [pre-push]  # Moved to pre-push: ~14s
-        # Note: Takes ~14s on full codebase - consider optimizing script for incremental checks
+        stages: [pre-push]  # Moved to pre-push: ~14s full codebase scan
         # Architectural exemptions documented in validate_naming.py ARCHITECTURAL_EXEMPTIONS
 
       - id: validate-file-locations
@@ -157,13 +155,18 @@ repos:
       # Catches: ModelSemVer.parse(), string literals, flat YAML versions
       # Allows: Docstrings, regex patterns (r"..."), test fixtures, log messages
       # See: docs/ANTI_PATTERNS.md#string-version-literals
+      #
+      # PROTOCOL EXCLUSION: protocols/ is excluded because Protocol types define
+      # interfaces (structural typing), not concrete implementations. They may
+      # reference version formats in docstrings/type hints for documentation.
+      # See: scripts/validation/validate-union-usage.py module docstring for rationale.
       - id: validate-string-versions
         name: ONEX String Version Anti-Pattern Detection
         entry: poetry run python scripts/validation/validate-string-versions.py
         language: system
         pass_filenames: true
         files: ^.*\.(py|yaml|yml)$
-        exclude: ^(tests/fixtures/validation/|archived/|archive/)
+        exclude: ^(tests/fixtures/validation/|archived/|archive/|src/omnibase_core/protocols/)
         stages: [pre-commit]
 
       - id: validate-archived-imports
@@ -196,6 +199,7 @@ repos:
         stages: [pre-commit]
 
       # ONEX Python Pattern Validation (SHARED HOOKS)
+      # Moved to pre-push for faster commits - these do full AST analysis
       - id: validate-pydantic-patterns
         name: ONEX Pydantic Pattern Validation
         entry: poetry run python scripts/validation/validate-pydantic-patterns.py
@@ -203,7 +207,7 @@ repos:
         language: system
         pass_filenames: false
         files: ^src/.*\.py$
-        stages: [pre-commit]
+        stages: [pre-push]  # Moved to pre-push: ~10-15s AST analysis
 
       - id: validate-union-usage
         name: ONEX Union Usage Validation
@@ -212,7 +216,7 @@ repos:
         language: system
         pass_filenames: false
         files: ^src/.*\.py$
-        stages: [pre-commit]
+        stages: [pre-push]  # Moved to pre-push: ~10-15s AST analysis
 
       # Repository-specific validation (omnibase_core only)
       - id: validate-contracts
@@ -230,7 +234,7 @@ repos:
         language: system
         always_run: true
         pass_filenames: false
-        stages: [pre-commit]
+        stages: [pre-push]  # Moved to pre-push: full codebase analysis
 
       - id: check-stub-implementations
         name: ONEX Stub Implementation Detector
@@ -268,13 +272,17 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
+      # PROTOCOL EXCLUSION: protocols/ is excluded because Protocol files define
+      # multiple related interfaces in single files (e.g., ProtocolIdentifiable,
+      # ProtocolNameable together). This is idiomatic for interface definitions.
+      # See: scripts/validation/validate-union-usage.py module docstring for rationale.
       - id: onex-single-class-per-file
         name: ONEX Single Class Per File
         entry: poetry run python scripts/validation/validate-single-class-per-file.py
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py|src/omnibase_core/models/core/model_action_config_value\.py).*\.py$
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py|src/omnibase_core/models/core/model_action_config_value\.py|src/omnibase_core/protocols/).*\.py$
         stages: [pre-commit]
 
       - id: validate-enum-model-imports
@@ -308,7 +316,7 @@ repos:
         pass_filenames: false
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
-        stages: [pre-commit]
+        stages: [pre-push]  # Moved to pre-push: full codebase scan
 
       - id: no-pydantic-bypass-in-prod
         name: ONEX Pydantic Bypass Prevention
@@ -367,11 +375,11 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-        stages: [pre-push]  # Moved to pre-push
+        stages: [pre-push]  # Moved to pre-push: scans all markdown files
 
-      # Smoke tests - fast critical path validation (~3s)
-      # Runs foundational tests (enums, errors) for immediate feedback
-      # Full test suite (10k+ tests) runs in CI with parallel execution
+      # Smoke tests - comprehensive validation before pushing
+      # Runs foundational tests (enums, errors) to catch regressions
+      # Full test suite (12k+ tests) runs in CI with parallel execution
       - id: pytest-smoke-tests
         name: Run Smoke Tests (enums + errors)
         entry: poetry run pytest
@@ -387,10 +395,55 @@ repos:
           - -q
           - -p
           - no:rerunfailures
+        stages: [pre-push]  # Moved to pre-push: ~4-5 minutes
+
+      # Protocol @runtime_checkable Validation
+      # Ensures all Protocol classes have @runtime_checkable decorator
+      # Required for isinstance() checks and duck typing at runtime
+      - id: check-protocol-runtime-checkable
+        name: ONEX Protocol @runtime_checkable Validation
+        entry: poetry run python scripts/validation/check_protocol_runtime_checkable.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: ^src/omnibase_core/protocols/.*\.py$
         stages: [pre-commit]
 
+      # Protocol __all__ Exports Validation
+      # Validates that protocol files have correct __all__ exports matching
+      # their Protocol class definitions
+      - id: check-protocol-exports
+        name: ONEX Protocol __all__ Exports Validation
+        entry: poetry run python scripts/check_protocol_exports.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        files: ^src/omnibase_core/protocols/.*\.py$
+        stages: [pre-commit]
+
+      # Protocol UUID Enforcement (pre-push only)
+      # Verifies protocol type annotations use UUID instead of str
+      # Catches issues like OMN-536/OMN-542 before CI
+      # ~6s runtime - acceptable for pre-push but too slow for every commit
+      - id: pytest-protocol-uuid-enforcement
+        name: Protocol UUID Enforcement Check
+        entry: poetry run pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        args:
+          - tests/unit/protocols/test_protocol_uuid_enforcement.py
+          - --maxfail=3
+          - -x
+          - --tb=short
+          - -q
+          - --timeout=30
+          - -p
+          - no:rerunfailures
+        stages: [pre-push]
+
 # Configuration
-default_install_hook_types: [pre-commit]
+default_install_hook_types: [pre-commit, pre-push]
 default_stages: [pre-commit]
 fail_fast: false
 # Note: minimum_pre_commit_version removed to avoid string version anti-pattern

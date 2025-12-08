@@ -1,9 +1,18 @@
+import re
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+# Pre-compiled SemVer pattern for performance
+# Basic SemVer regex pattern for major.minor.patch
+# Allows prerelease/metadata suffix (e.g., "1.2.3-alpha" or "1.2.3+build")
+# But ensures version ends after patch or has valid separator (-, +)
+_SEMVER_PATTERN = re.compile(
+    r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:[-+].*)?$"
+)
 
 """
 Semantic Version Model
@@ -13,7 +22,21 @@ Pydantic model for semantic versioning following SemVer specification.
 
 
 class ModelSemVer(BaseModel):
-    """Semantic version model following SemVer specification."""
+    """
+    Semantic version model following SemVer specification.
+
+    Preferred usage (structured format):
+        >>> version = ModelSemVer(major=0, minor=4, patch=0)
+        >>> assert str(version) == "0.4.0"
+        >>> assert version.major == 0 and version.minor == 4
+
+    For parsing external input, use the parse() class method:
+        >>> version = ModelSemVer.parse("0.4.0")
+        >>> assert version == ModelSemVer(major=0, minor=4, patch=0)
+
+    Note: String version literals like "1.0.0" are deprecated.
+    Always use structured format: ModelSemVer(major=X, minor=Y, patch=Z)
+    """
 
     major: int = Field(ge=0, description="Major version number")
     minor: int = Field(ge=0, description="Minor version number")
@@ -92,7 +115,11 @@ class ModelSemVer(BaseModel):
         return self == other or self > other
 
     def __hash__(self) -> int:
-        """Hash function for use in sets and as dict[str, Any]keys."""
+        """Return hash value for use in sets and as dict keys.
+
+        Returns:
+            int: Hash computed from (major, minor, patch) version tuple.
+        """
         return hash((self.major, self.minor, self.patch))
 
     @classmethod
@@ -100,15 +127,18 @@ class ModelSemVer(BaseModel):
         """
         Parse semantic version string into ModelSemVer (class method alias).
 
+        Note: For new code, prefer direct construction:
+            >>> version = ModelSemVer(major=1, minor=2, patch=3)
+
+        This method is primarily for parsing external input:
+            >>> version = ModelSemVer.parse("1.2.3")
+            >>> assert version.major == 1
+
         Args:
             version_str: Semantic version string (e.g., "1.2.3")
 
         Returns:
             ModelSemVer instance
-
-        Example:
-            >>> version = ModelSemVer.parse("1.2.3")
-            >>> assert version.major == 1
         """
         return parse_semver_from_string(version_str)
 
@@ -128,7 +158,8 @@ def default_model_version() -> ModelSemVer:
         ModelSemVer instance with major=1, minor=0, patch=0
 
     Example:
-        >>> version: ModelSemVer = Field(default_factory=default_model_version)
+        >>> class MyModel(BaseModel):
+        ...     version: ModelSemVer = Field(default_factory=default_model_version)
     """
     return ModelSemVer(major=1, minor=0, patch=0)
 
@@ -153,14 +184,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
         >>> version = parse_semver_from_string("1.2.3")
         >>> assert version.major == 1 and version.minor == 2 and version.patch == 3
     """
-    import re
-
-    # Basic SemVer regex pattern for major.minor.patch
-    # Allows prerelease/metadata suffix (e.g., "1.2.3-alpha" or "1.2.3+build")
-    # But ensures version ends after patch or has valid separator (-, +)
-    pattern = r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:[-+].*)?$"
-
-    match = re.match(pattern, version_str)
+    match = _SEMVER_PATTERN.match(version_str)
     if not match:
         msg = f"Invalid semantic version format: {version_str}"
         raise ModelOnexError(

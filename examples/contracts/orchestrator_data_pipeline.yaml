@@ -1,11 +1,12 @@
 ---
-# Example: Declarative Orchestrator Node - Data Processing Pipeline
+# Example: Orchestrator Node - Data Processing Pipeline
 #
 # This example demonstrates an orchestrator node that coordinates a multi-step
 # data processing workflow defined entirely in YAML.
 #
 # Node Implementation (NO custom code needed):
-#   class NodeDataPipelineOrchestrator(NodeOrchestratorDeclarative):
+#   from omnibase_core.nodes import NodeOrchestrator
+#   class NodeDataPipelineOrchestrator(NodeOrchestrator):
 #       pass  # All logic driven by this YAML contract
 #
 # Features Demonstrated:
@@ -31,14 +32,14 @@ workflow_coordination:
     workflow_metadata:
       workflow_name: data_processing_pipeline
       workflow_version: {major: 1, minor: 0, patch: 0}
-      description: "Multi-stage data processing with validation and enrichment"
+      description: Multi-stage data processing with validation and enrichment
       execution_mode: parallel  # Can be: sequential, parallel, batch
-      author: "ONEX Framework Team"
+      author: ONEX Framework Team
       tags:
         - data-processing
         - etl
         - parallel
-      documentation_url: "https://docs.onex.ai/workflows/data-pipeline"
+      documentation_url: https://docs.onex.ai/workflows/data-pipeline
 
     # Execution Graph: Nodes and their relationships
     execution_graph:
@@ -229,11 +230,10 @@ workflow_coordination:
 
 # Example Usage:
 #
-# from omnibase_core.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
-# from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
+# from omnibase_core.nodes import NodeOrchestrator, ModelOrchestratorInput
 # from uuid import uuid4
 #
-# class NodeDataPipelineOrchestrator(NodeOrchestratorDeclarative):
+# class NodeDataPipelineOrchestrator(NodeOrchestrator):
 #     pass  # No custom code needed!
 #
 # # Create orchestrator
@@ -278,12 +278,12 @@ workflow_coordination:
 # Metadata
 metadata:
   version: {major: 1, minor: 0, patch: 0}
-  author: "ONEX Framework Team"
-  description: "Declarative data processing pipeline orchestrator using workflow pattern"
+  author: ONEX Framework Team
+  description: Data processing pipeline orchestrator using workflow pattern
   tags:
     - orchestrator
     - workflow
     - declarative
     - data-pipeline
     - parallel
-  documentation_url: "https://docs.onex.ai/orchestrators/data-pipeline"
+  documentation_url: https://docs.onex.ai/orchestrators/data-pipeline

@@ -1,26 +1,199 @@
 #!/usr/bin/env python3
 """
 Enhanced Union type usage validation for omni* repositories.
+
 Validates that Union types are used properly according to ONEX standards.
 Uses AST-based legitimacy validation instead of arbitrary counting.
 Ensures unions follow proper typing patterns for strong type safety.
+
+Protocol Type Exclusion Rationale
+=================================
+
+The ``protocols/`` directory is excluded from union validation in .pre-commit-config.yaml
+for the following architectural reasons:
+
+1. **Structural vs Nominal Typing**:
+   Protocol types use structural (duck) typing, not nominal typing. They define
+   interfaces that describe behavior, not concrete runtime types. This fundamental
+   difference means standard union discrimination patterns don't apply.
+
+2. **Not Suitable for Union Discrimination**:
+   Protocol types cannot be used as discriminators in Union types because:
+
+   - They are abstract interface definitions, not instantiable types
+   - They don't have a concrete ``__class__`` to match against at runtime
+   - They cannot be used in Literal discriminator patterns (e.g., ``Literal["MyProtocol"]``)
+   - ``isinstance()`` checks with Protocol require ``@runtime_checkable`` and have limitations
+
+3. **Interface Flexibility by Design**:
+   Protocol definitions intentionally use broader return type unions to accommodate
+   multiple implementations. For example::
+
+       def get_metadata(self) -> dict[str, str | int | bool | float]
+
+   This is not "primitive soup" but rather a deliberate JSON-compatible interface
+   that any implementation can satisfy.
+
+4. **Suppression Comments for Legitimate Cases**:
+   When protocol methods must return union types (e.g., JSON-compatible values),
+   we use ``# union-ok: json_value`` suppression comments to document the rationale.
+   This provides an audit trail without cluttering the codebase with false positives.
+
+What Would Happen Without Exclusion
+-----------------------------------
+
+If protocols were validated without exclusion, the validator would flag many
+legitimate interface definitions as "primitive_soup" or "overly_broad" because:
+
+- Protocol return types must be general enough to cover all implementations
+- Protocol parameter types may accept multiple input formats
+- JSON-compatible value types (str | int | bool | float) are common in interfaces
+
+When This Exclusion Might Need to Change
+----------------------------------------
+
+Consider removing or modifying this exclusion if:
+
+- Protocol definitions start using genuinely problematic union patterns
+- A new validation category specifically for protocol interfaces is added
+- The codebase adopts a different approach to protocol typing (e.g., generics)
+
+See Also
+--------
+
+- ``src/omnibase_core/protocols/types.py`` for examples of legitimate protocol unions
+- ``CLAUDE.md`` section on Protocol-Driven Dependency Injection
+- ``.pre-commit-config.yaml`` for the exclude configuration
 """
 
 from __future__ import annotations
 
 import argparse
 import ast
+import json
 import re
 import sys
 from collections import Counter, defaultdict
+from collections.abc import Sequence
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 
 class UnionLegitimacyValidator:
-    """Validates the legitimacy of union patterns based on ONEX standards."""
+    """Validates the legitimacy of union patterns based on ONEX standards.
 
-    def __init__(self):
+    This validator classifies Union types into legitimate and invalid patterns
+    based on semantic meaning and type safety principles. It uses AST-based
+    analysis combined with file content inspection for accurate classification.
+
+    Legitimate Patterns:
+        - optional: T | None patterns for nullable types
+        - result_monadic: Result[T, E] error handling patterns
+        - discriminated: Unions with Literal type discriminators
+        - model_schema_value: Proper ModelSchemaValue usage
+        - error_handling: Exception handling patterns
+        - type_narrowing: Related type narrowing (str | Path)
+        - type_alias_definition: Canonical type definitions
+
+    Invalid/Lazy Patterns:
+        - primitive_soup: 3+ primitive types without semantic meaning
+        - any_contaminated: Unions containing Any types
+        - overly_broad: 5+ types or mixed primitive/complex without semantics
+        - semantic_mismatch: Unrelated type combinations
+
+    Attributes:
+        legitimate_patterns: Dict mapping pattern names to checker functions.
+        lazy_patterns: Dict mapping invalid pattern names to checker functions.
+
+    Example:
+        >>> validator = UnionLegitimacyValidator()
+        >>> pattern = UnionPattern(["str", "None"], line=10, file_path="test.py")
+        >>> result = validator.validate_union_legitimacy(pattern)
+        >>> assert result["is_legitimate"] is True
+        >>> assert result["pattern_type"] == "optional"
+    """
+
+    # Pre-compiled regex patterns for performance
+    # Pattern to match Field(..., discriminator="...") with flexible parameter order
+    FIELD_DISCRIMINATOR_PATTERN = re.compile(
+        r'Field\s*\([^)]*discriminator\s*=\s*["\'][^"\']+["\']'
+    )
+    # Pattern to match field_name: Literal["type1", "type2", ...]
+    LITERAL_DISCRIMINATOR_PATTERN = re.compile(r":\s*Literal\[([^\]]+)\]")
+    # Pattern to extract quoted string values from Literal types
+    LITERAL_VALUE_PATTERN = re.compile(r'["\'](\w+)["\']')
+
+    @staticmethod
+    def _safe_str(value: Any) -> str:
+        """Safely convert a value to string for type comparison operations.
+
+        This defensive helper handles edge cases that may arise from AST parsing
+        or malformed input:
+        - None values -> empty string (will be filtered by callers)
+        - Non-string types -> converted via str()
+        - Empty/whitespace strings -> returned as-is (callers decide handling)
+
+        Args:
+            value: Any value to convert to string.
+
+        Returns:
+            String representation of the value, or empty string for None.
+
+        Example:
+            >>> UnionLegitimacyValidator._safe_str(None)
+            ''
+            >>> UnionLegitimacyValidator._safe_str(123)
+            '123'
+            >>> UnionLegitimacyValidator._safe_str("str")
+            'str'
+
+        Note:
+            Currently, non-string types are silently converted via str(). This
+            could potentially hide issues with malformed AST nodes or unexpected
+            input types.
+
+            TODO: Consider adding optional debug logging for unexpected types
+            (e.g., when value is not str/None) to aid debugging malformed AST
+            nodes if issues arise in future iterations. This could be controlled
+            via a debug flag or environment variable to avoid noise in normal
+            operation.
+        """
+        if value is None:
+            return ""
+        if not isinstance(value, str):
+            return str(value)
+        return value
+
+    @staticmethod
+    def _safe_lower(value: Any) -> str:
+        """Safely lowercase a value for case-insensitive comparison.
+
+        This defensive helper combines safe string conversion with lowercasing,
+        handling edge cases:
+        - None values -> empty string
+        - Non-string types -> converted then lowercased
+        - AttributeError protection for objects without .lower()
+
+        Args:
+            value: Any value to convert and lowercase.
+
+        Returns:
+            Lowercased string representation, or empty string for None.
+
+        Example:
+            >>> UnionLegitimacyValidator._safe_lower(None)
+            ''
+            >>> UnionLegitimacyValidator._safe_lower("SUCCESS")
+            'success'
+        """
+        if value is None:
+            return ""
+        if not isinstance(value, str):
+            value = str(value)
+        return value.lower()
+
+    def __init__(self) -> None:
         # Legitimate union patterns
         self.legitimate_patterns = {
             "optional": self._is_optional_pattern,
@@ -43,13 +216,32 @@ class UnionLegitimacyValidator:
     def validate_union_legitimacy(
         self, union_pattern: UnionPattern, file_content: str | None = None
     ) -> dict[str, Any]:
-        """
-        Validate if a union pattern is legitimate according to ONEX standards.
+        """Validate if a union pattern is legitimate according to ONEX standards.
+
+        Analyzes a union pattern by first checking for legitimate patterns,
+        then checking for invalid/lazy patterns, and finally evaluating
+        semantic legitimacy for unclassified patterns.
+
+        Args:
+            union_pattern: The UnionPattern to validate.
+            file_content: Optional file content for context-aware validation
+                (e.g., detecting Field(discriminator=...) patterns).
 
         Returns:
-            Dict with 'is_legitimate', 'pattern_type', 'issues', 'suggestions'
+            Dict containing:
+                - is_legitimate (bool): Whether the pattern is valid.
+                - pattern_type (str | None): Classification of the pattern.
+                - issues (list[str]): List of validation issues found.
+                - suggestions (list[str]): Improvement suggestions.
+                - confidence (float): Confidence score (0.0-1.0).
+
+        Example:
+            >>> validator = UnionLegitimacyValidator()
+            >>> pattern = UnionPattern(["str", "int", "bool"], 10, "test.py")
+            >>> result = validator.validate_union_legitimacy(pattern)
+            >>> print(result["pattern_type"])  # "primitive_soup"
         """
-        result = {
+        result: dict[str, Any] = {
             "is_legitimate": False,
             "pattern_type": None,
             "issues": [],
@@ -97,47 +289,157 @@ class UnionLegitimacyValidator:
         # Look for Result[T, E] patterns or Result-like discriminated unions
         types = pattern.types
 
+        # Cache safe string conversions to avoid repeated calls in hot path
+        safe_types = [self._safe_str(t) for t in types]
+        safe_lower_types = [self._safe_lower(t) for t in types]
+
         # Direct Result type usage
-        if any("Result[" in t for t in types):
+        # Defensive: use cached _safe_str values to handle None/non-string types gracefully
+        if any(t and "Result[" in t for t in safe_types):
             return True
 
         # Look for success/error discriminated union pattern
-        has_success_variant = any(
-            "success" in t.lower() or "ok" in t.lower() for t in types
-        )
-        has_error_variant = any(
-            "error" in t.lower() or "err" in t.lower() for t in types
-        )
+        # Defensive: use cached _safe_lower values to handle None/non-string types gracefully
+        has_success_variant = any("success" in t or "ok" in t for t in safe_lower_types)
+        has_error_variant = any("error" in t or "err" in t for t in safe_lower_types)
 
         return has_success_variant and has_error_variant and len(types) == 2
 
     def _is_discriminated_union(
         self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
-        """Check if this is a properly discriminated union with Literal discriminators."""
-        # Look for Literal types in the union
-        has_literal = any("Literal[" in t for t in pattern.types)
+        """Check if this is a properly discriminated union with Literal discriminators.
 
-        # Check for discriminator-like patterns
-        has_type_field = any("type" in t.lower() and '"' in t for t in pattern.types)
-        has_kind_field = any("kind" in t.lower() and '"' in t for t in pattern.types)
+        Detects several patterns indicating a discriminated union:
+
+        1. **Literal types in the union**: Direct ``Literal["..."]`` annotations
+        2. **Type/kind discriminator fields**: Fields containing "type" or "kind" with quotes
+        3. **Pydantic Field(discriminator=)**: Modern Pydantic discriminated union syntax
+        4. **Companion Literal discriminator**: A separate field with Literal values
+           matching the union types (e.g., ``value_type: Literal["bool", "str", ...]``)
+
+        Defensive Type Normalization
+        ----------------------------
+        When comparing union type names to Literal values, the following edge cases
+        are handled defensively:
+
+        1. **Empty type strings ("")**: Filtered via ``if not t`` check
+        2. **None values in types list**: Filtered via ``if not t`` check
+        3. **Non-string types**: Guarded by ``isinstance(t, str)`` check
+           (can occur with malformed AST or edge cases)
+        4. **Types with brackets but empty base ("[str]")**: Filtered by
+           checking ``if base_type:`` after split (e.g., "[str]".split("[")[0] = "")
+        5. **Leading/trailing whitespace ("  str  ")**: Normalized via ``.strip()``
+        6. **Subscripted types ("dict[str, Any]", "list[int]")**: Base type
+           extracted via ``.split("[")[0]`` (e.g., "dict[str, Any]" -> "dict")
+
+        All type names are lowercased for case-insensitive matching.
+
+        Args:
+            pattern: The UnionPattern to check for discriminator patterns.
+            file_content: Optional file content for context-aware detection
+                of Field(discriminator=) and companion Literal patterns.
+
+        Returns:
+            True if the union appears to be properly discriminated.
+        """
+        # Cache safe string conversions to avoid repeated calls in hot path
+        safe_types = [self._safe_str(t) for t in pattern.types]
+        safe_lower_types = [self._safe_lower(t) for t in pattern.types]
+
+        # Look for Literal types in the union (defensive: handle None/non-string)
+        has_literal = any(t and "Literal[" in t for t in safe_types)
+
+        # Check for discriminator-like patterns (defensive: handle None/non-string)
+        # Use zip to pair safe_str and safe_lower for same index
+        has_type_field = any(
+            "type" in lower_t and '"' in str_t
+            for str_t, lower_t in zip(safe_types, safe_lower_types, strict=True)
+        )
+        has_kind_field = any(
+            "kind" in lower_t and '"' in str_t
+            for str_t, lower_t in zip(safe_types, safe_lower_types, strict=True)
+        )
 
         # Check for Field(discriminator=) pattern in file content (modern Pydantic approach)
         has_field_discriminator = False
+        has_companion_literal_discriminator = False
         if file_content:
             # Look for Field(discriminator="field_name") pattern near the union
-            import re
-
-            # Pattern to match Field(..., discriminator="...") with flexible parameter order
-            # Matches: Field(discriminator="...") or Field(..., discriminator="...") or Field(..., discriminator='...')
-            discriminator_pattern = (
-                r'Field\s*\([^)]*discriminator\s*=\s*["\'][^"\']+["\']'
-            )
             has_field_discriminator = bool(
-                re.search(discriminator_pattern, file_content)
+                self.FIELD_DISCRIMINATOR_PATTERN.search(file_content)
             )
 
-        # Must have discriminator indicators and reasonable type count
+            # Check for companion Literal discriminator field in the file
+            # Pattern: field_name: Literal["type1", "type2", ...] where types match union types
+            literal_matches = self.LITERAL_DISCRIMINATOR_PATTERN.findall(file_content)
+            for match in literal_matches:
+                literal_values = self.LITERAL_VALUE_PATTERN.findall(match)
+                if literal_values:
+                    # Normalize union type names: extract base type, strip whitespace, lowercase
+                    union_type_names: set[str] = set()
+                    for t in pattern.types:
+                        if not t or not isinstance(t, str):
+                            continue  # Skip None, empty, or non-string types
+                        base_type = t.split("[")[0].strip().lower()
+                        if base_type:  # Skip empty base types (e.g., "[str]" -> "")
+                            union_type_names.add(base_type)
+
+                    # Normalize literal values: lowercase, skip None/empty/non-string
+                    literal_values_lower: set[str] = {
+                        v.lower() for v in literal_values if v and isinstance(v, str)
+                    }
+
+                    # Overlap Threshold Formula Rationale
+                    # ==================================
+                    # The formula `min(3, len(union_type_names) // 2 + 1)` creates an
+                    # intentionally asymmetric threshold that balances precision vs recall:
+                    #
+                    # For SMALL unions (2-5 types):
+                    #   - 2 types: threshold = min(3, 1+1) = 2 matches required (100%)
+                    #   - 3 types: threshold = min(3, 1+1) = 2 matches required (67%)
+                    #   - 4 types: threshold = min(3, 2+1) = 3 matches required (75%)
+                    #   - 5 types: threshold = min(3, 2+1) = 3 matches required (60%)
+                    #
+                    # For LARGE unions (6+ types):
+                    #   - 6 types:  threshold = min(3, 3+1) = 3 matches required (50%)
+                    #   - 10 types: threshold = min(3, 5+1) = 3 matches required (30%)
+                    #   - 20 types: threshold = min(3, 10+1) = 3 matches required (15%)
+                    #
+                    # Why this asymmetry is intentional:
+                    #
+                    # 1. SMALL UNIONS need STRICTER matching (higher %) because:
+                    #    - With few types, coincidental overlap is more likely
+                    #    - A 2-type union matching 1 of 2 literals could be a false positive
+                    #    - We need high confidence that this is truly a discriminated union
+                    #
+                    # 2. LARGE UNIONS have a CAP at 3 matches because:
+                    #    - Requiring 50%+ of a 10-type union would be too strict
+                    #    - Large discriminated unions (ModelBool | ModelStr | ModelInt | ...)
+                    #      are common in schema definitions and are legitimately discriminated
+                    #    - 3 matching types provides strong evidence of intentional design
+                    #    - Avoiding false negatives is important for developer experience
+                    #
+                    # 3. The cap at 3 prevents:
+                    #    - False negatives on legitimate large discriminated unions
+                    #    - Forcing developers to add unnecessary suppression comments
+                    #
+                    # Alternative considered: consistent percentage (e.g., 50%)
+                    # Rejected because: Would require 5 matches for 10-type unions,
+                    # causing false negatives on legitimate ModelSchemaValue-style unions.
+                    #
+                    # If this heuristic proves too permissive or too strict in practice,
+                    # consider tuning the cap (currently 3) or the divisor (currently 2).
+                    overlap = literal_values_lower & union_type_names
+                    overlap_threshold = min(3, len(union_type_names) // 2 + 1)
+                    if len(overlap) >= overlap_threshold:
+                        has_companion_literal_discriminator = True
+                        break
+
+        # Companion literal discriminators explicitly handle all types, so no type count limit
+        if has_companion_literal_discriminator:
+            return True
+
         return (
             has_literal or has_type_field or has_kind_field or has_field_discriminator
         ) and len(pattern.types) <= 5
@@ -191,16 +493,23 @@ class UnionLegitimacyValidator:
     def _is_type_alias_definition(
         self, pattern: UnionPattern, file_content: str | None = None
     ) -> bool:
-        """
-        Check if this is a legitimate type alias definition.
+        """Check if this is a legitimate type alias definition.
 
         Type alias definitions in model_onex_common_types.py are canonical
         type definitions that define the ONEX type system. They should be
         exempt from primitive_soup detection because they:
+
         1. Are in the canonical type definition file
         2. Use recursive forward references (list["TypeAlias"])
         3. Are documented replacements for Any types
         4. Define the type system itself
+
+        Args:
+            pattern: The UnionPattern to check.
+            file_content: Optional file content (not used for this check).
+
+        Returns:
+            True if the pattern is a legitimate type alias definition.
         """
         # Check if this is in the canonical type definition file
         is_canonical_file = "model_onex_common_types.py" in pattern.file_path
@@ -276,7 +585,19 @@ class UnionLegitimacyValidator:
         return any(combo.issubset(types_set) for combo in problematic_combinations)
 
     def _evaluate_semantic_legitimacy(self, pattern: UnionPattern) -> dict[str, Any]:
-        """Evaluate legitimacy based on semantic coherence when no specific pattern matches."""
+        """Evaluate legitimacy based on semantic coherence when no specific pattern matches.
+
+        This fallback method is used when a union doesn't match any known
+        legitimate or invalid pattern. It uses simple heuristics based on
+        the number of types in the union.
+
+        Args:
+            pattern: The UnionPattern to evaluate.
+
+        Returns:
+            Dict with validation result fields (is_legitimate, pattern_type,
+            confidence, issues, suggestions).
+        """
         # Default to legitimate for small, coherent unions
         if len(pattern.types) <= 2:
             return {
@@ -299,7 +620,18 @@ class UnionLegitimacyValidator:
     def _get_suggestions_for_pattern(
         self, pattern_type: str, pattern: UnionPattern
     ) -> list[str]:
-        """Get specific suggestions for improving invalid patterns."""
+        """Get specific suggestions for improving invalid patterns.
+
+        Provides actionable recommendations for refactoring invalid union
+        patterns into type-safe alternatives.
+
+        Args:
+            pattern_type: The type of invalid pattern (e.g., "primitive_soup").
+            pattern: The UnionPattern that was flagged.
+
+        Returns:
+            List of suggestion strings for improving the pattern.
+        """
         suggestions = {
             "primitive_soup": [
                 "Replace with specific type (str, int, etc.) if only one type is actually needed",
@@ -330,33 +662,140 @@ class UnionLegitimacyValidator:
 
 
 class UnionPattern:
-    """Represents a Union pattern for analysis."""
+    """Represents a Union type pattern extracted from source code for analysis.
 
-    def __init__(self, types: list[str], line: int, file_path: str):
-        self.types = sorted(types)  # Sort for consistent comparison
+    This class encapsulates information about a Union type definition found
+    in Python source code, including the types it contains and its location.
+    Used by UnionLegitimacyValidator for pattern classification.
+
+    Attributes:
+        types: Sorted list of type names in the union (sorted for comparison).
+        line: Line number where the union was defined.
+        file_path: Path to the file containing the union.
+        type_count: Number of types in the union.
+
+    Example:
+        >>> pattern = UnionPattern(["str", "int", "None"], line=42, file_path="model.py")
+        >>> pattern.get_signature()
+        'Union[None, int, str]'
+        >>> pattern.type_count
+        3
+    """
+
+    def __init__(self, types: Sequence[str | None], line: int, file_path: str):
+        """Initialize a UnionPattern instance with defensive type normalization.
+
+        Args:
+            types: List of type names in the union. May contain edge cases from
+                AST parsing that are handled defensively.
+            line: Line number where the union is defined.
+            file_path: Path to the source file.
+
+        Note:
+            Defensive Type Normalization:
+            The types list may contain edge cases from AST parsing:
+            1. None values - from ast.Constant with None value
+            2. Empty strings - from malformed type annotations
+            3. Non-string types - from unexpected AST node types
+            4. Whitespace-only strings - from parsing artifacts
+
+            We normalize all values to strings and filter out invalid entries
+            to ensure downstream operations (sorting, joining, comparison)
+            never encounter TypeError or AttributeError.
+        """
+        normalized_types: list[str] = []
+        for t in types:
+            # Skip None values (can occur from ast.Constant with None)
+            if t is None:
+                continue
+            # Convert to string if not already (handles unexpected AST node types)
+            # Note: defensive check for runtime safety even if type says str
+            if not isinstance(t, str):  # type: ignore[unreachable]
+                t = str(t)  # type: ignore[unreachable]
+            # Skip empty or whitespace-only strings (malformed type annotations)
+            if not t.strip():
+                continue
+            normalized_types.append(t)
+
+        self.types = sorted(normalized_types)  # Sort for consistent comparison
         self.line = line
         self.file_path = file_path
-        self.type_count = len(types)
+        self.type_count = len(normalized_types)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
+        """Return hash value for use in sets and as dict keys.
+
+        Returns:
+            int: Hash computed from the sorted union types tuple.
+        """
         return hash(tuple(self.types))
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        """Check equality with another UnionPattern.
+
+        Args:
+            other: Object to compare against.
+
+        Returns:
+            bool: True if other is a UnionPattern with the same types.
+        """
         return isinstance(other, UnionPattern) and self.types == other.types
 
     def get_signature(self) -> str:
-        """Get a string signature for this union pattern."""
+        """Get a string signature for this union pattern.
+
+        Returns:
+            String representation in Union[...] format with sorted types.
+
+        Example:
+            >>> pattern = UnionPattern(["int", "str"], 1, "test.py")
+            >>> pattern.get_signature()
+            'Union[int, str]'
+        """
         return f"Union[{', '.join(self.types)}]"
 
 
 class UnionUsageChecker(ast.NodeVisitor):
-    """Enhanced checker for Union type usage patterns with legitimacy validation."""
+    """AST visitor that checks Union type usage patterns with legitimacy validation.
+
+    This class walks a Python AST to find all Union type definitions (both
+    Union[...] syntax and modern | syntax) and validates them against ONEX
+    standards using UnionLegitimacyValidator.
+
+    Attributes:
+        union_count: Total number of unions found.
+        legitimate_union_count: Number of valid unions.
+        invalid_union_count: Number of invalid unions.
+        issues: List of validation issues with location info.
+        file_path: Path to the file being analyzed.
+        file_content: Optional file content for context-aware validation.
+        union_patterns: All found UnionPattern instances.
+        legitimate_patterns: Patterns classified as legitimate.
+        invalid_patterns: Patterns classified as invalid.
+        validation_results: Per-pattern validation result details.
+        pattern_statistics: Count of each pattern type found.
+
+    Example:
+        >>> import ast
+        >>> code = "x: str | int | None"
+        >>> tree = ast.parse(code)
+        >>> checker = UnionUsageChecker("test.py", code)
+        >>> checker.visit(tree)
+        >>> print(checker.union_count)  # 1
+    """
 
     def __init__(self, file_path: str, file_content: str | None = None):
+        """Initialize the UnionUsageChecker.
+
+        Args:
+            file_path: Path to the file being analyzed.
+            file_content: Optional file content for context-aware checks
+                (e.g., detecting suppression comments, discriminator fields).
+        """
         self.union_count = 0
         self.legitimate_union_count = 0
         self.invalid_union_count = 0
-        self.issues = []
+        self.issues: list[str] = []
         self.file_path = file_path
         self.file_content = file_content
         self.union_patterns: list[UnionPattern] = []
@@ -385,7 +824,17 @@ class UnionUsageChecker(ast.NodeVisitor):
         }
 
     def _extract_type_name(self, node: ast.AST) -> str:
-        """Extract type name from AST node."""
+        """Extract type name from an AST node.
+
+        Handles various AST node types to extract the string representation
+        of a type annotation.
+
+        Args:
+            node: AST node representing a type annotation.
+
+        Returns:
+            String representation of the type name.
+        """
         if isinstance(node, ast.Name):
             return node.id
         elif isinstance(node, ast.Constant):
@@ -415,7 +864,16 @@ class UnionUsageChecker(ast.NodeVisitor):
         return "Unknown"
 
     def _extract_forward_ref_from_subscript(self, slice_node: ast.AST) -> str | None:
-        """Extract forward-reference string from subscript slice."""
+        """Extract forward-reference string from subscript slice.
+
+        Detects forward references like list["MyType"] or dict[str, "MyType"].
+
+        Args:
+            slice_node: AST node representing the subscript slice.
+
+        Returns:
+            The forward reference string if found, None otherwise.
+        """
         if isinstance(slice_node, ast.Constant) and isinstance(slice_node.value, str):
             # Direct forward reference: list["MyType"]
             return slice_node.value
@@ -430,7 +888,17 @@ class UnionUsageChecker(ast.NodeVisitor):
         return None
 
     def _has_suppression_comment(self, line_number: int) -> bool:
-        """Check if the union has a suppression comment above it."""
+        """Check if the union has a suppression comment above it.
+
+        Looks for comments like '# union-ok:' or '# ONEX_VALIDATION_IGNORE:'
+        in the lines immediately preceding the union definition.
+
+        Args:
+            line_number: 1-based line number of the union definition.
+
+        Returns:
+            True if a suppression comment was found, False otherwise.
+        """
         if not self.file_content:
             return False
 
@@ -454,7 +922,20 @@ class UnionUsageChecker(ast.NodeVisitor):
         return False
 
     def _analyze_union_pattern(self, union_pattern: UnionPattern) -> None:
-        """Analyze a union pattern using legitimacy validation."""
+        """Analyze a union pattern using legitimacy validation.
+
+        Validates the pattern against ONEX standards, categorizes it as
+        legitimate or invalid, and records any issues or suggestions.
+
+        Args:
+            union_pattern: The UnionPattern instance to analyze.
+
+        Side Effects:
+            Updates self.legitimate_patterns or self.invalid_patterns.
+            Updates self.legitimate_union_count or self.invalid_union_count.
+            Updates self.validation_results and self.pattern_statistics.
+            Appends any issues to self.issues.
+        """
         # Check for suppression comment first
         if self._has_suppression_comment(union_pattern.line):
             # Skip validation for suppressed unions
@@ -513,13 +994,13 @@ class UnionUsageChecker(ast.NodeVisitor):
             # This is a style suggestion, not a legitimacy issue
             # We'll handle this in a separate style checker if needed
 
-    def visit_Subscript(self, node):
+    def visit_Subscript(self, node: ast.Subscript) -> None:
         """Visit subscript nodes (e.g., Union[str, int])."""
         if isinstance(node.value, ast.Name) and node.value.id == "Union":
             self._process_union_types(node, node.slice, node.lineno)
         self.generic_visit(node)
 
-    def visit_BinOp(self, node):
+    def visit_BinOp(self, node: ast.BinOp) -> None:
         """Visit binary operation nodes (e.g., str | int | float)."""
         if isinstance(node.op, ast.BitOr):
             # Skip bitwise operations and set operations - only process type unions
@@ -540,9 +1021,19 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _is_likely_type_union(self, node: ast.BinOp) -> bool:
-        """Check if a BinOp with | is likely a type union vs set/bitwise operation."""
+        """Check if a BinOp with | is likely a type union vs set/bitwise operation.
 
-        def has_attribute_access(n):
+        Uses heuristics to distinguish type unions (str | int) from bitwise
+        operations (flags | OTHER_FLAG) and set operations (set1 | set2).
+
+        Args:
+            node: AST BinOp node with BitOr operator.
+
+        Returns:
+            True if likely a type union, False if likely bitwise/set operation.
+        """
+
+        def has_attribute_access(n: ast.AST) -> bool:
             """Check if node involves attribute access (like re.FLAG)."""
             if isinstance(n, ast.Attribute):
                 return True
@@ -550,7 +1041,7 @@ class UnionUsageChecker(ast.NodeVisitor):
                 return has_attribute_access(n.left) or has_attribute_access(n.right)
             return False
 
-        def has_variable_reference(n):
+        def has_variable_reference(n: ast.AST) -> bool:
             """Check if node is a variable reference (like set1)."""
             if isinstance(n, ast.Name):
                 # Simple heuristic: lowercase names are likely variables, not types
@@ -576,10 +1067,20 @@ class UnionUsageChecker(ast.NodeVisitor):
         return True
 
     def _extract_union_from_binop(self, node: ast.BinOp) -> list[str]:
-        """Extract union types from modern union syntax (A | B | C)."""
-        types = []
+        """Extract union types from modern union syntax (A | B | C).
 
-        def collect_types(n):
+        Recursively traverses nested BitOr operations to collect all type
+        names in a union chain.
+
+        Args:
+            node: AST BinOp node representing a union expression.
+
+        Returns:
+            List of type name strings found in the union.
+        """
+        types: list[str] = []
+
+        def collect_types(n: ast.AST) -> None:
             if isinstance(n, ast.BinOp) and isinstance(n.op, ast.BitOr):
                 collect_types(n.left)
                 collect_types(n.right)
@@ -591,8 +1092,19 @@ class UnionUsageChecker(ast.NodeVisitor):
         collect_types(node)
         return types
 
-    def _process_union_types(self, node, slice_node, line_no):
-        """Process union types from Union[...] syntax."""
+    def _process_union_types(
+        self, node: ast.AST, slice_node: ast.AST, line_no: int
+    ) -> None:
+        """Process union types from Union[...] syntax.
+
+        Extracts type names from the Union subscript, creates a UnionPattern,
+        and analyzes it for legitimacy.
+
+        Args:
+            node: The AST node for the Union subscript.
+            slice_node: The AST node for the subscript slice (type arguments).
+            line_no: Line number where the union is defined.
+        """
         # Extract union types
         union_types = []
         if isinstance(slice_node, ast.Tuple):
@@ -615,7 +1127,30 @@ class UnionUsageChecker(ast.NodeVisitor):
 
 
 def validate_python_file(file_path: Path) -> dict[str, Any]:
-    """Validate Union usage in a Python file with legitimacy analysis."""
+    """Validate Union usage in a Python file with legitimacy analysis.
+
+    Parses the Python file, extracts all Union type definitions, and validates
+    each against ONEX standards using UnionUsageChecker.
+
+    Args:
+        file_path: Path to the Python file to validate.
+
+    Returns:
+        Dict containing:
+            - union_count: Total unions found.
+            - legitimate_count: Count of valid unions.
+            - invalid_count: Count of invalid unions.
+            - issues: List of validation issue strings.
+            - union_patterns: List of all UnionPattern instances.
+            - legitimate_patterns: List of valid UnionPattern instances.
+            - invalid_patterns: List of invalid UnionPattern instances.
+            - pattern_statistics: Dict of pattern type counts.
+            - validation_results: Dict of per-pattern validation details.
+
+    Example:
+        >>> result = validate_python_file(Path("model.py"))
+        >>> print(f"Found {result['union_count']} unions")
+    """
     try:
         with open(file_path, encoding="utf-8") as f:
             content = f.read()
@@ -651,8 +1186,23 @@ def validate_python_file(file_path: Path) -> dict[str, Any]:
 
 
 def analyze_repeated_patterns(all_patterns: list[UnionPattern]) -> list[str]:
-    """Analyze repeated union patterns across files."""
-    pattern_counts = Counter()
+    """Analyze repeated union patterns across files.
+
+    Identifies union patterns that appear multiple times across the codebase,
+    which may indicate a need for a shared type definition or model.
+
+    Args:
+        all_patterns: List of UnionPattern instances from all validated files.
+
+    Returns:
+        List of issue strings for patterns repeated 3+ times.
+
+    Example:
+        >>> patterns = [UnionPattern(["str", "int"], 1, "a.py"),
+        ...             UnionPattern(["str", "int"], 2, "b.py")]
+        >>> issues = analyze_repeated_patterns(patterns)
+    """
+    pattern_counts: Counter[str] = Counter()
     pattern_files = defaultdict(set)
 
     for pattern in all_patterns:
@@ -678,8 +1228,23 @@ def analyze_repeated_patterns(all_patterns: list[UnionPattern]) -> list[str]:
 
 
 def generate_model_suggestions(patterns: list[UnionPattern]) -> list[str]:
-    """Generate specific suggestions for replacing unions with models."""
-    suggestions = []
+    """Generate specific suggestions for replacing unions with models.
+
+    Analyzes invalid union patterns and generates context-aware suggestions
+    for replacing them with proper Pydantic models or discriminated unions.
+
+    Args:
+        patterns: List of invalid UnionPattern instances to generate suggestions for.
+
+    Returns:
+        List of suggestion strings with model code examples and usage locations.
+
+    Example:
+        >>> patterns = [UnionPattern(["str", "int", "bool"], 10, "config.py")]
+        >>> suggestions = generate_model_suggestions(patterns)
+        >>> print(suggestions[0])  # Shows model suggestion with discriminator
+    """
+    suggestions: list[str] = []
 
     # Group patterns by type combination
     type_groups = defaultdict(list)
@@ -759,8 +1324,28 @@ def generate_model_suggestions(patterns: list[UnionPattern]) -> list[str]:
     return suggestions
 
 
-def main():
-    """Enhanced main validation function with AST-based legitimacy validation."""
+def main() -> int:
+    """Run the union validation tool with AST-based legitimacy analysis.
+
+    This is the main entry point for the validate-union-usage script.
+    It parses command-line arguments, scans Python files for Union types,
+    validates them against ONEX standards, and reports results.
+
+    Returns:
+        Exit code: 0 for success, 1 for validation failure.
+
+    Command-line Arguments:
+        --strict: Enable strict mode (fail on any invalid patterns).
+        --show-patterns: Show detailed pattern analysis.
+        --show-statistics: Show pattern type statistics.
+        --suggest-models: Generate model suggestions for invalid patterns.
+        --export-report FILE: Export detailed report to file (JSON or Markdown).
+        --allow-invalid N: Maximum allowed invalid patterns (default: 0).
+        path: Path to validate (file or directory, default: ".").
+
+    Example:
+        $ python validate-union-usage.py src/ --strict --show-statistics
+    """
     parser = argparse.ArgumentParser(
         description="Enhanced Union type usage validation with legitimacy analysis",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -820,6 +1405,12 @@ The validator focuses on type safety and semantic coherence rather than arbitrar
         python_files.sort(key=lambda p: str(p))
 
     # Filter out archived files, examples, and __pycache__
+    #
+    # NOTE: The protocols/ directory is excluded via .pre-commit-config.yaml,
+    # not in this script. This is intentional - see the module docstring for
+    # the "Protocol Type Exclusion Rationale" explaining why Protocol definitions
+    # are exempt from union validation (structural typing, interface flexibility,
+    # and inability to use Protocol types as union discriminators).
     python_files = [
         f
         for f in python_files
@@ -840,11 +1431,11 @@ The validator focuses on type safety and semantic coherence rather than arbitrar
     total_unions = 0
     total_legitimate = 0
     total_invalid = 0
-    total_issues = []
-    all_patterns = []
-    all_legitimate_patterns = []
-    all_invalid_patterns = []
-    global_statistics = {}
+    total_issues: list[str] = []
+    all_patterns: list[UnionPattern] = []
+    all_legitimate_patterns: list[UnionPattern] = []
+    all_invalid_patterns: list[UnionPattern] = []
+    global_statistics: dict[str, int] = {}
 
     # Process all files
     for py_file in python_files:
@@ -1010,10 +1601,7 @@ def export_legitimacy_report(
     python_files: list[Path],
 ) -> None:
     """Export a detailed legitimacy-based report to a file."""
-    import json
-    from datetime import datetime
-
-    report = {
+    report: dict[str, Any] = {
         "metadata": {
             "generated_at": datetime.now().isoformat(),
             "total_files_scanned": len(python_files),
@@ -1172,10 +1760,7 @@ def export_detailed_report(
     python_files: list[Path],
 ) -> None:
     """Export a detailed report to a file."""
-    import json
-    from datetime import datetime
-
-    report = {
+    report: dict[str, Any] = {
         "metadata": {
             "generated_at": datetime.now().isoformat(),
             "total_files_scanned": len(python_files),

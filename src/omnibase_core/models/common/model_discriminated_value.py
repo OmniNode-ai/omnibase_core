@@ -358,6 +358,7 @@ class ModelDiscriminatedValue(BaseModel):
     @classmethod
     def from_any(
         cls,
+        # union-ok: discriminated_union - factory creates discriminated value with EnumDiscriminatedValueType
         value: bool | float | int | str | dict[str, Any] | list[Any],
         metadata: dict[str, str] | None = None,
     ) -> ModelDiscriminatedValue:

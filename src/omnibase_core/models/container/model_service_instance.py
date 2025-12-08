@@ -1,4 +1,4 @@
-"""Service instance model - implements ProtocolDIServiceInstance."""
+"""Service instance model - implements ProtocolManagedServiceInstance."""
 
 from datetime import datetime
 from typing import Any
@@ -16,7 +16,7 @@ class ModelServiceInstance(BaseModel):
     """
     Service instance information.
 
-    Implements ProtocolDIServiceInstance from omnibase_spi.
+    Implements ProtocolManagedServiceInstance.
     Tracks active service instances with lifecycle and scope information.
 
     Attributes:

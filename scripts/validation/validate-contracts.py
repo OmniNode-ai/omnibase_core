@@ -162,15 +162,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 
 
 def discover_yaml_files_optimized(base_path: Path) -> Iterator[Path]:
-    """
-    Optimized file discovery using single walk with filtering.
-
-    Args:
-        base_path: Base directory to search
-
-    Yields:
-        Path objects for YAML files
-    """
+    """Discover YAML files in base_path, skipping archived and invalid fixture dirs."""
     try:
         # Single walk through directory tree with immediate filtering
         for root, dirs, files in os.walk(base_path):
@@ -216,16 +208,11 @@ def discover_yaml_files_optimized(base_path: Path) -> Iterator[Path]:
 
 
 def setup_timeout_handler() -> None:
-    """
-    Legacy compatibility function.
-
-    This function does nothing but exists for backward compatibility with tests.
-    Use timeout_context() instead for actual timeout handling.
-    """
+    """Legacy no-op for backward compatibility. Use timeout_context() instead."""
 
 
 def main():
-    """Main validation function."""
+    """CLI entry point: parse args, discover YAML files, validate, report results."""
     try:
         parser = argparse.ArgumentParser(description="Validate YAML contracts")
         parser.add_argument("path", nargs="?", default=".", help="Path to validate")

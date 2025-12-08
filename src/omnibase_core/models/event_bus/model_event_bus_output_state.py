@@ -14,6 +14,7 @@ from omnibase_core.models.core.model_monitoring_metrics import ModelMonitoringMe
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
+    default_model_version,
     parse_semver_from_string,
 )
 from omnibase_core.models.service.model_custom_fields import ModelErrorDetails
@@ -43,7 +44,7 @@ class ModelEventBusOutputState(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True, extra="forbid")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Schema version for output state (matches input)",
     )
     status: EnumOnexStatus = Field(

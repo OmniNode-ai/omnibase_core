@@ -42,7 +42,11 @@ class ModelReducerOutput[T_Output](BaseModel):
         rather than modifying an existing one.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        arbitrary_types_allowed=True,
+    )
 
     result: T_Output
     operation_id: UUID

@@ -6,9 +6,8 @@ input data with metadata for operation tracking, caching configuration, and
 parallel execution control.
 
 Thread Safety:
-    ModelComputeInput is mutable by default. If thread-safety is needed,
-    create the instance with all required values and treat as read-only
-    after creation.
+    ModelComputeInput is immutable (frozen=True) after creation, making it
+    thread-safe for concurrent read access from multiple threads or async tasks.
 
 Key Features:
     - Generic type parameter T_Input for type-safe input data
@@ -47,7 +46,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = [
     "ModelComputeInput",
@@ -100,6 +99,11 @@ class ModelComputeInput[T_Input](BaseModel):
         ...     metadata={"source": "user_input", "priority": "high"},
         ... )
     """
+
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+    )
 
     data: T_Input
     operation_id: UUID = Field(default_factory=uuid4)
