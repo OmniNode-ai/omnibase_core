@@ -1,9 +1,43 @@
 """
-ModelEffectOutput - Output model for NodeEffect operations.
+Output model for NodeEffect operations.
 
-Strongly typed output wrapper with transaction status and side effect execution metadata.
+This module provides the ModelEffectOutput model that wraps side effect
+operation results with comprehensive transaction status, timing metrics,
+and execution metadata for observability and error recovery.
 
-Author: ONEX Framework Team
+Thread Safety:
+    ModelEffectOutput is mutable by default but should be treated as
+    immutable after creation for thread-safe access.
+
+Key Features:
+    - Transaction state tracking (COMMITTED, ROLLED_BACK, etc.)
+    - Processing time measurement for performance analysis
+    - Retry count tracking for debugging and alerting
+    - Side effect and rollback operation audit trails
+    - Metadata for custom tracking and correlation
+
+Example:
+    >>> from omnibase_core.models.effect import ModelEffectOutput
+    >>> from omnibase_core.enums.enum_effect_types import (
+    ...     EnumEffectType,
+    ...     EnumTransactionState,
+    ... )
+    >>> from uuid import uuid4
+    >>>
+    >>> # Successful database write result
+    >>> output = ModelEffectOutput(
+    ...     result={"rows_affected": 1},
+    ...     operation_id=uuid4(),
+    ...     effect_type=EnumEffectType.DATABASE_WRITE,
+    ...     transaction_state=EnumTransactionState.COMMITTED,
+    ...     processing_time_ms=45.2,
+    ...     side_effects_applied=["insert_user_record"],
+    ... )
+
+See Also:
+    - omnibase_core.models.effect.model_effect_input: Corresponding input model
+    - omnibase_core.nodes.node_effect: NodeEffect implementation
+    - docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md: Effect node tutorial
 """
 
 from datetime import datetime
@@ -21,8 +55,37 @@ class ModelEffectOutput(BaseModel):
     """
     Output model for NodeEffect operations.
 
-    Strongly typed output wrapper with transaction status
-    and side effect execution metadata.
+    Strongly typed output wrapper containing the operation result along with
+    transaction status, timing metrics, and execution audit trail. Created
+    by NodeEffect after executing side effect operations.
+
+    Attributes:
+        result: The operation result data. Type varies based on effect_type
+            (e.g., query results for database reads, response body for API calls).
+        operation_id: UUID from the corresponding ModelEffectInput. Enables
+            correlation between input and output for tracing and debugging.
+        effect_type: Type of side effect operation that was executed.
+        transaction_state: Current state of the transaction (COMMITTED, ROLLED_BACK,
+            PENDING, etc.). Indicates whether the operation was successfully applied.
+        processing_time_ms: Actual execution time in milliseconds. Includes all
+            retries and transaction overhead.
+        retry_count: Number of retry attempts made before success or final failure.
+            Value of 0 indicates success on first attempt.
+        side_effects_applied: List of side effect identifiers that were successfully
+            applied. Useful for audit trails and debugging.
+        rollback_operations: List of rollback operation identifiers if transaction
+            was rolled back. Empty list if transaction succeeded.
+        metadata: Additional context metadata from the operation. May include
+            effect-specific information like row counts or API response codes.
+        timestamp: When this output was created. Auto-generated to current time.
+
+    Example:
+        >>> # Check operation result
+        >>> if output.transaction_state == EnumTransactionState.COMMITTED:
+        ...     print(f"Success: {output.result}")
+        ...     print(f"Time: {output.processing_time_ms:.2f}ms")
+        ... else:
+        ...     print(f"Rolled back: {output.rollback_operations}")
     """
 
     result: str | int | float | bool | dict[str, Any] | list[Any]

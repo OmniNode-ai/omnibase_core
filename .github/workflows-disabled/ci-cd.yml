@@ -474,7 +474,7 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_MESSAGE: "ONEX deployment successful! \nEnvironment: ${{ github.ref == 'refs/heads/develop'
-            && 'staging' || 'production' }}\nVersion: ${{ github.sha }}\n#magic___^_^___line\n"
+            && 'staging' || 'production' }}\nVersion: ${{ github.sha }}\n"
       - name: Notify on failure
         if: needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure'
         uses: rtCamp/action-slack-notify@v2

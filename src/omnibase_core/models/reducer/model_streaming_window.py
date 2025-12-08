@@ -1,9 +1,42 @@
 """
 Streaming window model for time-based data processing.
 
-Implements time-based windowing for streaming data reduction operations.
+This module provides the ModelStreamingWindow class that implements
+time-based windowing for streaming data reduction operations. Windows
+can optionally overlap for sliding window semantics.
 
-Author: ONEX Framework Team
+Thread Safety:
+    ModelStreamingWindow is NOT thread-safe. The internal buffer is
+    mutated during add_item() and advance_window() operations. Each
+    thread should use its own instance.
+
+Key Features:
+    - Time-based window duration (configurable in milliseconds)
+    - Optional overlap for sliding window patterns
+    - Automatic window completion detection
+    - Efficient deque-based buffer implementation
+
+Example:
+    >>> from omnibase_core.models.reducer import ModelStreamingWindow
+    >>>
+    >>> # 5-second tumbling window (no overlap)
+    >>> window = ModelStreamingWindow(window_size_ms=5000)
+    >>> for event in event_stream:
+    ...     is_ready = window.add_item(event)
+    ...     if is_ready:
+    ...         items = window.get_window_items()
+    ...         process_batch(items)
+    ...         window.advance_window()
+    >>>
+    >>> # 10-second sliding window with 2-second overlap
+    >>> sliding_window = ModelStreamingWindow(
+    ...     window_size_ms=10000,
+    ...     overlap_ms=2000,
+    ... )
+
+See Also:
+    - omnibase_core.models.reducer.model_reducer_input: Uses streaming windows
+    - omnibase_core.enums.enum_reducer_types.EnumStreamingMode: Streaming modes
 """
 
 from collections import deque
@@ -16,7 +49,21 @@ class ModelStreamingWindow:
     Time-based window for streaming data processing.
 
     Provides time-based windowing with optional overlap for streaming
-    reduction operations.
+    reduction operations. Items are buffered with timestamps and the
+    window automatically tracks when it's ready for processing.
+
+    Attributes:
+        window_size_ms: Duration of the window in milliseconds.
+        overlap_ms: Overlap duration for sliding windows. When > 0, items
+            within the overlap period are retained after advancing.
+        buffer: Internal deque storing (item, timestamp) tuples.
+        window_start: Timestamp when current window started.
+
+    Window Types:
+        - Tumbling Window: overlap_ms=0 (default). Windows are non-overlapping
+          and each item belongs to exactly one window.
+        - Sliding Window: overlap_ms>0. Windows overlap and items may be
+          processed in multiple consecutive windows.
     """
 
     def __init__(self, window_size_ms: int, overlap_ms: int = 0):

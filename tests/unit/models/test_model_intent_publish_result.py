@@ -541,7 +541,7 @@ class TestModelIntentPublishResultMetadata:
         """Test module name."""
         assert (
             ModelIntentPublishResult.__module__
-            == "omnibase_core.models.model_intent_publish_result"
+            == "omnibase_core.models.reducer.model_intent_publish_result"
         )
 
     def test_docstring(self):

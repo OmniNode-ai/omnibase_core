@@ -21,7 +21,6 @@ from __future__ import annotations
 import ast
 import os
 import re
-import signal
 import sys
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -858,9 +857,8 @@ class StringVersionValidator:
             )
 
 
-import timeout_utils
-
 # Import cross-platform timeout utility
+import timeout_utils
 from timeout_utils import timeout_context
 
 

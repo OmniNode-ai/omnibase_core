@@ -1,9 +1,60 @@
 """
-ModelIntent - Side effect declaration for pure FSM pattern.
+Intent model for pure FSM pattern side effect declarations.
 
-Intents represent side effects that the Reducer wants to occur,
-emitted to the Effect node for execution. This maintains the
-Reducer's purity while allowing side effects to be described.
+This module provides the ModelIntent class that represents side effects
+the Reducer wants to occur. Instead of performing side effects directly,
+the Reducer emits Intents describing what should happen. The Effect node
+consumes and executes these Intents.
+
+Design Pattern:
+    The Intent pattern maintains Reducer purity by separating the decision
+    of "what side effect should occur" from the execution of that side effect.
+    This follows the functional programming principle of keeping the core
+    business logic pure and pushing I/O to the edges.
+
+    Reducer function: delta(state, action) -> (new_state, intents[])
+
+Thread Safety:
+    ModelIntent is immutable after creation (Pydantic model with frozen=False
+    but should be treated as immutable). Thread-safe for concurrent read access.
+
+Key Features:
+    - Type-safe intent declaration with payload
+    - Priority ordering for intent execution
+    - Optional lease integration for single-writer semantics
+    - Epoch support for versioned state coordination
+
+Intent Types (Common Examples):
+    - "log": Emit log message or metrics
+    - "emit_event": Publish event to message bus
+    - "write": Persist data to storage
+    - "notify": Send notification to external system
+    - "http_request": Make outbound HTTP call
+
+Example:
+    >>> from omnibase_core.models.reducer import ModelIntent
+    >>>
+    >>> # Intent to emit an event
+    >>> intent = ModelIntent(
+    ...     intent_type="emit_event",
+    ...     target="user.created",
+    ...     payload={"user_id": "123", "email": "user@example.com"},
+    ...     priority=5,
+    ... )
+    >>>
+    >>> # Intent with lease for distributed coordination
+    >>> lease_intent = ModelIntent(
+    ...     intent_type="write",
+    ...     target="users/123/profile",
+    ...     payload={"name": "Alice"},
+    ...     lease_id=current_lease_id,
+    ...     epoch=current_epoch,
+    ... )
+
+See Also:
+    - omnibase_core.models.reducer.model_intent_publish_result: Publication result
+    - omnibase_core.nodes.node_reducer: Emits intents during reduction
+    - omnibase_core.nodes.node_effect: Executes intents
 """
 
 from typing import Any

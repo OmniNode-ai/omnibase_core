@@ -4,6 +4,11 @@ Output model for NodeReducer operations.
 Strongly typed output wrapper with reduction statistics, conflict resolution metadata,
 and Intent emission for pure FSM pattern.
 
+Thread Safety:
+    ModelReducerOutput is immutable (frozen=True) after creation, making it
+    thread-safe for concurrent read access from multiple threads or async tasks.
+    This follows the same pattern as ModelComputeOutput.
+
 Author: ONEX Framework Team
 """
 
@@ -26,9 +31,18 @@ class ModelReducerOutput[T_Output](BaseModel):
     Pure FSM Pattern:
         result: The new state after reduction
         intents: Side effects to be executed by Effect node
+
+    Thread Safety:
+        This model is immutable (frozen=True) after creation. The intents list
+        and metadata dict are captured at construction time and cannot be modified.
+        This ensures thread-safe sharing of output instances across concurrent
+        readers without synchronization.
+
+        For mutable workflows (rare), create a new ModelReducerOutput instance
+        rather than modifying an existing one.
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 
     result: T_Output
     operation_id: UUID
