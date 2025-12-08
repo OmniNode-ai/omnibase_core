@@ -120,10 +120,10 @@ class ModelOnexEnvelopeV1(BaseModel):
 # =============================================================================
 # Version Notice
 # =============================================================================
-# DEPRECATED: Use ModelOnexEnvelope instead.
+# SUPERSEDED: ModelOnexEnvelope is the recommended envelope for new code.
 #
-# ModelOnexEnvelopeV1 is the original envelope format. New code should use
-# ModelOnexEnvelope which provides:
+# ModelOnexEnvelopeV1 is the original/lightweight envelope format. For new
+# implementations, prefer ModelOnexEnvelope which provides:
 # - Causation chain tracking (causation_id)
 # - Routing support (target_node, handler_type)
 # - Request/response pattern (is_response, success, error)
