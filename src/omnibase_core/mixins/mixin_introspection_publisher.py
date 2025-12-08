@@ -47,10 +47,10 @@ class MixinIntrospectionPublisher:
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
             return
-        node_id = getattr(self, "_node_id", "unknown")
+        node_id_raw = getattr(self, "_node_id", None)
+        node_id = node_id_raw if node_id_raw is not None else "<unset>"
         try:
             introspection_data = self._gather_introspection_data()
-            from uuid import UUID, uuid4
 
             correlation_id = uuid4()
             # Require explicit get_node_type() implementation - no fallback
@@ -61,8 +61,14 @@ class MixinIntrospectionPublisher:
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
             node_type = self.get_node_type()
+            # For creating the event, we need a valid UUID - generate one if unset
+            event_node_id = (
+                UUID(node_id)
+                if isinstance(node_id, str) and node_id != "<unset>"
+                else (node_id_raw if isinstance(node_id_raw, UUID) else uuid4())
+            )
             introspection_event = ModelNodeIntrospectionEvent.create_from_node_info(
-                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                node_id=event_node_id,
                 node_name=introspection_data.node_name,
                 version=introspection_data.version,
                 node_type=node_type,
@@ -77,7 +83,7 @@ class MixinIntrospectionPublisher:
                 calling_function="_publish_introspection_event",
                 calling_line=71,
                 timestamp=datetime.now().isoformat(),
-                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
                 LogLevel.INFO,
@@ -90,11 +96,11 @@ class MixinIntrospectionPublisher:
                 calling_function="_publish_introspection_event",
                 calling_line=95,
                 timestamp=datetime.now().isoformat(),
-                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
                 LogLevel.ERROR,
-                f"💥 FAIL-FAST: Introspection validation failed: {e}",
+                f"FAIL-FAST: Introspection validation failed: {e}",
                 context=context,
             )
             raise
@@ -104,11 +110,11 @@ class MixinIntrospectionPublisher:
                 calling_function="_publish_introspection_event",
                 calling_line=95,
                 timestamp=datetime.now().isoformat(),
-                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
                 LogLevel.ERROR,
-                f"💥 FAIL-FAST: Failed to publish introspection event: {e}",
+                f"FAIL-FAST: Failed to publish introspection event: {e}",
                 context=context,
             )
             raise
@@ -135,17 +141,18 @@ class MixinIntrospectionPublisher:
             )
         except Exception as e:
             # fallback-ok: Introspection failures use fallback data with logging
-            node_id = getattr(self, "_node_id", "unknown")
+            node_id_raw = getattr(self, "_node_id", None)
+            node_id = node_id_raw if node_id_raw is not None else "<unset>"
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_gather_introspection_data",
                 calling_line=127,
                 timestamp=datetime.now().isoformat(),
-                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
                 LogLevel.WARNING,
-                f"Failed to gather full introspection data, using fallback: {e}",
+                f"Failed to gather full introspection data for node {node_id}, using fallback: {e}",
                 context=context,
             )
             return MixinNodeIntrospectionData(
@@ -332,7 +339,7 @@ class MixinIntrospectionPublisher:
         """Detect if this node has a health endpoint."""
         try:
             if hasattr(self, "health_check"):
-                node_id = getattr(self, "_node_id", "unknown")
+                node_id = getattr(self, "_node_id", None) or "<unset>"
                 return f"/health/{node_id}"
         except Exception:
             pass
@@ -343,19 +350,20 @@ class MixinIntrospectionPublisher:
         event_bus = getattr(self, "event_bus", None)
         if not event_bus:
             return
-        node_id = getattr(self, "_node_id", "unknown")
+        node_id_raw = getattr(self, "_node_id", None)
+        node_id = node_id_raw if node_id_raw is not None else "<unset>"
         from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         source_node_id_str: str
-        if isinstance(node_id, str):
-            source_node_id_str = node_id
-        elif isinstance(node_id, UUID):
-            source_node_id_str = str(node_id)
+        if isinstance(node_id_raw, UUID):
+            source_node_id_str = str(node_id_raw)
+        elif isinstance(node_id_raw, str):
+            source_node_id_str = node_id_raw
         else:
-            source_node_id_str = "unknown"
+            source_node_id_str = "<unset>"
         # Ensure source_node_id is UUID
-        if isinstance(node_id, UUID):
-            source_uuid = node_id
+        if isinstance(node_id_raw, UUID):
+            source_uuid = node_id_raw
         else:
             source_uuid = uuid4()
 
@@ -375,7 +383,7 @@ class MixinIntrospectionPublisher:
                         calling_function="_publish_with_retry",
                         calling_line=350,
                         timestamp=datetime.now().isoformat(),
-                        node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                        node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
                     )
                     emit_log_event_sync(
                         LogLevel.ERROR,

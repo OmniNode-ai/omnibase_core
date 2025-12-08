@@ -6,7 +6,7 @@ pytest-testmon is an intelligent test selection tool that tracks code dependenci
 
 ## Quick Start
 
-```
+```bash
 # Run only tests affected by recent changes
 poetry run pytest --testmon
 
@@ -34,7 +34,7 @@ pytest-testmon:
 
 ### Local Development (Recommended)
 
-```
+```bash
 # Fast iteration: Run only affected tests
 poetry run pytest --testmon
 
@@ -46,14 +46,14 @@ poetry run pytest --testmon-noselect
 
 ### Pre-Commit Validation
 
-```
+```bash
 # Validate your changes before commit
 poetry run pytest --testmon --cov --cov-fail-under=60
 ```
 
 ### Full Suite (Periodic)
 
-```
+```bash
 # Run full suite periodically to catch integration issues
 poetry run pytest tests/
 ```
@@ -83,7 +83,7 @@ See [CI_TEST_STRATEGY.md](./CI_TEST_STRATEGY.md) for recommended CI test approac
 
 ### Testmon selecting too many/few tests
 
-```
+```bash
 # Clear database and rebuild
 rm .testmondata
 poetry run pytest --testmon-noselect
@@ -91,7 +91,7 @@ poetry run pytest --testmon-noselect
 
 ### Testmon not detecting changes
 
-```
+```bash
 # Ensure you're using poetry run
 poetry run pytest --testmon  # Correct
 pytest --testmon              # Wrong (uses system pytest)
@@ -99,7 +99,7 @@ pytest --testmon              # Wrong (uses system pytest)
 
 ### Performance issues
 
-```
+```bash
 # Testmon database may be corrupt
 rm .testmondata
 poetry run pytest --testmon-noselect

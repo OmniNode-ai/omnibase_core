@@ -1,0 +1,358 @@
+# Example: Contract-Driven NodeCompute Pipeline - User Profile Normalizer
+#
+# This example demonstrates the v1.0 NodeCompute contract-driven pipeline system
+# for normalizing user profile data before storage or processing.
+#
+# USE CASE: Normalize user-submitted profile data to ensure consistency:
+# - Validate incoming data against schema
+# - Normalize unicode characters (handle accented names, etc.)
+# - Trim whitespace from text fields
+# - Standardize email format (lowercase)
+# - Clean phone numbers (remove non-digits)
+# - Map fields to final output structure
+#
+# Node Implementation (minimal code needed):
+#   class NodeUserProfileNormalizerCompute(NodeCompute):
+#       pass  # All pipeline logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - All 3 step types: VALIDATION, TRANSFORMATION, MAPPING
+# - 5 of 6 transformation types: TRIM, NORMALIZE_UNICODE, CASE_CONVERSION, REGEX, JSON_PATH
+# - Path resolution: $.input, $.input.<field>, $.steps.<name>.output
+# - Sequential execution with abort-on-first-failure semantics
+# - Pipeline-level timeout configuration
+#
+# v1.0 Contract Schema Version
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# COMPUTE SUBCONTRACT: Defines the transformation pipeline
+# ---------------------------------------------------------------------------
+# The compute subcontract specifies the sequential transformation pipeline
+# that the NodeCompute will execute. Steps are processed in order, and
+# any failure causes immediate abort (abort-on-first-failure semantics).
+
+compute:
+  # Schema version for forward compatibility
+  version: "1.0.0"
+
+  # Operation identification
+  operation_name: user_profile_normalizer
+  operation_version: "1.0.0"
+  description: |
+    Normalizes user profile data for consistent storage and processing.
+    Handles unicode normalization, whitespace trimming, email standardization,
+    and phone number cleaning. Validates input/output against defined schemas.
+
+  # Schema references (resolved at load time by schema registry)
+  # These reference JSON schemas in your project's schema directory
+  input_schema_ref: "schemas/user_profile_input.json"
+  output_schema_ref: "schemas/user_profile_normalized.json"
+
+  # Pipeline-level timeout (no per-step timeouts in v1.0)
+  pipeline_timeout_ms: 5000
+
+  # ---------------------------------------------------------------------------
+  # PIPELINE: Sequential list of transformation steps
+  # ---------------------------------------------------------------------------
+  # Each step is executed in order. If any step fails, the pipeline aborts.
+  # Steps can reference:
+  #   - $.input           - The original pipeline input
+  #   - $.input.<field>   - A specific field from the input
+  #   - $.steps.<name>.output - Output from a named previous step
+
+  pipeline:
+    # =========================================================================
+    # STEP 1: INPUT VALIDATION
+    # =========================================================================
+    # Validates the incoming data against the input schema before processing.
+    # This is a VALIDATION step type - it requires validation_config.
+    #
+    # Step Type: VALIDATION
+    # Purpose: Ensure input data meets expected structure and constraints
+    # On Failure: Pipeline aborts immediately (fail_on_error: true)
+
+    - step_name: validate_input
+      step_type: validation
+      enabled: true
+      validation_config:
+        config_type: validation
+        # Reference to JSON schema for input validation
+        schema_ref: "schemas/user_profile_input.json"
+        # If validation fails, abort the pipeline
+        fail_on_error: true
+
+    # =========================================================================
+    # STEP 2: UNICODE NORMALIZATION
+    # =========================================================================
+    # Normalizes unicode characters to NFC form for consistent storage.
+    # Handles accented characters, combining characters, etc.
+    #
+    # Step Type: TRANSFORMATION
+    # Transformation Type: NORMALIZE_UNICODE
+    # Input: $.input.display_name (from original input)
+    # Output: Normalized unicode string
+    #
+    # Example:
+    #   Input:  "Jose\u0301"  (Jose with combining acute accent)
+    #   Output: "Jos\u00e9"   (Jose with precomposed e-acute)
+
+    - step_name: normalize_display_name
+      step_type: transformation
+      enabled: true
+      transformation_type: normalize_unicode
+      transformation_config:
+        config_type: normalize_unicode
+        # NFC = Canonical Decomposition, followed by Canonical Composition
+        # This is the recommended form for most use cases
+        form: NFC
+
+    # =========================================================================
+    # STEP 3: WHITESPACE TRIMMING
+    # =========================================================================
+    # Removes leading and trailing whitespace from the display name.
+    #
+    # Step Type: TRANSFORMATION
+    # Transformation Type: TRIM
+    # Input: $.steps.normalize_display_name.output (from previous step)
+    # Output: Trimmed string
+    #
+    # Example:
+    #   Input:  "  John Smith  "
+    #   Output: "John Smith"
+
+    - step_name: trim_display_name
+      step_type: transformation
+      enabled: true
+      transformation_type: trim
+      transformation_config:
+        config_type: trim
+        # BOTH = trim from both left and right ends
+        mode: both
+
+    # =========================================================================
+    # STEP 4: EMAIL NORMALIZATION (CASE CONVERSION)
+    # =========================================================================
+    # Converts email address to lowercase for consistent matching and storage.
+    #
+    # Step Type: TRANSFORMATION
+    # Transformation Type: CASE_CONVERSION
+    # Input: $.input.email (from original input)
+    # Output: Lowercase email string
+    #
+    # Example:
+    #   Input:  "John.Smith@Example.COM"
+    #   Output: "john.smith@example.com"
+
+    - step_name: normalize_email
+      step_type: transformation
+      enabled: true
+      transformation_type: case_conversion
+      transformation_config:
+        config_type: case_conversion
+        mode: lowercase
+
+    # =========================================================================
+    # STEP 5: PHONE NUMBER CLEANING (REGEX)
+    # =========================================================================
+    # Removes all non-digit characters from phone number for consistent format.
+    #
+    # Step Type: TRANSFORMATION
+    # Transformation Type: REGEX
+    # Input: $.input.phone (from original input)
+    # Output: Digits-only phone string
+    #
+    # Example:
+    #   Input:  "+1 (555) 123-4567"
+    #   Output: "15551234567"
+
+    - step_name: clean_phone_number
+      step_type: transformation
+      enabled: true
+      transformation_type: regex
+      transformation_config:
+        config_type: regex
+        # Pattern matches any non-digit character
+        pattern: "[^0-9]"
+        # Replace with empty string (deletion)
+        replacement: ""
+        # No special flags needed for this pattern
+        flags: []
+
+    # =========================================================================
+    # STEP 6: EXTRACT USER ID FROM METADATA (JSON PATH)
+    # =========================================================================
+    # Extracts nested user ID from metadata using JSONPath expression.
+    #
+    # Step Type: TRANSFORMATION
+    # Transformation Type: JSON_PATH
+    # Input: $.input (entire input object)
+    # Output: Extracted user_id value
+    #
+    # Example:
+    #   Input:  {"metadata": {"ids": {"user_id": "usr_12345"}}}
+    #   Output: "usr_12345"
+
+    - step_name: extract_user_id
+      step_type: transformation
+      enabled: true
+      transformation_type: json_path
+      transformation_config:
+        config_type: json_path
+        # JSONPath expression to extract nested user_id
+        path: "$.metadata.ids.user_id"
+
+    # =========================================================================
+    # STEP 7: IDENTITY TRANSFORMATION (PASSTHROUGH)
+    # =========================================================================
+    # Demonstrates the IDENTITY transformation - passes data through unchanged.
+    # Useful for conditional pipelines or placeholder steps.
+    #
+    # Step Type: TRANSFORMATION
+    # Transformation Type: IDENTITY
+    # Note: IDENTITY transformations must NOT have transformation_config
+    #
+    # Example:
+    #   Input:  "any value"
+    #   Output: "any value" (unchanged)
+
+    - step_name: passthrough_bio
+      step_type: transformation
+      enabled: true
+      transformation_type: identity
+      # Note: No transformation_config for IDENTITY - it would cause validation error!
+
+    # =========================================================================
+    # STEP 8: OUTPUT MAPPING
+    # =========================================================================
+    # Maps all processed fields to the final output structure.
+    # This is a MAPPING step type - it requires mapping_config.
+    #
+    # Step Type: MAPPING
+    # Purpose: Combine results from multiple steps into final output
+    #
+    # Path Resolution:
+    #   - $.input           - Original pipeline input
+    #   - $.input.<field>   - Specific field from original input
+    #   - $.steps.<name>.output - Output from a named step
+
+    - step_name: build_output
+      step_type: mapping
+      enabled: true
+      mapping_config:
+        config_type: mapping
+        field_mappings:
+          # From previous transformation steps
+          display_name: "$.steps.trim_display_name.output"
+          email: "$.steps.normalize_email.output"
+          phone: "$.steps.clean_phone_number.output"
+          user_id: "$.steps.extract_user_id.output"
+          bio: "$.steps.passthrough_bio.output"
+
+          # Direct from input (unchanged fields)
+          created_at: "$.input.created_at"
+          preferences: "$.input.preferences"
+
+          # Nested field access from input
+          country_code: "$.input.address.country_code"
+
+    # =========================================================================
+    # STEP 9: OUTPUT VALIDATION
+    # =========================================================================
+    # Validates the final mapped output against the output schema.
+    # This ensures the pipeline produces valid, well-formed output.
+    #
+    # Step Type: VALIDATION
+    # Purpose: Verify output meets downstream system requirements
+
+    - step_name: validate_output
+      step_type: validation
+      enabled: true
+      validation_config:
+        config_type: validation
+        schema_ref: "schemas/user_profile_normalized.json"
+        fail_on_error: true
+
+# ---------------------------------------------------------------------------
+# EXAMPLE INPUT/OUTPUT
+# ---------------------------------------------------------------------------
+# This section shows what input the pipeline expects and what output it produces.
+# Not part of the contract schema - just documentation.
+
+# Example Input:
+# {
+#   "display_name": "  Jose\u0301 Smith  ",
+#   "email": "Jose.Smith@EXAMPLE.COM",
+#   "phone": "+1 (555) 123-4567",
+#   "bio": "Software developer and coffee enthusiast.",
+#   "created_at": "2024-01-15T10:30:00Z",
+#   "preferences": {"theme": "dark", "notifications": true},
+#   "address": {"country_code": "US", "postal_code": "12345"},
+#   "metadata": {"ids": {"user_id": "usr_12345", "org_id": "org_789"}}
+# }
+
+# Example Output:
+# {
+#   "display_name": "Jos\u00e9 Smith",
+#   "email": "jose.smith@example.com",
+#   "phone": "15551234567",
+#   "user_id": "usr_12345",
+#   "bio": "Software developer and coffee enthusiast.",
+#   "created_at": "2024-01-15T10:30:00Z",
+#   "preferences": {"theme": "dark", "notifications": true},
+#   "country_code": "US"
+# }
+
+# ---------------------------------------------------------------------------
+# USAGE EXAMPLE
+# ---------------------------------------------------------------------------
+# How to use this contract with NodeCompute:
+#
+# from omnibase_core.nodes import NodeCompute
+# from omnibase_core.models import ModelComputeInput
+# import yaml
+#
+# # Load contract
+# with open("user_profile_normalizer.yaml") as f:
+#     contract_data = yaml.safe_load(f)
+#
+# # Create node (contract drives all logic)
+# class NodeUserProfileNormalizerCompute(NodeCompute):
+#     pass
+#
+# node = NodeUserProfileNormalizerCompute(container, contract=contract_data)
+#
+# # Process data
+# input_data = ModelComputeInput(
+#     data={
+#         "display_name": "  Jose\u0301 Smith  ",
+#         "email": "Jose.Smith@EXAMPLE.COM",
+#         "phone": "+1 (555) 123-4567",
+#         "bio": "Software developer.",
+#         "created_at": "2024-01-15T10:30:00Z",
+#         "preferences": {"theme": "dark"},
+#         "address": {"country_code": "US"},
+#         "metadata": {"ids": {"user_id": "usr_12345"}}
+#     }
+# )
+#
+# result = await node.process(input_data)
+# print(result.data)  # Normalized profile data
+
+# ---------------------------------------------------------------------------
+# CONTRACT METADATA
+# ---------------------------------------------------------------------------
+
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: "ONEX Framework Team"
+  description: |
+    Contract-driven compute pipeline for user profile normalization.
+    Demonstrates all v1.0 step types and transformation types.
+  tags:
+    - compute
+    - pipeline
+    - normalization
+    - user-profile
+    - example
+  documentation_url: "https://docs.onex.ai/compute/user-profile-normalizer"

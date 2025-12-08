@@ -109,13 +109,17 @@ class MixinEventHandler:
             event_bus.subscribe(self._handle_introspection_request)
             event_bus.subscribe(self._handle_node_discovery_request)
 
-            node_id = getattr(self, "_node_id", "unknown")
+            node_id = getattr(self, "_node_id", None) or "<unset>"
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_setup_event_handlers",
                 calling_line=67,
                 timestamp=datetime.now().isoformat(),
-                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                node_id=(
+                    UUID(node_id)
+                    if isinstance(node_id, str) and node_id != "<unset>"
+                    else None
+                ),
             )
             emit_log_event_sync(
                 LogLevel.DEBUG,
@@ -203,13 +207,17 @@ class MixinEventHandler:
                 )
 
             # Emit response event (simplified - would need full implementation)
-            node_id = getattr(self, "_node_id", "unknown")
+            node_id = getattr(self, "_node_id", None) or "<unset>"
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_introspection_request",
                 calling_line=124,
                 timestamp=datetime.now().isoformat(),
-                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                node_id=(
+                    UUID(node_id)
+                    if isinstance(node_id, str) and node_id != "<unset>"
+                    else None
+                ),
             )
             emit_log_event_sync(
                 LogLevel.DEBUG,
@@ -218,13 +226,17 @@ class MixinEventHandler:
             )
 
         except Exception as e:
-            node_id = getattr(self, "_node_id", "unknown")
+            node_id = getattr(self, "_node_id", None) or "<unset>"
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_introspection_request",
                 calling_line=137,
                 timestamp=datetime.now().isoformat(),
-                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                node_id=(
+                    UUID(node_id)
+                    if isinstance(node_id, str) and node_id != "<unset>"
+                    else None
+                ),
             )
             emit_log_event_sync(
                 LogLevel.ERROR,
@@ -273,13 +285,17 @@ class MixinEventHandler:
 
         try:
             # Respond with basic node information
-            node_id = getattr(self, "_node_id", "unknown")
+            node_id = getattr(self, "_node_id", None) or "<unset>"
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_node_discovery_request",
                 calling_line=170,
                 timestamp=datetime.now().isoformat(),
-                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                node_id=(
+                    UUID(node_id)
+                    if isinstance(node_id, str) and node_id != "<unset>"
+                    else None
+                ),
             )
             emit_log_event_sync(
                 LogLevel.DEBUG,
@@ -288,13 +304,17 @@ class MixinEventHandler:
             )
 
         except Exception as e:
-            node_id = getattr(self, "_node_id", "unknown")
+            node_id = getattr(self, "_node_id", None) or "<unset>"
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_node_discovery_request",
                 calling_line=183,
                 timestamp=datetime.now().isoformat(),
-                node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                node_id=(
+                    UUID(node_id)
+                    if isinstance(node_id, str) and node_id != "<unset>"
+                    else None
+                ),
             )
             emit_log_event_sync(
                 LogLevel.ERROR,
@@ -320,8 +340,8 @@ class MixinEventHandler:
             # Check node ID filter
             target_node_id = getattr(event.metadata, "target_node_id", None)
             if target_node_id:
-                node_id = getattr(self, "_node_id", "unknown")
-                return fnmatch.fnmatch(node_id, target_node_id)
+                node_id = getattr(self, "_node_id", None) or "<unset>"
+                return fnmatch.fnmatch(str(node_id), target_node_id)
 
             # Check node name filter
             target_node_name = getattr(event.metadata, "target_node_name", None)
@@ -367,13 +387,17 @@ class MixinEventHandler:
                 event_bus.unsubscribe(self._handle_introspection_request)
                 event_bus.unsubscribe(self._handle_node_discovery_request)
 
-                node_id = getattr(self, "_node_id", "unknown")
+                node_id = getattr(self, "_node_id", None) or "<unset>"
                 context = ModelLogContext(
                     calling_module=_COMPONENT_NAME,
                     calling_function="cleanup_event_handlers",
                     calling_line=248,
                     timestamp=datetime.now().isoformat(),
-                    node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                    node_id=(
+                        UUID(node_id)
+                        if isinstance(node_id, str) and node_id != "<unset>"
+                        else None
+                    ),
                 )
                 emit_log_event_sync(
                     LogLevel.DEBUG,
@@ -381,13 +405,17 @@ class MixinEventHandler:
                     context=context,
                 )
             except Exception as e:
-                node_id = getattr(self, "_node_id", "unknown")
+                node_id = getattr(self, "_node_id", None) or "<unset>"
                 context = ModelLogContext(
                     calling_module=_COMPONENT_NAME,
                     calling_function="cleanup_event_handlers",
                     calling_line=261,
                     timestamp=datetime.now().isoformat(),
-                    node_id=UUID(node_id) if isinstance(node_id, str) else node_id,
+                    node_id=(
+                        UUID(node_id)
+                        if isinstance(node_id, str) and node_id != "<unset>"
+                        else None
+                    ),
                 )
                 emit_log_event_sync(
                     LogLevel.WARNING,

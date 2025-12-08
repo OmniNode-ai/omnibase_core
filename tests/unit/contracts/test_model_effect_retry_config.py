@@ -214,10 +214,10 @@ class TestModelEffectRetryConfigValidation:
         config = ModelEffectRetryConfig(circuit_breaker_threshold=1)
         assert config.circuit_breaker_threshold == 1
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelEffectRetryConfig(circuit_breaker_threshold=0)
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelEffectRetryConfig(circuit_breaker_threshold=-1)
 
     def test_circuit_breaker_timeout_s_minimum_value(self):
@@ -225,10 +225,10 @@ class TestModelEffectRetryConfigValidation:
         config = ModelEffectRetryConfig(circuit_breaker_timeout_s=1)
         assert config.circuit_breaker_timeout_s == 1
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelEffectRetryConfig(circuit_breaker_timeout_s=0)
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelEffectRetryConfig(circuit_breaker_timeout_s=-1)
 
 
@@ -404,7 +404,7 @@ class TestModelEffectRetryConfigModelConfig:
         assert config.max_attempts == 5
 
         # Invalid assignment should fail
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             config.max_attempts = 0
 
 

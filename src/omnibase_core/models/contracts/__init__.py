@@ -1,11 +1,11 @@
-from omnibase_core.models.core.model_workflow import ModelWorkflow
-
 """
 Contract Models
 
 Models for validating various contract formats and subcontract compositions.
 """
 
+from omnibase_core.mixins.mixin_node_type_validator import MixinNodeTypeValidator
+from omnibase_core.models.core.model_workflow import ModelWorkflow
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from omnibase_core.models.service.model_external_service_config import (
@@ -13,7 +13,6 @@ from omnibase_core.models.service.model_external_service_config import (
 )
 
 from . import subcontracts
-from .mixin_node_type_validator import MixinNodeTypeValidator
 from .model_action_emission_config import ModelActionEmissionConfig
 from .model_algorithm_config import ModelAlgorithmConfig
 from .model_algorithm_factor_config import ModelAlgorithmFactorConfig
@@ -28,6 +27,7 @@ from .model_contract_compute import ModelContractCompute
 from .model_contract_effect import ModelContractEffect
 from .model_contract_orchestrator import ModelContractOrchestrator
 from .model_contract_reducer import ModelContractReducer
+from .model_contract_version import ModelContractVersion
 from .model_dependency import ModelDependency
 from .model_effect_retry_config import ModelEffectRetryConfig
 from .model_event_coordination_config import ModelEventCoordinationConfig
@@ -57,6 +57,7 @@ __all__ = [
     "MixinNodeTypeValidator",
     # Foundation models
     "ModelContractBase",
+    "ModelContractVersion",
     "ModelDependency",
     # Primary contract models
     "ModelContractCompute",

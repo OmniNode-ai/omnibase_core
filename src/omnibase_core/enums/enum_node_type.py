@@ -217,16 +217,11 @@ class EnumNodeType(str, Enum):
         try:
             result = _KIND_MAP[node_type]
         except KeyError as e:
-            from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-            from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-            raise ModelOnexError(
-                message=f"No kind mapping for node type '{node_type}'",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                context={
-                    "node_type": str(node_type),
-                    "available_types": [str(k) for k in _KIND_MAP],
-                },
+            # Use ValueError instead of ModelOnexError to avoid enum->model import
+            # (architectural violation: enums must not import models)
+            raise ValueError(
+                f"No kind mapping for node type '{node_type}'. "
+                f"Available types: {[str(k) for k in _KIND_MAP]}"
             ) from e
         else:
             return result

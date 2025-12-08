@@ -18,7 +18,7 @@
 
 ## 📚 Documentation Structure
 
-```
+```text
 omnibase_core/docs/
 │
 ├── Getting Started          → New developer onboarding

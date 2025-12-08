@@ -1,7 +1,7 @@
 """Tests for ModelHealthCheck."""
 
 import pytest
-from pydantic import HttpUrl
+from pydantic import HttpUrl, ValidationError
 
 from omnibase_core.enums.enum_health_check_type import EnumHealthCheckType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -161,13 +161,13 @@ class TestModelHealthCheckValidation:
         )
 
         # Invalid status codes
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelHealthCheck(
                 check_type=EnumHealthCheckType.HTTP_GET,
                 endpoint_path="/health",
                 expected_status_code=99,
             )
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelHealthCheck(
                 check_type=EnumHealthCheckType.HTTP_GET,
                 endpoint_path="/health",
@@ -189,13 +189,13 @@ class TestModelHealthCheckValidation:
         )
 
         # Invalid timeouts
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelHealthCheck(
                 check_type=EnumHealthCheckType.HTTP_GET,
                 endpoint_path="/health",
                 timeout_seconds=0,
             )
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelHealthCheck(
                 check_type=EnumHealthCheckType.HTTP_GET,
                 endpoint_path="/health",

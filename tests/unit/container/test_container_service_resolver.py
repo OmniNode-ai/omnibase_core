@@ -23,6 +23,7 @@ from omnibase_core.errors import EnumCoreErrorCode, OnexError
 from omnibase_core.models.container.model_service import ModelService
 
 
+@pytest.mark.unit
 class TestRegistryMapBuilding:
     """Test registry map construction from container."""
 
@@ -119,6 +120,7 @@ class TestRegistryMapBuilding:
             assert callable(service_method), f"Service {service_name} not callable"
 
 
+@pytest.mark.unit
 class TestServiceResolution:
     """Test service resolution logic."""
 
@@ -199,6 +201,7 @@ class TestServiceResolution:
         assert service.protocol_name == "ProtocolEventBus"
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Test error handling in service resolution."""
 
@@ -245,6 +248,7 @@ class TestErrorHandling:
         assert exc_info.value.error_code == EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED
 
 
+@pytest.mark.unit
 class TestMethodBinding:
     """Test bind_get_service_method functionality."""
 
@@ -281,6 +285,7 @@ class TestMethodBinding:
         assert container.get_service.__self__ is container
 
 
+@pytest.mark.unit
 class TestServiceResolutionEdgeCases:
     """Test edge cases in service resolution."""
 
@@ -327,6 +332,7 @@ class TestServiceResolutionEdgeCases:
         assert len({svc.service_name for svc in services}) == 3
 
 
+@pytest.mark.unit
 class TestProtocolTypeHandling:
     """Test protocol type handling variations."""
 

@@ -6,7 +6,7 @@ and enforces the factory protocol.
 """
 
 import pytest
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from omnibase_core.models.base.model_factory import ModelBaseFactory
 
@@ -229,7 +229,7 @@ class TestFactoryCreationPatterns:
     def test_create_with_validation_error(self):
         """Test that create raises validation error for invalid data."""
         factory = ConcreteProductFactory()
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             factory.create(name="Test", price="invalid_price")  # type: ignore[arg-type]
 
     def test_factory_state_independence(self):

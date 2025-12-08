@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 from omnibase_core.models.health.model_health_metric import ModelHealthMetric
@@ -70,7 +71,7 @@ class TestModelHealthStatusValidation:
         ModelHealthStatus(status="unknown", health_score=0.0)
 
         # Invalid status
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelHealthStatus(status="invalid_status", health_score=1.0)
 
     def test_health_score_range_validation(self):
@@ -81,9 +82,9 @@ class TestModelHealthStatusValidation:
         ModelHealthStatus(status="healthy", health_score=1.0)
 
         # Invalid scores
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelHealthStatus(status="healthy", health_score=-0.1)
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelHealthStatus(status="healthy", health_score=1.1)
 
     def test_check_duration_validation(self):
@@ -93,7 +94,7 @@ class TestModelHealthStatusValidation:
         ModelHealthStatus(status="healthy", health_score=1.0, check_duration_ms=1000)
 
         # Invalid durations
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelHealthStatus(status="healthy", health_score=1.0, check_duration_ms=-1)
 
     def test_uptime_validation(self):
@@ -103,7 +104,7 @@ class TestModelHealthStatusValidation:
         ModelHealthStatus(status="healthy", health_score=1.0, uptime_seconds=3600)
 
         # Invalid uptimes
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelHealthStatus(status="healthy", health_score=1.0, uptime_seconds=-1)
 
 
