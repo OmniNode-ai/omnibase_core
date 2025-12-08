@@ -11,7 +11,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_detection_type import EnumDetectionType
 from omnibase_core.enums.enum_language_code import EnumLanguageCode
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 from omnibase_core.models.security.model_detection_pattern import ModelDetectionPattern
 
 
@@ -23,7 +26,7 @@ class ModelDetectionRuleSet(BaseModel):
     ruleset_id: UUID = Field(description="Unique identifier for this ruleset")
     ruleset_name: str = Field(description="Human-readable name for this ruleset")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of this ruleset",
     )
     patterns: list[ModelDetectionPattern] = Field(

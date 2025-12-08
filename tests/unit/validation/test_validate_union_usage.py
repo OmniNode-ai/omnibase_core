@@ -480,8 +480,8 @@ class MyModel(BaseModel):
         assert result["pattern_type"] == "primitive_soup"
 
 
-class TestCompanionLiteralDiscriminatorDetection:
-    """Test edge cases for companion literal discriminator detection.
+class TestValidatorCompanionLiteralFalsePositives:
+    """Test false positive prevention for companion literal discriminator detection.
 
     These tests focus on the detection logic that identifies Literal fields
     as discriminators for Union types, including false positive prevention

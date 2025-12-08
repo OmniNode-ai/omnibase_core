@@ -98,7 +98,7 @@ class ModelEventDescriptor(BaseModel):
         auto_provisioning_config: Optional auto-provisioning configuration
         trust_level: Trust level for service (default: "medium")
         validation_required: Whether event requires validation (default: True)
-        event_schema_version: EventDescriptor schema version (default: "1.0.0")
+        event_schema_version: EventDescriptor schema version (required, structured format)
     """
 
     # Core Event Identity

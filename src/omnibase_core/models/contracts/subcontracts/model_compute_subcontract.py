@@ -25,9 +25,9 @@ Example YAML Contract:
     .. code-block:: yaml
 
         compute_operations:
-          version: "1.0.0"
+          version: {major: 1, minor: 0, patch: 0}
           operation_name: "text_normalizer"
-          operation_version: "1.0.0"
+          operation_version: {major: 1, minor: 0, patch: 0}
           description: "Normalize text input to uppercase trimmed format"
           input_schema_ref: "schemas/text_input.json"
           output_schema_ref: "schemas/text_output.json"
@@ -48,10 +48,11 @@ Example Python Usage:
     >>> from omnibase_core.models.contracts.subcontracts import ModelComputeSubcontract
     >>> from omnibase_core.models.contracts.subcontracts import ModelComputePipelineStep
     >>> from omnibase_core.enums import EnumComputeStepType, EnumTransformationType
+    >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
     >>>
     >>> contract = ModelComputeSubcontract(
     ...     operation_name="text_normalizer",
-    ...     operation_version="1.0.0",
+    ...     operation_version=ModelSemVer(major=1, minor=0, patch=0),
     ...     description="Normalize text to uppercase",
     ...     pipeline=[...],  # List of ModelComputePipelineStep
     ... )
@@ -68,7 +69,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step import (
     ModelComputePipelineStep,
 )
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelComputeSubcontract(BaseModel):
@@ -95,7 +99,7 @@ class ModelComputeSubcontract(BaseModel):
 
     Attributes:
         version: Semantic version of the subcontract schema format. Defaults to
-            "1.0.0". Used for contract parser compatibility checking.
+            ModelSemVer(major=1, minor=0, patch=0). Used for contract parser compatibility checking.
         operation_name: Unique name identifying this compute operation. Should be
             descriptive and follow naming conventions (e.g., "text_normalizer",
             "user_data_validator").
@@ -130,7 +134,7 @@ class ModelComputeSubcontract(BaseModel):
 
     # Identity
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Semantic version of the subcontract schema format",
     )
     operation_name: str

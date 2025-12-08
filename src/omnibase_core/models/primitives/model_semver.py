@@ -115,7 +115,11 @@ class ModelSemVer(BaseModel):
         return self == other or self > other
 
     def __hash__(self) -> int:
-        """Hash function for use in sets and as dict keys."""
+        """Return hash value for use in sets and as dict keys.
+
+        Returns:
+            int: Hash computed from (major, minor, patch) version tuple.
+        """
         return hash((self.major, self.minor, self.patch))
 
     @classmethod

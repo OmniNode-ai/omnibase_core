@@ -1,29 +1,16 @@
-from __future__ import annotations
-
-import math
-from typing import Any, Literal, Union, cast
-
-from pydantic import BaseModel, Field, model_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-"""
-ModelDictValueUnion
-
-Type-safe wrapper for dict-containing union patterns.
+"""ModelDictValueUnion - Type-safe wrapper for dict-containing union patterns.
 
 This model provides automatic type inference and validation for union types,
 replacing bare Union[bool, dict, float, int, list, str] patterns with structured
 type safety optimized for extension and plugin systems.
 
 Features:
-- Automatic type inference from value
-- Type consistency validation
-- Support for nested collections (dict[str, Any], list[Any])
-- Dict-specific helper methods (has_key, get_dict_value)
-- Comprehensive validation with detailed error messages
-- Full mypy strict mode compliance
+    - Automatic type inference from value
+    - Type consistency validation
+    - Support for nested collections (dict[str, Any], list[Any])
+    - Dict-specific helper methods (has_key, get_dict_value)
+    - Comprehensive validation with detailed error messages
+    - Full mypy strict mode compliance
 
 Usage Examples:
     # Automatic type inference
@@ -40,21 +27,31 @@ Usage Examples:
     >>> assert value.value_type == "int"
 
 Security Features:
-- Maximum list size limit to prevent DoS attacks
-- Maximum dict size limit to prevent DoS attacks
-- String key validation for dict values
-- NaN and infinity detection for float values
-- Nested dict validation
+    - Maximum list size limit to prevent DoS attacks
+    - Maximum dict size limit to prevent DoS attacks
+    - String key validation for dict values
+    - NaN and infinity detection for float values
+    - Nested dict validation
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
 ===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):
-- Standard library modules only
-- omnibase_core.errors modules
-- pydantic modules
+    - Standard library modules only
+    - omnibase_core.errors modules
+    - pydantic modules
 """
+
+from __future__ import annotations
+
+import math
+from typing import Any, Literal, Union, cast
+
+from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelDictValueUnion(BaseModel):

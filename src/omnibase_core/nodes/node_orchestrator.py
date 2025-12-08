@@ -63,7 +63,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
               workflow_definition:
                 workflow_metadata:
                   workflow_name: data_processing_pipeline
-                  workflow_version: "1.0.0"
+                  workflow_version: {major: 1, minor: 0, patch: 0}
                   execution_mode: parallel
                   description: "Multi-stage data processing workflow"
 

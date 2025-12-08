@@ -155,6 +155,11 @@ repos:
       # Catches: ModelSemVer.parse(), string literals, flat YAML versions
       # Allows: Docstrings, regex patterns (r"..."), test fixtures, log messages
       # See: docs/ANTI_PATTERNS.md#string-version-literals
+      #
+      # PROTOCOL EXCLUSION: protocols/ is excluded because Protocol types define
+      # interfaces (structural typing), not concrete implementations. They may
+      # reference version formats in docstrings/type hints for documentation.
+      # See: scripts/validation/validate-union-usage.py module docstring for rationale.
       - id: validate-string-versions
         name: ONEX String Version Anti-Pattern Detection
         entry: poetry run python scripts/validation/validate-string-versions.py
@@ -267,6 +272,10 @@ repos:
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
 
+      # PROTOCOL EXCLUSION: protocols/ is excluded because Protocol files define
+      # multiple related interfaces in single files (e.g., ProtocolIdentifiable,
+      # ProtocolNameable together). This is idiomatic for interface definitions.
+      # See: scripts/validation/validate-union-usage.py module docstring for rationale.
       - id: onex-single-class-per-file
         name: ONEX Single Class Per File
         entry: poetry run python scripts/validation/validate-single-class-per-file.py
