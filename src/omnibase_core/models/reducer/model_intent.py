@@ -15,8 +15,8 @@ Design Pattern:
     Reducer function: delta(state, action) -> (new_state, intents[])
 
 Thread Safety:
-    ModelIntent is immutable after creation (Pydantic model with frozen=False
-    but should be treated as immutable). Thread-safe for concurrent read access.
+    ModelIntent is immutable (frozen=True) after creation, making it
+    thread-safe for concurrent read access from multiple threads or async tasks.
 
 Key Features:
     - Type-safe intent declaration with payload
@@ -60,7 +60,7 @@ See Also:
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelIntent(BaseModel):
@@ -122,8 +122,9 @@ class ModelIntent(BaseModel):
         ge=0,
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        use_enum_values=False,
+        validate_assignment=True,
+    )

@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
@@ -23,12 +23,16 @@ class ModelAction(BaseModel):
     Represents an Action emitted by the Orchestrator to Compute/Reducer nodes
     with single-writer semantics enforced via lease_id and epoch.
 
+    This model is immutable (frozen=True) for thread safety. Once created,
+    instances cannot be modified. Use model_copy() to create modified copies.
+
     Converted from NamedTuple to Pydantic BaseModel for:
     - Runtime validation
     - Better type safety
     - Serialization support
     - Default value handling
     - Lease validation
+    - Thread safety via immutability
     """
 
     action_id: UUID = Field(
@@ -101,8 +105,9 @@ class ModelAction(BaseModel):
         description="Timestamp when action was created",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        use_enum_values=False,
+        validate_assignment=True,
+    )

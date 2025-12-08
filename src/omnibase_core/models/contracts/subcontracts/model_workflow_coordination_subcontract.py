@@ -23,7 +23,7 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 
 from typing import ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -128,8 +128,9 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
         description="Whether to use exponential backoff for retries",
     )
 
-    model_config = {
-        "extra": "ignore",  # Allow extra fields from YAML contracts
-        "use_enum_values": False,  # Keep enum objects, don't convert to strings
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,
+    )
