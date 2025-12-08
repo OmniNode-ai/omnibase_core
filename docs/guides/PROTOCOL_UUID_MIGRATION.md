@@ -3,7 +3,7 @@
 > **Version**: 0.4.0
 > **Last Updated**: 2025-12-08
 > **Breaking Change**: Yes
-> **Related**: [CLAUDE.md](../../CLAUDE.md), [Container Protocols](../../src/omnibase_core/protocols/container.py)
+> **Related**: [CLAUDE.md](../../CLAUDE.md), [Container Protocols](../../src/omnibase_core/protocols/container/)
 
 ---
 
@@ -991,8 +991,8 @@ output_without_uuid = block.model_dump(exclude={"uuid"})
 ## Support
 
 - **Questions**: See [CLAUDE.md](../../CLAUDE.md) for quick reference
-- **Protocol Documentation**: See [Container Protocols](../../src/omnibase_core/protocols/container.py)
-- **Type Protocols**: See [Type Protocols](../../src/omnibase_core/protocols/types.py)
+- **Protocol Documentation**: See [Container Protocols](../../src/omnibase_core/protocols/container/)
+- **Type Protocols**: See [Type Protocols](../../src/omnibase_core/protocols/types/)
 
 ---
 

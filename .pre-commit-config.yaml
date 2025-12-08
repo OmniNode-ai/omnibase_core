@@ -370,8 +370,29 @@ repos:
           - no:rerunfailures
         stages: [pre-commit]
 
+      # Protocol UUID Enforcement (pre-push only)
+      # Verifies protocol type annotations use UUID instead of str
+      # Catches issues like OMN-536/OMN-542 before CI
+      # ~6s runtime - acceptable for pre-push but too slow for every commit
+      - id: pytest-protocol-uuid-enforcement
+        name: Protocol UUID Enforcement Check
+        entry: poetry run pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        args:
+          - tests/unit/protocols/test_protocol_uuid_enforcement.py
+          - --maxfail=3
+          - -x
+          - --tb=short
+          - -q
+          - --timeout=30
+          - -p
+          - no:rerunfailures
+        stages: [pre-push]
+
 # Configuration
-default_install_hook_types: [pre-commit]
+default_install_hook_types: [pre-commit, pre-push]
 default_stages: [pre-commit]
 fail_fast: false
 # Note: minimum_pre_commit_version removed to avoid string version anti-pattern
