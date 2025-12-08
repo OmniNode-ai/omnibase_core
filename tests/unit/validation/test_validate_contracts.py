@@ -616,11 +616,33 @@ class TestExampleContractsValidation:
     """Regression tests for example contracts in the repository."""
 
     def test_example_contracts_validate(self):
-        """Ensure all example contracts pass validation.
+        """Validate all example contracts against the ONEX contract schema.
 
-        This is a regression test to prevent future contract validation failures.
-        If this test fails, it means example contracts have invalid node_type values,
-        missing required fields (contract_version, node_type), or other schema violations.
+        This test ensures that every YAML contract file in the examples/contracts
+        directory passes full schema validation, including node_type enum validation,
+        required field presence, and structural correctness.
+
+        Purpose:
+            Validates that example contracts serve as correct reference implementations
+            for developers building new ONEX nodes. Example contracts are often copied
+            as starting templates, so they must be valid.
+
+        Importance (Regression Prevention):
+            This test was added after OMN-539 discovered that example contracts had
+            drifted out of compliance with the contract schema. Without this test,
+            invalid examples could silently exist in the repository, causing confusion
+            and errors when developers use them as templates.
+
+        What Failure Means:
+            - Invalid node_type: The contract uses an enum value not in EnumNodeType
+            - Missing required fields: contract_version or node_type is absent
+            - Schema violations: The contract structure doesn't match ModelContract
+            - Action required: Fix the failing contract or update the schema if the
+              contract represents a valid new pattern
+
+        Related:
+            - OMN-539: Original issue tracking contract validation failures
+            - test_example_contracts_have_required_fields: Complementary field check
         """
         example_path = (
             Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
@@ -647,7 +669,40 @@ class TestExampleContractsValidation:
         )
 
     def test_example_contracts_have_required_fields(self):
-        """Verify example contracts have contract_version and node_type fields."""
+        """Verify that all example contracts contain mandatory contract_version and node_type fields.
+
+        This test performs a structural check on YAML files to ensure they contain
+        the two fields that are absolutely required for any ONEX contract:
+        contract_version and node_type.
+
+        Purpose:
+            Provides a fast, focused validation that catches the most common contract
+            authoring mistakes before full schema validation. This test uses direct
+            YAML parsing rather than Pydantic validation, making it useful for
+            diagnosing issues when full validation fails.
+
+        Importance (Regression Prevention):
+            Contract authors sometimes forget to include contract_version or node_type,
+            especially when creating contracts from scratch rather than copying
+            templates. This test catches such omissions early in the development
+            cycle, before they cause confusing Pydantic validation errors.
+
+        What Failure Means:
+            - Missing contract_version: The contract needs a version string (e.g., "1.0.0")
+              to track schema compatibility and enable future migrations
+            - Missing node_type: The contract needs a node_type enum value to identify
+              what kind of ONEX node it describes (COMPUTE, EFFECT, REDUCER, etc.)
+            - Action required: Add the missing field to the failing contract file
+
+        Implementation Notes:
+            - Skips empty files and non-mapping YAML (scalars, lists)
+            - Only checks files that appear to be contracts (have contract indicators)
+            - Uses yaml.safe_load for security against malicious YAML
+
+        Related:
+            - test_example_contracts_validate: Full schema validation test
+            - OMN-539: Original issue tracking contract validation failures
+        """
         import yaml
 
         example_path = (

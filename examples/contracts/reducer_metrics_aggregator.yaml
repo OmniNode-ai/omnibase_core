@@ -2,14 +2,8 @@
 node_type: reducer
 contract_version: {major: 1, minor: 0, patch: 0}
 state_transitions:
-  version:
-    major: 1
-    minor: 0
-    patch: 0
-  state_machine_version:
-    major: 1
-    minor: 0
-    patch: 0
+  version: {major: 1, minor: 0, patch: 0}
+  state_machine_version: {major: 1, minor: 0, patch: 0}
   state_machine_name: metrics_aggregation_fsm
   description: Aggregates metrics from multiple data sources with validation
   initial_state: idle
@@ -22,10 +16,7 @@ state_transitions:
       metadata:
         ui_color: '#9CA3AF'
         icon: pause
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+      version: {major: 1, minor: 0, patch: 0}
       state_type: operational
     - state_name: collecting
       description: Collecting metrics from configured data sources
@@ -39,10 +30,7 @@ state_transitions:
       metadata:
         ui_color: '#3B82F6'
         icon: download
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+      version: {major: 1, minor: 0, patch: 0}
       state_type: operational
     - state_name: validating
       description: Validating collected metrics for completeness
@@ -54,10 +42,7 @@ state_transitions:
       metadata:
         ui_color: '#FBBF24'
         icon: check-circle
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+      version: {major: 1, minor: 0, patch: 0}
       state_type: operational
     - state_name: aggregating
       description: Computing aggregate statistics from validated metrics
@@ -71,10 +56,7 @@ state_transitions:
       metadata:
         ui_color: '#8B5CF6'
         icon: calculator
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+      version: {major: 1, minor: 0, patch: 0}
       state_type: operational
     - state_name: completed
       description: Metrics aggregation completed successfully
@@ -86,10 +68,7 @@ state_transitions:
       metadata:
         ui_color: '#10B981'
         icon: check
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+      version: {major: 1, minor: 0, patch: 0}
       state_type: terminal
     - state_name: failed
       description: Metrics aggregation failed
@@ -102,10 +81,7 @@ state_transitions:
       metadata:
         ui_color: '#EF4444'
         icon: x-circle
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+      version: {major: 1, minor: 0, patch: 0}
       state_type: terminal
   transitions:
     - transition_name: start_collection
@@ -118,24 +94,15 @@ state_transitions:
           expression: data_sources min_length 1
           required: true
           description: At least one data source must be configured
-          version:
-            major: 1
-            minor: 0
-            patch: 0
+          version: {major: 1, minor: 0, patch: 0}
           condition_type: data_validation
       actions:
         - action_name: emit_collection_started
           action_type: event
           is_critical: false
           timeout_ms: 1000
-          version:
-            major: 1
-            minor: 0
-            patch: 0
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
     - transition_name: complete_collection
       from_state: collecting
       to_state: validating
@@ -146,24 +113,15 @@ state_transitions:
           expression: collected_metrics min_length 10
           required: true
           description: At least 10 metrics must be collected
-          version:
-            major: 1
-            minor: 0
-            patch: 0
+          version: {major: 1, minor: 0, patch: 0}
           condition_type: data_validation
       actions:
         - action_name: snapshot_collected_metrics
           action_type: data_capture
           is_critical: true
           timeout_ms: 2000
-          version:
-            major: 1
-            minor: 0
-            patch: 0
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
     - transition_name: validation_passed
       from_state: validating
       to_state: aggregating
@@ -175,14 +133,8 @@ state_transitions:
           action_type: status_update
           is_critical: false
           timeout_ms: 500
-          version:
-            major: 1
-            minor: 0
-            patch: 0
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
     - transition_name: validation_failed_retry
       from_state: validating
       to_state: collecting
@@ -193,24 +145,15 @@ state_transitions:
           expression: retry_count less_than 3
           required: true
           description: Maximum 3 retries allowed
-          version:
-            major: 1
-            minor: 0
-            patch: 0
+          version: {major: 1, minor: 0, patch: 0}
           condition_type: data_validation
       actions:
         - action_name: increment_retry_counter
           action_type: counter_update
           is_critical: true
           timeout_ms: 100
-          version:
-            major: 1
-            minor: 0
-            patch: 0
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
     - transition_name: aggregation_complete
       from_state: aggregating
       to_state: completed
@@ -222,22 +165,13 @@ state_transitions:
           action_type: persistence
           is_critical: true
           timeout_ms: 5000
-          version:
-            major: 1
-            minor: 0
-            patch: 0
+          version: {major: 1, minor: 0, patch: 0}
         - action_name: emit_metrics_to_monitoring
           action_type: telemetry
           is_critical: false
           timeout_ms: 2000
-          version:
-            major: 1
-            minor: 0
-            patch: 0
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
     - transition_name: handle_error
       from_state: '*'
       to_state: failed
@@ -249,22 +183,13 @@ state_transitions:
           action_type: logging
           is_critical: true
           timeout_ms: 1000
-          version:
-            major: 1
-            minor: 0
-            patch: 0
+          version: {major: 1, minor: 0, patch: 0}
         - action_name: emit_error_alert
           action_type: alert
           is_critical: false
           timeout_ms: 2000
-          version:
-            major: 1
-            minor: 0
-            patch: 0
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
     - transition_name: handle_timeout
       from_state: '*'
       to_state: failed
@@ -276,14 +201,8 @@ state_transitions:
           action_type: logging
           is_critical: true
           timeout_ms: 1000
-          version:
-            major: 1
-            minor: 0
-            patch: 0
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
   terminal_states:
     - completed
     - failed
@@ -303,16 +222,10 @@ state_transitions:
           from_state: idle
           to_state: collecting
           trigger: undo_reset
-      version:
-        major: 1
-        minor: 0
-        patch: 0
+      version: {major: 1, minor: 0, patch: 0}
       operation_type: administrative
 metadata:
-  version:
-    major: 1
-    minor: 0
-    patch: 0
+  version: {major: 1, minor: 0, patch: 0}
   author: ONEX Framework Team
   description: Declarative metrics aggregation reducer using FSM pattern
   tags:

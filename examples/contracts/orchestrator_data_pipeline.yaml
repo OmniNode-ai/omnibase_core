@@ -5,7 +5,8 @@
 # data processing workflow defined entirely in YAML.
 #
 # Node Implementation (NO custom code needed):
-#   class NodeDataPipelineOrchestrator(NodeOrchestratorDeclarative):
+#   from omnibase_core.nodes import NodeOrchestrator
+#   class NodeDataPipelineOrchestrator(NodeOrchestrator):
 #       pass  # All logic driven by this YAML contract
 #
 # Features Demonstrated:
@@ -229,11 +230,10 @@ workflow_coordination:
 
 # Example Usage:
 #
-# from omnibase_core.nodes.node_orchestrator_declarative import NodeOrchestratorDeclarative
-# from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
+# from omnibase_core.nodes import NodeOrchestrator, ModelOrchestratorInput
 # from uuid import uuid4
 #
-# class NodeDataPipelineOrchestrator(NodeOrchestratorDeclarative):
+# class NodeDataPipelineOrchestrator(NodeOrchestrator):
 #     pass  # No custom code needed!
 #
 # # Create orchestrator
