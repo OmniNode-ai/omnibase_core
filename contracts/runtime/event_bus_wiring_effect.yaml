@@ -54,7 +54,7 @@ effect:
 
   # IO Configuration for event bus handler
   io_config:
-    handler_type: kafka  # Event bus abstraction (inmemory, kafka, etc.)
+    handler_type: "${env.ONEX_EVENT_BUS:inmemory}"  # Event bus type (consistent with wiring_config.event_bus_type)
     topic: "onex.runtime.subscriptions"
     payload_template: |
       {

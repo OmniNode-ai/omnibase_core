@@ -4,7 +4,7 @@ This directory contains YAML contract definitions for ONEX nodes.
 
 ## Directory Structure
 
-```
+```text
 contracts/
 └── runtime/           # Runtime orchestrator contracts (self-hosted ONEX)
     ├── runtime_orchestrator.yaml      # Main orchestrator
