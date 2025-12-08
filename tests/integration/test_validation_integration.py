@@ -115,7 +115,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "User data processing contract"
 """
         (contracts_dir / "user_processor.yaml").write_text(contract_content)
@@ -308,7 +308,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Valid contract"
 """
         (contracts_dir / "valid_contract.yaml").write_text(valid_contract)
@@ -507,7 +507,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Data processor"
 """,
         )
@@ -758,7 +758,7 @@ contract_version:
   major: 1
   minor: 0
   patch: 0
-node_type: "compute"
+node_type: "COMPUTE_GENERIC"
 description: "Feature processing contract"
 
 inputs:
