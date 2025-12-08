@@ -148,6 +148,7 @@ def correlation_id():
 
 
 # Test Classes
+@pytest.mark.unit
 class TestModelServiceEffectInitialization:
     """Test service initialization and setup."""
 
@@ -195,6 +196,7 @@ class TestModelServiceEffectInitialization:
         assert hasattr(service, "record_metric")
 
 
+@pytest.mark.unit
 class TestModelServiceEffectStartup:
     """Test service startup behavior."""
 
@@ -359,6 +361,7 @@ class TestModelServiceEffectStartup:
             await service_effect.stop_service_mode()
 
 
+@pytest.mark.unit
 class TestModelServiceEffectShutdown:
     """Test service shutdown behavior."""
 
@@ -452,6 +455,7 @@ class TestModelServiceEffectShutdown:
         assert service_effect._service_running is False
 
 
+@pytest.mark.unit
 class TestModelServiceEffectEventHandling:
     """Test event subscription and handling."""
 
@@ -537,6 +541,7 @@ class TestModelServiceEffectEventHandling:
         assert service_effect._failed_invocations == 1
 
 
+@pytest.mark.unit
 class TestModelServiceEffectHealthMonitoring:
     """Test health monitoring and reporting."""
 
@@ -582,6 +587,7 @@ class TestModelServiceEffectHealthMonitoring:
         assert health["active_invocations"] == 2
 
 
+@pytest.mark.unit
 class TestModelServiceEffectRestart:
     """Test service restart cycles."""
 
@@ -628,6 +634,7 @@ class TestModelServiceEffectRestart:
                 assert service_effect._total_invocations == (i + 1) * 10
 
 
+@pytest.mark.unit
 class TestModelServiceEffectSignalHandling:
     """Test signal handler registration and behavior."""
 

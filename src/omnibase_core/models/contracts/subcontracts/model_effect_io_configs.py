@@ -18,9 +18,17 @@ ZERO TOLERANCE: No Any types allowed in implementation.
 """
 
 import re
-from typing import Literal
+import warnings
+from typing import Annotated, ClassVar, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Discriminator,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
@@ -101,6 +109,19 @@ class ModelHttpIOConfig(BaseModel):
         description="Whether to verify SSL certificates",
     )
 
+    @field_validator("verify_ssl", mode="after")
+    @classmethod
+    def warn_on_disabled_ssl_verification(cls, value: bool) -> bool:
+        """Emit a security warning when SSL verification is disabled."""
+        if not value:
+            warnings.warn(
+                "verify_ssl=False disables SSL certificate validation. "
+                "This is insecure for production use.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return value
+
     @model_validator(mode="after")
     def validate_body_for_method(self) -> "ModelHttpIOConfig":
         """Require body_template for POST/PUT/PATCH methods."""
@@ -143,6 +164,10 @@ class ModelDbIOConfig(BaseModel):
             query_params=["${input.user_id}", "${input.status}"],
         )
     """
+
+    # Pre-compiled regex patterns for better performance in validators
+    _INPUT_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"\$\{input\.[^}]+\}")
+    _PLACEHOLDER_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"\$(\d+)")
 
     handler_type: Literal[EnumEffectHandlerType.DB] = Field(
         default=EnumEffectHandlerType.DB,
@@ -204,8 +229,7 @@ class ModelDbIOConfig(BaseModel):
         """Prevent SQL injection via ${input.*} patterns in raw queries."""
         if self.operation == "raw":
             # Check for potentially dangerous ${input.*} patterns in query_template
-            input_pattern = re.compile(r"\$\{input\.[^}]+\}")
-            if input_pattern.search(self.query_template):
+            if self._INPUT_PATTERN.search(self.query_template):
                 raise ModelOnexError(
                     message="Raw queries must not contain ${input.*} patterns. "
                     "Use parameterized queries ($1, $2, ...) with query_params instead.",
@@ -222,11 +246,15 @@ class ModelDbIOConfig(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def validate_param_count(self) -> "ModelDbIOConfig":
-        """Validate that query_params count matches $N placeholders in query."""
+    def validate_param_count_and_sequence(self) -> "ModelDbIOConfig":
+        """Validate query_params count and placeholder sequence.
+
+        Ensures:
+        1. query_params count matches the highest $N placeholder
+        2. Placeholders are sequential starting from $1 (no gaps like $1, $3 missing $2)
+        """
         # Find all $N placeholders (where N is a number)
-        placeholder_pattern = re.compile(r"\$(\d+)")
-        matches = placeholder_pattern.findall(self.query_template)
+        matches = self._PLACEHOLDER_PATTERN.findall(self.query_template)
 
         if not matches:
             # No placeholders, params should be empty
@@ -246,10 +274,11 @@ class ModelDbIOConfig(BaseModel):
                 )
             return self
 
-        # Get the highest placeholder number
-        max_placeholder = max(int(n) for n in matches)
+        # Get unique placeholder numbers as integers, sorted
+        placeholder_nums = sorted({int(n) for n in matches})
+        max_placeholder = placeholder_nums[-1]
 
-        # Check params count matches
+        # Check params count matches highest placeholder
         if len(self.query_params) != max_placeholder:
             raise ModelOnexError(
                 message=f"query_params has {len(self.query_params)} items "
@@ -269,6 +298,49 @@ class ModelDbIOConfig(BaseModel):
                 ),
             )
 
+        # Check placeholders are sequential starting from $1 (no gaps)
+        expected_sequence = list(range(1, max_placeholder + 1))
+        if placeholder_nums != expected_sequence:
+            missing = sorted(set(expected_sequence) - set(placeholder_nums))
+            raise ModelOnexError(
+                message=f"Placeholders must be sequential starting from $1. "
+                f"Missing placeholders: ${', $'.join(str(n) for n in missing)}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "placeholder_sequence_validation"
+                        ),
+                        "found_placeholders": ModelSchemaValue.from_value(
+                            placeholder_nums
+                        ),
+                        "missing_placeholders": ModelSchemaValue.from_value(missing),
+                    }
+                ),
+            )
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_read_only_semantics(self) -> "ModelDbIOConfig":
+        """Enforce read_only semantics: only select operations allowed when read_only=True."""
+        if self.read_only and self.operation != "select":
+            raise ModelOnexError(
+                message=f"read_only=True only allows 'select' operation, "
+                f"but got '{self.operation}'",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "read_only_semantics"
+                        ),
+                        "operation": ModelSchemaValue.from_value(self.operation),
+                        "read_only": ModelSchemaValue.from_value(self.read_only),
+                    }
+                ),
+            )
         return self
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -281,12 +353,24 @@ class ModelKafkaIOConfig(BaseModel):
     Provides topic configuration, payload templating, partition key generation,
     and delivery settings for Kafka message production.
 
+    WARNING: Using acks="0" (fire-and-forget) provides no delivery guarantees
+    and messages may be lost silently. This configuration requires explicit
+    opt-in via the acks_zero_acknowledged field.
+
     Example:
         config = ModelKafkaIOConfig(
             topic="user-events",
             payload_template='{"user_id": "${input.user_id}", "action": "${input.action}"}',
             partition_key_template="${input.user_id}",
             acks="all",
+        )
+
+    Example with acks=0 (fire-and-forget, use with caution):
+        config = ModelKafkaIOConfig(
+            topic="metrics",
+            payload_template='{"metric": "${input.name}", "value": ${input.value}}',
+            acks="0",
+            acks_zero_acknowledged=True,  # Required explicit opt-in
         )
     """
 
@@ -326,13 +410,58 @@ class ModelKafkaIOConfig(BaseModel):
 
     acks: Literal["0", "1", "all"] = Field(
         default="all",
-        description="Acknowledgment level: 0=none, 1=leader, all=all replicas",
+        description="Acknowledgment level: 0=none (fire-and-forget, may lose messages), "
+        "1=leader only, all=all replicas (strongest guarantee)",
+    )
+
+    acks_zero_acknowledged: bool = Field(
+        default=False,
+        description="Explicit opt-in for acks=0 (fire-and-forget mode). "
+        "Must be True when using acks='0' to acknowledge the risk of message loss.",
     )
 
     compression: Literal["none", "gzip", "snappy", "lz4", "zstd"] = Field(
         default="none",
         description="Compression codec for message payloads",
     )
+
+    @model_validator(mode="after")
+    def validate_acks_zero_opt_in(self) -> "ModelKafkaIOConfig":
+        """
+        Require explicit opt-in for acks=0 configuration.
+
+        Kafka acks=0 (fire-and-forget) provides no delivery guarantees and messages
+        may be lost silently. This validator ensures users explicitly acknowledge
+        this risk by setting acks_zero_acknowledged=True.
+        """
+        if self.acks == "0":
+            # Always emit a warning when acks=0 is used
+            warnings.warn(
+                "Kafka acks=0 provides no delivery guarantees. Messages may be lost. "
+                "Use acks=1 or acks='all' for better reliability.",
+                UserWarning,
+                stacklevel=2,
+            )
+            # Require explicit opt-in
+            if not self.acks_zero_acknowledged:
+                raise ModelOnexError(
+                    message="Kafka acks=0 requires explicit opt-in. "
+                    "Set acks_zero_acknowledged=True to acknowledge the risk of message loss.",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    details=ModelErrorContext.with_context(
+                        {
+                            "error_type": ModelSchemaValue.from_value("valueerror"),
+                            "validation_context": ModelSchemaValue.from_value(
+                                "acks_zero_opt_in"
+                            ),
+                            "acks": ModelSchemaValue.from_value(self.acks),
+                            "acks_zero_acknowledged": ModelSchemaValue.from_value(
+                                self.acks_zero_acknowledged
+                            ),
+                        }
+                    ),
+                )
+        return self
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -399,16 +528,27 @@ class ModelFilesystemIOConfig(BaseModel):
     @model_validator(mode="after")
     def validate_atomic_for_operation(self) -> "ModelFilesystemIOConfig":
         """
-        Validate atomic setting is only applicable to write/move operations.
+        Validate atomic setting is only applicable to write operations.
 
-        Note: This validator does not raise an error for invalid combinations
-        since setting atomic=True for read/delete/copy operations is harmless
-        (the setting is simply ignored). The validator exists as documentation
-        and for potential future enforcement.
+        Atomic operations (write to temp file, then rename) only make sense for
+        write operations. Enabling atomic=True for read/delete/move/copy operations
+        is a configuration error and will raise a validation error.
         """
-        # atomic_operations = {"write", "move"}
-        # For now, we allow atomic=True on any operation but it only has effect
-        # on write and move operations. This provides forward compatibility.
+        if self.atomic and self.operation != "write":
+            raise ModelOnexError(
+                message=f"atomic=True is only valid for 'write' operations, "
+                f"not '{self.operation}'",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "atomic_operation_validation"
+                        ),
+                        "operation": ModelSchemaValue.from_value(self.operation),
+                    }
+                ),
+            )
         return self
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -416,6 +556,7 @@ class ModelFilesystemIOConfig(BaseModel):
 
 # Discriminated union type for all IO configurations
 # Pydantic uses handler_type as the discriminator to select the correct model
-EffectIOConfig = (
-    ModelHttpIOConfig | ModelDbIOConfig | ModelKafkaIOConfig | ModelFilesystemIOConfig
-)
+EffectIOConfig = Annotated[
+    ModelHttpIOConfig | ModelDbIOConfig | ModelKafkaIOConfig | ModelFilesystemIOConfig,
+    Discriminator("handler_type"),
+]

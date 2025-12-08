@@ -11,6 +11,7 @@ import pytest
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 
 
+@pytest.mark.unit
 class TestEnumEffectHandlerType:
     """Test cases for EnumEffectHandlerType enum."""
 
@@ -112,6 +113,7 @@ class TestEnumEffectHandlerType:
         assert values1 is not values2  # Different list objects
 
 
+@pytest.mark.unit
 class TestEnumEffectHandlerTypePydanticIntegration:
     """Test Pydantic serialization compatibility."""
 
@@ -157,6 +159,7 @@ class TestEnumEffectHandlerTypePydanticIntegration:
         assert restored.handler_type == EnumEffectHandlerType.FILESYSTEM
 
 
+@pytest.mark.unit
 class TestEnumEffectHandlerTypeExport:
     """Test enum is properly exported from omnibase_core.enums."""
 

@@ -5,6 +5,8 @@ Tests discriminated union behavior, validators, frozen model behavior,
 and extra="forbid" configuration for all IO config models.
 """
 
+import warnings
+
 import pytest
 from pydantic import ValidationError
 
@@ -19,6 +21,7 @@ from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelHttpIOConfig:
     """Tests for ModelHttpIOConfig model."""
 
@@ -141,7 +144,42 @@ class TestModelHttpIOConfig:
             )
         assert "unknown_field" in str(exc_info.value)
 
+    def test_verify_ssl_false_emits_security_warning(self) -> None:
+        """Test that verify_ssl=False emits a SecurityWarning."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            config = ModelHttpIOConfig(
+                url_template="https://api.example.com",
+                method="GET",
+                verify_ssl=False,
+            )
+            assert config.verify_ssl is False
+            # Check that a SecurityWarning was emitted
+            assert len(w) == 1
+            assert issubclass(w[0].category, UserWarning)
+            assert "verify_ssl=False disables SSL certificate validation" in str(
+                w[0].message
+            )
+            assert "insecure for production use" in str(w[0].message)
 
+    def test_verify_ssl_true_no_warning(self) -> None:
+        """Test that verify_ssl=True (default) does not emit a warning."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            config = ModelHttpIOConfig(
+                url_template="https://api.example.com",
+                method="GET",
+                verify_ssl=True,
+            )
+            assert config.verify_ssl is True
+            # No warnings should be emitted
+            security_warnings = [
+                warning for warning in w if issubclass(warning.category, UserWarning)
+            ]
+            assert len(security_warnings) == 0
+
+
+@pytest.mark.unit
 class TestModelDbIOConfig:
     """Tests for ModelDbIOConfig model."""
 
@@ -281,7 +319,156 @@ class TestModelDbIOConfig:
             )
         assert "unknown_field" in str(exc_info.value)
 
+    def test_sequential_placeholders_valid(self) -> None:
+        """Test that sequential placeholders $1, $2, $3 are valid."""
+        config = ModelDbIOConfig(
+            operation="select",
+            connection_name="db",
+            query_template="SELECT * FROM users WHERE id = $1 AND status = $2 AND role = $3",
+            query_params=["${input.id}", "${input.status}", "${input.role}"],
+        )
+        assert len(config.query_params) == 3
 
+    def test_non_sequential_placeholders_error_missing_middle(self) -> None:
+        """Test error when placeholders skip numbers (e.g., $1, $3 missing $2)."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelDbIOConfig(
+                operation="select",
+                connection_name="db",
+                query_template="SELECT * FROM users WHERE id = $1 AND role = $3",
+                query_params=["${input.id}", "${input.status}", "${input.role}"],
+            )
+        assert "Placeholders must be sequential" in str(exc_info.value)
+        assert "$2" in str(exc_info.value)
+
+    def test_non_sequential_placeholders_error_missing_first(self) -> None:
+        """Test error when placeholders start from $2 (missing $1)."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelDbIOConfig(
+                operation="select",
+                connection_name="db",
+                query_template="SELECT * FROM users WHERE status = $2",
+                query_params=["${input.id}", "${input.status}"],
+            )
+        assert "Placeholders must be sequential" in str(exc_info.value)
+        assert "$1" in str(exc_info.value)
+
+    def test_non_sequential_placeholders_error_large_gap(self) -> None:
+        """Test error when placeholders have large gap (e.g., $1, $5)."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelDbIOConfig(
+                operation="select",
+                connection_name="db",
+                query_template="SELECT * FROM users WHERE id = $1 AND role = $5",
+                query_params=["a", "b", "c", "d", "e"],
+            )
+        assert "Placeholders must be sequential" in str(exc_info.value)
+        # Should mention missing $2, $3, $4
+        error_str = str(exc_info.value)
+        assert "$2" in error_str or "2" in error_str
+
+    def test_duplicate_placeholders_valid(self) -> None:
+        """Test that using same placeholder multiple times is valid."""
+        config = ModelDbIOConfig(
+            operation="select",
+            connection_name="db",
+            query_template="SELECT * FROM users WHERE id = $1 OR backup_id = $1",
+            query_params=["${input.id}"],
+        )
+        assert len(config.query_params) == 1
+
+    def test_read_only_with_select_valid(self) -> None:
+        """Test read_only=True is valid with select operation."""
+        config = ModelDbIOConfig(
+            operation="select",
+            connection_name="db",
+            query_template="SELECT * FROM users",
+            query_params=[],
+            read_only=True,
+        )
+        assert config.read_only is True
+        assert config.operation == "select"
+
+    def test_read_only_with_insert_error(self) -> None:
+        """Test read_only=True raises error with insert operation."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelDbIOConfig(
+                operation="insert",
+                connection_name="db",
+                query_template="INSERT INTO users (name) VALUES ($1)",
+                query_params=["${input.name}"],
+                read_only=True,
+            )
+        assert "read_only=True only allows 'select' operation" in str(exc_info.value)
+        assert "'insert'" in str(exc_info.value)
+
+    def test_read_only_with_update_error(self) -> None:
+        """Test read_only=True raises error with update operation."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelDbIOConfig(
+                operation="update",
+                connection_name="db",
+                query_template="UPDATE users SET name = $1 WHERE id = $2",
+                query_params=["${input.name}", "${input.id}"],
+                read_only=True,
+            )
+        assert "read_only=True only allows 'select' operation" in str(exc_info.value)
+        assert "'update'" in str(exc_info.value)
+
+    def test_read_only_with_delete_error(self) -> None:
+        """Test read_only=True raises error with delete operation."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelDbIOConfig(
+                operation="delete",
+                connection_name="db",
+                query_template="DELETE FROM users WHERE id = $1",
+                query_params=["${input.id}"],
+                read_only=True,
+            )
+        assert "read_only=True only allows 'select' operation" in str(exc_info.value)
+        assert "'delete'" in str(exc_info.value)
+
+    def test_read_only_with_upsert_error(self) -> None:
+        """Test read_only=True raises error with upsert operation."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelDbIOConfig(
+                operation="upsert",
+                connection_name="db",
+                query_template="INSERT INTO users (id, name) VALUES ($1, $2) ON CONFLICT DO UPDATE",
+                query_params=["${input.id}", "${input.name}"],
+                read_only=True,
+            )
+        assert "read_only=True only allows 'select' operation" in str(exc_info.value)
+        assert "'upsert'" in str(exc_info.value)
+
+    def test_read_only_with_raw_error(self) -> None:
+        """Test read_only=True raises error with raw operation."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelDbIOConfig(
+                operation="raw",
+                connection_name="db",
+                query_template="TRUNCATE TABLE users",
+                query_params=[],
+                read_only=True,
+            )
+        assert "read_only=True only allows 'select' operation" in str(exc_info.value)
+        assert "'raw'" in str(exc_info.value)
+
+    def test_read_only_false_allows_all_operations(self) -> None:
+        """Test read_only=False (default) allows all operations."""
+        for operation in ["select", "insert", "update", "delete", "upsert"]:
+            config = ModelDbIOConfig(
+                operation=operation,  # type: ignore[arg-type]
+                connection_name="db",
+                query_template="SELECT 1" if operation == "select" else "UPDATE t SET x = 1",
+                query_params=[],
+                read_only=False,
+            )
+            assert config.read_only is False
+            assert config.operation == operation
+
+
+@pytest.mark.unit
 class TestModelKafkaIOConfig:
     """Tests for ModelKafkaIOConfig model."""
 
@@ -318,13 +505,52 @@ class TestModelKafkaIOConfig:
 
     def test_acks_values(self) -> None:
         """Test valid acks values."""
-        for acks_value in ["0", "1", "all"]:
+        # Test acks=1 and acks=all (no opt-in required)
+        for acks_value in ["1", "all"]:
             config = ModelKafkaIOConfig(
                 topic="test",
                 payload_template="{}",
                 acks=acks_value,  # type: ignore[arg-type]
             )
             assert config.acks == acks_value
+
+        # Test acks=0 requires explicit opt-in
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            config = ModelKafkaIOConfig(
+                topic="test",
+                payload_template="{}",
+                acks="0",
+                acks_zero_acknowledged=True,
+            )
+            assert config.acks == "0"
+            assert config.acks_zero_acknowledged is True
+
+    def test_acks_zero_requires_opt_in(self) -> None:
+        """Test that acks=0 requires explicit opt-in via acks_zero_acknowledged."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelKafkaIOConfig(
+                topic="test",
+                payload_template="{}",
+                acks="0",  # No acks_zero_acknowledged=True
+            )
+        assert "acks_zero_acknowledged" in str(exc_info.value)
+        assert "explicit opt-in" in str(exc_info.value)
+
+    def test_acks_zero_emits_warning(self) -> None:
+        """Test that acks=0 emits a warning even with opt-in."""
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            ModelKafkaIOConfig(
+                topic="test",
+                payload_template="{}",
+                acks="0",
+                acks_zero_acknowledged=True,
+            )
+            # Check that warning was emitted
+            assert len(w) == 1
+            assert "no delivery guarantees" in str(w[0].message)
+            assert issubclass(w[0].category, UserWarning)
 
     def test_compression_values(self) -> None:
         """Test valid compression values."""
@@ -356,6 +582,7 @@ class TestModelKafkaIOConfig:
         assert "unknown_field" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelFilesystemIOConfig:
     """Tests for ModelFilesystemIOConfig model."""
 
@@ -377,9 +604,11 @@ class TestModelFilesystemIOConfig:
     def test_all_operations(self) -> None:
         """Test all valid operation types."""
         for op in ["read", "write", "delete", "move", "copy"]:
+            # atomic=False for non-write operations (atomic=True only valid for write)
             config = ModelFilesystemIOConfig(
                 file_path_template="/path",
                 operation=op,  # type: ignore[arg-type]
+                atomic=(op == "write"),  # Only write supports atomic=True
             )
             assert config.operation == op
 
@@ -403,6 +632,7 @@ class TestModelFilesystemIOConfig:
         config = ModelFilesystemIOConfig(
             file_path_template="/path",
             operation="read",
+            atomic=False,  # atomic=True only valid for write operations
         )
         with pytest.raises(ValidationError):
             config.operation = "write"  # type: ignore[misc]
@@ -413,11 +643,48 @@ class TestModelFilesystemIOConfig:
             ModelFilesystemIOConfig(
                 file_path_template="/path",
                 operation="read",
+                atomic=False,  # atomic=True only valid for write operations
                 unknown_field="value",  # type: ignore[call-arg]
             )
         assert "unknown_field" in str(exc_info.value)
 
+    def test_atomic_true_only_valid_for_write(self) -> None:
+        """Test atomic=True raises error for non-write operations."""
+        non_write_ops = ["read", "delete", "move", "copy"]
+        for op in non_write_ops:
+            with pytest.raises(ModelOnexError) as exc_info:
+                ModelFilesystemIOConfig(
+                    file_path_template="/path",
+                    operation=op,  # type: ignore[arg-type]
+                    atomic=True,
+                )
+            assert f"atomic=True is only valid for 'write' operations, not '{op}'" in str(
+                exc_info.value
+            )
 
+    def test_atomic_true_allowed_for_write(self) -> None:
+        """Test atomic=True is allowed for write operations."""
+        config = ModelFilesystemIOConfig(
+            file_path_template="/path",
+            operation="write",
+            atomic=True,
+        )
+        assert config.atomic is True
+        assert config.operation == "write"
+
+    def test_atomic_false_allowed_for_all_operations(self) -> None:
+        """Test atomic=False is allowed for all operations."""
+        for op in ["read", "write", "delete", "move", "copy"]:
+            config = ModelFilesystemIOConfig(
+                file_path_template="/path",
+                operation=op,  # type: ignore[arg-type]
+                atomic=False,
+            )
+            assert config.atomic is False
+            assert config.operation == op
+
+
+@pytest.mark.unit
 class TestEffectIOConfigUnion:
     """Tests for discriminated union behavior."""
 
@@ -471,6 +738,7 @@ class TestEffectIOConfigUnion:
             "handler_type": "filesystem",
             "file_path_template": "/path/to/file",
             "operation": "read",
+            "atomic": False,  # atomic=True only valid for write operations
         }
         from pydantic import TypeAdapter
 
@@ -506,13 +774,317 @@ class TestEffectIOConfigUnion:
             query_template="SELECT 1",
         )
         kafka = ModelKafkaIOConfig(topic="test", payload_template="{}")
-        fs = ModelFilesystemIOConfig(file_path_template="/path", operation="read")
+        fs = ModelFilesystemIOConfig(
+            file_path_template="/path",
+            operation="read",
+            atomic=False,  # atomic=True only valid for write operations
+        )
 
         # All should be valid EffectIOConfig instances (in type-checking sense)
         configs: list[EffectIOConfig] = [http, db, kafka, fs]
         assert len(configs) == 4
 
 
+@pytest.mark.unit
+class TestEffectIOConfigDiscriminatedUnionIntegration:
+    """
+    Integration tests for EffectIOConfig discriminated union behavior.
+
+    These tests verify that Pydantic correctly discriminates between
+    ModelHttpIOConfig, ModelDbIOConfig, ModelKafkaIOConfig, and
+    ModelFilesystemIOConfig based on the handler_type field.
+    """
+
+    def test_http_config_discriminated_from_dict(self) -> None:
+        """Test HTTP config is correctly discriminated from dict data."""
+        from pydantic import TypeAdapter
+
+        data = {
+            "handler_type": "http",
+            "url_template": "https://api.example.com/users",
+            "method": "GET",
+        }
+        config = TypeAdapter(EffectIOConfig).validate_python(data)
+        assert isinstance(config, ModelHttpIOConfig)
+        assert config.handler_type == EnumEffectHandlerType.HTTP
+        assert config.url_template == "https://api.example.com/users"
+        assert config.method == "GET"
+
+    def test_db_config_discriminated_from_dict(self) -> None:
+        """Test DB config is correctly discriminated from dict data."""
+        from pydantic import TypeAdapter
+
+        data = {
+            "handler_type": "db",
+            "operation": "select",
+            "connection_name": "primary_db",
+            "query_template": "SELECT * FROM users WHERE id = $1",
+            "query_params": ["user_123"],
+        }
+        config = TypeAdapter(EffectIOConfig).validate_python(data)
+        assert isinstance(config, ModelDbIOConfig)
+        assert config.handler_type == EnumEffectHandlerType.DB
+        assert config.operation == "select"
+        assert config.connection_name == "primary_db"
+
+    def test_kafka_config_discriminated_from_dict(self) -> None:
+        """Test Kafka config is correctly discriminated from dict data."""
+        from pydantic import TypeAdapter
+
+        data = {
+            "handler_type": "kafka",
+            "topic": "user-events",
+            "payload_template": '{"user_id": "${input.user_id}"}',
+        }
+        config = TypeAdapter(EffectIOConfig).validate_python(data)
+        assert isinstance(config, ModelKafkaIOConfig)
+        assert config.handler_type == EnumEffectHandlerType.KAFKA
+        assert config.topic == "user-events"
+
+    def test_filesystem_config_discriminated_from_dict(self) -> None:
+        """Test Filesystem config is correctly discriminated from dict data."""
+        from pydantic import TypeAdapter
+
+        data = {
+            "handler_type": "filesystem",
+            "file_path_template": "/data/output/${input.filename}.json",
+            "operation": "write",
+        }
+        config = TypeAdapter(EffectIOConfig).validate_python(data)
+        assert isinstance(config, ModelFilesystemIOConfig)
+        assert config.handler_type == EnumEffectHandlerType.FILESYSTEM
+        assert config.operation == "write"
+
+    def test_invalid_handler_type_rejected(self) -> None:
+        """Test invalid handler_type values are rejected."""
+        from pydantic import TypeAdapter
+
+        data = {
+            "handler_type": "invalid_type",
+            "url_template": "https://api.example.com",
+            "method": "GET",
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            TypeAdapter(EffectIOConfig).validate_python(data)
+        # Pydantic should report that no union member matched
+        error_str = str(exc_info.value)
+        assert "handler_type" in error_str or "Unable to extract" in error_str
+
+    def test_uppercase_handler_type_rejected(self) -> None:
+        """Test uppercase handler_type values are rejected (case-sensitive enum)."""
+        from pydantic import TypeAdapter
+
+        data = {
+            "handler_type": "HTTP",  # Should be lowercase "http"
+            "url_template": "https://api.example.com",
+            "method": "GET",
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            TypeAdapter(EffectIOConfig).validate_python(data)
+        error_str = str(exc_info.value)
+        assert "handler_type" in error_str or "Unable to extract" in error_str
+
+    def test_missing_handler_type_rejected(self) -> None:
+        """Test missing handler_type field is rejected."""
+        from pydantic import TypeAdapter
+
+        data = {
+            "url_template": "https://api.example.com",
+            "method": "GET",
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            TypeAdapter(EffectIOConfig).validate_python(data)
+        # Should fail because discriminator field is missing
+        error_str = str(exc_info.value)
+        assert "handler_type" in error_str or "Unable to extract" in error_str
+
+    def test_round_trip_http_serialization(self) -> None:
+        """Test HTTP config round-trip serialization/deserialization."""
+        from pydantic import TypeAdapter
+
+        original = ModelHttpIOConfig(
+            url_template="https://api.example.com/users/${input.user_id}",
+            method="POST",
+            body_template='{"name": "${input.name}"}',
+            headers={"Content-Type": "application/json"},
+            timeout_ms=5000,
+        )
+
+        # Serialize to dict
+        data = original.model_dump()
+        assert data["handler_type"] == "http"
+        assert data["url_template"] == "https://api.example.com/users/${input.user_id}"
+
+        # Deserialize back via union type adapter
+        restored = TypeAdapter(EffectIOConfig).validate_python(data)
+        assert isinstance(restored, ModelHttpIOConfig)
+        assert restored.handler_type == original.handler_type
+        assert restored.url_template == original.url_template
+        assert restored.method == original.method
+        assert restored.body_template == original.body_template
+
+    def test_round_trip_db_serialization(self) -> None:
+        """Test DB config round-trip serialization/deserialization."""
+        from pydantic import TypeAdapter
+
+        original = ModelDbIOConfig(
+            operation="select",
+            connection_name="primary_db",
+            query_template="SELECT * FROM users WHERE id = $1",
+            query_params=["${input.user_id}"],
+            read_only=True,
+        )
+
+        # Serialize to dict
+        data = original.model_dump()
+        assert data["handler_type"] == "db"
+
+        # Deserialize back via union type adapter
+        restored = TypeAdapter(EffectIOConfig).validate_python(data)
+        assert isinstance(restored, ModelDbIOConfig)
+        assert restored.operation == original.operation
+        assert restored.query_params == original.query_params
+
+    def test_round_trip_kafka_serialization(self) -> None:
+        """Test Kafka config round-trip serialization/deserialization."""
+        from pydantic import TypeAdapter
+
+        original = ModelKafkaIOConfig(
+            topic="user-events",
+            payload_template='{"user_id": "${input.user_id}"}',
+            partition_key_template="${input.user_id}",
+            acks="all",
+            compression="gzip",
+        )
+
+        # Serialize to dict
+        data = original.model_dump()
+        assert data["handler_type"] == "kafka"
+
+        # Deserialize back via union type adapter
+        restored = TypeAdapter(EffectIOConfig).validate_python(data)
+        assert isinstance(restored, ModelKafkaIOConfig)
+        assert restored.topic == original.topic
+        assert restored.acks == original.acks
+        assert restored.compression == original.compression
+
+    def test_round_trip_filesystem_serialization(self) -> None:
+        """Test Filesystem config round-trip serialization/deserialization."""
+        from pydantic import TypeAdapter
+
+        original = ModelFilesystemIOConfig(
+            file_path_template="/data/output/${input.date}/${input.filename}.json",
+            operation="write",
+            atomic=True,
+            create_dirs=True,
+            encoding="utf-8",
+        )
+
+        # Serialize to dict
+        data = original.model_dump()
+        assert data["handler_type"] == "filesystem"
+
+        # Deserialize back via union type adapter
+        restored = TypeAdapter(EffectIOConfig).validate_python(data)
+        assert isinstance(restored, ModelFilesystemIOConfig)
+        assert restored.file_path_template == original.file_path_template
+        assert restored.operation == original.operation
+
+    def test_json_round_trip_all_types(self) -> None:
+        """Test JSON serialization round-trip for all config types."""
+        from pydantic import TypeAdapter
+
+        configs = [
+            ModelHttpIOConfig(
+                url_template="https://api.example.com",
+                method="GET",
+            ),
+            ModelDbIOConfig(
+                operation="select",
+                connection_name="db",
+                query_template="SELECT 1",
+            ),
+            ModelKafkaIOConfig(
+                topic="test",
+                payload_template="{}",
+            ),
+            ModelFilesystemIOConfig(
+                file_path_template="/path/to/file",
+                operation="read",
+                atomic=False,  # atomic=True is only valid for write operations
+            ),
+        ]
+
+        adapter = TypeAdapter(EffectIOConfig)
+
+        for original in configs:
+            # Serialize to JSON string
+            json_str = original.model_dump_json()
+
+            # Deserialize from JSON
+            restored = adapter.validate_json(json_str)
+
+            # Verify type is preserved
+            assert type(restored) is type(original)
+            assert restored.handler_type == original.handler_type
+
+    def test_enum_handler_type_directly(self) -> None:
+        """Test using enum value directly in data dict."""
+        from pydantic import TypeAdapter
+
+        data = {
+            "handler_type": EnumEffectHandlerType.HTTP,
+            "url_template": "https://api.example.com",
+            "method": "GET",
+        }
+        config = TypeAdapter(EffectIOConfig).validate_python(data)
+        assert isinstance(config, ModelHttpIOConfig)
+        assert config.handler_type == EnumEffectHandlerType.HTTP
+
+    def test_mismatched_fields_for_handler_type_rejected(self) -> None:
+        """Test that providing fields from wrong config type causes validation error."""
+        from pydantic import TypeAdapter
+
+        # HTTP handler_type but with DB-specific fields
+        data = {
+            "handler_type": "http",
+            "operation": "select",  # DB-specific field
+            "connection_name": "db",  # DB-specific field
+            "query_template": "SELECT 1",  # DB-specific field
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            TypeAdapter(EffectIOConfig).validate_python(data)
+        # Should fail because required HTTP fields are missing
+        error_str = str(exc_info.value)
+        assert "url_template" in error_str or "method" in error_str
+
+    def test_all_handler_types_have_distinct_discriminator(self) -> None:
+        """Test that all handler types produce distinct discriminator values."""
+        configs = [
+            ModelHttpIOConfig(url_template="https://example.com", method="GET"),
+            ModelDbIOConfig(
+                operation="select", connection_name="db", query_template="SELECT 1"
+            ),
+            ModelKafkaIOConfig(topic="test", payload_template="{}"),
+            ModelFilesystemIOConfig(
+                file_path_template="/path",
+                operation="read",
+                atomic=False,  # atomic=True is only valid for write operations
+            ),
+        ]
+
+        handler_types = [config.handler_type for config in configs]
+        serialized_types = [config.model_dump()["handler_type"] for config in configs]
+
+        # All handler types should be unique
+        assert len(set(handler_types)) == 4
+        assert len(set(serialized_types)) == 4
+
+        # Serialized values should be lowercase strings
+        assert set(serialized_types) == {"http", "db", "kafka", "filesystem"}
+
+
+@pytest.mark.unit
 class TestExportedFromSubcontracts:
     """Test that models are properly exported from subcontracts module."""
 

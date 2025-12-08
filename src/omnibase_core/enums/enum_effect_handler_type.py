@@ -7,6 +7,7 @@ Eliminates raw string handler types to prevent typo bugs and enable IDE completi
 """
 
 from enum import Enum
+from typing import Never, NoReturn
 
 
 class EnumEffectHandlerType(str, Enum):
@@ -39,3 +40,32 @@ class EnumEffectHandlerType(str, Enum):
     def values(cls) -> list[str]:
         """Return all handler type values."""
         return [member.value for member in cls]
+
+    @staticmethod
+    def assert_exhaustive(value: Never) -> NoReturn:
+        """Ensures exhaustive handling of all enum values in match statements.
+
+        This method enables static type checkers to verify that all enum values
+        are handled in match/case statements. If a case is missing, mypy will
+        report an error at the call site.
+
+        Usage:
+            match handler_type:
+                case EnumEffectHandlerType.HTTP:
+                    handle_http()
+                case EnumEffectHandlerType.DB:
+                    handle_db()
+                case EnumEffectHandlerType.KAFKA:
+                    handle_kafka()
+                case EnumEffectHandlerType.FILESYSTEM:
+                    handle_filesystem()
+                case _ as unreachable:
+                    EnumEffectHandlerType.assert_exhaustive(unreachable)
+
+        Args:
+            value: The unhandled enum value (typed as Never for exhaustiveness).
+
+        Raises:
+            AssertionError: Always raised if this code path is reached at runtime.
+        """
+        raise AssertionError(f"Unhandled enum value: {value}")

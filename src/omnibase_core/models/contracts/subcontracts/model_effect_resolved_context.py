@@ -77,11 +77,13 @@ class ModelResolvedHttpContext(BaseModel):
         description="Resolved query parameters",
     )
 
+    # Timeout bounds: 100ms minimum (avoid instant timeout), 300000ms (5min) maximum
+    # Matches IO config timeout bounds for consistency across the effect layer
     timeout_ms: int = Field(
         default=30000,
         ge=100,
-        le=600000,
-        description="Request timeout in milliseconds",
+        le=300000,
+        description="Request timeout in milliseconds (100ms - 5min)",
     )
 
     follow_redirects: bool = Field(
@@ -140,11 +142,13 @@ class ModelResolvedDbContext(BaseModel):
         description="Resolved query parameter values in order",
     )
 
+    # Timeout bounds: 100ms minimum (avoid instant timeout), 300000ms (5min) maximum
+    # Matches IO config timeout bounds for consistency across the effect layer
     timeout_ms: int = Field(
         default=30000,
         ge=100,
-        le=600000,
-        description="Query timeout in milliseconds",
+        le=300000,
+        description="Query timeout in milliseconds (100ms - 5min)",
     )
 
     fetch_size: int | None = Field(
@@ -203,11 +207,13 @@ class ModelResolvedKafkaContext(BaseModel):
         description="Fully resolved message payload",
     )
 
+    # Timeout bounds: 100ms minimum (avoid instant timeout), 300000ms (5min) maximum
+    # Matches IO config timeout bounds for consistency across the effect layer
     timeout_ms: int = Field(
         default=30000,
         ge=100,
-        le=600000,
-        description="Publish timeout in milliseconds",
+        le=300000,
+        description="Publish timeout in milliseconds (100ms - 5min)",
     )
 
     acks: Literal["0", "1", "all"] = Field(
@@ -260,11 +266,13 @@ class ModelResolvedFilesystemContext(BaseModel):
         description="Resolved content for write operations",
     )
 
+    # Timeout bounds: 100ms minimum (avoid instant timeout), 300000ms (5min) maximum
+    # Matches IO config timeout bounds for consistency across the effect layer
     timeout_ms: int = Field(
         default=30000,
         ge=100,
-        le=600000,
-        description="Operation timeout in milliseconds",
+        le=300000,
+        description="Operation timeout in milliseconds (100ms - 5min)",
     )
 
     atomic: bool = Field(

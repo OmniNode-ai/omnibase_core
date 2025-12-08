@@ -101,11 +101,11 @@ class TestModelResolvedHttpContext:
         )
         assert context.timeout_ms == 100
 
-        # Valid maximum
+        # Valid maximum (300000ms = 5 minutes, consistent with IO configs)
         context = ModelResolvedHttpContext(
-            url="https://example.com", method="GET", timeout_ms=600000
+            url="https://example.com", method="GET", timeout_ms=300000
         )
-        assert context.timeout_ms == 600000
+        assert context.timeout_ms == 300000
 
         # Below minimum
         with pytest.raises(ValidationError):
@@ -113,10 +113,10 @@ class TestModelResolvedHttpContext:
                 url="https://example.com", method="GET", timeout_ms=99
             )
 
-        # Above maximum
+        # Above maximum (300000ms)
         with pytest.raises(ValidationError):
             ModelResolvedHttpContext(
-                url="https://example.com", method="GET", timeout_ms=600001
+                url="https://example.com", method="GET", timeout_ms=300001
             )
 
     def test_frozen_prevents_modification(self) -> None:
@@ -621,9 +621,13 @@ class TestEdgeCases:
         assert context.content is None
 
     def test_all_contexts_have_consistent_timeout_bounds(self) -> None:
-        """Test all contexts use same timeout bounds."""
+        """Test all contexts use same timeout bounds (100ms - 300000ms = 5min).
+
+        Timeout bounds are consistent with IO configs to ensure resolved contexts
+        can accept any valid timeout from the configuration layer.
+        """
         min_timeout = 100
-        max_timeout = 600000
+        max_timeout = 300000  # 5 minutes, consistent with IO configs
 
         # HTTP
         http_ctx = ModelResolvedHttpContext(

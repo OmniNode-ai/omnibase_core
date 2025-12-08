@@ -16,6 +16,7 @@ from omnibase_core.models.contracts.model_effect_retry_config import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
 
+@pytest.mark.unit
 class TestModelEffectRetryConfigBasic:
     """Test basic retry configuration functionality."""
 
@@ -69,6 +70,7 @@ class TestModelEffectRetryConfigBasic:
             assert config.backoff_strategy == strategy
 
 
+@pytest.mark.unit
 class TestModelEffectRetryConfigEnumValidation:
     """Test EnumRetryBackoffStrategy enum validation."""
 
@@ -172,6 +174,7 @@ class TestModelEffectRetryConfigEnumValidation:
             config.backoff_strategy = 999
 
 
+@pytest.mark.unit
 class TestModelEffectRetryConfigValidation:
     """Test retry configuration validation rules."""
 
@@ -232,6 +235,7 @@ class TestModelEffectRetryConfigValidation:
             ModelEffectRetryConfig(circuit_breaker_timeout_s=-1)
 
 
+@pytest.mark.unit
 class TestModelEffectRetryConfigMaxDelayValidator:
     """Test max_delay_ms validator that enforces it must be greater than base_delay_ms."""
 
@@ -292,6 +296,7 @@ class TestModelEffectRetryConfigMaxDelayValidator:
             ModelEffectRetryConfig(base_delay_ms=500, max_delay_ms=50)
 
 
+@pytest.mark.unit
 class TestModelEffectRetryConfigCircuitBreaker:
     """Test circuit breaker configuration."""
 
@@ -317,6 +322,7 @@ class TestModelEffectRetryConfigCircuitBreaker:
         assert config.circuit_breaker_timeout_s == 60
 
 
+@pytest.mark.unit
 class TestModelEffectRetryConfigSerialization:
     """Test retry configuration serialization."""
 
@@ -371,6 +377,7 @@ class TestModelEffectRetryConfigSerialization:
         assert restored.jitter_enabled == original.jitter_enabled
 
 
+@pytest.mark.unit
 class TestModelEffectRetryConfigModelConfig:
     """Test model configuration settings."""
 
@@ -408,6 +415,7 @@ class TestModelEffectRetryConfigModelConfig:
             config.max_attempts = 0
 
 
+@pytest.mark.unit
 class TestModelEffectRetryConfigEdgeCases:
     """Test edge cases and boundary conditions."""
 
