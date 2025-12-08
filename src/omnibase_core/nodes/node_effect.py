@@ -199,8 +199,13 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                 operations.append(op_dict)
 
             # Create new input_data with operations populated
-            updated_operation_data = {**input_data.operation_data, "operations": operations}
-            input_data = input_data.model_copy(update={"operation_data": updated_operation_data})
+            updated_operation_data = {
+                **input_data.operation_data,
+                "operations": operations,
+            }
+            input_data = input_data.model_copy(
+                update={"operation_data": updated_operation_data}
+            )
 
         # Delegate to mixin's execute_effect which handles:
         # - Sequential operation execution
