@@ -612,6 +612,65 @@ node_type: 'compute'""",
                 assert result == 1
 
 
+class TestExampleContractsValidation:
+    """Regression tests for example contracts in the repository."""
+
+    def test_example_contracts_validate(self):
+        """Ensure all example contracts pass validation.
+
+        This is a regression test to prevent future contract validation failures.
+        If this test fails, it means example contracts have invalid node_type values,
+        missing required fields (contract_version, node_type), or other schema violations.
+        """
+        example_path = Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
+
+        if not example_path.exists():
+            pytest.skip("examples/contracts directory not found")
+
+        yaml_files = list(example_path.rglob("*.yaml")) + list(example_path.rglob("*.yml"))
+
+        if not yaml_files:
+            pytest.skip("No YAML files found in examples/contracts")
+
+        all_errors = []
+        for yaml_file in yaml_files:
+            errors = validate_yaml_file(yaml_file)
+            if errors:
+                all_errors.append(f"{yaml_file.relative_to(example_path)}: {errors}")
+
+        assert len(all_errors) == 0, (
+            f"Example contracts failed validation:\n" + "\n".join(all_errors)
+        )
+
+    def test_example_contracts_have_required_fields(self):
+        """Verify example contracts have contract_version and node_type fields."""
+        import yaml
+
+        example_path = Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
+
+        if not example_path.exists():
+            pytest.skip("examples/contracts directory not found")
+
+        yaml_files = list(example_path.rglob("*.yaml")) + list(example_path.rglob("*.yml"))
+
+        for yaml_file in yaml_files:
+            with open(yaml_file, encoding="utf-8") as f:
+                content = yaml.safe_load(f)
+
+            if content is None:
+                continue  # Empty file
+
+            # Check if this looks like a contract (has contract indicators)
+            contract_indicators = {"contract_version", "node_type", "metadata", "inputs", "outputs"}
+            if any(field in content for field in contract_indicators):
+                assert "contract_version" in content, (
+                    f"{yaml_file.name} is missing required field: contract_version"
+                )
+                assert "node_type" in content, (
+                    f"{yaml_file.name} is missing required field: node_type"
+                )
+
+
 class TestFixtureValidation:
     """Test validation using our test fixtures."""
 
