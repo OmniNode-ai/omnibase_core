@@ -57,6 +57,31 @@ effect_operations:
         create_dirs: false  # Don't create dirs for read
         encoding: utf-8
 
+        # Security: Filesystem Path Sandboxing
+        # Rationale: Prevent path traversal attacks and restrict filesystem access
+        # to authorized directories only. This protects against:
+        # - Directory traversal via ".." sequences
+        # - Access to sensitive system directories (/etc, /var, /home)
+        # - Symlink escape attacks that could access files outside the sandbox
+        # - Arbitrary absolute path injection via environment variables
+        security:
+          allowed_base_paths:
+            - "${env.CONTRACTS_DIR:./contracts}"
+            - "./contracts"
+          path_validation:
+            enabled: true
+            deny_patterns:
+              - ".."
+              - "/etc"
+              - "/var"
+              - "/home"
+              - "~"
+              - "/proc"
+              - "/sys"
+              - "/dev"
+            deny_absolute_paths: true  # Only allow relative paths within sandbox
+            deny_symlink_escape: true  # Prevent symlinks pointing outside base paths
+
       # Scanning configuration (metadata for handler)
       metadata:
         scan_mode: directory
@@ -81,6 +106,8 @@ effect_operations:
         extraction_engine: jsonpath
 
       # Override retry for scan operation
+      # Timing Validation [OMN-467]: 500 + 1000 + 2000 + 4000 + 5000(capped) = 12500ms * 1.15 = 14375ms
+      # Worst case retry (14375ms) << timeout (60000ms) - PASS (76% margin)
       retry_policy:
         enabled: true
         max_retries: 5
@@ -105,6 +132,34 @@ effect_operations:
         create_dirs: false
         encoding: utf-8
 
+        # Security: Filesystem Path Sandboxing for User-Provided Paths
+        # Rationale: This operation accepts file paths from input, making it
+        # especially vulnerable to path traversal and arbitrary file access attacks.
+        # Strict sandboxing ensures users cannot read sensitive system files or
+        # escape the contracts directory boundary.
+        security:
+          allowed_base_paths:
+            - "${env.CONTRACTS_DIR:./contracts}"
+            - "./contracts"
+          path_validation:
+            enabled: true
+            deny_patterns:
+              - ".."
+              - "/etc"
+              - "/var"
+              - "/home"
+              - "~"
+              - "/proc"
+              - "/sys"
+              - "/dev"
+            deny_absolute_paths: true  # Only allow relative paths within sandbox
+            deny_symlink_escape: true  # Prevent symlinks pointing outside base paths
+          # Additional validation for user-provided file paths
+          require_path_under_base: true  # File path MUST resolve under allowed_base_paths
+          validate_extension:
+            - ".yaml"
+            - ".yml"
+
       response_handling:
         success_codes: [200]
         extract_fields:
@@ -115,6 +170,8 @@ effect_operations:
         fail_on_empty: true  # Empty contract file is an error
         extraction_engine: jsonpath
 
+      # Timing Validation [OMN-467]: 200 + 400 + 800 = 1400ms * 1.1 = 1540ms
+      # Worst case retry (1540ms) << timeout (15000ms) - PASS (90% margin)
       retry_policy:
         enabled: true
         max_retries: 3

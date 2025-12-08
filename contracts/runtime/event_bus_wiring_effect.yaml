@@ -56,6 +56,9 @@ effect:
   io_config:
     handler_type: "${env.ONEX_EVENT_BUS:inmemory}"  # Event bus type (consistent with wiring_config.event_bus_type)
     topic: "onex.runtime.subscriptions"
+    # SECURITY NOTE: ${input.subscriptions} is validated against topic_validation rules
+    # in wiring_config before being used. This prevents command injection, event spoofing,
+    # and buffer overflow attacks via malicious topic names.
     payload_template: |
       {
         "node_id": "${input.node_id}",
@@ -73,6 +76,8 @@ effect:
     compression: "none"
 
   # Retry policy for subscription operations
+  # Timing Validation [OMN-467]: 1000 + 2000 + 4000 = 7000ms * 1.1 = 7700ms
+  # Worst case retry (7700ms) << timeout (60000ms) - PASS (87% margin)
   retry_policy:
     enabled: true
     max_retries: 3
@@ -127,6 +132,46 @@ wiring_config:
   # Validation settings
   validate_topics: true
   fail_on_invalid_topic: true
+
+  # Topic Name Validation (SECURITY)
+  # ================================
+  # Topic validation is critical for preventing several attack vectors:
+  #
+  # 1. Command Injection: Malicious topic names could contain shell metacharacters
+  #    or template injection sequences (e.g., "${env.SECRET}") that get evaluated
+  #    in downstream processing, leading to data exfiltration or code execution.
+  #
+  # 2. Event Spoofing: Without prefix restrictions, untrusted nodes could subscribe
+  #    to system-internal topics (e.g., "onex.runtime.*") to intercept or inject
+  #    malicious events into the runtime control plane.
+  #
+  # 3. Buffer Overflow: Excessively long topic names could overflow fixed-size
+  #    buffers in event bus implementations, leading to crashes or memory corruption.
+  #
+  # 4. Resource Exhaustion: Unlimited subscriptions per node could be exploited
+  #    for denial-of-service attacks against the event bus infrastructure.
+  #
+  topic_validation:
+    enabled: true
+    # Only allow alphanumeric characters, dots, hyphens, and underscores.
+    # Must start with alphanumeric character to prevent hidden/special topics.
+    allowed_pattern: "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,254}$"
+    # Deny dangerous patterns that could enable injection attacks
+    deny_patterns:
+      - "\\.\\./"  # Path traversal sequences
+      - "\\$\\{"  # Variable/template injection
+      - "[<>\"'`]"  # Script injection characters (XSS, shell)
+      - "\\x00"  # Null bytes (string termination attacks)
+      - "\\s"  # Whitespace (parsing confusion, injection)
+    # Reserved topic prefixes that only system components can use.
+    # User-defined nodes attempting to subscribe to these will be rejected.
+    reserved_prefixes:
+      - "onex.runtime."  # Runtime control plane events (system-only)
+      - "_internal."  # Internal system coordination topics
+    # Hard limit on topic name length to prevent buffer overflow
+    max_topic_length: 255
+    # Limit subscriptions per node to prevent resource exhaustion attacks
+    max_subscriptions_per_node: 100
 
   # Ready event configuration
   ready_event:

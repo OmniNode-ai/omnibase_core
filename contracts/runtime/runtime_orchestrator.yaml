@@ -218,6 +218,112 @@ workflow_coordination:
       description: Runtime encountered a critical error
       payload_schema: ModelRuntimeErrorEvent
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Timing Constraints Validation
+# ─────────────────────────────────────────────────────────────────────────────
+# All retry policies have been validated to ensure worst-case total retry time
+# does not exceed operation timeout. This prevents infinite retry loops and
+# ensures predictable failure behavior.
+#
+# Validation Methodology:
+#   For exponential backoff: sum(base_delay * (2^i)) for i in 0..(max_retries-1)
+#   Then apply jitter_factor: total * (1 + jitter_factor) for worst case
+#   Delays are capped at max_delay_ms when specified
+#
+# Validation Date: 2025-12-08
+# Linear Ticket: OMN-467
+# ─────────────────────────────────────────────────────────────────────────────
+timing_constraints:
+  documentation: |
+    All retry policies have been validated to ensure worst-case total
+    retry time does not exceed operation timeout. This prevents infinite
+    retry loops and ensures predictable failure behavior.
+
+    Formula: sum(min(base_delay * 2^i, max_delay)) * (1 + jitter_factor)
+    for i in 0..(max_retries-1)
+
+  validations:
+    # contract_loader_effect.yaml - scan_contracts_directory
+    - operation: contract_loader.scan_contracts_directory
+      contract_ref: runtime/contract_loader_effect.yaml
+      timeout_ms: 60000
+      retry_config:
+        max_retries: 5
+        base_delay_ms: 500
+        max_delay_ms: 5000
+        backoff_strategy: exponential
+        jitter_factor: 0.15
+      calculation: "500 + 1000 + 2000 + 4000 + 5000(capped) = 12500ms * 1.15 = 14375ms"
+      worst_case_retry_ms: 14375
+      margin_ms: 45625
+      margin_percent: 76.0
+      status: PASS
+
+    # contract_loader_effect.yaml - read_contract_file
+    - operation: contract_loader.read_contract_file
+      contract_ref: runtime/contract_loader_effect.yaml
+      timeout_ms: 15000
+      retry_config:
+        max_retries: 3
+        base_delay_ms: 200
+        max_delay_ms: 2000
+        backoff_strategy: exponential
+        jitter_factor: 0.1
+      calculation: "200 + 400 + 800 = 1400ms * 1.1 = 1540ms"
+      worst_case_retry_ms: 1540
+      margin_ms: 13460
+      margin_percent: 89.7
+      status: PASS
+
+    # event_bus_wiring_effect.yaml - event_bus_wiring
+    - operation: event_bus_wiring.subscribe
+      contract_ref: runtime/event_bus_wiring_effect.yaml
+      timeout_ms: 60000
+      retry_config:
+        max_retries: 3
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        backoff_strategy: exponential
+        jitter_factor: 0.1
+      calculation: "1000 + 2000 + 4000 = 7000ms * 1.1 = 7700ms"
+      worst_case_retry_ms: 7700
+      margin_ms: 52300
+      margin_percent: 87.2
+      status: PASS
+
+    # runtime_orchestrator.yaml - coordination_rules (step-level retries)
+    - operation: runtime_orchestrator.step_retry
+      contract_ref: runtime/runtime_orchestrator.yaml
+      timeout_ms: 30000  # step_timeout_ms
+      retry_config:
+        max_retries: 3
+        base_delay_ms: 2000
+        backoff_strategy: exponential  # multiplier: 2.0
+        jitter_factor: 0.0  # No jitter specified
+      calculation: "2000 + 4000 + 8000 = 14000ms"
+      worst_case_retry_ms: 14000
+      margin_ms: 16000
+      margin_percent: 53.3
+      status: PASS
+
+  # Aggregate workflow timing
+  workflow_timing:
+    total_workflow_timeout_ms: 120000  # 2 minutes
+    step_timeout_ms: 30000  # 30 seconds per step
+    total_steps: 4  # contract_loader, contract_registry, node_graph, event_bus_wiring
+    worst_case_sequential_execution_ms: 120000  # 4 steps * 30s = 120s (at limit)
+    note: |
+      The workflow timeout equals the sum of step timeouts (4 * 30s = 120s).
+      This is acceptable because steps execute sequentially and each step
+      has sufficient retry margin within its own timeout.
+
+  # Notes on REDUCER contracts
+  reducer_notes: |
+    contract_registry_reducer.yaml and node_graph_reducer.yaml do not define
+    explicit retry policies. These REDUCER nodes use FSM state transitions
+    with short action timeouts (100ms-5000ms). Retry behavior for these nodes
+    is managed at the orchestrator level via coordination_rules.
+
 # Metadata
 metadata:
   version: {major: 1, minor: 0, patch: 0}
@@ -230,3 +336,4 @@ metadata:
     - self-hosted
     - lifecycle
   documentation_url: https://docs.onex.ai/runtime/orchestrator
+  linear_ticket: OMN-467
