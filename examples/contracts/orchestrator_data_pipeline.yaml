@@ -1,5 +1,5 @@
 ---
-# Example: Declarative Orchestrator Node - Data Processing Pipeline
+# Example: Orchestrator Node - Data Processing Pipeline
 #
 # This example demonstrates an orchestrator node that coordinates a multi-step
 # data processing workflow defined entirely in YAML.
@@ -279,7 +279,7 @@ workflow_coordination:
 metadata:
   version: {major: 1, minor: 0, patch: 0}
   author: "ONEX Framework Team"
-  description: "Declarative data processing pipeline orchestrator using workflow pattern"
+  description: "Data processing pipeline orchestrator using workflow pattern"
   tags:
     - orchestrator
     - workflow
