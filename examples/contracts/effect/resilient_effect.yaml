@@ -177,27 +177,7 @@ effect_operations:
         failure_threshold: 3
         success_threshold: 2
         timeout_ms: 60000
-        half_open_max_requests: 1
-
-        # Only trip on specific errors for payments
-        trip_on_errors:
-          - TIMEOUT
-          - CONNECTION_ERROR
-          - INTERNAL_SERVER_ERROR
-          - SERVICE_UNAVAILABLE
-          # Don't trip on validation errors or client errors
-
-        # Circuit breaker state change callbacks
-        on_state_change:
-          emit_event: true
-          log_state_change: true
-
-          # Notify monitoring system
-          notify:
-            enabled: true
-            channels:
-              - pagerduty
-              - slack
+        half_open_requests: 1
 
       # Retry policy matching ModelEffectRetryConfig schema
       # NOTE: Conservative retries for payment mutations
@@ -226,67 +206,21 @@ effect_operations:
           error_code: "$.error.code"
           error_message: "$.error.message"
 
-        store_full_response: true
+        fail_on_empty: false
 
-        # Validate response schema
-        validate_response:
-          enabled: true
-          schema_ref: "schemas/payment_gateway_response.json"
-
-      # Rate limiting for this operation
-      rate_limit:
-        enabled: true
-        max_requests_per_second: 50
-        burst_capacity: 75
-        strategy: token_bucket
+        extraction_engine: jsonpath
 
       # Observability configuration
       observability:
         # Comprehensive logging
-        log_requests: true
-        log_responses: true
-        log_response_body: false  # May contain sensitive data
-
-        # Log timing metrics
-        log_timing: true
+        log_request: true
+        log_response: true
 
         # Emit metrics
         emit_metrics: true
-        metric_labels:
-          operation: "process_payment"
-          handler: "payment_gateway"
-          criticality: "high"
 
         # Distributed tracing
-        tracing:
-          enabled: true
-          service_name: "payment-service"
-          span_name: "process_payment"
-          # Trace context headers
-          trace_id_header: "X-Trace-ID"
-          span_id_header: "X-Span-ID"
-
-        # Custom events
-        events:
-          # Emit event on operation start
-          on_start:
-            enabled: true
-            event_type: "payment.processing.started"
-
-          # Emit event on operation success
-          on_success:
-            enabled: true
-            event_type: "payment.processing.succeeded"
-
-          # Emit event on operation failure
-          on_failure:
-            enabled: true
-            event_type: "payment.processing.failed"
-
-          # Emit event on retry
-          on_retry:
-            enabled: true
-            event_type: "payment.processing.retrying"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 2: VERIFY PAYMENT STATUS (HTTP GET with Polling)
@@ -325,39 +259,12 @@ effect_operations:
 
         verify_ssl: true
 
-      # Polling configuration for async operations (application-level, not in io_config)
-      polling:
-        enabled: true
-
-        # Maximum polling attempts
-        max_attempts: 10
-
-        # Polling interval (milliseconds)
-        interval_ms: 2000
-
-        # Exponential backoff for polling
-        backoff_strategy: exponential
-        backoff_multiplier: 1.5
-        max_interval_ms: 10000
-
-        # Stop polling conditions
-        stop_conditions:
-          # Stop if status is terminal
-          response_field_equals:
-            field: "$.status"
-            values:
-              - "succeeded"
-              - "failed"
-              - "cancelled"
-
-          # Stop if error occurred
-          response_has_error: true
-
       circuit_breaker:
         enabled: true
         failure_threshold: 5
         success_threshold: 2
         timeout_ms: 30000
+        half_open_requests: 1
 
       # Retry policy matching ModelEffectRetryConfig schema
       # More retries for GET operations
@@ -379,19 +286,15 @@ effect_operations:
           gateway_status: "$.gateway_status"
           completed_at: "$.completed_at"
 
-        store_full_response: true
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
 
       observability:
-        log_requests: true
-        log_responses: true
+        log_request: true
+        log_response: true
         emit_metrics: true
-        metric_labels:
-          operation: "verify_payment_status"
-          handler: "payment_gateway"
-
-        tracing:
-          enabled: true
-          span_name: "verify_payment_status"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 3: RECORD PAYMENT TRANSACTION (Database with Transaction)
@@ -456,6 +359,7 @@ effect_operations:
         failure_threshold: 3
         success_threshold: 2
         timeout_ms: 60000
+        half_open_requests: 1
 
       # Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
@@ -470,20 +374,15 @@ effect_operations:
           record_id: "$.id"
           created_at: "$.created_at"
 
-        store_full_result: true
         fail_on_empty: true
 
-      observability:
-        log_queries: true
-        log_parameters: false
-        emit_metrics: true
-        metric_labels:
-          operation: "record_payment_transaction"
-          table: "payment_transactions"
+        extraction_engine: jsonpath
 
-        tracing:
-          enabled: true
-          span_name: "record_payment_transaction"
+      observability:
+        log_request: true
+        log_response: false
+        emit_metrics: true
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 4: PUBLISH PAYMENT EVENT (Kafka with Guaranteed Delivery)
@@ -539,6 +438,7 @@ effect_operations:
         failure_threshold: 3
         success_threshold: 2
         timeout_ms: 60000
+        half_open_requests: 1
 
       # Retry policy matching ModelEffectRetryConfig schema
       retry_policy:
@@ -554,19 +454,15 @@ effect_operations:
           offset: "$.offset"
           timestamp: "$.timestamp"
 
-        store_full_response: true
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
 
       observability:
-        log_messages: true
-        log_message_body: false
+        log_request: true
+        log_response: false
         emit_metrics: true
-        metric_labels:
-          operation: "publish_payment_event"
-          topic: "payments.events.completed"
-
-        tracing:
-          enabled: true
-          span_name: "publish_payment_event"
+        trace_propagation: true
 
 # ---------------------------------------------------------------------------
 # CONTRACT METADATA

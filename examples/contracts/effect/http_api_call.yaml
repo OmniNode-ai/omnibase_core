@@ -161,32 +161,31 @@ effect_operations:
           # Extract nested field
           audit_user: "$.audit.created_by"
 
-        # Store the entire response body (default: false)
-        # Useful for debugging or when you need the full response
-        store_full_response: true
+        # Fail if response is empty
+        fail_on_empty: false
+
+        # Extraction engine for path-based extraction
+        extraction_engine: jsonpath
 
       # Circuit breaker configuration (optional)
       circuit_breaker:
         enabled: false
-        # Would configure failure threshold, timeout, etc. if enabled
+        failure_threshold: 5
+        success_threshold: 2
+        timeout_ms: 60000
+        half_open_requests: 1
 
       # Observability configuration
       observability:
         # Enable request/response logging
-        log_requests: true
-        log_responses: true
-
-        # Log response bodies (can be verbose)
-        log_response_body: false
+        log_request: true
+        log_response: true
 
         # Emit metrics for this operation
         emit_metrics: true
 
-        # Metric labels
-        metric_labels:
-          operation: "create_user"
-          api: "user_management"
-          version: "v1"
+        # Propagate distributed trace context
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 2: GET USER (HTTP GET)
@@ -258,17 +257,15 @@ effect_operations:
           theme: "$.preferences.theme"
           notifications_enabled: "$.preferences.notifications.enabled"
 
-        store_full_response: true
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
 
       observability:
-        log_requests: true
-        log_responses: true
-        log_response_body: false
+        log_request: true
+        log_response: true
         emit_metrics: true
-        metric_labels:
-          operation: "get_user"
-          api: "user_management"
-          version: "v1"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 3: UPDATE USER STATUS (HTTP PATCH)
@@ -335,16 +332,15 @@ effect_operations:
           status: "$.status"
           updated_at: "$.metadata.updated_at"
 
-        store_full_response: true
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
 
       observability:
-        log_requests: true
-        log_responses: true
+        log_request: true
+        log_response: true
         emit_metrics: true
-        metric_labels:
-          operation: "update_user_status"
-          api: "user_management"
-          version: "v1"
+        trace_propagation: true
 
 # ---------------------------------------------------------------------------
 # EXAMPLE INPUT/OUTPUT

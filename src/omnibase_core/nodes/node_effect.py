@@ -96,6 +96,7 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         ```python
         from omnibase_core.nodes import NodeEffect
         from omnibase_core.models.effect import ModelEffectInput
+        from omnibase_core.enums.enum_effect_types import EnumEffectType
 
         # Create effect node
         node = NodeMyEffect(container)
@@ -103,7 +104,8 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
 
         # Execute effect
         result = await node.process(ModelEffectInput(
-            operation_data={"name": "John Doe"}
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={"name": "John Doe"},
         ))
         ```
 
@@ -141,10 +143,10 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # Effect subcontract - set after construction or via contract loading
         object.__setattr__(self, "effect_subcontract", None)
 
-        # Process-local circuit breaker state keyed by operation_id
-        # (NOT correlation_id - operation_id is stable per operation definition,
-        # while correlation_id changes per request)
-        # NOT thread-safe - each thread needs its own NodeEffect instance
+        # Process-local circuit breaker state keyed by operation_id.
+        # operation_id is stable per operation definition (from the contract),
+        # providing consistent circuit breaker state across requests.
+        # NOT thread-safe - each thread needs its own NodeEffect instance.
         object.__setattr__(self, "_circuit_breakers", {})
 
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
@@ -153,6 +155,13 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
 
         REQUIRED: This method implements the NodeEffect interface for contract-driven
         effect execution. All effect logic is driven by the effect_subcontract.
+
+        Timeout Behavior:
+            Timeouts are checked at the start of each retry attempt, not during
+            operation execution. This means an operation that starts before the
+            timeout may complete even if it exceeds the overall timeout window.
+            For strict timeout enforcement during execution, handlers should
+            implement their own timeout logic (e.g., HTTP client timeouts).
 
         Args:
             input_data: Effect input containing operation_data for template resolution
@@ -170,6 +179,44 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                 context={"node_id": str(self.node_id)},
             )
 
+        # Map subcontract-level defaults to ModelEffectInput fields
+        # This ensures the mixin receives properly configured input with:
+        # - Retry settings from default_retry_policy
+        # - Circuit breaker settings from default_circuit_breaker
+        # - Transaction settings from default_transaction_config
+        #
+        # Input values take precedence over subcontract defaults (caller override).
+        # This allows callers to override subcontract defaults at runtime.
+        default_retry = self.effect_subcontract.default_retry_policy
+        default_cb = self.effect_subcontract.default_circuit_breaker
+        default_tx = self.effect_subcontract.default_transaction_config
+
+        # Build update dict with subcontract defaults, respecting existing input values
+        input_updates: dict[str, object] = {}
+
+        # Retry policy: use subcontract defaults unless input explicitly differs
+        # We check against ModelEffectInput defaults to detect caller overrides
+        if input_data.retry_enabled and input_data.max_retries == 3:  # default value
+            input_updates["max_retries"] = default_retry.max_attempts
+        if input_data.retry_enabled and input_data.retry_delay_ms == 1000:  # default
+            input_updates["retry_delay_ms"] = default_retry.base_delay_ms
+
+        # Circuit breaker: inherit from subcontract if enabled there
+        if not input_data.circuit_breaker_enabled and default_cb.enabled:
+            input_updates["circuit_breaker_enabled"] = True
+
+        # Transaction: inherit from subcontract if enabled there
+        if input_data.transaction_enabled and default_tx.enabled:
+            # Transaction is already enabled by default in ModelEffectInput,
+            # so we just ensure it stays enabled if subcontract wants it
+            pass
+        elif not input_data.transaction_enabled and default_tx.enabled:
+            input_updates["transaction_enabled"] = True
+
+        # Apply updates if any
+        if input_updates:
+            input_data = input_data.model_copy(update=input_updates)
+
         # Transform effect_subcontract.operations into operation_data format
         # The mixin expects operations in input_data.operation_data["operations"]
         # This transformation bridges the contract (YAML) and execution (mixin)
@@ -177,20 +224,20 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
             # Serialize subcontract operations to the format expected by the mixin
             operations: list[dict[str, object]] = []
             for op in self.effect_subcontract.operations:
-                # Timeout fallback chain:
-                # 1. Use operation-specific timeout if defined
-                # 2. Fall back to default_retry_policy.max_delay_ms as a heuristic
-                #    (max retry delay provides a reasonable upper bound for operation timeout)
-                # 3. Fall back to 30s as a safe default
-                # NOTE: max_delay_ms is semantically "max delay between retries", not
-                # "operation timeout", but we use it as a heuristic since operations
-                # that tolerate long retry delays typically also tolerate longer timeouts.
-                # For precise control, always set operation_timeout_ms explicitly.
-                timeout_ms = (
-                    op.operation_timeout_ms
-                    or self.effect_subcontract.default_retry_policy.max_delay_ms
-                    or 30000
-                )
+                # Timeout fallback: use operation-specific timeout if defined,
+                # otherwise fall back to 30s as a safe default.
+                # NOTE: We intentionally do NOT use max_delay_ms (max delay between
+                # retries) as a fallback because it has different semantics.
+                # For precise control, always set operation_timeout_ms explicitly
+                # in the operation definition.
+                timeout_ms = op.operation_timeout_ms or 30000
+
+                # Merge operation-level overrides with subcontract defaults
+                # Operation retry_policy/circuit_breaker override subcontract defaults
+                op_retry = op.retry_policy or default_retry
+                op_cb = op.circuit_breaker or default_cb
+                op_tx = op.transaction_config or default_tx
+
                 op_dict: dict[str, object] = {
                     "operation_name": op.operation_name,
                     "description": op.description,
@@ -205,6 +252,16 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                         op.response_handling.model_dump()
                         if hasattr(op.response_handling, "model_dump")
                         else {}
+                    ),
+                    # Include merged retry/circuit breaker/transaction configs
+                    "retry_policy": (
+                        op_retry.model_dump() if hasattr(op_retry, "model_dump") else {}
+                    ),
+                    "circuit_breaker": (
+                        op_cb.model_dump() if hasattr(op_cb, "model_dump") else {}
+                    ),
+                    "transaction_config": (
+                        op_tx.model_dump() if hasattr(op_tx, "model_dump") else {}
                     ),
                 }
                 operations.append(op_dict)

@@ -131,21 +131,17 @@ effect_operations:
           status: "$.status"
           version: "$.version"
 
-        # Store full result set (all rows)
-        store_full_result: true
-
         # Fail if query returns no rows
         fail_on_empty: false
 
+        # Extraction engine for path-based extraction
+        extraction_engine: jsonpath
+
       observability:
-        log_queries: true
-        log_parameters: false  # Don't log sensitive data
-        log_results: false
+        log_request: true
+        log_response: false  # Don't log sensitive data
         emit_metrics: true
-        metric_labels:
-          operation: "select_user_by_email"
-          table: "users"
-          query_type: "SELECT"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 2: INSERT NEW USER (Transactional Insert)
@@ -216,18 +212,17 @@ effect_operations:
           created_at: "$.created_at"
           version: "$.version"
 
-        store_full_result: true
         # INSERT should return at least one row
         fail_on_empty: true
 
+        # Extraction engine for path-based extraction
+        extraction_engine: jsonpath
+
       observability:
-        log_queries: true
-        log_parameters: false  # Sensitive data (password_hash)
+        log_request: true
+        log_response: false  # Sensitive data (password_hash)
         emit_metrics: true
-        metric_labels:
-          operation: "insert_user"
-          table: "users"
-          query_type: "INSERT"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 3: UPDATE USER STATUS (Optimistic Locking)
@@ -288,18 +283,17 @@ effect_operations:
           version: "$.version"
           updated_at: "$.updated_at"
 
-        store_full_result: true
         # If no rows updated, version mismatch occurred
         fail_on_empty: true
 
+        # Extraction engine for path-based extraction
+        extraction_engine: jsonpath
+
       observability:
-        log_queries: true
-        log_parameters: false
+        log_request: true
+        log_response: false
         emit_metrics: true
-        metric_labels:
-          operation: "update_user_status"
-          table: "users"
-          query_type: "UPDATE"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 4: DELETE USER (Soft Delete)
@@ -356,17 +350,16 @@ effect_operations:
           deleted_at: "$.deleted_at"
           version: "$.version"
 
-        store_full_result: true
         fail_on_empty: false  # User may already be deleted
 
+        # Extraction engine for path-based extraction
+        extraction_engine: jsonpath
+
       observability:
-        log_queries: true
-        log_parameters: false
+        log_request: true
+        log_response: false
         emit_metrics: true
-        metric_labels:
-          operation: "soft_delete_user"
-          table: "users"
-          query_type: "UPDATE"
+        trace_propagation: true
 
 # ---------------------------------------------------------------------------
 # EXAMPLE INPUT/OUTPUT

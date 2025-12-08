@@ -8,6 +8,18 @@ retry policies, circuit breakers, and transaction management.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
+IMPORTANT - Handler Protocol Extensibility:
+    Effect handlers (ProtocolEffectHandler_HTTP, ProtocolEffectHandler_DB, etc.)
+    are NOT defined in omnibase_core. They are EXTENSIBILITY POINTS that
+    implementing applications MUST register via the container. See the
+    _execute_operation() method docstring for registration details.
+
+    Example handler registration (in your application code):
+        container.register_service(
+            "ProtocolEffectHandler_HTTP",
+            MyHttpEffectHandler()  # Your implementation
+        )
+
 Thread Safety:
     The mixin methods are stateless and operate on passed arguments only.
     However, circuit breaker state is process-local and NOT thread-safe.
@@ -25,6 +37,7 @@ Handler Contract:
     - Handlers receive fully-resolved context (ModelResolvedIOContext)
     - Handlers NEVER perform template resolution
     - Handlers are protocol-based and registered via container
+    - Handler protocol: async def execute(context: ResolvedIOContext) -> Any
 
 Usage:
     This mixin is designed to be used with NodeEffect classes that need to
@@ -53,6 +66,7 @@ Author: ONEX Framework Team
 
 import asyncio
 import os
+import random
 import re
 import time
 from typing import Any
@@ -107,7 +121,7 @@ class MixinEffectExecution:
         container (ModelONEXContainer): Expected to be provided by the mixing
             class. Used for handler resolution and service lookup.
         _circuit_breakers (dict): Internal circuit breaker state, keyed by
-            operation correlation_id. Process-local only in v1.0.
+            operation_id (UUID). Process-local only in v1.0.
 
     Example:
         >>> class MyEffectNode(NodeEffect, MixinEffectExecution):
@@ -133,7 +147,7 @@ class MixinEffectExecution:
             The mixing class (e.g., NodeEffect) MUST be listed BEFORE this mixin
             in the inheritance chain to ensure proper MRO resolution.
 
-            Correct MRO order:
+            Correct MRO order (NodeEffect inherits from NodeCoreBase):
                 class NodeEffect(NodeCoreBase, MixinEffectExecution):
                     pass  # NodeCoreBase.__init__ called first via super(), then mixin
 
@@ -178,14 +192,24 @@ class MixinEffectExecution:
         It orchestrates sequential operations with abort-on-first-failure
         semantics, retry policies, circuit breakers, and transaction management.
 
-        Operation Data Population (IMPORTANT):
+        Operation Data Population (IMPORTANT - Contract Binding):
             This method expects operations to be provided in input_data.operation_data
             under the "operations" key. The calling code (typically NodeEffect.process())
-            is responsible for populating this data, which may include:
+            is responsible for populating this from the effect_subcontract:
 
-            1. Transforming effect_subcontract.operations into operation_data["operations"]
-            2. Merging runtime parameters with static contract definitions
-            3. Applying any preprocessing or validation
+            REQUIRED: The node MUST transform effect_subcontract.operations into
+            operation_data["operations"] before calling this method. Example:
+
+                # In NodeEffect.process():
+                effect_subcontract = self.get_effect_subcontract()
+                input_data.operation_data["operations"] = [
+                    {
+                        "io_config": op.io_config.model_dump(),
+                        "operation_timeout_ms": op.operation_timeout_ms,
+                    }
+                    for op in effect_subcontract.operations
+                ]
+                result = await self.execute_effect(input_data)
 
             This design separates the MIXIN (execution logic) from the NODE (contract
             binding). The mixin is contract-agnostic and works with raw operation_data,
@@ -200,7 +224,7 @@ class MixinEffectExecution:
                                 "url_template": "...",
                                 ...
                             },
-                            "operation_timeout_ms": 60000
+                            "operation_timeout_ms": 30000
                         }
                     ],
                     ... # Additional context for template resolution
@@ -254,6 +278,20 @@ class MixinEffectExecution:
                 context={"operation_id": str(operation_id)},
             )
 
+        # v1.0: Only single operation execution is supported
+        # If multiple operations are provided, raise an error rather than silently ignoring them
+        if len(operations_config) > 1:
+            raise ModelOnexError(
+                message=f"v1.0 supports single operation only, but {len(operations_config)} "
+                f"operations were provided. Use separate effect invocations for each operation "
+                f"or upgrade to v2.0 for multi-operation support.",
+                error_code=EnumCoreErrorCode.UNSUPPORTED_OPERATION,
+                context={
+                    "operation_id": str(operation_id),
+                    "operations_count": len(operations_config),
+                },
+            )
+
         # Sequential execution with abort-on-first-failure (v1.0)
         retry_count = 0
         final_result: str | int | float | bool | dict[str, Any] | list[Any] = {}
@@ -265,8 +303,14 @@ class MixinEffectExecution:
 
             # Parse operation configuration
             io_config = self._parse_io_config(operation_config)
-            # Default to 60000ms (60s) if not provided or None
-            operation_timeout_ms = operation_config.get("operation_timeout_ms") or 60000
+            # Default operation timeout: 30000ms (30s) as final fallback
+            # This matches the resolved context timeout defaults (30s) for consistency.
+            # Individual IO configs may specify their own timeout_ms values.
+            DEFAULT_OPERATION_TIMEOUT_MS = 30000
+            operation_timeout_ms = (
+                operation_config.get("operation_timeout_ms")
+                or DEFAULT_OPERATION_TIMEOUT_MS
+            )
 
             # Resolve IO context from templates
             resolved_context = self._resolve_io_context(io_config, input_data)
@@ -496,28 +540,66 @@ class MixinEffectExecution:
             )
 
         elif isinstance(io_config, ModelFilesystemIOConfig):
-            # For filesystem write operations, content is extracted from input_data.operation_data.
-            # The content can be provided in multiple ways (in priority order):
-            # 1. "file_content" key in operation_data (preferred)
-            # 2. "content" key in operation_data (fallback)
-            # 3. None - handler may have alternative content source
+            # Filesystem content resolution strategy:
+            #
+            # Content sources (checked in priority order for write operations):
+            # 1. "file_content" key in operation_data (preferred, for explicit content)
+            # 2. "content" key in operation_data (fallback, legacy compatibility)
+            # 3. "content_template" key in operation_data (for templated content)
+            # 4. None - content may be provided by handler (e.g., from stream/file)
             #
             # This design separates content from templates because:
             # 1. Large content bypasses template resolution overhead
             # 2. Binary content cannot be templated (use base64 encoding externally)
             # 3. Content may come from external sources (e.g., file uploads, streams)
             #
-            # For read/delete/move/copy operations, content is typically None as these
+            # For read/delete/move/copy operations, content is always None as these
             # operations don't require input content.
             content: str | None = None
+
             if io_config.operation == "write":
-                # Extract content from operation_data for write operations
-                content = context_data.get("file_content") or context_data.get(
-                    "content"
-                )
-                # If content is a template string, resolve it
-                if content and TEMPLATE_PATTERN.search(content):
-                    content = TEMPLATE_PATTERN.sub(resolve_template, content)
+                # Priority 1: Direct content from operation_data
+                if "file_content" in context_data:
+                    raw_content = context_data["file_content"]
+                    if isinstance(raw_content, str):
+                        content = raw_content
+                        # Resolve templates if present
+                        if TEMPLATE_PATTERN.search(content):
+                            content = TEMPLATE_PATTERN.sub(resolve_template, content)
+                    elif raw_content is not None:
+                        # Non-string content - convert to string
+                        content = str(raw_content)
+
+                # Priority 2: Fallback to "content" key
+                elif "content" in context_data:
+                    raw_content = context_data["content"]
+                    if isinstance(raw_content, str):
+                        content = raw_content
+                        # Resolve templates if present
+                        if TEMPLATE_PATTERN.search(content):
+                            content = TEMPLATE_PATTERN.sub(resolve_template, content)
+                    elif raw_content is not None:
+                        # Non-string content - convert to string
+                        content = str(raw_content)
+
+                # Priority 3: Template content key (always resolve templates)
+                elif "content_template" in context_data:
+                    template = context_data.get("content_template")
+                    if isinstance(template, str):
+                        content = TEMPLATE_PATTERN.sub(resolve_template, template)
+
+                # If we still have no content for a write operation, raise clear error
+                if content is None:
+                    raise ModelOnexError(
+                        message="Filesystem write operation requires content. "
+                        "Provide 'file_content', 'content', or 'content_template' "
+                        "in operation_data.",
+                        error_code=EnumCoreErrorCode.INVALID_INPUT,
+                        context={
+                            "operation": io_config.operation,
+                            "file_path_template": io_config.file_path_template,
+                        },
+                    )
 
             return ModelResolvedFilesystemContext(
                 file_path=TEMPLATE_PATTERN.sub(
@@ -538,18 +620,33 @@ class MixinEffectExecution:
                 error_code=EnumCoreErrorCode.UNSUPPORTED_OPERATION,
             )
 
-    def _extract_field(self, data: dict[str, Any], field_path: str) -> Any:
+    def _extract_field(
+        self, data: dict[str, Any], field_path: str, max_depth: int = 10
+    ) -> Any:
         """
         Extract nested field from data using dotpath notation.
+
+        Security:
+            Enforces a maximum traversal depth to prevent denial-of-service
+            attacks via deeply nested or maliciously crafted field paths.
+            Default max_depth of 10 is sufficient for typical use cases while
+            preventing abuse.
 
         Args:
             data: Source data dictionary.
             field_path: Dotted path like "user.id" or "config.timeout_ms".
+            max_depth: Maximum allowed path depth (default: 10). Paths deeper
+                than this limit will return None.
 
         Returns:
-            Extracted value or None if not found.
+            Extracted value or None if not found or depth limit exceeded.
         """
         parts = field_path.split(".")
+
+        # Enforce depth limit for security
+        if len(parts) > max_depth:
+            return None
+
         current: Any = data
 
         for part in parts:
@@ -606,9 +703,14 @@ class MixinEffectExecution:
 
         Retry Policy:
             - Only retry if input_data.retry_enabled is True
-            - Only retry idempotent operations (determined by handler type)
             - Respect operation_timeout_ms overall timeout
             - Use exponential backoff with jitter
+
+            NOTE on Idempotency: This method retries based on retry_enabled flag only.
+            The caller (typically NodeEffect) is responsible for checking operation
+            idempotency via ModelEffectOperation.get_effective_idempotency() before
+            enabling retries. Non-idempotent operations (e.g., HTTP POST, DB INSERT)
+            should typically have retry_enabled=False to prevent duplicate side effects.
 
         Circuit Breaker:
             - Check state before each attempt
@@ -699,13 +801,12 @@ class MixinEffectExecution:
                 # attempt is 0-indexed, so attempt < max_retries means we have retries left
                 if attempt < max_retries and input_data.retry_enabled:
                     # Exponential backoff with jitter
-                    # Jitter calculation: Uses time.time() % 1 (fractional seconds) instead of
-                    # random.uniform() to avoid adding a random module dependency. This provides
-                    # call-time-based variability in range [0, jitter) which is sufficient for
-                    # preventing retry storms while keeping the implementation minimal.
+                    # Uses random.uniform() for proper randomness to prevent retry storms
+                    # when multiple clients retry simultaneously (thundering herd problem).
+                    # Jitter adds 0-10% random variation to the base delay.
                     delay_ms = retry_delay_ms * (2**attempt)
                     jitter = delay_ms * 0.1  # 10% jitter range
-                    actual_delay_ms = delay_ms + (jitter * (time.time() % 1))
+                    actual_delay_ms = delay_ms + random.uniform(0, jitter)
 
                     # Wait before retry
                     await asyncio.sleep(actual_delay_ms / 1000)
@@ -887,6 +988,18 @@ class MixinEffectExecution:
     ) -> dict[str, str | int | float | bool | None]:
         """
         Extract fields from response using JSONPath or dotpath.
+
+        NOTE: This is a utility method provided for handler implementations.
+        It is NOT automatically called during effect execution - handlers are
+        responsible for calling this method if they need response field extraction.
+
+        The design rationale is:
+        1. Handlers own response interpretation (they know the response format)
+        2. Not all responses need field extraction (some are pass-through)
+        3. Extraction logic may be handler-specific (HTTP status vs DB rows)
+
+        Handlers can access this method via the mixin and use the response_handling
+        config from ModelEffectOperation.response_handling.
 
         Extraction Engines:
             - jsonpath: Full JSONPath syntax (requires jsonpath-ng)

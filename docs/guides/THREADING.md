@@ -29,7 +29,7 @@ The `ModelComputeCache` LRU cache operations are not atomic:
 
 Example of thread-safe cache wrapper:
 
-```
+```python
 from collections.abc import Callable
 from threading import Lock
 from typing import Any
@@ -99,9 +99,9 @@ class ThreadSafeComputeCache:
 
 ### Cache Synchronization Strategies
 
-**Option 1: Per-Thread NodeCompute Instances (Recommended)**
+#### Option 1: Per-Thread NodeCompute Instances (Recommended)
 
-```
+```python
 import threading
 from omnibase_core.nodes.node_compute import NodeCompute
 
@@ -120,9 +120,9 @@ async def process_computation(data):
     return await compute_node.process(data)
 ```
 
-**Option 2: Shared NodeCompute with Locked Cache**
+#### Option 2: Shared NodeCompute with Locked Cache
 
-```
+```python
 from omnibase_core.nodes.node_compute import NodeCompute
 
 # Create NodeCompute instance
@@ -188,7 +188,7 @@ The `MixinEffectExecution` mixin methods are **stateless** and operate on passed
 
 ### Usage Patterns
 
-**❌ WRONG - Sharing NodeEffect Across Threads**
+#### Incorrect: Sharing NodeEffect Across Threads
 
 ```python
 # UNSAFE - Circuit breaker state will be corrupted
@@ -205,7 +205,7 @@ async def worker_2():
 # Concurrent access will corrupt circuit breaker state
 ```
 
-**✅ CORRECT - Separate Instance Per Thread**
+#### Correct: Separate Instance Per Thread
 
 ```python
 import threading
@@ -234,7 +234,7 @@ async def worker_2():
 
 ### Mitigation Options
 
-**Option 1: Single-Threaded Effects (Recommended)**
+#### Option 1: Single-Threaded Effects (Recommended)
 
 Design effects to run sequentially using semaphores or queues:
 
@@ -255,7 +255,7 @@ class SingleThreadedEffectNode(NodeEffect):
             return await super().process(input_data)
 ```
 
-**Option 2: Per-Thread NodeEffect Instances (Recommended)**
+#### Option 2: Per-Thread NodeEffect Instances (Recommended)
 
 Use thread-local storage to ensure each thread has its own NodeEffect:
 
@@ -280,7 +280,7 @@ async def process_effect(input_data):
     return await node.process(input_data)
 ```
 
-**Option 3: Per-Thread Circuit Breakers (Advanced)**
+#### Option 3: Per-Thread Circuit Breakers (Advanced)
 
 Use thread-local circuit breakers for isolated failure tracking:
 
@@ -305,7 +305,7 @@ class ThreadLocalCircuitBreakerManager:
         return self._thread_local.breakers[service_name]
 ```
 
-**Option 4: Atomic Counters with Locks (Advanced)**
+#### Option 4: Atomic Counters with Locks (Advanced)
 
 Add synchronization to circuit breaker operations:
 
@@ -338,9 +338,28 @@ class ThreadSafeCircuitBreaker:
         with self._lock:
             self._breaker.record_success()
 
+    def reset_state(self) -> None:
+        """Thread-safe state reset."""
+        with self._lock:
+            self._breaker.reset_state()
+
+    def get_current_state(self) -> str:
+        """Thread-safe state retrieval with potential state transitions.
+
+        Returns:
+            Current state: "closed", "open", "half_open", or "disabled"
+        """
+        with self._lock:
+            return self._breaker.get_current_state()
+
+    def get_failure_rate(self) -> float:
+        """Thread-safe failure rate calculation."""
+        with self._lock:
+            return self._breaker.get_failure_rate()
+
     @property
     def state(self) -> str:
-        """Thread-safe state retrieval.
+        """Thread-safe raw state retrieval (no state transitions).
 
         Returns:
             Current state: "closed", "open", or "half_open"
@@ -368,7 +387,7 @@ For complete details on NodeEffect architecture and circuit breaker implementati
 
 ### Transaction Isolation Pattern
 
-```
+```python
 from uuid import uuid4
 from omnibase_core.models.infrastructure.model_effect_transaction import ModelEffectTransaction
 
@@ -388,7 +407,7 @@ async def execute_isolated_effect(effect_node, operation_data):
 
 ### Transaction Cleanup in Concurrent Environments
 
-```
+```python
 import asyncio
 from contextlib import asynccontextmanager
 
@@ -417,7 +436,7 @@ async def safe_transaction_cleanup(effect_node):
 
 All Pydantic models are thread-safe after creation:
 
-```
+```python
 from omnibase_core.models.model_compute_input import ModelComputeInput
 
 # Thread-safe - models are immutable after construction
@@ -433,7 +452,7 @@ input_data = ModelComputeInput(
 
 Any mutable state (caches, counters, registries) needs explicit synchronization:
 
-```
+```python
 from threading import Lock
 
 class ThreadSafeMetrics:
@@ -462,7 +481,7 @@ class ThreadSafeMetrics:
 - **Protocol resolution is thread-safe**: `get_service()` performs dictionary lookup only
 - **Service instances**: Individual services may not be thread-safe - check service documentation
 
-```
+```python
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Create container once
@@ -480,8 +499,8 @@ def worker_thread(container):
 
 **DO NOT share node instances across threads without careful analysis:**
 
-```
-# ❌ UNSAFE - shared NodeCompute with cache races
+```python
+# UNSAFE - shared NodeCompute with cache races
 compute_node = NodeCompute(container)
 
 async def worker1():
@@ -490,7 +509,7 @@ async def worker1():
 async def worker2():
     await compute_node.process(input2)  # Cache race!
 
-# ✅ SAFE - separate instances per thread
+# SAFE - separate instances per thread
 def get_thread_local_compute():
     if not hasattr(thread_local, 'node'):
         thread_local.node = NodeCompute(container)
@@ -526,7 +545,7 @@ Before deploying ONEX nodes in multi-threaded production environments:
 
 Balance between safety and performance:
 
-```
+```python
 # Coarse-grained locking (safer, slower)
 class CoarseLockCache:
     def __init__(self):
@@ -553,7 +572,7 @@ class FineGrainedCache:
 
 For high-performance scenarios, consider lock-free data structures:
 
-```
+```python
 from queue import Queue
 
 # Lock-free queue for work distribution
@@ -570,7 +589,7 @@ task = work_queue.get()
 
 AsyncIO single-threaded execution model avoids many race conditions:
 
-```
+```python
 import asyncio
 
 # AsyncIO tasks share event loop - no thread races
@@ -583,10 +602,113 @@ async def safe_async_processing():
 
 **However**: If using `run_in_executor()` or `ThreadPoolExecutor`, thread safety concerns return:
 
-```
+```python
 # This introduces thread safety concerns!
 loop = asyncio.get_event_loop()
 result = await loop.run_in_executor(thread_pool, blocking_operation)
+```
+
+## Runtime Thread Safety Checks
+
+You can add runtime checks to detect threading violations early in development:
+
+### Thread Affinity Enforcement
+
+```python
+import threading
+from typing import Any
+
+class ThreadAffinityMixin:
+    """Mixin to enforce single-thread usage of a class.
+
+    Use this mixin to detect accidental multi-threaded access to
+    components that are not thread-safe (e.g., NodeCompute, NodeEffect).
+    """
+
+    _owner_thread: int | None = None
+
+    def _check_thread_affinity(self) -> None:
+        """Verify we're on the same thread that created this instance.
+
+        Raises:
+            RuntimeError: If called from a different thread than the creator.
+        """
+        current_thread = threading.current_thread().ident
+        if self._owner_thread is None:
+            self._owner_thread = current_thread
+        elif self._owner_thread != current_thread:
+            raise RuntimeError(
+                f"Thread safety violation: {self.__class__.__name__} "
+                f"created on thread {self._owner_thread} but accessed "
+                f"from thread {current_thread}. Use thread-local instances."
+            )
+
+    def __getattribute__(self, name: str) -> Any:
+        """Check thread affinity on all attribute access."""
+        # Skip check for internal attributes and the check method itself
+        if name.startswith('_') or name == '_check_thread_affinity':
+            return super().__getattribute__(name)
+        self._check_thread_affinity()
+        return super().__getattribute__(name)
+```
+
+### Debug Mode Thread Safety Wrapper
+
+```python
+import os
+from functools import wraps
+from typing import Callable, TypeVar
+
+T = TypeVar('T')
+
+def debug_thread_check(func: Callable[..., T]) -> Callable[..., T]:
+    """Decorator to add thread safety checks in debug mode.
+
+    Only active when ONEX_DEBUG_THREADING=1 environment variable is set.
+    Use this to instrument methods that should not be called concurrently.
+    """
+    @wraps(func)
+    def wrapper(self, *args, **kwargs) -> T:
+        if os.environ.get('ONEX_DEBUG_THREADING') == '1':
+            import threading
+            thread_id = threading.current_thread().ident
+            owner_attr = f'_thread_owner_{func.__name__}'
+
+            current_owner = getattr(self, owner_attr, None)
+            if current_owner is not None and current_owner != thread_id:
+                raise RuntimeError(
+                    f"Concurrent access detected in {func.__name__}: "
+                    f"thread {thread_id} vs owner {current_owner}"
+                )
+
+            setattr(self, owner_attr, thread_id)
+            try:
+                return func(self, *args, **kwargs)
+            finally:
+                setattr(self, owner_attr, None)
+        else:
+            return func(self, *args, **kwargs)
+
+    return wrapper
+```
+
+### Usage in Node Classes
+
+```python
+from omnibase_core.nodes import NodeEffect
+
+class DebugNodeEffect(NodeEffect):
+    """NodeEffect with runtime thread safety checks (development only)."""
+
+    @debug_thread_check
+    async def process(self, input_data):
+        """Process with thread safety validation."""
+        return await super().process(input_data)
+
+    @debug_thread_check
+    def get_circuit_breaker(self, operation_id):
+        """Get circuit breaker with thread safety validation."""
+        return super().get_circuit_breaker(operation_id)
 ```
 
 ## Testing Thread Safety
@@ -599,6 +721,68 @@ See `tests/unit/test_thread_safety.py` for examples of:
 - Expected failures without synchronization
 - Correct locking pattern validation
 
+### Example Test Pattern
+
+```python
+import asyncio
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
+import pytest
+
+from omnibase_core.nodes import NodeCompute
+
+
+class TestNodeComputeThreadSafety:
+    """Tests demonstrating thread safety issues and mitigations."""
+
+    def test_shared_node_race_condition(self, container):
+        """Demonstrates race condition with shared NodeCompute."""
+        node = NodeCompute(container)
+        errors = []
+
+        def worker():
+            try:
+                # Simulate concurrent processing
+                asyncio.run(node.process(input_data))
+            except Exception as e:
+                errors.append(e)
+
+        # Launch concurrent workers
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(worker) for _ in range(100)]
+            for f in futures:
+                f.result()
+
+        # May see race condition errors or cache corruption
+        # This test demonstrates the problem - not a passing test
+
+    def test_thread_local_node_safe(self, container):
+        """Demonstrates safe pattern with thread-local nodes."""
+        thread_local = threading.local()
+
+        def get_node():
+            if not hasattr(thread_local, 'node'):
+                thread_local.node = NodeCompute(container)
+            return thread_local.node
+
+        errors = []
+
+        def worker():
+            try:
+                node = get_node()  # Each thread gets its own
+                asyncio.run(node.process(input_data))
+            except Exception as e:
+                errors.append(e)
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(worker) for _ in range(100)]
+            for f in futures:
+                f.result()
+
+        assert len(errors) == 0, f"Unexpected errors: {errors}"
+```
+
 ## Additional Resources
 
 - [Python threading documentation](https://docs.python.org/3/library/threading.html)
@@ -607,24 +791,48 @@ See `tests/unit/test_thread_safety.py` for examples of:
 
 ## Summary
 
+### Thread Safety Quick Reference
+
 | Component | Thread-Safe? | Mitigation |
 |-----------|-------------|------------|
-| Pydantic Models | ✅ Yes (immutable) | None needed |
-| ModelONEXContainer | ✅ Yes (read-only) | None needed after init |
-| ModelComputeOutput | ✅ Yes (frozen=True) | None needed |
-| ModelReducerOutput | ✅ Yes (frozen=True) | None needed |
-| ModelEffectInput/Output | ✅ Yes (frozen=True) | None needed |
-| EffectIOConfig models | ✅ Yes (frozen=True) | None needed |
-| ModelComputeCache | ❌ No | Use locks or thread-local instances |
-| ModelCircuitBreaker | ❌ No | Use locks or thread-local instances |
-| ModelEffectTransaction | ❌ No | Never share across threads |
-| NodeCompute instances | ❌ No | Thread-local instances or locked cache |
-| NodeEffect instances | ❌ No | Thread-local instances (recommended) |
-| MixinEffectExecution._circuit_breakers | ❌ No | Process-local, single-thread only |
+| **Models (Input/Output)** | | |
+| Pydantic Models | Yes (immutable) | None needed |
+| ModelComputeInput/Output | Yes (frozen=True) | None needed |
+| ModelReducerInput/Output | Yes (frozen=True) | None needed |
+| ModelEffectInput/Output | Yes (frozen=True) | None needed |
+| ModelOrchestratorInput/Output | Yes (frozen=True) | None needed |
+| EffectIOConfig models | Yes (frozen=True) | None needed |
+| **Infrastructure** | | |
+| ModelONEXContainer | Yes (read-only) | None needed after init |
+| ModelComputeCache | No | Use locks or thread-local instances |
+| ModelCircuitBreaker | No | Use locks or thread-local instances |
+| ModelEffectTransaction | No | Never share across threads |
+| **Node Instances** | | |
+| NodeCompute | No | Thread-local instances or locked cache |
+| NodeEffect | No | Thread-local instances (recommended) |
+| NodeReducer | No | Thread-local instances (FSM state is mutable) |
+| NodeOrchestrator | No | Thread-local instances (workflow state is mutable) |
+| **Mixins** | | |
+| MixinEffectExecution | No | _circuit_breakers dict is not synchronized |
+| MixinNodeLifecycle | Yes | Stateless methods |
+| MixinDiscoveryResponder | Yes | Stateless methods |
+
+### Design Rationale
+
+ONEX nodes are intentionally NOT thread-safe by default for several reasons:
+
+1. **Performance**: Synchronization adds overhead to every operation
+2. **Simplicity**: Thread-local patterns are simpler to reason about
+3. **Explicit Control**: Developers must consciously choose their concurrency model
+4. **AsyncIO Compatibility**: Most ONEX workloads use asyncio which is single-threaded
 
 **Default Assumption**: Unless explicitly documented as thread-safe, assume components require synchronization for concurrent use.
 
-**Key References**:
+### Key References
+
 - NodeEffect: [node_effect.py](../../src/omnibase_core/nodes/node_effect.py)
+- NodeCompute: [node_compute.py](../../src/omnibase_core/nodes/node_compute.py)
+- NodeReducer: [node_reducer.py](../../src/omnibase_core/nodes/node_reducer.py)
+- NodeOrchestrator: [node_orchestrator.py](../../src/omnibase_core/nodes/node_orchestrator.py)
 - MixinEffectExecution: [mixin_effect_execution.py](../../src/omnibase_core/mixins/mixin_effect_execution.py)
 - NodeEffect Architecture: [CONTRACT_DRIVEN_NODEEFFECT_V1_0.md](../architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md)

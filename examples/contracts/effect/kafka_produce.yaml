@@ -147,17 +147,15 @@ effect_operations:
           # Timestamp assigned by broker
           timestamp: "$.timestamp"
 
-        # Store full response
-        store_full_response: true
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
 
       observability:
-        log_messages: true
-        log_message_body: false  # Can be verbose
+        log_request: true
+        log_response: false  # Can be verbose
         emit_metrics: true
-        metric_labels:
-          operation: "publish_user_registration"
-          topic: "user.events.registration"
-          event_type: "user.registered"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 2: PUBLISH USER ACTIVITY EVENT
@@ -226,14 +224,16 @@ effect_operations:
         extract_fields:
           partition: "$.partition"
           offset: "$.offset"
-        store_full_response: false  # Minimize overhead
+
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
 
       observability:
-        log_messages: false  # Too verbose for analytics
+        log_request: false  # Too verbose for analytics
+        log_response: false
         emit_metrics: true
-        metric_labels:
-          operation: "publish_user_activity"
-          topic: "user.events.activity"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 3: PUBLISH AUDIT LOG EVENT
@@ -316,16 +316,16 @@ effect_operations:
           partition: "$.partition"
           offset: "$.offset"
           timestamp: "$.timestamp"
-        store_full_response: true
+
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
 
       observability:
-        log_messages: true
-        log_message_body: false
+        log_request: true
+        log_response: false
         emit_metrics: true
-        metric_labels:
-          operation: "publish_audit_log"
-          topic: "security.audit.logs"
-          compliance: "true"
+        trace_propagation: true
 
 # ---------------------------------------------------------------------------
 # EXAMPLE INPUT/OUTPUT
