@@ -146,6 +146,17 @@ class UnionLegitimacyValidator:
             '123'
             >>> UnionLegitimacyValidator._safe_str("str")
             'str'
+
+        Note:
+            Currently, non-string types are silently converted via str(). This
+            could potentially hide issues with malformed AST nodes or unexpected
+            input types.
+
+            TODO: Consider adding optional debug logging for unexpected types
+            (e.g., when value is not str/None) to aid debugging malformed AST
+            nodes if issues arise in future iterations. This could be controlled
+            via a debug flag or environment variable to avoid noise in normal
+            operation.
         """
         if value is None:
             return ""
@@ -377,7 +388,46 @@ class UnionLegitimacyValidator:
                         v.lower() for v in literal_values if v and isinstance(v, str)
                     }
 
-                    # Require significant overlap: at least 3 matches OR majority for small unions
+                    # Overlap Threshold Formula Rationale
+                    # ==================================
+                    # The formula `min(3, len(union_type_names) // 2 + 1)` creates an
+                    # intentionally asymmetric threshold that balances precision vs recall:
+                    #
+                    # For SMALL unions (2-5 types):
+                    #   - 2 types: threshold = min(3, 1+1) = 2 matches required (100%)
+                    #   - 3 types: threshold = min(3, 1+1) = 2 matches required (67%)
+                    #   - 4 types: threshold = min(3, 2+1) = 3 matches required (75%)
+                    #   - 5 types: threshold = min(3, 2+1) = 3 matches required (60%)
+                    #
+                    # For LARGE unions (6+ types):
+                    #   - 6 types:  threshold = min(3, 3+1) = 3 matches required (50%)
+                    #   - 10 types: threshold = min(3, 5+1) = 3 matches required (30%)
+                    #   - 20 types: threshold = min(3, 10+1) = 3 matches required (15%)
+                    #
+                    # Why this asymmetry is intentional:
+                    #
+                    # 1. SMALL UNIONS need STRICTER matching (higher %) because:
+                    #    - With few types, coincidental overlap is more likely
+                    #    - A 2-type union matching 1 of 2 literals could be a false positive
+                    #    - We need high confidence that this is truly a discriminated union
+                    #
+                    # 2. LARGE UNIONS have a CAP at 3 matches because:
+                    #    - Requiring 50%+ of a 10-type union would be too strict
+                    #    - Large discriminated unions (ModelBool | ModelStr | ModelInt | ...)
+                    #      are common in schema definitions and are legitimately discriminated
+                    #    - 3 matching types provides strong evidence of intentional design
+                    #    - Avoiding false negatives is important for developer experience
+                    #
+                    # 3. The cap at 3 prevents:
+                    #    - False negatives on legitimate large discriminated unions
+                    #    - Forcing developers to add unnecessary suppression comments
+                    #
+                    # Alternative considered: consistent percentage (e.g., 50%)
+                    # Rejected because: Would require 5 matches for 10-type unions,
+                    # causing false negatives on legitimate ModelSchemaValue-style unions.
+                    #
+                    # If this heuristic proves too permissive or too strict in practice,
+                    # consider tuning the cap (currently 3) or the divisor (currently 2).
                     overlap = literal_values_lower & union_type_names
                     overlap_threshold = min(3, len(union_type_names) // 2 + 1)
                     if len(overlap) >= overlap_threshold:
