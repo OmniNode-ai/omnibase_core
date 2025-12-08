@@ -92,6 +92,7 @@ class ModelDictValueUnion(BaseModel):
     MAX_LIST_SIZE: int = 10000
     MAX_DICT_SIZE: int = 1000
 
+    # union-ok: discriminated_union - companion value_type Literal field provides type safety
     value: Union[bool, dict[str, Any], float, int, list[Any], str] = Field(
         description="The actual value",
     )
@@ -277,6 +278,7 @@ class ModelDictValueUnion(BaseModel):
 
         return self
 
+    # union-ok: discriminated_union - return type matches discriminated value field
     def get_value(self) -> Union[bool, dict[str, Any], float, int, list[Any], str]:
         """
         Get the stored value with proper type.

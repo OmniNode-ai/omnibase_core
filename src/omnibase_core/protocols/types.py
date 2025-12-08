@@ -121,6 +121,7 @@ class ProtocolMetadataProvider(Protocol):
 
     __omnibase_metadata_provider_marker__: Literal[True]
 
+    # union-ok: json_value - standard JSON-compatible metadata types
     async def get_metadata(self) -> dict[str, str | int | bool | float]:
         """Get the object's metadata."""
         ...
@@ -163,6 +164,7 @@ class ProtocolSerializable(Protocol):
     to be persisted, transmitted, or cached.
     """
 
+    # union-ok: json_value - serialization output uses standard JSON-compatible types
     def model_dump(
         self,
     ) -> dict[

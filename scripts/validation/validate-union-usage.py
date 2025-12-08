@@ -124,6 +124,7 @@ class UnionLegitimacyValidator:
 
         # Check for Field(discriminator=) pattern in file content (modern Pydantic approach)
         has_field_discriminator = False
+        has_companion_literal_discriminator = False
         if file_content:
             # Look for Field(discriminator="field_name") pattern near the union
             import re
@@ -137,7 +138,42 @@ class UnionLegitimacyValidator:
                 re.search(discriminator_pattern, file_content)
             )
 
+            # Check for companion Literal discriminator field in the file
+            # Pattern: field_name: Literal["type1", "type2", ...] where types match union types
+            # This detects patterns like:
+            #   value: Union[bool, dict, float, int, list, str]
+            #   value_type: Literal["bool", "dict", "float", "int", "list", "str"]
+            literal_discriminator_pattern = r":\s*Literal\[([^\]]+)\]"
+            literal_matches = re.findall(literal_discriminator_pattern, file_content)
+            for match in literal_matches:
+                # Extract literal string values from the match
+                literal_values = re.findall(r'["\'](\w+)["\']', match)
+                if literal_values:
+                    # Normalize union type names for comparison
+                    # Handle types like "dict[str, Any]" -> "dict", "list[Any]" -> "list"
+                    union_type_names = set()
+                    for t in pattern.types:
+                        # Extract base type name (before [ if subscripted)
+                        base_type = t.split("[")[0].lower()
+                        union_type_names.add(base_type)
+
+                    # Convert literal values to lowercase for comparison
+                    literal_values_lower = {v.lower() for v in literal_values}
+
+                    # If Literal values overlap significantly with union types, it's a discriminator
+                    # Require at least 3 matching values OR majority match for smaller unions
+                    overlap = literal_values_lower & union_type_names
+                    overlap_threshold = min(3, len(union_type_names) // 2 + 1)
+                    if len(overlap) >= overlap_threshold:
+                        has_companion_literal_discriminator = True
+                        break
+
         # Must have discriminator indicators and reasonable type count
+        # Relaxed type count limit for companion literal discriminators since they
+        # explicitly handle all types in the union
+        if has_companion_literal_discriminator:
+            return True
+
         return (
             has_literal or has_type_field or has_kind_field or has_field_discriminator
         ) and len(pattern.types) <= 5
