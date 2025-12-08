@@ -4,6 +4,8 @@
 > **Python**: 3.12+
 > **Framework**: ONEX Core - Foundational implementations for the ONEX architecture
 
+> **⚠️ No Backwards Compatibility**: Until v0.4.0 is released, this project does NOT maintain backwards compatibility. Breaking changes may occur between commits. This is acceptable during the pre-release development phase.
+
 > **📚 Shared Infrastructure**: For common OmniNode infrastructure (PostgreSQL, Kafka/Redpanda, remote server topology, Docker networking, environment variables), see **`~/.claude/CLAUDE.md`**. This file contains omnibase_core-specific architecture, patterns, and development only.
 
 ---

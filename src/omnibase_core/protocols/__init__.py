@@ -153,17 +153,10 @@ from omnibase_core.protocols.validation import (
 )
 
 # =============================================================================
-# Compatibility Aliases (for migration from SPI)
+# Convenience Type Aliases (for cleaner imports)
 # =============================================================================
 
-# Container aliases - ProtocolManagedServiceInstance is for DI container management
-# ProtocolServiceInstance (from types) is for service discovery
-ProtocolDIServiceInstance = ProtocolManagedServiceInstance
-ProtocolDIServiceMetadata = ProtocolServiceRegistrationMetadata
-# Legacy alias for backward compatibility
-ProtocolDiscoveryServiceInstance = ProtocolServiceInstance
-
-# Convenience type aliases for cleaner imports
+# Shorter names for commonly used protocols
 Configurable = ProtocolConfigurable
 Executable = ProtocolExecutable
 Identifiable = ProtocolIdentifiable
@@ -218,9 +211,6 @@ __all__ = [
     "ProtocolServiceFactory",
     "ProtocolServiceRegistryConfig",
     "ProtocolServiceRegistry",
-    # Container Aliases
-    "ProtocolDIServiceInstance",
-    "ProtocolDIServiceMetadata",
     # ==========================================================================
     # Event Bus Module
     # ==========================================================================
@@ -256,8 +246,6 @@ __all__ = [
     "ProtocolMetadata",
     "ProtocolServiceInstance",
     "ProtocolServiceMetadata",
-    # Legacy alias
-    "ProtocolDiscoveryServiceInstance",
     # Convenience Type Aliases
     "Configurable",
     "Executable",

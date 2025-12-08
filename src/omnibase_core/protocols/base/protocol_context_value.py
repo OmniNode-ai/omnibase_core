@@ -32,7 +32,7 @@ class ProtocolContextValue(Protocol):
         ...
 
 
-# Type alias for backwards compatibility and simpler usage
+# Type alias for simpler usage
 ContextValue = ProtocolContextValue
 
 

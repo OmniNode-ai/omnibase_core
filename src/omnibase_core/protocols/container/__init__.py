@@ -26,14 +26,14 @@ from omnibase_core.protocols.container.protocol_dependency_graph import (
 from omnibase_core.protocols.container.protocol_injection_context import (
     ProtocolInjectionContext,
 )
+from omnibase_core.protocols.container.protocol_managed_service_instance import (
+    ProtocolManagedServiceInstance,
+)
 from omnibase_core.protocols.container.protocol_service_dependency import (
     ProtocolServiceDependency,
 )
 from omnibase_core.protocols.container.protocol_service_factory import (
     ProtocolServiceFactory,
-)
-from omnibase_core.protocols.container.protocol_service_instance import (
-    ProtocolManagedServiceInstance,
 )
 from omnibase_core.protocols.container.protocol_service_registration import (
     ProtocolServiceRegistration,
