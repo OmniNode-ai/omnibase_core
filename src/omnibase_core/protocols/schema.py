@@ -34,6 +34,7 @@ class ProtocolSchemaModel(Protocol):
 
     schema_id: UUID
     schema_type: str
+    # error-ok: string_version - Protocol attribute; implementers may use str or ModelSemVer
     version: str
     definition: dict[str, object]
 

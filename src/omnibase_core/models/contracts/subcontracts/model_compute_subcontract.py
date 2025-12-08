@@ -68,6 +68,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step import (
     ModelComputePipelineStep,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelComputeSubcontract(BaseModel):
@@ -116,7 +117,7 @@ class ModelComputeSubcontract(BaseModel):
         >>> # Minimal contract with identity transform
         >>> contract = ModelComputeSubcontract(
         ...     operation_name="echo",
-        ...     operation_version="1.0.0",
+        ...     operation_version=ModelSemVer(major=1, minor=0, patch=0),
         ...     pipeline=[
         ...         ModelComputePipelineStep(
         ...             step_name="identity",
@@ -128,9 +129,15 @@ class ModelComputeSubcontract(BaseModel):
     """
 
     # Identity
-    version: str = "1.0.0"
+    version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Semantic version of the subcontract schema format",
+    )
     operation_name: str
-    operation_version: str
+    operation_version: ModelSemVer = Field(
+        ...,
+        description="Semantic version of this operation implementation",
+    )
     description: str = ""
 
     # Schema references (resolved at load time)

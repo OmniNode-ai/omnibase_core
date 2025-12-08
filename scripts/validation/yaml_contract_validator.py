@@ -15,11 +15,19 @@ class SimpleNodeType:
     """Simple node type values for validation."""
 
     VALID_TYPES = {
+        # Generic types for each node kind
+        "compute_generic",
+        "effect_generic",
+        "reducer_generic",
+        "orchestrator_generic",
+        "runtime_host_generic",
+        # Short aliases (backwards compatible)
         "compute",
-        "gateway",
-        "orchestrator",
-        "reducer",
         "effect",
+        "reducer",
+        "orchestrator",
+        # Specific implementation types
+        "gateway",
         "validator",
         "transformer",
         "aggregator",
@@ -32,7 +40,6 @@ class SimpleNodeType:
         "node",
         "workflow",
         "service",
-        "compute_generic",
         "unknown",
     }
 

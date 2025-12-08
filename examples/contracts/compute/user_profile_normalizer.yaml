@@ -26,6 +26,10 @@
 # v1.0 Contract Schema Version
 # ============================================================================
 
+# Contract header - required for validation
+node_type: compute_generic
+contract_version: {major: 1, minor: 0, patch: 0}
+
 # ---------------------------------------------------------------------------
 # COMPUTE SUBCONTRACT: Defines the transformation pipeline
 # ---------------------------------------------------------------------------
@@ -35,11 +39,11 @@
 
 compute:
   # Schema version for forward compatibility
-  version: "1.0.0"
+  version: {major: 1, minor: 0, patch: 0}
 
   # Operation identification
   operation_name: user_profile_normalizer
-  operation_version: "1.0.0"
+  operation_version: {major: 1, minor: 0, patch: 0}
   description: |
     Normalizes user profile data for consistent storage and processing.
     Handles unicode normalization, whitespace trimming, email standardization,

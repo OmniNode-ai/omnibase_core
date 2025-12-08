@@ -90,6 +90,7 @@ class ModelComputeExecutionContext(BaseModel):
 
     operation_id: UUID
     correlation_id: UUID | None = None
+    # error-ok: string_id - Intentionally str for flexibility (can be UUID, hostname, or custom identifier)
     node_id: str | None = None
 
     model_config = ConfigDict(extra="forbid", frozen=True)

@@ -138,6 +138,9 @@ class PythonASTValidator(ast.NodeVisitor):
             "protocol_version",  # Protocol version
             "schema_version",  # Schema version
             # Note: generic "version" field not whitelisted globally to catch other violations
+            # EXECUTION_CONTEXT_FIELDS (flexible identifiers)
+            # See: src/omnibase_core/models/compute/model_compute_execution_context.py
+            "node_id",  # Intentionally str: can be UUID, hostname, or custom identifier
         }
 
     def visit_Import(self, node: ast.Import):
@@ -939,6 +942,7 @@ def main() -> int:
                                         "archived",  # Exclude archived code (alternative naming)
                                         "tests",  # Exclude test files
                                         "examples_validation_container_usage.py",  # Exclude specific example files
+                                        "protocols",  # Exclude Protocol classes (interfaces, not implementations)
                                     ]
 
                                     try:
