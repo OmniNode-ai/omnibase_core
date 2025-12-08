@@ -43,7 +43,7 @@ Actions execute in a defined order during FSM state transitions:
 3. **entry_actions** of target state (initialization after arriving)
 
 Example from `node_graph_reducer.yaml`:
-```
+```yaml
 initializing -> wiring transition:
   1. exit_actions: [log_initialization_complete]     # From initializing state
   2. actions: [emit_wiring_started, snapshot_registry_state]  # From transition
@@ -98,6 +98,85 @@ Actions in terminal states (e.g., `stopped`) MUST be idempotent because:
 - Recovery scenarios may re-enter terminal states
 
 See `node_graph_reducer.yaml` for idempotency documentation patterns.
+
+## Integration Testing
+
+Integration tests for runtime contracts should cover the complete lifecycle:
+
+| Test Scenario | Description | Key Assertions |
+|--------------|-------------|----------------|
+| **Happy Path Startup** | contract_loader → registry → node_graph → wiring → ready | All FSMs reach target states, `runtime.ready` event emitted |
+| **Contract Validation Failure** | Invalid contract in contracts/ directory | Registry enters `error` state, error event emitted |
+| **Graceful Shutdown** | `shutdown_requested` during `running` state | Drain completes, all resources released, `graph.stopped` emitted |
+| **Fatal Error Recovery** | Inject fatal_error from each non-terminal state | Idempotent cleanup, consistent `stopped` state |
+| **Hot Reload** | Add/modify contract during `running` state | Registry reloads, graph rewires without restart |
+
+Test implementation pattern:
+```python
+@pytest.mark.integration
+async def test_runtime_lifecycle_happy_path():
+    orchestrator = RuntimeOrchestrator(contracts_dir="./test_contracts")
+    await orchestrator.start()
+    assert orchestrator.state == "running"
+    await orchestrator.shutdown(graceful=True)
+    assert orchestrator.state == "stopped"
+```
+
+## Performance Benchmarks
+
+Target benchmarks for runtime operations:
+
+| Operation | Target | Measurement Point |
+|-----------|--------|-------------------|
+| Contract scan (100 files) | < 500ms | `contract_loader.scan` completion |
+| Contract validation (per file) | < 10ms | `contract_registry.validate` |
+| Node wiring (50 nodes) | < 2s | `node_graph.wiring` → `running` |
+| Event bus subscription | < 100ms | `event_bus_wiring` per subscription |
+| Graceful shutdown (idle) | < 1s | `shutdown_requested` → `stopped` |
+| Graceful shutdown (draining) | < 30s | Respects `drain_timeout_ms` |
+
+Benchmark tooling:
+```bash
+# Run performance benchmarks
+poetry run pytest tests/integration/benchmarks/ -v --benchmark-only
+```
+
+## Operational Monitoring
+
+### Key Metrics
+
+| Metric | Source | Alert Threshold |
+|--------|--------|-----------------|
+| `onex.runtime.state` | FSM current state | Any error state > 1m |
+| `onex.runtime.startup_duration_ms` | Startup timing | > 10s |
+| `onex.contracts.loaded_count` | Registry | 0 (no contracts) |
+| `onex.contracts.validation_errors` | Registry | > 0 |
+| `onex.wiring.subscription_failures` | Event bus wiring | > 5 in 1m |
+| `onex.circuit_breaker.open` | All effect nodes | Any open > 30s |
+
+### Health Checks
+
+All nodes expose health checks via `health_check` configuration:
+
+```bash
+# Check runtime health
+curl http://localhost:8080/health/runtime
+
+# Expected response when healthy
+{"status": "healthy", "checks": {"registry": "ready", "graph": "running", "wiring": "complete"}}
+```
+
+### Event Topics for Monitoring
+
+Subscribe to these topics for operational visibility:
+
+| Topic | Purpose |
+|-------|---------|
+| `onex.runtime.ready` | Runtime fully initialized |
+| `onex.runtime.error` | Runtime-level errors |
+| `onex.runtime.state_changed` | FSM state transitions |
+| `onex.contracts.loaded` | Contract discovery events |
+| `onex.contracts.validation_failed` | Contract validation errors |
 
 ## Reference
 

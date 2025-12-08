@@ -53,8 +53,11 @@ effect:
   operation_timeout_ms: 60000  # 60 seconds total for all wiring operations
 
   # IO Configuration for event bus handler
+  # CONSISTENCY: handler_type and wiring_config.event_bus_type MUST use the same
+  # environment variable (ONEX_EVENT_BUS) to ensure the IO handler and wiring
+  # logic target the same event bus instance.
   io_config:
-    handler_type: "${env.ONEX_EVENT_BUS:inmemory}"  # Event bus type (consistent with wiring_config.event_bus_type)
+    handler_type: "${env.ONEX_EVENT_BUS:inmemory}"  # See also: wiring_config.event_bus_type
     topic: "onex.runtime.subscriptions"
     # SECURITY NOTE: ${input.subscriptions} is validated against topic_validation rules
     # in wiring_config before being used. This prevents command injection, event spoofing,

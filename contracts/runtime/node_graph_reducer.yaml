@@ -303,51 +303,20 @@ metadata:
     - lifecycle
   documentation_url: https://docs.onex.ai/reducers/node-graph
 
-# Testing Guidance for Wildcard Transitions (from_state: '*')
-# Wildcards (fatal_error, timeout) bypass normal flow and must be safe from ANY non-terminal state.
-# Target state (stopped) entry_actions must be idempotent.
+# Testing Guidance: Wildcard Transitions (from_state: '*')
+# Wildcards bypass normal flow; stopped entry_actions MUST be idempotent.
 testing_guidance:
-  applicable_transitions: [fatal_error, handle_timeout]
-
-  # Fatal error tests - from each non-terminal state (priority: critical)
-  fatal_error_tests:
-    - {name: fatal_error_from_initializing, from: initializing, to: stopped,
-       verify: [resources_released, error_logged_with_context, state_clean]}
-    - {name: fatal_error_from_wiring, from: wiring, to: stopped,
-       verify: [partial_wiring_cleaned, connections_cancelled, error_logged]}
-    - {name: fatal_error_from_running, from: running, to: stopped,
-       verify: [health_monitoring_stopped, nodes_deactivated, in_flight_captured]}
-    - {name: fatal_error_from_draining, from: draining, to: stopped,
-       verify: [drain_aborted, work_force_completed, timer_cancelled]}
-
-  # Timeout tests - from each non-terminal state (priority: high)
-  timeout_tests:
-    - {name: timeout_from_initializing, from: initializing, to: stopped,
-       verify: [timeout_logged_with_context, init_aborted_cleanly]}
-    - {name: timeout_from_wiring, from: wiring, to: stopped,
-       verify: [timeout_logged, wiring_aborted, partial_connections_cleaned]}
-    - {name: timeout_from_running, from: running, to: stopped,
-       verify: [timeout_alert_emitted, running_cleanup_performed]}
-    - {name: timeout_from_draining, from: draining, to: stopped,
-       verify: [drain_timeout_handled, work_force_stopped]}
-
-  # Idempotency tests - verify entry_actions safe to call multiple times (priority: critical)
-  idempotency_tests:
-    - name: double_fatal_error_idempotency
-      scenario: Trigger fatal_error twice before entry_actions complete
-      verify: [no_exceptions, resources_released_once, state_clean]
-    - name: fatal_error_after_timeout
-      scenario: Trigger timeout then immediately fatal_error
-      verify: [no_conflict, final_state_stopped, cleanup_idempotent]
-    - name: restart_after_fatal_error
-      scenario: fatal_error -> restart_graph -> fatal_error cycle
-      verify: [restart_works, second_fatal_works, no_accumulated_state]
-
-  # Edge cases (priority: high)
-  edge_case_tests:
-    - name: fatal_error_with_pending_actions
-      scenario: fatal_error while previous transition actions still executing
-      verify: [pending_cancelled_or_completed, no_orphaned_resources, consistent_state]
-    - name: concurrent_timeout_and_fatal_error
-      scenario: Both triggers fired simultaneously from same state
-      verify: [single_transition_executes, no_race_conditions, consistent_state]
+  transitions: [fatal_error, handle_timeout]
+  test_matrix:
+    # Test fatal_error and timeout from each non-terminal state to stopped
+    states: [initializing, wiring, running, draining]
+    triggers: [fatal_error, timeout]
+    verify: [resources_released, error_logged, state_clean, no_orphans]
+  idempotency:
+    # Entry actions must tolerate repeated calls (double-trigger, timeout+fatal, restart cycles)
+    scenarios: [double_trigger, timeout_then_fatal, restart_after_fatal]
+    verify: [no_exceptions, single_cleanup, consistent_state]
+  edge_cases:
+    # Concurrent triggers and in-flight action handling
+    - concurrent_triggers_single_execution
+    - pending_actions_cancelled_cleanly
