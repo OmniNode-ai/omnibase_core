@@ -39,7 +39,12 @@ class TestPipelineExecutorUnexpectedErrors:
     """
 
     def test_unexpected_exception_sets_success_false(self) -> None:
-        """Verify pipeline result has success=False when step raises unexpected error."""
+        """Test that unexpected exceptions result in a failed pipeline status.
+
+        Verifies that when a pipeline step raises an unexpected exception
+        (not ModelOnexError), the pipeline result object has success=False,
+        allowing callers to detect failures without catching exceptions.
+        """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
             operation_version="1.0.0",
@@ -64,7 +69,12 @@ class TestPipelineExecutorUnexpectedErrors:
         assert result.success is False
 
     def test_unexpected_exception_sets_error_type_unexpected(self) -> None:
-        """Verify error_type is 'unexpected_error' for non-ModelOnexError exceptions."""
+        """Test that unexpected exceptions are classified with error_type 'unexpected_error'.
+
+        Verifies that non-ModelOnexError exceptions are categorized distinctly
+        from structured ONEX errors, enabling orchestration layers to apply
+        appropriate recovery strategies for unexpected failures.
+        """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
             operation_version="1.0.0",
@@ -88,7 +98,12 @@ class TestPipelineExecutorUnexpectedErrors:
         assert result.error_type == "unexpected_error"
 
     def test_unexpected_exception_captures_error_message(self) -> None:
-        """Verify error_message contains the exception message."""
+        """Test that the original exception message is preserved in the result.
+
+        Verifies that the error_message field contains the exception's message,
+        providing diagnostic information for debugging without losing context
+        about what caused the failure.
+        """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
             operation_version="1.0.0",
@@ -113,7 +128,12 @@ class TestPipelineExecutorUnexpectedErrors:
         assert result.error_message == expected_message
 
     def test_unexpected_exception_logs_via_logger_exception(self) -> None:
-        """Verify logger.exception is called for unexpected errors."""
+        """Test that unexpected errors trigger logger.exception with full traceback.
+
+        Verifies that logger.exception is called (not logger.error), ensuring
+        the full stack trace is captured for post-mortem debugging while the
+        error is still gracefully handled in the result object.
+        """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
             operation_version="1.0.0",
@@ -136,7 +156,7 @@ class TestPipelineExecutorUnexpectedErrors:
             ) as mock_execute,
             patch("omnibase_core.utils.compute_executor.logger") as mock_logger,
         ):
-            mock_execute.side_effect = IOError("Disk read error")
+            mock_execute.side_effect = OSError("Disk read error")
 
             execute_compute_pipeline(contract, "test_input", context)
 
@@ -150,7 +170,12 @@ class TestPipelineExecutorUnexpectedErrors:
             assert "failing_step" in log_args
 
     def test_unexpected_exception_sets_error_step(self) -> None:
-        """Verify error_step is set to the failing step name."""
+        """Test that the failing step is correctly identified in multi-step pipelines.
+
+        Verifies that when a step fails in a multi-step pipeline, the error_step
+        field correctly identifies which specific step caused the failure,
+        enabling targeted debugging and partial recovery strategies.
+        """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
             operation_version="1.0.0",
@@ -190,7 +215,12 @@ class TestPipelineExecutorUnexpectedErrors:
         assert result.error_step == "step_two_failing"
 
     def test_unexpected_exception_records_step_result(self) -> None:
-        """Verify failing step is recorded in step_results with error details."""
+        """Test that failing steps are recorded in step_results with error details.
+
+        Verifies that the step_results dictionary contains an entry for the
+        failing step with success=False, the error type, error message, and
+        output=None, providing granular visibility into pipeline execution.
+        """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
             operation_version="1.0.0",
@@ -219,7 +249,12 @@ class TestPipelineExecutorUnexpectedErrors:
         assert step_result.output is None
 
     def test_unexpected_exception_tracks_steps_executed(self) -> None:
-        """Verify steps_executed includes the failing step."""
+        """Test that steps_executed accurately reflects execution progress.
+
+        Verifies that the steps_executed list includes all steps that were
+        attempted (including the failing step) but excludes steps that were
+        never reached due to early termination, enabling progress tracking.
+        """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
             operation_version="1.0.0",
@@ -265,7 +300,12 @@ class TestPipelineExecutorUnexpectedErrors:
         assert "never_reached" not in result.steps_executed
 
     def test_unexpected_exception_records_timing(self) -> None:
-        """Verify processing_time_ms and step duration are recorded even on failure."""
+        """Test that timing metrics are recorded even when steps fail.
+
+        Verifies that processing_time_ms and per-step duration_ms are captured
+        regardless of success or failure, enabling performance analysis and
+        identifying slow steps that may have contributed to failures.
+        """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
             operation_version="1.0.0",
@@ -290,7 +330,13 @@ class TestPipelineExecutorUnexpectedErrors:
         assert result.step_results["failing_step"].metadata.duration_ms >= 0
 
     def test_unexpected_exception_does_not_propagate(self) -> None:
-        """Verify unexpected exceptions do not propagate to caller."""
+        """Test that no exception types propagate to callers from the pipeline.
+
+        Verifies that various exception types (RuntimeError, ValueError,
+        TypeError, KeyError, AttributeError, IOError, MemoryError) are all
+        captured in the result object rather than propagating, ensuring
+        callers can rely on result-based error handling.
+        """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
             operation_version="1.0.0",
@@ -326,7 +372,12 @@ class TestPipelineExecutorUnexpectedErrors:
                 assert result.error_type == "unexpected_error"
 
     def test_unexpected_exception_includes_context_in_log(self) -> None:
-        """Verify operation_id and correlation_id are included in log output."""
+        """Test that log output includes operation context for traceability.
+
+        Verifies that operation_id and correlation_id from the execution
+        context are included in log messages, enabling correlation of errors
+        across distributed systems and log aggregation platforms.
+        """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
             operation_version="1.0.0",
@@ -369,7 +420,12 @@ class TestPipelineExecutorLoggingDetails:
     """Tests for detailed logging behavior during error handling."""
 
     def test_logger_exception_includes_exception_type(self) -> None:
-        """Verify log message includes the type of exception that occurred."""
+        """Test that log messages include the exception class name.
+
+        Verifies that the exception type (e.g., 'ZeroDivisionError') is
+        included in the log output, enabling quick categorization of
+        failures in log analysis without parsing stack traces.
+        """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
             operation_version="1.0.0",

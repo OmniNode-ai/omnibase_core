@@ -465,6 +465,7 @@ class TestActionTypes:
         assert EnumActionType.REDUCE in action_types
 
 
+@pytest.mark.unit
 class TestExecuteStepErrorHandling:
     """Test error handling in parallel execution's execute_step function.
 
@@ -504,7 +505,9 @@ class TestExecuteStepErrorHandling:
         with patch(
             "omnibase_core.utils.workflow_executor._create_action_for_step"
         ) as mock_create_action:
-            mock_create_action.side_effect = RuntimeError("Simulated action creation failure")
+            mock_create_action.side_effect = RuntimeError(
+                "Simulated action creation failure"
+            )
 
             result = await execute_workflow(
                 simple_workflow_definition,
@@ -598,16 +601,6 @@ class TestExecuteStepErrorHandling:
             ),
         ]
 
-        original_create_action = None
-
-        def selective_failure(step, workflow_id):
-            """Fail only for the 'Fail Step'."""
-            if step.step_id == fail_step_id:
-                raise ValueError("Intentional failure for testing")
-            # Call the real implementation for other steps
-            from omnibase_core.utils.workflow_executor import _create_action_for_step
-            return _create_action_for_step.__wrapped__(step, workflow_id)  # type: ignore[attr-defined]
-
         # We need to capture the original function before patching
         from omnibase_core.utils import workflow_executor
 
@@ -618,7 +611,9 @@ class TestExecuteStepErrorHandling:
                 raise ValueError("Intentional failure for testing")
             return original_fn(step, workflow_id)
 
-        with patch.object(workflow_executor, "_create_action_for_step", side_effect=mock_fn):
+        with patch.object(
+            workflow_executor, "_create_action_for_step", side_effect=mock_fn
+        ):
             result = await execute_workflow(
                 simple_workflow_definition,
                 steps,
