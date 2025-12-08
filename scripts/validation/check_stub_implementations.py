@@ -59,13 +59,13 @@ class StubIssue:
     function_name: str
     issue_type: str
     description: str
-    fix_suggestion: Optional[str] = None
+    fix_suggestion: str | None = None
 
 
 class StubDetectorConfig:
     """Configuration for stub detection."""
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         self.excluded_files: set[str] = set()
         self.excluded_patterns: set[str] = set()
         self.excluded_functions: set[str] = set()
@@ -97,7 +97,7 @@ class StubDetectorConfig:
         except Exception as e:
             print(f"Warning: Failed to load config from {config_path}: {e}")
 
-    def is_excluded(self, file_path: Path, function_name: Optional[str] = None) -> bool:
+    def is_excluded(self, file_path: Path, function_name: str | None = None) -> bool:
         """Check if file or function is excluded from checking."""
         file_str = str(file_path)
 
@@ -125,8 +125,8 @@ class StubImplementationDetector(ast.NodeVisitor):
         self.filename = filename
         self.source_lines = source_lines
         self.issues: list[StubIssue] = []
-        self.current_function: Optional[str] = None
-        self.current_class: Optional[str] = None
+        self.current_function: str | None = None
+        self.current_class: str | None = None
         self.in_protocol: bool = False
         self.in_abstract_class: bool = False
 
@@ -243,7 +243,7 @@ class StubImplementationDetector(ast.NodeVisitor):
 
     def _extract_statements(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef
-    ) -> tuple[Optional[str], list[ast.stmt]]:
+    ) -> tuple[str | None, list[ast.stmt]]:
         """Extract docstring and meaningful statements from function body."""
         docstring = None
         meaningful_statements = []
@@ -265,7 +265,7 @@ class StubImplementationDetector(ast.NodeVisitor):
     def _check_stub_patterns(
         self,
         node: ast.FunctionDef | ast.AsyncFunctionDef,
-        docstring: Optional[str],
+        docstring: str | None,
         statements: list[ast.stmt],
     ) -> None:
         """Check for various stub implementation patterns."""
@@ -368,7 +368,7 @@ class StubImplementationDetector(ast.NodeVisitor):
                 return stmt.exc.id == "NotImplementedError"
         return False
 
-    def _suggest_implementation(self, func_name: str, docstring: Optional[str]) -> str:
+    def _suggest_implementation(self, func_name: str, docstring: str | None) -> str:
         """Generate implementation suggestion based on function context."""
         if func_name == "__init__":
             return "Initialize instance attributes with proper values"
@@ -390,7 +390,7 @@ class StubImplementationDetector(ast.NodeVisitor):
         func_name: str,
         issue_type: str,
         description: str,
-        fix_suggestion: Optional[str] = None,
+        fix_suggestion: str | None = None,
     ) -> None:
         """Add a stub implementation issue."""
         self.issues.append(
@@ -412,7 +412,7 @@ class StubImplementationChecker:
         self,
         check_mode: bool = False,
         fix_suggestions: bool = False,
-        config_path: Optional[Path] = None,
+        config_path: Path | None = None,
     ):
         self.check_mode = check_mode
         self.fix_suggestions = fix_suggestions

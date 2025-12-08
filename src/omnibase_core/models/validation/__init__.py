@@ -32,10 +32,12 @@ __all__ = [
     # "ModelContractValidationResult",  # from .model_contract_validation_result
     # "ModelDuplicationInfo",  # from .model_duplication_info
     # "ModelDuplicationReport",  # from .model_duplication_report
+    # "ModelImportValidationResult",  # from .model_import_validation_result (ModelValidationResult)
     # "ModelMigrationPlan",  # from .model_migration_plan
     # "ModelMigrationResult",  # from .model_migration_result
+    # "ModelModuleImportResult",  # from .model_module_import_result
     # "ModelProtocolInfo",  # from .model_protocol_info
     # "ModelProtocolSignatureExtractor",  # from .model_protocol_signature_extractor
     # "ModelUnionPattern",  # from .model_union_pattern
-    # "ModelValidationResult",  # from .model_validation_result
+    # "ModelValidationResult",  # from .model_import_validation_result
 ]

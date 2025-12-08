@@ -8,7 +8,9 @@ validation operations.
 from dataclasses import dataclass, field
 
 from omnibase_core.enums.enum_import_status import EnumImportStatus
-from omnibase_core.models.model_module_import_result import ModelModuleImportResult
+from omnibase_core.models.validation.model_module_import_result import (
+    ModelModuleImportResult,
+)
 
 
 @dataclass

@@ -111,7 +111,7 @@ def validate_markdown_links(repo_root: Path) -> int:
                 file_errors += 1
                 errors += 1
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("✅ Validation complete!")
     print(f"   Files scanned: {total_files}")
     print(f"   Total links: {total_links}")

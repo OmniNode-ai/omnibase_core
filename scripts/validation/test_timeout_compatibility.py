@@ -105,9 +105,9 @@ def test_cleanup_function():
         assert False, "Should have timed out"
     except CustomTimeoutError:
         # Give cleanup function time to execute
-        assert cleanup_called.wait(
-            timeout=1
-        ), "Cleanup function should have been called"
+        assert cleanup_called.wait(timeout=1), (
+            "Cleanup function should have been called"
+        )
         print("  ✅ Cleanup function called on timeout")
 
 
@@ -158,15 +158,15 @@ def test_error_message_constants():
     ]
 
     for msg_type in required_messages:
-        assert (
-            msg_type in TIMEOUT_ERROR_MESSAGES
-        ), f"Missing error message for {msg_type}"
-        assert isinstance(
-            TIMEOUT_ERROR_MESSAGES[msg_type], str
-        ), f"Error message for {msg_type} must be string"
-        assert (
-            len(TIMEOUT_ERROR_MESSAGES[msg_type]) > 0
-        ), f"Error message for {msg_type} cannot be empty"
+        assert msg_type in TIMEOUT_ERROR_MESSAGES, (
+            f"Missing error message for {msg_type}"
+        )
+        assert isinstance(TIMEOUT_ERROR_MESSAGES[msg_type], str), (
+            f"Error message for {msg_type} must be string"
+        )
+        assert len(TIMEOUT_ERROR_MESSAGES[msg_type]) > 0, (
+            f"Error message for {msg_type} cannot be empty"
+        )
 
     print("  ✅ All required error messages are defined")
 
@@ -185,17 +185,17 @@ def test_default_timeouts():
     ]
 
     for timeout_type in required_timeouts:
-        assert (
-            timeout_type in DEFAULT_TIMEOUTS
-        ), f"Missing default timeout for {timeout_type}"
+        assert timeout_type in DEFAULT_TIMEOUTS, (
+            f"Missing default timeout for {timeout_type}"
+        )
         timeout_val = DEFAULT_TIMEOUTS[timeout_type]
-        assert isinstance(
-            timeout_val, int
-        ), f"Timeout for {timeout_type} must be integer"
+        assert isinstance(timeout_val, int), (
+            f"Timeout for {timeout_type} must be integer"
+        )
         assert timeout_val > 0, f"Timeout for {timeout_type} must be positive"
-        assert (
-            timeout_val <= 600
-        ), f"Timeout for {timeout_type} should be reasonable (≤ 10 minutes)"
+        assert timeout_val <= 600, (
+            f"Timeout for {timeout_type} should be reasonable (≤ 10 minutes)"
+        )
 
     print("  ✅ All default timeouts are reasonable")
 

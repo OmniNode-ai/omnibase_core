@@ -23,8 +23,8 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.model_reducer_input import ModelReducerInput
-from omnibase_core.models.model_reducer_output import ModelReducerOutput
+from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
+from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 
 # Error messages
 _ERR_FSM_CONTRACT_NOT_LOADED = "FSM contract not loaded"

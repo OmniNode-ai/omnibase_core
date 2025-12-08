@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.model_intent import ModelIntent
+from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
 class TestModelIntentInstantiation:
@@ -491,7 +491,7 @@ class TestModelIntentMetadata:
 
     def test_model_module(self):
         """Test ModelIntent module."""
-        assert ModelIntent.__module__ == "omnibase_core.models.model_intent"
+        assert ModelIntent.__module__ == "omnibase_core.models.reducer.model_intent"
 
     def test_model_inheritance(self):
         """Test that ModelIntent inherits from BaseModel."""

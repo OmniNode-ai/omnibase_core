@@ -17,7 +17,9 @@ from pydantic import BaseModel
 from omnibase_core.mixins.mixin_intent_publisher import MixinIntentPublisher
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_intent_events import TOPIC_EVENT_PUBLISH_INTENT
-from omnibase_core.models.model_intent_publish_result import ModelIntentPublishResult
+from omnibase_core.models.reducer.model_intent_publish_result import (
+    ModelIntentPublishResult,
+)
 
 
 class TestEventModel(BaseModel):

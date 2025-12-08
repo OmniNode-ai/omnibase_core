@@ -51,7 +51,7 @@ class OptimizationValidator:
             # Measure completion
             end_time = time.perf_counter()
             final_memory = self.process.memory_info().rss / 1024 / 1024
-            current, peak = tracemalloc.get_traced_memory()
+            _current, peak = tracemalloc.get_traced_memory()
 
             execution_time = (end_time - start_time) * 1000  # ms
             memory_delta = final_memory - initial_memory

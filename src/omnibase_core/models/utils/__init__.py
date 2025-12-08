@@ -6,6 +6,7 @@ Author: ONEX Framework Team
 
 from .model_field_converter import FieldConverter, ModelFieldConverterRegistry
 from .model_subcontract_constraint_validator import ModelSubcontractConstraintValidator
+from .model_yaml_dump_options import ModelYamlDumpOptions
 from .model_yaml_option import ModelYamlOption
 from .model_yaml_value import ModelYamlValue
 
@@ -16,6 +17,7 @@ __all__ = [
     "FieldConverter",
     "ModelFieldConverterRegistry",
     "ModelSubcontractConstraintValidator",
+    "ModelYamlDumpOptions",
     "ModelYamlOption",
     "ModelYamlValue",
     # "ModelValidationRulesConverter",  # Excluded to break circular import

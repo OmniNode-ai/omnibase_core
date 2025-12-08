@@ -339,7 +339,9 @@ def main():
     status = (
         "✅ EXCELLENT"
         if overall_success
-        else "⚠️  GOOD" if summary["success_rate"] >= 80 else "❌ NEEDS WORK"
+        else "⚠️  GOOD"
+        if summary["success_rate"] >= 80
+        else "❌ NEEDS WORK"
     )
     print(f"\n🎯 Protocol Implementation Quality: {status}")
 

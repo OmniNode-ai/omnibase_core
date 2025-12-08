@@ -48,7 +48,9 @@ from omnibase_core.models.events.model_intent_events import (
     TOPIC_EVENT_PUBLISH_INTENT,
     ModelEventPublishIntent,
 )
-from omnibase_core.models.model_intent_publish_result import ModelIntentPublishResult
+from omnibase_core.models.reducer.model_intent_publish_result import (
+    ModelIntentPublishResult,
+)
 
 
 class MixinIntentPublisher:

@@ -98,8 +98,7 @@ class ExceptionHandlingValidator:
                         for keyword in ["return", "raise", "break", "continue"]
                     ) or (
                         # Check for function calls (contains parentheses with content)
-                        re.search(r"\w+\s*\([^)]*\)", handler_content)
-                        is not None
+                        re.search(r"\w+\s*\([^)]*\)", handler_content) is not None
                     )
 
                     if not has_logging and not has_fallback_ok and not has_control_flow:

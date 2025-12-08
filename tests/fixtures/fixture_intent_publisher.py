@@ -30,7 +30,9 @@ from omnibase_core.models.events.model_intent_events import (
     ModelEventPublishIntent,
     ModelIntentExecutionResult,
 )
-from omnibase_core.models.model_intent_publish_result import ModelIntentPublishResult
+from omnibase_core.models.reducer.model_intent_publish_result import (
+    ModelIntentPublishResult,
+)
 from tests.fixtures.fixture_base import TestFixtureBase
 
 

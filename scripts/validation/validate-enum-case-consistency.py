@@ -179,8 +179,8 @@ class EnumCaseValidator:
                 print(
                     f"  🚨 Line {violation['line']}: {violation['class_name']}.{violation['enum_name']}"
                 )
-                print(f'     Current:   "{violation['current_value']}"')
-                print(f'     Suggested: "{violation['suggested_value']}"')
+                print(f'     Current:   "{violation["current_value"]}"')
+                print(f'     Suggested: "{violation["suggested_value"]}"')
                 print("     💡 Use lowercase for consistency with ONEX standards")
                 print()
 

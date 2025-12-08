@@ -12,8 +12,8 @@ import pytest
 
 from omnibase_core.enums.enum_effect_types import EnumEffectType
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.effect.model_effect_input import ModelEffectInput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.model_effect_input import ModelEffectInput
 from omnibase_core.nodes.node_effect import NodeEffect
 
 
