@@ -1,0 +1,232 @@
+---
+# ONEX Runtime Orchestrator Contract
+#
+# This contract defines the ONEX runtime itself as a node graph, proving the
+# system is self-consistent. The runtime is built using the 4-node architecture:
+# - Contract loading (Effect node)
+# - Contract registry (Reducer node)
+# - Node graph management (Reducer node)
+# - Event dispatching (Orchestrator sub-workflows)
+#
+# Architecture:
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │                    RUNTIME AS NODE GRAPH                                 │
+# ├─────────────────────────────────────────────────────────────────────────┤
+# │                                                                          │
+# │  runtime_orchestrator (NodeOrchestrator)                                │
+# │  ├── contract_loader (NodeEffect)                                       │
+# │  │   └── Scans contracts directory, emits loaded contracts              │
+# │  ├── contract_registry (NodeReducer)                                    │
+# │  │   └── FSM: empty → loading → ready                                   │
+# │  │   └── Maintains registry of compiled contracts                       │
+# │  ├── node_graph (NodeReducer)                                           │
+# │  │   └── FSM: initializing → wiring → running → draining                │
+# │  │   └── Maintains instantiated node graph                              │
+# │  └── event_bus_wiring (NodeEffect)                                      │
+# │      └── Wires nodes to event bus subscriptions                         │
+# │                                                                          │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
+# Node Implementation (NO custom code needed):
+#   from omnibase_core.nodes import NodeOrchestrator
+#   class NodeONEXRuntime(NodeOrchestrator):
+#       pass  # All logic driven by this YAML contract
+
+# Contract Metadata
+node_type: ORCHESTRATOR_GENERIC
+contract_version: {major: 1, minor: 0, patch: 0}
+
+# Workflow Coordination Subcontract
+workflow_coordination:
+  version: {major: 1, minor: 0, patch: 0}
+  subcontract_version: {major: 1, minor: 0, patch: 0}
+
+  # Workflow Definition: Runtime lifecycle management
+  workflow_definition:
+    # Workflow Metadata
+    workflow_metadata:
+      workflow_name: runtime_lifecycle
+      workflow_version: {major: 1, minor: 0, patch: 0}
+      description: ONEX runtime lifecycle management workflow - self-hosted runtime using 4-node architecture
+      execution_mode: sequential  # Runtime startup must be sequential
+      author: ONEX Framework
+      tags:
+        - runtime
+        - self-hosted
+        - lifecycle
+        - kernel
+      documentation_url: https://docs.onex.ai/runtime/orchestrator
+
+    # Execution Graph: Runtime node relationships
+    execution_graph:
+      nodes:
+        # ─────────────────────────────────────────────────────────────
+        # EFFECT: Contract Loader
+        # Scans filesystem for contract YAML files
+        # ─────────────────────────────────────────────────────────────
+        - node_id: contract_loader
+          node_type: EFFECT_GENERIC
+          node_name: Contract Loader
+          description: Scans contracts directory and loads YAML contract files
+          target_node_type: NodeContractLoaderEffect
+          contract_ref: runtime/contract_loader_effect.yaml
+          metadata:
+            contracts_dir: "${env.ONEX_CONTRACTS_DIR:./contracts}"
+            pattern: "**/*.yaml"
+            exclude_patterns:
+              - "**/runtime/**"
+              - "**/_*.yaml"
+            watch_mode: false
+            scan_interval_ms: 300000
+
+        # ─────────────────────────────────────────────────────────────
+        # REDUCER: Contract Registry
+        # Maintains state of loaded/compiled contracts
+        # FSM: empty → loading → ready
+        # ─────────────────────────────────────────────────────────────
+        - node_id: contract_registry
+          node_type: REDUCER_GENERIC
+          node_name: Contract Registry
+          description: Maintains registry of loaded and validated contracts
+          target_node_type: NodeContractRegistryReducer
+          contract_ref: runtime/contract_registry_reducer.yaml
+          depends_on:
+            - contract_loader
+          metadata:
+            max_contracts: 1000
+            validation_strict: true
+            cache_compiled_contracts: true
+
+        # ─────────────────────────────────────────────────────────────
+        # REDUCER: Node Graph Manager
+        # Maintains instantiated node graph state
+        # FSM: initializing → wiring → running → draining
+        # ─────────────────────────────────────────────────────────────
+        - node_id: node_graph
+          node_type: REDUCER_GENERIC
+          node_name: Node Graph Manager
+          description: Maintains the instantiated node graph based on loaded contracts
+          target_node_type: NodeGraphManagerReducer
+          contract_ref: runtime/node_graph_reducer.yaml
+          depends_on:
+            - contract_registry
+          metadata:
+            max_nodes: 500
+            enable_hot_reload: true
+            dependency_resolution: topological
+
+        # ─────────────────────────────────────────────────────────────
+        # EFFECT: Event Bus Wiring
+        # Wires nodes to event bus subscriptions
+        # ─────────────────────────────────────────────────────────────
+        - node_id: event_bus_wiring
+          node_type: EFFECT_GENERIC
+          node_name: Event Bus Wiring
+          description: Wires instantiated nodes to event bus subscriptions
+          target_node_type: NodeEventBusWiringEffect
+          contract_ref: runtime/event_bus_wiring_effect.yaml
+          depends_on:
+            - node_graph
+          metadata:
+            event_bus_type: "${env.ONEX_EVENT_BUS:inmemory}"
+            subscription_timeout_ms: 5000
+            retry_on_failure: true
+
+      # Execution edges (derived from depends_on)
+      edges:
+        - from_node: contract_loader
+          to_node: contract_registry
+          edge_type: data_flow
+          description: Discovered contracts flow to registry for validation
+        - from_node: contract_registry
+          to_node: node_graph
+          edge_type: data_flow
+          description: Validated contracts flow to node graph for instantiation
+        - from_node: node_graph
+          to_node: event_bus_wiring
+          edge_type: data_flow
+          description: Instantiated nodes flow to wiring for event subscriptions
+
+    # Coordination Rules: Runtime startup coordination
+    coordination_rules:
+      # Sequential execution for startup (order matters)
+      parallel_execution_allowed: false
+      max_parallel_steps: 1
+
+      # Failure recovery strategy
+      failure_recovery_strategy: fail_fast  # Runtime startup must succeed
+      max_retries: 3
+      retry_backoff_ms: 2000
+      retry_backoff_multiplier: 2.0
+
+      # Timeout configuration
+      timeout_ms: 120000  # 2 minutes total startup timeout
+      step_timeout_ms: 30000  # 30 seconds per step
+
+      # Dependency resolution
+      dependency_resolution_enabled: true
+      detect_cycles: true
+      fail_on_cycle: true
+
+      # Runtime must fully start
+      allow_partial_completion: false
+      min_required_steps_completion_percent: 100.0
+
+      # Resource constraints for runtime
+      resource_constraints:
+        max_memory_mb: 512
+        max_cpu_cores: 2
+
+      # Monitoring and observability
+      emit_step_metrics: true
+      emit_workflow_events: true
+      emit_dependency_graph: true
+
+  # Lifecycle configuration for runtime
+  lifecycle:
+    startup_sequence:
+      - contract_loader
+      - contract_registry
+      - node_graph
+      - event_bus_wiring
+    shutdown_sequence:
+      - event_bus_wiring
+      - node_graph
+      - contract_registry
+      - contract_loader
+    health_check_interval_ms: 30000
+    graceful_shutdown_timeout_ms: 60000
+
+  # Event subscriptions for runtime management
+  subscriptions:
+    - topic: runtime.startup
+      description: Trigger runtime startup sequence
+    - topic: runtime.shutdown
+      description: Trigger graceful shutdown sequence
+    - topic: runtime.contracts.reload
+      description: Trigger contract reload without full restart
+
+  # Events published by runtime
+  publications:
+    - topic: runtime.ready
+      description: Runtime is fully initialized and ready
+      payload_schema: ModelRuntimeReadyEvent
+    - topic: runtime.shutting_down
+      description: Runtime is beginning shutdown sequence
+      payload_schema: ModelRuntimeShutdownEvent
+    - topic: runtime.error
+      description: Runtime encountered a critical error
+      payload_schema: ModelRuntimeErrorEvent
+
+# Metadata
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: ONEX Framework
+  description: Self-hosted ONEX runtime orchestrator using 4-node architecture
+  tags:
+    - orchestrator
+    - runtime
+    - kernel
+    - self-hosted
+    - lifecycle
+  documentation_url: https://docs.onex.ai/runtime/orchestrator

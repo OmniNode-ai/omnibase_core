@@ -1,0 +1,158 @@
+---
+# ONEX Runtime: Contract Loader Effect Node
+#
+# This EFFECT node scans the filesystem for contract YAML files and emits
+# discovered contracts for the contract registry to process.
+#
+# Node Implementation (NO custom code needed):
+#   from omnibase_core.nodes import NodeEffect
+#   class NodeContractLoaderEffect(NodeEffect):
+#       pass  # All logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - Filesystem handler for directory scanning
+# - Watch mode for real-time contract discovery
+# - Pattern-based file filtering
+# - Retry policy for robustness
+
+# Contract Metadata
+node_type: EFFECT_GENERIC
+contract_version: {major: 1, minor: 0, patch: 0}
+
+# Effect Subcontract
+effect_operations:
+  version: {major: 1, minor: 0, patch: 0}
+  subcontract_version: {major: 1, minor: 0, patch: 0}
+
+  # Execution configuration
+  execution_mode: sequential_abort  # Abort on first failure
+
+  # Default resilience settings
+  default_retry_policy:
+    enabled: true
+    max_retries: 3
+    backoff_strategy: exponential
+    base_delay_ms: 1000
+    max_delay_ms: 10000
+    jitter_factor: 0.1
+    retryable_errors:
+      - ENOENT
+      - EACCES
+      - ETIMEDOUT
+      - ECONNRESET
+
+  # Operations
+  operations:
+    # Primary operation: Scan contracts directory
+    - operation_name: scan_contracts_directory
+      description: Scan configured directory for contract YAML files
+      idempotent: true  # Read-only operation
+
+      io_config:
+        handler_type: filesystem
+        file_path_template: "${env.CONTRACTS_DIR:./contracts}"
+        operation: read
+        timeout_ms: 30000
+        atomic: false  # Read operations don't need atomicity
+        create_dirs: false  # Don't create dirs for read
+        encoding: utf-8
+
+      # Scanning configuration (metadata for handler)
+      metadata:
+        scan_mode: directory
+        pattern: "**/*.yaml"
+        exclude_patterns:
+          - "**/runtime/**"  # Don't reload runtime contracts
+          - "**/_*.yaml"  # Skip disabled contracts (underscore prefix)
+          - "**/.*"  # Skip hidden files
+          - "**/__pycache__/**"  # Skip Python cache directories
+        watch_mode: true
+        watch_debounce_ms: 500
+        recursive: true
+        follow_symlinks: false
+
+      response_handling:
+        success_codes: [200]
+        extract_fields:
+          discovered_files: "$.files"
+          file_count: "$.count"
+          scan_timestamp: "$.timestamp"
+        fail_on_empty: false  # Empty contracts dir is valid (initial state)
+        extraction_engine: jsonpath
+
+      # Override retry for scan operation
+      retry_policy:
+        enabled: true
+        max_retries: 5
+        backoff_strategy: exponential
+        base_delay_ms: 500
+        max_delay_ms: 5000
+        jitter_factor: 0.15
+
+      operation_timeout_ms: 60000  # 60 second timeout for directory scan
+
+    # Secondary operation: Read individual contract file
+    - operation_name: read_contract_file
+      description: Read and return contents of a single contract file
+      idempotent: true  # Read-only operation
+
+      io_config:
+        handler_type: filesystem
+        file_path_template: "${input.file_path}"
+        operation: read
+        timeout_ms: 10000
+        atomic: false
+        create_dirs: false
+        encoding: utf-8
+
+      response_handling:
+        success_codes: [200]
+        extract_fields:
+          content: "$.content"
+          file_path: "$.path"
+          file_size: "$.size"
+          modified_at: "$.modified_at"
+        fail_on_empty: true  # Empty contract file is an error
+        extraction_engine: jsonpath
+
+      retry_policy:
+        enabled: true
+        max_retries: 3
+        backoff_strategy: exponential
+        base_delay_ms: 200
+        max_delay_ms: 2000
+        jitter_factor: 0.1
+
+      operation_timeout_ms: 15000  # 15 second timeout per file
+
+  # Circuit breaker for filesystem operations
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 10
+    success_threshold: 3
+    timeout_ms: 30000
+    half_open_requests: 5
+
+  # Observability
+  observability:
+    log_request: true
+    log_response: false  # Contract contents may be large
+    emit_metrics: true
+    trace_propagation: true
+
+# Metadata
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: ONEX Framework Team
+  description: Contract loader effect node for scanning and discovering ONEX contract YAML files from
+    the filesystem
+  tags:
+    - effect
+    - filesystem
+    - declarative
+    - contracts
+    - discovery
+    - runtime
+    - loader
+  documentation_url: https://docs.onex.ai/effects/contract-loader
+  linear_ticket: OMN-467

@@ -1,0 +1,200 @@
+---
+# ONEX Runtime Event Bus Wiring Effect Contract
+#
+# This contract defines the event_bus_wiring EFFECT node that wires instantiated
+# nodes to event bus subscriptions as part of the ONEX runtime self-hosting architecture.
+#
+# Role in Runtime Lifecycle:
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │                    RUNTIME AS NODE GRAPH                                 │
+# ├─────────────────────────────────────────────────────────────────────────┤
+# │  contract_loader (NodeEffect) → contract_registry (NodeReducer)         │
+# │                               → node_graph (NodeReducer)                │
+# │                               → event_bus_wiring (THIS NODE)             │
+# │                                                                          │
+# │  This node receives the instantiated node graph from node_graph reducer  │
+# │  and wires each node to its declared event bus topics.                   │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
+# Node Implementation (NO custom code needed):
+#   from omnibase_core.nodes import NodeEffect
+#   class NodeEventBusWiringEffect(NodeEffect):
+#       pass  # All logic driven by this YAML contract
+#
+# Features:
+# - Wire nodes to event bus subscriptions based on declared topics
+# - Support for multiple event bus types (inmemory, kafka, etc.)
+# - Retry logic for transient subscription failures
+# - Health checks for subscription status
+# - Publish runtime.ready event when wiring is complete
+#
+# Linear Ticket: OMN-467
+
+# Contract Metadata
+node_type: EFFECT_GENERIC
+contract_version: {major: 1, minor: 0, patch: 0}
+
+# Effect Operations Subcontract
+effect:
+  version: {major: 1, minor: 0, patch: 0}
+
+  # Operation identification
+  operation_name: event_bus_wiring
+  operation_version: {major: 1, minor: 0, patch: 0}
+  description: |
+    Wires instantiated nodes to event bus subscriptions.
+    Receives the node graph from node_graph reducer, subscribes each node
+    to its declared topics, and publishes runtime.ready when complete.
+
+  # Execution mode
+  execution_mode: sequential_abort  # Abort on first failure (v1.0 semantics)
+
+  # Overall operation timeout (guards against retry stacking)
+  operation_timeout_ms: 60000  # 60 seconds total for all wiring operations
+
+  # IO Configuration for event bus handler
+  io_config:
+    handler_type: kafka  # Event bus abstraction (inmemory, kafka, etc.)
+    topic: "onex.runtime.subscriptions"
+    payload_template: |
+      {
+        "node_id": "${input.node_id}",
+        "node_type": "${input.node_type}",
+        "subscriptions": ${input.subscriptions},
+        "correlation_id": "${input.correlation_id}"
+      }
+    partition_key_template: "${input.node_id}"
+    headers:
+      content-type: "application/json"
+      x-onex-operation: "subscribe"
+      x-onex-correlation-id: "${input.correlation_id}"
+    timeout_ms: 5000
+    acks: "all"  # Strong delivery guarantee for subscription messages
+    compression: "none"
+
+  # Retry policy for subscription operations
+  retry_policy:
+    enabled: true
+    max_retries: 3
+    backoff_strategy: exponential
+    base_delay_ms: 1000
+    max_delay_ms: 10000
+    jitter_factor: 0.1
+    retryable_errors:
+      - "ECONNRESET"
+      - "ETIMEDOUT"
+      - "ECONNREFUSED"
+      - "SUBSCRIPTION_FAILED"
+      - "BROKER_NOT_AVAILABLE"
+
+  # Circuit breaker configuration
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    success_threshold: 2
+    timeout_ms: 30000
+    half_open_requests: 3
+
+  # Response handling
+  response_handling:
+    success_codes:
+      - 200
+      - 201
+      - 202
+    extract_fields:
+      subscription_id: "$.subscription_id"
+      subscribed_at: "$.subscribed_at"
+    fail_on_empty: false
+    extraction_engine: jsonpath
+
+  # Observability
+  observability:
+    log_request: true
+    log_response: true
+    emit_metrics: true
+    trace_propagation: true
+
+# Wiring-specific configuration
+wiring_config:
+  # Event bus type (overridable via environment variable)
+  event_bus_type: "${env.ONEX_EVENT_BUS:inmemory}"
+
+  # Subscription management
+  subscription_timeout_ms: 5000
+  max_concurrent_subscriptions: 50
+  subscription_batch_size: 10
+
+  # Validation settings
+  validate_topics: true
+  fail_on_invalid_topic: true
+
+  # Ready event configuration
+  ready_event:
+    topic: "onex.runtime.ready"
+    payload_schema: ModelRuntimeReadyEvent
+    emit_on_success: true
+
+# Health check configuration
+health_check:
+  enabled: true
+  interval_ms: 30000
+  timeout_ms: 5000
+  checks:
+    - name: event_bus_connection
+      description: Verify event bus connectivity
+      check_type: connectivity
+      critical: true
+    - name: subscription_status
+      description: Verify all subscriptions are active
+      check_type: subscription_health
+      critical: true
+    - name: message_latency
+      description: Check message delivery latency
+      check_type: latency
+      critical: false
+      threshold_ms: 1000
+
+# Event subscriptions (what this node listens to)
+subscriptions:
+  - topic: onex.runtime.node_graph.ready
+    description: Triggered when node graph is fully instantiated
+    handler: wire_all_subscriptions
+  - topic: onex.runtime.node.registered
+    description: Handle new node registration for hot reload
+    handler: wire_single_subscription
+  - topic: onex.runtime.node.unregistered
+    description: Handle node removal
+    handler: remove_subscription
+
+# Events published by this node
+publications:
+  - topic: onex.runtime.ready
+    description: Runtime is fully initialized with all subscriptions wired
+    payload_schema: ModelRuntimeReadyEvent
+  - topic: onex.runtime.subscription.created
+    description: A new subscription was successfully created
+    payload_schema: ModelSubscriptionCreatedEvent
+  - topic: onex.runtime.subscription.failed
+    description: A subscription failed to be created
+    payload_schema: ModelSubscriptionFailedEvent
+  - topic: onex.runtime.wiring.error
+    description: Wiring encountered a critical error
+    payload_schema: ModelWiringErrorEvent
+
+# Metadata
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: ONEX Framework
+  description: |
+    Event bus wiring effect node for ONEX runtime self-hosting architecture.
+    Receives the node graph from node_graph reducer and wires each node to
+    its declared event bus subscriptions. Publishes runtime.ready when complete.
+  tags:
+    - effect
+    - runtime
+    - event-bus
+    - subscriptions
+    - self-hosted
+    - wiring
+  documentation_url: https://docs.onex.ai/runtime/event-bus-wiring
+  linear_ticket: OMN-467
