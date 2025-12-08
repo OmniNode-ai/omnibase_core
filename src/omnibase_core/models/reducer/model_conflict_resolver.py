@@ -1,9 +1,41 @@
 """
 Conflict resolution model for data reduction operations.
 
-Handles conflict resolution during data reduction with configurable strategies.
+This module provides the ModelConflictResolver class that handles conflicts
+during data reduction with configurable strategies including FIRST_WINS,
+LAST_WINS, MERGE, ERROR, and CUSTOM.
 
-Author: ONEX Framework Team
+Thread Safety:
+    ModelConflictResolver is NOT thread-safe. Each thread should use its
+    own instance. The conflicts_count attribute is mutated during resolution.
+
+Key Features:
+    - Multiple built-in conflict resolution strategies
+    - Custom resolver support for domain-specific logic
+    - Intelligent merging for numeric, string, list, and dict types
+    - Conflict counting for metrics and debugging
+
+Example:
+    >>> from omnibase_core.models.reducer import ModelConflictResolver
+    >>> from omnibase_core.enums.enum_reducer_types import EnumConflictResolution
+    >>>
+    >>> # Use MERGE strategy for combining values
+    >>> resolver = ModelConflictResolver(strategy=EnumConflictResolution.MERGE)
+    >>> result = resolver.resolve(existing_value=10, new_value=5)
+    >>> print(result)  # 15 (numeric values are summed)
+    >>>
+    >>> # Use custom resolver for domain-specific logic
+    >>> def priority_resolver(existing, new, key):
+    ...     return new if new.get("priority", 0) > existing.get("priority", 0) else existing
+    >>>
+    >>> custom_resolver = ModelConflictResolver(
+    ...     strategy=EnumConflictResolution.CUSTOM,
+    ...     custom_resolver=priority_resolver,
+    ... )
+
+See Also:
+    - omnibase_core.models.reducer.model_reducer_input: Uses conflict resolution
+    - omnibase_core.enums.enum_reducer_types.EnumConflictResolution: Strategy enum
 """
 
 from collections.abc import Callable
@@ -18,8 +50,23 @@ class ModelConflictResolver:
     """
     Handles conflict resolution during data reduction.
 
-    Provides configurable strategies for resolving conflicts when
-    merging or reducing data with overlapping keys.
+    Provides configurable strategies for resolving conflicts when merging
+    or reducing data with overlapping keys. Supports built-in strategies
+    (FIRST_WINS, LAST_WINS, MERGE, ERROR) and custom resolution functions.
+
+    Attributes:
+        strategy: The conflict resolution strategy to use.
+        custom_resolver: Optional custom resolution function for CUSTOM strategy.
+            Signature: ``(existing_value, new_value, key) -> resolved_value``
+        conflicts_count: Running count of conflicts resolved. Reset manually
+            if needed between operations.
+
+    Built-in Merge Behavior:
+        - Numeric (int, float): Values are summed
+        - Strings: Values are concatenated with ", " separator
+        - Lists: Values are concatenated
+        - Dicts: Values are shallow-merged (new overwrites existing keys)
+        - Other types: New value replaces existing
     """
 
     def __init__(

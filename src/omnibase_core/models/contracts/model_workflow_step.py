@@ -1,7 +1,3 @@
-from typing import Literal
-
-from pydantic import Field
-
 """
 Workflow Step Model - ONEX Standards Compliant.
 
@@ -11,9 +7,12 @@ with proper Pydantic validation and type safety.
 ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
 """
 
+from typing import Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+__all__ = ["ModelWorkflowStep"]
 
 
 class ModelWorkflowStep(BaseModel):
@@ -25,6 +24,13 @@ class ModelWorkflowStep(BaseModel):
 
     ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
     """
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+        "frozen": True,
+    }
 
     # ONEX correlation tracking
     correlation_id: UUID = Field(
@@ -146,9 +152,3 @@ class ModelWorkflowStep(BaseModel):
     # step_id validation is now handled by UUID type - no custom validation needed
 
     # depends_on validation is now handled by UUID type - no custom validation needed
-
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }

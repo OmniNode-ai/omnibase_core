@@ -24,17 +24,19 @@ from omnibase_core.enums.enum_reducer_types import (
     EnumReductionType,
     EnumStreamingMode,
 )
+from omnibase_core.models.compute.model_compute_input import ModelComputeInput
+from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
+from omnibase_core.models.effect.model_effect_input import ModelEffectInput
+from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
 from omnibase_core.models.infrastructure.model_effect_transaction import (
     ModelEffectTransaction,
 )
-from omnibase_core.models.model_compute_input import ModelComputeInput
-from omnibase_core.models.model_compute_output import ModelComputeOutput
-from omnibase_core.models.model_effect_input import ModelEffectInput
-from omnibase_core.models.model_effect_output import ModelEffectOutput
-from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
-from omnibase_core.models.model_reducer_input import ModelReducerInput
-from omnibase_core.models.model_reducer_output import ModelReducerOutput
 from omnibase_core.models.orchestrator import ModelOrchestratorOutput
+from omnibase_core.models.orchestrator.model_orchestrator_input import (
+    ModelOrchestratorInput,
+)
+from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
+from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator

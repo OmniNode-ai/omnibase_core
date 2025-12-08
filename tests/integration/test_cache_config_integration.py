@@ -9,13 +9,13 @@ configuration propagates correctly and impacts runtime behavior.
 import pytest
 
 from omnibase_core.enums.enum_cache_eviction_policy import EnumCacheEvictionPolicy
+from omnibase_core.models.compute.model_compute_input import ModelComputeInput
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
 from omnibase_core.models.container.model_onex_container import (
     create_model_onex_container,
 )
-from omnibase_core.models.model_compute_input import ModelComputeInput
 from omnibase_core.nodes.node_compute import NodeCompute
 
 

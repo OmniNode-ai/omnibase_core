@@ -736,7 +736,7 @@ class TestNodeComputeProcessSignatureSnapshot:
         """
         import typing
 
-        from omnibase_core.models.model_compute_input import ModelComputeInput
+        from omnibase_core.models.compute.model_compute_input import ModelComputeInput
         from omnibase_core.nodes import NodeCompute
 
         sig = inspect.signature(NodeCompute.process)
@@ -778,7 +778,7 @@ class TestNodeComputeProcessSignatureSnapshot:
         """
         import typing
 
-        from omnibase_core.models.model_compute_output import ModelComputeOutput
+        from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
         from omnibase_core.nodes import NodeCompute
 
         sig = inspect.signature(NodeCompute.process)
@@ -862,7 +862,7 @@ class TestNodeEffectProcessSignatureSnapshot:
 
         Pre-refactor: input_data is annotated as ModelEffectInput.
         """
-        from omnibase_core.models.model_effect_input import ModelEffectInput
+        from omnibase_core.models.effect.model_effect_input import ModelEffectInput
         from omnibase_core.nodes import NodeEffect
 
         sig = inspect.signature(NodeEffect.process)
@@ -879,7 +879,7 @@ class TestNodeEffectProcessSignatureSnapshot:
 
         Pre-refactor: Returns ModelEffectOutput.
         """
-        from omnibase_core.models.model_effect_output import ModelEffectOutput
+        from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
         from omnibase_core.nodes import NodeEffect
 
         sig = inspect.signature(NodeEffect.process)
@@ -952,7 +952,7 @@ class TestNodeReducerProcessSignatureSnapshot:
         """
         import typing
 
-        from omnibase_core.models.model_reducer_input import ModelReducerInput
+        from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
         from omnibase_core.nodes import NodeReducer
 
         sig = inspect.signature(NodeReducer.process)
@@ -994,7 +994,7 @@ class TestNodeReducerProcessSignatureSnapshot:
         """
         import typing
 
-        from omnibase_core.models.model_reducer_output import ModelReducerOutput
+        from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
         from omnibase_core.nodes import NodeReducer
 
         sig = inspect.signature(NodeReducer.process)
@@ -1078,7 +1078,9 @@ class TestNodeOrchestratorProcessSignatureSnapshot:
 
         Pre-refactor: input_data is annotated as ModelOrchestratorInput.
         """
-        from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
+        from omnibase_core.models.orchestrator.model_orchestrator_input import (
+            ModelOrchestratorInput,
+        )
         from omnibase_core.nodes import NodeOrchestrator
 
         sig = inspect.signature(NodeOrchestrator.process)

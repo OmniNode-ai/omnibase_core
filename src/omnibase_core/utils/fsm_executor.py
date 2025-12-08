@@ -31,7 +31,7 @@ from omnibase_core.models.fsm.model_fsm_state_snapshot import (
 from omnibase_core.models.fsm.model_fsm_transition_result import (
     ModelFSMTransitionResult as FSMTransitionResult,
 )
-from omnibase_core.models.model_intent import ModelIntent
+from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
 async def execute_transition(

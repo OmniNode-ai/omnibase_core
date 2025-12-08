@@ -16,7 +16,7 @@ from typing import Optional
 class GenericDownstreamValidator:
     """Validates omni* package downstream readiness."""
 
-    def __init__(self, package_name: Optional[str] = None):
+    def __init__(self, package_name: str | None = None):
         # Auto-detect package name from repository if not provided
         if package_name is None:
             self.package_name = self._detect_package_name()

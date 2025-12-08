@@ -38,7 +38,9 @@ from omnibase_core.models.discovery.model_tool_invocation_event import (
 from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
-from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
+from omnibase_core.models.orchestrator.model_orchestrator_input import (
+    ModelOrchestratorInput,
+)
 from omnibase_core.models.service.model_service_orchestrator import (
     ModelServiceOrchestrator,
 )

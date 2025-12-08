@@ -34,8 +34,14 @@ __all__ = [
     # "ModelDuplicationReport",  # from .model_duplication_report
     # "ModelMigrationPlan",  # from .model_migration_plan
     # "ModelMigrationResult",  # from .model_migration_result
+    # "ModelModuleImportResult",  # from .model_module_import_result
     # "ModelProtocolInfo",  # from .model_protocol_info
     # "ModelProtocolSignatureExtractor",  # from .model_protocol_signature_extractor
     # "ModelUnionPattern",  # from .model_union_pattern
-    # "ModelValidationResult",  # from .model_validation_result
+    #
+    # Circular Import Detection (dataclass, not Pydantic):
+    # "ModelValidationResult",  # from .model_import_validation_result
+    #     ^-- Aggregates results from circular import validation runs.
+    #         Tracks successful imports, circular imports, and errors.
+    #         Used by import validation tooling, not general validation.
 ]

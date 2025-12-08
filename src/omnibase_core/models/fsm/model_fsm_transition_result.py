@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-from omnibase_core.models.model_intent import ModelIntent
+from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
 class ModelFSMTransitionResult:

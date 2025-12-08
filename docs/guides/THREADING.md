@@ -498,6 +498,8 @@ See `tests/unit/test_thread_safety.py` for examples of:
 |-----------|-------------|------------|
 | Pydantic Models | ✅ Yes (immutable) | None needed |
 | ModelONEXContainer | ✅ Yes (read-only) | None needed after init |
+| ModelComputeOutput | ✅ Yes (frozen=True) | None needed |
+| ModelReducerOutput | ✅ Yes (frozen=True) | None needed |
 | ModelComputeCache | ❌ No | Use locks or thread-local instances |
 | ModelCircuitBreaker | ❌ No | Use locks or thread-local instances |
 | ModelEffectTransaction | ❌ No | Never share across threads |

@@ -129,9 +129,9 @@ class PythonEnvVarValidator(ast.NodeVisitor):
     def __init__(self, file_path: str):
         self.file_path = file_path
         self.violations: list[EnvVarViolation] = []
-        self.class_stack: list[ast.ClassDef] = (
-            []
-        )  # Track class context for Enum detection
+        self.class_stack: list[
+            ast.ClassDef
+        ] = []  # Track class context for Enum detection
         self.bypass_usage: list[tuple[str, int, str]] = []  # (file, line, reason)
 
         # Common environment variable prefixes

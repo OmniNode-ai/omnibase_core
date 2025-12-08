@@ -15,6 +15,8 @@ from uuid import uuid4
 
 import pytest
 
+from omnibase_core.models.compute.model_compute_input import ModelComputeInput
+from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
@@ -24,8 +26,6 @@ from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
-from omnibase_core.models.model_compute_input import ModelComputeInput
-from omnibase_core.models.model_compute_output import ModelComputeOutput
 from omnibase_core.models.service.model_service_compute import ModelServiceCompute
 
 
