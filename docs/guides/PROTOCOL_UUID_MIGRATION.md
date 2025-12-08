@@ -183,6 +183,121 @@ Pydantic automatically handles UUID serialization/deserialization.
 
 ---
 
+## Handling Legacy Serialized Data
+
+### Existing JSON/YAML Without UUID Fields
+
+When deserializing existing data that predates the UUID migration:
+
+#### ModelNodeMetadataBlock
+
+The `uuid` field has `default_factory=uuid4`, so existing data without this field will automatically get a new UUID:
+
+```python
+from omnibase_core.models.core.model_node_metadata_block import ModelNodeMetadataBlock
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Legacy data without uuid field
+legacy_data = {
+    "name": "my-node",
+    "version": {"major": 1, "minor": 0, "patch": 0},
+    "author": "developer",
+    "created_at": "2024-01-01T00:00:00Z",
+    "last_modified_at": "2024-01-01T00:00:00Z",
+    "hash": "a" * 64,
+    "entrypoint": "python://main.py",
+    "namespace": "onex.tools.example"
+}
+
+# Pydantic auto-generates uuid via default_factory
+block = ModelNodeMetadataBlock(**legacy_data)
+assert block.uuid is not None  # New UUID generated
+```
+
+#### Service Registration Models
+
+For models with required UUID fields:
+
+```python
+from uuid import UUID, uuid4
+from pydantic import ValidationError
+
+# Option 1: Provide UUID during deserialization
+def deserialize_with_uuid(data: dict) -> ModelServiceMetadata:
+    if "service_id" not in data:
+        data["service_id"] = uuid4()
+    elif isinstance(data["service_id"], str):
+        data["service_id"] = UUID(data["service_id"])
+    return ModelServiceMetadata(**data)
+```
+
+### Database Migration Strategy
+
+For persisted data in databases:
+
+```python
+# Example: SQLAlchemy migration
+def upgrade():
+    # 1. Add nullable uuid column
+    op.add_column('nodes', sa.Column('uuid', sa.UUID(), nullable=True))
+
+    # 2. Populate existing rows
+    op.execute("""
+        UPDATE nodes
+        SET uuid = gen_random_uuid()
+        WHERE uuid IS NULL
+    """)
+
+    # 3. Make column non-nullable
+    op.alter_column('nodes', 'uuid', nullable=False)
+```
+
+---
+
+## Implementation Changes
+
+### Method Signature Updates
+
+The following method signatures have changed to use UUID types:
+
+#### ServiceRegistry (`container/service_registry.py`)
+
+| Method | Parameter | Before | After |
+|--------|-----------|--------|-------|
+| `unregister_service` | `registration_id` | `str` | `UUID` |
+| `get_registration` | `registration_id` | `str` | `UUID` |
+| `get_active_instances` | `registration_id` | `str \| None` | `UUID \| None` |
+| `dispose_instances` | `registration_id` | `str` | `UUID` |
+| `get_dependency_graph` | `service_id` | `str` | `UUID` |
+| `validate_service_health` | `registration_id` | `str` | `UUID` |
+| `update_service_configuration` | `registration_id` | `str` | `UUID` |
+| `create_injection_scope` | `parent_scope` | `str \| None` | `UUID \| None` |
+| `create_injection_scope` | return type | `str` | `UUID` |
+| `dispose_injection_scope` | `scope_id` | `str` | `UUID` |
+| `get_injection_context` | `context_id` | `str` | `UUID` |
+
+### Updating Method Calls
+
+**Before**:
+```python
+registry = container.get_service("ProtocolServiceRegistry")
+await registry.unregister_service("service-id-string")
+scope_id = await registry.create_injection_scope("my-scope", "parent-scope-string")
+```
+
+**After**:
+```python
+from uuid import UUID
+
+registry = container.get_service("ProtocolServiceRegistry")
+await registry.unregister_service(UUID("550e8400-e29b-41d4-a716-446655440000"))
+parent = UUID("660e8400-e29b-41d4-a716-446655440000")
+scope_id = await registry.create_injection_scope("my-scope", parent)
+# scope_id is now UUID, not str
+```
+
+---
+
 ## Code Examples
 
 ### Example 1: Implementing ProtocolIdentifiable
