@@ -61,6 +61,7 @@ class EnumEffectType(Enum):
         Raises:
             AssertionError: Always raised if this code path is reached at runtime.
         """
+        # error-ok: exhaustiveness check - enums cannot import models
         raise AssertionError(f"Unhandled enum value: {value}")
 
 
@@ -102,6 +103,7 @@ class EnumTransactionState(Enum):
         Raises:
             AssertionError: Always raised if this code path is reached at runtime.
         """
+        # error-ok: exhaustiveness check - enums cannot import models
         raise AssertionError(f"Unhandled enum value: {value}")
 
 
@@ -137,4 +139,5 @@ class EnumCircuitBreakerState(Enum):
         Raises:
             AssertionError: Always raised if this code path is reached at runtime.
         """
+        # error-ok: exhaustiveness check - enums cannot import models
         raise AssertionError(f"Unhandled enum value: {value}")
