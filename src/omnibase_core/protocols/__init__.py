@@ -13,13 +13,13 @@ Design Principles:
 - Use forward references where needed to avoid circular imports
 
 Module Organization:
-- base.py: Common type aliases and base protocols (ContextValue, SemVer, etc.)
-- container/: DI container and service registry protocols (package)
-- event_bus/: Event-driven messaging protocols (package)
-- types.py: Type constraint protocols (Configurable, Executable, etc.)
+- base/: Common type aliases and base protocols (ContextValue, SemVer, etc.)
+- container/: DI container and service registry protocols
+- event_bus/: Event-driven messaging protocols
+- types/: Type constraint protocols (Configurable, Executable, etc.)
 - core.py: Core operation protocols (CanonicalSerializer)
-- schema/: Schema loading protocols (package)
-- validation.py: Validation and compliance protocols
+- schema/: Schema loading protocols
+- validation/: Validation and compliance protocols
 
 Usage:
     from omnibase_core.protocols import (

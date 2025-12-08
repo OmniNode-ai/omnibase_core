@@ -8,9 +8,14 @@ See validation.py for the complete definition.
 
 from __future__ import annotations
 
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from omnibase_core.protocols.base import ContextValue
+
+if TYPE_CHECKING:
+    from omnibase_core.protocols.validation.protocol_validation_error import (
+        ProtocolValidationError,
+    )
 
 
 @runtime_checkable
@@ -25,8 +30,8 @@ class ProtocolValidationResult(Protocol):
     is_valid: bool
     protocol_name: str
     implementation_name: str
-    errors: list[Any]  # ProtocolValidationError
-    warnings: list[Any]  # ProtocolValidationError
+    errors: list[ProtocolValidationError]
+    warnings: list[ProtocolValidationError]
 
     def add_error(
         self,

@@ -7,13 +7,14 @@ for event envelope handling without circular dependencies.
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import Protocol, TypeVar, runtime_checkable
 
-from omnibase_core.protocols.base import T_co
+# Define covariant type variable for generic protocol
+T_co = TypeVar("T_co", covariant=True)
 
 
 @runtime_checkable
-class ProtocolEventEnvelope[T_co](Protocol):
+class ProtocolEventEnvelope(Protocol[T_co]):
     """
     Protocol defining the minimal interface for event envelopes.
 
