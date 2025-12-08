@@ -28,7 +28,6 @@ from omnibase_core.protocols.types import (
     ProtocolValidatable,
 )
 
-
 # =============================================================================
 # Test Fixtures
 # =============================================================================
@@ -468,7 +467,7 @@ class TestUUIDConversionEdgeCases:
         uuid2 = UUID(uuid_str)
 
         assert uuid1 == uuid2
-        assert not (uuid1 != uuid2)
+        assert uuid1 == uuid2  # Simplified from 'not (uuid1 != uuid2)' per SIM202
 
     def test_uuid_comparison_uuid_vs_string_explicit_conversion(self) -> None:
         """Test UUID comparison with explicit string conversion."""
