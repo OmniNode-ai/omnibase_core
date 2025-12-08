@@ -19,6 +19,7 @@ from omnibase_core.protocols.base import (
     ProtocolDateTime,
 )
 
+
 @runtime_checkable
 class ProtocolServiceRegistryStatus(Protocol):
     """

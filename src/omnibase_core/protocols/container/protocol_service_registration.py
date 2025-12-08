@@ -26,6 +26,7 @@ if TYPE_CHECKING:
         ProtocolServiceRegistrationMetadata,
     )
 
+
 @runtime_checkable
 class ProtocolServiceRegistration(Protocol):
     """
