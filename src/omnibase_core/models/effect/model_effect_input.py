@@ -25,9 +25,9 @@ Example:
     >>> from omnibase_core.models.effect import ModelEffectInput
     >>> from omnibase_core.enums.enum_effect_types import EnumEffectType
     >>>
-    >>> # Database write with transaction and retry
+    >>> # Database operation with transaction and retry
     >>> input_data = ModelEffectInput(
-    ...     effect_type=EnumEffectType.DATABASE_WRITE,
+    ...     effect_type=EnumEffectType.DATABASE_OPERATION,
     ...     operation_data={"table": "users", "data": {"name": "Alice"}},
     ...     transaction_enabled=True,
     ...     retry_enabled=True,
@@ -66,7 +66,7 @@ class ModelEffectInput(BaseModel):
     Used by NodeEffect to execute external I/O operations safely.
 
     Attributes:
-        effect_type: Type of side effect operation (DATABASE_READ, API_CALL, etc.).
+        effect_type: Type of side effect operation (DATABASE_OPERATION, API_CALL, etc.).
             Determines which handler processes the operation.
         operation_data: Payload data for the operation. Structure depends on
             effect_type (e.g., SQL query for database, URL for API).
@@ -90,9 +90,9 @@ class ModelEffectInput(BaseModel):
         timestamp: When this input was created. Auto-generated to current time.
 
     Example:
-        >>> # File system operation with timeout
+        >>> # File operation with timeout
         >>> input_data = ModelEffectInput(
-        ...     effect_type=EnumEffectType.FILE_SYSTEM,
+        ...     effect_type=EnumEffectType.FILE_OPERATION,
         ...     operation_data={"path": "/data/output.json", "action": "write"},
         ...     timeout_ms=10000,
         ...     transaction_enabled=False,

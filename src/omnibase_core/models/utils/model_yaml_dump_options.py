@@ -6,8 +6,8 @@ serialization output format. It implements core protocols for serialization
 and validation.
 
 Thread Safety:
-    ModelYamlDumpOptions is mutable but should be treated as immutable after
-    creation for thread-safe usage.
+    ModelYamlDumpOptions is immutable (frozen=True) after creation, making it
+    thread-safe for concurrent read access from multiple threads or async tasks.
 
 Key Features:
     - Configurable indentation and line width
@@ -93,6 +93,7 @@ class ModelYamlDumpOptions(BaseModel):
         "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
+        "frozen": True,
     }
 
     # Export the model

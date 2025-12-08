@@ -80,36 +80,43 @@ class ModelLoadBalancer:
         self.max_concurrent_operations = max_concurrent_operations
         self.active_operations: dict[UUID, datetime] = {}
         self.operation_counts: dict[str, int] = {}
+        self.target_counts: dict[str, int] = {}
         self.semaphore = asyncio.Semaphore(max_concurrent_operations)
 
-    async def acquire(self, operation_id: UUID) -> bool:
+    async def acquire(self, operation_id: UUID, target: str | None = None) -> bool:
         """Acquire slot for operation execution.
+
+        Blocks until a semaphore slot is available, then registers the operation.
 
         Args:
             operation_id: UUID of the operation to acquire slot for.
+            target: Optional target identifier for load tracking.
 
         Returns:
-            True if slot acquired successfully, False otherwise.
+            True when slot is acquired (always succeeds after blocking).
         """
-        async with self.semaphore:
-            if len(self.active_operations) < self.max_concurrent_operations:
-                self.active_operations[operation_id] = datetime.now()
-                operation_key = str(operation_id)
-                self.operation_counts[operation_key] = (
-                    self.operation_counts.get(operation_key, 0) + 1
-                )
-                return True
-            return False
+        await self.semaphore.acquire()
+        self.active_operations[operation_id] = datetime.now()
+        operation_key = str(operation_id)
+        self.operation_counts[operation_key] = (
+            self.operation_counts.get(operation_key, 0) + 1
+        )
+        if target is not None:
+            self.target_counts[target] = self.target_counts.get(target, 0) + 1
+        return True
 
     def release(self, operation_id: UUID) -> None:
         """Release slot after operation completion.
+
+        Only releases the semaphore if the operation was previously acquired.
+        This prevents over-release of the semaphore which could corrupt its state.
 
         Args:
             operation_id: UUID of the operation to release slot for.
         """
         if operation_id in self.active_operations:
             del self.active_operations[operation_id]
-        self.semaphore.release()
+            self.semaphore.release()
 
     def get_least_loaded_target(self, targets: list[str]) -> str:
         """Get least loaded target for operation distribution.
@@ -123,7 +130,7 @@ class ModelLoadBalancer:
         if not targets:
             return ""
 
-        return min(targets, key=lambda t: self.operation_counts.get(t, 0))
+        return min(targets, key=lambda t: self.target_counts.get(t, 0))
 
     def get_stats(self) -> dict[str, Any]:
         """Get load balancer statistics.

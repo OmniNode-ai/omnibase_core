@@ -24,11 +24,11 @@ Example:
     ... )
     >>> from uuid import uuid4
     >>>
-    >>> # Successful database write result
+    >>> # Successful database operation result
     >>> output = ModelEffectOutput(
     ...     result={"rows_affected": 1},
     ...     operation_id=uuid4(),
-    ...     effect_type=EnumEffectType.DATABASE_WRITE,
+    ...     effect_type=EnumEffectType.DATABASE_OPERATION,
     ...     transaction_state=EnumTransactionState.COMMITTED,
     ...     processing_time_ms=45.2,
     ...     side_effects_applied=["insert_user_record"],

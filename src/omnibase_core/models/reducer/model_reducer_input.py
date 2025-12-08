@@ -25,17 +25,17 @@ Example:
     ...     EnumStreamingMode,
     ... )
     >>>
-    >>> # Batch aggregation with sum reduction
+    >>> # Batch aggregation with fold reduction
     >>> input_data = ModelReducerInput(
     ...     data=[1, 2, 3, 4, 5],
-    ...     reduction_type=EnumReductionType.SUM,
+    ...     reduction_type=EnumReductionType.FOLD,
     ...     conflict_resolution=EnumConflictResolution.MERGE,
     ... )
     >>>
     >>> # Streaming window with 5-second batches
     >>> streaming_input = ModelReducerInput(
     ...     data=[{"user": "alice", "count": 1}],
-    ...     reduction_type=EnumReductionType.GROUP_BY,
+    ...     reduction_type=EnumReductionType.GROUP,
     ...     streaming_mode=EnumStreamingMode.WINDOWED,
     ...     window_size_ms=5000,
     ... )
@@ -75,8 +75,8 @@ class ModelReducerInput[T_Input](BaseModel):
     Attributes:
         data: List of input elements to reduce. Type is determined by the
             generic parameter T_Input.
-        reduction_type: Type of reduction to perform (SUM, COUNT, GROUP_BY,
-            MERGE, FIRST, LAST, etc.). Determines the reduction algorithm.
+        reduction_type: Type of reduction to perform (FOLD, ACCUMULATE, MERGE,
+            AGGREGATE, GROUP, etc.). Determines the reduction algorithm.
         operation_id: Unique identifier for tracking this operation.
             Auto-generated UUID by default.
         conflict_resolution: Strategy for resolving conflicts when keys overlap.
@@ -93,10 +93,10 @@ class ModelReducerInput[T_Input](BaseModel):
         timestamp: When this input was created. Auto-generated to current time.
 
     Example:
-        >>> # Group by operation with custom conflict resolution
+        >>> # Group operation with custom conflict resolution
         >>> input_data = ModelReducerInput[dict](
         ...     data=[{"key": "a", "value": 1}, {"key": "a", "value": 2}],
-        ...     reduction_type=EnumReductionType.GROUP_BY,
+        ...     reduction_type=EnumReductionType.GROUP,
         ...     conflict_resolution=EnumConflictResolution.MERGE,
         ... )
     """

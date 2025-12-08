@@ -55,4 +55,4 @@ type JsonSerializable = (
     | list["JsonSerializable"]
 )
 
-__all__ = []
+__all__ = ["JsonSerializable"]

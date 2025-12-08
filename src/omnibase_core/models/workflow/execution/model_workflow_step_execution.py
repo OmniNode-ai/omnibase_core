@@ -1,7 +1,3 @@
-from collections.abc import Callable
-
-from pydantic import Field
-
 """
 Workflow Step Execution Model - ONEX Standards Compliant.
 
@@ -11,11 +7,12 @@ Different from ModelWorkflowStep (configuration) - this tracks execution state.
 Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
 """
 
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_workflow_execution import (
     EnumBranchCondition,
@@ -23,6 +20,8 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumWorkflowState,
 )
 from omnibase_core.models.orchestrator.model_action import ModelAction
+
+__all__ = ["ModelWorkflowStepExecution"]
 
 
 class ModelWorkflowStepExecution(BaseModel):
@@ -38,6 +37,13 @@ class ModelWorkflowStepExecution(BaseModel):
     - Error tracking
     - Result collection
     """
+
+    model_config = {
+        "extra": "ignore",
+        "arbitrary_types_allowed": True,  # For Callable[..., Any] and Exception
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     step_id: UUID = Field(
         default_factory=uuid4,
@@ -117,10 +123,3 @@ class ModelWorkflowStepExecution(BaseModel):
         default_factory=list,
         description="Execution results from this step",
     )
-
-    model_config = {
-        "extra": "ignore",
-        "arbitrary_types_allowed": True,  # For Callable[..., Any]and Exception
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
