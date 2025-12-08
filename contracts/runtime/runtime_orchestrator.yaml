@@ -346,6 +346,125 @@ timing_constraints:
     with short action timeouts (100ms-5000ms). Retry behavior for these nodes
     is managed at the orchestrator level via coordination_rules.
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Performance Benchmarks
+# ─────────────────────────────────────────────────────────────────────────────
+# Expected performance characteristics for runtime operations. These targets
+# guide implementation and enable regression detection.
+#
+# Methodology:
+#   - Measurements at p99 (99th percentile) unless otherwise noted
+#   - Warm-up: 3 iterations before measurement
+#   - Sample size: minimum 100 iterations
+#   - Baseline environment: SSD storage, 4 CPU cores, 8GB RAM
+#
+# Linear Ticket: OMN-467
+# ─────────────────────────────────────────────────────────────────────────────
+performance_benchmarks:
+  description: Expected performance characteristics for runtime orchestrator operations
+
+  methodology:
+    measurement_percentile: p99
+    warmup_iterations: 3
+    minimum_sample_size: 100
+    baseline_environment:
+      storage: SSD
+      cpu_cores: 4
+      memory_gb: 8
+
+  # Contract Scanning (contract_loader Effect node)
+  contract_scanning:
+    description: Filesystem traversal to discover YAML contract files
+    metrics:
+      - operation: scan_contracts_directory
+        metric: latency_p99_ms
+        target: "<500"
+        conditions: "100 contracts, SSD storage"
+      - operation: scan_contracts_directory
+        metric: latency_p99_ms
+        target: "<2000"
+        conditions: "1000 contracts, SSD storage"
+      - operation: scan_contracts_directory
+        metric: throughput_contracts_per_second
+        target: ">200"
+        conditions: "Warm filesystem cache"
+      - operation: scan_contracts_directory
+        metric: memory_overhead_mb
+        target: "<50"
+        conditions: "1000 contracts loaded"
+    scaling: Linear with contract count
+
+  # Contract Validation (contract_registry Reducer node)
+  contract_validation:
+    description: YAML parsing, schema validation, and contract compilation
+    metrics:
+      - operation: validate_single_contract
+        metric: latency_p99_ms
+        target: "<50"
+        conditions: "Single contract, strict validation"
+      - operation: validate_batch
+        metric: latency_p99_ms
+        target: "<3000"
+        conditions: "100 contracts, parallel validation"
+      - operation: validate_batch
+        metric: throughput_per_second
+        target: ">30"
+        conditions: "Sequential validation"
+      - operation: cache_lookup
+        metric: hit_ratio
+        target: ">0.95"
+        conditions: "Steady state after initial load"
+    scaling: CPU-bound; benefits from parallel validation
+
+  # Node Wiring (event_bus_wiring Effect node)
+  event_bus_wiring:
+    description: Creating event bus subscriptions for instantiated nodes
+    metrics:
+      - operation: create_subscription
+        metric: latency_p99_ms
+        target: "<100"
+        conditions: "Single subscription, in-memory event bus"
+      - operation: wire_batch
+        metric: latency_p99_ms
+        target: "<1000"
+        conditions: "100 subscriptions, in-memory event bus"
+      - operation: create_subscription
+        metric: latency_p99_ms
+        target: "<500"
+        conditions: "Single subscription, Kafka event bus"
+      - operation: wire_batch
+        metric: latency_p99_ms
+        target: "<5000"
+        conditions: "100 subscriptions, Kafka event bus"
+    scaling: In-memory ~5x faster than external brokers
+
+  # End-to-End Runtime Startup
+  runtime_startup:
+    description: Complete runtime initialization from cold start to ready
+    metrics:
+      - operation: cold_start
+        metric: latency_p99_ms
+        target: "<5000"
+        conditions: "100 contracts, in-memory event bus"
+      - operation: cold_start
+        metric: latency_p99_ms
+        target: "<15000"
+        conditions: "100 contracts, Kafka event bus"
+      - operation: hot_reload
+        metric: latency_p99_ms
+        target: "<2000"
+        conditions: "Single contract change, cached baseline"
+    breakdown_percent:
+      contract_scanning: 10
+      contract_validation: 30
+      node_instantiation: 20
+      event_bus_wiring: 40
+
+  # Regression Detection
+  regression_thresholds:
+    warning_multiplier: 1.5   # Flag if 50% slower than target
+    critical_multiplier: 2.0  # Fail if 2x slower than target
+
 # Metadata
 metadata:
   version: {major: 1, minor: 0, patch: 0}
@@ -398,3 +517,328 @@ metadata:
       alternatives_considered:
         - "Separate 'fragments/' directory (adds complexity)"
         - "Explicit 'fragment: true' field (requires schema changes)"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Integration Testing Requirements
+# ─────────────────────────────────────────────────────────────────────────────
+# Documentation for end-to-end tests covering the complete runtime lifecycle.
+# Tests should verify the 4-node orchestration pattern works correctly.
+# ─────────────────────────────────────────────────────────────────────────────
+integration_testing:
+  description: End-to-end tests for runtime lifecycle orchestration
+  test_location: tests/integration/runtime/test_runtime_orchestrator.py
+
+  # Test Fixtures
+  fixtures:
+    mock_event_bus:
+      description: In-memory event bus for capturing published events
+      captures: [runtime.ready, runtime.shutting_down, runtime.error]
+    mock_contracts_dir:
+      description: Temp directory with valid/invalid contract YAML files
+      contents:
+        - valid_compute.yaml   # Valid COMPUTE contract
+        - valid_effect.yaml    # Valid EFFECT contract
+        - _internal.yaml       # Should be excluded (underscore prefix)
+        - invalid.yaml         # Malformed YAML for error testing
+    mock_container:
+      description: ModelONEXContainer with mock services registered
+
+  # Test Scenarios
+  scenarios:
+    - name: successful_startup
+      description: Verify complete startup sequence executes in order
+      steps:
+        - step: contract_loader scans mock_contracts_dir
+          assert: Emits contract.loaded events for valid contracts only
+        - step: contract_registry transitions empty → loading → ready
+          assert: FSM state is 'ready', registry contains 2 contracts
+        - step: node_graph transitions initializing → wiring → running
+          assert: FSM state is 'running', nodes instantiated
+        - step: event_bus_wiring subscribes nodes to topics
+          assert: Subscriptions active, runtime.ready event emitted
+      expected_events:
+        - runtime.ready
+      expected_fsm_states:
+        contract_registry: ready
+        node_graph: running
+
+    - name: graceful_shutdown
+      description: Verify shutdown sequence executes in reverse order
+      precondition: Runtime in 'running' state
+      steps:
+        - step: Trigger runtime.shutdown event
+          assert: runtime.shutting_down event emitted
+        - step: event_bus_wiring unsubscribes all nodes
+          assert: No active subscriptions remain
+        - step: node_graph transitions running → draining → stopped
+          assert: FSM state is 'stopped', all nodes disposed
+        - step: contract_registry clears registry
+          assert: Registry empty
+        - step: contract_loader stops watching
+          assert: No file watchers active
+      expected_events:
+        - runtime.shutting_down
+      expected_fsm_states:
+        node_graph: stopped
+
+    - name: startup_failure_contract_loader
+      description: Verify fail-fast on contract loading errors
+      setup: mock_contracts_dir contains only invalid YAML
+      steps:
+        - step: contract_loader attempts scan
+          assert: Raises validation error after retries exhausted
+        - step: Orchestrator catches failure
+          assert: runtime.error event emitted with error details
+      expected_events:
+        - runtime.error
+      expected_error_code: CONTRACT_VALIDATION_FAILED
+
+    - name: startup_failure_node_instantiation
+      description: Verify fail-fast when node instantiation fails
+      setup: Valid contracts but missing required service in container
+      steps:
+        - step: contract_loader and contract_registry succeed
+          assert: FSM states progress normally
+        - step: node_graph fails during instantiation
+          assert: runtime.error event with instantiation failure
+        - step: Partial cleanup triggered
+          assert: Already-started nodes disposed
+      expected_events:
+        - runtime.error
+      expected_error_code: NODE_INSTANTIATION_FAILED
+
+    - name: retry_behavior
+      description: Verify retry with exponential backoff
+      setup: contract_loader fails twice then succeeds
+      steps:
+        - step: First attempt fails (transient error)
+          assert: Retries after 2000ms (base delay)
+        - step: Second attempt fails
+          assert: Retries after 4000ms (2x backoff)
+        - step: Third attempt succeeds
+          assert: Startup continues, runtime.ready emitted
+      expected_events:
+        - runtime.ready
+      timing_assertions:
+        - min_total_time_ms: 6000  # 2000 + 4000
+
+    - name: timeout_enforcement
+      description: Verify step timeout kills hanging operations
+      setup: contract_loader hangs indefinitely
+      steps:
+        - step: contract_loader exceeds step_timeout_ms (30000)
+          assert: Operation cancelled, retries begin
+        - step: All retries timeout
+          assert: runtime.error with TIMEOUT error code
+      expected_events:
+        - runtime.error
+      expected_error_code: STEP_TIMEOUT
+
+  # Assertions Checklist
+  assertions:
+    event_ordering:
+      - Events emitted in documented sequence
+      - No duplicate events for same lifecycle transition
+    fsm_consistency:
+      - FSM states match expected values at each step
+      - No invalid state transitions occur
+    resource_cleanup:
+      - All nodes disposed on shutdown or failure
+      - No orphaned event subscriptions
+      - Temp files cleaned up
+    timing:
+      - Total startup < 120000ms (workflow timeout)
+      - Each step < 30000ms (step timeout)
+      - Retry delays match exponential backoff config
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Operational Monitoring
+# ─────────────────────────────────────────────────────────────────────────────
+# Production monitoring guidance for the ONEX runtime. Covers health endpoints,
+# metrics, alerting thresholds, and log patterns. Addresses PR #137 feedback.
+#
+# Linear Ticket: OMN-467
+# ─────────────────────────────────────────────────────────────────────────────
+operational_monitoring:
+  description: |
+    Operational guidance for monitoring the ONEX runtime in production.
+    Covers health endpoints, metrics, alerting, and log analysis.
+
+  # Health check endpoints exposed by the runtime
+  health_endpoints:
+    - path: /health/runtime
+      description: Overall runtime health status
+      response_fields:
+        - state: Current runtime FSM state (initializing|wiring|running|draining|stopped)
+        - uptime_seconds: Time since runtime entered 'running' state
+        - last_health_check: ISO8601 timestamp of last successful health check
+    - path: /health/nodes
+      description: Aggregated health of all managed nodes
+      response_fields:
+        - total_nodes: Number of nodes in graph
+        - healthy_nodes: Count of nodes reporting healthy status
+        - unhealthy_nodes: List of node_ids with issues
+    - path: /health/nodes/{node_id}
+      description: Individual node health status
+      response_fields:
+        - node_id: Node identifier
+        - node_type: Node type (EFFECT|COMPUTE|REDUCER|ORCHESTRATOR)
+        - state: Current node FSM state
+        - last_event_processed: Timestamp of last event processed
+        - error_count: Number of errors since startup
+
+  # Key metrics (Prometheus/OpenTelemetry compatible)
+  key_metrics:
+    # Runtime state
+    - name: onex_runtime_state
+      type: gauge
+      labels: [state]
+      description: Current runtime FSM state (1 for active state, 0 otherwise)
+      states: [initializing, wiring, running, draining, stopped]
+
+    - name: onex_runtime_uptime_seconds
+      type: counter
+      description: Seconds since runtime entered 'running' state
+
+    - name: onex_runtime_startup_duration_seconds
+      type: histogram
+      description: Time taken for runtime startup sequence
+      buckets: [0.5, 1, 2, 5, 10, 30, 60, 120]
+
+    # Node health
+    - name: onex_node_state
+      type: gauge
+      labels: [node_id, node_type, state]
+      description: Current FSM state per node (1 for active state)
+
+    - name: onex_node_events_processed_total
+      type: counter
+      labels: [node_id, node_type, event_type]
+      description: Total events processed by each node
+
+    - name: onex_node_event_processing_duration_seconds
+      type: histogram
+      labels: [node_id, node_type]
+      description: Event processing latency per node
+      buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5]
+
+    # Errors
+    - name: onex_node_errors_total
+      type: counter
+      labels: [node_id, node_type, error_code]
+      description: Total errors by node and error code
+
+    - name: onex_runtime_errors_total
+      type: counter
+      labels: [error_code, severity]
+      description: Total runtime-level errors
+
+    # Contracts
+    - name: onex_contracts_loaded_total
+      type: gauge
+      description: Number of contracts loaded in registry
+
+    - name: onex_contract_reload_duration_seconds
+      type: histogram
+      description: Time taken to reload contracts
+      buckets: [0.1, 0.5, 1, 2, 5, 10, 30]
+
+  # Alerting thresholds
+  alerting:
+    critical:
+      - name: RuntimeNotRunning
+        condition: onex_runtime_state{state="running"} == 0 for 30s
+        description: Runtime is not in running state
+        action: Check runtime logs, verify startup sequence completed
+
+      - name: NodeErrorSpike
+        condition: rate(onex_node_errors_total[1m]) > 10
+        description: Rapid increase in node errors (>10/min)
+        action: Check node logs for error_code, review recent contract changes
+
+      - name: RuntimeStartupTimeout
+        condition: onex_runtime_startup_duration_seconds > 120
+        description: Runtime startup exceeded 2-minute timeout
+        action: Review contract loader performance, check filesystem access
+
+    warning:
+      - name: NodeDrainingTooLong
+        condition: onex_node_state{state="draining"} == 1 for 60s
+        description: Node stuck in draining state
+        action: Check for pending events, review graceful shutdown logic
+
+      - name: HighEventLatency
+        condition: histogram_quantile(0.99, onex_node_event_processing_duration_seconds) > 1
+        description: P99 event processing latency exceeds 1 second
+        action: Profile node processing, check for blocking operations
+
+      - name: NoContractsLoaded
+        condition: onex_contracts_loaded_total < 1
+        description: No contracts loaded in registry
+        action: Verify contracts directory path, check file permissions
+
+  # Dashboard recommendations
+  dashboards:
+    overview:
+      title: ONEX Runtime Overview
+      panels:
+        - name: Runtime State
+          type: state_timeline
+          description: State machine with current state highlighted
+        - name: Node Health Grid
+          type: stat_grid
+          description: All nodes with color-coded health status
+        - name: Events Processed
+          type: time_series
+          description: Events/second throughput
+        - name: Error Rate
+          type: time_series
+          description: Errors/minute by severity
+
+    node_details:
+      title: ONEX Node Details
+      variables: [node_id]
+      panels:
+        - name: FSM State Timeline
+          type: state_timeline
+        - name: Event Latency (P50/P95/P99)
+          type: time_series
+        - name: Events by Type
+          type: pie_chart
+        - name: Errors by Code
+          type: bar_chart
+
+  # Log patterns to monitor
+  log_patterns:
+    required_fields:
+      - correlation_id: UUID for request tracing
+      - node_id: Source node identifier
+      - event_type: Event being processed
+      - fsm_state: Current FSM state
+      - timestamp: ISO8601 timestamp
+
+    watch_patterns:
+      - pattern: "fsm_transition_failed"
+        severity: error
+        description: FSM could not transition to expected state
+        investigation: Check valid transitions in contract, review event payload
+
+      - pattern: "contract_validation_error"
+        severity: error
+        description: Contract failed validation during load
+        investigation: Review contract YAML syntax, check schema version
+
+      - pattern: "event_bus_connection_lost"
+        severity: critical
+        description: Lost connection to event bus
+        investigation: Check network connectivity, verify event bus service
+
+      - pattern: "retry_exhausted"
+        severity: warning
+        description: Operation failed after all retries
+        investigation: Review timeout vs retry config, check external deps
+
+      - pattern: "graceful_shutdown_timeout"
+        severity: warning
+        description: Shutdown did not complete within timeout
+        investigation: Check for stuck nodes, review shutdown_sequence
