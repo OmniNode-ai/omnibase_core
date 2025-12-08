@@ -58,30 +58,57 @@ poetry shell
 ### 3. Set Up Git Hooks
 
 ```bash
-# Install pre-commit hooks (formatting, linting, type checking)
+# Install pre-commit hooks (fast checks: formatting, basic validation)
 pre-commit install
 
-# Install pre-push hooks (validates clean project root)
-./scripts/setup-git-hooks.sh
+# Install pre-push hooks (comprehensive: type checking, tests, complex validation)
+pre-commit install --hook-type pre-push
 ```
 
-**What do these hooks do?**
+**Two-Stage Validation Strategy**:
 
-- **Pre-commit**: Runs before every commit
-  - Code formatting (black, isort)
-  - Linting (ruff)
-  - Type checking (mypy)
-  - Fast feedback on code quality
+The project uses a two-stage validation approach optimized for developer experience:
 
-- **Pre-push**: Runs before every push
-  - Validates project root is clean
-  - Prevents committing temporary/build artifacts
-  - Checks for: `.coverage`, `htmlcov/`, `.pytest_cache`, audit reports, etc.
-  - Can bypass with `git push --no-verify` (not recommended)
+- **Pre-commit** (target: <15 seconds) - Runs before every commit:
+  - Code formatting (ruff format, ruff fix for import sorting)
+  - Basic file checks (whitespace, large files, merge conflicts)
+  - Quick structural validations (empty dirs, duplicates)
+  - Security checks (secrets, env vars)
+  - Fast pattern validations
+
+- **Pre-push** (comprehensive validation) - Runs before every push:
+  - mypy type checking (~5-10s)
+  - pytest smoke tests (~4-5 minutes for enums + errors)
+  - validate-naming-conventions (~14s)
+  - Complex pattern validations (union, pydantic, dict-any)
+  - Documentation link validation
+  - Protocol UUID enforcement
+
+**Bypassing Hooks** (not recommended):
+```bash
+# Bypass pre-commit hooks (emergency only)
+git commit --no-verify
+
+# Bypass pre-push hooks (emergency only)
+git push --no-verify
+```
 
 **Temporary Files**:
 
 The `tmp/` directory is treated as ephemeral. A pre-commit hook automatically clears its contents on every commit. Do not store important files there.
+
+**Running Hooks Manually**:
+
+```bash
+# Run all pre-commit stage hooks
+pre-commit run --all-files
+
+# Run all pre-push stage hooks
+pre-commit run --all-files --hook-stage pre-push
+
+# Run a specific hook
+pre-commit run mypy-type-check --all-files --hook-stage pre-push
+```
 
 ### 4. Verify Setup
 

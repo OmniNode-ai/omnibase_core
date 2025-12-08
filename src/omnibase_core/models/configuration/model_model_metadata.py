@@ -2,7 +2,10 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 class ModelMetadata(BaseModel):
@@ -10,11 +13,11 @@ class ModelMetadata(BaseModel):
 
     meta_type: str = Field(default=..., description="Type of metadata block")
     metadata_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the metadata schema",
     )
     schema_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the content schema",
     )
     uuid: str = Field(default=..., description="Unique identifier for this file")

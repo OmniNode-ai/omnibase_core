@@ -19,6 +19,7 @@ class ProtocolSerializable(Protocol):
     to be persisted, transmitted, or cached.
     """
 
+    # union-ok: json_value - serialization output uses standard JSON-compatible types
     def model_dump(
         self,
     ) -> dict[

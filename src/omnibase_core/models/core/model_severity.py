@@ -186,7 +186,11 @@ class ModelSeverity(BaseModel):
         return self.numeric_value >= other.numeric_value
 
     def __hash__(self) -> int:
-        """ONEX-compliant hash for set/dict[str, Any]usage."""
+        """Return hash value for use in sets and as dict keys.
+
+        Returns:
+            int: Hash computed from (name, numeric_value) tuple.
+        """
         return hash((self.name, self.numeric_value))
 
     # ONEX-compliant property methods

@@ -11,6 +11,7 @@ from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step imp
 from omnibase_core.models.contracts.subcontracts.model_compute_subcontract import (
     ModelComputeSubcontract,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 @pytest.mark.unit
@@ -21,14 +22,14 @@ class TestModelComputeSubcontractCreation:
         """Test creating subcontract with minimal fields."""
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[],
         )
         assert subcontract.operation_name == "test_op"
-        assert subcontract.operation_version == "1.0.0"
+        assert subcontract.operation_version == ModelSemVer(major=1, minor=0, patch=0)
         assert subcontract.pipeline == []
         assert subcontract.pipeline_timeout_ms is None
-        assert subcontract.version == "1.0.0"
+        assert subcontract.version == ModelSemVer(major=1, minor=0, patch=0)
 
     def test_create_with_pipeline(self) -> None:
         """Test creating subcontract with pipeline steps."""
@@ -39,7 +40,7 @@ class TestModelComputeSubcontractCreation:
         )
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[step],
         )
         assert len(subcontract.pipeline) == 1
@@ -49,7 +50,7 @@ class TestModelComputeSubcontractCreation:
         """Test creating subcontract with pipeline timeout."""
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[],
             pipeline_timeout_ms=5000,
         )
@@ -64,7 +65,7 @@ class TestModelComputeSubcontractTimeoutValidation:
         """Test that None timeout is allowed (no timeout)."""
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[],
             pipeline_timeout_ms=None,
         )
@@ -74,7 +75,7 @@ class TestModelComputeSubcontractTimeoutValidation:
         """Test that positive timeout values are allowed."""
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[],
             pipeline_timeout_ms=1000,
         )
@@ -84,7 +85,7 @@ class TestModelComputeSubcontractTimeoutValidation:
         """Test that large timeout values are allowed (up to 1 hour)."""
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[],
             pipeline_timeout_ms=600000,  # 10 minutes
         )
@@ -94,7 +95,7 @@ class TestModelComputeSubcontractTimeoutValidation:
         """Test that maximum timeout (1 hour) is allowed."""
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[],
             pipeline_timeout_ms=3600000,  # 1 hour (max allowed)
         )
@@ -105,7 +106,7 @@ class TestModelComputeSubcontractTimeoutValidation:
         with pytest.raises(ValidationError, match="less than or equal to 3600000"):
             ModelComputeSubcontract(
                 operation_name="test_op",
-                operation_version="1.0.0",
+                operation_version=ModelSemVer(major=1, minor=0, patch=0),
                 pipeline=[],
                 pipeline_timeout_ms=3600001,  # Just over 1 hour
             )
@@ -114,7 +115,7 @@ class TestModelComputeSubcontractTimeoutValidation:
         """Test that timeout of 1ms is allowed."""
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[],
             pipeline_timeout_ms=1,
         )
@@ -125,7 +126,7 @@ class TestModelComputeSubcontractTimeoutValidation:
         with pytest.raises(ValidationError, match="greater than 0"):
             ModelComputeSubcontract(
                 operation_name="test_op",
-                operation_version="1.0.0",
+                operation_version=ModelSemVer(major=1, minor=0, patch=0),
                 pipeline=[],
                 pipeline_timeout_ms=0,
             )
@@ -135,7 +136,7 @@ class TestModelComputeSubcontractTimeoutValidation:
         with pytest.raises(ValidationError, match="greater than 0"):
             ModelComputeSubcontract(
                 operation_name="test_op",
-                operation_version="1.0.0",
+                operation_version=ModelSemVer(major=1, minor=0, patch=0),
                 pipeline=[],
                 pipeline_timeout_ms=-1000,
             )
@@ -145,7 +146,7 @@ class TestModelComputeSubcontractTimeoutValidation:
         with pytest.raises(ValidationError, match="greater than 0"):
             ModelComputeSubcontract(
                 operation_name="test_op",
-                operation_version="1.0.0",
+                operation_version=ModelSemVer(major=1, minor=0, patch=0),
                 pipeline=[],
                 pipeline_timeout_ms=-99999,
             )
@@ -159,7 +160,7 @@ class TestModelComputeSubcontractFrozen:
         """Test that model is immutable."""
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[],
         )
         with pytest.raises(ValidationError):
@@ -170,7 +171,7 @@ class TestModelComputeSubcontractFrozen:
         with pytest.raises(ValidationError):
             ModelComputeSubcontract(
                 operation_name="test_op",
-                operation_version="1.0.0",
+                operation_version=ModelSemVer(major=1, minor=0, patch=0),
                 pipeline=[],
                 extra_field="invalid",  # type: ignore[call-arg]
             )
@@ -194,7 +195,7 @@ class TestModelComputeSubcontractUniqueStepNames:
         )
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[step1, step2],
         )
         assert len(subcontract.pipeline) == 2
@@ -216,7 +217,7 @@ class TestModelComputeSubcontractUniqueStepNames:
         with pytest.raises(ValidationError, match="step names must be unique"):
             ModelComputeSubcontract(
                 operation_name="test_op",
-                operation_version="1.0.0",
+                operation_version=ModelSemVer(major=1, minor=0, patch=0),
                 pipeline=[step1, step2],
             )
 
@@ -247,7 +248,7 @@ class TestModelComputeSubcontractUniqueStepNames:
         with pytest.raises(ValidationError, match="step names must be unique"):
             ModelComputeSubcontract(
                 operation_name="test_op",
-                operation_version="1.0.0",
+                operation_version=ModelSemVer(major=1, minor=0, patch=0),
                 pipeline=steps,
             )
 
@@ -255,7 +256,7 @@ class TestModelComputeSubcontractUniqueStepNames:
         """Test that empty pipeline is allowed."""
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[],
         )
         assert subcontract.pipeline == []
@@ -269,7 +270,7 @@ class TestModelComputeSubcontractUniqueStepNames:
         )
         subcontract = ModelComputeSubcontract(
             operation_name="test_op",
-            operation_version="1.0.0",
+            operation_version=ModelSemVer(major=1, minor=0, patch=0),
             pipeline=[step],
         )
         assert len(subcontract.pipeline) == 1
@@ -289,6 +290,6 @@ class TestModelComputeSubcontractUniqueStepNames:
         with pytest.raises(ValidationError, match="my_duplicate"):
             ModelComputeSubcontract(
                 operation_name="test_op",
-                operation_version="1.0.0",
+                operation_version=ModelSemVer(major=1, minor=0, patch=0),
                 pipeline=[step1, step2],
             )

@@ -1,28 +1,15 @@
-from __future__ import annotations
-
-import math
-from typing import Any, Literal, Union
-
-from pydantic import BaseModel, Field, model_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-"""
-ModelValueUnion
-
-Type-safe wrapper for common primitive value unions.
+"""ModelValueUnion - Type-safe wrapper for common primitive value unions.
 
 This model provides automatic type inference and validation for union types,
 replacing bare Union[bool, float, int, list, str] and
 Union[bool, dict, float, int, list, str] patterns with structured type safety.
 
 Features:
-- Automatic type inference from value
-- Type consistency validation
-- Support for nested collections (List[Any], Dict[str, Any])
-- Comprehensive validation with detailed error messages
-- Full mypy strict mode compliance
+    - Automatic type inference from value
+    - Type consistency validation
+    - Support for nested collections (List[Any], Dict[str, Any])
+    - Comprehensive validation with detailed error messages
+    - Full mypy strict mode compliance
 
 Usage Examples:
     # Automatic type inference
@@ -40,20 +27,31 @@ Usage Examples:
     >>> assert value.get_python_type() == dict
 
 Security Features:
-- Maximum list size limit to prevent DoS attacks
-- Maximum dict size limit to prevent DoS attacks
-- String key validation for dict values
-- NaN and infinity detection for float values
+    - Maximum list size limit to prevent DoS attacks
+    - Maximum dict size limit to prevent DoS attacks
+    - String key validation for dict values
+    - NaN and infinity detection for float values
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
 ===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):
-- Standard library modules only
-- omnibase_core.errors modules
-- pydantic modules
+    - Standard library modules only
+    - omnibase_core.enums modules
+    - omnibase_core.models.errors modules
+    - pydantic modules
 """
+
+from __future__ import annotations
+
+import math
+from typing import Any, ClassVar, Literal, Union
+
+from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelValueUnion(BaseModel):
@@ -87,8 +85,8 @@ class ModelValueUnion(BaseModel):
     """
 
     # Security constants - prevent DoS via large collections
-    MAX_LIST_SIZE: int = 10000
-    MAX_DICT_SIZE: int = 1000
+    MAX_LIST_SIZE: ClassVar[int] = 10000
+    MAX_DICT_SIZE: ClassVar[int] = 1000
 
     value: Union[bool, int, float, str, list[Any], dict[str, Any]] = Field(
         description="The actual value",

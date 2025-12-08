@@ -9,7 +9,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 
 # ONEX NAMING VALIDATION: This model correctly follows the Model* prefix convention.
@@ -40,7 +43,7 @@ class ModelMixinInfo(BaseModel):
         json_schema_extra={"example": "Event-driven communication capabilities"},
     )
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Semantic version of the mixin",
     )
     category: str = Field(

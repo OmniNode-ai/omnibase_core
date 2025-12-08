@@ -1,29 +1,16 @@
-from __future__ import annotations
-
-import math
-from typing import Any, Literal, Union, cast
-
-from pydantic import BaseModel, Field, model_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-"""
-ModelDictValueUnion
-
-Type-safe wrapper for dict-containing union patterns.
+"""ModelDictValueUnion - Type-safe wrapper for dict-containing union patterns.
 
 This model provides automatic type inference and validation for union types,
 replacing bare Union[bool, dict, float, int, list, str] patterns with structured
 type safety optimized for extension and plugin systems.
 
 Features:
-- Automatic type inference from value
-- Type consistency validation
-- Support for nested collections (dict[str, Any], list[Any])
-- Dict-specific helper methods (has_key, get_dict_value)
-- Comprehensive validation with detailed error messages
-- Full mypy strict mode compliance
+    - Automatic type inference from value
+    - Type consistency validation
+    - Support for nested collections (dict[str, Any], list[Any])
+    - Dict-specific helper methods (has_key, get_dict_value)
+    - Comprehensive validation with detailed error messages
+    - Full mypy strict mode compliance
 
 Usage Examples:
     # Automatic type inference
@@ -40,21 +27,32 @@ Usage Examples:
     >>> assert value.value_type == "int"
 
 Security Features:
-- Maximum list size limit to prevent DoS attacks
-- Maximum dict size limit to prevent DoS attacks
-- String key validation for dict values
-- NaN and infinity detection for float values
-- Nested dict validation
+    - Maximum list size limit to prevent DoS attacks
+    - Maximum dict size limit to prevent DoS attacks
+    - String key validation for dict values
+    - NaN and infinity detection for float values
+    - Nested dict validation
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
 ===============================================
 This module is part of a carefully managed import chain to avoid circular dependencies.
 
 Safe Runtime Imports (OK to import at module level):
-- Standard library modules only
-- omnibase_core.errors modules
-- pydantic modules
+    - Standard library modules only
+    - omnibase_core.enums modules
+    - omnibase_core.models.errors modules
+    - pydantic modules
 """
+
+from __future__ import annotations
+
+import math
+from typing import Any, ClassVar, Literal, Union, cast
+
+from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelDictValueUnion(BaseModel):
@@ -89,9 +87,10 @@ class ModelDictValueUnion(BaseModel):
     """
 
     # Security constants - prevent DoS via large collections
-    MAX_LIST_SIZE: int = 10000
-    MAX_DICT_SIZE: int = 1000
+    MAX_LIST_SIZE: ClassVar[int] = 10000
+    MAX_DICT_SIZE: ClassVar[int] = 1000
 
+    # union-ok: discriminated_union - companion value_type Literal field provides type safety
     value: Union[bool, dict[str, Any], float, int, list[Any], str] = Field(
         description="The actual value",
     )
@@ -131,6 +130,8 @@ class ModelDictValueUnion(BaseModel):
         """
         if not isinstance(data, dict):
             data = {"value": data}
+        else:
+            data = dict(data)  # Make a copy to avoid mutating input
 
         # If value_type already specified, validate it's correct
         if "value_type" in data:
@@ -277,6 +278,7 @@ class ModelDictValueUnion(BaseModel):
 
         return self
 
+    # union-ok: discriminated_union - return type matches discriminated value field
     def get_value(self) -> Union[bool, dict[str, Any], float, int, list[Any], str]:
         """
         Get the stored value with proper type.
@@ -418,7 +420,19 @@ class ModelDictValueUnion(BaseModel):
 
     def get_as_dict(self) -> dict[str, Any]:
         """
-        Get value as dictionary.
+        Get value as dictionary with safe-access semantics.
+
+        Unlike the other get_as_* methods which raise ModelOnexError on type mismatch,
+        this method returns an empty dict for non-dict values. This intentional design
+        choice supports safe dict-operation chaining patterns common in extension/plugin
+        systems where dict access is frequent and the fallback to empty dict is the
+        natural default behavior (e.g., `value.get_as_dict().get("key", default)`).
+
+        For strict type checking that raises on type mismatch, use:
+            if value.is_dict():
+                d = value.get_as_dict()
+            else:
+                raise ModelOnexError(...)
 
         Returns:
             dict[str, Any]: The dictionary value, or empty dict if not a dict
@@ -427,7 +441,7 @@ class ModelDictValueUnion(BaseModel):
             >>> value = ModelDictValueUnion(value={"key": "value"})
             >>> assert value.get_as_dict() == {"key": "value"}
             >>> value = ModelDictValueUnion(value=42)
-            >>> assert value.get_as_dict() == {}
+            >>> assert value.get_as_dict() == {}  # Safe fallback, not an error
         """
         if self.is_dict():
             return self.value  # type: ignore[return-value]
@@ -544,8 +558,8 @@ class ModelDictValueUnion(BaseModel):
         """
         if not self.is_dict():
             return False
-        dict_value = self.get_as_dict()
-        return key in dict_value
+        # Direct access to self.value since we already verified is_dict()
+        return key in self.value  # type: ignore[operator]
 
     def get_dict_value(self, key: str, default: Any = None) -> Any:
         """
@@ -569,8 +583,8 @@ class ModelDictValueUnion(BaseModel):
         """
         if not self.is_dict():
             return default
-        dict_value = self.get_as_dict()
-        return dict_value.get(key, default)
+        # Direct access since we verified is_dict()
+        return self.value.get(key, default)  # type: ignore[union-attr]
 
     # === Collection Helpers ===
 
