@@ -603,7 +603,7 @@ def execute_compute_pipeline(
                 error_step=step.step_name,
             )
 
-        except Exception as e:
+        except Exception as e:  # fallback-ok: pipeline executor captures errors in result object, logged via logger.exception
             step_duration = (time.perf_counter() - step_start) * 1000
             total_time = (time.perf_counter() - start_time) * 1000
 

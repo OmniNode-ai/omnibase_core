@@ -483,7 +483,7 @@ async def _execute_parallel(
             # Create action for this step
             action = _create_action_for_step(step, workflow_id)
             return (step, action, None)
-        except Exception as e:
+        except Exception as e:  # fallback-ok: parallel execution returns error in tuple for caller handling
             return (step, None, e)
 
     # For parallel execution, we execute in waves based on dependencies
