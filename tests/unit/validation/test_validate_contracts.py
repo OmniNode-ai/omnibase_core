@@ -622,12 +622,16 @@ class TestExampleContractsValidation:
         If this test fails, it means example contracts have invalid node_type values,
         missing required fields (contract_version, node_type), or other schema violations.
         """
-        example_path = Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
+        example_path = (
+            Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
+        )
 
         if not example_path.exists():
             pytest.skip("examples/contracts directory not found")
 
-        yaml_files = list(example_path.rglob("*.yaml")) + list(example_path.rglob("*.yml"))
+        yaml_files = list(example_path.rglob("*.yaml")) + list(
+            example_path.rglob("*.yml")
+        )
 
         if not yaml_files:
             pytest.skip("No YAML files found in examples/contracts")
@@ -646,12 +650,16 @@ class TestExampleContractsValidation:
         """Verify example contracts have contract_version and node_type fields."""
         import yaml
 
-        example_path = Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
+        example_path = (
+            Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
+        )
 
         if not example_path.exists():
             pytest.skip("examples/contracts directory not found")
 
-        yaml_files = list(example_path.rglob("*.yaml")) + list(example_path.rglob("*.yml"))
+        yaml_files = list(example_path.rglob("*.yaml")) + list(
+            example_path.rglob("*.yml")
+        )
 
         for yaml_file in yaml_files:
             with open(yaml_file, encoding="utf-8") as f:
@@ -661,7 +669,13 @@ class TestExampleContractsValidation:
                 continue  # Empty file
 
             # Check if this looks like a contract (has contract indicators)
-            contract_indicators = {"contract_version", "node_type", "metadata", "inputs", "outputs"}
+            contract_indicators = {
+                "contract_version",
+                "node_type",
+                "metadata",
+                "inputs",
+                "outputs",
+            }
             if any(field in content for field in contract_indicators):
                 assert "contract_version" in content, (
                     f"{yaml_file.name} is missing required field: contract_version"
