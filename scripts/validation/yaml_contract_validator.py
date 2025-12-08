@@ -12,10 +12,9 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 
 class SimpleNodeType:
-    """Simple node type values for validation.
+    """Valid node_type values for YAML contract validation.
 
-    Uses uppercase values aligned with EnumNodeType in omnibase_core.enums.enum_node_type.
-    No legacy/deprecated lowercase values - clean break for v0.4.0+.
+    Mirrors EnumNodeType uppercase values. Input is case-insensitive (v0.4.0+).
     """
 
     VALID_TYPES = {
@@ -44,7 +43,7 @@ class SimpleNodeType:
 
 
 class SimpleContractVersion(BaseModel):
-    """Simple contract version model."""
+    """Semantic version model for contract_version field (major.minor.patch)."""
 
     major: int = Field(..., ge=0)
     minor: int = Field(..., ge=0)
@@ -52,12 +51,9 @@ class SimpleContractVersion(BaseModel):
 
 
 class SimpleYamlContract(BaseModel):
-    """
-    Simple YAML contract validation model without circular dependencies.
+    """Pydantic model for validating YAML contracts without circular imports.
 
-    This model provides validation for the minimum required fields in a YAML contract:
-    - contract_version: Semantic version information
-    - node_type: Node type classification
+    Validates required fields: contract_version and node_type.
     """
 
     model_config = ConfigDict(
@@ -104,10 +100,10 @@ class SimpleYamlContract(BaseModel):
     @field_validator("node_type")
     @classmethod
     def validate_node_type(cls, value: str) -> str:
-        """Validate node_type field with simple validation.
+        """Validate node_type field with case-insensitive normalization.
 
-        Validates against uppercase EnumNodeType values. No legacy lowercase
-        values are accepted - this is a clean break for v0.4.0+.
+        Accepts both uppercase and lowercase input, normalizes to uppercase
+        for v0.4.0+ compliance with EnumNodeType values.
         """
         if not isinstance(value, str):
             raise ValueError("node_type must be a string")
@@ -122,16 +118,5 @@ class SimpleYamlContract(BaseModel):
 
     @classmethod
     def validate_yaml_content(cls, yaml_data: dict[str, Any]) -> "SimpleYamlContract":
-        """
-        Validate YAML content using Pydantic model validation.
-
-        Args:
-            yaml_data: Dictionary loaded from YAML file
-
-        Returns:
-            SimpleYamlContract: Validated contract instance
-
-        Raises:
-            ValidationError: If validation fails
-        """
+        """Validate YAML dict and return validated contract. Raises ValidationError on failure."""
         return cls.model_validate(yaml_data)

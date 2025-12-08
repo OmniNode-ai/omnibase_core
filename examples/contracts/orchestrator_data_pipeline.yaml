@@ -32,14 +32,14 @@ workflow_coordination:
     workflow_metadata:
       workflow_name: data_processing_pipeline
       workflow_version: {major: 1, minor: 0, patch: 0}
-      description: "Multi-stage data processing with validation and enrichment"
+      description: Multi-stage data processing with validation and enrichment
       execution_mode: parallel  # Can be: sequential, parallel, batch
-      author: "ONEX Framework Team"
+      author: ONEX Framework Team
       tags:
         - data-processing
         - etl
         - parallel
-      documentation_url: "https://docs.onex.ai/workflows/data-pipeline"
+      documentation_url: https://docs.onex.ai/workflows/data-pipeline
 
     # Execution Graph: Nodes and their relationships
     execution_graph:
@@ -278,12 +278,12 @@ workflow_coordination:
 # Metadata
 metadata:
   version: {major: 1, minor: 0, patch: 0}
-  author: "ONEX Framework Team"
-  description: "Data processing pipeline orchestrator using workflow pattern"
+  author: ONEX Framework Team
+  description: Data processing pipeline orchestrator using workflow pattern
   tags:
     - orchestrator
     - workflow
     - declarative
     - data-pipeline
     - parallel
-  documentation_url: "https://docs.onex.ai/orchestrators/data-pipeline"
+  documentation_url: https://docs.onex.ai/orchestrators/data-pipeline

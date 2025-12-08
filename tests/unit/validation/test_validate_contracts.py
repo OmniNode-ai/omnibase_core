@@ -282,6 +282,191 @@ description: "Partial contract"
         assert "contract_version" in errors[0]
 
 
+class TestNodeTypeValidation:
+    """Test node_type field validation edge cases."""
+
+    def test_lowercase_node_type_normalized(self, temp_repo):
+        """Test lowercase node_type is normalized to uppercase."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "compute_generic"
+"""
+        yaml_file = temp_repo / "lowercase_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0, f"Expected normalization to uppercase, got: {errors}"
+
+    def test_mixed_case_node_type_normalized(self, temp_repo):
+        """Test mixed-case node_type is normalized to uppercase."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "Compute_Generic"
+"""
+        yaml_file = temp_repo / "mixed_case_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0, f"Expected normalization to uppercase, got: {errors}"
+
+    def test_uppercase_node_type_accepted(self, temp_repo):
+        """Test uppercase node_type is accepted as-is."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "EFFECT_GENERIC"
+"""
+        yaml_file = temp_repo / "uppercase_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) == 0
+
+    def test_invalid_node_type_rejected(self, temp_repo):
+        """Test invalid node_type values are rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "INVALID_TYPE_XYZ"
+"""
+        yaml_file = temp_repo / "invalid_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_empty_string_node_type_rejected(self, temp_repo):
+        """Test empty string node_type is rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: ""
+"""
+        yaml_file = temp_repo / "empty_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_integer_node_type_rejected(self, temp_repo):
+        """Test integer node_type is rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: 123
+"""
+        yaml_file = temp_repo / "integer_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_list_node_type_rejected(self, temp_repo):
+        """Test list node_type is rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type:
+  - COMPUTE_GENERIC
+  - EFFECT_GENERIC
+"""
+        yaml_file = temp_repo / "list_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_null_node_type_rejected(self, temp_repo):
+        """Test null node_type is rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: null
+"""
+        yaml_file = temp_repo / "null_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_whitespace_node_type_rejected(self, temp_repo):
+        """Test whitespace-only node_type is rejected."""
+        yaml_content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "   "
+"""
+        yaml_file = temp_repo / "whitespace_node_type.yaml"
+        yaml_file.write_text(yaml_content)
+
+        errors = validate_yaml_file(yaml_file)
+        assert len(errors) >= 1
+        assert any("node_type" in error.lower() for error in errors)
+
+    def test_all_valid_node_types_accepted(self, temp_repo):
+        """Test all valid node_type values are accepted."""
+        valid_types = [
+            "COMPUTE_GENERIC",
+            "EFFECT_GENERIC",
+            "REDUCER_GENERIC",
+            "ORCHESTRATOR_GENERIC",
+            "RUNTIME_HOST_GENERIC",
+            "GATEWAY",
+            "VALIDATOR",
+            "TRANSFORMER",
+            "AGGREGATOR",
+            "FUNCTION",
+            "TOOL",
+            "AGENT",
+            "MODEL",
+            "PLUGIN",
+            "SCHEMA",
+            "NODE",
+            "WORKFLOW",
+            "SERVICE",
+            "UNKNOWN",
+        ]
+
+        for node_type in valid_types:
+            yaml_content = f"""
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "{node_type}"
+"""
+            yaml_file = temp_repo / f"valid_{node_type.lower()}.yaml"
+            yaml_file.write_text(yaml_content)
+
+            errors = validate_yaml_file(yaml_file)
+            assert len(errors) == 0, f"{node_type} should be valid, got: {errors}"
+
+
 class TestFileHandling:
     """Test file handling edge cases."""
 
@@ -404,6 +589,67 @@ node_type: 'COMPUTE_GENERIC'""",
             assert len(errors) >= 1
             # Check for OS/IO error in message (script uses "OS/IO error reading file")
             assert any("error reading file" in error.lower() for error in errors)
+
+    def test_non_mapping_yaml_scalar_string(self, temp_repo):
+        """Test handling of YAML with scalar string root (non-dict).
+
+        Regression test for PR #132: Prevents TypeError when YAML root is not a dict.
+        """
+        yaml_file = temp_repo / "scalar_string.yaml"
+        yaml_file.write_text("just a plain string")
+
+        # Should not raise TypeError, should return empty errors (not a contract)
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+        assert len(errors) == 0  # Non-dict YAML is silently skipped (not a contract)
+
+    def test_non_mapping_yaml_scalar_number(self, temp_repo):
+        """Test handling of YAML with scalar number root (non-dict).
+
+        Regression test for PR #132: Prevents TypeError when YAML root is not a dict.
+        """
+        yaml_file = temp_repo / "scalar_number.yaml"
+        yaml_file.write_text("42")
+
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+        assert len(errors) == 0
+
+    def test_non_mapping_yaml_list_root(self, temp_repo):
+        """Test handling of YAML with list root (non-dict).
+
+        Regression test for PR #132: Prevents TypeError when YAML root is a list.
+        """
+        yaml_file = temp_repo / "list_root.yaml"
+        yaml_file.write_text("- item1\n- item2\n- item3")
+
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+        assert len(errors) == 0
+
+    def test_non_mapping_yaml_list_of_dicts(self, temp_repo):
+        """Test handling of YAML with list of dicts root (non-dict).
+
+        Regression test for PR #132: Even list of dicts should not trigger TypeError.
+        """
+        yaml_file = temp_repo / "list_of_dicts.yaml"
+        yaml_file.write_text("- key1: value1\n- key2: value2")
+
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+        assert len(errors) == 0
+
+    def test_non_mapping_yaml_boolean_root(self, temp_repo):
+        """Test handling of YAML with boolean root (non-dict).
+
+        Regression test for PR #132: Prevents TypeError when YAML root is a boolean.
+        """
+        yaml_file = temp_repo / "boolean_root.yaml"
+        yaml_file.write_text("true")
+
+        errors = validate_yaml_file(yaml_file)
+        assert isinstance(errors, list)
+        assert len(errors) == 0
 
 
 class TestMainFunction:
@@ -616,19 +862,9 @@ class TestExampleContractsValidation:
     """Regression tests for example contracts in the repository."""
 
     def test_example_contracts_validate(self):
-        """Validate all example contracts against the ONEX contract schema.
+        """Validate all example contracts pass full schema validation.
 
-        Ensures example contracts pass full schema validation (node_type enum,
-        required fields, structural correctness) since they serve as templates.
-
-        Regression Prevention (OMN-539):
-            Added after example contracts drifted out of schema compliance.
-
-        Failure Means:
-            - Invalid node_type, missing required fields, or schema violations
-            - Fix the contract or update schema if it represents a valid pattern
-
-        Related: test_example_contracts_have_required_fields
+        Regression test (OMN-539): ensures example contracts remain schema-compliant.
         """
         example_path = (
             Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
@@ -650,25 +886,14 @@ class TestExampleContractsValidation:
             if errors:
                 all_errors.append(f"{yaml_file.relative_to(example_path)}: {errors}")
 
-        assert len(all_errors) == 0, (
-            "Example contracts failed validation:\n" + "\n".join(all_errors)
-        )
+        assert (
+            len(all_errors) == 0
+        ), "Example contracts failed validation:\n" + "\n".join(all_errors)
 
     def test_example_contracts_have_required_fields(self):
-        """Verify example contracts contain mandatory contract_version and node_type.
+        """Verify example contracts have contract_version and node_type fields.
 
-        Fast structural check using direct YAML parsing (not Pydantic) to catch
-        common authoring mistakes before full schema validation.
-
-        Regression Prevention (OMN-539):
-            Catches missing required fields early, before confusing validation errors.
-
-        Failure Means:
-            - Missing contract_version or node_type in a contract file
-            - Add the missing field to resolve
-
-        Notes: Skips empty files and non-mapping YAML; uses yaml.safe_load.
-        Related: test_example_contracts_validate
+        Fast structural check via YAML parsing. Regression test (OMN-539).
         """
         import yaml
 
@@ -703,12 +928,12 @@ class TestExampleContractsValidation:
                 "outputs",
             }
             if any(field in content for field in contract_indicators):
-                assert "contract_version" in content, (
-                    f"{yaml_file.name} is missing required field: contract_version"
-                )
-                assert "node_type" in content, (
-                    f"{yaml_file.name} is missing required field: node_type"
-                )
+                assert (
+                    "contract_version" in content
+                ), f"{yaml_file.name} is missing required field: contract_version"
+                assert (
+                    "node_type" in content
+                ), f"{yaml_file.name} is missing required field: node_type"
 
 
 class TestFixtureValidation:
@@ -724,9 +949,9 @@ class TestFixtureValidation:
 
             if valid_contract.exists():
                 errors = validate_yaml_file(valid_contract)
-                assert len(errors) == 0, (
-                    f"Valid contract fixture should pass. Errors: {errors}"
-                )
+                assert (
+                    len(errors) == 0
+                ), f"Valid contract fixture should pass. Errors: {errors}"
 
     def test_invalid_fixtures_trigger_violations(self):
         """Test that invalid fixtures trigger YAML violations."""
@@ -739,9 +964,9 @@ class TestFixtureValidation:
             if malformed_contract.exists():
                 errors = validate_yaml_file(malformed_contract)
                 # Should detect either YAML parsing errors or missing required fields
-                assert len(errors) > 0, (
-                    "Malformed contract should trigger validation errors"
-                )
+                assert (
+                    len(errors) > 0
+                ), "Malformed contract should trigger validation errors"
 
     def test_edge_case_fixtures(self):
         """Test edge case fixtures."""
