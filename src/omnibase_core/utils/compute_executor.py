@@ -462,6 +462,18 @@ def execute_compute_pipeline(
         4. First failure aborts the pipeline immediately
         5. All step results and timing metrics are captured
 
+    Error Handling:
+        This function never raises exceptions to the caller. All errors (both
+        expected ModelOnexError and unexpected exceptions) are captured in the
+        result object with success=False. This design enables:
+        - Orchestration layers to inspect errors programmatically
+        - Retry logic implementation by callers
+        - Partial result aggregation from multi-step pipelines
+        - Graceful degradation without try/except boilerplate at call sites
+
+        All errors are logged for observability (warning level for ModelOnexError,
+        exception level with full stack trace for unexpected errors).
+
     Args:
         contract: The compute subcontract defining the pipeline steps.
         input_data: Input data to process (dict, Pydantic model, or JSON-compatible).
@@ -603,7 +615,12 @@ def execute_compute_pipeline(
                 error_step=step.step_name,
             )
 
-        except Exception as e:
+        # Pipeline error handling: Capture unexpected errors in result object
+        # rather than propagating to allow callers to handle failures gracefully.
+        # This enables orchestration layers to inspect errors programmatically,
+        # implement retry logic, or aggregate partial results from multi-step pipelines.
+        # Error is logged via logger.exception for full stack trace observability.
+        except Exception as e:  # fallback-ok: pipeline executor captures errors in result object, logged via logger.exception
             step_duration = (time.perf_counter() - step_start) * 1000
             total_time = (time.perf_counter() - start_time) * 1000
 

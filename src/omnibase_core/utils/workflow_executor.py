@@ -477,13 +477,36 @@ async def _execute_parallel(
         """
         Execute a single workflow step asynchronously.
 
-        Returns tuple of (step, action_or_none, error_or_none).
+        Inner async function designed for parallel execution via asyncio.gather.
+        Returns a tuple pattern that enables safe error handling in concurrent
+        contexts without raising exceptions that would cancel sibling tasks.
+
+        Args:
+            step: The workflow step to execute, containing step metadata,
+                configuration, and dependency information.
+
+        Returns:
+            A 3-tuple of (step, action, error) where:
+            - step: The original ModelWorkflowStep (always present for correlation)
+            - action: ModelAction if execution succeeded, None if failed
+            - error: Exception if execution failed, None if succeeded
+
+            Exactly one of action/error will be None (mutually exclusive).
+            This tuple pattern allows the caller to process results from
+            asyncio.gather without individual try/except blocks per task.
+
+        Note:
+            This function catches all exceptions and returns them in the tuple
+            rather than re-raising. This is intentional for parallel execution:
+            - Prevents one failing step from canceling other parallel steps
+            - Allows batch processing of all results after gather completes
+            - Caller is responsible for logging and handling returned errors
         """
         try:
             # Create action for this step
             action = _create_action_for_step(step, workflow_id)
             return (step, action, None)
-        except Exception as e:
+        except Exception as e:  # fallback-ok: parallel execution returns error in tuple for caller handling
             return (step, None, e)
 
     # For parallel execution, we execute in waves based on dependencies
