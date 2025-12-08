@@ -427,10 +427,23 @@ class UnionPattern:
         self.file_path = file_path
         self.type_count = len(types)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
+        """Return hash value for use in sets and as dict keys.
+
+        Returns:
+            int: Hash computed from the sorted union types tuple.
+        """
         return hash(tuple(self.types))
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        """Check equality with another UnionPattern.
+
+        Args:
+            other: Object to compare against.
+
+        Returns:
+            bool: True if other is a UnionPattern with the same types.
+        """
         return isinstance(other, UnionPattern) and self.types == other.types
 
     def get_signature(self) -> str:

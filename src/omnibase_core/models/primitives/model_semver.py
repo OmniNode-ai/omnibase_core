@@ -26,11 +26,16 @@ class ModelSemVer(BaseModel):
     Semantic version model following SemVer specification.
 
     Preferred usage (structured format):
-        >>> version = ModelSemVer(major=1, minor=2, patch=3)
-        >>> assert str(version) == "1.2.3"
+        >>> version = ModelSemVer(major=0, minor=4, patch=0)
+        >>> assert str(version) == "0.4.0"
+        >>> assert version.major == 0 and version.minor == 4
 
     For parsing external input, use the parse() class method:
-        >>> version = ModelSemVer.parse("1.2.3")
+        >>> version = ModelSemVer.parse("0.4.0")
+        >>> assert version == ModelSemVer(major=0, minor=4, patch=0)
+
+    Note: String version literals like "1.0.0" are deprecated.
+    Always use structured format: ModelSemVer(major=X, minor=Y, patch=Z)
     """
 
     major: int = Field(ge=0, description="Major version number")

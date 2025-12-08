@@ -28,7 +28,8 @@ def validate_union_usage_module() -> ModuleType:
     Returns:
         The loaded module containing UnionPattern and UnionLegitimacyValidator.
     """
-    scripts_path = Path("/workspace/omnibase_core/scripts/validation")
+    # Get the project root by navigating up from tests/unit/validation/
+    scripts_path = Path(__file__).parent.parent.parent.parent / "scripts" / "validation"
     spec = importlib.util.spec_from_file_location(
         "validate_union_usage",
         scripts_path / "validate-union-usage.py",
@@ -477,6 +478,190 @@ class MyModel(BaseModel):
         # Should be flagged as primitive_soup or similar
         assert result["is_legitimate"] is False
         assert result["pattern_type"] == "primitive_soup"
+
+
+class TestCompanionLiteralDiscriminatorDetection:
+    """Test edge cases for companion literal discriminator detection.
+
+    These tests focus on the detection logic that identifies Literal fields
+    as discriminators for Union types, including false positive prevention
+    and correct matching with multiple Literal fields.
+    """
+
+    def test_companion_literal_requires_matching_type_values(
+        self, validate_union_usage_module: ModuleType
+    ) -> None:
+        """Test that companion literal detection requires matching type values.
+
+        A Literal field should only be considered a discriminator if its values
+        match the union type names. Unrelated Literal values should not trigger
+        false positive detection.
+        """
+        UnionPattern = validate_union_usage_module.UnionPattern
+        UnionLegitimacyValidator = validate_union_usage_module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        pattern = UnionPattern(
+            ["bool", "str", "int"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # Unrelated Literal field (not a discriminator for this union)
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, str, int]
+    status: Literal["active", "inactive"]  # Not related to value types
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        # Should NOT detect as discriminated - status values don't match union types
+        assert result is False, (
+            "Should not detect unrelated Literal fields as discriminators"
+        )
+
+    def test_multiple_literal_fields_correct_match(
+        self, validate_union_usage_module: ModuleType
+    ) -> None:
+        """Test detection with multiple Literal fields - should match correct one.
+
+        When multiple Literal fields exist in a file, the detection should
+        correctly identify the one that matches the union type names.
+        """
+        UnionPattern = validate_union_usage_module.UnionPattern
+        UnionLegitimacyValidator = validate_union_usage_module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        pattern = UnionPattern(
+            ["bool", "str", "int"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        file_content = """
+class MyModel(BaseModel):
+    status: Literal["active", "inactive"]  # Unrelated
+    value: Union[bool, str, int]
+    value_type: Literal["bool", "str", "int"]  # Matching discriminator
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        assert result is True, (
+            "Should detect matching discriminator among multiple Literal fields"
+        )
+
+    def test_partial_overlap_below_threshold_not_detected(
+        self, validate_union_usage_module: ModuleType
+    ) -> None:
+        """Test that partial overlap below threshold is not detected.
+
+        If a Literal field only partially matches the union types and doesn't
+        meet the threshold, it should not be considered a discriminator.
+        """
+        UnionPattern = validate_union_usage_module.UnionPattern
+        UnionLegitimacyValidator = validate_union_usage_module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        # 4-type union: threshold = min(3, 4 // 2 + 1) = 3
+        pattern = UnionPattern(
+            ["bool", "str", "int", "float"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # Only 1 matching type - well below threshold of 3
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, str, int, float]
+    mode: Literal["bool", "debug", "verbose"]  # Only "bool" matches
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        assert result is False, "Should not detect with only 1 match for 4-type union"
+
+    def test_literal_field_with_superset_of_union_types(
+        self, validate_union_usage_module: ModuleType
+    ) -> None:
+        """Test detection when Literal has more values than union types.
+
+        The Literal field may contain additional values beyond the union types,
+        but if enough values match, it should still be detected as a discriminator.
+        """
+        UnionPattern = validate_union_usage_module.UnionPattern
+        UnionLegitimacyValidator = validate_union_usage_module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        pattern = UnionPattern(
+            ["bool", "str", "int"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # Literal has extra values beyond union types
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, str, int]
+    value_type: Literal["bool", "str", "int", "float", "list"]
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        # Should detect - all 3 union types are in the Literal
+        assert result is True, (
+            "Should detect when Literal contains all union types plus extras"
+        )
+
+    def test_no_literal_field_in_file(
+        self, validate_union_usage_module: ModuleType
+    ) -> None:
+        """Test that absence of Literal field means no companion detection."""
+        UnionPattern = validate_union_usage_module.UnionPattern
+        UnionLegitimacyValidator = validate_union_usage_module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        pattern = UnionPattern(
+            ["bool", "str", "int"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # No Literal field at all
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, str, int]
+    name: str
+    count: int
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        assert result is False, "Should not detect when no Literal field exists"
+
+    def test_literal_with_case_mismatch_still_matches(
+        self, validate_union_usage_module: ModuleType
+    ) -> None:
+        """Test that case-insensitive matching works for Literal values.
+
+        Literal values like "Bool" should match union type "bool" due to
+        case-insensitive comparison in the detection logic.
+        """
+        UnionPattern = validate_union_usage_module.UnionPattern
+        UnionLegitimacyValidator = validate_union_usage_module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        pattern = UnionPattern(
+            ["bool", "str", "int"],
+            line=10,
+            file_path="/test/path.py",
+        )
+
+        # Literal values with different case
+        file_content = """
+class MyModel(BaseModel):
+    value: Union[bool, str, int]
+    value_type: Literal["BOOL", "STR", "INT"]
+"""
+
+        result = validator._is_discriminated_union(pattern, file_content)
+        assert result is True, "Should detect with case-insensitive matching"
 
 
 class TestTypeNormalizationDetails:
