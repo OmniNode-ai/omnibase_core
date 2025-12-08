@@ -40,10 +40,12 @@ from omnibase_core.models.common.model_validation_result import ModelValidationR
 # Import BOTH validation result classes (different purposes!)
 # - ModelValidationResult (from models/) is for circular import validation
 # - ModelValidationResult (from models/validation/) is for general validation
-from omnibase_core.models.model_import_validation_result import (
+from omnibase_core.models.validation.model_import_validation_result import (
     ModelValidationResult as CircularImportValidationResult,
 )
-from omnibase_core.models.model_module_import_result import ModelModuleImportResult
+from omnibase_core.models.validation.model_module_import_result import (
+    ModelModuleImportResult,
+)
 
 # Import validation functions for easy access
 from .architecture import validate_architecture_directory, validate_one_model_per_file

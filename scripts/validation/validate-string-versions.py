@@ -21,7 +21,6 @@ from __future__ import annotations
 import ast
 import os
 import re
-import signal
 import sys
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -52,6 +51,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 # Try to import Pydantic models if available (may not exist in empty package structure)
 try:
     from omnibase_core.core.model_generic_yaml import ModelGenericYaml
+
     from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
     PYDANTIC_MODELS_AVAILABLE = True
@@ -857,9 +857,8 @@ class StringVersionValidator:
             )
 
 
-import timeout_utils
-
 # Import cross-platform timeout utility
+import timeout_utils
 from timeout_utils import timeout_context
 
 

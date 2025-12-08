@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from omnibase_core.models.compute.model_compute_execution_context import (
     ModelComputeExecutionContext,
 )
+from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
 from omnibase_core.models.compute.model_compute_pipeline_result import (
     ModelComputePipelineResult,
 )
@@ -17,7 +18,6 @@ from omnibase_core.models.compute.model_compute_step_metadata import (
 from omnibase_core.models.compute.model_compute_step_result import (
     ModelComputeStepResult,
 )
-from omnibase_core.models.model_compute_output import ModelComputeOutput
 
 
 @pytest.mark.unit

@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Workflow Definition Model - ONEX Standards Compliant.
 
 Model for complete workflow definitions in the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -17,6 +15,12 @@ from .model_workflow_definition_metadata import ModelWorkflowDefinitionMetadata
 
 class ModelWorkflowDefinition(BaseModel):
     """Complete workflow definition."""
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
@@ -40,9 +44,3 @@ class ModelWorkflowDefinition(BaseModel):
         ),
         description="Rules for workflow coordination",
     )
-
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }

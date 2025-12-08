@@ -283,7 +283,7 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
         self.config = config
         self.violations: list[StringTypingViolation] = []
         self.imports: set[str] = set()
-        self.current_class: Optional[str] = None
+        self.current_class: str | None = None
         self.current_model_fields: list[str] = []
         self.is_pydantic_model = False
 
@@ -476,7 +476,7 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
             re.match(pattern, field_name) for pattern in self.config.uuid_patterns
         )
 
-    def _check_enum_patterns(self, field_name: str) -> Optional[list[str]]:
+    def _check_enum_patterns(self, field_name: str) -> list[str] | None:
         """Check if field name matches enum patterns and return suggested values."""
         field_lower = field_name.lower()
 
@@ -553,7 +553,7 @@ class PydanticModelAnalyzer(ast.NodeVisitor):
 class StringTypingValidator:
     """Main validator for string typing anti-patterns in Pydantic models."""
 
-    def __init__(self, config: Optional[ValidationConfig] = None):
+    def __init__(self, config: ValidationConfig | None = None):
         self.config = config or ValidationConfig.default()
         self.violations: list[StringTypingViolation] = []
         self.checked_files = 0

@@ -100,7 +100,10 @@ def example_custom_validation_suite():
 
     # Union validation with lower limit
     union_result = suite.run_validation(
-        "union-usage", directory, max_unions=25, strict=True  # Stricter limit
+        "union-usage",
+        directory,
+        max_unions=25,
+        strict=True,  # Stricter limit
     )
     print(f"  Union usage (strict):  {'✅' if union_result.success else '❌'}")
 
@@ -173,7 +176,7 @@ def example_file_level_validation():
         print(f"    Architecture: {arch_status}")
 
         # Union usage validation
-        union_count, union_issues, patterns = validate_union_usage_file(file_path)
+        union_count, union_issues, _patterns = validate_union_usage_file(file_path)
         union_status = "✅" if not union_issues else "❌"
         print(f"    Union usage:  {union_status} ({union_count} unions)")
 

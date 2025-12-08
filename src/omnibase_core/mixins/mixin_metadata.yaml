@@ -1,3 +1,4 @@
+---
 # ONEX Mixin Metadata - Autonomous Code Generation Support
 # Version: 1.0.0
 # Purpose: Machine-readable metadata for mixin discovery and code generation
@@ -23,16 +24,16 @@ mixin_retry:
 
   # Compatibility
   compatible_with:
-    - "MixinEventBus" # Can publish retry events
-    - "MixinHealthCheck" # Can report retry failures
-    - "MixinMetrics" # Can track retry metrics
-    - "MixinLogging" # Can log retry attempts
-    - "MixinCircuitBreaker" # Can integrate with circuit breaker
-    - "MixinCaching" # Can retry cache operations
-    - "MixinTimeout" # Can combine retry with timeout
+    - "MixinEventBus"  # Can publish retry events
+    - "MixinHealthCheck"  # Can report retry failures
+    - "MixinMetrics"  # Can track retry metrics
+    - "MixinLogging"  # Can log retry attempts
+    - "MixinCircuitBreaker"  # Can integrate with circuit breaker
+    - "MixinCaching"  # Can retry cache operations
+    - "MixinTimeout"  # Can combine retry with timeout
 
   incompatible_with:
-    - "MixinSynchronous" # Retry requires async operations (if exists)
+    - "MixinSynchronous"  # Retry requires async operations (if exists)
 
   # Configuration schema
   config_schema:
@@ -348,11 +349,11 @@ mixin_retry:
   # Monitoring and observability
   observability:
     metrics:
-      - "retry_attempts_total" # Counter
-      - "retry_success_rate" # Gauge (0.0-1.0)
-      - "retry_delay_seconds" # Histogram
-      - "retry_exhausted_total" # Counter
-      - "circuit_breaker_state" # Gauge (0=closed, 1=open, 2=half-open)
+      - "retry_attempts_total"  # Counter
+      - "retry_success_rate"  # Gauge (0.0-1.0)
+      - "retry_delay_seconds"  # Histogram
+      - "retry_exhausted_total"  # Counter
+      - "circuit_breaker_state"  # Gauge (0=closed, 1=open, 2=half-open)
 
     logs:
       - level: "DEBUG"
@@ -452,15 +453,15 @@ mixin_health_check:
 
   # Compatibility
   compatible_with:
-    - "MixinEventBus" # Can emit health events
-    - "MixinCaching" # Can cache health check results
-    - "MixinRetry" # Can retry failed health checks
-    - "MixinLogging" # Enhanced health check logging
-    - "MixinMetrics" # Health metrics collection
-    - "MixinCircuitBreaker" # Health-based circuit breaking
-    - "MixinValidation" # Health data validation
+    - "MixinEventBus"  # Can emit health events
+    - "MixinCaching"  # Can cache health check results
+    - "MixinRetry"  # Can retry failed health checks
+    - "MixinLogging"  # Enhanced health check logging
+    - "MixinMetrics"  # Health metrics collection
+    - "MixinCircuitBreaker"  # Health-based circuit breaking
+    - "MixinValidation"  # Health data validation
 
-  incompatible_with: [] # No known incompatibilities
+  incompatible_with: []  # No known incompatibilities
 
   # Configuration schema
   config_schema:
@@ -613,7 +614,8 @@ mixin_health_check:
               ]
 
       - name: "check_dependency_health"
-        signature: "def check_dependency_health(self, dependency_name: str, check_func: Callable[[], bool]) -> ModelHealthStatus"
+        signature: "def check_dependency_health(self, dependency_name: str, check_func: Callable[[], bool])
+          -> ModelHealthStatus"
         description: "Helper to check dependency health"
         example: |
           db_health = self.check_dependency_health(
@@ -720,12 +722,12 @@ mixin_health_check:
   # Monitoring and observability
   observability:
     metrics:
-      - "health_check_count" # Counter
-      - "health_check_duration_ms" # Histogram
-      - "health_status_changes" # Counter
-      - "health_check_failures" # Counter
-      - "current_health_status" # Gauge (0-4)
-      - "dependency_health_status" # Gauge per dependency
+      - "health_check_count"  # Counter
+      - "health_check_duration_ms"  # Histogram
+      - "health_status_changes"  # Counter
+      - "health_check_failures"  # Counter
+      - "current_health_status"  # Gauge (0-4)
+      - "dependency_health_status"  # Gauge per dependency
 
     logs:
       - level: "DEBUG"
@@ -1035,7 +1037,8 @@ mixin_health_check:
 # =============================================================================
 mixin_caching:
   name: "MixinCaching"
-  description: "Multi-level caching capabilities with TTL, invalidation strategies, distributed caching, and performance optimization"
+  description: "Multi-level caching capabilities with TTL, invalidation strategies, distributed caching,
+    and performance optimization"
   version: {major: 1, minor: 0, patch: 0}
   category: "data_management"
 
@@ -1053,17 +1056,17 @@ mixin_caching:
 
   # Compatibility
   compatible_with:
-    - "MixinEventBus" # Can publish cache events
-    - "MixinHealthCheck" # Can report cache health
-    - "MixinMetrics" # Can track cache metrics
-    - "MixinLogging" # Can log cache operations
-    - "MixinCircuitBreaker" # Can integrate with circuit breaker
-    - "MixinRetry" # Can retry cache operations
-    - "MixinTimeout" # Can timeout cache operations
-    - "MixinValidation" # Can validate cached data
+    - "MixinEventBus"  # Can publish cache events
+    - "MixinHealthCheck"  # Can report cache health
+    - "MixinMetrics"  # Can track cache metrics
+    - "MixinLogging"  # Can log cache operations
+    - "MixinCircuitBreaker"  # Can integrate with circuit breaker
+    - "MixinRetry"  # Can retry cache operations
+    - "MixinTimeout"  # Can timeout cache operations
+    - "MixinValidation"  # Can validate cached data
 
   incompatible_with:
-    - "MixinStateless" # Caching requires state management
+    - "MixinStateless"  # Caching requires state management
 
   # Configuration schema
   config_schema:
@@ -1369,7 +1372,8 @@ mixin_caching:
               return result
 
       - name: "set_cached"
-        signature: "async def set_cached(self, key: str, value: dict[str, Any], ttl_seconds: int | None = None) -> bool"
+        signature: "async def set_cached(self, key: str, value: dict[str, Any], ttl_seconds: int | None
+          = None) -> bool"
         description: "Store value in cache with optional TTL override"
         example: |
           await self.set_cached(cache_key, result_data, ttl_seconds=600)
@@ -1466,7 +1470,8 @@ mixin_caching:
 # =============================================================================
 mixin_event_bus:
   name: "MixinEventBus"
-  description: "Event-driven communication capabilities for publishing and subscribing to events with structured payloads, correlation tracking, and graceful degradation"
+  description: "Event-driven communication capabilities for publishing and subscribing to events with
+    structured payloads, correlation tracking, and graceful degradation"
   version: {major: 1, minor: 0, patch: 0}
   category: "communication"
 
@@ -1484,16 +1489,16 @@ mixin_event_bus:
 
   # Compatibility
   compatible_with:
-    - "MixinCaching" # Can cache event subscriptions
-    - "MixinHealthCheck" # Can emit health status events
-    - "MixinRetry" # Can retry failed event publications
-    - "MixinLogging" # Enhanced event logging
-    - "MixinMetrics" # Event metrics collection
-    - "MixinCircuitBreaker" # Event bus circuit breaking
-    - "MixinValidation" # Event payload validation
-    - "MixinTimeout" # Event publication timeout
+    - "MixinCaching"  # Can cache event subscriptions
+    - "MixinHealthCheck"  # Can emit health status events
+    - "MixinRetry"  # Can retry failed event publications
+    - "MixinLogging"  # Enhanced event logging
+    - "MixinMetrics"  # Event metrics collection
+    - "MixinCircuitBreaker"  # Event bus circuit breaking
+    - "MixinValidation"  # Event payload validation
+    - "MixinTimeout"  # Event publication timeout
 
-  incompatible_with: [] # No known incompatibilities
+  incompatible_with: []  # No known incompatibilities
 
   # Configuration schema
   config_schema:
@@ -1670,7 +1675,8 @@ mixin_event_bus:
 
     methods:
       - name: "publish_event"
-        signature: "async def publish_event(self, event_type: str, payload: dict[str, Any], correlation_id: UUID | None = None) -> bool"
+        signature: "async def publish_event(self, event_type: str, payload: dict[str, Any], correlation_id:
+          UUID | None = None) -> bool"
         description: "Publish an event to the event bus with optional correlation tracking"
         example: |
           success = await self.publish_event(
@@ -1680,7 +1686,8 @@ mixin_event_bus:
           )
 
       - name: "emit_state_change_event"
-        signature: "async def emit_state_change_event(self, event_type: str, payload: dict[str, Any], correlation_id: UUID | None = None) -> bool"
+        signature: "async def emit_state_change_event(self, event_type: str, payload: dict[str, Any],
+          correlation_id: UUID | None = None) -> bool"
         description: "Emit a state change event with structured payload"
         example: |
           await self.emit_state_change_event(
@@ -1693,7 +1700,8 @@ mixin_event_bus:
           )
 
       - name: "subscribe_to_events"
-        signature: "async def subscribe_to_events(self, event_types: list[str], callback: Callable) -> str"
+        signature: "async def subscribe_to_events(self, event_types: list[str], callback: Callable) ->
+          str"
         description: "Subscribe to specific event types with callback handler"
         example: |
           subscription_id = await self.subscribe_to_events(
@@ -1714,7 +1722,8 @@ mixin_event_bus:
               logger.info("Event bus available")
 
       - name: "validate_event_payload"
-        signature: "async def validate_event_payload(self, payload: dict[str, Any], event_type: str) -> bool"
+        signature: "async def validate_event_payload(self, payload: dict[str, Any], event_type: str) ->
+          bool"
         description: "Validate event payload against schema for event type"
 
       - name: "get_event_history"
@@ -1830,13 +1839,13 @@ mixin_event_bus:
   # Monitoring and observability
   observability:
     metrics:
-      - "events_published_total" # Counter
-      - "event_publication_failures" # Counter
-      - "event_publication_latency_ms" # Histogram
-      - "event_payload_size_bytes" # Histogram
-      - "event_bus_availability" # Gauge (0=unavailable, 1=available)
-      - "events_by_type_total" # Counter per event type
-      - "correlation_chains_active" # Gauge
+      - "events_published_total"  # Counter
+      - "event_publication_failures"  # Counter
+      - "event_publication_latency_ms"  # Histogram
+      - "event_payload_size_bytes"  # Histogram
+      - "event_bus_availability"  # Gauge (0=unavailable, 1=available)
+      - "events_by_type_total"  # Counter per event type
+      - "correlation_chains_active"  # Gauge
 
     logs:
       - level: "DEBUG"
@@ -2125,7 +2134,8 @@ mixin_event_bus:
       by_name: 'container.get_service("event_bus")'
 
     protocol_methods:
-      - signature: "async def emit_event(self, event_type: str, payload: dict[str, Any], correlation_id: UUID | None) -> bool"
+      - signature: "async def emit_event(self, event_type: str, payload: dict[str, Any], correlation_id:
+          UUID | None) -> bool"
         description: "Emit event to event bus"
 
       - signature: "async def subscribe(self, event_types: list[str], handler: Callable) -> str"
@@ -2216,7 +2226,8 @@ mixin_event_bus:
 # =============================================================================
 mixin_circuit_breaker:
   name: "MixinCircuitBreaker"
-  description: "Circuit breaker pattern implementation for fault tolerance with failure threshold detection and automatic recovery"
+  description: "Circuit breaker pattern implementation for fault tolerance with failure threshold detection
+    and automatic recovery"
   version: {major: 1, minor: 0, patch: 0}
   category: "resilience"
 
@@ -2267,7 +2278,8 @@ mixin_circuit_breaker:
 # =============================================================================
 mixin_logging:
   name: "MixinLogging"
-  description: "Structured logging with context preservation, correlation IDs, and ONEX-compliant log events"
+  description: "Structured logging with context preservation, correlation IDs, and ONEX-compliant log
+    events"
   version: {major: 1, minor: 0, patch: 0}
   category: "observability"
 
@@ -2307,7 +2319,8 @@ mixin_logging:
 # =============================================================================
 mixin_metrics:
   name: "MixinMetrics"
-  description: "Performance metrics collection, aggregation, and export with Prometheus/OpenTelemetry support"
+  description: "Performance metrics collection, aggregation, and export with Prometheus/OpenTelemetry
+    support"
   version: {major: 1, minor: 0, patch: 0}
   category: "observability"
 
@@ -2466,7 +2479,8 @@ mixin_serialization:
 # =============================================================================
 mixin_fsm_execution:
   name: "MixinFSMExecution"
-  description: "Declarative FSM execution from YAML contracts - enables state machines without custom code"
+  description: "Declarative FSM execution from YAML contracts - enables state machines without custom
+    code"
   version: {major: 1, minor: 0, patch: 0}
   category: "declarative_execution"
 
@@ -2479,12 +2493,12 @@ mixin_fsm_execution:
 
   # Compatibility
   compatible_with:
-    - "MixinEventBus" # Can emit FSM events
-    - "MixinLogging" # Can log state transitions
-    - "MixinMetrics" # Can track FSM metrics
-    - "MixinHealthCheck" # Can report FSM health
-    - "MixinValidation" # Can validate FSM contracts
-    - "MixinSerialization" # Can serialize FSM state
+    - "MixinEventBus"  # Can emit FSM events
+    - "MixinLogging"  # Can log state transitions
+    - "MixinMetrics"  # Can track FSM metrics
+    - "MixinHealthCheck"  # Can report FSM health
+    - "MixinValidation"  # Can validate FSM contracts
+    - "MixinSerialization"  # Can serialize FSM state
 
   incompatible_with: []
 
@@ -2780,7 +2794,8 @@ mixin_fsm_execution:
 # =============================================================================
 mixin_workflow_execution:
   name: "MixinWorkflowExecution"
-  description: "Declarative workflow execution from YAML contracts - enables workflows without custom code"
+  description: "Declarative workflow execution from YAML contracts - enables workflows without custom
+    code"
   version: {major: 1, minor: 0, patch: 0}
   category: "declarative_execution"
 
@@ -2794,12 +2809,12 @@ mixin_workflow_execution:
 
   # Compatibility
   compatible_with:
-    - "MixinEventBus" # Can emit workflow events
-    - "MixinLogging" # Can log workflow execution
-    - "MixinMetrics" # Can track workflow metrics
-    - "MixinHealthCheck" # Can report workflow health
-    - "MixinValidation" # Can validate workflow contracts
-    - "MixinFSMExecution" # Can combine FSM with workflow
+    - "MixinEventBus"  # Can emit workflow events
+    - "MixinLogging"  # Can log workflow execution
+    - "MixinMetrics"  # Can track workflow metrics
+    - "MixinHealthCheck"  # Can report workflow health
+    - "MixinValidation"  # Can validate workflow contracts
+    - "MixinFSMExecution"  # Can combine FSM with workflow
 
   incompatible_with: []
 
@@ -3081,13 +3096,15 @@ mixin_workflow_execution:
 # =============================================================================
 mixin_discovery_responder:
   name: "MixinDiscoveryResponder"
-  description: "Service discovery responder for ONEX discovery broadcasts with rate limiting, capability advertisement, and introspection integration"
+  description: "Service discovery responder for ONEX discovery broadcasts with rate limiting, capability
+    advertisement, and introspection integration"
   version: {major: 1, minor: 0, patch: 0}
   category: "service_discovery"
 
   # Subcontract reference
   subcontract_model: "omnibase_core.models.contracts.subcontracts.model_discovery_subcontract.ModelDiscoverySubcontract"
-  subcontract_description: "Provides declarative configuration for discovery response behavior, rate limiting, capability advertisement, and event bus routing"
+  subcontract_description: "Provides declarative configuration for discovery response behavior, rate limiting,
+    capability advertisement, and event bus routing"
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_discovery_subcontract"
@@ -3142,13 +3159,15 @@ mixin_discovery_responder:
 # =============================================================================
 mixin_introspection:
   name: "MixinIntrospection"
-  description: "Node introspection capabilities providing metadata, capabilities, and runtime information for monitoring and discovery"
+  description: "Node introspection capabilities providing metadata, capabilities, and runtime information
+    for monitoring and discovery"
   version: {major: 1, minor: 0, patch: 0}
   category: "observability"
 
   # Subcontract reference
   subcontract_model: "omnibase_core.models.contracts.subcontracts.model_introspection_subcontract.ModelIntrospectionSubcontract"
-  subcontract_description: "Enables declarative introspection configuration including metadata exposure, capability reporting, and performance metrics"
+  subcontract_description: "Enables declarative introspection configuration including metadata exposure,
+    capability reporting, and performance metrics"
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_introspection_subcontract"
@@ -3198,13 +3217,15 @@ mixin_introspection:
 # =============================================================================
 mixin_event_handler:
   name: "MixinEventHandler"
-  description: "Event handling capabilities for processing ONEX event bus messages with routing, filtering, and error handling"
+  description: "Event handling capabilities for processing ONEX event bus messages with routing, filtering,
+    and error handling"
   version: {major: 1, minor: 0, patch: 0}
   category: "event_driven"
 
   # Subcontract reference
   subcontract_model: "omnibase_core.models.contracts.subcontracts.model_event_handling_subcontract.ModelEventHandlingSubcontract"
-  subcontract_description: "Provides declarative event handler configuration including routing rules, filters, retry policies, and dead letter queues"
+  subcontract_description: "Provides declarative event handler configuration including routing rules,
+    filters, retry policies, and dead letter queues"
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_event_handling_subcontract"
@@ -3260,13 +3281,15 @@ mixin_event_handler:
 # =============================================================================
 mixin_node_lifecycle:
   name: "MixinNodeLifecycle"
-  description: "Node lifecycle management for initialization, startup, shutdown, and cleanup with health checks and state transitions"
+  description: "Node lifecycle management for initialization, startup, shutdown, and cleanup with health
+    checks and state transitions"
   version: {major: 1, minor: 0, patch: 0}
   category: "infrastructure"
 
   # Subcontract reference
   subcontract_model: "omnibase_core.models.contracts.subcontracts.model_lifecycle_subcontract.ModelLifecycleSubcontract"
-  subcontract_description: "Enables declarative lifecycle configuration including startup hooks, shutdown grace periods, and health check integration"
+  subcontract_description: "Enables declarative lifecycle configuration including startup hooks, shutdown
+    grace periods, and health check integration"
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_lifecycle_subcontract"
@@ -3320,13 +3343,15 @@ mixin_node_lifecycle:
 # =============================================================================
 mixin_tool_execution:
   name: "MixinToolExecution"
-  description: "Tool and action execution capabilities for LLM integration, validation, and monitoring with sandboxing and timeout protection"
+  description: "Tool and action execution capabilities for LLM integration, validation, and monitoring
+    with sandboxing and timeout protection"
   version: {major: 1, minor: 0, patch: 0}
   category: "integration"
 
   # Subcontract reference
   subcontract_model: "omnibase_core.models.contracts.subcontracts.model_tool_execution_subcontract.ModelToolExecutionSubcontract"
-  subcontract_description: "Provides declarative tool execution configuration including sandboxing, timeout limits, validation rules, and result caching"
+  subcontract_description: "Provides declarative tool execution configuration including sandboxing, timeout
+    limits, validation rules, and result caching"
 
   requires:
     - "omnibase_core.models.contracts.subcontracts.model_tool_execution_subcontract"

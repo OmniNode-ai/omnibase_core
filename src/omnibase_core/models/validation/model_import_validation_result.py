@@ -2,18 +2,32 @@
 Validation result model for circular import detection.
 
 Provides comprehensive validation results and statistics for module import
-validation operations.
+validation operations. This is a dataclass (not Pydantic) used specifically
+for import validation tooling that detects circular dependencies.
+
+Note: This module defines ModelValidationResult, which is distinct from other
+validation result types in the codebase (e.g., ModelContractValidationResult).
+This class specifically aggregates results from circular import detection runs,
+tracking successful imports, circular imports, and various error categories.
 """
 
 from dataclasses import dataclass, field
 
 from omnibase_core.enums.enum_import_status import EnumImportStatus
-from omnibase_core.models.model_module_import_result import ModelModuleImportResult
+from omnibase_core.models.validation.model_module_import_result import (
+    ModelModuleImportResult,
+)
 
 
 @dataclass
 class ModelValidationResult:
-    """Overall validation results for circular import detection."""
+    """
+    Overall validation results for circular import detection.
+
+    Aggregates ModelModuleImportResult instances from import validation runs,
+    categorizing them by status (success, circular import, error, skipped).
+    Used by import validation tooling to detect and report circular dependencies.
+    """
 
     total_files: int
     successful_imports: list[ModelModuleImportResult] = field(default_factory=list)

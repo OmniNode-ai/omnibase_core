@@ -57,7 +57,7 @@ class CrossPlatformTimeout:
         self,
         seconds: int,
         error_message: str,
-        cleanup_func: Optional[Callable[[], None]] = None,
+        cleanup_func: Callable[[], None] | None = None,
     ):
         """
         Initialize timeout handler.
@@ -70,7 +70,7 @@ class CrossPlatformTimeout:
         self.seconds = seconds
         self.error_message = error_message
         self.cleanup_func = cleanup_func
-        self.timer: Optional[threading.Timer] = None
+        self.timer: threading.Timer | None = None
         self.timed_out = False
         self._cancelled = False
 
@@ -161,8 +161,8 @@ class UnixSignalTimeout:
 @contextmanager
 def timeout_context(
     operation: str,
-    duration: Optional[int] = None,
-    cleanup_func: Optional[Callable[[], None]] = None,
+    duration: int | None = None,
+    cleanup_func: Callable[[], None] | None = None,
     use_signal: bool = False,
 ) -> Generator[None, None, None]:
     """
@@ -196,7 +196,7 @@ def timeout_context(
 def with_timeout(
     timeout_seconds: int,
     error_message: str = TIMEOUT_ERROR_MESSAGES["general"],
-    cleanup_func: Optional[Callable[[], None]] = None,
+    cleanup_func: Callable[[], None] | None = None,
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """
     Decorator to add timeout to any function.
@@ -245,7 +245,7 @@ def create_cleanup_function(files_to_cleanup: list[Path]) -> Callable[[], None]:
     return cleanup
 
 
-def safe_file_operation(
+def safe_file_operation(  # noqa: UP047
     file_path: Path,
     operation: Callable[[Path], T],
     timeout_seconds: int = 30,

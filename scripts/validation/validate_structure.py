@@ -579,7 +579,9 @@ def print_validation_report(violations: list[StructureViolation], repo_name: str
             level_emoji = (
                 "🚨"
                 if violation.level == ViolationLevel.ERROR
-                else "⚠️" if violation.level == ViolationLevel.WARNING else "INFO"
+                else "⚠️"
+                if violation.level == ViolationLevel.WARNING
+                else "INFO"
             )
             print(f"{level_emoji} {violation.level.value}: {violation.message}")
             print(f"   📍 Path: {violation.path}")

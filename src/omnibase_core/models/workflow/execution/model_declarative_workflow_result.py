@@ -7,7 +7,7 @@ Follows ONEX one-model-per-file architecture.
 ZERO TOLERANCE: No Any types in implementation.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime, timezone
 from typing import Any
 from uuid import UUID
 
@@ -55,7 +55,7 @@ class ModelDeclarativeWorkflowResult:
         self.actions_emitted = actions_emitted
         self.execution_time_ms = execution_time_ms
         self.metadata = metadata or {}
-        self.timestamp = datetime.now().isoformat()
+        self.timestamp = datetime.now(UTC).isoformat()
 
 
 __all__ = ["ModelDeclarativeWorkflowResult"]

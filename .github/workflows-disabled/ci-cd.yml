@@ -1,3 +1,4 @@
+---
 # ONEX Smart Responder Chain CI/CD Pipeline
 # Note: Quality checks (linting, testing, type checking) are handled by pre-push hooks
 # This pipeline focuses on integration testing, builds, and deployments
@@ -20,7 +21,8 @@ jobs:
   # Phase 3L: 7-Gate Validation for ONEX Model Remediation
   seven-gate-validation:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'))
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/main'
+      || github.ref == 'refs/heads/develop'))
     permissions:
       contents: read
       actions: read
@@ -53,7 +55,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}-v2
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{
+            hashFiles('**/pyproject.toml') }}-v2
 
       - name: Configure git for private dependencies
         env:
@@ -470,11 +473,13 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: "ONEX deployment successful! \nEnvironment: ${{ github.ref == 'refs/heads/develop' && 'staging' || 'production' }}\nVersion: ${{ github.sha }}\n#magic___^_^___line\n"
+          SLACK_MESSAGE: "ONEX deployment successful! \nEnvironment: ${{ github.ref == 'refs/heads/develop'
+            && 'staging' || 'production' }}\nVersion: ${{ github.sha }}\n"
       - name: Notify on failure
         if: needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure'
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_COLOR: danger
-          SLACK_MESSAGE: "ONEX deployment failed! \nEnvironment: ${{ github.ref == 'refs/heads/develop' && 'staging' || 'production' }}\nCheck GitHub Actions for details.\n"
+          SLACK_MESSAGE: "ONEX deployment failed! \nEnvironment: ${{ github.ref == 'refs/heads/develop'
+            && 'staging' || 'production' }}\nCheck GitHub Actions for details.\n"

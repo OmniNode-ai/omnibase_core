@@ -156,7 +156,7 @@ def is_allowed_context(line: str) -> bool:
     return False
 
 
-def check_file(filepath: Path) -> tuple[list[tuple[int, str, str]], Optional[str]]:
+def check_file(filepath: Path) -> tuple[list[tuple[int, str, str]], str | None]:
     """Check file for Pydantic bypass patterns.
 
     Uses tokenize module to skip strings and comments, avoiding false positives.

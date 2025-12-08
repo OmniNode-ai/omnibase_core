@@ -39,7 +39,7 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
-from omnibase_core.models.model_reducer_output import ModelReducerOutput
+from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
 
 

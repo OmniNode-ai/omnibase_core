@@ -16,7 +16,7 @@ from typing import Optional
 class GenericImportValidator:
     """Validates omni* package imports based on discovered structure."""
 
-    def __init__(self, package_name: Optional[str] = None):
+    def __init__(self, package_name: str | None = None):
         self.results: list[tuple[str, bool, str]] = []
 
         # Auto-detect package name from repository if not provided
