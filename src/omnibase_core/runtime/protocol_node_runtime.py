@@ -1,0 +1,81 @@
+"""
+ProtocolNodeRuntime - Protocol for node runtime implementations.
+
+This module defines the protocol interface that NodeRuntime implementations
+must follow. It enables dependency inversion where NodeInstance depends on
+an abstract interface rather than a concrete implementation.
+
+Related:
+    - OMN-227: NodeInstance execution wrapper
+    - OMN-228: NodeRuntime implementation (future)
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
+    from omnibase_core.runtime.runtime_node_instance import RuntimeNodeInstance
+
+
+@runtime_checkable
+class ProtocolNodeRuntime(Protocol):
+    """
+    Protocol defining the interface for node runtime implementations.
+
+    This protocol enables dependency inversion - RuntimeNodeInstance depends on
+    the abstract ProtocolNodeRuntime interface rather than a concrete
+    NodeRuntime implementation. This allows:
+
+    - Different runtime implementations (sync, async, distributed)
+    - Easy mocking in tests
+    - Future extensibility without changing RuntimeNodeInstance
+
+    The runtime is responsible for all actual execution, including:
+    - Handler dispatch and invocation
+    - Error handling and recovery
+    - Observability (logging, metrics, tracing)
+    - Transaction management
+
+    Note:
+        This protocol will be implemented by NodeRuntime (OMN-228).
+        For now, it defines the contract that RuntimeNodeInstance depends on.
+    """
+
+    async def execute_with_handler(
+        self,
+        envelope: ModelOnexEnvelope,
+        instance: RuntimeNodeInstance,
+    ) -> ModelOnexEnvelope:
+        """
+        Execute the node's handler for the given envelope.
+
+        This method is called by RuntimeNodeInstance.handle() to delegate
+        actual execution to the runtime. The runtime is responsible for:
+
+        1. Resolving the appropriate handler based on envelope operation
+        2. Invoking the handler with proper context
+        3. Handling errors and generating error response envelopes
+        4. Recording metrics and traces
+        5. Managing transactions if applicable
+
+        Args:
+            envelope: The input envelope to process. Contains the operation
+                type, payload, and metadata for routing and execution.
+            instance: The RuntimeNodeInstance that received this envelope.
+                Provides access to the node's contract and configuration.
+
+        Returns:
+            ModelOnexEnvelope: The response envelope containing the result
+                of execution. May be a success response with payload or
+                an error response with error details.
+
+        Raises:
+            ModelOnexError: If execution fails and cannot be handled by
+                the runtime's error recovery mechanisms.
+        """
+        ...
+
+
+__all__ = ["ProtocolNodeRuntime"]
