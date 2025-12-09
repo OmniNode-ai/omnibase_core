@@ -20,12 +20,14 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_effect_circuit_breaker import ModelEffectCircuitBreaker
 from .model_effect_contract_metadata import ModelEffectContractMetadata
 from .model_effect_input_schema import ModelEffectInputSchema
+from .model_effect_io_configs import ModelDbIOConfig
 from .model_effect_observability import ModelEffectObservability
 from .model_effect_operation import ModelEffectOperation
 from .model_effect_retry_policy import ModelEffectRetryPolicy
@@ -169,9 +171,11 @@ class ModelEffectSubcontract(BaseModel):
             )
 
         # Check all use same connection
+        # Use isinstance for type narrowing (we've already validated all ops are DB above)
         connection_names = {
-            op.io_config.connection_name  # type: ignore[union-attr]
+            op.io_config.connection_name
             for op in self.operations
+            if isinstance(op.io_config, ModelDbIOConfig)
         }
         if len(connection_names) > 1:
             raise ModelOnexError(
@@ -227,8 +231,9 @@ class ModelEffectSubcontract(BaseModel):
 
         # Check for SELECT operations with retry enabled in strict isolation
         for op in self.operations:
-            if op.handler_type == "db":
-                if op.io_config.operation == "select":  # type: ignore[union-attr]
+            # Use isinstance for type narrowing on discriminated union
+            if op.handler_type == "db" and isinstance(op.io_config, ModelDbIOConfig):
+                if op.io_config.operation == "select":
                     retry = op.retry_policy or self.default_retry_policy
                     if retry.enabled and retry.max_retries > 0:
                         raise ModelOnexError(
@@ -259,10 +264,13 @@ class ModelEffectSubcontract(BaseModel):
         if not self.transaction.enabled:
             return self
 
+        # Use isinstance for type narrowing on discriminated union
         raw_ops = [
             op
             for op in self.operations
-            if op.handler_type == "db" and op.io_config.operation == "raw"  # type: ignore[union-attr]
+            if op.handler_type == "db"
+            and isinstance(op.io_config, ModelDbIOConfig)
+            and op.io_config.operation == "raw"
         ]
 
         if raw_ops:

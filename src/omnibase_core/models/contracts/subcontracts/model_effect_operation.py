@@ -101,16 +101,19 @@ class ModelEffectOperation(BaseModel):
         handler = str(self.io_config.handler_type.value)
         defaults = IDEMPOTENCY_DEFAULTS.get(handler, {})
 
-        # Extract operation type for lookup
-        if handler == "http":
-            op_type = self.io_config.method  # type: ignore[union-attr]
-        elif handler == "filesystem":
-            op_type = self.io_config.operation  # type: ignore[union-attr]
+        # Extract operation type for lookup using isinstance for type narrowing
+        op_type: str  # Explicit type to allow different string assignments
+        if handler == "http" and isinstance(self.io_config, ModelHttpIOConfig):
+            op_type = self.io_config.method
+        elif handler == "filesystem" and isinstance(
+            self.io_config, ModelFilesystemIOConfig
+        ):
+            op_type = self.io_config.operation
         elif handler == "kafka":
             op_type = "produce"
-        elif handler == "db":
+        elif handler == "db" and isinstance(self.io_config, ModelDbIOConfig):
             # Use explicit operation type (no more query string parsing)
-            op_type = self.io_config.operation.upper()  # type: ignore[union-attr]
+            op_type = self.io_config.operation.upper()
             # 'raw' operations default to non-idempotent for safety
             if op_type == "RAW":
                 return False
