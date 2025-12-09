@@ -2,7 +2,7 @@
 """
 Standalone YAML Contract Validator.
 
-Simple Pydantic model for validating YAML contract files without circular dependencies.
+Minimal Pydantic model for validating YAML contract files without circular dependencies.
 This model is designed specifically for the validation script to avoid import issues.
 
 Normalization Behavior
@@ -44,14 +44,14 @@ Supported node_type Values
 
 Usage Example
 -------------
-    from yaml_contract_validator import SimpleYamlContract
+    from yaml_contract_validator import MinimalYamlContract
 
     yaml_data = {
         "node_type": "compute_generic",  # Lowercase input
         "contract_version": {"major": 1, "minor": 0, "patch": 0}
     }
 
-    contract = SimpleYamlContract.validate_yaml_content(yaml_data)
+    contract = MinimalYamlContract.validate_yaml_content(yaml_data)
     print(contract.node_type)  # "COMPUTE_GENERIC" (normalized to uppercase)
 """
 
@@ -60,7 +60,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 
-class SimpleNodeType:
+class MinimalNodeType:
     """Valid node_type values for YAML contract validation.
 
     Mirrors EnumNodeType uppercase values. Input is case-insensitive (v0.4.0+).
@@ -106,7 +106,7 @@ class SimpleNodeType:
     }
 
 
-class SimpleContractVersion(BaseModel):
+class MinimalContractVersion(BaseModel):
     """Semantic version model for contract_version field (major.minor.patch)."""
 
     major: int = Field(..., ge=0)
@@ -114,7 +114,7 @@ class SimpleContractVersion(BaseModel):
     patch: int = Field(..., ge=0)
 
 
-class SimpleYamlContract(BaseModel):
+class MinimalYamlContract(BaseModel):
     """Pydantic model for validating YAML contracts without circular imports.
 
     Validates required fields: contract_version and node_type.
@@ -128,7 +128,7 @@ class SimpleYamlContract(BaseModel):
     )
 
     # Required fields for contract validation
-    contract_version: SimpleContractVersion = Field(
+    contract_version: MinimalContractVersion = Field(
         ...,
         description="Contract semantic version specification",
     )
@@ -200,15 +200,15 @@ class SimpleYamlContract(BaseModel):
             raise ValueError("node_type must be a string")
 
         value_upper = value.upper()
-        if value_upper in SimpleNodeType.VALID_TYPES:
+        if value_upper in MinimalNodeType.VALID_TYPES:
             return value_upper
 
         raise ValueError(
-            f"Invalid node_type '{value}'. Must be one of: {', '.join(sorted(SimpleNodeType.VALID_TYPES))}"
+            f"Invalid node_type '{value}'. Must be one of: {', '.join(sorted(MinimalNodeType.VALID_TYPES))}"
         )
 
     @classmethod
-    def validate_yaml_content(cls, yaml_data: dict[str, Any]) -> "SimpleYamlContract":
+    def validate_yaml_content(cls, yaml_data: dict[str, Any]) -> "MinimalYamlContract":
         """Validate YAML dict and return validated contract.
 
         This method applies all normalization rules:
@@ -219,7 +219,7 @@ class SimpleYamlContract(BaseModel):
             yaml_data: Dictionary loaded from YAML file.
 
         Returns:
-            Validated SimpleYamlContract with normalized values.
+            Validated MinimalYamlContract with normalized values.
 
         Raises:
             ValidationError: If required fields are missing or invalid.

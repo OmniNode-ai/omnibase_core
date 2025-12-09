@@ -130,7 +130,7 @@ state_transitions:
       conditions: []
       actions:
         - action_name: mark_metrics_validated
-          action_type: status_update
+          action_type: data_capture
           is_critical: false
           timeout_ms: 500
           version: {major: 1, minor: 0, patch: 0}
@@ -149,7 +149,7 @@ state_transitions:
           condition_type: data_validation
       actions:
         - action_name: increment_retry_counter
-          action_type: counter_update
+          action_type: data_capture
           is_critical: true
           timeout_ms: 100
           version: {major: 1, minor: 0, patch: 0}
@@ -167,7 +167,7 @@ state_transitions:
           timeout_ms: 5000
           version: {major: 1, minor: 0, patch: 0}
         - action_name: emit_metrics_to_monitoring
-          action_type: telemetry
+          action_type: event
           is_critical: false
           timeout_ms: 2000
           version: {major: 1, minor: 0, patch: 0}

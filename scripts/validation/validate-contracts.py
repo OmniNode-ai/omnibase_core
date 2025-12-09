@@ -126,10 +126,10 @@ def validate_yaml_file(file_path: Path) -> list[str]:
             # Use standalone validator to avoid circular imports
             try:
                 from pydantic import ValidationError
-                from yaml_contract_validator import SimpleYamlContract
+                from yaml_contract_validator import MinimalYamlContract
 
                 # Validate using Pydantic model
-                SimpleYamlContract.validate_yaml_content(content)
+                MinimalYamlContract.validate_yaml_content(content)
 
             except ValidationError as e:
                 # Extract meaningful error messages from Pydantic validation
