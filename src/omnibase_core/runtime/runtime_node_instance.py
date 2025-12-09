@@ -83,8 +83,6 @@ Thread Safety:
         4. Future versions may add an atomic state transition mechanism
 
 Related:
-    - OMN-227: NodeInstance execution wrapper
-    - OMN-228: NodeRuntime with execute_with_handler (future)
     - ModelOnexEnvelope: The envelope format handled by this instance
     - ModelContractBase: The contract defining node behavior
 

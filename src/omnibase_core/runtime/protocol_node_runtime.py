@@ -4,10 +4,6 @@ ProtocolNodeRuntime - Protocol for node runtime implementations.
 This module defines the protocol interface that NodeRuntime implementations
 must follow. It enables dependency inversion where NodeInstance depends on
 an abstract interface rather than a concrete implementation.
-
-Related:
-    - OMN-227: NodeInstance execution wrapper
-    - OMN-228: NodeRuntime implementation (future)
 """
 
 from __future__ import annotations
@@ -39,8 +35,8 @@ class ProtocolNodeRuntime(Protocol):
     - Transaction management
 
     Note:
-        This protocol will be implemented by NodeRuntime (OMN-228).
-        For now, it defines the contract that RuntimeNodeInstance depends on.
+        This protocol defines the contract that RuntimeNodeInstance depends on.
+        Implementations provide the actual execution logic.
 
     Design Decision (Type Variance):
         The `instance` parameter uses the concrete `RuntimeNodeInstance` type rather

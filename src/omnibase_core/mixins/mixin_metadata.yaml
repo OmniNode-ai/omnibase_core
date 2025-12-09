@@ -1,7 +1,7 @@
 ---
-# ONEX Mixin Metadata - Autonomous Code Generation Support
+# ONEX Mixin Metadata - Machine-Readable Mixin Discovery
 # Version: 1.0.0
-# Purpose: Machine-readable metadata for mixin discovery and code generation
+# Purpose: Machine-readable metadata for mixin discovery and tooling support
 
 # =============================================================================
 # MixinRetry - Automatic Retry with Exponential Backoff

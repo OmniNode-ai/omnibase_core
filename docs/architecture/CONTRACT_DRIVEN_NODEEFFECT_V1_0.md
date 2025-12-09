@@ -173,7 +173,7 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
 """
 Effect Handler Type Enumeration.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+VERSION: 1.0.0 - Stable API
 
 Eliminates raw string handler types to prevent typo bugs and enable IDE completion.
 """
@@ -221,7 +221,7 @@ class EnumEffectHandlerType(str, Enum):
 """
 Effect IO Configuration Models - Discriminated Union Pattern.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+VERSION: 1.0.0 - Stable API
 
 Each handler type has its own strongly-typed IO config model.
 The discriminator field `handler_type` uses EnumEffectHandlerType directly
@@ -486,7 +486,7 @@ EffectIOConfig = ModelHttpIOConfig | ModelDbIOConfig | ModelKafkaIOConfig | Mode
 """
 Resolved IO Context - Template-free handler input.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+VERSION: 1.0.0 - Stable API
 
 Handlers receive ModelResolvedIOContext, NOT raw io_config with templates.
 All ${...} placeholders are resolved before handler invocation.
@@ -661,7 +661,7 @@ IDEMPOTENCY_DEFAULTS: dict[str, dict[str, bool]] = {
 """
 Effect Subcontract Model - ONEX Standards Compliant.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+VERSION: 1.0.0 - Stable API
 
 Defines declarative effect operations with:
 - Discriminated union IO configs (type-safe per handler)
@@ -1275,7 +1275,7 @@ class ModelEffectOutput(BaseModel):
 """
 Effect Handler Protocol - Core Layer.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+VERSION: 1.0.0 - Stable API
 
 Defines the interface for effect handlers. Implemented in SPI.
 Core defines; SPI implements.
@@ -1337,7 +1337,7 @@ class ProtocolEffectHandler(Protocol):
 """
 Effect Handler Registry - Core Layer.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+VERSION: 1.0.0 - Stable API
 
 Registry abstraction that decouples Core from SPI service names.
 SPI populates; Core consumes.
