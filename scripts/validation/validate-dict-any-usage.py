@@ -53,14 +53,25 @@ class DictAnyDetector(ast.NodeVisitor):
             )
         return False
 
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        """Check for @allow_dict_any decorator."""
+    def _check_allow_dict_any_decorator(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ) -> None:
+        """Check for @allow_dict_any decorator on a function."""
         for decorator in node.decorator_list:
             if isinstance(decorator, ast.Name) and decorator.id == "allow_dict_any":
                 # Allow dict[str, Any] usage in this function
                 for stmt in ast.walk(node):
                     if hasattr(stmt, "lineno"):
                         self.allowed_lines.add(stmt.lineno)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """Check for @allow_dict_any decorator on sync functions."""
+        self._check_allow_dict_any_decorator(node)
+        self.generic_visit(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """Check for @allow_dict_any decorator on async functions."""
+        self._check_allow_dict_any_decorator(node)
         self.generic_visit(node)
 
 

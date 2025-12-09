@@ -110,6 +110,12 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # from effect_subcontract.operations by the process() method.
         # Caller-provided data in operation_data is used for template resolution
         # (e.g., ${input.name} will resolve to "John Doe").
+        #
+        # The subcontract's default_retry_policy, default_circuit_breaker, and
+        # transaction settings are applied to the input_data before delegation
+        # to the mixin. Per-operation configs (response_handling, retry_policy,
+        # circuit_breaker) are serialized into operation_data["operations"] for
+        # handler access during execution.
         result = await node.process(ModelEffectInput(
             effect_type=EnumEffectType.API_CALL,
             operation_data={

@@ -460,11 +460,13 @@ class TestNodeOrchestrator:
 
 
 @pytest.mark.integration
+@pytest.mark.slow
 class TestDeclarativeNodesIntegration:
     """Integration tests for declarative nodes.
 
     Note: These tests are in tests/unit/ for convenience but test integration
     of multiple node components together (reducer workflows, orchestrator steps).
+    They are marked ``@pytest.mark.slow`` as they test multi-component workflows.
     """
 
     @pytest.mark.asyncio

@@ -79,8 +79,18 @@ import random
 import re
 import threading
 import time
+from collections.abc import Callable
 from typing import Any
 from uuid import UUID
+
+
+# Type-checking decorator to allow dict[str, Any] in methods that handle dynamic configs.
+# Effect execution requires dict[str, Any] for operation configs from YAML contracts
+# where the schema is validated by Pydantic models at runtime, not at type-check time.
+def allow_dict_any[F: Callable[..., object]](func: F) -> F:
+    """Mark a function as intentionally using dict[str, Any] for dynamic configs."""
+    return func
+
 
 from omnibase_core.constants.constants_effect import (
     DEBUG_THREAD_SAFETY,
@@ -89,7 +99,6 @@ from omnibase_core.constants.constants_effect import (
     DEFAULT_RETRY_JITTER_FACTOR,
     SAFE_FIELD_PATTERN,
 )
-from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumTransactionState
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
@@ -261,6 +270,7 @@ class MixinEffectExecution:
                     },
                 )
 
+    @allow_dict_any
     async def execute_effect(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """
         Execute effect operation with full resilience patterns.
@@ -505,6 +515,7 @@ class MixinEffectExecution:
             metadata=input_data.metadata,
         )
 
+    @allow_dict_any
     def _parse_io_config(self, operation_config: dict[str, Any]) -> EffectIOConfig:
         """
         Parse operation configuration into typed IO config.
@@ -828,6 +839,7 @@ class MixinEffectExecution:
                 error_code=EnumCoreErrorCode.UNSUPPORTED_OPERATION,
             )
 
+    @allow_dict_any
     def _extract_field(
         self,
         data: dict[str, Any],
@@ -929,6 +941,7 @@ class MixinEffectExecution:
         # Return as string
         return value
 
+    @allow_dict_any
     async def _execute_with_retry(
         self,
         resolved_context: ResolvedIOContext,
@@ -1092,14 +1105,15 @@ class MixinEffectExecution:
                 # Check if we should retry
                 # attempt is 0-indexed, so attempt < max_retries means we have retries left
                 if attempt < max_retries and input_data.retry_enabled:
-                    # Exponential backoff with jitter
+                    # Exponential backoff with symmetric jitter
                     # Uses random.uniform() for proper randomness to prevent retry storms
                     # when multiple clients retry simultaneously (thundering herd problem).
-                    # Jitter adds 0-10% random variation to the base delay (configurable
-                    # via DEFAULT_RETRY_JITTER_FACTOR constant).
+                    # Jitter applies +/- jitter_factor * delay (e.g., +/-10% for 0.1 factor).
+                    # Symmetric jitter provides better distribution than additive-only,
+                    # reducing correlation between concurrent retry attempts.
                     delay_ms = retry_delay_ms * (2**attempt)
                     jitter = delay_ms * DEFAULT_RETRY_JITTER_FACTOR
-                    actual_delay_ms = delay_ms + random.uniform(0, jitter)
+                    actual_delay_ms = delay_ms + random.uniform(-jitter, jitter)
 
                     # Wait before retry
                     await asyncio.sleep(actual_delay_ms / 1000)
@@ -1128,6 +1142,7 @@ class MixinEffectExecution:
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
         )
 
+    @allow_dict_any
     async def _execute_operation(
         self,
         resolved_context: ResolvedIOContext,
@@ -1302,6 +1317,7 @@ class MixinEffectExecution:
         else:
             circuit_breaker.record_failure()
 
+    @allow_dict_any
     def _extract_response_fields(
         self,
         response: dict[str, Any],

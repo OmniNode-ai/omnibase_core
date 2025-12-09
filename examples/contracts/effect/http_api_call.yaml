@@ -408,6 +408,7 @@ effect_operations:
 # import yaml
 # from omnibase_core.nodes import NodeEffect
 # from omnibase_core.models import ModelEffectInput
+# from omnibase_core.models.contracts.subcontracts import ModelEffectSubcontract
 #
 # # Load contract
 # with open("http_api_call.yaml") as f:

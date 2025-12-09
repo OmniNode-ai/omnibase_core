@@ -46,13 +46,13 @@ io_config:
       "display_name": "${input.display_name}"
     }
 
-# Retry policy matching ModelEffectRetryConfig schema
+# Retry policy matching ModelEffectRetryPolicy schema
 retry_policy:
-  max_attempts: 3
+  max_retries: 3
   backoff_strategy: exponential
   base_delay_ms: 1000
   max_delay_ms: 10000
-  jitter_enabled: true
+  jitter_factor: 0.1
 
 response_handling:
   extract_fields:
@@ -101,15 +101,15 @@ io_config:
   timeout_ms: 5000
   read_only: true
 
-# Retry policy matching ModelEffectRetryConfig schema
-# NOTE: retryable_error_codes is not part of ModelEffectRetryConfig
+# Retry policy matching ModelEffectRetryPolicy schema
+# NOTE: retryable_error_codes is not part of ModelEffectRetryPolicy
 # but can be extended by handlers
 retry_policy:
-  max_attempts: 4
+  max_retries: 4
   backoff_strategy: exponential
   base_delay_ms: 100
   max_delay_ms: 2000
-  jitter_enabled: true
+  jitter_factor: 0.1
 ```
 
 ---
@@ -239,13 +239,13 @@ circuit_breaker:
   timeout_ms: 30000
   half_open_requests: 2
 
-# Retry policy matching ModelEffectRetryConfig schema
+# Retry policy matching ModelEffectRetryPolicy schema
 retry_policy:
-  max_attempts: 4
+  max_retries: 4
   backoff_strategy: exponential
   base_delay_ms: 1000
   max_delay_ms: 10000
-  jitter_enabled: true
+  jitter_factor: 0.1
 
 # Observability configuration matching ModelEffectObservability schema
 observability:
@@ -291,13 +291,13 @@ effect_operations:
         body_template: '{"key": "${input.value}"}'
         timeout_ms: 5000
 
-      # Retry configuration matching ModelEffectRetryConfig schema
+      # Retry configuration matching ModelEffectRetryPolicy schema
       retry_policy:
-        max_attempts: 3
+        max_retries: 3
         backoff_strategy: exponential
         base_delay_ms: 1000
         max_delay_ms: 10000
-        jitter_enabled: true
+        jitter_factor: 0.1
 
       # Circuit breaker (optional) matching ModelEffectCircuitBreaker schema
       circuit_breaker:
@@ -419,30 +419,28 @@ circuit_breaker:
   failure_threshold: 5      # Open after 5 failures
   success_threshold: 2      # Close after 2 successes
   timeout_ms: 30000         # Wait 30s before retry
-  half_open_max_requests: 2 # Allow 2 requests in half-open state
+  half_open_requests: 2     # Allow 2 requests in half-open state
 ```
 
 **States**: CLOSED (normal) → OPEN (failing) → HALF_OPEN (testing) → CLOSED
 
 ### Retry Policy
 
-Automatic retries with configurable backoff strategies (matching ModelEffectRetryConfig schema):
+Automatic retries with configurable backoff strategies (matching ModelEffectRetryPolicy schema):
 
 ```yaml
 retry_policy:
-  max_attempts: 3                 # Total attempts including first try
-  backoff_strategy: exponential   # or linear, fixed, random, fibonacci
+  max_retries: 3                  # Maximum retry attempts (0-10)
+  backoff_strategy: exponential   # or linear, fixed
   base_delay_ms: 1000             # Initial delay between retries
   max_delay_ms: 10000             # Maximum delay cap
-  jitter_enabled: true            # Prevent thundering herd
+  jitter_factor: 0.1              # Prevent thundering herd (10% jitter)
 ```
 
-**Backoff Strategies** (EnumRetryBackoffStrategy):
-- **exponential**: Exponentially increasing delay (recommended for most cases)
-- **linear**: Linearly increasing delay
-- **fixed**: Constant delay between retries
-- **random**: Random delay within range
-- **fibonacci**: Fibonacci sequence delays
+**Backoff Strategies** (per ModelEffectRetryPolicy schema):
+- **exponential**: Delay doubles each retry, e.g., base_delay_ms * 2^attempt (recommended)
+- **linear**: Delay increases linearly, e.g., base_delay_ms * attempt
+- **fixed**: Constant delay between retries (base_delay_ms)
 
 **Note**: The backoff calculation is handled internally by the retry handler.
 The `base_delay_ms` and `max_delay_ms` define the delay bounds.
@@ -661,5 +659,5 @@ Just load the contract and execute!
 ---
 
 **Version**: 1.0.0
-**Last Updated**: 2024-12-08
+**Last Updated**: 2025-12-09
 **Maintained By**: ONEX Framework Team

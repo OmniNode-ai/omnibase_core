@@ -91,7 +91,12 @@ class ModelEffectSubcontract(BaseModel):
             "- NEVER raises for operation failures\n"
             "- Returns complete ModelEffectOutput with all results\n"
             "- failed_operation and operation success flags indicate failures\n"
-            "- Use for best-effort: 'run everything, report all outcomes'"
+            "- Use for best-effort: 'run everything, report all outcomes'\n\n"
+            "**YAML Mapping**:\n"
+            "In YAML contracts, set this field directly as `execution_mode`.\n"
+            "The value controls execution ORDER (sequential) and ERROR HANDLING\n"
+            "(abort vs continue). Operations always execute in list order.\n"
+            "Example: `execution_mode: sequential_continue`"
         ),
     )
 

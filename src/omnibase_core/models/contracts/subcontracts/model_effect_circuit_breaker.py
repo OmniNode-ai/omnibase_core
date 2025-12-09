@@ -29,6 +29,23 @@ class ModelEffectCircuitBreaker(BaseModel):
     ModelCircuitBreakerSubcontract from:
         omnibase_core.models.contracts.subcontracts.model_circuit_breaker_subcontract
 
+    Configuration vs Runtime:
+        This model defines CONTRACT configuration (what goes in YAML subcontracts).
+        At runtime, NodeEffect.get_circuit_breaker() creates ModelCircuitBreaker
+        instances using ModelCircuitBreaker.create_resilient() which has different
+        defaults optimized for production:
+
+        | Setting            | This Model  | create_resilient() |
+        |--------------------|-------------|-------------------|
+        | failure_threshold  | 5           | 10                |
+        | success_threshold  | 2           | 5                 |
+        | timeout            | 60000ms     | 120s              |
+
+        When an operation has circuit_breaker configuration in its subcontract,
+        those values override the resilient defaults. When no configuration is
+        provided, resilient defaults apply. Specify values in YAML for tighter
+        failure detection or more lenient thresholds as needed.
+
     Attributes:
         enabled: Whether circuit breaker protection is active. Defaults to False,
             requiring explicit opt-in for each operation.
@@ -43,7 +60,7 @@ class ModelEffectCircuitBreaker(BaseModel):
 
     Thread Safety:
         NOT thread-safe. NodeEffect instances must be isolated per thread.
-        Circuit state is process-local only in v1.0, keyed by operation correlation_id.
+        Circuit state is process-local only in v1.0, keyed by operation_id.
 
     Example:
         >>> circuit_breaker = ModelEffectCircuitBreaker(
@@ -57,6 +74,7 @@ class ModelEffectCircuitBreaker(BaseModel):
     See Also:
         - ModelCircuitBreakerSubcontract: Full-featured circuit breaker configuration
         - ModelEffectRetryPolicy: Retry behavior that works with circuit breakers
+        - ModelCircuitBreaker.create_resilient: Runtime circuit breaker factory
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")

@@ -25,6 +25,9 @@ from pathlib import Path
 
 import pytest
 
+# Module-level pytest marker for all tests in this file
+pytestmark = pytest.mark.unit
+
 
 class TestNodeComputeSignatureSnapshot:
     """Signature snapshot tests for NodeCompute.__init__."""
@@ -610,12 +613,18 @@ class TestSignatureComprehensiveSummary:
     def test_no_node_has_callback_param(self) -> None:
         """Verify no node class has on_rollback_failure callback parameter.
 
-        As of v0.4.0, the legacy code-driven NodeEffect implementation was refactored.
-        The contract-driven NodeEffect (v0.4.0+) does NOT have this parameter.
-        Rollback handling is now declarative via effect subcontracts.
+        As of v0.4.0, NodeEffect was refactored from code-driven to contract-driven.
+        The current ``NodeEffect`` (from ``omnibase_core.nodes``) does NOT have the
+        ``on_rollback_failure`` callback parameter that existed in pre-v0.4.0 versions.
+        Rollback handling is now declarative via effect subcontracts in YAML.
+
+        Note:
+            The legacy code-driven NodeEffect was removed entirely in v0.4.0.
+            There is no ``NodeEffectLegacy`` class - the old implementation was
+            replaced, not preserved alongside the new one.
 
         .. versionchanged:: 0.4.0
-            Legacy code-driven NodeEffect refactored to contract-driven.
+            NodeEffect refactored to contract-driven; ``on_rollback_failure`` removed.
             All nodes now use declarative YAML contracts.
         """
         from omnibase_core.nodes import (

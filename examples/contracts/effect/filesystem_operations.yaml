@@ -99,6 +99,11 @@ effect_operations:
       # I/O configuration for filesystem handler
       # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
       # Fields are direct children of io_config (no filesystem_config wrapper)
+      #
+      # IMPORTANT: Write operations require content from input.
+      # The content for the marker file MUST be provided in operation_data as
+      # "directory_marker_content" or "file_content". The handler will use
+      # this content when writing the file. See Example Input section below.
       io_config:
         handler_type: filesystem
 
@@ -444,11 +449,14 @@ effect_operations:
 
 # Example Input (ModelEffectInput.operation_data):
 # NOTE: Content for write operations must be provided via "file_content" or "content" key.
+# For create_user_directory, provide "directory_marker_content" with the marker file content.
 # {
 #   "tenant_id": "tenant_001",
 #   "user_id": "usr_12345",
 #   "document_id": "doc_abc123",
 #   "document_title": "Project Proposal",
+#   "timestamp": "2024-12-08T12:00:00Z",
+#   "directory_marker_content": "{\"created_at\": \"2024-12-08T12:00:00Z\"}",  # For marker file
 #   "file_content": "This is the document content...",  # Required for write operations
 #   "author_id": "usr_12345",
 #   "created_at": "2024-12-08T12:00:00Z",
