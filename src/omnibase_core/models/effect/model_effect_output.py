@@ -47,6 +47,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
+from omnibase_core.types.type_effect_result import EffectResultType
 
 __all__ = ["ModelEffectOutput"]
 
@@ -100,7 +101,7 @@ class ModelEffectOutput(BaseModel):
         ...     print(f"Rolled back: {output.rollback_operations}")
     """
 
-    result: str | int | float | bool | dict[str, Any] | list[Any]
+    result: EffectResultType
     operation_id: UUID
     effect_type: EnumEffectType
     transaction_state: EnumTransactionState

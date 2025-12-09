@@ -212,14 +212,14 @@ repos:
 
       # UNION VALIDATION THRESHOLD:
       # Current baseline: 256 invalid unions (2025-12-09)
-      # Threshold set to 258 (256 + 2 buffer for minor additions)
-      # Latest additions: 2 unions in mixin_effect_execution.py for JSON-compatible
-      # "primitive_soup" return types from effect operations (legitimate pattern)
+      # Threshold maintained at 256 by using centralized type aliases
+      # Effect result types now use EffectResultType and DbParamType
+      # from omnibase_core.types.type_effect_result instead of inline unions
       # TECH DEBT: Union cleanup tracked as follow-up work (reduce toward 0)
       - id: validate-union-usage
         name: ONEX Union Usage Validation
         entry: poetry run python scripts/validation/validate-union-usage.py
-        args: ['--allow-invalid', '258']
+        args: ['--allow-invalid', '256']
         language: system
         pass_filenames: true
         files: ^src/.*\.py$

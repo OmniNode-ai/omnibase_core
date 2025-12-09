@@ -91,6 +91,8 @@ def _should_skip_file(filepath: Path) -> bool:
         or "/scripts/validation/" in filepath_str
         or "/archive/" in filepath_str
         or "/archived/" in filepath_str
+        # Type alias files are allowed to use dict[str, Any] - they define type aliases
+        or "/types/" in filepath_str
     )
 
 

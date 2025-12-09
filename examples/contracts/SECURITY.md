@@ -15,6 +15,7 @@ This document provides comprehensive security guidance for developers implementi
 4. [Authentication and Authorization](#authentication-and-authorization)
 5. [Logging and Observability](#logging-and-observability)
 6. [Best Practices Summary](#best-practices-summary)
+7. [Secret Resolution Mechanism](#secret-resolution-mechanism)
 
 ---
 
@@ -395,6 +396,252 @@ Before deploying contracts to production:
 - [ ] Timeout values are configured for all external calls
 - [ ] Response validation is enabled for external APIs
 - [ ] Circuit breakers are configured for fault tolerance
+
+---
+
+## Secret Resolution Mechanism
+
+### Overview
+
+ONEX contracts support a **secret resolution mechanism** that allows sensitive values (API keys, tokens, credentials) to be referenced in YAML contracts without hardcoding them. This mechanism ensures secrets are resolved at runtime from secure storage backends.
+
+### Secret Reference Syntax
+
+Secrets are referenced using the `${secrets.<key>}` template syntax:
+
+```yaml
+# Reference a secret by key
+headers:
+  Authorization: "Bearer ${secrets.api_token}"
+  X-API-Key: "${secrets.external_api_key}"
+
+# Database credentials
+io_config:
+  handler_type: db
+  connection_name: "user_db"
+  credentials:
+    username: "${secrets.db_username}"
+    password: "${secrets.db_password}"
+```
+
+### Resolution Flow
+
+The secret resolution follows this flow:
+
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  YAML Contract  │────▶│  Template Engine │────▶│  Secret Backend │
+│  ${secrets.key} │     │  _resolve_secret │     │  (Vault/Env/KMS)│
+└─────────────────┘     └──────────────────┘     └─────────────────┘
+                                 │
+                                 ▼
+                        ┌──────────────────┐
+                        │  Resolved Value  │
+                        │  (in memory only)│
+                        └──────────────────┘
+```
+
+1. **Parse**: Template engine identifies `${secrets.*}` patterns
+2. **Resolve**: Secret backend is queried for the value
+3. **Inject**: Value is substituted in memory (never persisted)
+4. **Clear**: Value is cleared from memory after use
+
+### Supported Secret Backends
+
+#### 1. Environment Variables (Default)
+
+The simplest backend, suitable for development and containerized deployments:
+
+```python
+# Resolution: ${secrets.api_key} → os.environ.get("ONEX_SECRET_API_KEY")
+# Prefix: ONEX_SECRET_ is prepended to the key name (uppercase)
+```
+
+Configuration:
+```yaml
+secret_backend:
+  type: environment
+  prefix: "ONEX_SECRET_"  # Optional, default: "ONEX_SECRET_"
+```
+
+#### 2. HashiCorp Vault (Production)
+
+For production deployments with centralized secret management:
+
+```yaml
+secret_backend:
+  type: vault
+  address: "https://vault.internal:8200"
+  auth_method: kubernetes  # or token, approle, aws
+  mount_path: "secret"
+  secret_path: "onex/effects"
+  # Token/credentials resolved from environment or mounted files
+```
+
+Resolution: `${secrets.api_key}` → `vault.read("secret/onex/effects").data["api_key"]`
+
+#### 3. AWS Secrets Manager
+
+For AWS-native deployments:
+
+```yaml
+secret_backend:
+  type: aws_secrets_manager
+  region: "us-east-1"
+  secret_name: "onex/effect-secrets"
+  # AWS credentials from instance profile, environment, or config
+```
+
+#### 4. Kubernetes Secrets
+
+For Kubernetes deployments using mounted secrets:
+
+```yaml
+secret_backend:
+  type: kubernetes
+  secret_mount_path: "/var/run/secrets/onex"
+  # Secrets mounted as files: /var/run/secrets/onex/<key>
+```
+
+### Implementation Pattern
+
+To implement secret resolution in an effect handler:
+
+```python
+from omnibase_core.protocols.protocol_secret_resolver import ProtocolSecretResolver
+
+class MyEffectHandler:
+    def __init__(self, secret_resolver: ProtocolSecretResolver):
+        self._secret_resolver = secret_resolver
+
+    async def execute(self, operation_data: dict) -> dict:
+        # Resolve secrets before use
+        api_key = await self._secret_resolver.resolve("api_key")
+
+        # Use the secret
+        response = await self._call_api(api_key=api_key)
+
+        # Secret is not stored, logged, or returned
+        return {"status": "success", "data": response}
+```
+
+### Security Requirements
+
+#### 1. Never Log Secrets
+
+```python
+# INSECURE - logs the resolved secret
+logger.info(f"Using API key: {api_key}")
+
+# SECURE - log only that resolution occurred
+logger.debug("Resolved secret: api_key (length=%d)", len(api_key))
+```
+
+#### 2. Never Return Secrets in Responses
+
+```python
+# INSECURE - secret in response
+return {"api_key": api_key, "result": data}
+
+# SECURE - only return operation results
+return {"result": data}
+```
+
+#### 3. Clear Secrets After Use
+
+```python
+# For highly sensitive operations, clear from memory
+import ctypes
+
+def secure_clear(secret: str) -> None:
+    """Overwrite string memory (best effort in Python)."""
+    if secret:
+        ctypes.memset(id(secret) + 48, 0, len(secret))
+```
+
+#### 4. Validate Secret Names
+
+```python
+import re
+
+SAFE_SECRET_NAME = re.compile(r'^[a-zA-Z][a-zA-Z0-9_]{0,63}$')
+
+def validate_secret_name(name: str) -> bool:
+    """Validate secret name follows safe pattern."""
+    return bool(SAFE_SECRET_NAME.match(name))
+```
+
+### Error Handling
+
+Secret resolution errors should be handled gracefully without exposing details:
+
+```python
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.enums import EnumCoreErrorCode
+
+try:
+    secret = await resolver.resolve("api_key")
+except SecretNotFoundError:
+    raise ModelOnexError(
+        error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+        message="Required secret not configured",
+        # DO NOT include secret name in user-facing error
+        context={"hint": "Check secret backend configuration"}
+    )
+except SecretAccessDeniedError:
+    raise ModelOnexError(
+        error_code=EnumCoreErrorCode.AUTHORIZATION_ERROR,
+        message="Secret access denied",
+        context={"hint": "Check secret backend permissions"}
+    )
+```
+
+### Audit and Compliance
+
+Secret access should be auditable:
+
+```yaml
+secret_backend:
+  type: vault
+  audit:
+    enabled: true
+    log_access: true      # Log when secrets are accessed
+    log_resolution: false  # Don't log resolved values
+    include_requester: true  # Include node_id in audit log
+```
+
+Audit log format:
+```json
+{
+  "timestamp": "2025-12-09T17:00:00Z",
+  "event": "secret_access",
+  "secret_name": "api_key",
+  "node_id": "effect-user-api-123",
+  "correlation_id": "abc-123",
+  "result": "success"
+}
+```
+
+### Migration from Inline Secrets
+
+To migrate from inline secrets to the resolution mechanism:
+
+```yaml
+# BEFORE (insecure - inline secret)
+headers:
+  Authorization: "Bearer sk-live-abc123..."
+
+# AFTER (secure - secret reference)
+headers:
+  Authorization: "Bearer ${secrets.stripe_api_key}"
+```
+
+Migration steps:
+1. Identify all inline secrets in contracts
+2. Add secrets to your backend (Vault, AWS, etc.)
+3. Replace inline values with `${secrets.<key>}` references
+4. Test resolution in staging environment
+5. Deploy updated contracts
 
 ---
 

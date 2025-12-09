@@ -110,6 +110,7 @@ from omnibase_core.models.contracts.subcontracts.model_effect_resolved_context i
 from omnibase_core.models.effect.model_effect_input import ModelEffectInput
 from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_effect_result import DbParamType, EffectResultType
 
 __all__ = ["MixinEffectExecution"]
 
@@ -411,11 +412,10 @@ class MixinEffectExecution:
 
         # Sequential execution with abort-on-first-failure (v1.0)
         retry_count = 0
-        # NOTE: Union type annotation ("primitive_soup" pattern) is intentional.
-        # Effect operations can return various primitive types depending on handler.
-        # This explicit union provides type safety while supporting diverse return types.
-        # Potential v2.0 enhancement: Use a generic result wrapper instead.
-        final_result: str | int | float | bool | dict[str, Any] | list[Any] = {}
+        # EffectResultType centralizes the type alias to avoid primitive soup unions.
+        # Effect operations can return various types depending on handler.
+        # See omnibase_core.types.type_effect_result for the type definition.
+        final_result: EffectResultType = {}
         transaction_state = EnumTransactionState.PENDING
 
         try:
@@ -673,7 +673,7 @@ class MixinEffectExecution:
             )
 
             # Resolve query params
-            resolved_params: list[str | int | float | bool | None] = []
+            resolved_params: list[DbParamType] = []
             for param_template in io_config.query_params:
                 resolved = TEMPLATE_PATTERN.sub(resolve_template, param_template)
                 # Try to coerce to appropriate type
@@ -860,7 +860,7 @@ class MixinEffectExecution:
 
         return current
 
-    def _coerce_param_value(self, value: str) -> str | int | float | bool | None:
+    def _coerce_param_value(self, value: str) -> DbParamType:
         """
         Coerce string value to appropriate type for DB parameters.
 
@@ -898,7 +898,7 @@ class MixinEffectExecution:
         resolved_context: ResolvedIOContext,
         input_data: ModelEffectInput,
         operation_timeout_ms: int,
-    ) -> tuple[str | int | float | bool | dict[str, Any] | list[Any], int]:
+    ) -> tuple[EffectResultType, int]:
         """
         Execute operation with retry logic and circuit breaker.
 
@@ -963,7 +963,6 @@ class MixinEffectExecution:
         the option for fresh values when needed.
 
         See: docs/architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md
-        Ticket: Create if implementing (suggested: OMN-XXX)
 
         Args:
             resolved_context: Fully resolved IO context.
@@ -1090,7 +1089,7 @@ class MixinEffectExecution:
         self,
         resolved_context: ResolvedIOContext,
         input_data: ModelEffectInput,
-    ) -> str | int | float | bool | dict[str, Any] | list[Any]:
+    ) -> EffectResultType:
         """
         Execute single operation by dispatching to appropriate handler.
 
@@ -1236,7 +1235,7 @@ class MixinEffectExecution:
         self,
         response: dict[str, Any],
         response_handling: dict[str, Any],
-    ) -> dict[str, str | int | float | bool | None]:
+    ) -> dict[str, DbParamType]:
         """
         Extract fields from response using JSONPath or dotpath.
 
@@ -1279,7 +1278,7 @@ class MixinEffectExecution:
         if not extract_fields:
             return {}
 
-        extracted: dict[str, str | int | float | bool | None] = {}
+        extracted: dict[str, DbParamType] = {}
 
         for output_name, path_expr in extract_fields.items():
             try:
