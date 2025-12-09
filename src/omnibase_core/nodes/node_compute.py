@@ -248,6 +248,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
 
         # Performance tracking
         self.computation_metrics: dict[str, dict[str, float]] = {}
+        self.parallel_execution_warning_count: int = 0  # Track parallel misconfigurations
 
         # Register built-in computations
         self._register_builtin_computations()
@@ -511,9 +512,40 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
 
         # Extract cache and parallel settings from metadata or use defaults
         # NOTE: bool() coerces truthy/falsy values per Python semantics.
-        # Warning: string "false" coerces to True. Consumers should pass actual booleans.
-        cache_enabled: bool = bool(metadata.get("cache_enabled", True))
-        parallel_enabled: bool = bool(metadata.get("parallel_enabled", False))
+        # Runtime warnings are emitted below when string values are detected.
+        cache_value = metadata.get("cache_enabled", True)
+        if isinstance(cache_value, str):
+            # Warn about string coercion - common mistake that's hard to debug
+            # e.g., string "false" coerces to True, which is unexpected
+            emit_log_event(
+                LogLevel.WARNING,
+                "cache_enabled received string value instead of boolean. "
+                "String values coerce to True (including 'false'). Use actual booleans.",
+                {
+                    "node_id": str(self.node_id),
+                    "received_value": cache_value,
+                    "coerced_to": bool(cache_value),
+                    "recommendation": "Pass cache_enabled=False (boolean) not cache_enabled='false' (string)",
+                },
+            )
+        cache_enabled: bool = bool(cache_value)
+
+        parallel_value = metadata.get("parallel_enabled", False)
+        if isinstance(parallel_value, str):
+            # Warn about string coercion - common mistake that's hard to debug
+            # e.g., string "false" coerces to True, which is unexpected
+            emit_log_event(
+                LogLevel.WARNING,
+                "parallel_enabled received string value instead of boolean. "
+                "String values coerce to True (including 'false'). Use actual booleans.",
+                {
+                    "node_id": str(self.node_id),
+                    "received_value": parallel_value,
+                    "coerced_to": bool(parallel_value),
+                    "recommendation": "Pass parallel_enabled=True (boolean) not parallel_enabled='true' (string)",
+                },
+            )
+        parallel_enabled: bool = bool(parallel_value)
 
         return ModelComputeInput(
             data=input_data,
@@ -594,22 +626,29 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         try:
             self._validate_compute_input(input_data)
 
-            # Generate cache key
-            cache_key = self._generate_cache_key(input_data)
-
             # Check cache first if enabled
+            # Measure cache lookup time separately for observability
+            cache_lookup_time_ms = 0.0
             if input_data.cache_enabled:
+                cache_lookup_start = time.perf_counter()
+                cache_key = self._generate_cache_key(input_data)
                 cached_result = self.computation_cache.get(cache_key)
+                cache_lookup_time_ms = (time.perf_counter() - cache_lookup_start) * 1000
+
                 if cached_result is not None:
                     return ModelComputeOutput(
                         result=cached_result,
                         operation_id=input_data.operation_id,
                         computation_type=input_data.computation_type,
-                        processing_time_ms=0.0,
+                        processing_time_ms=0.0,  # Semantic: no computation work
+                        cache_lookup_time_ms=cache_lookup_time_ms,  # Actual elapsed time
                         cache_hit=True,
                         parallel_execution_used=False,
                         metadata={"cache_retrieval": True},
                     )
+            else:
+                # Generate cache key for potential later use (cache storing on miss)
+                cache_key = self._generate_cache_key(input_data)
 
             # Execute computation
             supports_parallel = self._supports_parallel_execution(input_data)
@@ -619,6 +658,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             else:
                 # Warn if parallel was requested but data is not parallelizable
                 if input_data.parallel_enabled and not supports_parallel:
+                    self.parallel_execution_warning_count += 1  # Track for observability
                     data_type = type(input_data.data).__name__
                     data_length = (
                         len(input_data.data)
@@ -675,6 +715,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                 operation_id=input_data.operation_id,
                 computation_type=input_data.computation_type,
                 processing_time_ms=processing_time,
+                cache_lookup_time_ms=0.0,  # No cache lookup on miss or disabled
                 cache_hit=False,
                 parallel_execution_used=parallel_used,
                 metadata={
@@ -800,6 +841,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                 - "parallel_processing": Thread pool status
                     - max_workers: Maximum parallel workers configured
                     - thread_pool_active: 1.0 if pool is active, 0.0 otherwise
+                    - execution_warnings: Count of times parallel was requested but not used
 
         Example:
             >>> metrics = await node.get_computation_metrics()
@@ -827,6 +869,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             "parallel_processing": {
                 "max_workers": float(self.max_parallel_workers),
                 "thread_pool_active": float(1 if self.thread_pool else 0),
+                "execution_warnings": float(self.parallel_execution_warning_count),
             },
         }
 
