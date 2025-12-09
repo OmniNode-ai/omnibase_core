@@ -141,6 +141,12 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         - Each thread should have its own NodeEffect instance
         - See docs/guides/THREADING.md for guidelines
 
+    v1.0 Limitations:
+        Per-operation configs (response_handling, retry_policy, circuit_breaker,
+        transaction_config) are parsed from YAML but not yet fully honored.
+        Only subcontract-level defaults are applied. See process() docstring
+        for details on what is and is not supported in v1.0.
+
     See Also:
         - :class:`MixinEffectExecution`: Provides execute_effect() implementation
         - :class:`ModelEffectSubcontract`: Effect contract specification
@@ -189,6 +195,37 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
             timeout may complete even if it exceeds the overall timeout window.
             For strict timeout enforcement during execution, handlers should
             implement their own timeout logic (e.g., HTTP client timeouts).
+
+        Note:
+            **v1.0 Limitation - Per-Operation Configs Not Yet Honored**
+
+            Per-operation configuration settings (response_handling, retry_policy,
+            circuit_breaker, transaction_config) are parsed from the YAML contract
+            and serialized into operation_data["operations"]. However, in v1.0,
+            these per-operation settings are NOT YET fully honored by the effect
+            execution pipeline:
+
+            - **response_handling**: Parsed and included in operation_config, but
+              handlers only receive ResolvedIOContext. Field extraction via
+              extract_fields is available as a utility (_extract_response_fields)
+              but not automatically applied. Callers must implement their own
+              response processing logic.
+
+            - **retry_policy** (per-operation): Parsed but NOT wired to the retry
+              loop. Only subcontract-level default_retry_policy (applied to
+              input_data.max_retries and retry_delay_ms) is honored.
+
+            - **circuit_breaker** (per-operation): Parsed but NOT wired to circuit
+              breaker checks. Only input_data.circuit_breaker_enabled is checked,
+              using a default ModelCircuitBreaker configuration.
+
+            - **transaction_config**: Subcontract-level only; per-operation
+              transaction boundaries are not supported.
+
+            Future versions will wire these configurations to handlers or adjust
+            the handler contract to receive full operation_config. See
+            docs/architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md for the v1.0
+            specification and planned enhancements.
 
         Args:
             input_data: Effect input containing operation_data for template resolution

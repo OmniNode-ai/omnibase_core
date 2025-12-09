@@ -150,7 +150,10 @@ class MixinEffectExecution:
         _circuit_breakers (dict): Internal circuit breaker state, keyed by
             operation_id (UUID). Each operation gets its own circuit breaker
             to track failure/success patterns independently. Process-local only
-            in v1.0 (no cross-process state sharing).
+            in v1.0 (no cross-process state sharing). IMPORTANT: Must be
+            initialized by the concrete class (e.g., NodeEffect), not by this
+            mixin. The mixin provides methods that operate on this state but
+            does not own its initialization.
 
     Example:
         >>> class MyEffectNode(NodeEffect, MixinEffectExecution):
@@ -166,6 +169,7 @@ class MixinEffectExecution:
     # Type hints for attributes that should exist on the mixing class
     node_id: UUID
     container: Any  # ModelONEXContainer - avoiding circular import
+    _circuit_breakers: dict[UUID, ModelCircuitBreaker]  # Initialized by concrete class
 
     def __init__(self, **kwargs: Any) -> None:
         """
@@ -188,17 +192,19 @@ class MixinEffectExecution:
             1. NodeEffect.__init__ calls super().__init__()
             2. Python's MRO calls NodeCoreBase.__init__ (sets up container, node_id)
             3. NodeCoreBase.__init__ calls super().__init__()
-            4. MixinEffectExecution.__init__ is called (initializes _circuit_breakers)
+            4. MixinEffectExecution.__init__ is called (sets up thread safety only)
             5. MixinEffectExecution calls super().__init__() (reaches object)
+            6. Control returns to NodeEffect.__init__ which initializes _circuit_breakers
 
             This ensures self.container and self.node_id exist before mixin methods
-            are called. The _circuit_breakers dict is initialized AFTER super().__init__()
-            to guarantee all base class attributes are available.
+            are called. IMPORTANT: _circuit_breakers is NOT initialized by this mixin;
+            the concrete class (NodeEffect) is responsible for initializing it after
+            super().__init__() completes.
 
         Thread Safety:
-            _circuit_breakers is instance-local state and NOT thread-safe.
-            Each NodeEffect instance with this mixin should be used from a
-            single thread or with explicit synchronization.
+            _circuit_breakers (initialized by concrete class) is instance-local state
+            and NOT thread-safe. Each NodeEffect instance with this mixin should be
+            used from a single thread or with explicit synchronization.
 
             Debug Mode Thread Safety Validation:
                 When ONEX_DEBUG_THREAD_SAFETY=1 is set, runtime checks validate
@@ -213,13 +219,11 @@ class MixinEffectExecution:
         # This ensures container and node_id are available on self.
         super().__init__(**kwargs)
 
-        # Circuit breaker state: operation_id (UUID) -> ModelCircuitBreaker
-        # Initialized AFTER super().__init__() to ensure base class setup completes first.
-        # This ordering is critical for MRO: base classes set up container/node_id first,
-        # then mixin initializes its own state. See __init__ docstring for full MRO details.
-        # Thread Safety: NOT thread-safe - see class docstring for details.
-        # Each operation_id gets its own circuit breaker instance.
-        self._circuit_breakers: dict[UUID, ModelCircuitBreaker] = {}
+        # NOTE: _circuit_breakers is NOT initialized here.
+        # The concrete class (NodeEffect) is responsible for initializing _circuit_breakers
+        # after all super().__init__() calls complete. This mixin provides methods that
+        # operate on _circuit_breakers but does NOT own its initialization.
+        # See NodeEffect.__init__ for the actual initialization.
 
         # Thread safety debugging (zero overhead when disabled).
         # When DEBUG_THREAD_SAFETY is enabled, we record the creating thread's ID

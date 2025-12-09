@@ -73,6 +73,9 @@ class TestNode(MixinEffectExecution):
         self.node_id: UUID = uuid4()
         self.container: MockContainer = container or MockContainer()
         super().__init__()
+        # Initialize _circuit_breakers as required by MixinEffectExecution.
+        # In production, NodeEffect initializes this; for tests, we do it here.
+        self._circuit_breakers: dict[UUID, ModelCircuitBreaker] = {}
 
 
 # =============================================================================
