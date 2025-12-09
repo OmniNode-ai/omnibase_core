@@ -1,0 +1,295 @@
+---
+node_type: REDUCER_GENERIC
+contract_version: {major: 1, minor: 0, patch: 0}
+state_transitions:
+  version: {major: 1, minor: 0, patch: 0}
+  state_machine_version: {major: 1, minor: 0, patch: 0}
+  state_machine_name: contract_registry_fsm
+  description: Maintains state of loaded and compiled ONEX contracts using FSM pattern
+  initial_state: empty
+  states:
+    - state_name: empty
+      description: Initial state - no contracts loaded
+      entry_actions: []
+      exit_actions: []
+      is_terminal: false
+      metadata:
+        ui_color: '#9CA3AF'
+        icon: folder-open
+      version: {major: 1, minor: 0, patch: 0}
+      state_type: operational
+    - state_name: loading
+      description: Loading and compiling contracts from configured sources
+      entry_actions:
+        - start_loading_timer
+        - initialize_contract_buffers
+        - clear_validation_cache
+      exit_actions:
+        - stop_loading_timer
+        - flush_contract_buffers
+      is_terminal: false
+      metadata:
+        ui_color: '#3B82F6'
+        icon: download
+      version: {major: 1, minor: 0, patch: 0}
+      state_type: operational
+    - state_name: ready
+      description: Contracts loaded and validated successfully
+      entry_actions:
+        - emit_ready_event
+        - update_registry_index
+        - enable_contract_queries
+      exit_actions:
+        - disable_contract_queries
+        - snapshot_current_state
+      is_terminal: false
+      metadata:
+        ui_color: '#10B981'
+        icon: check-circle
+      version: {major: 1, minor: 0, patch: 0}
+      state_type: operational
+    - state_name: error
+      description: Contract loading or validation failed
+      entry_actions:
+        - emit_error_event
+        - log_failure_details
+        - cleanup_partial_load
+      exit_actions:
+        - clear_error_state
+      # Non-terminal to allow recovery via retry_loading (automatic) or force_reload (manual).
+      # See recovery_strategies section for detailed recovery documentation.
+      is_terminal: false
+      metadata:
+        ui_color: '#EF4444'
+        icon: x-circle
+      version: {major: 1, minor: 0, patch: 0}
+      # state_type: error combined with recovery_enabled: true enables FSM recovery tracking
+      state_type: error
+  transitions:
+    - transition_name: discover_contracts
+      from_state: empty
+      to_state: loading
+      trigger: contracts_discovered
+      description: Begin loading contracts after discovery
+      conditions:
+        - condition_name: has_contract_sources
+          expression: contract_sources min_length 1
+          required: true
+          description: At least one contract source must be configured
+          version: {major: 1, minor: 0, patch: 0}
+          condition_type: data_validation
+      actions:
+        - action_name: emit_loading_started
+          action_type: event
+          is_critical: false
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
+    - transition_name: complete_validation
+      from_state: loading
+      to_state: ready
+      trigger: validation_complete
+      description: All contracts loaded and validated successfully
+      conditions:
+        - condition_name: all_contracts_valid
+          expression: validation_errors equals 0
+          required: true
+          description: All loaded contracts must pass validation
+          version: {major: 1, minor: 0, patch: 0}
+          condition_type: data_validation
+        - condition_name: minimum_contracts_loaded
+          expression: loaded_contracts min_length 1
+          required: true
+          description: At least one contract must be loaded
+          version: {major: 1, minor: 0, patch: 0}
+          condition_type: data_validation
+      actions:
+        - action_name: persist_registry_state
+          action_type: persistence
+          is_critical: true
+          timeout_ms: 5000
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: emit_registry_ready
+          action_type: event
+          is_critical: false
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
+    - transition_name: fail_validation
+      from_state: loading
+      to_state: error
+      trigger: validation_failed
+      description: Contract validation failed
+      conditions: []
+      actions:
+        - action_name: log_validation_errors
+          action_type: logging
+          is_critical: true
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: emit_validation_failed
+          action_type: event
+          is_critical: false
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
+    - transition_name: reload_contracts
+      from_state: ready
+      to_state: loading
+      trigger: contracts_changed
+      description: Reload contracts when changes detected
+      conditions: []
+      actions:
+        - action_name: snapshot_previous_state
+          action_type: data_capture
+          is_critical: true
+          timeout_ms: 2000
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: emit_reload_started
+          action_type: event
+          is_critical: false
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
+    # Automatic recovery transition from error state.
+    # When retry_count >= 3, this transition is blocked and manual intervention is required.
+    # See recovery_strategies.max_retries_exhausted for operator guidance.
+    - transition_name: retry_loading
+      from_state: error
+      to_state: loading
+      trigger: retry_load
+      description: Retry loading contracts after error
+      conditions:
+        - condition_name: retries_remaining
+          # When this condition fails (retry_count >= 3), automatic recovery stops.
+          # Operators must use force_reload operation to continue recovery.
+          expression: retry_count less_than 3
+          required: true
+          description: Maximum 3 retries allowed
+          version: {major: 1, minor: 0, patch: 0}
+          condition_type: data_validation
+      actions:
+        - action_name: increment_retry_counter
+          action_type: data_capture
+          is_critical: true
+          timeout_ms: 100
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: emit_retry_started
+          action_type: event
+          is_critical: false
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
+  terminal_states: []
+  error_states:
+    - error
+  persistence_enabled: true
+  # Recovery is enabled for the error state, allowing automatic retry transitions.
+  # The error state (state_type: error) combined with recovery_enabled: true means:
+  # 1. The FSM will attempt automatic recovery via retry_loading transition
+  # 2. Retry attempts are tracked via retry_count (max 3 attempts)
+  # 3. When retry_count >= 3, automatic recovery stops and manual intervention is required
+  recovery_enabled: true
+  # Recovery strategies documentation for operators and monitoring systems.
+  # This section documents the expected behavior when automatic recovery fails.
+  recovery_strategies:
+    max_retries_exhausted:
+      # When retry_count reaches 3, the retry_loading transition condition fails
+      # and the FSM remains in the error state without automatic recovery.
+      description: >-
+        When retry_count reaches maximum (3), automatic recovery via retry_loading transition is blocked.
+        The FSM remains in error state awaiting manual intervention.
+      detection:
+        # How to detect this condition in monitoring systems
+        - condition: retry_count >= 3 AND current_state == error
+        - event: runtime.contracts.max_retries_exhausted
+        - metric: contract_registry_retry_exhausted_total
+      recommended_actions:
+        # Ordered list of recovery steps for operators
+        - step: 1
+          action: Check contract validation errors in application logs
+          command: "grep 'validation_failed\\|contract.*error' /var/log/onex/*.log"
+        - step: 2
+          action: Identify and fix invalid contract files
+          details: >-
+            Review emit_error_event and log_validation_errors output to identify which contracts failed
+            validation and why
+        - step: 3
+          action: Use force_reload operation after fixing issues
+          details: >-
+            The force_reload operation (defined in operations section) bypasses the retry_count check
+            and directly transitions to loading state
+        - step: 4
+          action: Monitor runtime.contracts.reload events for success
+          details: Subscribe to event bus for reload confirmation
+      escalation:
+        # When manual recovery attempts fail, escalate to these actions
+        - level: 1
+          trigger: force_reload fails after contract fixes
+          action: Alert operations team via paging system
+        - level: 2
+          trigger: Multiple force_reload attempts fail
+          action: Consider runtime restart with fresh contract discovery
+        - level: 3
+          trigger: Runtime restart fails to resolve
+          action: Engage platform engineering for infrastructure investigation
+    recovery_from_error:
+      # Documents the relationship between error state and recovery mechanisms
+      description: >-
+        The error state has is_terminal: false, allowing recovery transitions. This is intentional to
+        support both automatic retry and manual recovery paths.
+      automatic_recovery:
+        mechanism: retry_loading transition
+        max_attempts: 3
+        trigger: retry_load event
+        condition: retry_count less_than 3
+      manual_recovery:
+        mechanism: force_reload operation
+        requires_permission: true
+        bypasses_retry_limit: true
+        description: >-
+          Operators can invoke force_reload to reset the loading process regardless of retry_count. This
+          is the primary recovery path when automatic retries are exhausted.
+  operations:
+    # Primary manual recovery operation when automatic retries are exhausted.
+    # Bypasses retry_count check by directly targeting loading state.
+    - operation_name: force_reload
+      description: Force reload all contracts from sources
+      trigger: force_reload
+      target_state: loading
+      # Permission required to prevent accidental triggering during production
+      requires_permission: true
+      is_destructive: false
+      rollback_transitions:
+        - transition_name: rollback_force_reload
+          from_state: loading
+          to_state: ready
+          trigger: undo_force_reload
+      version: {major: 1, minor: 0, patch: 0}
+      operation_type: administrative
+    - operation_name: clear_registry
+      description: Clear all loaded contracts and reset to empty state
+      trigger: clear
+      target_state: empty
+      requires_permission: true
+      is_destructive: true
+      rollback_transitions:
+        - transition_name: rollback_clear
+          from_state: empty
+          to_state: loading
+          trigger: undo_clear
+      version: {major: 1, minor: 0, patch: 0}
+      operation_type: administrative
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: ONEX Framework Team
+  description: Declarative contract registry reducer using FSM pattern for managing loaded and compiled
+    ONEX contracts
+  tags:
+    - reducer
+    - fsm
+    - declarative
+    - contracts
+    - registry
+    - runtime
+  documentation_url: https://docs.onex.ai/reducers/contract-registry

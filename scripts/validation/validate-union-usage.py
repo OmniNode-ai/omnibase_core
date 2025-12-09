@@ -1335,16 +1335,17 @@ def main() -> int:
         Exit code: 0 for success, 1 for validation failure.
 
     Command-line Arguments:
+        files: Optional list of files to validate (if provided, only these are checked).
         --strict: Enable strict mode (fail on any invalid patterns).
         --show-patterns: Show detailed pattern analysis.
         --show-statistics: Show pattern type statistics.
         --suggest-models: Generate model suggestions for invalid patterns.
         --export-report FILE: Export detailed report to file (JSON or Markdown).
         --allow-invalid N: Maximum allowed invalid patterns (default: 0).
-        path: Path to validate (file or directory, default: ".").
 
     Example:
         $ python validate-union-usage.py src/ --strict --show-statistics
+        $ python validate-union-usage.py file1.py file2.py  # Validate specific files
     """
     parser = argparse.ArgumentParser(
         description="Enhanced Union type usage validation with legitimacy analysis",
@@ -1369,10 +1370,16 @@ The validator focuses on type safety and semantic coherence rather than arbitrar
 
 Examples:
     python validate-union-usage.py                              # Check current directory
-    python validate-union-usage.py --src-dir src/               # Check src directory
+    python validate-union-usage.py src/                         # Check src directory
     python validate-union-usage.py --strict --show-statistics   # Strict mode with stats
     python validate-union-usage.py file1.py file2.py file3.py   # Check specific files (pre-commit)
+    python validate-union-usage.py --allow-invalid 5 file1.py   # Mix options and files
         """,
+    )
+    parser.add_argument(
+        "files",
+        nargs="*",
+        help="Files to validate. If not provided, scans src/ directory by default.",
     )
     parser.add_argument(
         "--strict",
@@ -1399,34 +1406,23 @@ Examples:
         default=0,
         help="Maximum allowed invalid union patterns (default: 0)",
     )
-    parser.add_argument(
-        "--src-dir",
-        "-s",
-        type=Path,
-        default=Path(),
-        help="Source directory to scan (default: ., ignored if files provided)",
-    )
-    parser.add_argument(
-        "files",
-        nargs="*",
-        type=Path,
-        help="Specific files to check (for pre-commit integration)",
-    )
     args = parser.parse_args()
 
-    # If specific files are provided, check only those files (pre-commit mode)
+    # Determine files to validate
     if args.files:
-        # Filter to only Python files
-        python_files = [f for f in args.files if f.suffix == ".py" and f.exists()]
+        # Files provided as arguments - validate only those (filter to .py files)
+        python_files = [Path(f) for f in args.files if f.endswith(".py")]
+        # Sort files for deterministic order
+        python_files.sort(key=lambda p: str(p))
     else:
-        # Otherwise scan the entire src directory
-        base_path = args.src_dir
-        if base_path.is_file() and base_path.suffix == ".py":
-            python_files = [base_path]
-        else:
-            python_files = list(base_path.rglob("*.py"))
-            # Sort files for deterministic order across different systems
-            python_files.sort(key=lambda p: str(p))
+        # No files provided - fall back to scanning src/ directory
+        base_path = Path("src")
+        if not base_path.exists():
+            # If src/ doesn't exist, try current directory
+            base_path = Path()
+        python_files = list(base_path.rglob("*.py"))
+        # Sort files for deterministic order across different systems
+        python_files.sort(key=lambda p: str(p))
 
     # Filter out archived files, examples, and __pycache__
     #
