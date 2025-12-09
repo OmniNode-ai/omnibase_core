@@ -874,6 +874,9 @@ class TestValidateYamlFileErrors:
 
     def test_validate_yaml_file_permission_denied(self, tmp_path: Path) -> None:
         """Test handling of permission denied errors."""
+        import os
+        import platform
+
         yaml_file = tmp_path / "test.yaml"
         yaml_file.write_text(
             """
@@ -884,10 +887,16 @@ operations: []
         )
 
         # Make file unreadable (Unix only)
-        import platform
-
         if platform.system() != "Windows":
             yaml_file.chmod(0o000)
+
+            # Check if permissions are actually enforced
+            # Some environments (Docker containers, certain filesystems)
+            # may not enforce file permissions
+            if os.access(yaml_file, os.R_OK):
+                # Permissions not enforced, skip the actual test
+                yaml_file.chmod(0o644)
+                pytest.skip("File permissions not enforced in this environment")
 
             errors = validate_yaml_file(yaml_file)
 

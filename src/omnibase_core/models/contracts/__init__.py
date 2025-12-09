@@ -25,10 +25,22 @@ from .model_conflict_resolution_config import ModelConflictResolutionConfig
 from .model_contract_base import ModelContractBase
 from .model_contract_compute import ModelContractCompute
 from .model_contract_effect import ModelContractEffect
+from .model_contract_fingerprint import ModelContractFingerprint
+from .model_contract_meta import (
+    ModelContractMeta,
+    is_valid_meta_model,
+    validate_meta_model,
+)
+from .model_contract_node_metadata import (
+    ModelContractNodeMetadata,
+)
+from .model_contract_normalization_config import ModelContractNormalizationConfig
 from .model_contract_orchestrator import ModelContractOrchestrator
 from .model_contract_reducer import ModelContractReducer
 from .model_contract_version import ModelContractVersion
 from .model_dependency import ModelDependency
+from .model_drift_details import ModelDriftDetails
+from .model_drift_result import ModelDriftResult
 from .model_effect_retry_config import ModelEffectRetryConfig
 from .model_event_coordination_config import ModelEventCoordinationConfig
 from .model_event_registry_config import ModelEventRegistryConfig
@@ -38,6 +50,7 @@ from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig
 from .model_lifecycle_config import ModelLifecycleConfig
 from .model_memory_management_config import ModelMemoryManagementConfig
+from .model_node_extensions import ModelNodeExtensions
 from .model_node_ref import ModelNodeRef
 from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
@@ -61,9 +74,18 @@ __all__ = [
     "MixinNodeTypeValidator",
     # Foundation models
     "ModelContractBase",
+    "ModelContractFingerprint",
+    "ModelContractMeta",
+    "ModelContractNodeMetadata",
+    "ModelContractNormalizationConfig",
     "ModelContractVersion",
     "ModelDependency",
+    "ModelDriftDetails",
+    "ModelDriftResult",
+    "ModelNodeExtensions",
     "ModelNodeRef",
+    "is_valid_meta_model",
+    "validate_meta_model",
     # Primary contract models
     "ModelContractCompute",
     "ModelContractEffect",
