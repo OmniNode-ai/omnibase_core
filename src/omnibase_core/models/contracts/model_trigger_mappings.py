@@ -10,7 +10,7 @@ Trigger Mappings Model.
 Strongly-typed trigger mappings model that replaces dict[str, str] patterns
 with proper Pydantic validation and type safety.
 
-ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
+Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 """
 
 from uuid import UUID, uuid4
@@ -27,7 +27,7 @@ class ModelTriggerMappings(BaseModel):
     Replaces dict[str, str] patterns with proper Pydantic model
     providing runtime validation and type safety for trigger mappings.
 
-    ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
+    Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
     """
 
     # ONEX correlation tracking

@@ -18,7 +18,7 @@ Dedicated subcontract model for metrics collection functionality providing:
 This model is composed into node contracts that require metrics functionality,
 providing clean separation between node logic and metrics collection behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -40,7 +40,7 @@ class ModelMetricsSubcontract(BaseModel):
     metric type enablement, collection intervals, and performance monitoring.
     Designed for composition into node contracts requiring metrics functionality.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

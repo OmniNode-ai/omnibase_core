@@ -11,7 +11,7 @@ Core Workflow Model.
 Base model for workflow definitions and execution tracking in the ONEX system.
 Used across the workflow coordination, execution, and monitoring subsystems.
 
-ZERO TOLERANCE: No Any types allowed.
+Strict typing is enforced: No Any types allowed.
 """
 
 
@@ -22,7 +22,7 @@ class ModelWorkflow(BaseModel):
     Represents a workflow definition with execution tracking capabilities.
     Used by workflow coordination, metrics collection, and execution systems.
 
-    ZERO TOLERANCE: No Any types allowed.
+    Strict typing is enforced: No Any types allowed.
     """
 
     workflow_id: UUID = Field(

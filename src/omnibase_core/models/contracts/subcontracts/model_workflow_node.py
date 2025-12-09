@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-# Type aliases for structured data - ZERO TOLERANCE for Any types
+# Type aliases for structured data - Strict typing is enforced for Any types
 from omnibase_core.types.constraints import PrimitiveValueType
 
 ParameterValue = PrimitiveValueType

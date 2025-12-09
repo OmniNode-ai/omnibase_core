@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
 
-# Type aliases for structured data - ZERO TOLERANCE for Any types
+# Type aliases for structured data - Strict typing is enforced for Any types
 from omnibase_core.types.constraints import PrimitiveValueType
 
 ParameterValue = PrimitiveValueType

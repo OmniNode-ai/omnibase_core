@@ -31,7 +31,7 @@ Thread Safety:
     To modify configuration, create a new instance using model_copy():
         new_config = existing_config.model_copy(update={"max_concurrent_workflows": 20})
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -81,7 +81,7 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
         ...     max_concurrent_workflows=5,
         ... )
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

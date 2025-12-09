@@ -17,7 +17,7 @@ Dedicated subcontract model for configuration management functionality providing
 This model is composed into node contracts that require configuration management functionality,
 providing clean separation between node logic and configuration behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pathlib import Path
@@ -53,7 +53,7 @@ class ModelConfigurationSubcontract(BaseModel):
     - Manage sensitive configuration data securely
     - Monitor configuration sources for changes
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

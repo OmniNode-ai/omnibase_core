@@ -28,7 +28,7 @@ class ModelWorkflowExecutionResult(BaseModel):
     Provides workflow-specific execution results with coordination metrics
     and performance tracking.
 
-    ZERO TOLERANCE: No Any types allowed.
+    Strict typing is enforced - no Any types allowed.
     """
 
     workflow_id: UUID = Field(default_factory=uuid4, description="Workflow identifier")

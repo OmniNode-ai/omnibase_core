@@ -658,7 +658,7 @@ IDEMPOTENCY_DEFAULTS: dict[str, dict[str, bool]] = {
 
 ```python
 """
-Effect Subcontract Model - ONEX Standards Compliant.
+Effect Subcontract Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
@@ -1210,7 +1210,6 @@ ModelEffectOutput - Strongly-typed output model for NodeEffect operations.
 
 VERSION: 2.0.0 - Zero Any types, explicit result structure
 
-Author: ONEX Framework Team
 """
 
 from datetime import datetime

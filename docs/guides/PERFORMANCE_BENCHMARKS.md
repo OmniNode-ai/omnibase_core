@@ -195,7 +195,7 @@ poetry run python -m pytest tests/performance/ --benchmark-json=performance-resu
 ### ONEX Standards Compliance
 All performance tests validate ONEX architectural principles:
 
-- **ZERO TOLERANCE**: No Any types or string fallbacks in performance-critical paths
+- **Strict typing is enforced**: No Any types or string fallbacks in performance-critical paths
 - **Strong Typing**: All validation maintains type safety without performance penalty
 - **Circular Dependency Prevention**: Fast detection prevents infinite loops
 - **Security-First**: Security validation doesn't compromise performance

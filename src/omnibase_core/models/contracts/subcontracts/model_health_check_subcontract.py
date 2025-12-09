@@ -15,7 +15,7 @@ This subcontract provides comprehensive health check capabilities for COMPUTE,
 EFFECT, REDUCER, and ORCHESTRATOR nodes, including component health monitoring,
 dependency health checks, and health score calculation.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -32,7 +32,7 @@ class ModelHealthCheckSubcontract(BaseModel):
     Provides standardized health monitoring and status reporting capabilities
     for COMPUTE, EFFECT, REDUCER, and ORCHESTRATOR nodes.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

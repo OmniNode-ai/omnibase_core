@@ -1,5 +1,5 @@
 """
-Tests for Effect supporting models - ONEX Standards Compliant.
+Tests for Effect supporting models.
 
 Comprehensive tests for Effect subcontract supporting models:
 - ModelEffectRetryPolicy

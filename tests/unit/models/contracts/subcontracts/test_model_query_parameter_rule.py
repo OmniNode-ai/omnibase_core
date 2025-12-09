@@ -1,5 +1,5 @@
 """
-Unit tests for ModelQueryParameterRule - ONEX Standards Compliant.
+Unit tests for ModelQueryParameterRule.
 
 Comprehensive test coverage for query parameter rule model including:
 - Field validation and constraints

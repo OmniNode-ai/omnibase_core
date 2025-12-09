@@ -49,7 +49,7 @@ omnibase_core/docs/
 
 ### Node Building Guide ⭐ CRITICAL PRIORITY
 
-**Complete guide to building ONEX nodes - perfect for developers and AI agents**
+**Complete guide to building ONEX nodes - perfect for developers**
 
 | # | Document | Description | Time | Status |
 |---|----------|-------------|------|--------|

@@ -18,7 +18,6 @@ Key Capabilities:
 STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
 Code generators can target this stable interface.
 
-Author: ONEX Framework Team
 """
 
 from datetime import datetime, timedelta

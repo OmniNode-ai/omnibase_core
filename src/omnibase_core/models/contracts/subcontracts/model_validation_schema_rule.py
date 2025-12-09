@@ -4,7 +4,7 @@ Validation Schema Rule Model.
 Strongly-typed model for configuration validation schema rules.
 Replaces dict[str, str] with proper type safety.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 import json

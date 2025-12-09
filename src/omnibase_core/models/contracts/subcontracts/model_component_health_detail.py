@@ -4,7 +4,7 @@ Component Health Detail Model.
 Strongly-typed model for component health details.
 Replaces dict[str, str] with proper type safety.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

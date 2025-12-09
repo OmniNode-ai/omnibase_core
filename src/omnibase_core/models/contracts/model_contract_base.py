@@ -36,7 +36,7 @@ class ModelContractBase(BaseModel, ABC):
     Provides common contract fields, node type classification,
     and foundational configuration for all specialized contract models.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability
@@ -162,7 +162,7 @@ class ModelContractBase(BaseModel, ABC):
     ) -> list[ModelDependency]:
         """Validate dependencies with optimized batch processing.
 
-        ZERO TOLERANCE for runtime: Only ModelDependency objects.
+        Strict typing is enforced for runtime: Only ModelDependency objects.
         YAML EXCEPTION: Allow dict[str, Any]conversion only during YAML contract loading.
         MEMORY SAFETY: Enforce maximum dependencies limit to prevent resource exhaustion.
         SECURITY: Reject string dependencies with clear actionable error messages.
@@ -447,14 +447,14 @@ class ModelContractBase(BaseModel, ABC):
     def validate_node_type_enum_only(cls, v: object) -> EnumNodeType:
         """Validate node_type with YAML deserialization support.
 
-        ZERO TOLERANCE for runtime usage: Only EnumNodeType enum instances.
+        Strict typing is enforced for runtime usage: Only EnumNodeType enum instances.
         YAML EXCEPTION: Allow string conversion only during YAML contract loading.
         """
         if isinstance(v, EnumNodeType):
             return v
         if isinstance(v, str):
             # YAML DESERIALIZATION EXCEPTION: Allow string-to-enum conversion for contract loading
-            # This maintains zero tolerance for runtime while enabling YAML contract deserialization
+            # This maintains strict typing for runtime while enabling YAML contract deserialization
             try:
                 return EnumNodeType(v)
             except ValueError:
@@ -466,7 +466,7 @@ class ModelContractBase(BaseModel, ABC):
                     yaml_deserialization="String conversion allowed only for YAML loading",
                 )
         else:
-            # ZERO TOLERANCE: Reject all other types
+            # Strict typing is enforced: Reject all other types
             raise ModelOnexError(
                 message=f"node_type must be EnumNodeType enum or valid string for YAML, not {type(v).__name__}.",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -582,7 +582,7 @@ class ModelContractBase(BaseModel, ABC):
             )
 
     model_config = ConfigDict(
-        extra="forbid",  # Strict typing - reject unknown fields (ZERO TOLERANCE)
+        extra="forbid",  # Strict typing - reject unknown fields (Strict typing is enforced)
         use_enum_values=False,  # Keep enum objects, don't convert to strings
         validate_assignment=True,
         str_strip_whitespace=True,

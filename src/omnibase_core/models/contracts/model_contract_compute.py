@@ -15,7 +15,7 @@ Specialized contract model for NodeCompute implementations providing:
 - Caching strategies for expensive computations
 - Input validation and output transformation rules
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -58,7 +58,7 @@ class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
     for clean separation between node logic and functionality patterns.
     Supports algorithm specifications, parallel processing, and caching via subcontracts.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

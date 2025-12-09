@@ -18,7 +18,7 @@ Dedicated subcontract model for event bus functionality providing:
 This model is composed into node contracts that require event bus functionality,
 providing clean separation between node logic and event communication behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -40,7 +40,7 @@ class ModelEventBusSubcontract(BaseModel):
     queue management, and monitoring capabilities. Designed for composition
     into node contracts requiring event-driven communication.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

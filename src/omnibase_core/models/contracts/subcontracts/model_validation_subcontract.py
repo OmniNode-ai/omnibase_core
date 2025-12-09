@@ -18,7 +18,7 @@ Dedicated subcontract model for validation functionality providing:
 This model is composed into node contracts that require validation functionality,
 providing clean separation between node logic and validation behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -41,7 +41,7 @@ class ModelValidationSubcontract(BaseModel):
     and error management. Designed for composition into node contracts
     requiring validation functionality.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

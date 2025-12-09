@@ -15,7 +15,7 @@ Specialized contract model for NodeOrchestrator implementations providing:
 - Workflow state management and checkpointing
 - Event Registry integration for event-driven coordination
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -54,7 +54,7 @@ class ModelContractOrchestrator(MixinNodeTypeValidator, ModelContractBase):
     emission, conditional branching, and Event Registry integration.
     Includes UUID correlation tracking for operational traceability.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

@@ -4,7 +4,7 @@ Workflow Step Model.
 Strongly-typed workflow step model that replaces dict[str, str | int | bool] patterns
 with proper Pydantic validation and type safety.
 
-ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
+Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 """
 
 from typing import Literal
@@ -22,7 +22,7 @@ class ModelWorkflowStep(BaseModel):
     Replaces dict[str, str | int | bool] patterns with proper Pydantic model
     providing runtime validation and type safety for workflow execution.
 
-    ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
+    Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
     """
 
     model_config = {

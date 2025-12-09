@@ -4,7 +4,6 @@ Deduplication Models - Abstract bases for idempotent action processing.
 Provides abstract base classes for action deduplication in at-least-once
 delivery systems.
 
-Author: ONEX Framework Team
 Version: 1.0.0
 """
 

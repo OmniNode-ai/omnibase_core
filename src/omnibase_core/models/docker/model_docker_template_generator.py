@@ -4,7 +4,6 @@ Docker Template Generator for ONEX Node Services.
 This module generates Docker and Docker Compose configurations from service schemas,
 enabling contract-driven deployment infrastructure.
 
-Author: OmniNode Team
 """
 
 from pathlib import Path

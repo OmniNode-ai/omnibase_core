@@ -18,7 +18,7 @@ Dedicated subcontract model for event-driven architecture functionality providin
 This model is composed into node contracts that participate in event-driven workflows,
 providing clean separation between node logic and event handling behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -46,7 +46,7 @@ class ModelEventTypeSubcontract(BaseModel):
     transformations, routing, and persistence configuration.
     Designed for composition into node contracts participating in event workflows.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

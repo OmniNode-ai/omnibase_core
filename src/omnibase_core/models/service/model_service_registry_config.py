@@ -13,7 +13,6 @@ Service Registry Configuration Model for ONEX Configuration-Driven Registry Syst
 This module provides the ModelServiceRegistryConfig for complete service registry configuration.
 Extracted from model_service_configuration.py for modular architecture compliance.
 
-Author: OmniNode Team
 """
 
 

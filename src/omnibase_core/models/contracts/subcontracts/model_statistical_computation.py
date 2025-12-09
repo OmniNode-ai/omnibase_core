@@ -6,7 +6,7 @@ Statistical Computation Model.
 Individual model for statistical computation configuration.
 Part of the Aggregation Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel

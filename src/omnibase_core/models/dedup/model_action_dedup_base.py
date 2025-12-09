@@ -4,7 +4,6 @@ Action Deduplication Base Model - Abstract base for idempotent action processing
 This abstract base class defines the interface for action deduplication
 in at-least-once delivery systems.
 
-Author: ONEX Framework Team
 Version: 1.0.0
 """
 

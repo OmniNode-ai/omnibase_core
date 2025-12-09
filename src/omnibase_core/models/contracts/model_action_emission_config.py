@@ -6,7 +6,7 @@ Thunk Emission Configuration Model.
 Defines thunk creation, emission timing, and deferred
 execution strategies for workflow coordination.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 

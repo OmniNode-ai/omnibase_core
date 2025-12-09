@@ -6,7 +6,7 @@ Algorithm Factor Configuration Model.
 Configuration for individual algorithm factors defining weight,
 calculation method, and parameters for each factor in a multi-factor algorithm.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel

@@ -19,7 +19,7 @@ Dedicated subcontract model for tool execution functionality providing:
 This model is composed into node contracts that require tool execution capabilities,
 providing clean separation between node logic and tool execution behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar, Self
@@ -50,7 +50,7 @@ class ModelToolExecutionSubcontract(BaseModel):
     - Manage environment variables for tool processes
     - Handle tool execution request events via MixinToolExecution
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

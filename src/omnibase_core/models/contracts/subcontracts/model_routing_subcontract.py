@@ -21,7 +21,7 @@ This model is composed into node contracts that require routing functionality,
 providing clean separation between node logic and routing behavior optimized
 for ONEX microservices ecosystem.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -49,7 +49,7 @@ class ModelRoutingSubcontract(BaseModel):
     for ONEX microservices ecosystem. Designed for composition into node
     contracts requiring routing functionality with service mesh integration.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

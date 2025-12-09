@@ -1,5 +1,5 @@
 """
-Unit tests for ModelResponseHeaderRule - ONEX Standards Compliant.
+Unit tests for ModelResponseHeaderRule.
 
 Comprehensive test coverage for response header rule model including:
 - Field validation and constraints

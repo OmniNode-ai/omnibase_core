@@ -6,7 +6,6 @@ Model for YAML schema object representation in ONEX NodeBase implementation.
 This model supports the PATTERN-005 ContractLoader functionality for
 strongly typed YAML schema object definitions.
 
-Author: ONEX Framework Team
 """
 
 from pydantic import BaseModel, ConfigDict

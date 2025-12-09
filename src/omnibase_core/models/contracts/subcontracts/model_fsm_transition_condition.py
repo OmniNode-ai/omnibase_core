@@ -6,7 +6,7 @@ FSM Transition Condition Model.
 Individual model for FSM transition condition specification.
 Part of the FSM Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 

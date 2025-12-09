@@ -19,7 +19,7 @@ Dedicated subcontract model for logging functionality providing:
 This model is composed into node contracts that require logging functionality,
 providing clean separation between node logic and logging behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar, Self
@@ -43,7 +43,7 @@ class ModelLoggingSubcontract(BaseModel):
     and security features. Designed for composition into node contracts
     requiring logging functionality.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

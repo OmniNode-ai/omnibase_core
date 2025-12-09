@@ -18,7 +18,7 @@ Dedicated subcontract model for node lifecycle management providing:
 This model is composed into node contracts that require lifecycle management,
 providing clean separation between node logic and lifecycle behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar, Self
@@ -40,7 +40,7 @@ class ModelLifecycleSubcontract(BaseModel):
     graceful shutdown controls, lifecycle hook registration, and event emission
     configuration following ONEX standards.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

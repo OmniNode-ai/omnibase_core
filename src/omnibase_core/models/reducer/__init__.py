@@ -9,7 +9,6 @@ This module provides models for FSM-driven state management:
 - ModelConflictResolver: Conflict resolution strategies
 - ModelStreamingWindow: Time-based windowing for streaming
 
-Author: ONEX Framework Team
 """
 
 from omnibase_core.models.reducer.model_conflict_resolver import ModelConflictResolver

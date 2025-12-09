@@ -6,7 +6,7 @@ Output Transformation Configuration Model.
 Output transformation and formatting rules defining transformation logic,
 formatting rules, and post-processing configuration for output data.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel

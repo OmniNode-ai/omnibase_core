@@ -14,7 +14,7 @@ Specialized contract model for NodeEffect implementations providing:
 - Retry policies and circuit breaker settings
 - External service integration patterns
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -24,7 +24,7 @@ from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-# Type aliases for structured data - ZERO TOLERANCE for Any types
+# Type aliases for structured data - Strict typing is enforced for Any types
 from omnibase_core.types.constraints import PrimitiveValueType
 
 ParameterValue = PrimitiveValueType
@@ -78,7 +78,7 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
     for clean separation between node logic and functionality patterns.
     Handles I/O operations, transaction management, and external service integration.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

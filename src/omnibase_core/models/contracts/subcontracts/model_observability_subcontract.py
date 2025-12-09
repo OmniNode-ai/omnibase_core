@@ -18,7 +18,7 @@ Dedicated subcontract model for observability functionality providing:
 This model is composed into node contracts that require comprehensive observability
 functionality, integrating logging, metrics, and distributed tracing capabilities.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar, Self
@@ -47,7 +47,7 @@ class ModelObservabilitySubcontract(BaseModel):
     - Export telemetry data in multiple formats
     - Control observability overhead through sampling and enablement flags
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

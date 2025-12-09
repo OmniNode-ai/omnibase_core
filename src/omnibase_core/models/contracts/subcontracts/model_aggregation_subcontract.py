@@ -18,7 +18,7 @@ Dedicated subcontract model for data aggregation functionality providing:
 This model is composed into node contracts that require aggregation functionality,
 providing clean separation between node logic and aggregation behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -46,7 +46,7 @@ class ModelAggregationSubcontract(BaseModel):
     grouping strategies, windowing, and statistical computations.
     Designed for composition into node contracts requiring aggregation functionality.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

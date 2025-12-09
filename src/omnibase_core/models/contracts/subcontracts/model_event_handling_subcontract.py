@@ -19,7 +19,7 @@ Dedicated subcontract model for event handling functionality providing:
 This model is composed into node contracts that require event handling functionality,
 providing clean separation between node logic and event-driven behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import Any, ClassVar
@@ -48,7 +48,7 @@ class ModelEventHandlingSubcontract(BaseModel):
     - Event handler cleanup and lifecycle management
     - Failed event handling with retry and dead letter queue support
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

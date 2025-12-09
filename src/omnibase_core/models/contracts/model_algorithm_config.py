@@ -8,7 +8,7 @@ Algorithm Configuration Model.
 Algorithm configuration and parameters defining the computational algorithm
 with factors, weights, and execution parameters for contract-driven behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced - no Any types allowed in implementation.
 """
 
 

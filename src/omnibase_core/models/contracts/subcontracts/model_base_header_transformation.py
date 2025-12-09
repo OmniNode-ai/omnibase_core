@@ -4,7 +4,7 @@ Base Header Transformation Model.
 Abstract base class for all header/parameter transformation rules.
 Provides common fields and behavior to reduce duplication.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, Field

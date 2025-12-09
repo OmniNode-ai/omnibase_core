@@ -6,7 +6,7 @@ Windowing Strategy Model.
 Individual model for windowing strategy configuration.
 Part of the Aggregation Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 

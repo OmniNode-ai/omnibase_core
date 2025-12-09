@@ -1,5 +1,5 @@
 """
-Unit tests for Effect Resolved Context Models - ONEX Standards Compliant.
+Unit tests for Effect Resolved Context Models.
 
 Comprehensive test coverage for resolved context models including:
 - Basic model instantiation and field validation

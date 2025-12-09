@@ -4,7 +4,6 @@ ModelEffectTransaction - Transaction management for side effect operations.
 Provides rollback capabilities and operation tracking for complex side effect
 sequences in the ONEX 4-Node Architecture.
 
-Author: ONEX Framework Team
 """
 
 import asyncio

@@ -6,7 +6,7 @@ Branching Configuration Model.
 Defines conditional logic, decision points, and branching
 strategies for dynamic workflow execution paths.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel

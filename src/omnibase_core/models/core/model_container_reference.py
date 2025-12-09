@@ -8,7 +8,6 @@ Model for container reference in ONEX NodeBase implementation.
 This model supports the PATTERN-005 NodeBase functionality for
 strongly-typed container references.
 
-Author: ONEX Framework Team
 """
 
 from pydantic import BaseModel, ConfigDict

@@ -4,7 +4,7 @@ Query Parameter Rule Model.
 Strongly-typed model for query parameter transformation rules.
 Replaces dict[str, str] with proper type safety.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import Field

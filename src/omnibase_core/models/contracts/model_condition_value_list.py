@@ -3,10 +3,10 @@ from pydantic import Field
 """
 Model Condition Value List - Container for list[Any]of strongly-typed condition values.
 
-ONEX Standards Compliant list[Any]container for workflow condition values
+list[Any]container for workflow condition values
 that maintains type safety and provides utility methods for value checking.
 
-ZERO TOLERANCE: No string conditions or Any types allowed.
+Strict typing is enforced: No string conditions or Any types allowed.
 """
 
 from pydantic import BaseModel

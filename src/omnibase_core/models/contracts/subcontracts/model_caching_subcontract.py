@@ -18,7 +18,7 @@ Dedicated subcontract model for caching functionality providing:
 This model is composed into node contracts that require caching functionality,
 providing clean separation between node logic and caching behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -46,7 +46,7 @@ class ModelCachingSubcontract(BaseModel):
     key generation, invalidation policies, and performance tuning.
     Designed for composition into node contracts requiring caching functionality.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

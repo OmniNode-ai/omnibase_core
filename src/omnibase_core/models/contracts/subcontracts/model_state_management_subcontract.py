@@ -18,7 +18,7 @@ Dedicated subcontract model for state management functionality providing:
 This model is composed into node contracts that require state management,
 providing clean separation between node logic and state handling behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -53,7 +53,7 @@ class ModelStateManagementSubcontract(BaseModel):
     validation, synchronization, and versioning capabilities.
     Designed for composition into node contracts requiring state management.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

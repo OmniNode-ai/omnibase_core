@@ -6,7 +6,7 @@ State Versioning Model.
 Individual model for state versioning configuration.
 Part of the State Management Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel

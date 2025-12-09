@@ -5,7 +5,7 @@ VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
 Provides overall health status tracking for ONEX nodes.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from datetime import datetime

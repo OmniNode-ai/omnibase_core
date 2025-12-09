@@ -18,7 +18,7 @@ Dedicated subcontract model for retry logic providing:
 This model is composed into node contracts that require retry functionality,
 providing clean separation between node logic and retry behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar, Self
@@ -40,7 +40,7 @@ class ModelRetrySubcontract(BaseModel):
     jitter support, and circuit breaker integration for handling failures
     in distributed operations following ONEX standards.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

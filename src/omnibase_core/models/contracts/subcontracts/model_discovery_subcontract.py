@@ -20,7 +20,7 @@ This model is composed into node contracts that require service discovery functi
 enabling nodes to participate in ONEX discovery broadcasts and respond with introspection
 data, health status, and capabilities.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 
 MIXIN INTEGRATION:
 - Designed for use with MixinDiscoveryResponder
@@ -69,7 +69,7 @@ class ModelDiscoverySubcontract(BaseModel):
     ⚠️ Configuration is immutable after initialization (Pydantic frozen=False by default)
     ⚠️ Discovery state managed by MixinDiscoveryResponder (see threading docs)
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

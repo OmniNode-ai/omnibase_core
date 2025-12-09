@@ -14,7 +14,7 @@ DISCRIMINATED UNION:
 The EffectIOConfig union type uses handler_type as the discriminator field,
 enabling Pydantic to automatically select the correct model during validation.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 import re

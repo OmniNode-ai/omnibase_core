@@ -1,5 +1,5 @@
 """
-Unit tests for ModelBaseHeaderTransformation - ONEX Standards Compliant.
+Unit tests for ModelBaseHeaderTransformation.
 
 Comprehensive test coverage for base transformation model including:
 - Field validation and constraints

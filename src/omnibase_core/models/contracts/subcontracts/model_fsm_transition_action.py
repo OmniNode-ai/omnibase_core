@@ -15,7 +15,7 @@ FSM Transition Action Model.
 Individual model for FSM transition action specification.
 Part of the FSM Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 

@@ -15,7 +15,6 @@ Thread Safety:
     - asyncio tasks inherit context at creation time
     - Modifications in one task don't affect others
 
-Author: ONEX Framework Team
 """
 
 from __future__ import annotations

@@ -18,7 +18,7 @@ Dedicated subcontract model for finite state machine functionality providing:
 This model is composed into node contracts that require FSM functionality,
 providing clean separation between node logic and state machine behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -45,7 +45,7 @@ class ModelFSMSubcontract(BaseModel):
     transitions, operations, validation, and recovery mechanisms.
     Designed for composition into node contracts requiring FSM functionality.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

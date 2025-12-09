@@ -11,7 +11,7 @@ STABILITY GUARANTEE:
 Provides result model for Health Check Subcontract operations with comprehensive
 health status information.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -40,7 +40,7 @@ class ModelHealthCheckSubcontractResult(BaseModel):
     This model extends beyond the core ModelHealthCheckResult to provide
     specialized health monitoring data for ONEX nodes with subcontract support.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Model version for instance tracking

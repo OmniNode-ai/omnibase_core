@@ -9,7 +9,7 @@ EnumLifecycle management configuration for node initialization and cleanup provi
 - Error recovery mechanisms and persistence settings
 - Contract-driven lifecycle management specifications
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 

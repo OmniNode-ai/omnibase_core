@@ -4,15 +4,15 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
-Model Workflow Dependency - ONEX Standards Compliant Workflow Dependency Specification.
+Model Workflow Dependency Workflow Dependency Specification.
 
 Strongly-typed dependency model for workflow orchestration patterns that eliminates
 legacy string-based dependency support and enforces architectural consistency.
 
-ZERO TOLERANCE: No Any types, string fallbacks, or dict[str, Any]configs allowed.
+Strict typing is enforced: No Any types, string fallbacks, or dict[str, Any]configs allowed.
 """
 
-# NO Any imports - ZERO TOLERANCE for Any types
+# NO Any imports - Strict typing is enforced for Any types
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -32,7 +32,7 @@ class ModelWorkflowDependency(BaseModel):
     and validation for orchestration patterns. Eliminates legacy string-based
     dependency support completely.
 
-    ZERO TOLERANCE: No Any types or string fallbacks allowed.
+    Strict typing is enforced: No Any types or string fallbacks allowed.
     """
 
     workflow_id: UUID = Field(
@@ -83,11 +83,11 @@ class ModelWorkflowDependency(BaseModel):
         """
         Validate workflow_id is a proper UUID instance.
 
-        ZERO TOLERANCE: Only accepts UUID objects - no string conversion.
+        Strict typing is enforced: Only accepts UUID objects - no string conversion.
         """
         if isinstance(v, UUID):
             return v
-        # ZERO TOLERANCE: Reject all non-UUID types including strings
+        # Strict typing is enforced: Reject all non-UUID types including strings
         raise ModelOnexError(
             message=f"workflow_id must be UUID instance, not {type(v).__name__}. No string conversion allowed.",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -105,7 +105,7 @@ class ModelWorkflowDependency(BaseModel):
         STRONG TYPES ONLY: Accept ModelWorkflowCondition instances ONLY.
         NO FALLBACKS: Reject dict[str, Any]s, strings, Any types, or other patterns.
         NO YAML CONVERSION: Use proper serialization/deserialization patterns instead.
-        ZERO TOLERANCE: Parameter type matches implementation - no Any types allowed.
+        Strict typing is enforced: Parameter type matches implementation - no Any types allowed.
         """
         if v is None:
             return v

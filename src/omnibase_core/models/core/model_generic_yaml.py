@@ -5,7 +5,6 @@ These models provide type-safe validation for various YAML structures
 that appear throughout the codebase, ensuring proper validation without
 relying on yaml.safe_load() directly.
 
-Author: ONEX Framework Team
 """
 
 from typing import Any, TypeVar
