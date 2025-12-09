@@ -20,6 +20,10 @@ node_type: EFFECT_GENERIC
 contract_version: {major: 1, minor: 0, patch: 0}
 
 # Effect Subcontract
+# NOTE: This contract uses `effect_operations` (multi-operation schema) rather than
+# `effect` (single-operation schema) because it defines multiple filesystem operations
+# (scan_contracts_directory, read_contract_file). Contracts with a single operation
+# use the simpler `effect:` key (e.g., event_bus_wiring_effect.yaml).
 effect_operations:
   version: {major: 1, minor: 0, patch: 0}
   subcontract_version: {major: 1, minor: 0, patch: 0}
@@ -50,7 +54,7 @@ effect_operations:
 
       io_config:
         handler_type: filesystem
-        file_path_template: "${env.CONTRACTS_DIR:./contracts}"
+        file_path_template: "${env.ONEX_CONTRACTS_DIR:./contracts}"
         operation: read
         timeout_ms: 30000
         atomic: false  # Read operations don't need atomicity
@@ -66,7 +70,7 @@ effect_operations:
         # - Arbitrary absolute path injection via environment variables
         security:
           allowed_base_paths:
-            - "${env.CONTRACTS_DIR:./contracts}"
+            - "${env.ONEX_CONTRACTS_DIR:./contracts}"
             - "./contracts"
           path_validation:
             enabled: true
@@ -139,7 +143,7 @@ effect_operations:
         # escape the contracts directory boundary.
         security:
           allowed_base_paths:
-            - "${env.CONTRACTS_DIR:./contracts}"
+            - "${env.ONEX_CONTRACTS_DIR:./contracts}"
             - "./contracts"
           path_validation:
             enabled: true

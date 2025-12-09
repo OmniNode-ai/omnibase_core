@@ -34,7 +34,11 @@
 node_type: EFFECT_GENERIC
 contract_version: {major: 1, minor: 0, patch: 0}
 
-# Effect Operations Subcontract
+# Effect Subcontract
+# NOTE: This contract uses `effect` (single-operation schema) rather than
+# `effect_operations` (multi-operation schema) because it defines a single
+# event bus wiring operation. Contracts with multiple operations use
+# `effect_operations:` with an operations list (e.g., contract_loader_effect.yaml).
 effect:
   version: {major: 1, minor: 0, patch: 0}
 
