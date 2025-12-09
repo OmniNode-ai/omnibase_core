@@ -22,6 +22,7 @@ class ModelSecurityPolicyData(BaseModel):
     )
 
     # Current standards property
+    # union-ok: json_value - standard JSON-compatible value types for policy data
     @property
     def data(
         self,

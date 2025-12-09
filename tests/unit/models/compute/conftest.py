@@ -141,7 +141,7 @@ def empty_compute_subcontract():
     """
     return ModelComputeSubcontract(
         operation_name="empty_op",
-        operation_version="1.0.0",
+        operation_version={"major": 1, "minor": 0, "patch": 0},
         pipeline=[],
     )
 
@@ -155,7 +155,7 @@ def simple_compute_subcontract(uppercase_pipeline_step):
     """
     return ModelComputeSubcontract(
         operation_name="text_upper",
-        operation_version="1.0.0",
+        operation_version={"major": 1, "minor": 0, "patch": 0},
         pipeline=[uppercase_pipeline_step],
     )
 
@@ -169,7 +169,7 @@ def multi_step_compute_subcontract(trim_pipeline_step, uppercase_pipeline_step):
     """
     return ModelComputeSubcontract(
         operation_name="text_normalize",
-        operation_version="1.0.0",
+        operation_version={"major": 1, "minor": 0, "patch": 0},
         pipeline=[trim_pipeline_step, uppercase_pipeline_step],
     )
 
@@ -183,7 +183,7 @@ def compute_subcontract_with_timeout(uppercase_pipeline_step):
     """
     return ModelComputeSubcontract(
         operation_name="timed_op",
-        operation_version="1.0.0",
+        operation_version={"major": 1, "minor": 0, "patch": 0},
         pipeline=[uppercase_pipeline_step],
         pipeline_timeout_ms=5000,
     )

@@ -15,7 +15,10 @@ from omnibase_core.enums.enum_metadata import (
 )
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.core.model_node_metadata import Namespace
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 if TYPE_CHECKING:
     from omnibase_core.enums import EnumProtocolVersion
@@ -34,13 +37,13 @@ class ModelOnexMetadata(BaseModel):
     """
 
     metadata_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Must be a semver string, e.g., '0.1.0'",
     )
     name: str = Field(default=..., description="Validator/tool name")
     namespace: "Namespace"
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Semantic version, e.g., 0.1.0",
     )
     entrypoint: str | None = Field(

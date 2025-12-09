@@ -1,6 +1,9 @@
 from typing import Any
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 "\nIntrospection Response Event Model\n\nEvent sent by nodes in response to REQUEST_REAL_TIME_INTROSPECTION events.\nProvides real-time node status and capabilities for discovery coordination.\n"
 from uuid import UUID
@@ -37,7 +40,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
     )
     node_name: str = Field(default=..., description="Name of the responding node")
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Version of the responding node",
     )
     current_status: EnumNodeCurrentStatus = Field(

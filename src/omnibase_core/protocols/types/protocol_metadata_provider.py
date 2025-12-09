@@ -19,6 +19,7 @@ class ProtocolMetadataProvider(Protocol):
 
     __omnibase_metadata_provider_marker__: Literal[True]
 
+    # union-ok: json_value - standard JSON-compatible metadata types
     async def get_metadata(self) -> dict[str, str | int | bool | float]:
         """Get the object's metadata."""
         ...

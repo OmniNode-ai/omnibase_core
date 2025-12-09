@@ -47,7 +47,7 @@ class TestPipelineExecutorUnexpectedErrors:
         """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="failing_step",
@@ -77,7 +77,7 @@ class TestPipelineExecutorUnexpectedErrors:
         """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="failing_step",
@@ -106,7 +106,7 @@ class TestPipelineExecutorUnexpectedErrors:
         """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="failing_step",
@@ -136,7 +136,7 @@ class TestPipelineExecutorUnexpectedErrors:
         """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="failing_step",
@@ -178,7 +178,7 @@ class TestPipelineExecutorUnexpectedErrors:
         """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="step_one",
@@ -223,7 +223,7 @@ class TestPipelineExecutorUnexpectedErrors:
         """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="failing_step",
@@ -257,7 +257,7 @@ class TestPipelineExecutorUnexpectedErrors:
         """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="step_one",
@@ -308,7 +308,7 @@ class TestPipelineExecutorUnexpectedErrors:
         """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="failing_step",
@@ -339,7 +339,7 @@ class TestPipelineExecutorUnexpectedErrors:
         """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="failing_step",
@@ -380,7 +380,7 @@ class TestPipelineExecutorUnexpectedErrors:
         """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="failing_step",
@@ -428,7 +428,7 @@ class TestPipelineExecutorLoggingDetails:
         """
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="failing_step",

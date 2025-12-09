@@ -1,7 +1,10 @@
-"""
-UnionUsageChecker
+"""UnionUsageChecker - AST-based checker for Union type usage patterns.
 
-Enhanced checker for Union type usage patterns.
+This module provides the UnionUsageChecker class for analyzing Python source
+code to detect Union type usage patterns that may indicate poor type design.
+
+The checker visits AST nodes to find both Union[...] syntax and modern | syntax
+unions, analyzes them for problematic patterns, and reports issues.
 
 IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
 ===============================================
@@ -9,6 +12,15 @@ This module is part of a carefully managed import chain to avoid circular depend
 
 Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
+- omnibase_core.models.validation.model_union_pattern
+
+Example:
+    >>> import ast
+    >>> code = "x: str | int | bool | float"
+    >>> tree = ast.parse(code)
+    >>> checker = UnionUsageChecker("example.py")
+    >>> checker.visit(tree)
+    >>> print(checker.issues)  # Reports primitive overload
 """
 
 import ast
@@ -17,9 +29,39 @@ from omnibase_core.models.validation.model_union_pattern import ModelUnionPatter
 
 
 class UnionUsageChecker(ast.NodeVisitor):
-    """Enhanced checker for Union type usage patterns."""
+    """AST visitor that checks Union type usage patterns for issues.
 
-    def __init__(self, file_path: str):
+    This class walks a Python AST to find all Union type definitions (both
+    Union[...] syntax and modern | syntax) and reports problematic patterns
+    such as primitive overload, mixed primitive/complex types, and overly
+    broad unions.
+
+    Attributes:
+        union_count: Total number of unions found.
+        issues: List of validation issue strings.
+        file_path: Path to the file being analyzed.
+        union_patterns: List of all ModelUnionPattern instances found.
+        complex_unions: Unions with 3+ types.
+        primitive_heavy_unions: Unions with many primitive types.
+        generic_unions: Unions with generic type patterns.
+        problematic_combinations: Dict mapping type sets to problem types.
+
+    Example:
+        >>> import ast
+        >>> code = "def f(x: str | int | bool | float): pass"
+        >>> tree = ast.parse(code)
+        >>> checker = UnionUsageChecker("test.py")
+        >>> checker.visit(tree)
+        >>> len(checker.issues) > 0
+        True
+    """
+
+    def __init__(self, file_path: str) -> None:
+        """Initialize the UnionUsageChecker.
+
+        Args:
+            file_path: Path to the file being analyzed, used for error messages.
+        """
         self.union_count = 0
         self.issues: list[str] = []
         self.file_path = file_path
@@ -32,7 +74,7 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.generic_unions: list[ModelUnionPattern] = []
 
         # Common problematic type combinations
-        self.problematic_combinations = {
+        self.problematic_combinations: dict[frozenset[str], str] = {
             frozenset(["str", "int", "bool", "float"]): "primitive_overload",
             # Mixed primitive/complex patterns (with generic annotations)
             frozenset(
@@ -59,7 +101,18 @@ class UnionUsageChecker(ast.NodeVisitor):
         }
 
     def _extract_type_name(self, node: ast.AST) -> str:
-        """Extract type name from AST node."""
+        """Extract type name from an AST node.
+
+        Handles various AST node types to extract the string representation
+        of a type annotation.
+
+        Args:
+            node: AST node representing a type annotation.
+
+        Returns:
+            String representation of the type name, or "Unknown" for
+            unrecognized node types.
+        """
         if isinstance(node, ast.Name):
             return node.id
         if isinstance(node, ast.Constant):
@@ -76,7 +129,21 @@ class UnionUsageChecker(ast.NodeVisitor):
         return "Unknown"
 
     def _analyze_union_pattern(self, union_pattern: ModelUnionPattern) -> None:
-        """Analyze a union pattern for potential issues."""
+        """Analyze a union pattern for potential issues.
+
+        Checks for problematic patterns such as:
+        - Union[T, None] that should use Optional[T]
+        - Primitive overload (4+ primitive types)
+        - Mixed primitive/complex types
+        - Overly broad "everything" unions
+
+        Args:
+            union_pattern: The ModelUnionPattern to analyze.
+
+        Side Effects:
+            Appends issues to self.issues for any problems found.
+            Categorizes pattern into self.complex_unions if applicable.
+        """
         types_set = frozenset(union_pattern.types)
 
         # Check for Union[T, None] which should use Optional[T]
@@ -120,13 +187,31 @@ class UnionUsageChecker(ast.NodeVisitor):
                 )
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
-        """Visit subscript nodes (e.g., Union[str, int])."""
+        """Visit subscript nodes to detect Union[...] type definitions.
+
+        Called by the AST visitor for each subscript node. Checks if the
+        subscript is a Union type and processes it.
+
+        Args:
+            node: AST Subscript node to visit.
+        """
         if isinstance(node.value, ast.Name) and node.value.id == "Union":
             self._process_union_types(node, node.slice, node.lineno)
         self.generic_visit(node)
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
-        """Visit binary operation nodes (e.g., str | int | float)."""
+        """Visit binary operation nodes to detect modern union syntax (A | B).
+
+        Called by the AST visitor for each binary operation node. Checks if
+        the operation is a BitOr (|) that represents a type union.
+
+        Args:
+            node: AST BinOp node to visit.
+
+        Note:
+            Uses _in_union_binop flag to prevent double-counting nested unions
+            like (str | int) | bool.
+        """
         if isinstance(node.op, ast.BitOr):
             # Skip if we're already inside a union BinOp chain
             # This prevents double-counting nested unions like (str | int) | bool
@@ -158,8 +243,18 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _extract_union_from_binop(self, node: ast.BinOp) -> list[str]:
-        """Extract union types from modern union syntax (A | B | C)."""
-        types = []
+        """Extract union types from modern union syntax (A | B | C).
+
+        Recursively traverses nested BitOr operations to collect all type
+        names in a union chain.
+
+        Args:
+            node: AST BinOp node representing a union expression.
+
+        Returns:
+            List of type name strings found in the union.
+        """
+        types: list[str] = []
 
         def collect_types(n: ast.AST) -> None:
             if isinstance(n, ast.BinOp) and isinstance(n.op, ast.BitOr):
@@ -176,7 +271,16 @@ class UnionUsageChecker(ast.NodeVisitor):
     def _process_union_types(
         self, node: ast.AST, slice_node: ast.AST, line_no: int
     ) -> None:
-        """Process union types from Union[...] syntax."""
+        """Process union types from Union[...] syntax.
+
+        Extracts type names from the Union subscript, creates a ModelUnionPattern,
+        and analyzes it for issues.
+
+        Args:
+            node: The AST node for the Union subscript (unused but kept for signature).
+            slice_node: The AST node for the subscript slice (type arguments).
+            line_no: Line number where the union is defined.
+        """
         # Extract union types
         union_types = []
         if isinstance(slice_node, ast.Tuple):

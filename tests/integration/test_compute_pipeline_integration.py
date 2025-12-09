@@ -77,7 +77,7 @@ class TestComputePipelineIntegration:
         # Create a pipeline: TRIM -> CASE_CONVERSION -> IDENTITY
         contract = ModelComputeSubcontract(
             operation_name="multi_step_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="trim_input",
@@ -130,7 +130,7 @@ class TestComputePipelineIntegration:
         # Create a pipeline where step 2 will fail (integer input to TRIM)
         contract = ModelComputeSubcontract(
             operation_name="error_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="step1_identity",
@@ -185,7 +185,7 @@ class TestComputePipelineIntegration:
         """
         contract = ModelComputeSubcontract(
             operation_name="mapping_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="uppercase_name",
@@ -233,7 +233,7 @@ class TestComputePipelineIntegration:
         """
         contract = ModelComputeSubcontract(
             operation_name="disabled_step_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="step1",
@@ -283,7 +283,7 @@ class TestComputePipelineIntegration:
         """
         contract = ModelComputeSubcontract(
             operation_name="complex_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 # Step 1: Normalize multiple spaces to single space
                 ModelComputePipelineStep(
@@ -337,7 +337,7 @@ class TestComputePipelineIntegration:
         """
         contract = ModelComputeSubcontract(
             operation_name="nested_mapping_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="extract_fields",
@@ -386,7 +386,7 @@ class TestComputePipelineIntegration:
         """
         contract = ModelComputeSubcontract(
             operation_name="chained_with_mapping",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 # Step 1: Uppercase transformation
                 ModelComputePipelineStep(
@@ -433,7 +433,7 @@ class TestComputePipelineIntegration:
         """
         contract = ModelComputeSubcontract(
             operation_name="timing_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="step1",
@@ -474,7 +474,7 @@ class TestComputePipelineIntegration:
         """Test that empty pipeline returns input unchanged."""
         contract = ModelComputeSubcontract(
             operation_name="empty_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[],
         )
 
@@ -501,7 +501,7 @@ class TestComputePipelineIntegration:
         """
         contract = ModelComputeSubcontract(
             operation_name="regex_flags_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="case_insensitive_replace",
@@ -541,7 +541,7 @@ class TestComputePipelineIntegration:
         """
         contract = ModelComputeSubcontract(
             operation_name="unicode_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="normalize",
@@ -589,7 +589,7 @@ class TestComputePipelineIntegration:
         # Create a simple pipeline
         contract = ModelComputeSubcontract(
             operation_name="performance_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="trim",
@@ -659,7 +659,7 @@ class TestComputePipelineIntegration:
 
         contract = ModelComputeSubcontract(
             operation_name="many_steps_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=steps,
         )
 
@@ -691,7 +691,7 @@ class TestComputePipelineErrorScenarios:
         """Test that invalid regex pattern causes proper failure."""
         contract = ModelComputeSubcontract(
             operation_name="invalid_regex",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="bad_regex",
@@ -721,7 +721,7 @@ class TestComputePipelineErrorScenarios:
         """Test that referencing non-existent path in mapping fails."""
         contract = ModelComputeSubcontract(
             operation_name="missing_path",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="bad_mapping",
@@ -751,7 +751,7 @@ class TestComputePipelineErrorScenarios:
         """Test that referencing non-existent step in mapping fails."""
         contract = ModelComputeSubcontract(
             operation_name="missing_step",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="bad_mapping",
@@ -784,7 +784,7 @@ class TestComputePipelineErrorScenarios:
         """Test that type mismatch in middle of pipeline aborts correctly."""
         contract = ModelComputeSubcontract(
             operation_name="type_mismatch",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 # Step 1: Create a mapping (outputs dict)
                 ModelComputePipelineStep(
@@ -848,7 +848,7 @@ class TestComputePipelineContextTracking:
 
         contract = ModelComputeSubcontract(
             operation_name="context_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="identity",
@@ -879,7 +879,7 @@ class TestComputePipelineContextTracking:
 
         contract = ModelComputeSubcontract(
             operation_name="minimal_context_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="identity",
@@ -919,7 +919,7 @@ class TestComputePipelineSingleStepScenarios:
         """
         contract = ModelComputeSubcontract(
             operation_name="single_step_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="only_step",
@@ -955,7 +955,7 @@ class TestComputePipelineSingleStepScenarios:
         """
         contract = ModelComputeSubcontract(
             operation_name="single_mapping_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="only_mapping",
@@ -995,7 +995,7 @@ class TestComputePipelineSingleStepScenarios:
         """
         contract = ModelComputeSubcontract(
             operation_name="single_fail_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="failing_step",
@@ -1043,7 +1043,7 @@ class TestComputePipelineStepResultAccumulation:
         """
         contract = ModelComputeSubcontract(
             operation_name="accumulation_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="step_trim",
@@ -1111,7 +1111,7 @@ class TestComputePipelineStepResultAccumulation:
         """
         contract = ModelComputeSubcontract(
             operation_name="multi_reference_mapping",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="upper_version",
@@ -1168,7 +1168,7 @@ class TestComputePipelineStepResultAccumulation:
         """
         contract = ModelComputeSubcontract(
             operation_name="nested_mapping_build",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="first_mapping",
@@ -1215,7 +1215,7 @@ class TestComputePipelineStepResultAccumulation:
         """
         contract = ModelComputeSubcontract(
             operation_name="metadata_tracking_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="trim_step",
@@ -1281,7 +1281,7 @@ class TestComputePipelineAllStepTypes:
         """
         contract = ModelComputeSubcontract(
             operation_name="all_transforms_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 # Step 1: Normalize unicode
                 ModelComputePipelineStep(
@@ -1349,7 +1349,7 @@ class TestComputePipelineAllStepTypes:
         """
         contract = ModelComputeSubcontract(
             operation_name="mixed_types_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 # Transform: uppercase
                 ModelComputePipelineStep(
@@ -1395,7 +1395,7 @@ class TestComputePipelineAllStepTypes:
         """
         contract = ModelComputeSubcontract(
             operation_name="validation_passthrough_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="validate_input",
@@ -1447,7 +1447,7 @@ class TestComputePipelineConcurrency:
         """
         contract = ModelComputeSubcontract(
             operation_name="concurrent_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="uppercase",
@@ -1502,7 +1502,7 @@ class TestComputePipelineConcurrency:
         """
         contract_upper = ModelComputeSubcontract(
             operation_name="upper_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="uppercase",
@@ -1517,7 +1517,7 @@ class TestComputePipelineConcurrency:
 
         contract_lower = ModelComputeSubcontract(
             operation_name="lower_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="lowercase",
@@ -1581,7 +1581,7 @@ class TestComputePipelineEdgeCases:
         """
         contract = ModelComputeSubcontract(
             operation_name="all_disabled_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="disabled1",
@@ -1628,7 +1628,7 @@ class TestComputePipelineEdgeCases:
         """
         contract = ModelComputeSubcontract(
             operation_name="special_chars_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="identity",
@@ -1673,7 +1673,7 @@ class TestComputePipelineEdgeCases:
 
         contract = ModelComputeSubcontract(
             operation_name="deep_nesting_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="extract_deep",
@@ -1710,7 +1710,7 @@ class TestComputePipelineEdgeCases:
         """
         contract = ModelComputeSubcontract(
             operation_name="null_empty_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="identity",
@@ -1751,7 +1751,7 @@ class TestComputePipelineEdgeCases:
         """
         contract = ModelComputeSubcontract(
             operation_name="large_list_test",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="identity",

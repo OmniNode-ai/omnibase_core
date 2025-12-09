@@ -10,6 +10,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
+    default_model_version,
     parse_semver_from_string,
 )
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
@@ -31,7 +32,7 @@ class ModelEventBusInputState(BaseModel):
     """
 
     version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        default_factory=default_model_version,
         description="Schema version for input state (semantic version)",
     )
     input_field: str = Field(

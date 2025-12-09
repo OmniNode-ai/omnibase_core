@@ -117,7 +117,11 @@ class ModelNodeActionType(BaseModel):
         return False
 
     def __hash__(self) -> int:
-        """Hash based on action name for use in sets/dict[str, Any]s."""
+        """Return hash value for use in sets and as dict keys.
+
+        Returns:
+            int: Hash computed from the action name.
+        """
         return hash(self.name)
 
     @classmethod
