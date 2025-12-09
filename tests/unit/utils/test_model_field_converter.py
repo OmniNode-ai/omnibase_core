@@ -27,9 +27,9 @@ from omnibase_core.models.utils.model_field_converter import (
 )
 
 
-# Test enum for enum field tests
-class TestStatus(Enum):
-    """Test enum for converter tests."""
+# Sample enum for enum field tests
+class SampleStatus(Enum):
+    """Sample enum for converter tests."""
 
     ACTIVE = "active"
     INACTIVE = "inactive"
@@ -237,41 +237,43 @@ class TestModelFieldConverterRegistry:
     def test_register_enum_field_by_value(self) -> None:
         """Test enum field conversion by value."""
         registry = ModelFieldConverterRegistry()
-        registry.register_enum_field("status", TestStatus)
+        registry.register_enum_field("status", SampleStatus)
 
         result = registry.convert_field("status", "active")
-        assert result == TestStatus.ACTIVE
-        assert isinstance(result, TestStatus)
+        assert result == SampleStatus.ACTIVE
+        assert isinstance(result, SampleStatus)
 
     def test_register_enum_field_by_name(self) -> None:
         """Test enum field conversion by name (case-insensitive)."""
         registry = ModelFieldConverterRegistry()
-        registry.register_enum_field("status", TestStatus)
+        registry.register_enum_field("status", SampleStatus)
 
         # Test case-insensitive name matching
         result = registry.convert_field("status", "ACTIVE")
-        assert result == TestStatus.ACTIVE
+        assert result == SampleStatus.ACTIVE
 
         result = registry.convert_field("status", "Inactive")
-        assert result == TestStatus.INACTIVE
+        assert result == SampleStatus.INACTIVE
 
     def test_register_enum_field_invalid_value(self) -> None:
         """Test enum field with invalid value."""
         registry = ModelFieldConverterRegistry()
-        registry.register_enum_field("status", TestStatus)
+        registry.register_enum_field("status", SampleStatus)
 
         with pytest.raises(ModelOnexError) as exc_info:
             registry.convert_field("status", "invalid_status")
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
-        assert "Invalid TestStatus value" in exc_info.value.message
+        assert "Invalid SampleStatus value" in exc_info.value.message
 
     def test_register_enum_field_with_default(self) -> None:
         """Test enum field with default value."""
         registry = ModelFieldConverterRegistry()
-        registry.register_enum_field("status", TestStatus, default=TestStatus.PENDING)
+        registry.register_enum_field(
+            "status", SampleStatus, default=SampleStatus.PENDING
+        )
 
         result = registry.convert_field("status", "invalid")
-        assert result == TestStatus.PENDING
+        assert result == SampleStatus.PENDING
 
     def test_register_optional_integer_field_empty_string(self) -> None:
         """Test optional integer field with empty string."""
@@ -359,7 +361,7 @@ class TestModelFieldConverterRegistry:
         registry = ModelFieldConverterRegistry()
         registry.register_boolean_field("enabled")
         registry.register_integer_field("count")
-        registry.register_enum_field("status", TestStatus)
+        registry.register_enum_field("status", SampleStatus)
 
         data = {
             "enabled": "true",
@@ -380,7 +382,9 @@ class TestModelFieldConverterRegistry:
         assert isinstance(result["status"], ModelSchemaValue)
         # ModelSchemaValue stores enums as string representation
         status_value = result["status"].to_value()
-        assert status_value == "TestStatus.ACTIVE" or status_value == TestStatus.ACTIVE
+        assert (
+            status_value == "SampleStatus.ACTIVE" or status_value == SampleStatus.ACTIVE
+        )
 
         # Unknown field should be skipped
         assert "unknown_field" not in result
@@ -425,7 +429,7 @@ class TestModelFieldConverterRegistry:
 
         registry.register_boolean_field("enabled")
         registry.register_integer_field("count")
-        registry.register_enum_field("status", TestStatus)
+        registry.register_enum_field("status", SampleStatus)
 
         fields = registry.list_fields()
         assert len(fields) == 3
@@ -464,7 +468,9 @@ class TestModelFieldConverterRegistry:
         # Register various field types
         registry.register_boolean_field("is_active")
         registry.register_integer_field("priority", min_value=1, max_value=10)
-        registry.register_enum_field("status", TestStatus, default=TestStatus.PENDING)
+        registry.register_enum_field(
+            "status", SampleStatus, default=SampleStatus.PENDING
+        )
         registry.register_optional_integer_field("parent_id")
         registry.register_custom_field("tags", lambda v: v.split(","))
 
@@ -485,7 +491,9 @@ class TestModelFieldConverterRegistry:
         assert result["priority"].to_value() == 5
         # ModelSchemaValue stores enums as string representation
         status_value = result["status"].to_value()
-        assert status_value == "TestStatus.ACTIVE" or status_value == TestStatus.ACTIVE
+        assert (
+            status_value == "SampleStatus.ACTIVE" or status_value == SampleStatus.ACTIVE
+        )
         assert result["parent_id"].to_value() == 123
         # Tags are stored as string representation of list
         tags_value = result["tags"].to_value()

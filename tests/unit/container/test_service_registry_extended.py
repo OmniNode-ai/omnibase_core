@@ -19,12 +19,12 @@ class ITestService:
         """Execute service logic."""
 
 
-# Test Implementation
-class TestServiceImplementation(ITestService):
-    """Test service implementation."""
+# Mock Implementation (not a test class - prefix avoids pytest collection)
+class MockServiceImplementation(ITestService):
+    """Mock service implementation for testing."""
 
     def __init__(self, name: str = "test") -> None:
-        """Initialize test service."""
+        """Initialize mock service."""
         self.name = name
         self.execution_count = 0
 
@@ -78,7 +78,7 @@ class TestServiceRegistryExtended:
         """Test register_service with lazy loading enabled (default)."""
         registration_id = await registry.register_service(
             interface=ITestService,
-            implementation=TestServiceImplementation,
+            implementation=MockServiceImplementation,
             lifecycle="singleton",
             scope="global",
             configuration={"env": "test"},
@@ -103,7 +103,7 @@ class TestServiceRegistryExtended:
         """Test register_service with lazy_loading_enabled=False (Lines 184-187)."""
         registration_id = await non_lazy_registry.register_service(
             interface=ITestService,
-            implementation=TestServiceImplementation,
+            implementation=MockServiceImplementation,
             lifecycle="singleton",
             scope="global",
         )
@@ -114,7 +114,7 @@ class TestServiceRegistryExtended:
         # Verify instance created immediately (non-lazy)
         instances = await non_lazy_registry.get_active_instances(registration_id)
         assert len(instances) == 1
-        assert isinstance(instances[0].instance, TestServiceImplementation)
+        assert isinstance(instances[0].instance, MockServiceImplementation)
 
     @pytest.mark.asyncio
     async def test_register_service_with_transient_lazy(
@@ -123,7 +123,7 @@ class TestServiceRegistryExtended:
         """Test register_service with transient lifecycle (lazy loading)."""
         registration_id = await registry.register_service(
             interface=ITestService,
-            implementation=TestServiceImplementation,
+            implementation=MockServiceImplementation,
             lifecycle="transient",
             scope="request",
         )
@@ -185,7 +185,7 @@ class TestServiceRegistryExtended:
         with pytest.raises(ModelOnexError) as exc_info:
             await registry.register_instance(
                 interface=ITestService,
-                instance=TestServiceImplementation("test"),
+                instance=MockServiceImplementation("test"),
                 scope="global",
             )
 
@@ -209,7 +209,7 @@ class TestServiceRegistryExtended:
         with pytest.raises(ModelOnexError) as exc_info:
             await registry.register_factory(
                 interface=ITestService,
-                factory=lambda: TestServiceImplementation(),
+                factory=lambda: MockServiceImplementation(),
                 lifecycle="transient",
                 scope="global",
             )
@@ -233,8 +233,8 @@ class TestServiceRegistryExtended:
     ) -> None:
         """Test unregister_service performs full cleanup (Lines 330-351)."""
         # Register two services with same interface
-        service1 = TestServiceImplementation("service1")
-        service2 = TestServiceImplementation("service2")
+        service1 = MockServiceImplementation("service1")
+        service2 = MockServiceImplementation("service2")
 
         reg_id_1 = await registry.register_instance(
             interface=ITestService,
@@ -273,7 +273,7 @@ class TestServiceRegistryExtended:
     ) -> None:
         """Test unregister removes interface_map entry when empty (Lines 342-343)."""
         # Register single service
-        service = TestServiceImplementation("service")
+        service = MockServiceImplementation("service")
         reg_id = await registry.register_instance(
             interface=ITestService,
             instance=service,
@@ -321,7 +321,7 @@ class TestServiceRegistryExtended:
     ) -> None:
         """Test resolve_named_service happy path (Lines 462-475)."""
         # Register service
-        service = TestServiceImplementation("named_service")
+        service = MockServiceImplementation("named_service")
         await registry.register_instance(
             interface=ITestService,
             instance=service,
@@ -331,12 +331,12 @@ class TestServiceRegistryExtended:
         # Resolve by name
         resolved = await registry.resolve_named_service(
             interface=ITestService,
-            name="TestServiceImplementation",
+            name="MockServiceImplementation",
         )
 
         # Verify
         assert resolved is not None
-        assert isinstance(resolved, TestServiceImplementation)
+        assert isinstance(resolved, MockServiceImplementation)
 
     @pytest.mark.asyncio
     async def test_resolve_named_service_not_found(
@@ -357,7 +357,7 @@ class TestServiceRegistryExtended:
     ) -> None:
         """Test resolve_named_service with scope override (Line 473)."""
         # Register service
-        service = TestServiceImplementation("scoped_service")
+        service = MockServiceImplementation("scoped_service")
         await registry.register_instance(
             interface=ITestService,
             instance=service,
@@ -367,7 +367,7 @@ class TestServiceRegistryExtended:
         # Resolve with scope override (should still work)
         resolved = await registry.resolve_named_service(
             interface=ITestService,
-            name="TestServiceImplementation",
+            name="MockServiceImplementation",
             scope="request",
         )
 
@@ -379,7 +379,7 @@ class TestServiceRegistryExtended:
     async def test_get_active_instances_all(self, registry: ServiceRegistry) -> None:
         """Test get_active_instances returns all instances when no ID provided (Lines 595-599)."""
         # Register multiple services
-        service1 = TestServiceImplementation("service1")
+        service1 = MockServiceImplementation("service1")
         service2 = AnotherServiceImplementation("service2")
 
         await registry.register_instance(
@@ -417,7 +417,7 @@ class TestServiceRegistryExtended:
     ) -> None:
         """Test dispose_instances with scope filter (Lines 621-623)."""
         # Register service
-        service = TestServiceImplementation("scoped")
+        service = MockServiceImplementation("scoped")
         reg_id = await registry.register_instance(
             interface=ITestService,
             instance=service,
@@ -440,7 +440,7 @@ class TestServiceRegistryExtended:
     ) -> None:
         """Test resolve_service tracks performance metrics (Lines 417-419)."""
         # Register service
-        service = TestServiceImplementation("perf_test")
+        service = MockServiceImplementation("perf_test")
         await registry.register_instance(
             interface=ITestService,
             instance=service,
@@ -529,7 +529,7 @@ class TestServiceRegistryExtended:
     ) -> None:
         """Test detect_circular_dependencies returns empty list (Line 659)."""
         # Register service
-        service = TestServiceImplementation("test")
+        service = MockServiceImplementation("test")
         reg_id = await registry.register_instance(
             interface=ITestService,
             instance=service,
@@ -564,7 +564,7 @@ class TestServiceRegistryExtended:
         # Register service without instance (using register_service with lazy loading)
         reg_id = await registry.register_service(
             interface=ITestService,
-            implementation=TestServiceImplementation,
+            implementation=MockServiceImplementation,
             lifecycle="singleton",
             scope="global",
         )
@@ -583,7 +583,7 @@ class TestServiceRegistryExtended:
         # Register transient service (lazy loading)
         reg_id = await registry.register_service(
             interface=ITestService,
-            implementation=TestServiceImplementation,
+            implementation=MockServiceImplementation,
             lifecycle="transient",
             scope="request",
         )
@@ -602,7 +602,7 @@ class TestServiceRegistryExtended:
     ) -> None:
         """Test get_registry_status shows 'failed' status with failures (Lines 713-714)."""
         # Register a service first so registry is not empty
-        service = TestServiceImplementation("service")
+        service = MockServiceImplementation("service")
         await registry.register_instance(
             interface=ITestService,
             instance=service,
@@ -633,7 +633,7 @@ class TestServiceRegistryExtended:
     ) -> None:
         """Test get_registry_status calculates distributions correctly (Lines 681-698)."""
         # Register services with different lifecycles and scopes
-        service1 = TestServiceImplementation("service1")
+        service1 = MockServiceImplementation("service1")
         service2 = AnotherServiceImplementation("service2")
 
         await registry.register_instance(

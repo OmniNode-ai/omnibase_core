@@ -14,8 +14,8 @@ from omnibase_core.models.mixins.model_service_registry_entry import (
 )
 
 
-class TestServiceHub(MixinServiceRegistry):
-    """Test service hub class that uses MixinServiceRegistry."""
+class MockServiceHub(MixinServiceRegistry):
+    """Mock service hub class that uses MixinServiceRegistry."""
 
     def __init__(self, event_bus=None):
         super().__init__()
@@ -29,7 +29,7 @@ class TestMixinServiceRegistry:
 
     def test_initialization(self):
         """Test mixin initialization."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         assert hasattr(hub, "service_registry")
         assert hasattr(hub, "discovery_callbacks")
@@ -42,7 +42,7 @@ class TestMixinServiceRegistry:
 
     def test_initialization_with_custom_config(self):
         """Test initialization with custom configuration."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
         hub.introspection_timeout = 60
         hub.service_ttl = 600
 
@@ -54,7 +54,7 @@ class TestMixinServiceRegistry:
         mock_event_bus = Mock()
         mock_event_bus.subscribe = Mock()
 
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
         hub.start_service_registry()
 
         assert hub.registry_started is True
@@ -62,7 +62,7 @@ class TestMixinServiceRegistry:
     def test_start_service_registry_with_domain_filter(self):
         """Test starting service registry with domain filter."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         hub.start_service_registry(domain_filter="generation")
 
@@ -72,7 +72,7 @@ class TestMixinServiceRegistry:
     def test_start_service_registry_already_started(self):
         """Test starting service registry when already started."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         hub.start_service_registry()
         hub.start_service_registry()  # Try to start again
@@ -83,7 +83,7 @@ class TestMixinServiceRegistry:
     def test_stop_service_registry(self):
         """Test stopping service registry."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         hub.start_service_registry()
         hub.stop_service_registry()
@@ -92,7 +92,7 @@ class TestMixinServiceRegistry:
 
     def test_send_discovery_request_without_event_bus(self):
         """Test sending discovery request without event bus."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         # Should not raise, just return early
         hub._send_discovery_request()
@@ -102,7 +102,7 @@ class TestMixinServiceRegistry:
         mock_event_bus = Mock()
         mock_event_bus.publish = Mock()
 
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
         hub._send_discovery_request()
 
         # Should have published discovery request
@@ -111,7 +111,7 @@ class TestMixinServiceRegistry:
     def test_handle_node_start_basic(self):
         """Test handling node start event."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         # Create mock envelope
         mock_event = Mock()
@@ -133,7 +133,7 @@ class TestMixinServiceRegistry:
     def test_handle_node_start_skip_own_event(self):
         """Test handling node start event skips own start."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         # Create event with hub's own node_id
         mock_event = Mock()
@@ -154,7 +154,7 @@ class TestMixinServiceRegistry:
     def test_handle_node_start_with_domain_filter(self):
         """Test handling node start with domain filter."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
         hub.domain_filter = "generation"
 
         # Create event with matching domain
@@ -176,7 +176,7 @@ class TestMixinServiceRegistry:
     def test_handle_node_start_with_non_matching_domain(self):
         """Test handling node start with non-matching domain."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
         hub.domain_filter = "generation"
 
         # Create event with different domain
@@ -198,7 +198,7 @@ class TestMixinServiceRegistry:
     def test_handle_node_start_update_existing(self):
         """Test handling node start updates existing entry."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         node_id = uuid4()
         mock_event = Mock()
@@ -224,7 +224,7 @@ class TestMixinServiceRegistry:
     def test_handle_node_start_with_discovery_callback(self):
         """Test handling node start triggers discovery callback."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         callback_called = []
 
@@ -249,7 +249,7 @@ class TestMixinServiceRegistry:
     def test_handle_node_stop_basic(self):
         """Test handling node stop event."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         # Register a node first
         node_id = uuid4()
@@ -276,7 +276,7 @@ class TestMixinServiceRegistry:
     def test_handle_node_stop_nonexistent_node(self):
         """Test handling node stop for nonexistent node."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         mock_event = Mock()
         mock_event.node_id = uuid4()
@@ -291,7 +291,7 @@ class TestMixinServiceRegistry:
     def test_handle_node_failure(self):
         """Test handling node failure event."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         # Register a node
         node_id = uuid4()
@@ -319,7 +319,7 @@ class TestMixinServiceRegistry:
         mock_event_bus = Mock()
         mock_event_bus.publish = Mock()
 
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
         node_id = uuid4()
 
         hub._send_introspection_request(node_id)
@@ -329,7 +329,7 @@ class TestMixinServiceRegistry:
 
     def test_send_introspection_request_without_event_bus(self):
         """Test sending introspection request without event bus."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         # Should not raise
         hub._send_introspection_request(uuid4())
@@ -337,7 +337,7 @@ class TestMixinServiceRegistry:
     def test_handle_introspection_response(self):
         """Test handling introspection response."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         # Register a node first
         node_id = uuid4()
@@ -369,7 +369,7 @@ class TestMixinServiceRegistry:
         mock_event_bus = Mock()
         mock_event_bus.publish = Mock()
 
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         # Add some services to registry
         node_id = uuid4()
@@ -402,7 +402,7 @@ class TestMixinServiceRegistry:
         mock_event_bus = Mock()
         mock_event_bus.publish = Mock()
 
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
         hub.domain_filter = "generation"
 
         mock_event = Mock()
@@ -425,7 +425,7 @@ class TestMixinServiceRegistry:
         mock_event_bus = Mock()
         mock_event_bus.publish = Mock()
 
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
         hub.domain_filter = "generation"
 
         mock_event = Mock()
@@ -444,7 +444,7 @@ class TestMixinServiceRegistry:
 
     def test_get_registered_tools(self):
         """Test getting registered tools."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         # Add some entries
         for i in range(3):
@@ -462,7 +462,7 @@ class TestMixinServiceRegistry:
 
     def test_get_registered_tools_with_status_filter(self):
         """Test getting registered tools with status filter."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         # Add online and offline entries
         for i in range(2):
@@ -492,7 +492,7 @@ class TestMixinServiceRegistry:
 
     def test_get_tool_by_name(self):
         """Test getting tool by service name."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         node_id = uuid4()
         entry = ModelServiceRegistryEntry(
@@ -509,7 +509,7 @@ class TestMixinServiceRegistry:
 
     def test_get_tool_by_name_not_found(self):
         """Test getting tool by name that doesn't exist."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         result = hub.get_tool_by_name("nonexistent_node")
 
@@ -517,7 +517,7 @@ class TestMixinServiceRegistry:
 
     def test_get_tools_by_capability(self):
         """Test getting tools by capability."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         # Add node with specific capability
         node_id = uuid4()
@@ -545,7 +545,7 @@ class TestMixinServiceRegistry:
 
     def test_get_tools_by_capability_only_online(self):
         """Test getting tools by capability only returns online tools."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         # Add online node with capability
         node_id = uuid4()
@@ -575,7 +575,7 @@ class TestMixinServiceRegistry:
 
     def test_add_discovery_callback(self):
         """Test adding discovery callback."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         callback = Mock()
         hub.add_discovery_callback(callback)
@@ -584,7 +584,7 @@ class TestMixinServiceRegistry:
 
     def test_cleanup_stale_entries(self):
         """Test cleaning up stale entries."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
         hub.service_ttl = 1  # 1 second TTL
 
         # Add entry
@@ -606,7 +606,7 @@ class TestMixinServiceRegistry:
 
     def test_cleanup_stale_entries_no_stale(self):
         """Test cleanup when no stale entries."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         node_id = uuid4()
         entry = ModelServiceRegistryEntry(
@@ -623,7 +623,7 @@ class TestMixinServiceRegistry:
 
     def test_get_registry_stats(self):
         """Test getting registry statistics."""
-        hub = TestServiceHub()
+        hub = MockServiceHub()
 
         # Add online and offline entries
         for i in range(3):
@@ -657,7 +657,7 @@ class TestMixinServiceRegistry:
         mock_event_bus = Mock()
         mock_event_bus.subscribe = Mock()
 
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
         hub._setup_registry_event_handlers()
 
         # Should have subscribed to multiple event types
@@ -666,7 +666,7 @@ class TestMixinServiceRegistry:
     def test_handle_node_start_with_string_node_id(self):
         """Test handling node start with string node_id."""
         mock_event_bus = Mock()
-        hub = TestServiceHub(event_bus=mock_event_bus)
+        hub = MockServiceHub(event_bus=mock_event_bus)
 
         mock_event = Mock()
         mock_event.node_id = "string-node-id"
