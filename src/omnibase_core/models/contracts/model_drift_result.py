@@ -19,6 +19,7 @@ Drift Types:
     - 'version': Only the semantic version changed
     - 'content': Only the content hash changed
     - 'both': Both version and content changed
+    - 'not_registered': Contract not found in registry
     - None: No drift detected
 
 See Also:
@@ -30,6 +31,7 @@ See Also:
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -37,6 +39,9 @@ from omnibase_core.models.contracts.model_contract_fingerprint import (
     ModelContractFingerprint,
 )
 from omnibase_core.models.contracts.model_drift_details import ModelDriftDetails
+
+# Type alias for valid drift type values
+DriftType = Literal["version", "content", "both", "not_registered"]
 
 
 class ModelDriftResult(BaseModel):
@@ -86,9 +91,9 @@ class ModelDriftResult(BaseModel):
         default=None,
         description="Computed fingerprint from current contract",
     )
-    drift_type: str | None = Field(
+    drift_type: DriftType | None = Field(
         default=None,
-        description="Type of drift: 'version', 'content', 'both', or None",
+        description="Type of drift: 'version', 'content', 'both', 'not_registered', or None",
     )
     detected_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
@@ -106,4 +111,4 @@ class ModelDriftResult(BaseModel):
     )
 
 
-__all__ = ["ModelDriftDetails", "ModelDriftResult"]
+__all__ = ["DriftType", "ModelDriftDetails", "ModelDriftResult"]

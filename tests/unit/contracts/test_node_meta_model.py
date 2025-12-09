@@ -21,7 +21,7 @@ Requirements from OMN-157:
 - mypy --strict compliance
 """
 
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 

@@ -93,6 +93,7 @@ def analyze_source() -> Callable[[str], PurityAnalyzer]:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestPurityCheckerConfiguration:
     """Test purity checker configuration constants."""
 
@@ -151,6 +152,7 @@ class TestPurityCheckerConfiguration:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestNetworkingImportDetection:
     """Test detection of forbidden networking imports."""
 
@@ -255,6 +257,7 @@ class TestNetworkingImportDetection:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestFilesystemOperationDetection:
     """Test detection of forbidden filesystem operations."""
 
@@ -362,6 +365,7 @@ class TestFilesystemOperationDetection:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestSubprocessDetection:
     """Test detection of forbidden subprocess operations."""
 
@@ -401,6 +405,7 @@ class TestSubprocessDetection:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestThreadingDetection:
     """Test detection of forbidden threading operations."""
 
@@ -459,6 +464,7 @@ class TestThreadingDetection:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestLoggingDetection:
     """Test detection of forbidden logging imports."""
 
@@ -499,6 +505,7 @@ class TestLoggingDetection:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestClassMutableDataDetection:
     """Test detection of class-level mutable data."""
 
@@ -584,6 +591,7 @@ class TestClassMutableDataDetection:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestCachingDecoratorDetection:
     """Test detection of forbidden caching decorators."""
 
@@ -665,6 +673,7 @@ class TestCachingDecoratorDetection:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestInheritanceValidation:
     """Test validation of node inheritance."""
 
@@ -746,6 +755,7 @@ class TestInheritanceValidation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestNodeTypeDetection:
     """Test detection of node types."""
 
@@ -803,6 +813,7 @@ class TestNodeTypeDetection:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestEffectNodesAreNotChecked:
     """Test that effect nodes allow I/O operations."""
 
@@ -841,6 +852,7 @@ class TestEffectNodesAreNotChecked:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestFileAnalysis:
     """Test full file analysis."""
 
@@ -887,6 +899,7 @@ class TestFileAnalysis:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestViolationSeverity:
     """Test that violations have correct severity levels."""
 
@@ -930,6 +943,7 @@ class TestViolationSeverity:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestActualNodeFiles:
     """Test actual node files in the codebase for purity."""
 
@@ -962,31 +976,97 @@ class TestActualNodeFiles:
         assert result.node_type == "reducer"
 
     def test_node_effect_skipped(self, src_dir):
-        """Test that NodeEffect is skipped (not a pure node)."""
+        """Test that NodeEffect is skipped (not a pure node).
+
+        Effect nodes are explicitly skipped from purity checks since they are
+        designed to handle I/O operations. The analyzer should:
+        1. Correctly identify the node type as "effect"
+        2. Set skip_reason (indicating purity checks were skipped)
+        3. Mark is_pure as True (since no violations are checked)
+        4. Have an empty violations list
+        """
         node_effect_path = src_dir / "nodes" / "node_effect.py"
         if not node_effect_path.exists():
             pytest.skip("NodeEffect file not found")
 
         result = analyze_file(node_effect_path)
 
-        assert result.node_type == "effect"
-        # Effect nodes should have skip_reason or be marked as pure (no violations checked)
-        # The key is that Effect nodes don't fail purity checks
-        assert result.is_pure is True or result.skip_reason is not None
+        # Verify node type detection
+        assert result.node_type == "effect", (
+            f"Expected node_type='effect', got '{result.node_type}'"
+        )
+
+        # Effect nodes MUST have skip_reason set - this is the key indicator
+        # that purity checks were intentionally skipped for this node type
+        assert result.skip_reason is not None, (
+            "Effect nodes must have skip_reason set to indicate purity checks "
+            "were skipped. Got skip_reason=None which would indicate the node "
+            "was analyzed for purity violations (incorrect for EFFECT nodes)."
+        )
+        assert "Not a pure node" in result.skip_reason, (
+            f"Expected skip_reason to contain 'Not a pure node', "
+            f"got: '{result.skip_reason}'"
+        )
+
+        # When skipped, is_pure should be True (no violations found/checked)
+        assert result.is_pure is True, (
+            f"Expected is_pure=True for skipped effect node, got {result.is_pure}"
+        )
+
+        # Violations list should be empty since no checks were performed
+        assert len(result.violations) == 0, (
+            f"Expected no violations for skipped effect node, "
+            f"got {len(result.violations)} violations"
+        )
 
     def test_node_orchestrator_skipped(self, src_dir):
-        """Test that NodeOrchestrator is skipped (not a pure node)."""
+        """Test that NodeOrchestrator is skipped (not a pure node).
+
+        Orchestrator nodes are explicitly skipped from purity checks since they
+        coordinate workflows and may need to interact with external systems.
+        The analyzer should:
+        1. Correctly identify the node type as "orchestrator"
+        2. Set skip_reason (indicating purity checks were skipped)
+        3. Mark is_pure as True (since no violations are checked)
+        4. Have an empty violations list
+        """
         node_orch_path = src_dir / "nodes" / "node_orchestrator.py"
         if not node_orch_path.exists():
             pytest.skip("NodeOrchestrator file not found")
 
         result = analyze_file(node_orch_path)
 
-        assert result.node_type == "orchestrator"
-        assert result.is_pure is True or result.skip_reason is not None
+        # Verify node type detection
+        assert result.node_type == "orchestrator", (
+            f"Expected node_type='orchestrator', got '{result.node_type}'"
+        )
+
+        # Orchestrator nodes MUST have skip_reason set - this is the key indicator
+        # that purity checks were intentionally skipped for this node type
+        assert result.skip_reason is not None, (
+            "Orchestrator nodes must have skip_reason set to indicate purity "
+            "checks were skipped. Got skip_reason=None which would indicate the "
+            "node was analyzed for purity violations (incorrect for ORCHESTRATOR nodes)."
+        )
+        assert "Not a pure node" in result.skip_reason, (
+            f"Expected skip_reason to contain 'Not a pure node', "
+            f"got: '{result.skip_reason}'"
+        )
+
+        # When skipped, is_pure should be True (no violations found/checked)
+        assert result.is_pure is True, (
+            f"Expected is_pure=True for skipped orchestrator node, got {result.is_pure}"
+        )
+
+        # Violations list should be empty since no checks were performed
+        assert len(result.violations) == 0, (
+            f"Expected no violations for skipped orchestrator node, "
+            f"got {len(result.violations)} violations"
+        )
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestViolationFormatting:
     """Test violation message formatting."""
 
@@ -1025,6 +1105,7 @@ class TestViolationFormatting:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestAllowedPatterns:
     """Test that allowed patterns don't trigger violations."""
 

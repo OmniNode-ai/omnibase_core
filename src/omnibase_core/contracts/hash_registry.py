@@ -30,6 +30,14 @@ Example:
 
 See Also:
     CONTRACT_STABILITY_SPEC.md: Detailed specification for contract stability.
+    docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md: ONEX 4-node architecture overview.
+    docs/guides/THREADING.md: Thread safety patterns for production use.
+
+ONEX Compliance:
+    This module supports ONEX contract stability by providing deterministic
+    fingerprinting that enables safe migration between legacy and declarative
+    node implementations. All contracts in the ONEX ecosystem should be
+    registered with a fingerprint for change tracking.
 
 Stability Guarantee:
     - Fingerprint computation is deterministic across Python versions (3.10-3.12)
@@ -53,8 +61,9 @@ from omnibase_core.models.contracts.model_contract_normalization_config import (
     ModelContractNormalizationConfig,
 )
 from omnibase_core.models.contracts.model_contract_version import ModelContractVersion
+from omnibase_core.models.contracts.model_drift_details import ModelDriftDetails
 from omnibase_core.models.contracts.model_drift_result import (
-    ModelDriftDetails,
+    DriftType,
     ModelDriftResult,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -254,8 +263,8 @@ def compute_contract_fingerprint(
     normalized = normalize_contract(contract, config)
 
     # Compute SHA256 hash
-    hash_bytes = hashlib.sha256(normalized.encode("utf-8"))
-    full_hash = hash_bytes.hexdigest()
+    hasher = hashlib.sha256(normalized.encode("utf-8"))
+    full_hash = hasher.hexdigest()
     hash_prefix = full_hash[: config.hash_length]
 
     return ModelContractFingerprint(
@@ -284,6 +293,7 @@ class ContractHashRegistry:
     Thread Safety:
         This class is NOT thread-safe. Use external synchronization
         (e.g., threading.Lock) if accessing from multiple threads.
+        See docs/guides/THREADING.md for detailed thread safety patterns.
 
     Example:
         Basic registration and lookup::
@@ -448,6 +458,7 @@ class ContractHashRegistry:
             )
 
         # Determine drift type
+        drift_type: DriftType
         if not version_match and not hash_match:
             drift_type = "both"
         elif not version_match:

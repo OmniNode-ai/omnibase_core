@@ -201,9 +201,11 @@ FORBIDDEN_THREADING_MODULES = frozenset(
 )
 
 # Filesystem write operations - functions that modify filesystem
+# NOTE: open() is handled specially in visit_Call to allow read-only mode
 FORBIDDEN_FILESYSTEM_FUNCTIONS = frozenset(
     {
-        "open",  # Only when mode includes 'w', 'a', 'x', '+'
+        # "open" is NOT listed here - it's handled specially in visit_Call
+        # to allow read-only mode (e.g., open(..., 'r'))
         "os.write",
         "os.remove",
         "os.unlink",
@@ -1151,6 +1153,23 @@ def find_node_files(src_dir: Path) -> list[Path]:
     return sorted(node_files)
 
 
+def _safe_relative_path(file_path: Path, base_dir: Path) -> str:
+    """Get relative path, falling back to full path if not relative.
+
+    Args:
+        file_path: Path to make relative.
+        base_dir: Base directory to compute relative path from.
+
+    Returns:
+        String representation of relative path, or full path if relative_to fails.
+    """
+    try:
+        return str(file_path.relative_to(base_dir))
+    except ValueError:
+        # Path is outside base_dir, return the full path
+        return str(file_path)
+
+
 def main() -> int:
     """Main entry point for the node purity validation script.
 
@@ -1276,7 +1295,7 @@ def main() -> int:
 
     for result in results:
         if result.skip_reason and args.verbose:
-            relative_path = result.file_path.relative_to(src_dir.parent.parent)
+            relative_path = _safe_relative_path(result.file_path, src_dir.parent.parent)
             print(f"SKIP: {relative_path} - {result.skip_reason}")
             continue
 
@@ -1296,7 +1315,7 @@ def main() -> int:
         # Only print if there are displayable violations
         displayable = error_violations + (warning_violations if args.strict else [])
         if displayable:
-            relative_path = result.file_path.relative_to(src_dir.parent.parent)
+            relative_path = _safe_relative_path(result.file_path, src_dir.parent.parent)
             print(f"\nFile: {relative_path}")
             print(f"  Node: {result.node_class_name} ({result.node_type})")
             print()

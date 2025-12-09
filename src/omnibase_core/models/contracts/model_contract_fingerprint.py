@@ -160,15 +160,8 @@ class ModelContractFingerprint(BaseModel):
             )
 
         # Split on first colon only (version may contain hyphens but not colons)
-        parts = fingerprint_str.split(":", 1)
-        if len(parts) != 2:
-            raise ModelOnexError(
-                message=f"Invalid fingerprint format: '{fingerprint_str}'. Expected exactly one colon separator.",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                fingerprint=fingerprint_str,
-            )
-
-        version_str, hash_prefix = parts
+        # split(":", 1) always returns exactly 2 parts since we verified colon exists above
+        version_str, hash_prefix = fingerprint_str.split(":", 1)
 
         try:
             version = ModelContractVersion.from_string(version_str)
@@ -180,7 +173,7 @@ class ModelContractFingerprint(BaseModel):
                 version_error=str(e),
             ) from e
 
-        # Validate hash prefix format
+        # Validate hash prefix format (must be hexadecimal)
         if not hash_prefix or not all(
             c in "0123456789abcdef" for c in hash_prefix.lower()
         ):
@@ -189,6 +182,16 @@ class ModelContractFingerprint(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 fingerprint=fingerprint_str,
                 hash_prefix=hash_prefix,
+            )
+
+        # Validate hash prefix length (8-64 characters as defined in model schema)
+        if len(hash_prefix) < 8 or len(hash_prefix) > 64:
+            raise ModelOnexError(
+                message=f"Invalid hash prefix length: {len(hash_prefix)}. Must be between 8 and 64 characters.",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                fingerprint=fingerprint_str,
+                hash_prefix=hash_prefix,
+                hash_prefix_length=len(hash_prefix),
             )
 
         # For parsed fingerprints, use hash_prefix as full_hash placeholder.

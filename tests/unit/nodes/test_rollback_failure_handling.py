@@ -21,6 +21,7 @@ from omnibase_core.nodes.node_effect import NodeEffect
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestModelEffectTransactionRollbackFailures:
     """Test ModelEffectTransaction rollback failure handling."""
 
@@ -156,6 +157,7 @@ class TestModelEffectTransactionRollbackFailures:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestNodeEffectRollbackFailures:
     """Test NodeEffect rollback failure handling and callbacks."""
 

@@ -43,10 +43,17 @@ class ModelContractNormalizationConfig(BaseModel):
 
     Attributes:
         resolve_defaults: Whether to insert default values for optional fields.
+            Default: True (ensures consistent normalization regardless of input).
         remove_nulls: Whether to recursively remove None/null values.
+            Default: True (null vs absent field should produce same hash).
         sort_keys: Whether to alphabetically sort all dictionary keys.
+            Default: True (ensures key order doesn't affect hash).
         compact_json: Whether to use compact JSON (no whitespace).
+            Default: True (whitespace doesn't affect semantics).
         hash_length: Number of hex characters from SHA256 to use (8-64).
+            Default: 12 (48 bits, ~281 trillion possibilities - sufficient
+            for collision avoidance in typical contract registries while
+            keeping fingerprints readable).
 
     Example:
         >>> config = ModelContractNormalizationConfig(

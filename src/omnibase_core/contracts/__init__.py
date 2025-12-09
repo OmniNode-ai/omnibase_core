@@ -48,6 +48,18 @@ Example:
 See Also:
     CONTRACT_STABILITY_SPEC.md: Detailed specification for contract stability.
     docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md: ONEX architecture overview.
+    docs/guides/THREADING.md: Thread safety patterns for registry usage.
+
+Thread Safety:
+    ContractHashRegistry is NOT thread-safe. Use external synchronization
+    (e.g., threading.Lock) when accessing from multiple threads.
+    See docs/guides/THREADING.md for detailed patterns.
+
+ONEX Compliance:
+    This module is part of the ONEX contract infrastructure, ensuring:
+    - Deterministic fingerprinting for change detection
+    - Schema stability through meta-model validation
+    - Migration safety between legacy and declarative implementations
 
 Version:
     1.0.0 - Meta-model definition added
@@ -81,8 +93,9 @@ from omnibase_core.models.contracts.model_contract_node_metadata import (
 from omnibase_core.models.contracts.model_contract_normalization_config import (
     ModelContractNormalizationConfig,
 )
+from omnibase_core.models.contracts.model_drift_details import ModelDriftDetails
 from omnibase_core.models.contracts.model_drift_result import (
-    ModelDriftDetails,
+    DriftType,
     ModelDriftResult,
 )
 from omnibase_core.models.contracts.model_node_extensions import (
@@ -95,6 +108,7 @@ __all__ = [
     "ContractHashRegistry",
     "ModelContractFingerprint",
     "ModelContractNormalizationConfig",
+    "DriftType",
     "ModelDriftDetails",
     "ModelDriftResult",
     "compute_contract_fingerprint",
