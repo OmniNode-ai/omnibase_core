@@ -787,3 +787,456 @@ class TestModelEffectOperationIntegration:
         assert operation.operation_timeout_ms == 120000
         # Kafka produce is not idempotent
         assert operation.get_effective_idempotency() is False
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(60)
+class TestRetryPolicyEdgeCases:
+    """Tests for retry policy edge cases including max_retries boundaries."""
+
+    def test_retry_policy_max_retries_zero_is_valid(self) -> None:
+        """Test that max_retries=0 is valid (no retries).
+
+        When max_retries=0, the operation is attempted once with no retries.
+        This is useful for operations that should fail fast without retry.
+        """
+        from omnibase_core.models.contracts.subcontracts.model_effect_retry_policy import (
+            ModelEffectRetryPolicy,
+        )
+
+        retry_policy = ModelEffectRetryPolicy(
+            enabled=True,
+            max_retries=0,  # No retries - fail fast
+        )
+        assert retry_policy.max_retries == 0
+        assert retry_policy.enabled is True
+
+    def test_retry_policy_max_retries_zero_in_operation(self) -> None:
+        """Test operation with max_retries=0 retry policy."""
+        from omnibase_core.models.contracts.subcontracts.model_effect_retry_policy import (
+            ModelEffectRetryPolicy,
+        )
+
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/critical",
+            method="GET",
+        )
+        retry_policy = ModelEffectRetryPolicy(
+            enabled=True,
+            max_retries=0,  # Fail fast mode
+            backoff_strategy="exponential",
+        )
+        operation = ModelEffectOperation(
+            operation_name="critical_operation",
+            io_config=io_config,
+            retry_policy=retry_policy,
+        )
+        assert operation.retry_policy is not None
+        assert operation.retry_policy.max_retries == 0
+
+    def test_retry_policy_max_retries_maximum_boundary(self) -> None:
+        """Test that max_retries=10 is valid (maximum boundary)."""
+        from omnibase_core.models.contracts.subcontracts.model_effect_retry_policy import (
+            ModelEffectRetryPolicy,
+        )
+
+        retry_policy = ModelEffectRetryPolicy(
+            enabled=True,
+            max_retries=10,  # Maximum allowed retries
+        )
+        assert retry_policy.max_retries == 10
+
+    def test_retry_policy_max_retries_above_maximum_rejected(self) -> None:
+        """Test that max_retries above maximum (10) is rejected."""
+        from pydantic import ValidationError
+
+        from omnibase_core.models.contracts.subcontracts.model_effect_retry_policy import (
+            ModelEffectRetryPolicy,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectRetryPolicy(
+                enabled=True,
+                max_retries=11,  # Above maximum of 10
+            )
+        assert "max_retries" in str(exc_info.value)
+
+    def test_retry_policy_max_retries_negative_rejected(self) -> None:
+        """Test that negative max_retries is rejected."""
+        from pydantic import ValidationError
+
+        from omnibase_core.models.contracts.subcontracts.model_effect_retry_policy import (
+            ModelEffectRetryPolicy,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectRetryPolicy(
+                enabled=True,
+                max_retries=-1,  # Negative value
+            )
+        assert "max_retries" in str(exc_info.value)
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(60)
+class TestTimeoutEdgeCases:
+    """Tests for timeout field edge cases (operation_timeout_ms and io_config timeout_ms)."""
+
+    def test_operation_timeout_minimum_boundary(self) -> None:
+        """Test operation_timeout_ms at minimum boundary (1000ms = 1s)."""
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/fast",
+            method="GET",
+        )
+        operation = ModelEffectOperation(
+            operation_name="fast_op",
+            io_config=io_config,
+            operation_timeout_ms=1000,  # Minimum: 1 second
+        )
+        assert operation.operation_timeout_ms == 1000
+
+    def test_operation_timeout_maximum_boundary(self) -> None:
+        """Test operation_timeout_ms at maximum boundary (600000ms = 10 minutes)."""
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/slow",
+            method="GET",
+        )
+        operation = ModelEffectOperation(
+            operation_name="slow_op",
+            io_config=io_config,
+            operation_timeout_ms=600000,  # Maximum: 10 minutes
+        )
+        assert operation.operation_timeout_ms == 600000
+
+    def test_operation_timeout_below_minimum_rejected(self) -> None:
+        """Test that operation_timeout_ms below minimum (1000ms) is rejected."""
+        from pydantic import ValidationError
+
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectOperation(
+                operation_name="invalid_op",
+                io_config=io_config,
+                operation_timeout_ms=999,  # Below minimum of 1000
+            )
+        assert "operation_timeout_ms" in str(exc_info.value)
+
+    def test_operation_timeout_above_maximum_rejected(self) -> None:
+        """Test that operation_timeout_ms above maximum (600000ms) is rejected."""
+        from pydantic import ValidationError
+
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectOperation(
+                operation_name="invalid_op",
+                io_config=io_config,
+                operation_timeout_ms=600001,  # Above maximum of 600000
+            )
+        assert "operation_timeout_ms" in str(exc_info.value)
+
+    def test_http_timeout_minimum_boundary(self) -> None:
+        """Test HTTP timeout_ms at minimum boundary (1000ms)."""
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/fast",
+            method="GET",
+            timeout_ms=1000,  # Minimum
+        )
+        operation = ModelEffectOperation(
+            operation_name="fast_http",
+            io_config=io_config,
+        )
+        assert operation.io_config.timeout_ms == 1000
+
+    def test_http_timeout_maximum_boundary(self) -> None:
+        """Test HTTP timeout_ms at maximum boundary (600000ms)."""
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/slow",
+            method="GET",
+            timeout_ms=600000,  # Maximum
+        )
+        operation = ModelEffectOperation(
+            operation_name="slow_http",
+            io_config=io_config,
+        )
+        assert operation.io_config.timeout_ms == 600000
+
+    def test_http_timeout_below_minimum_rejected(self) -> None:
+        """Test that HTTP timeout_ms below minimum is rejected."""
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelHttpIOConfig(
+                url_template="https://api.example.com/test",
+                method="GET",
+                timeout_ms=999,  # Below minimum
+            )
+        assert "timeout_ms" in str(exc_info.value)
+
+    def test_http_timeout_above_maximum_rejected(self) -> None:
+        """Test that HTTP timeout_ms above maximum is rejected."""
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelHttpIOConfig(
+                url_template="https://api.example.com/test",
+                method="GET",
+                timeout_ms=600001,  # Above maximum
+            )
+        assert "timeout_ms" in str(exc_info.value)
+
+    def test_db_timeout_minimum_boundary(self) -> None:
+        """Test DB timeout_ms at minimum boundary (1000ms)."""
+        io_config = ModelDbIOConfig(
+            operation="select",
+            connection_name="db",
+            query_template="SELECT 1",
+            timeout_ms=1000,  # Minimum
+        )
+        operation = ModelEffectOperation(
+            operation_name="fast_db",
+            io_config=io_config,
+        )
+        assert operation.io_config.timeout_ms == 1000
+
+    def test_db_timeout_maximum_boundary(self) -> None:
+        """Test DB timeout_ms at maximum boundary (600000ms)."""
+        io_config = ModelDbIOConfig(
+            operation="select",
+            connection_name="db",
+            query_template="SELECT 1",
+            timeout_ms=600000,  # Maximum
+        )
+        operation = ModelEffectOperation(
+            operation_name="slow_db",
+            io_config=io_config,
+        )
+        assert operation.io_config.timeout_ms == 600000
+
+    def test_kafka_timeout_boundaries(self) -> None:
+        """Test Kafka timeout_ms at min and max boundaries."""
+        # Minimum
+        min_config = ModelKafkaIOConfig(
+            topic="test-topic",
+            payload_template="{}",
+            timeout_ms=1000,
+        )
+        assert min_config.timeout_ms == 1000
+
+        # Maximum
+        max_config = ModelKafkaIOConfig(
+            topic="test-topic",
+            payload_template="{}",
+            timeout_ms=600000,
+        )
+        assert max_config.timeout_ms == 600000
+
+    def test_filesystem_timeout_boundaries(self) -> None:
+        """Test Filesystem timeout_ms at min and max boundaries."""
+        # Minimum
+        min_config = ModelFilesystemIOConfig(
+            file_path_template="/data/test.txt",
+            operation="read",
+            atomic=False,
+            timeout_ms=1000,
+        )
+        assert min_config.timeout_ms == 1000
+
+        # Maximum
+        max_config = ModelFilesystemIOConfig(
+            file_path_template="/data/test.txt",
+            operation="read",
+            atomic=False,
+            timeout_ms=600000,
+        )
+        assert max_config.timeout_ms == 600000
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(60)
+class TestLongTemplateStringEdgeCases:
+    """Tests for very long template strings near practical limits."""
+
+    def test_http_long_url_template(self) -> None:
+        """Test HTTP operation with very long URL template.
+
+        URLs can be very long due to query parameters and path segments.
+        This tests near practical limits (8KB URL is common browser limit).
+        """
+        # Create a long URL template with many placeholders and query params
+        long_path = "/users/${input.id}/" + "segment/" * 100 + "final"
+        # Add query parameters to make URL longer
+        query_params = "&".join(f"param_{i}=${{input.val_{i}}}" for i in range(50))
+        long_url = f"https://api.example.com{long_path}?{query_params}"
+
+        io_config = ModelHttpIOConfig(
+            url_template=long_url,
+            method="GET",
+        )
+        operation = ModelEffectOperation(
+            operation_name="long_url_op",
+            io_config=io_config,
+        )
+        assert len(operation.io_config.url_template) > 2000
+        assert operation.io_config.url_template == long_url
+
+    def test_http_long_body_template(self) -> None:
+        """Test HTTP operation with very long body template.
+
+        Large JSON payloads with many fields are common in APIs.
+        """
+        # Create a long body template with many fields
+        fields = ", ".join(f'"field_{i}": "${{input.value_{i}}}"' for i in range(500))
+        long_body = "{" + fields + "}"
+
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/users",
+            method="POST",
+            body_template=long_body,
+        )
+        operation = ModelEffectOperation(
+            operation_name="large_payload_op",
+            io_config=io_config,
+        )
+        assert len(operation.io_config.body_template) > 10000
+        assert '"field_0":' in operation.io_config.body_template
+        assert '"field_499":' in operation.io_config.body_template
+
+    def test_db_long_query_template(self) -> None:
+        """Test DB operation with very long query template.
+
+        Complex SQL queries with many columns and conditions are common.
+        """
+        # Create a long SELECT query with many columns
+        columns = ", ".join(f"column_{i}" for i in range(200))
+        conditions = " AND ".join(f"field_{i} = ${i + 1}" for i in range(50))
+        long_query = f"SELECT {columns} FROM large_table WHERE {conditions}"
+        params = [f"${{input.param_{i}}}" for i in range(50)]
+
+        io_config = ModelDbIOConfig(
+            operation="select",
+            connection_name="db",
+            query_template=long_query,
+            query_params=params,
+        )
+        operation = ModelEffectOperation(
+            operation_name="complex_query_op",
+            io_config=io_config,
+        )
+        assert len(operation.io_config.query_template) > 2000
+        assert "column_0" in operation.io_config.query_template
+        assert "column_199" in operation.io_config.query_template
+        assert len(operation.io_config.query_params) == 50
+
+    def test_kafka_long_payload_template(self) -> None:
+        """Test Kafka operation with very long payload template.
+
+        Large event payloads with nested structures are common in event-driven systems.
+        """
+        # Create a long JSON payload template
+        items = ", ".join(
+            f'{{"id": "${{input.item_{i}_id}}", "data": "${{input.item_{i}_data}}"}}'
+            for i in range(200)
+        )
+        long_payload = f'{{"type": "batch_event", "items": [{items}]}}'
+
+        io_config = ModelKafkaIOConfig(
+            topic="large-events",
+            payload_template=long_payload,
+        )
+        operation = ModelEffectOperation(
+            operation_name="large_event_op",
+            io_config=io_config,
+        )
+        assert len(operation.io_config.payload_template) > 10000
+
+    def test_filesystem_long_path_template(self) -> None:
+        """Test Filesystem operation with very long path template.
+
+        Deep directory structures with many path segments.
+        """
+        # Create a long file path with many segments
+        segments = "/".join(f"dir_{i}/${{input.segment_{i}}}" for i in range(30))
+        long_path = f"/data/archive/{segments}/final_file.json"
+
+        io_config = ModelFilesystemIOConfig(
+            file_path_template=long_path,
+            operation="read",
+            atomic=False,
+        )
+        operation = ModelEffectOperation(
+            operation_name="deep_path_op",
+            io_config=io_config,
+        )
+        assert len(operation.io_config.file_path_template) > 500
+        assert "dir_0" in operation.io_config.file_path_template
+        assert "dir_29" in operation.io_config.file_path_template
+
+    def test_long_operation_name_at_boundary(self) -> None:
+        """Test operation_name at maximum length boundary (100 chars)."""
+        long_name = "a" * 100  # max_length=100
+
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+        )
+        operation = ModelEffectOperation(
+            operation_name=long_name,
+            io_config=io_config,
+        )
+        assert len(operation.operation_name) == 100
+
+    def test_operation_name_above_maximum_rejected(self) -> None:
+        """Test that operation_name above maximum (100 chars) is rejected."""
+        from pydantic import ValidationError
+
+        long_name = "a" * 101  # Above max_length=100
+
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectOperation(
+                operation_name=long_name,
+                io_config=io_config,
+            )
+        assert "operation_name" in str(exc_info.value)
+
+    def test_long_description_at_boundary(self) -> None:
+        """Test description at maximum length boundary (500 chars)."""
+        long_desc = "a" * 500  # max_length=500
+
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+        )
+        operation = ModelEffectOperation(
+            operation_name="test_op",
+            description=long_desc,
+            io_config=io_config,
+        )
+        assert len(operation.description) == 500
+
+    def test_description_above_maximum_rejected(self) -> None:
+        """Test that description above maximum (500 chars) is rejected."""
+        from pydantic import ValidationError
+
+        long_desc = "a" * 501  # Above max_length=500
+
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectOperation(
+                operation_name="test_op",
+                description=long_desc,
+                io_config=io_config,
+            )
+        assert "description" in str(exc_info.value)

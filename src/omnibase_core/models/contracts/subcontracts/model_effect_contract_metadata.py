@@ -14,6 +14,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.constants.constants_effect_limits import EFFECT_AUTHOR_MAX_LENGTH
+
 __all__ = ["ModelEffectContractMetadata"]
 
 
@@ -39,7 +41,7 @@ class ModelEffectContractMetadata(BaseModel):
     updated_at: str | None = Field(
         default=None, description="ISO-8601 last update timestamp"
     )
-    author: str | None = Field(default=None, max_length=100)
+    author: str | None = Field(default=None, max_length=EFFECT_AUTHOR_MAX_LENGTH)
     tags: list[str] = Field(default_factory=list, description="Searchable tags")
 
     # Contract hash for tooling and RSD

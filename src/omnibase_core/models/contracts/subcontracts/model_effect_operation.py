@@ -17,6 +17,12 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants.constants_effect_idempotency import IDEMPOTENCY_DEFAULTS
+from omnibase_core.constants.constants_effect_limits import (
+    EFFECT_OPERATION_DESCRIPTION_MAX_LENGTH,
+    EFFECT_OPERATION_NAME_MAX_LENGTH,
+    EFFECT_TIMEOUT_MAX_MS,
+    EFFECT_TIMEOUT_MIN_MS,
+)
 
 from .model_effect_circuit_breaker import ModelEffectCircuitBreaker
 from .model_effect_io_configs import (
@@ -43,8 +49,12 @@ class ModelEffectOperation(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     # Identity
-    operation_name: str = Field(..., min_length=1, max_length=100)
-    description: str | None = Field(default=None, max_length=500)
+    operation_name: str = Field(
+        ..., min_length=1, max_length=EFFECT_OPERATION_NAME_MAX_LENGTH
+    )
+    description: str | None = Field(
+        default=None, max_length=EFFECT_OPERATION_DESCRIPTION_MAX_LENGTH
+    )
 
     # Idempotency - CRITICAL for retry safety
     idempotent: bool | None = Field(
@@ -76,8 +86,8 @@ class ModelEffectOperation(BaseModel):
     # Operation-level timeout (guards against retry stacking)
     operation_timeout_ms: int | None = Field(
         default=None,
-        ge=1000,
-        le=600000,
+        ge=EFFECT_TIMEOUT_MIN_MS,
+        le=EFFECT_TIMEOUT_MAX_MS,
         description="Overall operation timeout including all retries. "
         "If None, defaults to 60000ms (60s). "
         "Prevents retry stacking from exceeding intended limits.",

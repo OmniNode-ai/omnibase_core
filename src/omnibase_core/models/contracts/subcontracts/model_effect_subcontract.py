@@ -19,6 +19,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.constants.constants_effect_limits import (
+    EFFECT_MAX_OPERATIONS,
+    EFFECT_SUBCONTRACT_DESCRIPTION_MAX_LENGTH,
+    EFFECT_SUBCONTRACT_NAME_MAX_LENGTH,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -61,11 +66,15 @@ class ModelEffectSubcontract(BaseModel):
     )
 
     # Identity
-    subcontract_name: str = Field(..., min_length=1, max_length=100)
+    subcontract_name: str = Field(
+        ..., min_length=1, max_length=EFFECT_SUBCONTRACT_NAME_MAX_LENGTH
+    )
     version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0)
     )
-    description: str | None = Field(default=None, max_length=1000)
+    description: str | None = Field(
+        default=None, max_length=EFFECT_SUBCONTRACT_DESCRIPTION_MAX_LENGTH
+    )
 
     # Execution semantics - EXPLICIT in contract
     execution_mode: Literal["sequential_abort", "sequential_continue"] = Field(
@@ -87,7 +96,9 @@ class ModelEffectSubcontract(BaseModel):
     )
 
     # Operations (sequential execution per execution_mode)
-    operations: list[ModelEffectOperation] = Field(..., min_length=1, max_length=50)
+    operations: list[ModelEffectOperation] = Field(
+        ..., min_length=1, max_length=EFFECT_MAX_OPERATIONS
+    )
 
     # Global resilience defaults
     default_retry_policy: ModelEffectRetryPolicy = Field(
@@ -222,26 +233,45 @@ class ModelEffectSubcontract(BaseModel):
         transactions. Either use read_committed (where retries are safe) or disable
         retry for SELECT operations.
         """
+        # Early exit: no transaction means no snapshot semantics to enforce
         if not self.transaction.enabled:
             return self
 
         isolation = self.transaction.isolation_level
-        if isolation in ["read_uncommitted", "read_committed"]:
-            return self  # Safe to retry - each query sees fresh data
 
-        # Check for SELECT operations with retry enabled in strict isolation
+        # Early exit: read_uncommitted/read_committed are safe - each query sees fresh data
+        if isolation in ("read_uncommitted", "read_committed"):
+            return self
+
+        # At this point: transaction enabled with strict isolation (repeatable_read/serializable)
+        # Check for SELECT operations with retry enabled
         for op in self.operations:
-            # Use isinstance for type narrowing on discriminated union
-            if op.handler_type == "db" and isinstance(op.io_config, ModelDbIOConfig):
-                if op.io_config.operation == "select":
-                    retry = op.retry_policy or self.default_retry_policy
-                    if retry.enabled and retry.max_retries > 0:
-                        raise ModelOnexError(
-                            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                            message=f"Operation '{op.operation_name}' is a SELECT with retry enabled "
-                            f"inside a {isolation} transaction. This violates snapshot semantics. "
-                            f"Either disable retry for this operation or use read_committed isolation.",
-                        )
+            # Skip non-DB operations (only DB has SELECT)
+            if op.handler_type != "db":
+                continue
+
+            # Type narrow for discriminated union
+            if not isinstance(op.io_config, ModelDbIOConfig):
+                continue
+
+            # Skip non-SELECT operations
+            if op.io_config.operation != "select":
+                continue
+
+            # Get effective retry policy (operation-level overrides default)
+            retry = op.retry_policy or self.default_retry_policy
+
+            # Skip if retry is disabled or max_retries is 0
+            if not retry.enabled or retry.max_retries <= 0:
+                continue
+
+            # Found violation: SELECT with retry in strict isolation
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Operation '{op.operation_name}' is a SELECT with retry enabled "
+                f"inside a {isolation} transaction. This violates snapshot semantics. "
+                f"Either disable retry for this operation or use read_committed isolation.",
+            )
 
         return self
 

@@ -267,7 +267,7 @@ def create_order_processing_subcontract() -> ModelEffectSubcontract:
             ModelEffectOperation(
                 operation_name="create_order",
                 description="Insert new order record",
-                idempotent=False,  # Explicit - INSERT creates new row
+                idempotent=False,  # Non-idempotent by design - INSERT creates new row each time
                 io_config=ModelDbIOConfig(
                     handler_type=EnumEffectHandlerType.DB,
                     operation="insert",
