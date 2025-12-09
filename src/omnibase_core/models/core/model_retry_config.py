@@ -1,11 +1,10 @@
-import time
+import random
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.utils.util_hash import deterministic_jitter
 
 
 class ModelRetryConfig(BaseModel):
@@ -106,10 +105,12 @@ class ModelRetryConfig(BaseModel):
             delay = self.backoff_seconds * attempt_number
 
         # Add jitter to prevent thundering herd
-        # Uses hash-based jitter seeded by current time - deterministic per seed
-        # but not reproducible across calls since time.time() changes each call
+        # Uses random.random() for better distribution and uncorrelated retries
+        # across concurrent clients (avoids time-based correlation)
         if include_jitter:
-            jitter = deterministic_jitter(str(time.time()), delay, jitter_factor=0.1)
+            # Jitter in range [-jitter_factor * delay, +jitter_factor * delay]
+            jitter_factor = 0.1
+            jitter = delay * jitter_factor * (2.0 * random.random() - 1.0)
             delay += jitter
 
         # Type narrowing: ensure float return

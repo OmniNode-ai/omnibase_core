@@ -22,6 +22,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.service.model_service_health import ModelServiceHealth
 
 
+@pytest.mark.integration
 class TestEnumModelIntegration:
     """Test integration between enums and models."""
 
@@ -93,6 +94,7 @@ class TestEnumModelIntegration:
         assert workflow_data["execution_status"] != EnumExecutionStatus.COMPLETED
 
 
+@pytest.mark.integration
 class TestErrorHandlingIntegration:
     """Test error handling across multiple modules."""
 
@@ -163,6 +165,7 @@ class TestErrorHandlingIntegration:
         )
 
 
+@pytest.mark.integration
 class TestSemVerIntegration:
     """Test SemVer integration with service models."""
 
@@ -225,6 +228,7 @@ class TestSemVerIntegration:
         assert services[0].version < services[2].version
 
 
+@pytest.mark.integration
 class TestDataFlowIntegration:
     """Test data flow across multiple modules."""
 
@@ -295,6 +299,7 @@ class TestDataFlowIntegration:
         assert workflow_steps[3][1] == EnumActionCategory.EXECUTION
 
 
+@pytest.mark.integration
 class TestConcurrentOperations:
     """Test concurrent operations across modules."""
 
@@ -362,6 +367,7 @@ class TestConcurrentOperations:
         assert excellent_count + good_count >= 8
 
 
+@pytest.mark.integration
 class TestComplexWorkflows:
     """Test complex multi-step workflows."""
 
@@ -494,6 +500,7 @@ class TestComplexWorkflows:
             )
 
 
+@pytest.mark.integration
 class TestStateTransitions:
     """Test state transitions across modules."""
 

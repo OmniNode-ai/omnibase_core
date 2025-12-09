@@ -17,6 +17,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.nodes.node_effect import NodeEffect
 
 
+@pytest.mark.integration
 class TestRollbackFailureIntegration:
     """Integration tests for rollback failure scenarios."""
 
