@@ -206,7 +206,7 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # This allows callers to override subcontract defaults at runtime.
         default_retry = self.effect_subcontract.default_retry_policy
         default_cb = self.effect_subcontract.default_circuit_breaker
-        default_tx = self.effect_subcontract.default_transaction_config
+        default_tx = self.effect_subcontract.transaction
 
         # Build update dict with subcontract defaults, respecting existing input values
         input_updates: dict[str, object] = {}
@@ -214,7 +214,7 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # Retry policy: use subcontract defaults unless input explicitly differs
         # We check against ModelEffectInput defaults to detect caller overrides
         if input_data.retry_enabled and input_data.max_retries == 3:  # default value
-            input_updates["max_retries"] = default_retry.max_attempts
+            input_updates["max_retries"] = default_retry.max_retries
         if input_data.retry_enabled and input_data.retry_delay_ms == 1000:  # default
             input_updates["retry_delay_ms"] = default_retry.base_delay_ms
 
@@ -251,9 +251,10 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
 
                 # Merge operation-level overrides with subcontract defaults
                 # Operation retry_policy/circuit_breaker override subcontract defaults
+                # Note: transaction_config is subcontract-level only (not per-operation)
                 op_retry = op.retry_policy or default_retry
                 op_cb = op.circuit_breaker or default_cb
-                op_tx = op.transaction_config or default_tx
+                op_tx = default_tx
 
                 op_dict: dict[str, object] = {
                     "operation_name": op.operation_name,
