@@ -112,6 +112,14 @@ class NamingConventionValidator:
         "models/mixins/": [
             "MixinServiceRegistryEntry",  # Dataclass for service registry entries
         ],
+        # CONTRACT INFRASTRUCTURE: Contract hash registry for integrity verification
+        # Location: contracts/ - Contract management infrastructure
+        # Rationale: ContractHashRegistry is a stateful registry service for managing contract hashes,
+        #            not a Protocol (which would require Protocol* prefix) or a Model (Pydantic data class).
+        #            Similar to ServiceRegistry in container/, this is infrastructure for contract integrity.
+        "contracts/": [
+            "ContractHashRegistry",  # Registry service for contract hash management
+        ],
     }
 
     @staticmethod
