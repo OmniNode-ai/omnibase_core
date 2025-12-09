@@ -636,6 +636,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             # Check cache first if enabled
             # Measure cache lookup time separately for observability
             cache_lookup_time_ms = 0.0
+            cache_key: str | None = None
             if input_data.cache_enabled:
                 cache_lookup_start = time.perf_counter()
                 cache_key = self._generate_cache_key(input_data)
@@ -653,9 +654,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                         parallel_execution_used=False,
                         metadata={"cache_retrieval": True},
                     )
-            else:
-                # Generate cache key for potential later use (cache storing on miss)
-                cache_key = self._generate_cache_key(input_data)
+            # No else branch needed - cache_key remains None when cache_enabled=False
 
             # Execute computation
             supports_parallel = self._supports_parallel_execution(input_data)
@@ -706,8 +705,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                     },
                 )
 
-            # Cache result if enabled
-            if input_data.cache_enabled:
+            # Cache result if enabled (cache_key is always set when cache_enabled=True)
+            if input_data.cache_enabled and cache_key is not None:
                 self.computation_cache.put(cache_key, result, self.cache_ttl_minutes)
 
             # Update metrics
