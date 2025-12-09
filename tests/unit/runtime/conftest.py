@@ -38,7 +38,6 @@ Related:
 """
 
 from datetime import UTC, datetime
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -153,8 +152,6 @@ def mock_runtime() -> MagicMock:
             instance.set_runtime(mock_runtime)  # Correct
             instance._runtime = mock_runtime     # Avoid - bypasses validation
     """
-    from unittest.mock import AsyncMock
-
     runtime = MagicMock()
     # Default return value for execute_with_handler (async method)
     runtime.execute_with_handler = AsyncMock(
@@ -330,8 +327,10 @@ def mock_handler_with_error() -> MagicMock:
     handler.execute = AsyncMock(side_effect=RuntimeError("Handler execution failed"))
 
     handler.describe.return_value = {
-        "type": EnumHandlerType.HTTP.value,
-        "test": True,
+        "name": "mock_http_error_handler",
+        "version": ModelSemVer(major=1, minor=0, patch=0),
+        "description": "Mock handler that simulates execution errors",
+        "capabilities": ["test", "error"],
         "error_mode": True,
     }
 

@@ -26,8 +26,8 @@ Usage:
             # Handler implementation
             ...
 
-        def describe(self) -> dict[str, Any]:
-            return {"name": "my_handler", "version": "1.0.0"}
+        def describe(self) -> TypedDictHandlerMetadata:
+            return {"name": "my_handler", "version": ModelSemVer(major=1, minor=0, patch=0)}
 
 Related:
     - OMN-226: ProtocolHandler interface definition

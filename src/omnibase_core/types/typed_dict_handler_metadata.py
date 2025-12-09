@@ -21,6 +21,8 @@ from typing import TYPE_CHECKING, TypedDict
 if TYPE_CHECKING:
     from omnibase_core.models.primitives.model_semver import ModelSemVer
 
+__all__ = ["TypedDictHandlerMetadata"]
+
 
 class TypedDictHandlerMetadata(TypedDict, total=False):
     """TypedDict for handler metadata returned by ProtocolHandler.describe().

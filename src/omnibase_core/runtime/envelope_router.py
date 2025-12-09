@@ -63,11 +63,34 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         This is the minimal viable implementation (OMN-228). Lifecycle methods
         (initialize, shutdown) and health checks are deferred to Beta.
 
+    Registration Semantics:
+        Handlers and nodes have different registration semantics:
+        - **Handlers**: Allow replacement (last-write-wins). Registering a handler
+          with the same handler_type silently replaces the previous handler. This
+          enables handler hot-swapping and testing patterns.
+        - **Nodes**: Raise on duplicate slugs. Node slugs must be unique within
+          the runtime. Attempting to register a second node with the same slug
+          raises ModelOnexError. This prevents accidental overwriting of node
+          configurations.
+
     Thread Safety:
         WARNING: EnvelopeRouter is NOT thread-safe. The handler and node registries
         use dict without synchronization. For concurrent access:
-        - Use external locking, or
-        - Create separate EnvelopeRouter instances per thread
+        - Use external locking (e.g., threading.Lock around register/route calls), or
+        - Create separate EnvelopeRouter instances per thread/coroutine
+        - Consider using asyncio.Lock for async contexts
+
+        Example with external locking:
+            .. code-block:: python
+
+                import threading
+                lock = threading.Lock()
+
+                with lock:
+                    runtime.register_handler(handler)
+
+        As per coding guidelines: "Never share node instances across threads
+        without explicit synchronization."
 
     Example:
         .. code-block:: python

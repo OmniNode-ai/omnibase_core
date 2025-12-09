@@ -30,12 +30,10 @@ Related:
 """
 
 from datetime import UTC, datetime
-from typing import Any
 from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
-from pydantic import ValidationError
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
@@ -169,7 +167,20 @@ class TestEnvelopeRouterRegisterHandler:
         # Register second handler with same type (should replace)
         runtime.register_handler(mock_handler_alternate)
 
-        # Both handlers have same type - replacement should have occurred
+        # Verify replacement by routing and checking which handler is returned
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=ModelSemVer(major=1, minor=0, patch=0),
+            correlation_id=uuid4(),
+            source_node="test",
+            operation="TEST",
+            payload={},
+            timestamp=datetime.now(UTC),
+            handler_type=mock_handler.handler_type,
+        )
+        result = runtime.route_envelope(envelope)
+        # Alternate handler should have 'alternate' key in describe()
+        assert result["handler"].describe().get("alternate") is True
 
     def test_register_handler_none_raises_error(self) -> None:
         """
@@ -700,8 +711,20 @@ class TestEnvelopeRouterEdgeCases:
         runtime.register_handler(mock_handler_database)  # DATABASE
         runtime.register_handler(mock_handler_kafka)  # KAFKA
 
-        # All handlers should be registered (verify via routing)
-        # This is an indirect verification - full verification in route tests
+        # Verify each handler type can be routed
+        for handler in [mock_handler, mock_handler_database, mock_handler_kafka]:
+            envelope = ModelOnexEnvelope(
+                envelope_id=uuid4(),
+                envelope_version=ModelSemVer(major=1, minor=0, patch=0),
+                correlation_id=uuid4(),
+                source_node="test",
+                operation="TEST",
+                payload={},
+                timestamp=datetime.now(UTC),
+                handler_type=handler.handler_type,
+            )
+            result = runtime.route_envelope(envelope)
+            assert result["handler"] is handler
 
     @pytest.mark.asyncio
     async def test_handler_execution_error_returns_error_envelope(

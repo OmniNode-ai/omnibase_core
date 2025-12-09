@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from omnibase_core.enums.enum_handler_type import EnumHandlerType
     from omnibase_core.protocols.runtime.protocol_handler import ProtocolHandler
 
+__all__ = ["TypedDictRoutingInfo"]
+
 
 class TypedDictRoutingInfo(TypedDict):
     """TypedDict for envelope routing information returned by route_envelope.
