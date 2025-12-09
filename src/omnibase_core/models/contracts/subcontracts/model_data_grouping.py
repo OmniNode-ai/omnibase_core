@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Data Grouping Model - ONEX Standards Compliant.
+Data Grouping Model.
 
 Individual model for data grouping configuration.
 Part of the Aggregation Subcontract Model family.

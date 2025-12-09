@@ -1,5 +1,5 @@
 """
-Resource Usage Metric Model - ONEX Standards Compliant.
+Resource Usage Metric Model.
 
 Strongly-typed model for resource usage metrics.
 Replaces dict[str, float] with proper type safety and validation.

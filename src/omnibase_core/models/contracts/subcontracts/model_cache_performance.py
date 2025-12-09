@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Cache Performance Model - ONEX Standards Compliant.
+Cache Performance Model.
 
 Model for cache performance configuration in the ONEX caching system.
 """

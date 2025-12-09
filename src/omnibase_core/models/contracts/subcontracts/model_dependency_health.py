@@ -1,5 +1,5 @@
 """
-Dependency Health Model - ONEX Standards Compliant.
+Dependency Health Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 

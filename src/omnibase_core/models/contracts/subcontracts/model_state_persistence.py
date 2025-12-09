@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-State Persistence Model - ONEX Standards Compliant.
+State Persistence Model.
 
 Individual model for state persistence configuration.
 Part of the State Management Subcontract Model family.

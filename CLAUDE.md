@@ -762,7 +762,7 @@ class MyNode(NodeCoreBase, MixinDiscoveryResponder):
 
 ### Node Building Guide ⭐ CRITICAL
 
-**Recommended starting point for developers and AI agents:**
+**Recommended starting point for developers:**
 
 1. [What is a Node?](docs/guides/node-building/01_WHAT_IS_A_NODE.md) (5 min)
 2. [Node Types](docs/guides/node-building/02_NODE_TYPES.md) (10 min)

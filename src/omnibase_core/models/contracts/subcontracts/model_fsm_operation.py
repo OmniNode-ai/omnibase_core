@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-FSM Operation Model - ONEX Standards Compliant.
+FSM Operation Model.
 
 Individual model for FSM operation specification.
 Part of the FSM Subcontract Model family.

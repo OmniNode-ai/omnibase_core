@@ -6,7 +6,7 @@ from pydantic import Field, field_validator
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
-Filter Conditions Model - ONEX Standards Compliant.
+Filter Conditions Model.
 
 Strongly-typed filter conditions model that replaces dict[str, str | int | float | bool] patterns
 with proper Pydantic validation and type safety.

@@ -17,7 +17,7 @@ Provides dedicated Pydantic models for all ONEX subcontract patterns:
 These models are composed into node contracts via Union types and optional fields,
 providing clean separation between node logic and subcontract functionality.
 
-ONEX Compliance: Strong typing with zero tolerance for Any types.
+Strong typing with comprehensive type safety.
 """
 
 # Re-export constant from canonical location

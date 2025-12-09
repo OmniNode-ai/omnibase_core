@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Cache Distribution Model - ONEX Standards Compliant.
+Cache Distribution Model.
 
 Model for distributed caching configuration in the ONEX caching system.
 """

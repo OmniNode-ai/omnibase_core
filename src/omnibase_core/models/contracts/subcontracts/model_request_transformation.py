@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Request Transformation Model - ONEX Standards Compliant.
+Request Transformation Model.
 
 Individual model for request transformation configuration.
 Part of the Routing Subcontract Model family.

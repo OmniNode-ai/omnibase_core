@@ -1,7 +1,7 @@
 """
 Timeline Event Type Enumeration
 
-ONEX-compliant enumeration for unified timeline dashboard event types.
+ONEX-compatible enumeration for unified timeline dashboard event types.
 Supports user messages, tool executions, and Claude responses in chronological timeline.
 """
 

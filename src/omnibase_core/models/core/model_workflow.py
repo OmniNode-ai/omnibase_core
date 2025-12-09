@@ -6,7 +6,7 @@ from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
-Core Workflow Model - ONEX Standards Compliant.
+Core Workflow Model.
 
 Base model for workflow definitions and execution tracking in the ONEX system.
 Used across the workflow coordination, execution, and monitoring subsystems.

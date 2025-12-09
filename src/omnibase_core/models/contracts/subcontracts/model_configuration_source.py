@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Configuration Source Model - ONEX Standards Compliant.
+Configuration Source Model.
 
 Model for configuration source specifications in the ONEX configuration management system.
 """

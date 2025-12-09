@@ -1,5 +1,5 @@
 """
-ONEX-compliant device type enumeration.
+ONEX-compatible device type enumeration.
 
 Defines device types for distributed agent orchestration
 and deployment strategies.

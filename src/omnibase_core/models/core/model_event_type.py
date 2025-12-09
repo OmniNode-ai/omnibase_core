@@ -62,7 +62,7 @@ class ModelEventType(BaseModel):
         **kwargs: Any,
     ) -> "ModelEventType":
         """
-        ONEX-compliant factory method using Pydantic model_validate.
+        ONEX-compatible factory method using Pydantic model_validate.
 
         Replaces from_contract_event() with proper validation.
         """
@@ -116,7 +116,7 @@ def create_event_type_from_registry(
     description: str | None = None,
 ) -> ModelEventType:
     """
-    ONEX-compliant event type creation with registry lookup.
+    ONEX-compatible event type creation with registry lookup.
 
     Replaces create_event_type_from_string() with proper validation.
     Uses Pydantic validation throughout.
@@ -128,7 +128,7 @@ def create_event_type_from_registry(
     if existing:
         return existing
 
-    # Create event type using ONEX-compliant validation
+    # Create event type using ONEX-compatible validation
     validated_data = {
         "event_name": event_name,
         "namespace": namespace,

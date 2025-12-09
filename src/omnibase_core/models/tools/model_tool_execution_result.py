@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Simple Tool Execution Result Model - ONEX Standards Compliant.
+Simple Tool Execution Result Model.
 
 Domain-specific result model for tool execution results.
 Replaces the generic ModelExecutionResult with a focused tool-specific model.

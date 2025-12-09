@@ -1,5 +1,5 @@
 """
-Compensation Plan Model - ONEX Standards Compliant.
+Compensation Plan Model.
 
 Strongly-typed compensation plan model that replaces dict[str, str | list[str]] patterns
 with proper Pydantic validation and type safety for saga pattern workflows.

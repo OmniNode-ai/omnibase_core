@@ -1,4 +1,4 @@
-"""ONEX-compliant Registry Health Report Model.
+"""ONEX-compatible Registry Health Report Model.
 
 This module provides comprehensive registry health reporting with business intelligence,
 aggregated analytics, and operational insights for ONEX registry systems.

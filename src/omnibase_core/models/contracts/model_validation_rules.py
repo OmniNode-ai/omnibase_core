@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Validation Rules Model - ONEX Standards Compliant.
+Validation Rules Model.
 
 Contract validation rules and constraint definitions providing:
 - Runtime validation rules for input/output models

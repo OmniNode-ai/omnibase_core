@@ -1,5 +1,5 @@
 """
-Runtime Host Contract Model - ONEX Standards Compliant.
+Runtime Host Contract Model.
 
 Main contract model for RuntimeHost configuration combining:
 - Handler configurations for I/O operations

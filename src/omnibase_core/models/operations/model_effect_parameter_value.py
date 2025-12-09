@@ -18,7 +18,7 @@ class ModelEffectParameterValue(BaseModel):
     Discriminated union for effect parameter values.
 
     Replaces Union[TargetSystemParameter, OperationModeParameter, ...] with
-    ONEX-compliant discriminated union pattern.
+    ONEX-compatible discriminated union pattern.
     """
 
     parameter_type: EnumEffectParameterType = Field(

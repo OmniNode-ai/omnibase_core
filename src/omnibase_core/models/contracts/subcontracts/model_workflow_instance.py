@@ -3,7 +3,7 @@ from pydantic import Field
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
-Workflow Instance Model - ONEX Standards Compliant.
+Workflow Instance Model.
 
 Model for workflow execution instances in the ONEX workflow coordination system.
 """

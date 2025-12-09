@@ -4,7 +4,7 @@ Tests for MixinHybridExecution - comprehensive conditional branch coverage.
 Tests all execution paths, mode selection branches, complexity calculations,
 and workflow execution scenarios for the hybrid execution mixin.
 
-ZERO TOLERANCE: No Any types allowed.
+Comprehensive type safety testing required.
 
 Note on Event Loop Mocking:
     These tests use manual MagicMock() creation for event loops instead of the

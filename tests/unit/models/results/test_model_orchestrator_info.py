@@ -632,7 +632,7 @@ class TestModelOrchestratorInfoSerialization:
 
 
 class TestModelOrchestratorInfoTypeSafety:
-    """Test type safety - ZERO TOLERANCE for Any types."""
+    """Test type safety - comprehensive testing required."""
 
     def test_no_any_types_in_custom_data(self):
         """Test that custom_data uses JsonSerializable, not Any."""

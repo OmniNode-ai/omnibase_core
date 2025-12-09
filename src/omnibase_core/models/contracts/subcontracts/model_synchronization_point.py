@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Synchronization Point Model - ONEX Standards Compliant.
+Synchronization Point Model.
 
 Model for synchronization points in workflow execution for the ONEX workflow coordination system.
 """

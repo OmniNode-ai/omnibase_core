@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Agent Status Type Enum - ONEX Standards Compliant.
+Agent Status Type Enum.
 
 Strongly-typed enumeration for agent status types.
 """

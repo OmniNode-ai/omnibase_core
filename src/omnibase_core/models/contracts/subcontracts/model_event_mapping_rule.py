@@ -1,5 +1,5 @@
 """
-Event Mapping Rule Model - ONEX Standards Compliant.
+Event Mapping Rule Model.
 
 Strongly-typed model for event field mapping rules.
 Replaces dict[str, str] with proper type safety.

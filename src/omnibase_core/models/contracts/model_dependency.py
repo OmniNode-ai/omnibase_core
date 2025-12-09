@@ -346,6 +346,6 @@ class ModelDependency(BaseModel):
     )
 
 
-# ONEX-compliant dependency model - no factory functions or custom serialization
+# ONEX-compatible dependency model - no factory functions or custom serialization
 # Use direct instantiation: ModelDependency(name="...", module="...")
 # Use model_dump() for serialization, not custom to_dict() methods

@@ -1,5 +1,5 @@
 """
-Effect IO Configuration Models - ONEX Standards Compliant.
+Effect IO Configuration Models.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 

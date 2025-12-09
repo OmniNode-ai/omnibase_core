@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Configuration Validation Model - ONEX Standards Compliant.
+Configuration Validation Model.
 
 Model for configuration validation rules and constraints in the ONEX configuration management system.
 """

@@ -1,5 +1,5 @@
 """
-Dependency Type Enum - ONEX Standards Compliant.
+Dependency Type Enum.
 
 Dependency type classification for ONEX contract validation.
 """

@@ -5,7 +5,7 @@ from pydantic import Field, field_validator
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
-Trigger Mappings Model - ONEX Standards Compliant.
+Trigger Mappings Model.
 
 Strongly-typed trigger mappings model that replaces dict[str, str] patterns
 with proper Pydantic validation and type safety.

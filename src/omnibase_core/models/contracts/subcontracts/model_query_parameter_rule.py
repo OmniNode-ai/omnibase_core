@@ -1,5 +1,5 @@
 """
-Query Parameter Rule Model - ONEX Standards Compliant.
+Query Parameter Rule Model.
 
 Strongly-typed model for query parameter transformation rules.
 Replaces dict[str, str] with proper type safety.

@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-State Validation Model - ONEX Standards Compliant.
+State Validation Model.
 
 Individual model for state validation configuration.
 Part of the State Management Subcontract Model family.

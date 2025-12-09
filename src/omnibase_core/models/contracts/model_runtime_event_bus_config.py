@@ -1,5 +1,5 @@
 """
-Event Bus Configuration Model - ONEX Standards Compliant.
+Event Bus Configuration Model.
 
 Event bus configuration for RuntimeHost contract.
 MVP implementation with kind only. Advanced event bus configuration

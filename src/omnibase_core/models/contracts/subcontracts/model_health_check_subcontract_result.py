@@ -1,5 +1,5 @@
 """
-Health Check Subcontract Result Model - ONEX Standards Compliant.
+Health Check Subcontract Result Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 

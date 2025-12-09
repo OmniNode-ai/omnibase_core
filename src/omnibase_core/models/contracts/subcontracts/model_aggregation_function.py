@@ -1,5 +1,5 @@
 """
-Aggregation Function Model - ONEX Standards Compliant.
+Aggregation Function Model.
 
 Individual model for aggregation function definitions and configurations.
 Part of the Aggregation Subcontract Model family.

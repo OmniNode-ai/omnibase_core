@@ -1,5 +1,5 @@
 """
-Environment Validation Rule Model - ONEX Standards Compliant.
+Environment Validation Rule Model.
 
 Strongly-typed model for environment-specific validation rules.
 Replaces dict[str, str] nested structures with proper type safety.

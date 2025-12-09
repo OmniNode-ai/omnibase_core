@@ -1,5 +1,5 @@
 """
-Lifecycle Subcontract Model - ONEX Standards Compliant.
+Lifecycle Subcontract Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 

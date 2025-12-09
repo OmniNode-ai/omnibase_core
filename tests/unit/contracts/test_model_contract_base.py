@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ModelContractBase Comprehensive Unit Tests - Zero Tolerance Testing
+ModelContractBase Comprehensive Unit Tests
 
 This module provides comprehensive test coverage for ModelContractBase,
 the abstract foundation for all contract models in the ONEX framework.
@@ -11,7 +11,7 @@ Coverage Requirements:
 - Comprehensive edge case and boundary condition testing
 - Memory safety validation with large data structures
 
-ZERO TOLERANCE: Every code path must be tested thoroughly.
+Comprehensive testing required for all code paths.
 """
 
 import pytest
@@ -484,7 +484,7 @@ class TestModelContractBase:
     # =================== MODEL CONFIGURATION TESTS ===================
 
     def test_model_config_extra_fields_rejected(self):
-        """Test that extra fields are rejected per ZERO TOLERANCE model configuration."""
+        """Test that extra fields are rejected per strict model configuration."""
         data_with_extra = {
             **self.minimal_valid_data,
             "extra_unknown_field": "should_be_rejected",

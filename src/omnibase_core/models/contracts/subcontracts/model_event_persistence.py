@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Event Persistence Model - ONEX Standards Compliant.
+Event Persistence Model.
 
 Model for event persistence configuration in the ONEX event-driven architecture system.
 """

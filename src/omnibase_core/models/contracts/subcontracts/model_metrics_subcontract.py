@@ -1,5 +1,5 @@
 """
-Metrics Subcontract Model - ONEX Standards Compliant.
+Metrics Subcontract Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 

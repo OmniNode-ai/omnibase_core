@@ -1,5 +1,5 @@
 """
-Component Health Detail Model - ONEX Standards Compliant.
+Component Health Detail Model.
 
 Strongly-typed model for component health details.
 Replaces dict[str, str] with proper type safety.

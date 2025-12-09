@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 class ModelServiceDiscoveryManager(BaseModel):
     """
-    ONEX-compliant model for service discovery manager configuration.
+    ONEX-compatible model for service discovery manager configuration.
 
     Represents the configuration for service discovery with Consul integration,
     static configuration fallback, and service caching capabilities.

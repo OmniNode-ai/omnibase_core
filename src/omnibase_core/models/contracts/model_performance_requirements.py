@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Performance Requirements Model - ONEX Standards Compliant.
+Performance Requirements Model.
 
 Performance SLA specifications for contract-driven behavior providing:
 - Measurable performance targets and resource constraints

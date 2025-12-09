@@ -1,5 +1,5 @@
 """
-Workflow Step Model - ONEX Standards Compliant.
+Workflow Step Model.
 
 Strongly-typed workflow step model that replaces dict[str, str | int | bool] patterns
 with proper Pydantic validation and type safety.

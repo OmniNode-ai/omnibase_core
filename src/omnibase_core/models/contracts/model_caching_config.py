@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Caching Configuration Model - ONEX Standards Compliant.
+Caching Configuration Model.
 
 Caching strategy and policies defining caching behavior for expensive computations
 with TTL, size limits, and eviction policies.

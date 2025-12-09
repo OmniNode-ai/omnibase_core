@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Route Definition Model - ONEX Standards Compliant.
+Route Definition Model.
 
 Individual model for route definition.
 Part of the Routing Subcontract Model family.

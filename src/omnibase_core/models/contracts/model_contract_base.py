@@ -1,13 +1,5 @@
 """
-Contract Model Base - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
-
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
-- Breaking changes require major version bump
+Contract Model Base.
 
 Abstract foundation for 4-node architecture contract models providing:
 - Core contract identification and versioning
@@ -16,7 +8,7 @@ Abstract foundation for 4-node architecture contract models providing:
 - Performance requirements and lifecycle management
 - Validation rules and constraint definitions
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+This implementation does not use Any types.
 """
 
 from abc import ABC, abstractmethod

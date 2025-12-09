@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-FSM State Transition Model - ONEX Standards Compliant.
+FSM State Transition Model.
 
 Individual model for FSM state transition specification.
 Part of the FSM Subcontract Model family.

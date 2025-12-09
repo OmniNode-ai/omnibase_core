@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Thunk Emission Configuration Model - ONEX Standards Compliant.
+Thunk Emission Configuration Model.
 
 Defines thunk creation, emission timing, and deferred
 execution strategies for workflow coordination.

@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Workflow Configuration Model - ONEX Standards Compliant.
+Workflow Configuration Model.
 
 Defines workflow execution patterns, state persistence,
 and coordination strategies for complex workflows.

@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Output Transformation Configuration Model - ONEX Standards Compliant.
+Output Transformation Configuration Model.
 
 Output transformation and formatting rules defining transformation logic,
 formatting rules, and post-processing configuration for output data.

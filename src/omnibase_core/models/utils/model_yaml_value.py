@@ -4,8 +4,6 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
 YAML-serializable data structures model with discriminated union.
-
-Author: ONEX Framework Team
 """
 
 from typing import Any

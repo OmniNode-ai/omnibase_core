@@ -1,5 +1,5 @@
 """
-Logging Subcontract Model - ONEX Standards Compliant.
+Logging Subcontract Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 

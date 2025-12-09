@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Branching Configuration Model - ONEX Standards Compliant.
+Branching Configuration Model.
 
 Defines conditional logic, decision points, and branching
 strategies for dynamic workflow execution paths.

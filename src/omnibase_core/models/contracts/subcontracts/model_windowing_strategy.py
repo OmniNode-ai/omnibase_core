@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Windowing Strategy Model - ONEX Standards Compliant.
+Windowing Strategy Model.
 
 Individual model for windowing strategy configuration.
 Part of the Aggregation Subcontract Model family.

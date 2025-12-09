@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Parallel Configuration Model - ONEX Standards Compliant.
+Parallel Configuration Model.
 
 Parallel processing configuration defining thread pools, async settings,
 and concurrency parameters for performance optimization.

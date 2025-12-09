@@ -1,5 +1,5 @@
 """
-Effect Contract Model - ONEX Standards Compliant.
+Effect Contract Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 

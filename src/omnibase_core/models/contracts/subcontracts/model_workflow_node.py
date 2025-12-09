@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Workflow Node Model - ONEX Standards Compliant.
+Workflow Node Model.
 
 Model for node definitions in workflow graphs for the ONEX workflow coordination system.
 """

@@ -8,11 +8,11 @@
 [![Framework: Core](https://img.shields.io/badge/framework-core-purple.svg)](https://github.com/OmniNode-ai/omnibase_core)
 [![Node Types: 4](https://img.shields.io/badge/node%20types-4-blue.svg)](https://github.com/OmniNode-ai/omnibase_core)
 
-**Contract-driven execution layer for AI agents.** Deterministic execution, zero boilerplate, full observability.
+**Contract-driven execution layer for tools and workflows.** Deterministic execution, zero boilerplate, full observability.
 
 ## What is ONEX?
 
-**ONEX is a declarative, contract-driven execution layer for AI agents and distributed tools.** It standardizes how agents execute, communicate, and share context. Instead of custom glue code for each agent or tool, ONEX provides a deterministic execution protocol that behaves the same from local development to distributed production.
+**ONEX is a declarative, contract-driven execution layer for tools and distributed workflows.** It standardizes how agents execute, communicate, and share context. Instead of custom glue code for each agent or tool, ONEX provides a deterministic execution protocol that behaves the same from local development to distributed production.
 
 Use ONEX when you need predictable, testable, observable agent tools with consistent error handling across distributed systems.
 

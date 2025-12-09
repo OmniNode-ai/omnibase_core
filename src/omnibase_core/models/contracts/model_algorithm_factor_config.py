@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Algorithm Factor Configuration Model - ONEX Standards Compliant.
+Algorithm Factor Configuration Model.
 
 Configuration for individual algorithm factors defining weight,
 calculation method, and parameters for each factor in a multi-factor algorithm.

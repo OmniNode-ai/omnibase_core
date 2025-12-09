@@ -32,7 +32,7 @@ class MixinNodeTypeValidator:
     Subclasses should define their own _DEFAULT_NODE_TYPE class variable to specify
     the default node type when EnumNodeArchitectureType is provided.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    This implementation does not use Any types.
     """
 
     # Mapping from architecture type strings to EnumNodeType

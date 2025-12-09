@@ -1,5 +1,5 @@
 """
-Serialization Subcontract Model - ONEX Standards Compliant.
+Serialization Subcontract Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 

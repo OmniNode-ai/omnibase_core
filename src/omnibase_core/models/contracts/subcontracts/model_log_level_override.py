@@ -1,5 +1,5 @@
 """
-Log Level Override Model - ONEX Standards Compliant.
+Log Level Override Model.
 
 Strongly-typed model for per-module or per-logger log level overrides.
 Replaces dict[str, str] with proper type safety and enum validation.

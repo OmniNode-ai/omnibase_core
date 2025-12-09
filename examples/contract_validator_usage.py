@@ -1,7 +1,7 @@
 """
 Contract Validator Usage Examples.
 
-Demonstrates how to use the ContractValidator API for autonomous code generation.
+Demonstrates how to use the ContractValidator API for contract validation.
 """
 
 from omnibase_core.validation.contract_validator import (

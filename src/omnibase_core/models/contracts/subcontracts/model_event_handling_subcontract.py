@@ -1,5 +1,5 @@
 """
-Event Handling Subcontract Model - ONEX Standards Compliant.
+Event Handling Subcontract Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 

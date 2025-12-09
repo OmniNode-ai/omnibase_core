@@ -74,7 +74,7 @@ class ModelSecurityPolicyData(BaseModel):
         data: dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None],
     ) -> "ModelSecurityPolicyData":
         """
-        Create from a regular dictionary using ONEX-compliant patterns.
+        Create from a regular dictionary using ONEX-compatible patterns.
 
         Args:
             data: Dictionary of policy data
@@ -82,7 +82,7 @@ class ModelSecurityPolicyData(BaseModel):
         Returns:
             ModelSecurityPolicyData with typed values
         """
-        # ONEX-compliant approach: Create empty mapping and populate through methods
+        # ONEX-compatible approach: Create empty mapping and populate through methods
         typed_mapping = ModelTypedMapping()
         for key, value in data.items():
             typed_mapping.set_value(key, value)

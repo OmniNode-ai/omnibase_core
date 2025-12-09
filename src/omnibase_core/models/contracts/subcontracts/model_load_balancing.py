@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Load Balancing Model - ONEX Standards Compliant.
+Load Balancing Model.
 
 Individual model for load balancing configuration.
 Part of the Routing Subcontract Model family.

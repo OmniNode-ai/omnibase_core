@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Coordination Rules Model - ONEX Standards Compliant.
+Coordination Rules Model.
 
 Model for workflow coordination rules in the ONEX workflow coordination system.
 """

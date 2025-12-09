@@ -1,5 +1,5 @@
 """
-Handler Configuration Model - ONEX Standards Compliant.
+Handler Configuration Model.
 
 Handler configuration for RuntimeHost contract providing handler type
 classification for handler registry operations.

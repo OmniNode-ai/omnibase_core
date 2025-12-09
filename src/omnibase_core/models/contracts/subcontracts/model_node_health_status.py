@@ -1,5 +1,5 @@
 """
-Node Health Status Model - ONEX Standards Compliant.
+Node Health Status Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 

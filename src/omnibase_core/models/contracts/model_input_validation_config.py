@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Input Validation Configuration Model - ONEX Standards Compliant.
+Input Validation Configuration Model.
 
 Input validation and transformation rules defining validation rules,
 constraints, and transformation logic for input data processing.

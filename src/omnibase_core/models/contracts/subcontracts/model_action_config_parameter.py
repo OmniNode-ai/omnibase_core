@@ -1,5 +1,5 @@
 """
-Action Config Parameter Model - ONEX Standards Compliant.
+Action Config Parameter Model.
 
 Strongly-typed model for action configuration parameters.
 Replaces dict[str, ModelActionConfigValue] with proper structure.

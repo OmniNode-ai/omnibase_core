@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Model Configuration for CLI Discovery Stats - ONEX Standards Compliant.
+Model Configuration for CLI Discovery Stats.
 
 Strongly-typed configuration class for CLI discovery stats.
 """

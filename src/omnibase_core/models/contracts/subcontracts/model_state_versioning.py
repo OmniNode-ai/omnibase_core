@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-State Versioning Model - ONEX Standards Compliant.
+State Versioning Model.
 
 Individual model for state versioning configuration.
 Part of the State Management Subcontract Model family.

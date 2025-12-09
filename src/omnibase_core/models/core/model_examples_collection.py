@@ -1,5 +1,5 @@
 """
-ModelExamplesCollection - ONEX Standards Compliant.
+ModelExamplesCollection.
 
 Examples collection model with comprehensive validation, migration support,
 and business intelligence capabilities for ONEX compliance.

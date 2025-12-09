@@ -1,5 +1,5 @@
 """
-ONEX Reply Models - ONEX Standards Compliant.
+ONEX Reply Models.
 
 Re-export module for ONEX reply components including status enums,
 error details, performance metrics, and the main reply class.

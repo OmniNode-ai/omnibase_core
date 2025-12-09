@@ -1,5 +1,5 @@
 """
-Base Header Transformation Model - ONEX Standards Compliant.
+Base Header Transformation Model.
 
 Abstract base class for all header/parameter transformation rules.
 Provides common fields and behavior to reduce duplication.

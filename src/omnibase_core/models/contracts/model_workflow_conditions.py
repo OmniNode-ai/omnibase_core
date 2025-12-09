@@ -3,7 +3,7 @@ from pydantic import Field, field_validator
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
-Workflow Conditions Model - ONEX Standards Compliant.
+Workflow Conditions Model.
 
 Strongly-typed workflow conditions model that replaces dict[str, str | bool | int] patterns
 with proper Pydantic validation and type safety.

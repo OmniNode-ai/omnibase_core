@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hub Service Configuration Model - ONEX Standards Compliant.
+Hub Service Configuration Model.
 
 Strongly-typed model for service configuration in hubs.
 """

@@ -1,5 +1,5 @@
 """
-Action Configuration Numeric Value Model - ONEX Standards Compliant.
+Action Configuration Numeric Value Model.
 
 Strongly-typed numeric configuration value for FSM transition actions and similar use cases.
 Provides discriminated union support for type-safe action configurations.

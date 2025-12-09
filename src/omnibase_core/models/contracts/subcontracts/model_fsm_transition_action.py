@@ -10,7 +10,7 @@ __all__ = [
 ]
 
 """
-FSM Transition Action Model - ONEX Standards Compliant.
+FSM Transition Action Model.
 
 Individual model for FSM transition action specification.
 Part of the FSM Subcontract Model family.

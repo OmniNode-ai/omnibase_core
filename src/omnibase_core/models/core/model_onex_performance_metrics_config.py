@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Model Configuration for ONEX Performance Metrics - ONEX Standards Compliant.
+Model Configuration for ONEX Performance Metrics.
 
 Strongly-typed configuration class for ONEX performance metrics.
 """

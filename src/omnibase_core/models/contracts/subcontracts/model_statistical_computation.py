@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Statistical Computation Model - ONEX Standards Compliant.
+Statistical Computation Model.
 
 Individual model for statistical computation configuration.
 Part of the Aggregation Subcontract Model family.

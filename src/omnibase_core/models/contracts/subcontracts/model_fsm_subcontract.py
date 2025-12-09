@@ -1,5 +1,5 @@
 """
-FSM (Finite State Machine) Subcontract Model - ONEX Standards Compliant.
+FSM (Finite State Machine) Subcontract Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 

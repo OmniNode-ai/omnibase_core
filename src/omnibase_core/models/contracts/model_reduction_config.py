@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Reduction Configuration Model - ONEX Standards Compliant.
+Reduction Configuration Model.
 
 Data reduction operation specifications for NodeReducer implementations.
 Defines reduction algorithms, aggregation functions, and data processing patterns

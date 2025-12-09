@@ -1,5 +1,5 @@
 """
-Aggregation Subcontract Model - ONEX Standards Compliant.
+Aggregation Subcontract Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
