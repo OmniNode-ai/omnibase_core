@@ -101,6 +101,7 @@ omnibase_core/docs/
 | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) | Contract system design and subcontract patterns | ✅ Complete |
 | [Mixin Architecture](architecture/MIXIN_ARCHITECTURE.md) | Mixin system design and patterns | ✅ Complete |
 | [Protocol Architecture](architecture/PROTOCOL_ARCHITECTURE.md) | Protocol design and compliance | ✅ Complete |
+| [Effect Timeout Behavior](architecture/EFFECT_TIMEOUT_BEHAVIOR.md) | Timeout check points and retry behavior | ✅ Complete |
 | [Ecosystem Directory Structure](architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md) | Repository organization and patterns across ONEX ecosystem | ✅ Available |
 
 ---
@@ -267,19 +268,19 @@ omnibase_core/docs/
 |----------|----------|-------------|---------|-------|
 | **Getting Started** | 3 | 0 | 0 | 3 |
 | **Node Building** | 10 | 0 | 0 | 10 |
-| **Architecture** | 12 | 0 | 0 | 12 |
+| **Architecture** | 13 | 0 | 0 | 13 |
 | **Reference** | 13 | 0 | 0 | 13 |
 | **Specialized** | 11 | 0 | 0 | 11 |
-| **TOTAL** | **49** | **0** | **0** | **49** |
+| **TOTAL** | **50** | **0** | **0** | **50** |
 
-**Overall Progress**: 100% complete (49/49 documents)
+**Overall Progress**: 100% complete (50/50 documents)
 
 ### Priority Items
 
 **Completed**:
 - ✅ Node Building Guide (10/10 complete)
 - ✅ Getting Started guides (3/3 complete)
-- ✅ Architecture documentation (12/12 complete)
+- ✅ Architecture documentation (13/13 complete)
 - ✅ Testing Guide
 - ✅ All node tutorials (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)
 - ✅ Agent Templates (AI-optimized node templates)

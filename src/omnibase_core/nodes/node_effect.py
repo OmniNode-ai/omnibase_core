@@ -312,7 +312,13 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         Note:
             Circuit breakers are NOT thread-safe. Each thread should use
             its own NodeEffect instance.
+
+            When ONEX_DEBUG_THREAD_SAFETY=1 is set, this method validates
+            thread safety at runtime.
         """
+        # Thread safety check (zero overhead when disabled)
+        self._check_thread_safety()
+
         if operation_id not in self._circuit_breakers:
             # Use create_resilient() for production-ready defaults, matching mixin behavior
             self._circuit_breakers[operation_id] = (

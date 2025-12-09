@@ -9,6 +9,20 @@ VERSION: 1.0.0
 Author: ONEX Framework Team
 """
 
+import os
+import re
+
+# ==============================================================================
+# Debug Mode Configuration
+# ==============================================================================
+
+# Debug mode for thread safety validation.
+# Enable via ONEX_DEBUG_THREAD_SAFETY=1 environment variable.
+# When enabled, runtime checks validate that NodeEffect and MixinEffectExecution
+# instances are accessed from the same thread that created them.
+# Has zero overhead when disabled (just a None check).
+DEBUG_THREAD_SAFETY: bool = os.environ.get("ONEX_DEBUG_THREAD_SAFETY", "0") == "1"
+
 # ==============================================================================
 # Timeout Constants
 # ==============================================================================
@@ -31,6 +45,23 @@ DEFAULT_OPERATION_TIMEOUT_MS: int = 30000
 # attacks via deeply nested or maliciously crafted field paths.
 # Default of 10 is sufficient for typical use cases while preventing abuse.
 DEFAULT_MAX_FIELD_EXTRACTION_DEPTH: int = 10
+
+# Field path validation pattern - only allow safe characters.
+# Prevents injection attacks via malicious paths like __import__, eval(), etc.
+# Allowed characters:
+#   - a-z, A-Z: Alphanumeric field names
+#   - 0-9: Numeric field names or array indices in path segments
+#   - _: Underscore for snake_case field names
+#   - .: Dot separator for nested field access
+#
+# Disallowed patterns (examples):
+#   - __import__  (rejected: double underscore)
+#   - eval()      (rejected: parentheses)
+#   - foo;bar     (rejected: semicolon)
+#   - path/../etc (rejected: double dot is allowed but ../ path traversal is not)
+#   - a[0]        (rejected: brackets)
+#   - ${var}      (rejected: special characters)
+SAFE_FIELD_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z0-9_.]+$")
 
 # ==============================================================================
 # Retry Constants

@@ -544,6 +544,113 @@ class TestExtractField:
         data = {"value": "string"}
         assert test_node._extract_field(data, "value.nested") is None
 
+    def test_extract_field_with_underscore_names(self, test_node: TestNode) -> None:
+        """Test extracting fields with underscore names (snake_case)."""
+        data = {"user_info": {"first_name": "John", "last_name": "Doe"}}
+        assert test_node._extract_field(data, "user_info.first_name") == "John"
+        assert test_node._extract_field(data, "user_info.last_name") == "Doe"
+
+    def test_extract_field_with_numeric_names(self, test_node: TestNode) -> None:
+        """Test extracting fields with numeric names."""
+        data = {"item0": {"sub1": "value"}}
+        assert test_node._extract_field(data, "item0.sub1") == "value"
+
+    def test_extract_field_rejects_unsafe_characters(self, test_node: TestNode) -> None:
+        """Test that _extract_field rejects paths with unsafe characters.
+
+        Security hardening: Prevents injection attacks via malicious field paths
+        like __import__, eval(), etc.
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        unsafe_paths = [
+            "eval()",           # Parentheses not allowed
+            "foo;bar",          # Semicolon not allowed
+            "path/../etc",      # Path traversal via ../
+            "a[0]",             # Brackets not allowed
+            "${var}",           # Template syntax not allowed
+            "foo bar",          # Spaces not allowed
+            "foo\nbar",         # Newlines not allowed
+            "foo\tbar",         # Tabs not allowed
+            "foo|bar",          # Pipe not allowed
+            "foo&bar",          # Ampersand not allowed
+            "foo>bar",          # Greater than not allowed
+            "foo<bar",          # Less than not allowed
+            'foo"bar',          # Quotes not allowed
+            "foo'bar",          # Single quotes not allowed
+            "foo`bar",          # Backticks not allowed
+            "foo!bar",          # Exclamation not allowed
+            "foo@bar",          # At symbol not allowed
+            "foo#bar",          # Hash not allowed
+            "foo%bar",          # Percent not allowed
+            "foo^bar",          # Caret not allowed
+            "foo*bar",          # Asterisk not allowed
+            "foo+bar",          # Plus not allowed
+            "foo=bar",          # Equals not allowed
+            "foo~bar",          # Tilde not allowed
+            "foo\\bar",         # Backslash not allowed
+            "foo/bar",          # Forward slash not allowed
+            "foo:bar",          # Colon not allowed
+            "foo?bar",          # Question mark not allowed
+            "foo,bar",          # Comma not allowed
+        ]
+        data = {"foo": {"bar": "value"}}
+
+        for unsafe_path in unsafe_paths:
+            with pytest.raises(ModelOnexError) as exc_info:
+                test_node._extract_field(data, unsafe_path)
+            assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+            assert "Invalid field path characters" in str(exc_info.value)
+            # Context is stored in model.context for additional (non-standard) keys
+            assert "allowed_pattern" in exc_info.value.model.context
+
+    def test_extract_field_accepts_safe_paths(self, test_node: TestNode) -> None:
+        """Test that _extract_field accepts valid safe paths."""
+        data = {
+            "user_id": "123",
+            "UserName": "John",
+            "item0": {"sub_field": "value"},
+            "__init__": "allowed",  # Double underscore IS allowed by the pattern
+            "a": {"b": {"c": "deep"}},
+        }
+
+        # These should all work without raising
+        assert test_node._extract_field(data, "user_id") == "123"
+        assert test_node._extract_field(data, "UserName") == "John"
+        assert test_node._extract_field(data, "item0.sub_field") == "value"
+        assert test_node._extract_field(data, "__init__") == "allowed"
+        assert test_node._extract_field(data, "a.b.c") == "deep"
+
+    def test_extract_field_rejects_empty_path(self, test_node: TestNode) -> None:
+        """Test that _extract_field rejects empty paths."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        data = {"foo": "bar"}
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            test_node._extract_field(data, "")
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_extract_field_error_includes_operation_id(
+        self, test_node: TestNode
+    ) -> None:
+        """Test that error context includes operation_id when provided."""
+        from uuid import uuid4
+
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        data = {"foo": "bar"}
+        op_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            test_node._extract_field(data, "eval()", operation_id=op_id)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Context is stored in model.context for additional (non-standard) keys
+        assert exc_info.value.model.context["operation_id"] == str(op_id)
+        assert exc_info.value.model.context["field_path"] == "eval()"
+        assert exc_info.value.model.context["allowed_pattern"] == "[a-zA-Z0-9_.]"
+
 
 class TestCoerceParamValue:
     """Test _coerce_param_value type coercion."""

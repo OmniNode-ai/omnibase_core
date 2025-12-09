@@ -407,6 +407,7 @@ class ThreadSafeCircuitBreaker:
 
 For complete details on NodeEffect architecture and circuit breaker implementation:
 - [CONTRACT_DRIVEN_NODEEFFECT_V1_0.md](../architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md) - Full specification
+- [EFFECT_TIMEOUT_BEHAVIOR.md](../architecture/EFFECT_TIMEOUT_BEHAVIOR.md) - Timeout check points and behavior
 - [NodeEffect](../../src/omnibase_core/nodes/node_effect.py) - Implementation
 - [MixinEffectExecution](../../src/omnibase_core/mixins/mixin_effect_execution.py) - Execution mixin
 
@@ -643,9 +644,122 @@ loop = asyncio.get_event_loop()
 result = await loop.run_in_executor(thread_pool, blocking_operation)
 ```
 
-## Runtime Thread Safety Checks
+## Built-in Debug Mode Thread Safety Validation
 
-You can add runtime checks to detect threading violations early in development:
+ONEX provides built-in runtime thread safety validation for effect execution that can be enabled during development. This helps catch threading violations early with zero overhead in production.
+
+### Enabling Debug Mode
+
+Set the `ONEX_DEBUG_THREAD_SAFETY` environment variable to enable runtime checks:
+
+```bash
+# Enable thread safety validation
+export ONEX_DEBUG_THREAD_SAFETY=1
+
+# Run your application/tests
+poetry run pytest tests/
+
+# Disable (default - zero overhead)
+unset ONEX_DEBUG_THREAD_SAFETY
+```
+
+### How It Works
+
+When `ONEX_DEBUG_THREAD_SAFETY=1` is set:
+
+1. **Instance Creation**: When a `NodeEffect` or `MixinEffectExecution` instance is created, it records the creating thread's ID
+2. **Method Entry**: Key public methods (`execute_effect()`, `get_circuit_breaker()`) validate they're called from the same thread
+3. **Violation Detection**: If called from a different thread, a `ModelOnexError` is raised with `THREAD_SAFETY_VIOLATION` error code
+
+When disabled (default):
+- The `_owner_thread_id` attribute is `None`
+- The check is a simple `if self._owner_thread_id is not None:` which short-circuits immediately
+- **Zero performance overhead** in production
+
+### Example Error
+
+When a thread safety violation is detected:
+
+```python
+import threading
+from omnibase_core.nodes import NodeEffect
+
+# Enable debug mode
+import os
+os.environ["ONEX_DEBUG_THREAD_SAFETY"] = "1"
+
+# Create node on main thread
+node = NodeEffect(container)
+node.effect_subcontract = subcontract
+
+# Access from different thread - will raise!
+def worker():
+    import asyncio
+    asyncio.run(node.process(input_data))  # Raises ModelOnexError!
+
+thread = threading.Thread(target=worker)
+thread.start()
+thread.join()
+```
+
+Error output:
+```
+ModelOnexError: Thread safety violation: node instance accessed from different thread
+  error_code: ONEX_CORE_261_THREAD_SAFETY_VIOLATION
+  context:
+    owner_thread: 140234567890432
+    current_thread: 140234567890999
+    node_id: 550e8400-e29b-41d4-a716-446655440000
+```
+
+### Protected Methods
+
+The following methods are protected by thread safety checks when debug mode is enabled:
+
+| Component | Method | Protection |
+|-----------|--------|------------|
+| `MixinEffectExecution` | `execute_effect()` | Validates thread at entry |
+| `NodeEffect` | `get_circuit_breaker()` | Validates thread at entry |
+
+### When to Use
+
+**Enable during**:
+- Development and debugging
+- CI/CD test runs (add to test environment)
+- Staging environment validation
+- Performance testing (to catch races before production)
+
+**Disable in**:
+- Production (default - zero overhead)
+- Benchmarking (to measure true performance)
+
+### Configuration
+
+The debug flag is configured in `omnibase_core.constants.constants_effect`:
+
+```python
+from omnibase_core.constants.constants_effect import DEBUG_THREAD_SAFETY
+
+# Check if debug mode is enabled
+if DEBUG_THREAD_SAFETY:
+    print("Thread safety validation is active")
+```
+
+### Integration with CI
+
+Add to your CI configuration to catch threading issues early:
+
+```yaml
+# GitHub Actions example
+- name: Run tests with thread safety validation
+  env:
+    ONEX_DEBUG_THREAD_SAFETY: "1"
+  run: poetry run pytest tests/
+```
+
+## Runtime Thread Safety Checks (Custom)
+
+In addition to the built-in debug mode, you can add custom runtime checks to detect threading violations:
 
 ### Thread Affinity Enforcement
 
