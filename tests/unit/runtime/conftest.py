@@ -1,10 +1,29 @@
 """
 Shared fixtures for runtime test suite.
 
-Provides reusable fixtures for:
-- NodeInstance creation
-- Mock runtime objects
-- Sample envelopes and contracts
+This module provides reusable pytest fixtures for testing RuntimeNodeInstance
+and related runtime components. All fixtures follow ONEX testing conventions.
+
+Fixture Categories:
+    - Model fixtures: default_version, sample_envelope, mock_contract
+    - Mock fixtures: mock_runtime (async-aware runtime mock)
+    - Identity fixtures: sample_slug, sample_node_type
+
+Usage Pattern:
+    Fixtures are auto-discovered by pytest. Use them as function parameters::
+
+        def test_example(sample_slug, mock_contract, mock_runtime):
+            instance = NodeInstance(slug=sample_slug, ...)
+            instance.set_runtime(mock_runtime)
+
+Note:
+    The mock_runtime fixture uses AsyncMock for the execute_with_handler method,
+    ensuring proper async/await behavior in tests. Always use set_runtime() to
+    inject the mock, never assign to _runtime directly.
+
+Related:
+    - tests/unit/runtime/test_node_instance.py: Primary test consumers
+    - src/omnibase_core/runtime/runtime_node_instance.py: Implementation
 """
 
 from datetime import UTC, datetime
@@ -115,6 +134,11 @@ def mock_runtime() -> MagicMock:
     Note: Uses AsyncMock which is the recommended approach for mocking
     async methods. AsyncMock automatically handles async/await properly,
     making it cleaner than manually defining async functions with side_effect.
+
+    Important:
+        Always use set_runtime() to inject this mock into NodeInstance:
+            instance.set_runtime(mock_runtime)  # Correct
+            instance._runtime = mock_runtime     # Avoid - bypasses validation
     """
     from unittest.mock import AsyncMock
 

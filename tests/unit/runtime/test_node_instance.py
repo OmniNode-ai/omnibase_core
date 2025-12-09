@@ -29,7 +29,7 @@ Related:
 """
 
 from datetime import UTC, datetime
-from unittest.mock import MagicMock, Mock, call
+from unittest.mock import MagicMock, Mock
 from uuid import uuid4
 
 import pytest
@@ -44,6 +44,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeInstanceCreation:
     """Tests for NodeInstance class instantiation and property access."""
 
@@ -212,6 +213,7 @@ class TestNodeInstanceCreation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeInstanceFrozenBehavior:
     """Tests for NodeInstance immutability when frozen=True."""
 
@@ -281,6 +283,7 @@ class TestNodeInstanceFrozenBehavior:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeInstanceInitialize:
     """Tests for NodeInstance initialize() lifecycle method."""
 
@@ -336,7 +339,7 @@ class TestNodeInstanceInitialize:
             node_type=sample_node_type,
             contract=mock_contract,
         )
-        instance._runtime = mock_runtime
+        instance.set_runtime(mock_runtime)
 
         # initialize() returns None - verify it doesn't raise
         # Note: We don't need to check return value since type is None
@@ -384,6 +387,7 @@ class TestNodeInstanceInitialize:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeInstanceShutdown:
     """Tests for NodeInstance shutdown() lifecycle method."""
 
@@ -440,7 +444,7 @@ class TestNodeInstanceShutdown:
             node_type=sample_node_type,
             contract=mock_contract,
         )
-        instance._runtime = mock_runtime
+        instance.set_runtime(mock_runtime)
         await instance.initialize()  # Must be initialized before shutdown
 
         # shutdown() returns None - verify it doesn't raise
@@ -512,6 +516,7 @@ class TestNodeInstanceShutdown:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeInstanceHandle:
     """Tests for NodeInstance handle() method - envelope processing."""
 
@@ -572,8 +577,8 @@ class TestNodeInstanceHandle:
             contract=mock_contract,
         )
 
-        # Set the runtime (implementation detail - may be set differently)
-        instance._runtime = mock_runtime  # type: ignore[attr-defined]
+        # Set the runtime using public API
+        instance.set_runtime(mock_runtime)
         await instance.initialize()
 
         result = await instance.handle(sample_envelope)
@@ -653,6 +658,7 @@ class TestNodeInstanceHandle:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeInstanceRuntimeIntegration:
     """Tests for NodeInstance runtime delegation patterns."""
 
@@ -667,8 +673,9 @@ class TestNodeInstanceRuntimeIntegration:
         Test that runtime reference can be set on NodeInstance.
 
         EXPECTED BEHAVIOR:
-        - Runtime can be set via property or method
-        - Stored runtime is accessible
+        - Runtime can be set via set_runtime() method
+        - Runtime can be accessed via runtime property after being set
+        - String representation changes to indicate runtime state
         """
         from omnibase_core.runtime import NodeInstance
 
@@ -678,11 +685,11 @@ class TestNodeInstanceRuntimeIntegration:
             contract=mock_contract,
         )
 
-        # Set runtime (implementation may vary - property or method)
-        instance._runtime = mock_runtime  # type: ignore[attr-defined]
+        # Set runtime using public API
+        instance.set_runtime(mock_runtime)
 
-        # Verify runtime is set
-        assert instance._runtime is mock_runtime  # type: ignore[attr-defined]
+        # Verify runtime is set via public property
+        assert instance.runtime is mock_runtime
 
     @pytest.mark.asyncio
     async def test_handle_delegates_to_runtime_execute(
@@ -708,7 +715,7 @@ class TestNodeInstanceRuntimeIntegration:
             node_type=sample_node_type,
             contract=mock_contract,
         )
-        instance._runtime = mock_runtime  # type: ignore[attr-defined]
+        instance.set_runtime(mock_runtime)
         await instance.initialize()
 
         result = await instance.handle(sample_envelope)
@@ -795,7 +802,7 @@ class TestNodeInstanceRuntimeIntegration:
             node_type=sample_node_type,
             contract=mock_contract,
         )
-        instance._runtime = mock_runtime  # type: ignore[attr-defined]
+        instance.set_runtime(mock_runtime)
         await instance.initialize()
 
         await instance.handle(envelope)
@@ -826,6 +833,7 @@ class TestNodeInstanceRuntimeIntegration:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeInstanceStringRepresentation:
     """Tests for NodeInstance __str__ and __repr__ methods."""
 
@@ -883,6 +891,7 @@ class TestNodeInstanceStringRepresentation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeInstanceEdgeCases:
     """Tests for NodeInstance edge cases and error conditions."""
 
@@ -911,7 +920,7 @@ class TestNodeInstanceEdgeCases:
             node_type=sample_node_type,
             contract=mock_contract,
         )
-        instance._runtime = mock_runtime  # type: ignore[attr-defined]
+        instance.set_runtime(mock_runtime)
         await instance.initialize()
 
         # NodeInstance delegates to runtime - None envelope is passed through
@@ -949,7 +958,7 @@ class TestNodeInstanceEdgeCases:
             node_type=sample_node_type,
             contract=mock_contract,
         )
-        instance._runtime = mock_runtime  # type: ignore[attr-defined]
+        instance.set_runtime(mock_runtime)
         await instance.initialize()
 
         # NodeInstance delegates to runtime - invalid envelope is passed through
@@ -1149,6 +1158,7 @@ class TestNodeInstanceEdgeCases:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeInstanceModelConfig:
     """Tests for NodeInstance Pydantic model configuration."""
 
@@ -1214,6 +1224,7 @@ class TestNodeInstanceModelConfig:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeInstanceIntegrationPatterns:
     """Tests for common NodeInstance usage patterns."""
 
@@ -1242,8 +1253,8 @@ class TestNodeInstanceIntegrationPatterns:
             contract=mock_contract,
         )
 
-        # Set runtime
-        instance._runtime = mock_runtime  # type: ignore[attr-defined]
+        # Set runtime using public API
+        instance.set_runtime(mock_runtime)
 
         # Initialize
         await instance.initialize()

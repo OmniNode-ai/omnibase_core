@@ -74,6 +74,14 @@ Thread Safety:
     The NodeRuntime implementation is responsible for thread safety of the
     actual execution within handle(). See CLAUDE.md thread safety matrix.
 
+    Concurrent handle() and shutdown() Behavior:
+        If shutdown() is called while handle() operations are in progress:
+        1. In-flight handle() calls may complete normally or encounter errors
+        2. The _initialized flag is NOT protected by a lock
+        3. This is a known limitation - callers are responsible for ensuring
+           all handle() calls complete before calling shutdown()
+        4. Future versions may add an atomic state transition mechanism
+
 Related:
     - OMN-227: NodeInstance execution wrapper
     - OMN-228: NodeRuntime with execute_with_handler (future)
@@ -348,6 +356,12 @@ class RuntimeNodeInstance(BaseModel):
                 await instance.shutdown()
                 # Instance can no longer handle envelopes
 
+        Warning:
+            This method is NOT thread-safe with respect to concurrent handle()
+            calls. Ensure all handle() operations have completed before calling
+            shutdown(). Future versions may implement atomic state transitions
+            with proper synchronization.
+
         Note:
             This is an async method to support future shutdown steps
             that may require I/O (performed by the runtime, not this class).
@@ -420,13 +434,17 @@ class RuntimeNodeInstance(BaseModel):
             - Logging and metrics
         """
         if not self._initialized:
+            # Safely extract operation for error context (envelope may be None)
+            envelope_operation = (
+                getattr(envelope, "operation", None) if envelope else None
+            )
             raise ModelOnexError(
                 message=f"RuntimeNodeInstance '{self.slug}' is not initialized. "
                 "Call initialize() before handling envelopes.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
                 node_type=str(self.node_type),
-                envelope_operation=envelope.operation,
+                envelope_operation=envelope_operation,
             )
 
         # Delegate to runtime - all execution happens there
