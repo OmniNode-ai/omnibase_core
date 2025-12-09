@@ -1366,6 +1366,12 @@ INVALID PATTERNS:
 • Semantically mismatched type combinations
 
 The validator focuses on type safety and semantic coherence rather than arbitrary limits.
+
+Examples:
+    python validate-union-usage.py                              # Check current directory
+    python validate-union-usage.py --src-dir src/               # Check src directory
+    python validate-union-usage.py --strict --show-statistics   # Strict mode with stats
+    python validate-union-usage.py file1.py file2.py file3.py   # Check specific files (pre-commit)
         """,
     )
     parser.add_argument(
@@ -1393,16 +1399,34 @@ The validator focuses on type safety and semantic coherence rather than arbitrar
         default=0,
         help="Maximum allowed invalid union patterns (default: 0)",
     )
-    parser.add_argument("path", nargs="?", default=".", help="Path to validate")
+    parser.add_argument(
+        "--src-dir",
+        "-s",
+        type=Path,
+        default=Path(),
+        help="Source directory to scan (default: ., ignored if files provided)",
+    )
+    parser.add_argument(
+        "files",
+        nargs="*",
+        type=Path,
+        help="Specific files to check (for pre-commit integration)",
+    )
     args = parser.parse_args()
 
-    base_path = Path(args.path)
-    if base_path.is_file() and base_path.suffix == ".py":
-        python_files = [base_path]
+    # If specific files are provided, check only those files (pre-commit mode)
+    if args.files:
+        # Filter to only Python files
+        python_files = [f for f in args.files if f.suffix == ".py" and f.exists()]
     else:
-        python_files = list(base_path.rglob("*.py"))
-        # Sort files for deterministic order across different systems
-        python_files.sort(key=lambda p: str(p))
+        # Otherwise scan the entire src directory
+        base_path = args.src_dir
+        if base_path.is_file() and base_path.suffix == ".py":
+            python_files = [base_path]
+        else:
+            python_files = list(base_path.rglob("*.py"))
+            # Sort files for deterministic order across different systems
+            python_files.sort(key=lambda p: str(p))
 
     # Filter out archived files, examples, and __pycache__
     #

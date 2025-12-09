@@ -104,6 +104,39 @@ class OptionalUsageAuditor:
 
         return len([v for v in self.violations if v.justification_needed]) == 0
 
+    def audit_files(self, files: list[Path]) -> bool:
+        """
+        Audit Optional type usage in specific files.
+
+        This method is used for pre-commit integration where only staged files
+        are checked, providing faster feedback during development.
+
+        Args:
+            files: List of file paths to audit
+
+        Returns:
+            True if no violations needing justification are found, False otherwise
+        """
+        for file_path in files:
+            # Resolve to absolute path if needed
+            abs_path = file_path if file_path.is_absolute() else Path.cwd() / file_path
+
+            # Skip non-existent files, non-Python files, test files, and archived
+            if not abs_path.exists():
+                continue
+            if abs_path.suffix != ".py":
+                continue
+            if (
+                "test" in str(abs_path).lower()
+                or "__pycache__" in str(abs_path)
+                or "/archived/" in str(abs_path)
+            ):
+                continue
+
+            self._audit_file(abs_path)
+
+        return len([v for v in self.violations if v.justification_needed]) == 0
+
     def _audit_file(self, file_path: Path):
         """Audit Optional usage in a specific file."""
         try:
@@ -213,10 +246,20 @@ class OptionalUsageAuditor:
             and not has_field_justification
         )
 
+        # Get relative path for display, fallback to absolute if not under repo_path
+        try:
+            display_path = str(file_path.relative_to(self.repo_path))
+        except ValueError:
+            # File is not under repo_path, use path relative to cwd or absolute
+            try:
+                display_path = str(file_path.relative_to(Path.cwd()))
+            except ValueError:
+                display_path = str(file_path)
+
         if needs_justification:
             self.violations.append(
                 OptionalViolation(
-                    file_path=str(file_path.relative_to(self.repo_path)),
+                    file_path=display_path,
                     line_number=line_num,
                     variable_name=var_name,
                     context=line_content.strip(),
@@ -239,7 +282,7 @@ class OptionalUsageAuditor:
 
             self.violations.append(
                 OptionalViolation(
-                    file_path=str(file_path.relative_to(self.repo_path)),
+                    file_path=display_path,
                     line_number=line_num,
                     variable_name=var_name,
                     context=line_content.strip(),
@@ -359,20 +402,58 @@ class OptionalUsageAuditor:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Audit Optional type usage in omni* ecosystem"
+        description="Audit Optional type usage in omni* ecosystem",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+    python scripts/validation/audit_optional.py .                    # Audit entire repo
+    python scripts/validation/audit_optional.py src/omnibase_core    # Audit specific directory
+    python scripts/validation/audit_optional.py file1.py file2.py   # Audit specific files (pre-commit)
+        """,
     )
-    parser.add_argument("repo_path", help="Path to repository root")
+    parser.add_argument(
+        "repo_path",
+        nargs="?",
+        help="Path to repository root (for full audit)",
+    )
+    parser.add_argument(
+        "files",
+        nargs="*",
+        type=Path,
+        help="Specific files to check (for pre-commit integration)",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     args = parser.parse_args()
 
-    repo_path = Path(args.repo_path).resolve()
-    if not repo_path.exists():
-        print(f"Error: Repository path does not exist: {repo_path}")
-        sys.exit(1)
-
-    auditor = OptionalUsageAuditor(repo_path)
-    is_valid = auditor.audit_optional_usage()
+    # Determine mode: file mode vs directory mode
+    # If repo_path looks like a .py file, treat it as a file argument
+    if args.repo_path and args.repo_path.endswith(".py"):
+        # File mode: first arg is a Python file, combine with any additional files
+        all_files = [Path(args.repo_path)] + (args.files or [])
+        auditor = OptionalUsageAuditor(Path.cwd())
+        is_valid = auditor.audit_files(all_files)
+    elif args.files:
+        # File mode: repo_path provided but also explicit files
+        all_files = args.files
+        if args.repo_path:
+            # repo_path might be a file too
+            if args.repo_path.endswith(".py"):
+                all_files = [Path(args.repo_path)] + list(args.files)
+        auditor = OptionalUsageAuditor(Path.cwd())
+        is_valid = auditor.audit_files(all_files)
+    elif args.repo_path:
+        # Directory mode: audit entire repository
+        repo_path = Path(args.repo_path).resolve()
+        if not repo_path.exists():
+            print(f"Error: Repository path does not exist: {repo_path}")
+            sys.exit(1)
+        auditor = OptionalUsageAuditor(repo_path)
+        is_valid = auditor.audit_optional_usage()
+    else:
+        # No arguments: default to current directory
+        auditor = OptionalUsageAuditor(Path.cwd())
+        is_valid = auditor.audit_optional_usage()
 
     print(auditor.generate_report())
 
