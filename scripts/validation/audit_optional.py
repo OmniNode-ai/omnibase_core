@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import os
 import re
 import sys
 from dataclasses import dataclass
@@ -27,7 +28,7 @@ class OptionalUsageAuditor:
     """Audits Optional type usage for business justification."""
 
     # Patterns that usually shouldn't be Optional
-    SUSPICIOUS_PATTERNS = [
+    SUSPICIOUS_PATTERNS: list[str] = [
         r".*_id.*: .*Optional",  # IDs are usually required
         r".*id.*: .*Optional",  # IDs are usually required
         r".*status.*: .*Optional",  # Status is usually known
@@ -39,7 +40,7 @@ class OptionalUsageAuditor:
     ]
 
     # Patterns where Optional is typically justified
-    JUSTIFIED_PATTERNS = [
+    JUSTIFIED_PATTERNS: list[str] = [
         r".*_date.*: .*Optional",  # Dates can be null (not yet occurred)
         r".*_time.*: .*Optional",  # Times can be null
         r".*email.*: .*Optional",  # Email might be optional
@@ -62,7 +63,7 @@ class OptionalUsageAuditor:
     ]
 
     # Justification keywords that indicate business reasoning
-    JUSTIFICATION_KEYWORDS = [
+    JUSTIFICATION_KEYWORDS: list[str] = [
         "optional",
         "nullable",
         "might be",
@@ -85,13 +86,28 @@ class OptionalUsageAuditor:
         "optimization",
     ]
 
-    def __init__(self, repo_path: Path):
-        self.repo_path = repo_path
+    def __init__(self, base_path: Path, files: list[Path] | None = None):
+        """Initialize auditor.
+
+        Args:
+            base_path: Base path for computing relative file paths in reports.
+            files: Optional list of specific files to audit. If None, will scan
+                base_path recursively when audit_optional_usage() is called.
+        """
+        self.base_path = base_path
+        self.files = files
         self.violations: list[OptionalViolation] = []
 
     def audit_optional_usage(self) -> bool:
         """Audit all Optional type usage."""
-        for py_file in self.repo_path.rglob("*.py"):
+        if self.files is not None:
+            # Audit specific files provided
+            files_to_check = self.files
+        else:
+            # Scan directory recursively (original behavior)
+            files_to_check = list(self.base_path.rglob("*.py"))
+
+        for py_file in files_to_check:
             # Skip test files, __pycache__, and archived directories
             if (
                 "test" in str(py_file).lower()
@@ -104,7 +120,7 @@ class OptionalUsageAuditor:
 
         return len([v for v in self.violations if v.justification_needed]) == 0
 
-    def _audit_file(self, file_path: Path):
+    def _audit_file(self, file_path: Path) -> None:
         """Audit Optional usage in a specific file."""
         try:
             with open(file_path, encoding="utf-8") as f:
@@ -127,7 +143,9 @@ class OptionalUsageAuditor:
         except (SyntaxError, UnicodeDecodeError) as e:
             print(f"Warning: Could not parse {file_path}: {e}")
 
-    def _check_annotation(self, file_path: Path, node: ast.AnnAssign, lines: list[str]):
+    def _check_annotation(
+        self, file_path: Path, node: ast.AnnAssign, lines: list[str]
+    ) -> None:
         """Check type annotations for Optional usage."""
         if hasattr(node, "annotation"):
             annotation_str = ast.unparse(node.annotation)
@@ -143,7 +161,7 @@ class OptionalUsageAuditor:
 
     def _check_function_annotations(
         self, file_path: Path, node: ast.FunctionDef, lines: list[str]
-    ):
+    ) -> None:
         """Check function parameter and return type annotations for Optional usage."""
         # Check return type
         if hasattr(node, "returns") and node.returns:
@@ -177,7 +195,7 @@ class OptionalUsageAuditor:
         var_name: str,
         annotation: str,
         lines: list[str],
-    ):
+    ) -> None:
         """Evaluate whether Optional usage is justified."""
         line_content = lines[line_num - 1] if line_num <= len(lines) else ""
 
@@ -216,7 +234,7 @@ class OptionalUsageAuditor:
         if needs_justification:
             self.violations.append(
                 OptionalViolation(
-                    file_path=str(file_path.relative_to(self.repo_path)),
+                    file_path=str(file_path.relative_to(self.base_path)),
                     line_number=line_num,
                     variable_name=var_name,
                     context=line_content.strip(),
@@ -239,7 +257,7 @@ class OptionalUsageAuditor:
 
             self.violations.append(
                 OptionalViolation(
-                    file_path=str(file_path.relative_to(self.repo_path)),
+                    file_path=str(file_path.relative_to(self.base_path)),
                     line_number=line_num,
                     variable_name=var_name,
                     context=line_content.strip(),
@@ -357,31 +375,78 @@ class OptionalUsageAuditor:
         return report
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Audit Optional type usage in omni* ecosystem"
     )
-    parser.add_argument("repo_path", help="Path to repository root")
+    parser.add_argument(
+        "paths",
+        nargs="+",
+        help="Files or directories to validate. If a directory is provided, "
+        "it will be scanned recursively for .py files.",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
 
     args = parser.parse_args()
 
-    repo_path = Path(args.repo_path).resolve()
-    if not repo_path.exists():
-        print(f"Error: Repository path does not exist: {repo_path}")
+    # Collect files to check and determine base path
+    files_to_check: list[Path] = []
+    directory_mode = False
+    base_path: Path | None = None
+
+    for path_str in args.paths:
+        p = Path(path_str).resolve()
+        if not p.exists():
+            print(f"Warning: Path does not exist, skipping: {p}")
+            continue
+
+        if p.is_file():
+            if p.suffix == ".py":
+                files_to_check.append(p)
+            else:
+                print(f"Warning: Skipping non-Python file: {p}")
+        elif p.is_dir():
+            # If a directory is provided, use it as base_path and scan recursively
+            base_path = p
+            directory_mode = True
+            files_to_check = []  # Clear any files, directory takes precedence
+            break  # Directory mode takes precedence
+        else:
+            print(f"Warning: Skipping unknown path type: {p}")
+
+    # Handle case where no valid paths were found
+    if not directory_mode and not files_to_check:
+        print("Error: No valid Python files or directories provided")
         sys.exit(1)
 
-    auditor = OptionalUsageAuditor(repo_path)
+    # For file mode, compute common base path from all files
+    if not directory_mode and files_to_check:
+        # Find common parent directory for all files
+        all_parents = [f.parent for f in files_to_check]
+        if all_parents:
+            # Use the common prefix of all parent paths
+            base_path = Path(os.path.commonpath(all_parents))
+        else:
+            base_path = Path.cwd()
+
+    # Determine if we're in file mode or directory mode
+    if directory_mode:
+        # Directory mode: scan recursively (original behavior)
+        auditor = OptionalUsageAuditor(base_path, files=None)  # type: ignore[arg-type]
+    else:
+        # File mode: audit specific files
+        auditor = OptionalUsageAuditor(base_path, files=files_to_check)  # type: ignore[arg-type]
+
     is_valid = auditor.audit_optional_usage()
 
     print(auditor.generate_report())
 
     if is_valid:
-        print("\n✅ SUCCESS: All Optional usage is justified!")
+        print("\n[OK] SUCCESS: All Optional usage is justified!")
         sys.exit(0)
     else:
         errors = len([v for v in auditor.violations if v.justification_needed])
-        print(f"\n⚠️  WARNING: {errors} Optional usages need business justification!")
+        print(f"\n[WARNING] {errors} Optional usages need business justification!")
         sys.exit(0)  # Don't fail the build for this, just warn
 
 

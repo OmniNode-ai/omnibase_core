@@ -13,6 +13,7 @@ Detects patterns like:
 Usage:
     python scripts/validate-pydantic-patterns.py
     python scripts/validate-pydantic-patterns.py --strict
+    python scripts/validate-pydantic-patterns.py file1.py file2.py  # Validate specific files
 """
 
 from __future__ import annotations
@@ -335,6 +336,113 @@ class PydanticPatternValidator:
 
         return success
 
+    def validate_files(self, files: list[Path], allowed_errors: int = 0) -> bool:
+        """
+        Validate Pydantic patterns in specific files.
+
+        Args:
+            files: List of file paths to validate
+            allowed_errors: Number of allowed errors before failing (default: 0)
+
+        Returns:
+            True if validation passes, False otherwise
+        """
+        print("🔍 ONEX Pydantic Legacy Pattern Validation")
+        print("=" * 55)
+        print("📋 Preventing regression of legacy Pydantic v1 patterns")
+
+        # Filter to only Python files that exist
+        python_files = [f for f in files if f.suffix == ".py" and f.exists()]
+        print(f"📁 Scanning {len(python_files)} Python file(s)...")
+
+        if not python_files:
+            print("⚠️  No Python files to validate")
+            return True
+
+        total_errors = 0
+        total_warnings = 0
+        files_with_issues: dict[str, list[tuple[LegacyPattern, int, str]]] = {}
+
+        for py_file in python_files:
+            findings = self.find_legacy_patterns_in_file(py_file)
+            if findings:
+                files_with_issues[str(py_file)] = findings
+
+                # Count errors vs warnings
+                for pattern, _, _ in findings:
+                    if pattern.severity == "error":
+                        total_errors += 1
+                    else:
+                        total_warnings += 1
+
+        print(
+            f"📊 Found {total_errors} errors and {total_warnings} warnings across {len(files_with_issues)} files"
+        )
+
+        # Report findings
+        if files_with_issues:
+            print("\n🚨 FILES WITH LEGACY PYDANTIC PATTERNS:")
+            for file_path, findings in files_with_issues.items():
+                print(f"\n   📄 {file_path} ({len(findings)} issues):")
+
+                for pattern, line_num, line in findings:
+                    severity_icon = "❌" if pattern.severity == "error" else "⚠️"
+                    print(
+                        f"      {severity_icon} Line {line_num}: {pattern.description}"
+                    )
+                    print(f"         Code: {line}")
+                    print(f"         Fix:  Use {pattern.replacement}")
+
+        # Apply validation rules
+        success = True
+
+        if total_errors > allowed_errors:
+            print(
+                f"\n❌ CRITICAL: Found {total_errors} legacy Pydantic patterns (allowed: {allowed_errors})"
+            )
+            print(
+                "   🚫 REGRESSION DETECTED! These patterns were already migrated to Pydantic v2."
+            )
+            print("   🔧 Quick fixes:")
+            print("      • Replace .dict() with .model_dump()")
+            print(
+                "      • Replace .dict(exclude_none=True) with .model_dump(exclude_none=True)"
+            )
+            print("      • Replace .json(...) with .model_dump_json(...)")
+            print("      • Replace .copy(...) with .model_copy(...)")
+            success = False
+        elif total_warnings > 0 and self.strict:
+            print(f"\n⚠️  STRICT MODE: {total_warnings} warnings found")
+            print("   These patterns should be reviewed and potentially updated:")
+            print("      • @validator → @field_validator or @model_validator")
+            print("      • @root_validator → @model_validator")
+            print("      • Config class → model_config = ConfigDict(...)")
+            success = False
+        elif total_warnings > 0:
+            print(f"\n⚠️  INFO: {total_warnings} warnings found (non-critical)")
+            print("   Consider updating these patterns in future refactoring:")
+            print("      • Legacy validators and config classes")
+            print("      • Schema generation methods")
+
+        # Success message
+        if total_errors == 0 and total_warnings == 0:
+            print("\n✅ EXCELLENT: No legacy Pydantic patterns found!")
+            print("   🎉 Full Pydantic v2 compliance maintained!")
+
+        print("\n📊 PYDANTIC VALIDATION SUMMARY")
+        print("=" * 55)
+        print(f"Total errors: {total_errors}")
+        print(f"Total warnings: {total_warnings}")
+        print(f"Files with issues: {len(files_with_issues)}")
+        print(f"Allowed errors: {allowed_errors}")
+        print(f"Strict mode: {'ON' if self.strict else 'OFF'}")
+        print(f"Status: {'PASSED' if success else 'FAILED'}")
+
+        if success and total_errors == 0:
+            print("🛡️  Legacy pattern regression protection active!")
+
+        return success
+
 
 def main():
     """Main entry point."""
@@ -348,7 +456,13 @@ Examples:
     python scripts/validate-pydantic-patterns.py              # Check for errors only
     python scripts/validate-pydantic-patterns.py --strict     # Check errors and warnings
     python scripts/validate-pydantic-patterns.py --allow-errors 3  # Allow up to 3 errors
+    python scripts/validate-pydantic-patterns.py file1.py file2.py  # Validate specific files
         """,
+    )
+    parser.add_argument(
+        "files",
+        nargs="*",
+        help="Files to validate (default: scan src/ directory)",
     )
     parser.add_argument(
         "--strict", action="store_true", help="Strict mode - treat warnings as errors"
@@ -364,17 +478,30 @@ Examples:
         "-s",
         type=Path,
         default=Path("src"),
-        help="Source directory to scan (default: src)",
+        help="Source directory to scan when no files provided (default: src)",
     )
 
     args = parser.parse_args()
 
-    if not args.src_dir.exists():
-        print(f"❌ Source directory not found: {args.src_dir}")
-        sys.exit(1)
-
     validator = PydanticPatternValidator(strict=args.strict)
-    success = validator.validate_project(args.src_dir, allowed_errors=args.allow_errors)
+
+    # If files are provided, validate only those files
+    if args.files:
+        files_to_check = [Path(f) for f in args.files if f.endswith(".py")]
+        if not files_to_check:
+            print("⚠️  No Python files provided to validate")
+            sys.exit(0)
+        success = validator.validate_files(
+            files_to_check, allowed_errors=args.allow_errors
+        )
+    else:
+        # Fall back to scanning src/ directory
+        if not args.src_dir.exists():
+            print(f"❌ Source directory not found: {args.src_dir}")
+            sys.exit(1)
+        success = validator.validate_project(
+            args.src_dir, allowed_errors=args.allow_errors
+        )
 
     if not success:
         print("\n🚫 Pydantic pattern validation failed!")

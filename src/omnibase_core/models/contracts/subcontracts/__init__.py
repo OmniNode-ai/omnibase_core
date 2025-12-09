@@ -20,6 +20,8 @@ providing clean separation between node logic and subcontract functionality.
 ONEX Compliance: Strong typing with zero tolerance for Any types.
 """
 
+# Re-export constant from canonical location
+from omnibase_core.constants import IDEMPOTENCY_DEFAULTS
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.core.model_health_check_result import ModelHealthCheckResult
 from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
@@ -47,6 +49,12 @@ from .model_data_grouping import ModelDataGrouping
 from .model_dependency_health import ModelDependencyHealth
 from .model_discovery_subcontract import ModelDiscoverySubcontract
 
+# Effect subcontract imports (Contract-Driven NodeEffect v1.0 - OMN-524, OMN-525)
+# Individual model imports from split files
+from .model_effect_circuit_breaker import ModelEffectCircuitBreaker
+from .model_effect_contract_metadata import ModelEffectContractMetadata
+from .model_effect_input_schema import ModelEffectInputSchema
+
 # Effect IO config imports (Contract-Driven NodeEffect v1.0)
 from .model_effect_io_configs import (
     EffectIOConfig,
@@ -55,6 +63,9 @@ from .model_effect_io_configs import (
     ModelHttpIOConfig,
     ModelKafkaIOConfig,
 )
+from .model_effect_observability import ModelEffectObservability
+from .model_effect_operation import ModelEffectOperation
+from .model_effect_operation_result import ModelEffectOperationResult
 
 # Effect resolved context imports (Contract-Driven NodeEffect v1.0)
 from .model_effect_resolved_context import (
@@ -64,6 +75,10 @@ from .model_effect_resolved_context import (
     ModelResolvedKafkaContext,
     ResolvedIOContext,
 )
+from .model_effect_response_handling import ModelEffectResponseHandling
+from .model_effect_retry_policy import ModelEffectRetryPolicy
+from .model_effect_subcontract import ModelEffectSubcontract
+from .model_effect_transaction_config import ModelEffectTransactionConfig
 from .model_event_bus_subcontract import ModelEventBusSubcontract
 from .model_event_definition import ModelEventDefinition
 from .model_event_handling_subcontract import ModelEventHandlingSubcontract
@@ -127,6 +142,18 @@ __all__ = [
     "ModelResolvedKafkaContext",
     "ModelResolvedFilesystemContext",
     "ResolvedIOContext",
+    # Effect subcontract models (Contract-Driven NodeEffect v1.0 - OMN-524, OMN-525)
+    "ModelEffectRetryPolicy",
+    "IDEMPOTENCY_DEFAULTS",
+    "ModelEffectCircuitBreaker",
+    "ModelEffectTransactionConfig",
+    "ModelEffectResponseHandling",
+    "ModelEffectObservability",
+    "ModelEffectOperation",
+    "ModelEffectOperationResult",
+    "ModelEffectContractMetadata",
+    "ModelEffectInputSchema",
+    "ModelEffectSubcontract",
     # Aggregation subcontracts and components
     "ModelAggregationSubcontract",
     "ModelAggregationFunction",

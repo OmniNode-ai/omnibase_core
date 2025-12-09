@@ -8,6 +8,18 @@ from omnibase_core.constants.constants_contract_fields import (
     INTEGRATION_KEY,
     PROCESSED_KEY,
 )
+from omnibase_core.constants.constants_effect_idempotency import IDEMPOTENCY_DEFAULTS
+from omnibase_core.constants.constants_effect_limits import (
+    EFFECT_AUTHOR_MAX_LENGTH,
+    EFFECT_MAX_OPERATIONS,
+    EFFECT_OPERATION_DESCRIPTION_MAX_LENGTH,
+    EFFECT_OPERATION_NAME_MAX_LENGTH,
+    EFFECT_SUBCONTRACT_DESCRIPTION_MAX_LENGTH,
+    EFFECT_SUBCONTRACT_NAME_MAX_LENGTH,
+    EFFECT_TIMEOUT_DEFAULT_MS,
+    EFFECT_TIMEOUT_MAX_MS,
+    EFFECT_TIMEOUT_MIN_MS,
+)
 from omnibase_core.constants.event_types import (
     NODE_FAILURE,
     NODE_HEALTH_CHECK,
@@ -50,4 +62,16 @@ __all__ = [
     "DEFAULT_PROCESSED_VALUE",
     "INTEGRATION_KEY",
     "PROCESSED_KEY",
+    # Effect idempotency defaults
+    "IDEMPOTENCY_DEFAULTS",
+    # Effect subcontract limits
+    "EFFECT_AUTHOR_MAX_LENGTH",
+    "EFFECT_MAX_OPERATIONS",
+    "EFFECT_OPERATION_DESCRIPTION_MAX_LENGTH",
+    "EFFECT_OPERATION_NAME_MAX_LENGTH",
+    "EFFECT_SUBCONTRACT_DESCRIPTION_MAX_LENGTH",
+    "EFFECT_SUBCONTRACT_NAME_MAX_LENGTH",
+    "EFFECT_TIMEOUT_DEFAULT_MS",
+    "EFFECT_TIMEOUT_MAX_MS",
+    "EFFECT_TIMEOUT_MIN_MS",
 ]
