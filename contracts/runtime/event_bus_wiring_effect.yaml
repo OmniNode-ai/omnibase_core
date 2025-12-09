@@ -28,7 +28,6 @@
 # - Health checks for subscription status
 # - Publish runtime.ready event when wiring is complete
 #
-# Linear Ticket: OMN-467
 
 # Contract Metadata
 node_type: EFFECT_GENERIC
@@ -83,7 +82,7 @@ effect:
     compression: "none"
 
   # Retry policy for subscription operations
-  # Timing Validation [OMN-467]: 1000 + 2000 + 4000 = 7000ms * 1.1 = 7700ms
+  # Timing Validation: 1000 + 2000 + 4000 = 7000ms * 1.1 = 7700ms
   # Worst case retry (7700ms) << timeout (60000ms) - PASS (87% margin)
   retry_policy:
     enabled: true
@@ -250,4 +249,3 @@ metadata:
     - self-hosted
     - wiring
   documentation_url: https://docs.onex.ai/runtime/event-bus-wiring
-  linear_ticket: OMN-467

@@ -3,11 +3,6 @@ NodeReducer - FSM-driven reducer node for state management.
 
 Primary reducer implementation using FSM subcontracts for state transitions.
 Zero custom Python code required - all state transitions defined declaratively.
-
-VERSION: 2.0.0
-STABILITY GUARANTEE: FSM contract interface is stable.
-
-Author: ONEX Framework Team
 """
 
 import time

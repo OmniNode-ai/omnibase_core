@@ -1,12 +1,8 @@
 """
-Effect Input Schema Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+Effect Input Schema Model.
 
 Optional input schema for pre-execution validation.
 RESERVED FOR v1.1: Minimal implementation in v1.0 (structure only, no validation).
-
-Implements: OMN-524
 """
 
 from pydantic import BaseModel, ConfigDict, Field

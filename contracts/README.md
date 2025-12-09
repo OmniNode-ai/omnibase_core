@@ -180,4 +180,4 @@ Subscribe to these topics for operational visibility:
 
 ## Reference
 
-See [OMN-467](https://linear.app/omninode/issue/OMN-467) for the runtime orchestrator implementation.
+See the runtime orchestrator implementation documentation for details.

@@ -1,13 +1,11 @@
 """
-Contract Validation API for Autonomous Code Generation.
+Contract Validation API.
 
 Provides programmatic contract validation against ONEX standards with:
 - YAML contract validation against locked-down models
 - Model code compliance checking
 - Scoring based on completeness and correctness
-- Actionable error messages for code generation
-
-VERSION: 1.0.0 - Interface locked for autonomous code generation
+- Actionable error messages for validation
 """
 
 import ast
@@ -56,7 +54,7 @@ WARNING_PENALTY_MODEL_COMPLIANCE = 0.05  # Model compliance warning penalty
 
 class ProtocolContractValidator:
     """
-    Programmatic contract validation for autonomous code generation.
+    Programmatic contract validation API.
 
     Validates YAML contracts and model code against ONEX standards:
     - Uses locked-down contract models (INTERFACE_VERSION 1.0.0)

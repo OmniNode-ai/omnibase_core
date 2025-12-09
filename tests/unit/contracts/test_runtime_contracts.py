@@ -22,7 +22,6 @@ Test Coverage:
 
 Related:
     - PR #137: Runtime orchestrator contract validation
-    - Linear Ticket: OMN-467
 """
 
 import importlib.util
@@ -885,19 +884,6 @@ class TestAllRuntimeContractsValidation:
                 assert "state_transitions" in data, (
                     f"{name}: Missing state_transitions section"
                 )
-
-    def test_linear_ticket_references(self, all_contracts: dict[str, dict]) -> None:
-        """Test that runtime contracts reference the correct Linear ticket."""
-        for name, data in all_contracts.items():
-            metadata = data.get("metadata", {})
-            linear_ticket = metadata.get("linear_ticket")
-            # Linear ticket should be OMN-467 for runtime contracts
-            if linear_ticket:
-                assert linear_ticket == "OMN-467", (
-                    f"{name}: Expected Linear ticket OMN-467, got {linear_ticket}"
-                )
-
-
 @pytest.mark.unit
 class TestContractVersionFormats:
     """Tests for contract_version format handling across runtime contracts."""

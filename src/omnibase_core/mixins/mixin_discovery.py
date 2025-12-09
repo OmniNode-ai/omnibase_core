@@ -1,5 +1,5 @@
 """
-Mixin Discovery API for autonomous code generation.
+Mixin Discovery API.
 
 Provides programmatic discovery and querying of available mixins with metadata,
 compatibility checking, and dependency resolution for intelligent composition.
@@ -21,10 +21,10 @@ MAX_METADATA_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10MB limit for metadata files
 
 class MixinDiscovery:
     """
-    Discover and query available mixins for autonomous code generation.
+    Discover and query available mixins.
 
     Provides intelligent mixin discovery, compatibility checking, and dependency
-    resolution to support autonomous composition of ONEX nodes.
+    resolution to support composition of ONEX nodes.
 
     Example:
         >>> discovery = MixinDiscovery()

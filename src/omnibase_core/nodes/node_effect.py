@@ -1,8 +1,4 @@
 """
-VERSION: 1.0.0
-STABILITY GUARANTEE: Abstract method signatures frozen.
-Breaking changes require major version bump.
-
 NodeEffect - Side Effect Management Node for 4-Node Architecture.
 
 Specialized node type for managing side effects and external interactions with
@@ -15,11 +11,6 @@ Key Capabilities:
 - Retry policies and circuit breaker patterns
 - Event bus publishing for state changes
 - Atomic file operations for data integrity
-
-STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
-Code generators can target this stable interface.
-
-Author: ONEX Framework Team
 """
 
 import asyncio

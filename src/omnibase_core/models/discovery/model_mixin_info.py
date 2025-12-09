@@ -2,7 +2,7 @@
 Mixin metadata information model.
 
 Provides comprehensive information about mixin capabilities, compatibility,
-dependencies, and usage for autonomous code generation systems.
+dependencies, and usage.
 """
 
 from typing import Any
@@ -24,7 +24,7 @@ class ModelMixinInfo(BaseModel):
     Metadata information for a single mixin.
 
     Provides comprehensive information about mixin capabilities, compatibility,
-    dependencies, and usage for autonomous code generation systems.
+    dependencies, and usage.
     """
 
     model_config = {

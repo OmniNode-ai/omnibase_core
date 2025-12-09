@@ -1,12 +1,8 @@
 """
-Effect Operation Result Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+Effect Operation Result Model.
 
 Strongly-typed result for a single effect operation.
 Eliminates dict[str, Any] in favor of explicit fields.
-
-Implements: OMN-524
 """
 
 from pydantic import BaseModel, ConfigDict, Field

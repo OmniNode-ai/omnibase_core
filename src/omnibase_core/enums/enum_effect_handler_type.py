@@ -1,8 +1,6 @@
 """
 Effect Handler Type Enumeration.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
-
 Eliminates raw string handler types to prevent typo bugs and enable IDE completion.
 """
 

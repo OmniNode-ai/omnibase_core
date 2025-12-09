@@ -1,12 +1,8 @@
 """
-Effect Circuit Breaker Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+Effect Circuit Breaker Model.
 
 Effect-specific circuit breaker configuration (simplified view).
 Provides effect-specific defaults optimized for common I/O operation patterns.
-
-Implements: OMN-524
 """
 
 from pydantic import BaseModel, ConfigDict, Field

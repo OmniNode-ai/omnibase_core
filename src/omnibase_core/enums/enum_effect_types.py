@@ -3,8 +3,6 @@ Effect-related enumerations for NodeEffect operations.
 
 Defines types of side effects, transaction states, and circuit breaker states
 for managing external interactions and resilience patterns.
-
-Author: ONEX Framework Team
 """
 
 from enum import Enum

@@ -1,8 +1,4 @@
 """
-VERSION: 1.0.0
-STABILITY GUARANTEE: Abstract method signatures frozen.
-Breaking changes require major version bump.
-
 NodeCompute - Pure Computation Node for 4-Node Architecture.
 
 Specialized node type for pure computational operations with deterministic guarantees.
@@ -14,11 +10,6 @@ Key Capabilities:
 - Computational pipeline with parallel processing
 - Caching layer for expensive computations
 - Algorithm registration and execution
-
-STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
-Code generators can target this stable interface.
-
-Author: ONEX Framework Team
 """
 
 import asyncio

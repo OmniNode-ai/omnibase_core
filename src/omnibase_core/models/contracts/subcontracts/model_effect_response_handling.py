@@ -1,12 +1,8 @@
 """
-Effect Response Handling Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+Effect Response Handling Model.
 
 Response extraction and validation configuration for effect operations.
 Defines success codes, field extraction, and extraction engine settings.
-
-Implements: OMN-524
 """
 
 from typing import Literal

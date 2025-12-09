@@ -3,8 +3,6 @@ Reducer Type Enums for 4-Node Architecture.
 
 Defines enums for reduction operations, conflict resolution strategies,
 and streaming processing modes.
-
-Author: ONEX Framework Team
 """
 
 from enum import Enum

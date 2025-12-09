@@ -1,13 +1,9 @@
 """
-Effect Contract Metadata Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+Effect Contract Metadata Model.
 
 Contract-level metadata for tooling, versioning, and RSD compatibility.
 Enables contract diffing, migration tracking, ONEX introspection,
 code generation, audit trails, and change history.
-
-Implements: OMN-524
 """
 
 from uuid import UUID, uuid4
