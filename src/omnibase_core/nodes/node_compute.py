@@ -53,21 +53,64 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
     .. versionadded:: 0.4.0
         Added PEP 695 generic type parameters and execute_compute() contract interface.
 
-    Generic type parameters:
-        T_Input: Type of input data items (flows from ModelComputeInput[T_Input])
-        T_Output: Type of output result (flows to ModelComputeOutput[T_Output])
+    Type Parameters:
+        T_Input: The input data type for computations.
+            Example: dict[str, Any], ModelUserData, list[ModelMetric]
+        T_Output: The output data type from computations.
+            Example: ModelComputeResult, dict[str, float], list[ModelPrediction]
 
     Type flow:
         Input data (T_Input) -> computation -> Output result (T_Output)
         T_Output is typically the same as T_Input or a transformation thereof.
 
+    Example with concrete types::
+
+        class NodeStringProcessor(NodeCompute[str, str]):
+            '''Process string inputs to string outputs.'''
+
+            async def process(
+                self, input_data: ModelComputeInput[str]
+            ) -> ModelComputeOutput[str]:
+                result = input_data.data.upper()
+                return ModelComputeOutput(
+                    result=result,
+                    operation_id=input_data.operation_id,
+                    computation_type=input_data.computation_type,
+                    processing_time_ms=0.0,
+                    cache_hit=False,
+                    parallel_execution_used=False,
+                    metadata={},
+                )
+
+        class NodeMetricsAggregator(NodeCompute[list[float], dict[str, float]]):
+            '''Aggregate numeric metrics into statistics.'''
+
+            async def process(
+                self, input_data: ModelComputeInput[list[float]]
+            ) -> ModelComputeOutput[dict[str, float]]:
+                values = input_data.data
+                result = {
+                    "sum": sum(values),
+                    "avg": sum(values) / len(values) if values else 0.0,
+                    "count": float(len(values)),
+                }
+                return ModelComputeOutput(
+                    result=result,
+                    operation_id=input_data.operation_id,
+                    computation_type="metrics_aggregation",
+                    processing_time_ms=0.0,
+                    cache_hit=False,
+                    parallel_execution_used=False,
+                    metadata={},
+                )
+
     Key Features:
-    - Pure function patterns (no side effects)
-    - Deterministic operation guarantees
-    - Parallel processing support for batch operations
-    - Intelligent caching layer for expensive computations
-    - Performance monitoring and optimization
-    - Type-safe input/output handling
+        - Pure function patterns (no side effects)
+        - Deterministic operation guarantees
+        - Parallel processing support for batch operations
+        - Intelligent caching layer for expensive computations
+        - Performance monitoring and optimization
+        - Type-safe input/output handling
 
     Thread Safety:
         - Instance NOT thread-safe due to mutable cache state
@@ -192,6 +235,41 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         compute_input = self._contract_to_input(contract)
         return await self.process(compute_input)
 
+    def _extract_computation_type(self, contract: Any, metadata: dict[str, Any]) -> str:
+        """
+        Extract computation type from contract or metadata.
+
+        Priority order:
+            1. contract.algorithm.algorithm_type (preferred for ModelContractCompute)
+            2. metadata["computation_type"]
+            3. contract.computation_type (if exists)
+            4. Default: "default"
+
+        Args:
+            contract: The compute contract
+            metadata: Extracted metadata dict
+
+        Returns:
+            Computation type string
+        """
+        # Check algorithm configuration first (preferred for ModelContractCompute)
+        contract_algorithm = getattr(contract, "algorithm", None)
+        if contract_algorithm is not None:
+            algorithm_type = getattr(contract_algorithm, "algorithm_type", None)
+            if algorithm_type is not None:
+                return str(algorithm_type)
+
+        # Check metadata next
+        if "computation_type" in metadata:
+            return str(metadata["computation_type"])
+
+        # Check contract attribute
+        contract_computation_type = getattr(contract, "computation_type", None)
+        if contract_computation_type is not None:
+            return str(contract_computation_type)
+
+        return "default"
+
     def _contract_to_input(self, contract: Any) -> ModelComputeInput[Any]:
         """
         Convert ModelContractCompute to ModelComputeInput for processing.
@@ -233,14 +311,19 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             that contract is a ModelContractCompute instance. Direct calls
             should ensure proper contract type validation.
         """
+        # Cache contract attributes to avoid redundant getattr calls
+        contract_input_state = getattr(contract, "input_state", None)
+        contract_input_data = getattr(contract, "input_data", None)
+        contract_metadata = getattr(contract, "metadata", None)
+
         # Extract input_state from contract - this is the primary input data field
         # for ModelContractCompute (not input_data which is used in simpler contracts)
-        input_data: Any = getattr(contract, "input_state", None)
+        input_data: Any = contract_input_state
 
         # Validate that input_state is present - it's required for computation
         if input_data is None:
             # Check for legacy input_data attribute as fallback
-            input_data = getattr(contract, "input_data", None)
+            input_data = contract_input_data
 
             if input_data is None:
                 raise ModelOnexError(
@@ -265,19 +348,11 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             )
 
         # Extract metadata from contract (optional field)
-        metadata: dict[str, Any] = getattr(contract, "metadata", None) or {}
+        # Use empty dict as default for falsy values (None, empty dict)
+        metadata: dict[str, Any] = contract_metadata or {}
 
-        # Extract computation_type from algorithm config, metadata, or use default
-        computation_type: str = "default"
-
-        # First check algorithm configuration (preferred for ModelContractCompute)
-        algorithm = getattr(contract, "algorithm", None)
-        if algorithm is not None and hasattr(algorithm, "algorithm_type"):
-            computation_type = str(algorithm.algorithm_type)
-        elif "computation_type" in metadata:
-            computation_type = str(metadata["computation_type"])
-        elif hasattr(contract, "computation_type"):
-            computation_type = str(contract.computation_type)
+        # Extract computation_type using helper method
+        computation_type = self._extract_computation_type(contract, metadata)
 
         # Extract cache and parallel settings from metadata or use defaults
         cache_enabled: bool = bool(metadata.get("cache_enabled", True))
