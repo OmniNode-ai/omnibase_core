@@ -79,7 +79,7 @@ python = "^3.12"
 # NOTE: omnibase-spi removed in v0.3.6 - SPI now depends on Core (dependency inversion)
 pydantic = "^2.12.5"
 llama-index = "^0.14.0"  # Updated for pypdf 6.0+ security fix (CVE-2025-55197)
-pypdf = "^6.4.0"  # Security fix for CVE-2025-55197
+pypdf = "^6.4.1"  # Security fix for CVE-2025-55197
 fastapi = "^0.120.1"  # Updated to 0.120.1+ for starlette 0.49.x compatibility
 starlette = "^0.49.1"  # Security fix for CVE-2025-62727 (O(n^2) DoS via Range header)
 uvicorn = "^0.32.0"
@@ -113,7 +113,7 @@ pytest-xdist = "^3.8.0"
 pytest-split = "^0.10.0"
 pytest-timeout = "^2.4.0"
 pytest-rerunfailures = "^16.1"
-pytest-testmon = "^2.1.4"
+pytest-testmon = "^2.2.0"
 interrogate = "^1.7.0"
 hypothesis = "^6.148"
 
