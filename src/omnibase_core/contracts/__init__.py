@@ -12,7 +12,6 @@ This module provides the contract infrastructure for the ONEX 4-node architectur
    registered fingerprints, supporting safe migration workflows.
 
 Exports:
-    ContractData: Type alias for contract dictionaries (dict[str, object]).
     ContractHashRegistry: Registry for storing and retrieving contract fingerprints.
     ModelContractFingerprint: Pydantic model for contract fingerprints.
     ModelContractMeta: Meta-model for contract validation.
@@ -21,8 +20,8 @@ Exports:
     ModelDriftDetails: Detailed drift information.
     ModelDriftResult: Result of drift detection.
     ModelNodeExtensions: Extension points for nodes.
-    compute_contract_fingerprint: Compute SHA256 fingerprint for a contract.
-    normalize_contract: Normalize contract for deterministic hashing.
+    compute_contract_fingerprint: Compute SHA256 fingerprint for a contract model.
+    normalize_contract: Normalize contract model for deterministic hashing.
     is_valid_meta_model: Check if a model is a valid meta-model.
     validate_meta_model: Validate a model against meta-model requirements.
 
@@ -33,9 +32,10 @@ Example:
             ContractHashRegistry,
             compute_contract_fingerprint,
         )
+        from omnibase_core.models.contracts import ModelContractCompute
 
-        # Compute fingerprint for a contract
-        contract = {"name": "my_node", "version": "0.4.0", "type": "compute"}
+        # Compute fingerprint for a contract model
+        contract = ModelContractCompute(name="my_node", version="0.4.0", ...)
         fingerprint = compute_contract_fingerprint(contract)
         print(fingerprint)  # Output: 0.4.0:8fa1e2b4c9d1
 
@@ -52,8 +52,8 @@ See Also:
 
 Thread Safety:
     ContractHashRegistry is NOT thread-safe. Use external synchronization
-    (e.g., threading.Lock) when accessing from multiple threads.
-    See docs/guides/THREADING.md for detailed patterns.
+    (e.g., threading.Lock) if accessing from multiple threads.
+    See docs/guides/THREADING.md for detailed thread safety patterns.
 
 ONEX Compliance:
     This module is part of the ONEX contract infrastructure, ensuring:
@@ -72,7 +72,6 @@ Stability Guarantee:
 """
 
 from omnibase_core.contracts.hash_registry import (
-    ContractData,
     ContractHashRegistry,
     compute_contract_fingerprint,
     normalize_contract,
@@ -104,7 +103,6 @@ from omnibase_core.models.contracts.model_node_extensions import (
 
 __all__ = [
     # Hash Registry
-    "ContractData",
     "ContractHashRegistry",
     "ModelContractFingerprint",
     "ModelContractNormalizationConfig",

@@ -150,6 +150,13 @@ class ModelContractFingerprint(BaseModel):
 
         Raises:
             ModelOnexError: If format is invalid
+
+        Note:
+            Input validation is performed on all components (version format,
+            hash prefix format, and length constraints). When parsing untrusted
+            input in high-throughput scenarios, consider implementing rate
+            limiting at the application layer to prevent resource exhaustion
+            from malformed fingerprint strings.
         """
         if ":" not in fingerprint_str:
             raise ModelOnexError(

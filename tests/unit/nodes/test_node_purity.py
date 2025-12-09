@@ -39,6 +39,7 @@ from check_node_purity import (
     PurityCheckResult,
     Severity,
     ViolationType,
+    _safe_relative_path,
     analyze_file,
 )
 
@@ -1229,3 +1230,464 @@ class TestAllowedPatterns:
             if v.violation_type == ViolationType.OPEN_CALL
         ]
         assert len(open_violations) == 0
+
+    def test_allows_open_read_binary_mode(self, analyze_source):
+        """Test that open() with read binary mode is allowed."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def read_binary(self, path: str) -> bytes:
+                with open(path, "rb") as f:
+                    return f.read()
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        assert len(open_violations) == 0
+
+    def test_allows_open_default_mode(self, analyze_source):
+        """Test that open() without explicit mode (defaults to read) is allowed."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def read_file(self, path: str) -> str:
+                with open(path) as f:
+                    return f.read()
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        assert len(open_violations) == 0
+
+    def test_allows_open_mode_keyword(self, analyze_source):
+        """Test that open() with mode='r' keyword is allowed."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def read_file(self, path: str) -> str:
+                with open(path, mode="r") as f:
+                    return f.read()
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        assert len(open_violations) == 0
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(30)
+class TestOpenWriteModeDetection:
+    """Test detection of open() with various write modes."""
+
+    def test_detects_open_write_mode_w(self, analyze_source):
+        """Test that open() with 'w' mode is detected as violation."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def write_file(self):
+                with open("test.txt", "w") as f:
+                    f.write("data")
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        assert len(open_violations) == 1
+        assert "write mode" in open_violations[0].message.lower()
+
+    def test_detects_open_write_mode_wb(self, analyze_source):
+        """Test that open() with 'wb' binary write mode is detected."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def write_binary(self):
+                with open("test.bin", "wb") as f:
+                    f.write(b"data")
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        assert len(open_violations) == 1
+
+    def test_detects_open_append_mode_a(self, analyze_source):
+        """Test that open() with 'a' append mode is detected."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def append_file(self):
+                with open("test.txt", "a") as f:
+                    f.write("more data")
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        assert len(open_violations) == 1
+
+    def test_detects_open_create_mode_x(self, analyze_source):
+        """Test that open() with 'x' exclusive create mode is detected."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def create_file(self):
+                with open("test.txt", "x") as f:
+                    f.write("new file")
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        assert len(open_violations) == 1
+
+    def test_detects_open_read_write_mode_rplus(self, analyze_source):
+        """Test that open() with 'r+' read/write mode is detected."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def update_file(self):
+                with open("test.txt", "r+") as f:
+                    f.write("updated")
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        assert len(open_violations) == 1
+
+    def test_detects_open_write_mode_keyword(self, analyze_source):
+        """Test that open() with mode='w' keyword is detected."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def write_file(self):
+                with open("test.txt", mode="w") as f:
+                    f.write("data")
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        assert len(open_violations) == 1
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(30)
+class TestSafeRelativePath:
+    """Test _safe_relative_path() helper function."""
+
+    def test_relative_path_within_base_dir(self, tmp_path: Path) -> None:
+        """Test that paths within base_dir return relative path."""
+        base_dir = tmp_path / "project"
+        base_dir.mkdir()
+        file_path = base_dir / "src" / "module.py"
+
+        result = _safe_relative_path(file_path, base_dir)
+
+        assert result == "src/module.py"
+
+    def test_relative_path_direct_child(self, tmp_path: Path) -> None:
+        """Test that direct child of base_dir returns just filename."""
+        base_dir = tmp_path / "project"
+        base_dir.mkdir()
+        file_path = base_dir / "file.py"
+
+        result = _safe_relative_path(file_path, base_dir)
+
+        assert result == "file.py"
+
+    def test_path_outside_base_dir_returns_full_path(self, tmp_path: Path) -> None:
+        """Test that paths outside base_dir return full path."""
+        base_dir = tmp_path / "project"
+        base_dir.mkdir()
+        # Path outside base_dir
+        outside_path = tmp_path / "other" / "external.py"
+
+        result = _safe_relative_path(outside_path, base_dir)
+
+        # Should return full path as string since relative_to would fail
+        assert result == str(outside_path)
+
+    def test_completely_unrelated_path(self, tmp_path: Path) -> None:
+        """Test with completely unrelated path returns full path."""
+        base_dir = Path("/some/base/dir")
+        file_path = Path("/totally/different/path/file.py")
+
+        result = _safe_relative_path(file_path, base_dir)
+
+        assert result == str(file_path)
+
+    def test_path_is_base_dir_itself(self, tmp_path: Path) -> None:
+        """Test when file_path equals base_dir returns dot."""
+        base_dir = tmp_path / "project"
+        base_dir.mkdir()
+
+        result = _safe_relative_path(base_dir, base_dir)
+
+        assert result == "."
+
+    def test_handles_windows_style_paths(self, tmp_path: Path) -> None:
+        """Test that function handles paths correctly across platforms."""
+        # This test uses platform-agnostic Path objects
+        base_dir = tmp_path / "project"
+        base_dir.mkdir()
+        file_path = base_dir / "subdir" / "nested" / "file.py"
+
+        result = _safe_relative_path(file_path, base_dir)
+
+        # Path separators are normalized by Path
+        expected = str(Path("subdir") / "nested" / "file.py")
+        assert result == expected
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(30)
+class TestViolationDetectionSmokeTests:
+    """Smoke tests covering all major violation types with minimal examples."""
+
+    def test_smoke_networking_violation(self, analyze_source):
+        """Smoke test: networking import is flagged."""
+        source = """
+        import requests
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeTestCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+        assert any(
+            v.violation_type == ViolationType.NETWORKING_IMPORT
+            for v in analyzer.violations
+        )
+
+    def test_smoke_filesystem_write_violation(self, analyze_source):
+        """Smoke test: filesystem write operation is flagged."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeTestCompute(NodeCoreBase):
+            def bad_method(self):
+                with open("test.txt", "w") as f:
+                    f.write("data")
+        """
+        analyzer = analyze_source(source)
+        assert any(
+            v.violation_type == ViolationType.OPEN_CALL for v in analyzer.violations
+        )
+
+    def test_smoke_subprocess_violation(self, analyze_source):
+        """Smoke test: subprocess import is flagged."""
+        source = """
+        import subprocess
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeTestCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+        assert any(
+            v.violation_type == ViolationType.SUBPROCESS_IMPORT
+            for v in analyzer.violations
+        )
+
+    def test_smoke_threading_violation(self, analyze_source):
+        """Smoke test: threading import is flagged."""
+        source = """
+        import threading
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeTestCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+        assert any(
+            v.violation_type == ViolationType.THREADING_IMPORT
+            for v in analyzer.violations
+        )
+
+    def test_smoke_mutable_class_data_violation(self, analyze_source):
+        """Smoke test: mutable class data is flagged."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeTestCompute(NodeCoreBase):
+            shared_state = []  # Mutable class attribute
+        """
+        analyzer = analyze_source(source)
+        assert any(
+            v.violation_type == ViolationType.CLASS_MUTABLE_DATA
+            for v in analyzer.violations
+        )
+
+    def test_smoke_caching_decorator_violation(self, analyze_source):
+        """Smoke test: caching decorator is flagged."""
+        source = """
+        from functools import lru_cache
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeTestCompute(NodeCoreBase):
+            @lru_cache(maxsize=100)
+            def compute(self, x):
+                return x * 2
+        """
+        analyzer = analyze_source(source)
+        assert any(
+            v.violation_type == ViolationType.CACHING_DECORATOR
+            for v in analyzer.violations
+        )
+
+    def test_smoke_pathlib_write_violation(self, analyze_source):
+        """Smoke test: pathlib write method is flagged."""
+        source = """
+        from pathlib import Path
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeTestCompute(NodeCoreBase):
+            def bad_method(self):
+                Path("test.txt").write_text("data")
+        """
+        analyzer = analyze_source(source)
+        assert any(
+            v.violation_type == ViolationType.PATHLIB_WRITE for v in analyzer.violations
+        )
+
+    def test_smoke_logging_import_violation(self, analyze_source):
+        """Smoke test: logging import is flagged."""
+        source = """
+        import logging
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeTestCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+        assert any(
+            v.violation_type == ViolationType.LOGGING_IMPORT
+            for v in analyzer.violations
+        )
+
+    def test_smoke_invalid_inheritance_violation(self, analyze_source):
+        """Smoke test: invalid base class is flagged."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class InvalidBase:
+            pass
+
+        class NodeTestCompute(NodeCoreBase, InvalidBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+        assert any(
+            v.violation_type == ViolationType.INVALID_INHERITANCE
+            for v in analyzer.violations
+        )
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(30)
+class TestReadModeVsWriteModeDistinction:
+    """Explicit tests verifying read-mode open is NOT flagged while write-mode IS flagged."""
+
+    def test_read_mode_not_flagged_explicit_r(self, analyze_source):
+        """Read mode 'r' should NOT be flagged as violation."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def read_data(self):
+                with open("data.txt", "r") as f:
+                    return f.read()
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        assert len(open_violations) == 0, "Read mode 'r' should not be flagged"
+
+    def test_write_mode_is_flagged_explicit_w(self, analyze_source):
+        """Write mode 'w' SHOULD be flagged as violation."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def write_data(self):
+                with open("data.txt", "w") as f:
+                    f.write("output")
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        assert len(open_violations) == 1, "Write mode 'w' SHOULD be flagged"
+
+    def test_read_and_write_in_same_class(self, analyze_source):
+        """Test that read is allowed and write is flagged in same class."""
+        source = """
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            def read_config(self):
+                with open("config.json", "r") as f:
+                    return f.read()
+
+            def bad_write(self):
+                with open("output.txt", "w") as f:
+                    f.write("bad")
+        """
+        analyzer = analyze_source(source)
+
+        open_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.OPEN_CALL
+        ]
+        # Only the write should be flagged
+        assert len(open_violations) == 1
+        # Verify it's the write that was flagged (line 8-9 in dedented source)
+        assert open_violations[0].line_number > 5  # Should be from bad_write method
