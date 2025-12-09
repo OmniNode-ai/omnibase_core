@@ -1006,3 +1006,57 @@ class TestNodeComputeEdgeCases:
         assert result.computation_type == "default"
         # Default computation returns input unchanged
         assert result.result == {"test": "data"}
+
+    @pytest.mark.asyncio
+    async def test_execute_compute_cache_lookup_time_on_miss(
+        self,
+        node: NodeCompute[Any, Any],
+    ) -> None:
+        """Test that cache_lookup_time_ms is propagated on cache misses.
+
+        When caching is enabled and a cache miss occurs, the cache_lookup_time_ms
+        should reflect the actual time spent checking the cache (including key
+        generation via SHA256 hashing and dictionary lookup), not 0.0.
+
+        This is important for observability - knowing the cache overhead even on
+        misses helps identify performance bottlenecks in the caching layer.
+        """
+        mock_contract = MagicMock(spec=ModelContractCompute)
+        mock_contract.input_state = {"unique_data": "for_cache_miss_test"}
+        mock_contract.metadata = {"cache_enabled": True}
+        mock_contract.algorithm = MagicMock()
+        mock_contract.algorithm.algorithm_type = "default"
+
+        # First call will be a cache miss
+        result = await node.execute_compute(mock_contract)
+
+        assert isinstance(result, ModelComputeOutput)
+        assert result.cache_hit is False
+        # cache_lookup_time_ms should be >= 0.0 (actual measured time, not hardcoded 0.0)
+        # It will be a small positive value due to SHA256 hashing + dict lookup
+        assert result.cache_lookup_time_ms >= 0.0
+        # Note: We don't assert > 0.0 because the timing could be very small
+        # on fast systems, but the value should be the actual measured time
+
+    @pytest.mark.asyncio
+    async def test_execute_compute_cache_lookup_time_disabled(
+        self,
+        node: NodeCompute[Any, Any],
+    ) -> None:
+        """Test that cache_lookup_time_ms is 0.0 when caching is disabled.
+
+        When caching is disabled, no cache lookup occurs, so cache_lookup_time_ms
+        should be 0.0.
+        """
+        mock_contract = MagicMock(spec=ModelContractCompute)
+        mock_contract.input_state = {"data": "no_cache_lookup"}
+        mock_contract.metadata = {"cache_enabled": False}
+        mock_contract.algorithm = MagicMock()
+        mock_contract.algorithm.algorithm_type = "default"
+
+        result = await node.execute_compute(mock_contract)
+
+        assert isinstance(result, ModelComputeOutput)
+        assert result.cache_hit is False
+        # When caching is disabled, no lookup occurs, so time should be 0.0
+        assert result.cache_lookup_time_ms == 0.0

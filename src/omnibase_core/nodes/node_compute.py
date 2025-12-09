@@ -200,9 +200,11 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             - **Cache Hits**: Return cached result with ``processing_time_ms=0.0``.
               This value represents *semantic computation time* (no actual computation
               work was performed), not total elapsed time. Cache lookup overhead
-              (SHA256 hashing, dictionary access) is intentionally excluded to
-              distinguish "work done" from "time elapsed".
-            - **Cache Misses**: Execute computation, cache result if ``cache_enabled=True``
+              (SHA256 hashing, dictionary access) is captured separately in
+              ``cache_lookup_time_ms`` to distinguish "work done" from "cache overhead".
+            - **Cache Misses**: Execute computation, cache result if ``cache_enabled=True``.
+              The ``cache_lookup_time_ms`` field is populated with the actual lookup
+              time even on misses (when caching is enabled) for accurate observability.
             - **String Serialization**: Input data is converted to string for hashing;
               complex objects should implement consistent ``__str__`` methods
 
@@ -752,7 +754,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                 operation_id=input_data.operation_id,
                 computation_type=input_data.computation_type,
                 processing_time_ms=processing_time,
-                cache_lookup_time_ms=0.0,  # No cache lookup on miss or disabled
+                cache_lookup_time_ms=cache_lookup_time_ms,  # Propagate actual lookup time (0.0 when disabled)
                 cache_hit=False,
                 parallel_execution_used=parallel_used,
                 metadata={

@@ -73,12 +73,12 @@ class ModelComputeOutput[T_Output](BaseModel):
             computation start to completion, excluding cache lookup time.
             Value is 0.0 for cache hits (semantic: no computation work performed).
         cache_lookup_time_ms: Time spent on cache lookup operations in milliseconds.
-            For cache hits, this represents the actual elapsed time for the cache
-            retrieval (including key generation and dictionary access). For cache
-            misses or when caching is disabled, this is 0.0. This field enables
-            observability tooling to distinguish between "computation work done"
-            (processing_time_ms) and "actual elapsed time" (cache_lookup_time_ms
-            for cache hits).
+            For cache hits and misses (when caching is enabled), this represents the
+            actual elapsed time for the cache lookup operation (including key generation
+            via SHA256 hashing and dictionary access). When caching is disabled, this
+            is 0.0. This field enables observability tooling to distinguish between
+            "computation work done" (processing_time_ms) and "cache overhead"
+            (cache_lookup_time_ms) regardless of hit/miss status.
         cache_hit: Whether this result was retrieved from cache rather than
             computed. True if the result was cached from a previous identical
             computation, False if freshly computed.
