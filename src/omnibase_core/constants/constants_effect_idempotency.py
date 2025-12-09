@@ -15,8 +15,10 @@ References:
 - Filesystem: Read, delete are idempotent; write, move, copy are NOT
 """
 
-# Default idempotency by handler type and operation
-IDEMPOTENCY_DEFAULTS: dict[str, dict[str, bool]] = {
+from types import MappingProxyType
+
+# Private mutable dict used only for initialization
+_IDEMPOTENCY_DEFAULTS_MUTABLE: dict[str, dict[str, bool]] = {
     "http": {
         "GET": True,
         "HEAD": True,
@@ -44,5 +46,12 @@ IDEMPOTENCY_DEFAULTS: dict[str, dict[str, bool]] = {
         "copy": False,  # Dest may exist after first attempt, causing failure
     },
 }
+
+# Immutable nested MappingProxyType - both outer and inner dicts are read-only
+IDEMPOTENCY_DEFAULTS: MappingProxyType[str, MappingProxyType[str, bool]] = (
+    MappingProxyType(
+        {k: MappingProxyType(v) for k, v in _IDEMPOTENCY_DEFAULTS_MUTABLE.items()}
+    )
+)
 
 __all__ = ["IDEMPOTENCY_DEFAULTS"]

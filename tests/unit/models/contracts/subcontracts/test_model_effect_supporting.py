@@ -12,6 +12,8 @@ Comprehensive tests for Effect subcontract supporting models:
 Implements: OMN-524, OMN-525
 """
 
+from types import MappingProxyType
+
 import pytest
 from pydantic import ValidationError
 
@@ -791,11 +793,13 @@ class TestIdempotencyDefaultsStructure:
                 )
 
     def test_dictionary_is_properly_typed(self) -> None:
-        """Test IDEMPOTENCY_DEFAULTS matches type annotation."""
-        assert isinstance(IDEMPOTENCY_DEFAULTS, dict)
+        """Test IDEMPOTENCY_DEFAULTS is immutable MappingProxyType."""
+        # Outer structure is MappingProxyType (immutable)
+        assert isinstance(IDEMPOTENCY_DEFAULTS, MappingProxyType)
         for handler_type, operations in IDEMPOTENCY_DEFAULTS.items():
             assert isinstance(handler_type, str)
-            assert isinstance(operations, dict)
+            # Inner structures are also MappingProxyType (deeply immutable)
+            assert isinstance(operations, MappingProxyType)
             for operation, is_idempotent in operations.items():
                 assert isinstance(operation, str)
                 assert isinstance(is_idempotent, bool)

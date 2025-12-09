@@ -10,6 +10,7 @@ This ensures type-safe validation at contract load time.
 Implements: OMN-524
 """
 
+from collections.abc import Mapping
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -99,25 +100,23 @@ class ModelEffectOperation(BaseModel):
             return self.idempotent
 
         handler = str(self.io_config.handler_type.value)
-        defaults = IDEMPOTENCY_DEFAULTS.get(handler, {})
+        defaults: Mapping[str, bool] = IDEMPOTENCY_DEFAULTS.get(handler, {})
 
-        # Extract operation type for lookup using isinstance for type narrowing
-        op_type: str  # Explicit type to allow different string assignments
-        if handler == "http" and isinstance(self.io_config, ModelHttpIOConfig):
-            op_type = self.io_config.method
-        elif handler == "filesystem" and isinstance(
-            self.io_config, ModelFilesystemIOConfig
-        ):
-            op_type = self.io_config.operation
-        elif handler == "kafka":
-            op_type = "produce"
-        elif handler == "db" and isinstance(self.io_config, ModelDbIOConfig):
-            # Use explicit operation type (no more query string parsing)
-            op_type = self.io_config.operation.upper()
-            # 'raw' operations default to non-idempotent for safety
-            if op_type == "RAW":
-                return False
-        else:
-            return True  # Conservative default
+        # Extract operation type for lookup using match/case for type narrowing
+        op_type: str
+        match self.io_config:
+            case ModelHttpIOConfig(method=method):
+                op_type = method
+            case ModelFilesystemIOConfig(operation=operation):
+                op_type = operation
+            case ModelKafkaIOConfig():
+                op_type = "produce"
+            case ModelDbIOConfig(operation=operation):
+                op_type = operation.upper()
+                # 'raw' operations default to non-idempotent for safety
+                if op_type == "RAW":
+                    return False
+            case _:  # Defensive: unknown handler types
+                return True  # type: ignore[unreachable]  # Conservative default
 
         return defaults.get(op_type, True)
