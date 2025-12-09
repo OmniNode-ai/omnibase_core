@@ -13,12 +13,14 @@
 #   - Security checks (secrets, env vars)
 #   - Fast pattern validations
 #
-# PRE-PUSH (comprehensive validation before sharing):
+# PRE-PUSH (quick validation before sharing):
 #   - mypy type checking (~5-10s)
-#   - pytest smoke tests (~4-5 minutes)
 #   - validate-naming-conventions (~14s)
-#   - Complex pattern validations (union, pydantic, dict-any)
 #   - Documentation link validation
+#   - Protocol UUID enforcement (~6s)
+#
+# NOTE: AST-based validators (pydantic, union, dict-any, optional) now use
+# pass_filenames=true - they only check staged files, not entire codebase.
 #
 # USAGE:
 #   pre-commit install                    # Install pre-commit hooks
@@ -198,25 +200,24 @@ repos:
         exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/discovery/mixin_discovery\.py|tests/fixtures/validation/)
         stages: [pre-commit]
 
-      # ONEX Python Pattern Validation (SHARED HOOKS)
-      # Moved to pre-push for faster commits - these do full AST analysis
+      # AST-based validators - now accept file arguments for fast pre-commit
       - id: validate-pydantic-patterns
         name: ONEX Pydantic Pattern Validation
         entry: poetry run python scripts/validation/validate-pydantic-patterns.py
-        args: ['--allow-errors', '13']
         language: system
-        pass_filenames: false
+        pass_filenames: true
         files: ^src/.*\.py$
-        stages: [pre-push]  # Moved to pre-push: ~10-15s AST analysis
+        exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
+        stages: [pre-commit]
 
       - id: validate-union-usage
         name: ONEX Union Usage Validation
         entry: poetry run python scripts/validation/validate-union-usage.py
-        args: ['--allow-invalid', '234']
         language: system
-        pass_filenames: false
+        pass_filenames: true
         files: ^src/.*\.py$
-        stages: [pre-push]  # Moved to pre-push: ~10-15s AST analysis
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/protocols/).*\.py$
+        stages: [pre-commit]
 
       # Repository-specific validation (omnibase_core only)
       - id: validate-contracts
@@ -230,11 +231,11 @@ repos:
       - id: audit-optional-usage
         name: ONEX Optional Type Usage Audit
         entry: poetry run python scripts/validation/audit_optional.py
-        args: ['.']
         language: system
-        always_run: true
-        pass_filenames: false
-        stages: [pre-push]  # Moved to pre-push: full codebase analysis
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
+        stages: [pre-commit]
 
       - id: check-stub-implementations
         name: ONEX Stub Implementation Detector
@@ -304,16 +305,14 @@ repos:
         stages: [pre-commit]
 
       # dict[str, Any] Anti-Pattern Detection
-      # Enforces strong typing by detecting dict[str, Any] usage
       # TECHNICAL DEBT: Current baseline is 842 violations (2025-12-05)
-      # Goal: Reduce to 0 over time by replacing with TypedDict or specific models
-      # Track progress by lowering --max-violations as fixes are applied
+      # In file mode (pre-commit), any new violation fails
+      # In directory mode (CI), compares against --max-violations threshold
       - id: validate-dict-any-usage
         name: ONEX dict[str, Any] Anti-Pattern Detection
         entry: poetry run python scripts/validation/validate-dict-any-usage.py
-        args: [--max-violations, "850"]
         language: system
-        pass_filenames: false
+        pass_filenames: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-push]  # Moved to pre-push: full codebase scan
@@ -377,25 +376,9 @@ repos:
         always_run: true
         stages: [pre-push]  # Moved to pre-push: scans all markdown files
 
-      # Smoke tests - comprehensive validation before pushing
-      # Runs foundational tests (enums, errors) to catch regressions
-      # Full test suite (12k+ tests) runs in CI with parallel execution
-      - id: pytest-smoke-tests
-        name: Run Smoke Tests (enums + errors)
-        entry: poetry run pytest
-        language: system
-        pass_filenames: false
-        always_run: true
-        args:
-          - tests/unit/enums
-          - tests/unit/errors
-          - --maxfail=5
-          - -x
-          - --tb=short
-          - -q
-          - -p
-          - no:rerunfailures
-        stages: [pre-push]  # Moved to pre-push: ~4-5 minutes
+      # NOTE: Smoke tests removed (2025-12) - redundant with CI
+      # CI runs full 12k+ test suite with 20 parallel splits
+      # Removing saves ~4-5 minutes per push with no coverage loss
 
       # Protocol @runtime_checkable Validation
       # Ensures all Protocol classes have @runtime_checkable decorator

@@ -215,6 +215,13 @@ jobs:
       - name: Run mypy type checking (strict)
         run: poetry run mypy src/omnibase_core
 
+      - name: Run mypy on architectural validation scripts (strict)
+        run: |
+          poetry run mypy --strict \
+            scripts/validation/validate-no-direct-io.py \
+            scripts/validation/validate-all-exports.py \
+            scripts/validation/validate-no-infra-imports.py
+
   docs-validation:
     name: Documentation Validation
     runs-on: ubuntu-latest
