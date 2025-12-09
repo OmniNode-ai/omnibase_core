@@ -26,16 +26,21 @@ Related:
 """
 
 import sys
+import warnings
 from pathlib import Path
 
 import pytest
 import yaml
 
-# Add the validation scripts directory to path for MinimalYamlContract import
+# NOTE: sys.path manipulation required because yaml_contract_validator.py is
+# a standalone validation script in scripts/validation/, not a proper Python package.
+# This is intentional - validation scripts must work standalone for pre-commit hooks.
+# Using .resolve() ensures absolute path; guard check prevents duplicate entries.
 VALIDATION_SCRIPTS_PATH = (
-    Path(__file__).parent.parent.parent.parent / "scripts" / "validation"
+    Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "validation"
 )
-sys.path.insert(0, str(VALIDATION_SCRIPTS_PATH))
+if str(VALIDATION_SCRIPTS_PATH) not in sys.path:
+    sys.path.insert(0, str(VALIDATION_SCRIPTS_PATH))
 
 from yaml_contract_validator import MinimalYamlContract
 
@@ -61,6 +66,18 @@ EXPECTED_NODE_TYPES = {
     "node_graph_reducer.yaml": "REDUCER_GENERIC",
     "event_bus_wiring_effect.yaml": "EFFECT_GENERIC",
 }
+
+
+@pytest.fixture
+def all_contracts() -> dict[str, dict]:
+    """Load all runtime contracts."""
+    contracts = {}
+    for contract_name in EXPECTED_RUNTIME_CONTRACTS:
+        contract_path = RUNTIME_CONTRACTS_DIR / contract_name
+        if contract_path.exists():
+            with open(contract_path, encoding="utf-8") as f:
+                contracts[contract_name] = yaml.safe_load(f)
+    return contracts
 
 
 @pytest.mark.unit
@@ -98,13 +115,10 @@ class TestRuntimeContractsDirectoryStructure:
 
         # Allow unexpected files but warn about them
         if unexpected_files:
-            (
-                pytest.warns(
-                    UserWarning,
-                    match="Unexpected files found in runtime contracts directory",
-                )
-                if hasattr(pytest, "warns")
-                else None
+            warnings.warn(
+                f"Unexpected files found in runtime contracts directory: {unexpected_files}",
+                UserWarning,
+                stacklevel=2,
             )
             # This is a soft warning, not a failure
             # Future contracts should be added to EXPECTED_RUNTIME_CONTRACTS
@@ -443,11 +457,11 @@ class TestNodeGraphReducerContract:
         """Test that node_graph_reducer.yaml defines lifecycle FSM states."""
         state_transitions = contract_data.get("state_transitions", {})
         states = state_transitions.get("states", [])
-        assert len(states) >= 4, "Expected at least 4 FSM states"
+        assert len(states) >= 5, "Expected at least 5 FSM states (including draining)"
 
-        # Check for expected lifecycle states
+        # Check for expected lifecycle states (including draining)
         state_names = {s.get("state_name") for s in states}
-        expected_states = {"initializing", "wiring", "running", "stopped"}
+        expected_states = {"initializing", "wiring", "running", "draining", "stopped"}
         assert expected_states.issubset(state_names), (
             f"Missing expected states. Expected {expected_states}, got {state_names}"
         )
@@ -573,17 +587,6 @@ class TestEventBusWiringEffectContract:
 class TestAllRuntimeContractsValidation:
     """Cross-contract validation tests for all runtime contracts."""
 
-    @pytest.fixture
-    def all_contracts(self) -> dict[str, dict]:
-        """Load all runtime contracts."""
-        contracts = {}
-        for contract_name in EXPECTED_RUNTIME_CONTRACTS:
-            contract_path = RUNTIME_CONTRACTS_DIR / contract_name
-            if contract_path.exists():
-                with open(contract_path, encoding="utf-8") as f:
-                    contracts[contract_name] = yaml.safe_load(f)
-        return contracts
-
     def test_all_contracts_have_version_1_0_0(
         self, all_contracts: dict[str, dict]
     ) -> None:
@@ -674,17 +677,6 @@ class TestAllRuntimeContractsValidation:
 @pytest.mark.unit
 class TestContractVersionFormats:
     """Tests for contract_version format handling across runtime contracts."""
-
-    @pytest.fixture
-    def all_contracts(self) -> dict[str, dict]:
-        """Load all runtime contracts."""
-        contracts = {}
-        for contract_name in EXPECTED_RUNTIME_CONTRACTS:
-            contract_path = RUNTIME_CONTRACTS_DIR / contract_name
-            if contract_path.exists():
-                with open(contract_path, encoding="utf-8") as f:
-                    contracts[contract_name] = yaml.safe_load(f)
-        return contracts
 
     def test_contract_version_dict_format(self, all_contracts: dict[str, dict]) -> None:
         """Test that contract_version uses dict format with major/minor/patch."""
