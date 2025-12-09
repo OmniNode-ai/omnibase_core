@@ -41,6 +41,13 @@ class ProtocolNodeRuntime(Protocol):
     Note:
         This protocol will be implemented by NodeRuntime (OMN-228).
         For now, it defines the contract that RuntimeNodeInstance depends on.
+
+    Design Decision (Type Variance):
+        The `instance` parameter uses the concrete `RuntimeNodeInstance` type rather
+        than a generic TypeVar or Protocol. This is intentional per YAGNI - we only
+        have one NodeInstance implementation. If multiple instance types are needed
+        in the future, this can be generalized to a TypeVar or NodeInstanceProtocol.
+        See PR #141 review discussion.
     """
 
     async def execute_with_handler(

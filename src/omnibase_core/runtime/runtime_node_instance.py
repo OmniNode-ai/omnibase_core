@@ -57,12 +57,22 @@ Usage:
         await instance.shutdown()
 
 Thread Safety:
-    RuntimeNodeInstance uses frozen=True configuration, making instances immutable
-    after creation. The runtime reference is the only mutable state, and
-    should be set once during initialization before any concurrent access.
+    WARNING: The _runtime and _initialized PrivateAttrs are NOT thread-safe.
 
-    For concurrent envelope handling, the NodeRuntime implementation is
-    responsible for thread safety of the actual execution.
+    RuntimeNodeInstance uses frozen=True configuration, making the model fields
+    (slug, node_type, contract) immutable after creation. However, the private
+    attributes (_runtime, _initialized) are mutable and have no synchronization.
+
+    Safe Usage Pattern:
+        1. Create the instance (single thread)
+        2. Call set_runtime() (single thread)
+        3. Call initialize() (single thread)
+        4. Share the instance across threads
+        5. Call handle() concurrently (thread safety is runtime's responsibility)
+        6. Call shutdown() (single thread, after all handle() calls complete)
+
+    The NodeRuntime implementation is responsible for thread safety of the
+    actual execution within handle(). See CLAUDE.md thread safety matrix.
 
 Related:
     - OMN-227: NodeInstance execution wrapper
@@ -238,11 +248,16 @@ class RuntimeNodeInstance(BaseModel):
     @property
     def runtime(self) -> ProtocolNodeRuntime:
         """
-        Get runtime reference with validation.
+        Get runtime reference with validation (internal API).
 
         This property provides type-safe access to the runtime, raising a
-        descriptive error if the runtime has not been set. Use this instead
-        of accessing _runtime directly.
+        descriptive error if the runtime has not been set. Primarily intended
+        for internal use within this class (e.g., in handle()).
+
+        Note:
+            This is considered internal API. External code should interact
+            with the instance through handle(), not by accessing the runtime
+            directly. The runtime is an implementation detail that may change.
 
         Returns:
             ProtocolNodeRuntime: The configured runtime instance.
@@ -253,8 +268,8 @@ class RuntimeNodeInstance(BaseModel):
         Example:
             .. code-block:: python
 
-                instance.set_runtime(my_runtime)
-                runtime = instance.runtime  # Safe access with validation
+                # Internal usage pattern (within this class)
+                return await self.runtime.execute_with_handler(envelope, self)
         """
         if self._runtime is None:
             raise ModelOnexError(
