@@ -22,7 +22,10 @@ TEST SCENARIOS (Agent Errors):
 import sys
 from pathlib import Path
 
-# Add src to path to import directly without circular dependencies
+# Add src to path to allow direct imports before package installation.
+# This is required because this is a standalone comparison script that runs
+# independently of pytest and needs access to omnibase_core source modules.
+# Without this, Python would fail to find omnibase_core since it's not installed.
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 

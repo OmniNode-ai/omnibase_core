@@ -136,6 +136,7 @@ def simple_workflow_definition() -> ModelWorkflowDefinition:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestNodeReducer:
     """Test declarative reducer node."""
 
@@ -295,6 +296,7 @@ class TestNodeReducer:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestNodeOrchestrator:
     """Test declarative orchestrator node."""
 
@@ -460,6 +462,7 @@ class TestNodeOrchestrator:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestDeclarativeNodesIntegration:
     """Integration tests for declarative nodes."""
 

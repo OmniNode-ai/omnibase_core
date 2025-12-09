@@ -12,7 +12,11 @@ from pathlib import Path
 
 import pytest
 
-# Add scripts directory to path for imports
+# Add scripts directory to path to import validation hook modules.
+# This is needed because check_error_raising.py lives in scripts/validation/
+# which is not a Python package (no __init__.py) and is not installed.
+# The script is designed to be run standalone, so we add it to sys.path
+# to enable testing its functionality from the test suite.
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts" / "validation"))
 
 from check_error_raising import ErrorRaisingDetector, check_file

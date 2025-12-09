@@ -14,7 +14,12 @@ from pathlib import Path
 
 import psutil
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Add src to path to allow direct imports before package installation.
+# This validation script runs standalone (not via pytest) and needs access
+# to omnibase_core source modules to measure import performance.
+# The path manipulation is necessary because the package isn't installed
+# when running this script directly during development/CI validation.
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 
 class OptimizationValidator:

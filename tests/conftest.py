@@ -117,16 +117,14 @@ def event_loop_cleanup() -> Generator[None, None, None]:
 
     # Clean up any remaining event loops
     try:
-        # Try to get the current event loop
+        # Try to get the current running event loop only
+        # Note: asyncio.get_event_loop() is deprecated in Python 3.12+
+        # We only use get_running_loop() to avoid deprecation warnings
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
-            # No running loop, try to get the event loop
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                # No event loop at all - that's fine
-                return
+            # No running loop - that's fine, nothing to clean up
+            return
 
         if loop and not loop.is_closed():
             # Suppress asyncio exception logging during cleanup
@@ -304,7 +302,9 @@ def pytest_runtest_teardown(item: pytest.Item, nextitem: pytest.Item | None) -> 
 
 
 @pytest.fixture(autouse=True)
-async def cleanup_service_tasks() -> Generator[None, None, None]:
+def cleanup_service_tasks(
+    request: pytest.FixtureRequest,
+) -> Generator[None, None, None]:
     """
     Specifically clean up service-related async tasks after each test.
 
@@ -314,59 +314,52 @@ async def cleanup_service_tasks() -> Generator[None, None, None]:
     Also suppresses asyncio exception logging during cleanup to prevent
     "Task was destroyed but it is pending!" warnings when tasks are cancelled
     during test teardown.
+
+    Note: This is a sync fixture to avoid PytestRemovedIn9Warning when applied
+    to sync tests. It performs async cleanup only when an event loop is available.
     """
     yield  # Let test run
 
-    # Give any pending cleanup a moment to complete
-    await asyncio.sleep(0.1)
+    # Only do async cleanup if there's a running event loop
+    # This avoids warnings when applied to sync tests
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # No running loop - nothing to clean up
+        return
 
     # Force cleanup of any remaining tasks
     try:
-        # Get current event loop if available
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            return  # No running loop
+        if loop and not loop.is_closed():
+            # Suppress asyncio exception logging during cleanup
+            # This prevents "Task was destroyed but it is pending!" errors
+            # when we cancel tasks during test teardown
+            old_exception_handler = loop.get_exception_handler()
+            loop.set_exception_handler(lambda loop, context: None)
 
-        # Suppress asyncio exception logging during cleanup
-        # This prevents "Task was destroyed but it is pending!" errors
-        # when we cancel tasks during test teardown
-        old_exception_handler = loop.get_exception_handler()
-        loop.set_exception_handler(lambda loop, context: None)
+            try:
+                # Get all tasks
+                all_tasks = asyncio.all_tasks(loop)
 
-        try:
-            # Get all tasks
-            all_tasks = asyncio.all_tasks(loop)
-
-            # Filter for health monitor and service tasks
-            health_tasks = [
-                task
-                for task in all_tasks
-                if not task.done()
-                and (
-                    "_health_monitor_loop" in str(task.get_coro())
-                    or "_service_loop" in str(task.get_coro())
-                    or "_service_event_loop" in str(task.get_coro())
-                )
-            ]
-
-            if health_tasks:
-                # Cancel health monitor tasks specifically
-                for task in health_tasks:
-                    task.cancel()
-
-                # Wait for cancellation with timeout
-                try:
-                    await asyncio.wait_for(
-                        asyncio.gather(*health_tasks, return_exceptions=True),
-                        timeout=1.0,
+                # Filter for health monitor and service tasks
+                health_tasks = [
+                    task
+                    for task in all_tasks
+                    if not task.done()
+                    and (
+                        "_health_monitor_loop" in str(task.get_coro())
+                        or "_service_loop" in str(task.get_coro())
+                        or "_service_event_loop" in str(task.get_coro())
                     )
-                except TimeoutError:
-                    # Tasks didn't cancel in time - they'll be cleaned up by event_loop_cleanup
-                    pass
-        finally:
-            # Restore original exception handler
-            loop.set_exception_handler(old_exception_handler)
+                ]
+
+                if health_tasks:
+                    # Cancel health monitor tasks specifically
+                    for task in health_tasks:
+                        task.cancel()
+            finally:
+                # Restore original exception handler
+                loop.set_exception_handler(old_exception_handler)
 
     except Exception:
         # Best effort cleanup - don't fail tests

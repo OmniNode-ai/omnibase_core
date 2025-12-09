@@ -13,9 +13,9 @@ from omnibase_core.models.utils.model_field_converter_registry import (
 )
 
 
-# Test enum for testing enum field conversion
-class TestStatus(Enum):
-    """Test enum for enum field conversion."""
+# Sample enum for testing enum field conversion
+class SampleStatus(Enum):
+    """Sample enum for enum field conversion."""
 
     ACTIVE = "active"
     INACTIVE = "inactive"
@@ -133,51 +133,53 @@ class TestRegisterEnumField:
     def test_register_enum_field_by_value(self):
         """Test enum conversion by exact value match."""
         registry = ModelFieldConverterRegistry()
-        registry.register_enum_field("status", TestStatus)
+        registry.register_enum_field("status", SampleStatus)
 
         result = registry.convert_field("status", "active")
-        assert result == TestStatus.ACTIVE
+        assert result == SampleStatus.ACTIVE
 
         result = registry.convert_field("status", "inactive")
-        assert result == TestStatus.INACTIVE
+        assert result == SampleStatus.INACTIVE
 
     def test_register_enum_field_by_name_case_insensitive(self):
         """Test enum conversion by name (case-insensitive)."""
         registry = ModelFieldConverterRegistry()
-        registry.register_enum_field("status", TestStatus)
+        registry.register_enum_field("status", SampleStatus)
 
         result = registry.convert_field("status", "ACTIVE")
-        assert result == TestStatus.ACTIVE
+        assert result == SampleStatus.ACTIVE
 
         result = registry.convert_field("status", "Active")
-        assert result == TestStatus.ACTIVE
+        assert result == SampleStatus.ACTIVE
 
         result = registry.convert_field("status", "inactive")
-        assert result == TestStatus.INACTIVE
+        assert result == SampleStatus.INACTIVE
 
     def test_register_enum_field_with_default(self):
         """Test enum field with default value for invalid inputs."""
         registry = ModelFieldConverterRegistry()
-        registry.register_enum_field("status", TestStatus, default=TestStatus.PENDING)
+        registry.register_enum_field(
+            "status", SampleStatus, default=SampleStatus.PENDING
+        )
 
         # Valid value
         result = registry.convert_field("status", "active")
-        assert result == TestStatus.ACTIVE
+        assert result == SampleStatus.ACTIVE
 
         # Invalid value returns default
         result = registry.convert_field("status", "invalid")
-        assert result == TestStatus.PENDING
+        assert result == SampleStatus.PENDING
 
     def test_register_enum_field_without_default_raises_error(self):
         """Test enum field without default raises error on invalid input."""
         registry = ModelFieldConverterRegistry()
-        registry.register_enum_field("status", TestStatus)
+        registry.register_enum_field("status", SampleStatus)
 
         with pytest.raises(ModelOnexError) as exc_info:
             registry.convert_field("status", "invalid")
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
-        assert "Invalid TestStatus value" in exc_info.value.message
+        assert "Invalid SampleStatus value" in exc_info.value.message
 
 
 class TestRegisterOptionalIntegerField:
@@ -293,7 +295,7 @@ class TestConvertData:
         registry = ModelFieldConverterRegistry()
         registry.register_boolean_field("is_active")
         registry.register_integer_field("age")
-        registry.register_enum_field("status", TestStatus)
+        registry.register_enum_field("status", SampleStatus)
 
         data = {"is_active": "true", "age": "25", "status": "active"}
 
@@ -356,7 +358,7 @@ class TestHasConverter:
         registry = ModelFieldConverterRegistry()
         registry.register_boolean_field("flag1")
         registry.register_integer_field("num1")
-        registry.register_enum_field("status", TestStatus)
+        registry.register_enum_field("status", SampleStatus)
 
         assert registry.has_converter("flag1") is True
         assert registry.has_converter("num1") is True
@@ -377,7 +379,7 @@ class TestListFields:
         registry = ModelFieldConverterRegistry()
         registry.register_boolean_field("enabled")
         registry.register_integer_field("count")
-        registry.register_enum_field("status", TestStatus)
+        registry.register_enum_field("status", SampleStatus)
 
         fields = registry.list_fields()
 
@@ -409,7 +411,9 @@ class TestModelFieldConverterRegistryIntegration:
         # Register various field types
         registry.register_boolean_field("is_active", default=True)
         registry.register_integer_field("age", min_value=0, max_value=120)
-        registry.register_enum_field("status", TestStatus, default=TestStatus.PENDING)
+        registry.register_enum_field(
+            "status", SampleStatus, default=SampleStatus.PENDING
+        )
         registry.register_optional_integer_field("score", zero_as_none=True)
 
         # Verify all registered
@@ -418,7 +422,7 @@ class TestModelFieldConverterRegistryIntegration:
         # Convert individual fields
         assert registry.convert_field("is_active", "true") is True
         assert registry.convert_field("age", "30") == 30
-        assert registry.convert_field("status", "active") == TestStatus.ACTIVE
+        assert registry.convert_field("status", "active") == SampleStatus.ACTIVE
         assert registry.convert_field("score", "0") is None
 
         # Convert batch data

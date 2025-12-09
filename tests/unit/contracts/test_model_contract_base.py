@@ -27,7 +27,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 # Concrete implementation for testing abstract base class
-class TestableContractModel(ModelContractBase):
+class SampleContractModel(ModelContractBase):
     """Concrete implementation of ModelContractBase for testing purposes."""
 
     def validate_node_specific_config(self) -> None:
@@ -65,7 +65,7 @@ class TestModelContractBase:
 
     def test_valid_construction_minimal_required_fields(self):
         """Test valid construction with only required fields."""
-        contract = TestableContractModel(**self.minimal_valid_data)
+        contract = SampleContractModel(**self.minimal_valid_data)
 
         assert contract.name == "test_contract"
         assert contract.version == self.valid_semver
@@ -92,7 +92,7 @@ class TestModelContractBase:
             "documentation_url": "https://docs.onex.systems/contracts/test_contract",
         }
 
-        contract = TestableContractModel(**full_data)
+        contract = SampleContractModel(**full_data)
 
         assert len(contract.dependencies) == 1
         assert contract.dependencies[0].name == "TestProtocol"
@@ -113,17 +113,17 @@ class TestModelContractBase:
         # Test missing name
         del data["name"]
         with pytest.raises(ValidationError, match="name"):
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         # Test empty name
         data["name"] = ""
         with pytest.raises(ValidationError, match="at least 1 character"):
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         # Test whitespace-only name - should be stripped to empty and fail validation
         data["name"] = "   "
         with pytest.raises(ValidationError, match="at least 1 character"):
-            TestableContractModel(
+            SampleContractModel(
                 **data,
             )  # Pydantic strips whitespace, then validates min_length
 
@@ -134,12 +134,12 @@ class TestModelContractBase:
         # Test missing description
         del data["description"]
         with pytest.raises(ValidationError, match="description"):
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         # Test empty description
         data["description"] = ""
         with pytest.raises(ValidationError, match="at least 1 character"):
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
     def test_input_output_model_validation(self):
         """Test input_model and output_model field validation."""
@@ -148,12 +148,12 @@ class TestModelContractBase:
         # Test missing input_model
         del test_data["input_model"]
         with pytest.raises(ValidationError, match="input_model"):
-            TestableContractModel(**test_data)
+            SampleContractModel(**test_data)
 
         # Test empty input_model
         test_data["input_model"] = ""
         with pytest.raises(ValidationError, match="at least 1 character"):
-            TestableContractModel(**test_data)
+            SampleContractModel(**test_data)
 
     # =================== NODE TYPE VALIDATION TESTS ===================
 
@@ -161,14 +161,14 @@ class TestModelContractBase:
         """Test node_type validation with valid EnumNodeType values."""
         for node_type in EnumNodeType:
             data = {**self.minimal_valid_data, "node_type": node_type}
-            contract = TestableContractModel(**data)
+            contract = SampleContractModel(**data)
             assert contract.node_type == node_type
 
     def test_node_type_string_conversion_yaml_support(self):
         """Test node_type string conversion for YAML deserialization."""
         # Test valid string conversion using EnumNodeType value
         data = {**self.minimal_valid_data, "node_type": "COMPUTE_GENERIC"}
-        contract = TestableContractModel(**data)
+        contract = SampleContractModel(**data)
         assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
 
     def test_node_type_invalid_string_raises_onex_error(self):
@@ -176,7 +176,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "node_type": "invalid_node_type"}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         assert error.model.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -190,7 +190,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "node_type": 123}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -201,7 +201,7 @@ class TestModelContractBase:
     def test_dependencies_validation_empty_list(self):
         """Test dependencies validation with empty list."""
         data = {**self.minimal_valid_data, "dependencies": []}
-        contract = TestableContractModel(**data)
+        contract = SampleContractModel(**data)
         assert contract.dependencies == []
 
     def test_dependencies_validation_valid_model_dependency_list(self):
@@ -220,7 +220,7 @@ class TestModelContractBase:
         ]
 
         data = {**self.minimal_valid_data, "dependencies": deps}
-        contract = TestableContractModel(**data)
+        contract = SampleContractModel(**data)
         assert len(contract.dependencies) == 2
         assert contract.dependencies[0].name == "Protocol1"
         assert contract.dependencies[1].name == "Protocol2"
@@ -238,7 +238,7 @@ class TestModelContractBase:
         ]
 
         data = {**self.minimal_valid_data, "dependencies": dict_deps}
-        contract = TestableContractModel(**data)
+        contract = SampleContractModel(**data)
         assert len(contract.dependencies) == 1
         assert contract.dependencies[0].name == "YamlProtocol"
         assert contract.dependencies[0].dependency_type == EnumDependencyType.PROTOCOL
@@ -248,7 +248,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "dependencies": "invalid_string"}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -261,7 +261,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "dependencies": string_deps}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         assert error.model.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -278,7 +278,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "dependencies": large_deps}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -298,7 +298,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "dependencies": mixed_deps}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -317,7 +317,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "dependencies": [self_dep]}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -334,7 +334,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "dependencies": dup_deps}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -351,7 +351,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "dependencies": [module_dep]}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -367,7 +367,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "dependencies": many_deps}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
@@ -381,7 +381,7 @@ class TestModelContractBase:
             **self.minimal_valid_data,
             "protocol_interfaces": ["omnibase_core.protocol.test_interface"],
         }
-        contract = TestableContractModel(**data)
+        contract = SampleContractModel(**data)
         assert "omnibase_core.protocol.test_interface" in contract.protocol_interfaces
 
         # Invalid protocol interface (missing 'protocol' in name)
@@ -393,7 +393,7 @@ class TestModelContractBase:
             ModelOnexError,
             match="Protocol interface must contain 'protocol'",
         ):
-            TestableContractModel(**invalid_data)
+            SampleContractModel(**invalid_data)
 
     # =================== MEMORY SAFETY AND PERFORMANCE TESTS ===================
 
@@ -405,7 +405,7 @@ class TestModelContractBase:
         ]
 
         data = {**self.minimal_valid_data, "dependencies": max_deps}
-        contract = TestableContractModel(**data)
+        contract = SampleContractModel(**data)
 
         assert len(contract.dependencies) == 50
         assert contract.dependencies[0].name == "Protocol0"
@@ -416,7 +416,7 @@ class TestModelContractBase:
         large_interfaces = [f"omnibase_core.protocol.interface{i}" for i in range(50)]
 
         data = {**self.minimal_valid_data, "protocol_interfaces": large_interfaces}
-        contract = TestableContractModel(**data)
+        contract = SampleContractModel(**data)
 
         assert len(contract.protocol_interfaces) == 50
 
@@ -425,7 +425,7 @@ class TestModelContractBase:
         large_tags = [f"tag{i}" for i in range(100)]
 
         data = {**self.minimal_valid_data, "tags": large_tags}
-        contract = TestableContractModel(**data)
+        contract = SampleContractModel(**data)
 
         assert len(contract.tags) == 100
 
@@ -440,7 +440,7 @@ class TestModelContractBase:
             "author": "   ",  # Should become empty string
         }
 
-        contract = TestableContractModel(**data)
+        contract = SampleContractModel(**data)
         assert contract.name == "test_contract"
         assert contract.description == "description"
         assert contract.author == ""  # Whitespace stripped
@@ -454,7 +454,7 @@ class TestModelContractBase:
             "author": "测试作者",
         }
 
-        contract = TestableContractModel(**unicode_data)
+        contract = SampleContractModel(**unicode_data)
         assert "🔥" in contract.name
         assert "émojis" in contract.description
         assert contract.author == "测试作者"
@@ -465,7 +465,7 @@ class TestModelContractBase:
 
         data = {**self.minimal_valid_data, "description": long_string}
 
-        contract = TestableContractModel(**data)
+        contract = SampleContractModel(**data)
         assert len(contract.description) == 10000
 
     # =================== ABSTRACT METHOD TESTING ===================
@@ -473,13 +473,13 @@ class TestModelContractBase:
     def test_abstract_method_validate_node_specific_config(self):
         """Test abstract method validate_node_specific_config is called."""
         # Test successful validation
-        contract = TestableContractModel(**self.minimal_valid_data)
+        contract = SampleContractModel(**self.minimal_valid_data)
         assert contract.name == "test_contract"
 
         # Test validation error propagation
         error_data = {**self.minimal_valid_data, "name": "invalid_test_contract"}
         with pytest.raises(ValueError):
-            TestableContractModel(**error_data)
+            SampleContractModel(**error_data)
 
     # =================== MODEL CONFIGURATION TESTS ===================
 
@@ -492,7 +492,7 @@ class TestModelContractBase:
         }
 
         with pytest.raises(ValidationError) as exc_info:
-            TestableContractModel(**data_with_extra)
+            SampleContractModel(**data_with_extra)
 
         # Verify both extra fields are reported in the error
         error_str = str(exc_info.value)
@@ -501,7 +501,7 @@ class TestModelContractBase:
 
     def test_model_config_enum_values_preservation(self):
         """Test that enum objects are preserved, not converted to strings."""
-        contract = TestableContractModel(**self.minimal_valid_data)
+        contract = SampleContractModel(**self.minimal_valid_data)
         assert isinstance(contract.node_type, EnumNodeType)
         assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
 
@@ -512,7 +512,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "node_type": "invalid_enum_value"}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         # Verify exception chaining is preserved
@@ -523,7 +523,7 @@ class TestModelContractBase:
         data = {**self.minimal_valid_data, "dependencies": "invalid_type"}
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestableContractModel(**data)
+            SampleContractModel(**data)
 
         error = exc_info.value
         assert error.model.context is not None

@@ -25,8 +25,8 @@ from omnibase_core.models.discovery.model_nodeintrospectionevent import (
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
-class TestNode(MixinIntrospectionPublisher):
-    """Test node class that uses MixinIntrospectionPublisher."""
+class MockNode(MixinIntrospectionPublisher):
+    """Mock node class that uses MixinIntrospectionPublisher."""
 
     def __init__(self):
         self._node_id = uuid4()
@@ -43,7 +43,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_initialization(self):
         """Test mixin provides required methods."""
-        node = TestNode()
+        node = MockNode()
 
         assert hasattr(node, "_publish_introspection_event")
         assert hasattr(node, "_gather_introspection_data")
@@ -53,7 +53,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_name_from_class(self):
         """Test extracting node name from class name."""
-        node = TestNode()
+        node = MockNode()
 
         name = node._extract_node_name()
 
@@ -76,7 +76,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_name_with_metadata_loader(self):
         """Test extracting node name from metadata loader."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock metadata loader
         mock_metadata = Mock()
@@ -93,7 +93,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_name_with_namespace(self):
         """Test extracting node name from namespace."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock metadata with namespace
         mock_metadata = Mock()
@@ -111,7 +111,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_version_default(self):
         """Test extracting default node version."""
-        node = TestNode()
+        node = MockNode()
 
         version = node._extract_node_version()
 
@@ -122,7 +122,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_version_from_metadata(self):
         """Test extracting node version from metadata loader."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock metadata with version
         mock_metadata = Mock()
@@ -142,7 +142,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_version_invalid_format(self):
         """Test extracting node version with invalid format falls back to default."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock metadata with invalid version
         mock_metadata = Mock()
@@ -163,7 +163,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_capabilities_basic(self):
         """Test extracting basic node capabilities."""
-        node = TestNode()
+        node = MockNode()
 
         capabilities = node._extract_node_capabilities()
 
@@ -174,7 +174,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_capabilities_with_metadata(self):
         """Test extracting capabilities with metadata loader."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock metadata
         mock_metadata = Mock()
@@ -218,7 +218,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_actions_default(self):
         """Test that health_check is always in actions."""
-        node = TestNode()
+        node = MockNode()
 
         actions = node._extract_node_actions()
 
@@ -226,7 +226,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_detect_supported_protocols_basic(self):
         """Test detecting basic supported protocols."""
-        node = TestNode()
+        node = MockNode()
 
         protocols = node._detect_supported_protocols()
 
@@ -261,7 +261,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_generate_discovery_tags_basic(self):
         """Test generating basic discovery tags."""
-        node = TestNode()
+        node = MockNode()
 
         tags = node._generate_discovery_tags()
 
@@ -312,7 +312,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_detect_health_endpoint_without_method(self):
         """Test detecting health endpoint when health_check method doesn't exist."""
-        node = TestNode()
+        node = MockNode()
 
         endpoint = node._detect_health_endpoint()
 
@@ -321,7 +321,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_gather_introspection_data_basic(self):
         """Test gathering basic introspection data."""
-        node = TestNode()
+        node = MockNode()
 
         data = node._gather_introspection_data()
 
@@ -333,7 +333,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_gather_introspection_data_with_error(self):
         """Test gathering introspection data with error falls back gracefully."""
-        node = TestNode()
+        node = MockNode()
 
         # Force an error in extraction
         with patch.object(
@@ -347,7 +347,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_publish_introspection_event_without_event_bus(self):
         """Test publishing introspection event without event bus."""
-        node = TestNode()
+        node = MockNode()
         node.event_bus = None
 
         # Should not raise, just return early
@@ -355,7 +355,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_publish_introspection_event_with_event_bus(self):
         """Test publishing introspection event with event bus."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock event bus
         mock_event_bus = Mock()
@@ -371,7 +371,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_publish_with_retry_basic(self):
         """Test publishing with retry logic."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock event bus
         mock_event_bus = Mock()
@@ -397,7 +397,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_publish_with_retry_on_failure(self):
         """Test publishing with retry on failure."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock event bus that fails first, then succeeds
         mock_event_bus = Mock()
@@ -425,7 +425,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_publish_with_retry_max_retries_exceeded(self):
         """Test publishing with retry when max retries exceeded."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock event bus that always fails
         mock_event_bus = Mock()
@@ -449,7 +449,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_publish_with_retry_without_event_bus(self):
         """Test publishing with retry without event bus."""
-        node = TestNode()
+        node = MockNode()
         node.event_bus = None
 
         # Create real introspection event
@@ -468,7 +468,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_name_exception_handling(self):
         """Test extract_node_name handles exceptions gracefully."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock metadata that raises exception
         mock_loader = Mock()
@@ -484,7 +484,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_version_exception_handling(self):
         """Test extract_node_version handles exceptions gracefully."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock metadata that raises exception
         mock_loader = Mock()
@@ -500,7 +500,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_publish_introspection_event_with_validation_error(self):
         """Test publishing introspection event with validation error."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock event bus
         mock_event_bus = Mock()
@@ -527,7 +527,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_publish_introspection_event_with_generic_exception(self):
         """Test publishing introspection event with generic exception."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock event bus
         mock_event_bus = Mock()
@@ -542,7 +542,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_capabilities_exception_handling(self):
         """Test extract_node_capabilities handles exceptions gracefully."""
-        node = TestNode()
+        node = MockNode()
 
         # Create mock metadata that raises exception
         mock_loader = Mock()
@@ -557,7 +557,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_node_id_as_string(self):
         """Test handling node_id as string."""
-        node = TestNode()
+        node = MockNode()
         node._node_id = "test-node-id"
 
         # Should handle string node_id gracefully
@@ -567,7 +567,7 @@ class TestMixinIntrospectionPublisher:
 
     def test_node_id_as_uuid(self):
         """Test handling node_id as UUID."""
-        node = TestNode()
+        node = MockNode()
         node._node_id = uuid4()
 
         # Should handle UUID node_id
