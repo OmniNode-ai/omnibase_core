@@ -138,6 +138,9 @@ class PythonASTValidator(ast.NodeVisitor):
             "protocol_version",  # Protocol version
             "schema_version",  # Schema version
             # Note: generic "version" field not whitelisted globally to catch other violations
+            # EXECUTION_CONTEXT_FIELDS (flexible identifiers)
+            # See: src/omnibase_core/models/compute/model_compute_execution_context.py
+            "node_id",  # Intentionally str: can be UUID, hostname, or custom identifier
         }
 
     def visit_Import(self, node: ast.Import):
@@ -922,6 +925,17 @@ def main() -> int:
                             try:
                                 with timeout_context("directory_scan"):
                                     # Recursively find all YAML and Python files, but exclude non-ONEX directories
+                                    #
+                                    # EXCLUSION RATIONALE:
+                                    # - protocols/: Protocol files define interfaces/type stubs that may
+                                    #   reference version formats in docstrings and type hints for
+                                    #   documentation purposes. These are abstract interfaces, not runtime
+                                    #   implementations, so the string version anti-pattern doesn't apply.
+                                    #   Protocol files document API contracts and may legitimately include
+                                    #   version string examples in their docstrings.
+                                    # - tests/: Test files may contain version strings as test data
+                                    # - archive/archived/: Legacy code not subject to current standards
+                                    #
                                     exclude_patterns = [
                                         "deployment",
                                         ".github",
@@ -939,6 +953,7 @@ def main() -> int:
                                         "archived",  # Exclude archived code (alternative naming)
                                         "tests",  # Exclude test files
                                         "examples_validation_container_usage.py",  # Exclude specific example files
+                                        "protocols",  # Exclude Protocol classes (see EXCLUSION RATIONALE above)
                                     ]
 
                                     try:

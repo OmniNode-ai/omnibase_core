@@ -6,9 +6,9 @@ reduction operations with comprehensive configuration for streaming modes,
 conflict resolution, and batch processing.
 
 Thread Safety:
-    ModelReducerInput is mutable by default. If thread-safety is needed,
-    create the instance with all required values and treat as read-only
-    after creation.
+    ModelReducerInput is immutable (frozen=True) after creation, making it
+    thread-safe for concurrent read access from multiple threads or async tasks.
+    This follows the same pattern as ModelComputeInput.
 
 Key Features:
     - Generic type parameter T_Input for type-safe data lists
@@ -101,14 +101,18 @@ class ModelReducerInput[T_Input](BaseModel):
         ... )
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        arbitrary_types_allowed=True,
+    )
 
     data: list[T_Input]
     reduction_type: EnumReductionType
     operation_id: UUID = Field(default_factory=uuid4)
     conflict_resolution: EnumConflictResolution = EnumConflictResolution.LAST_WINS
     streaming_mode: EnumStreamingMode = EnumStreamingMode.BATCH
-    batch_size: int = 1000
-    window_size_ms: int = 5000
+    batch_size: int = Field(default=1000, gt=0, le=10000)
+    window_size_ms: int = Field(default=5000, ge=1000, le=60000)
     metadata: dict[str, Any] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)

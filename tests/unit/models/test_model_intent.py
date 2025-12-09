@@ -418,47 +418,69 @@ class TestModelIntentEdgeCases:
         assert "UUID" in str(exc_info.value) or "uuid" in str(exc_info.value).lower()
 
     def test_extra_fields_behavior(self):
-        """Test behavior with extra fields (should be ignored)."""
+        """Test behavior with extra fields (should be forbidden)."""
         data = {
             "intent_type": "log",
             "target": "service",
-            "extra_field": "should_be_ignored",
+            "extra_field": "should_be_forbidden",
             "another_field": 123,
         }
 
-        intent = ModelIntent.model_validate(data)
+        # Extra fields should raise ValidationError (extra="forbid")
+        with pytest.raises(ValidationError) as exc_info:
+            ModelIntent.model_validate(data)
 
-        # Should create successfully
-        assert intent.intent_type == "log"
-        assert intent.target == "service"
-
-        # Extra fields should be ignored
-        assert not hasattr(intent, "extra_field")
-        assert not hasattr(intent, "another_field")
+        # Should mention the extra fields
+        error_str = str(exc_info.value)
+        assert "extra_field" in error_str or "Extra inputs" in error_str
 
 
 class TestModelIntentModelConfig:
     """Test ModelIntent model configuration."""
 
-    def test_model_config_extra_ignore(self):
-        """Test that model_config has extra='ignore'."""
-        assert ModelIntent.model_config["extra"] == "ignore"
+    def test_model_config_extra_forbid(self):
+        """Test that model_config has extra='forbid'."""
+        assert ModelIntent.model_config["extra"] == "forbid"
+
+    def test_model_config_frozen(self):
+        """Test that model_config has frozen=True."""
+        assert ModelIntent.model_config["frozen"] is True
 
     def test_model_config_validate_assignment(self):
         """Test that model_config has validate_assignment=True."""
         assert ModelIntent.model_config["validate_assignment"] is True
 
-    def test_assignment_validation(self):
-        """Test that assignment validation works."""
+    def test_frozen_model_prevents_assignment(self):
+        """Test that frozen model prevents direct attribute assignment."""
         intent = ModelIntent(intent_type="log", target="service", priority=5)
 
-        # Valid assignment
-        intent.priority = 8
-        assert intent.priority == 8
+        # Direct assignment should raise ValidationError (frozen=True)
+        with pytest.raises(ValidationError) as exc_info:
+            intent.priority = 8
+        assert "frozen" in str(exc_info.value).lower() or "Instance is frozen" in str(
+            exc_info.value
+        )
 
-        # Invalid assignment should raise ValidationError
+    def test_model_copy_with_valid_values(self):
+        """Test that model_copy works for valid value updates."""
+        intent = ModelIntent(intent_type="log", target="service", priority=5)
+
+        # Use model_copy for updates (frozen model pattern)
+        new_intent = intent.model_copy(update={"priority": 8})
+        assert new_intent.priority == 8
+        assert intent.priority == 5  # Original unchanged
+
+    def test_validated_copy_with_invalid_values(self):
+        """Test that validated copies reject invalid values."""
+        intent = ModelIntent(intent_type="log", target="service", priority=5)
+
+        # model_copy bypasses validation, but model_validate enforces constraints
+        # For validated updates, combine model_dump with model_validate
+        data = intent.model_dump()
+        data["priority"] = 11  # Out of range
+
         with pytest.raises(ValidationError):
-            intent.priority = 11  # Out of range
+            ModelIntent.model_validate(data)
 
     def test_model_config_use_enum_values(self):
         """Test that model_config has use_enum_values=False."""

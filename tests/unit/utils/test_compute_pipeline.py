@@ -397,7 +397,7 @@ class TestExecuteComputePipeline:
         """Test executing a simple transformation pipeline."""
         contract = ModelComputeSubcontract(
             operation_name="text_upper",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="to_upper",
@@ -422,7 +422,7 @@ class TestExecuteComputePipeline:
         """Test executing a multi-step pipeline."""
         contract = ModelComputeSubcontract(
             operation_name="text_normalize",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="trim",
@@ -454,7 +454,7 @@ class TestExecuteComputePipeline:
         """Test pipeline aborts on first failure."""
         contract = ModelComputeSubcontract(
             operation_name="failing_pipeline",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="to_upper",
@@ -484,7 +484,7 @@ class TestExecuteComputePipeline:
         """Test identity transformation in pipeline."""
         contract = ModelComputeSubcontract(
             operation_name="passthrough",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="identity",
@@ -505,7 +505,7 @@ class TestExecuteComputePipeline:
         """Test disabled steps are skipped."""
         contract = ModelComputeSubcontract(
             operation_name="with_disabled",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="disabled_step",
@@ -540,7 +540,7 @@ class TestExecuteComputePipeline:
         """Test empty pipeline returns input unchanged."""
         contract = ModelComputeSubcontract(
             operation_name="empty",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[],
         )
         context = ModelComputeExecutionContext(operation_id=uuid4())
@@ -555,7 +555,7 @@ class TestExecuteComputePipeline:
         """Test pipeline tracks processing time."""
         contract = ModelComputeSubcontract(
             operation_name="timed",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="step1",
@@ -576,7 +576,7 @@ class TestExecuteComputePipeline:
         """Test regex transformation in pipeline."""
         contract = ModelComputeSubcontract(
             operation_name="regex_clean",
-            operation_version="1.0.0",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
             pipeline=[
                 ModelComputePipelineStep(
                     step_name="normalize_spaces",

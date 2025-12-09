@@ -160,7 +160,11 @@ class ModelContractVersion(BaseModel):
         return self.to_tuple() >= other.to_tuple()
 
     def __hash__(self) -> int:
-        """Hash function for use in sets and as dict keys."""
+        """Return hash value for use in sets and as dict keys.
+
+        Returns:
+            int: Hash computed from (major, minor, patch) version tuple.
+        """
         return hash(self.to_tuple())
 
     def bump_major(self) -> ModelContractVersion:
