@@ -29,7 +29,6 @@ Related:
 """
 
 from datetime import UTC, datetime
-from typing import Any
 from unittest.mock import MagicMock, Mock, call
 from uuid import uuid4
 
@@ -579,12 +578,13 @@ class TestNodeInstanceHandle:
 
         result = await instance.handle(sample_envelope)
 
-        # Should return the mock runtime's result (runtime returns dict in mock)
+        # Should return the mock runtime's result
         assert result is not None
-        # The mock returns a dict, so we cast to Any for the check
 
-        result_dict: Any = result
-        assert result_dict.get("status") == "success"
+        # Verify result structure - mock returns dict with status key
+        # Use explicit type check for clarity
+        assert isinstance(result, dict), f"Expected dict result, got {type(result)}"
+        assert result.get("status") == "success"
 
     @pytest.mark.asyncio
     async def test_handle_with_various_envelopes(

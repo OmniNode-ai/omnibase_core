@@ -96,6 +96,22 @@ def mock_runtime() -> MagicMock:
     - Envelope forwarding to runtime
     - Return value handling
 
+    Common verification patterns::
+
+        # Verify method was called
+        mock_runtime.execute_with_handler.assert_called_once()
+
+        # Verify call arguments
+        mock_runtime.execute_with_handler.assert_called_with(envelope, instance)
+
+        # Get call arguments for detailed inspection
+        call_args = mock_runtime.execute_with_handler.call_args
+        passed_envelope = call_args.args[0]
+        assert passed_envelope.envelope_id == expected_id
+
+        # Reset for multiple test phases
+        mock_runtime.execute_with_handler.reset_mock()
+
     Note: Uses AsyncMock which is the recommended approach for mocking
     async methods. AsyncMock automatically handles async/await properly,
     making it cleaner than manually defining async functions with side_effect.

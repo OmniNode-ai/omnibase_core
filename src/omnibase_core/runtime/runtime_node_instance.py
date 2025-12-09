@@ -73,6 +73,27 @@ Related:
 See Also:
     - docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md
     - docs/guides/node-building/README.md
+
+Future Considerations:
+    The current lifecycle uses a simple boolean `_initialized` flag for state
+    tracking. Future versions may introduce a state enum for more complex
+    lifecycle management:
+
+    - EnumNodeInstanceState.CREATED: Instance created, no runtime set
+    - EnumNodeInstanceState.CONFIGURED: Runtime set via set_runtime()
+    - EnumNodeInstanceState.INITIALIZING: initialize() in progress
+    - EnumNodeInstanceState.READY: Ready to handle envelopes
+    - EnumNodeInstanceState.SHUTTING_DOWN: shutdown() in progress
+    - EnumNodeInstanceState.SHUTDOWN: Shutdown complete
+
+    This would enable:
+    - More granular state queries (is_ready(), is_shutting_down())
+    - State transition validation with explicit allowed transitions
+    - Better observability and debugging of lifecycle issues
+    - Support for async initialization/shutdown with intermediate states
+
+    For now, the boolean approach is sufficient for the current use cases
+    and keeps the implementation simple per YAGNI principles.
 """
 
 from __future__ import annotations
@@ -213,6 +234,37 @@ class RuntimeNodeInstance(BaseModel):
                 node_type=str(self.node_type),
             )
         self._runtime = runtime
+
+    @property
+    def runtime(self) -> ProtocolNodeRuntime:
+        """
+        Get runtime reference with validation.
+
+        This property provides type-safe access to the runtime, raising a
+        descriptive error if the runtime has not been set. Use this instead
+        of accessing _runtime directly.
+
+        Returns:
+            ProtocolNodeRuntime: The configured runtime instance.
+
+        Raises:
+            ModelOnexError: If runtime has not been set via set_runtime().
+
+        Example:
+            .. code-block:: python
+
+                instance.set_runtime(my_runtime)
+                runtime = instance.runtime  # Safe access with validation
+        """
+        if self._runtime is None:
+            raise ModelOnexError(
+                message=f"Runtime not set for RuntimeNodeInstance '{self.slug}'. "
+                "Call set_runtime() before accessing runtime.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+                node_slug=self.slug,
+                node_type=str(self.node_type),
+            )
+        return self._runtime
 
     async def initialize(self) -> None:
         """
@@ -362,19 +414,8 @@ class RuntimeNodeInstance(BaseModel):
                 envelope_operation=envelope.operation,
             )
 
-        if self._runtime is None:
-            # This should not happen if initialized properly, but defensive check
-            raise ModelOnexError(
-                message=f"RuntimeNodeInstance '{self.slug}' has no runtime. "
-                "This indicates an internal error - runtime was cleared after initialization.",
-                error_code=EnumCoreErrorCode.INTERNAL_ERROR,
-                node_slug=self.slug,
-                node_type=str(self.node_type),
-                envelope_operation=envelope.operation,
-            )
-
         # Delegate to runtime - all execution happens there
-        return await self._runtime.execute_with_handler(envelope, self)
+        return await self.runtime.execute_with_handler(envelope, self)
 
     def __str__(self) -> str:
         """
