@@ -43,7 +43,7 @@ Actions execute in a defined order during FSM state transitions:
 3. **entry_actions** of target state (initialization after arriving)
 
 Example from `node_graph_reducer.yaml`:
-```yaml
+```text
 initializing -> wiring transition:
   1. exit_actions: [log_initialization_complete]     # From initializing state
   2. actions: [emit_wiring_started, snapshot_registry_state]  # From transition

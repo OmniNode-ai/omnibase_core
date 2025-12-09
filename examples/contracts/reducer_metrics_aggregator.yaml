@@ -149,7 +149,7 @@ state_transitions:
           condition_type: data_validation
       actions:
         - action_name: increment_retry_counter
-          action_type: counter_update
+          action_type: data_capture
           is_critical: true
           timeout_ms: 100
           version: {major: 1, minor: 0, patch: 0}

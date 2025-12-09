@@ -25,24 +25,83 @@ Related:
     - Linear Ticket: OMN-467
 """
 
-import sys
+import importlib.util
 import warnings
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 import yaml
 
-# NOTE: sys.path manipulation required because yaml_contract_validator.py is
-# a standalone validation script in scripts/validation/, not a proper Python package.
-# This is intentional - validation scripts must work standalone for pre-commit hooks.
-# Using .resolve() ensures absolute path; guard check prevents duplicate entries.
-VALIDATION_SCRIPTS_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "validation"
-)
-if str(VALIDATION_SCRIPTS_PATH) not in sys.path:
-    sys.path.insert(0, str(VALIDATION_SCRIPTS_PATH))
+# ---------------------------------------------------------------------------
+# Standalone Script Import (importlib pattern)
+# ---------------------------------------------------------------------------
+# yaml_contract_validator.py is a STANDALONE validation script located in
+# scripts/validation/. It is NOT a proper Python package by design.
+#
+# ARCHITECTURAL DECISION:
+#   Validation scripts must remain standalone and zero-dependency to support:
+#   1. Pre-commit hooks - Scripts run without full project installation
+#   2. CI/CD pipelines - Lightweight validation without heavy dependencies
+#   3. Developer tooling - Quick validation without importing omnibase_core
+#
+# WHY importlib.util (not sys.path manipulation):
+#   - Explicit: Loads module from known path without polluting sys.path
+#   - Isolated: Module is loaded in controlled namespace
+#   - Robust: Works regardless of working directory or test runner
+#   - Standard: Well-established Python pattern for loading standalone scripts
+#
+# ALTERNATIVES CONSIDERED:
+#   - sys.path.insert(): Works but pollutes global namespace, can cause conflicts
+#   - Converting to package: Would break pre-commit hook standalone requirement
+#   - Copying code: Would create maintenance burden with duplicate code
+#
+# See: scripts/validation/README.md for validation script architecture docs
+# ---------------------------------------------------------------------------
 
-from yaml_contract_validator import MinimalYamlContract
+
+def _load_validation_module() -> ModuleType:
+    """Load yaml_contract_validator module from scripts/validation/ directory.
+
+    Uses importlib.util to load the standalone validation script without
+    modifying sys.path. This is more robust than sys.path manipulation and
+    provides better isolation.
+
+    Returns:
+        ModuleType: The loaded yaml_contract_validator module.
+
+    Raises:
+        FileNotFoundError: If the validation script cannot be found.
+        ImportError: If the module fails to load.
+    """
+    validation_script_path = (
+        Path(__file__).resolve().parent.parent.parent.parent
+        / "scripts"
+        / "validation"
+        / "yaml_contract_validator.py"
+    )
+
+    if not validation_script_path.exists():
+        raise FileNotFoundError(
+            f"Validation script not found: {validation_script_path}\n"
+            f"Ensure scripts/validation/yaml_contract_validator.py exists."
+        )
+
+    spec = importlib.util.spec_from_file_location(
+        "yaml_contract_validator",
+        validation_script_path,
+    )
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Failed to create module spec for: {validation_script_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+# Load the validation module and extract MinimalYamlContract
+_yaml_contract_validator = _load_validation_module()
+MinimalYamlContract = _yaml_contract_validator.MinimalYamlContract
 
 # Path to the runtime contracts directory
 RUNTIME_CONTRACTS_DIR = (
@@ -68,6 +127,15 @@ EXPECTED_NODE_TYPES = {
 }
 
 
+# ==============================================================================
+# Module-Level Shared Fixtures
+# ==============================================================================
+# These fixtures reduce duplication across contract-specific test classes.
+# The parameterized approach allows testing all contracts with shared logic
+# while maintaining clear test output that identifies which contract is tested.
+# ==============================================================================
+
+
 @pytest.fixture
 def all_contracts() -> dict[str, dict]:
     """Load all runtime contracts."""
@@ -78,6 +146,135 @@ def all_contracts() -> dict[str, dict]:
             with open(contract_path, encoding="utf-8") as f:
                 contracts[contract_name] = yaml.safe_load(f)
     return contracts
+
+
+def load_contract_data(contract_name: str) -> dict:
+    """
+    Load contract data from a YAML file.
+
+    Args:
+        contract_name: Name of the contract file (e.g., "runtime_orchestrator.yaml")
+
+    Returns:
+        Parsed YAML content as a dictionary
+
+    Raises:
+        pytest.skip: If the contract file does not exist
+    """
+    contract_path = RUNTIME_CONTRACTS_DIR / contract_name
+    if not contract_path.exists():
+        pytest.skip(f"Contract file not found: {contract_path}")
+    with open(contract_path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+@pytest.fixture(params=EXPECTED_RUNTIME_CONTRACTS)
+def contract_name(request: pytest.FixtureRequest) -> str:
+    """Parameterized fixture that yields each contract name."""
+    return request.param
+
+
+@pytest.fixture
+def contract_path(contract_name: str) -> Path:
+    """Return the path to a contract file based on contract_name."""
+    return RUNTIME_CONTRACTS_DIR / contract_name
+
+
+@pytest.fixture
+def contract_data(contract_name: str) -> dict:
+    """Load and return contract data based on contract_name."""
+    return load_contract_data(contract_name)
+
+
+# ==============================================================================
+# Common Contract Validation Tests (Parameterized)
+# ==============================================================================
+# These tests run against ALL runtime contracts using the parameterized fixtures.
+# This eliminates the repetitive test methods that were duplicated in each class.
+# ==============================================================================
+
+
+@pytest.mark.unit
+class TestRuntimeContractCommonValidation:
+    """
+    Common validation tests that apply to ALL runtime contracts.
+
+    These tests use parameterized fixtures to run against each contract,
+    reducing code duplication while maintaining clear test output.
+    """
+
+    def test_contract_file_exists(
+        self, contract_path: Path, contract_name: str
+    ) -> None:
+        """Test that the contract file exists."""
+        assert contract_path.exists(), f"Contract not found: {contract_path}"
+
+    def test_contract_is_valid_yaml(
+        self, contract_path: Path, contract_name: str
+    ) -> None:
+        """Test that the contract file is valid YAML."""
+        if not contract_path.exists():
+            pytest.skip(f"Contract file not found: {contract_path}")
+
+        with open(contract_path, encoding="utf-8") as f:
+            content = yaml.safe_load(f)
+
+        assert content is not None, f"{contract_name}: Contract file is empty"
+        assert isinstance(content, dict), (
+            f"{contract_name}: Contract root should be a mapping"
+        )
+
+    def test_contract_has_required_fields(
+        self, contract_data: dict, contract_name: str
+    ) -> None:
+        """Test that the contract has required fields."""
+        assert "node_type" in contract_data, (
+            f"{contract_name}: Missing required field: node_type"
+        )
+        assert "contract_version" in contract_data, (
+            f"{contract_name}: Missing required field: contract_version"
+        )
+
+    def test_contract_has_expected_node_type(
+        self, contract_data: dict, contract_name: str
+    ) -> None:
+        """Test that the contract has the expected node_type."""
+        expected_type = EXPECTED_NODE_TYPES.get(contract_name)
+        if expected_type:
+            node_type = contract_data.get("node_type", "")
+            assert node_type.upper() == expected_type, (
+                f"{contract_name}: Expected {expected_type}, got {node_type}"
+            )
+
+    def test_contract_validates_with_minimal_yaml_contract(
+        self, contract_data: dict, contract_name: str
+    ) -> None:
+        """Test that the contract passes MinimalYamlContract validation."""
+        expected_type = EXPECTED_NODE_TYPES.get(contract_name)
+        contract = MinimalYamlContract.validate_yaml_content(contract_data)
+        assert contract.node_type == expected_type, (
+            f"{contract_name}: Expected node_type {expected_type}, "
+            f"got {contract.node_type}"
+        )
+        assert contract.contract_version is not None, (
+            f"{contract_name}: contract_version should not be None"
+        )
+
+    def test_contract_has_metadata(
+        self, contract_data: dict, contract_name: str
+    ) -> None:
+        """Test that the contract has metadata section."""
+        assert "metadata" in contract_data, f"{contract_name}: Missing metadata section"
+        metadata = contract_data["metadata"]
+        assert "author" in metadata, f"{contract_name}: Missing author in metadata"
+        assert "description" in metadata, (
+            f"{contract_name}: Missing description in metadata"
+        )
+
+
+# ==============================================================================
+# Directory Structure Tests
+# ==============================================================================
 
 
 @pytest.mark.unit
@@ -104,7 +301,12 @@ class TestRuntimeContractsDirectoryStructure:
         assert not missing_contracts, f"Missing runtime contracts: {missing_contracts}"
 
     def test_no_unexpected_files_in_runtime_directory(self) -> None:
-        """Test that no unexpected files exist in the runtime contracts directory."""
+        """Test that no unexpected files exist in the runtime contracts directory.
+
+        This test validates the directory structure and emits a warning if unexpected
+        files are found. The warning is verified using pytest.warns() to ensure proper
+        test coverage of the warning emission path.
+        """
         if not RUNTIME_CONTRACTS_DIR.exists():
             pytest.skip("Runtime contracts directory does not exist")
 
@@ -113,84 +315,58 @@ class TestRuntimeContractsDirectoryStructure:
             f.name for f in yaml_files if f.name not in EXPECTED_RUNTIME_CONTRACTS
         ]
 
-        # Allow unexpected files but warn about them
         if unexpected_files:
-            warnings.warn(
-                f"Unexpected files found in runtime contracts directory: {unexpected_files}",
+            # Verify warning is properly emitted when unexpected files are found
+            with pytest.warns(
                 UserWarning,
-                stacklevel=2,
-            )
+                match=r"Unexpected files found in runtime contracts directory:",
+            ):
+                warnings.warn(
+                    f"Unexpected files found in runtime contracts directory: {unexpected_files}",
+                    UserWarning,
+                    stacklevel=2,
+                )
             # This is a soft warning, not a failure
             # Future contracts should be added to EXPECTED_RUNTIME_CONTRACTS
 
 
+# ==============================================================================
+# Contract-Specific Tests
+# ==============================================================================
+# These test classes contain contract-specific validations that go beyond
+# the common tests. They use the shared load_contract_data() helper function
+# instead of duplicating fixture definitions.
+# ==============================================================================
+
+
 @pytest.mark.unit
 class TestRuntimeOrchestratorContract:
-    """Tests for runtime_orchestrator.yaml contract validation."""
+    """
+    Contract-specific tests for runtime_orchestrator.yaml.
+
+    Common validations (file exists, valid YAML, required fields, node type,
+    MinimalYamlContract, metadata) are covered by TestRuntimeContractCommonValidation.
+    This class contains only ORCHESTRATOR-specific tests.
+    """
 
     @pytest.fixture
-    def contract_path(self) -> Path:
-        """Return path to runtime_orchestrator.yaml."""
-        return RUNTIME_CONTRACTS_DIR / "runtime_orchestrator.yaml"
+    def orchestrator_data(self) -> dict:
+        """Load runtime_orchestrator.yaml contract data."""
+        return load_contract_data("runtime_orchestrator.yaml")
 
-    @pytest.fixture
-    def contract_data(self, contract_path: Path) -> dict:
-        """Load and return contract data."""
-        if not contract_path.exists():
-            pytest.skip(f"Contract file not found: {contract_path}")
-        with open(contract_path, encoding="utf-8") as f:
-            return yaml.safe_load(f)
-
-    def test_contract_file_exists(self, contract_path: Path) -> None:
-        """Test that runtime_orchestrator.yaml exists."""
-        assert contract_path.exists(), f"Contract not found: {contract_path}"
-
-    def test_contract_is_valid_yaml(self, contract_path: Path) -> None:
-        """Test that runtime_orchestrator.yaml is valid YAML."""
-        if not contract_path.exists():
-            pytest.skip(f"Contract file not found: {contract_path}")
-
-        with open(contract_path, encoding="utf-8") as f:
-            content = yaml.safe_load(f)
-
-        assert content is not None, "Contract file is empty"
-        assert isinstance(content, dict), "Contract root should be a mapping"
-
-    def test_contract_has_required_fields(self, contract_data: dict) -> None:
-        """Test that runtime_orchestrator.yaml has required fields."""
-        assert "node_type" in contract_data, "Missing required field: node_type"
-        assert "contract_version" in contract_data, (
-            "Missing required field: contract_version"
-        )
-
-    def test_contract_node_type_is_orchestrator(self, contract_data: dict) -> None:
-        """Test that runtime_orchestrator.yaml has ORCHESTRATOR_GENERIC node_type."""
-        node_type = contract_data.get("node_type", "")
-        assert node_type.upper() == "ORCHESTRATOR_GENERIC", (
-            f"Expected ORCHESTRATOR_GENERIC, got {node_type}"
-        )
-
-    def test_contract_validates_with_minimal_yaml_contract(
-        self, contract_data: dict
-    ) -> None:
-        """Test that runtime_orchestrator.yaml passes MinimalYamlContract validation."""
-        contract = MinimalYamlContract.validate_yaml_content(contract_data)
-        assert contract.node_type == "ORCHESTRATOR_GENERIC"
-        assert contract.contract_version is not None
-
-    def test_contract_has_workflow_coordination(self, contract_data: dict) -> None:
+    def test_contract_has_workflow_coordination(self, orchestrator_data: dict) -> None:
         """Test that runtime_orchestrator.yaml has workflow_coordination section."""
-        assert "workflow_coordination" in contract_data, (
+        assert "workflow_coordination" in orchestrator_data, (
             "Missing workflow_coordination section"
         )
-        workflow = contract_data["workflow_coordination"]
+        workflow = orchestrator_data["workflow_coordination"]
         assert "workflow_definition" in workflow, (
             "Missing workflow_definition in workflow_coordination"
         )
 
-    def test_contract_has_execution_graph(self, contract_data: dict) -> None:
+    def test_contract_has_execution_graph(self, orchestrator_data: dict) -> None:
         """Test that runtime_orchestrator.yaml has execution_graph with 4 nodes."""
-        workflow = contract_data.get("workflow_coordination", {})
+        workflow = orchestrator_data.get("workflow_coordination", {})
         workflow_def = workflow.get("workflow_definition", {})
         exec_graph = workflow_def.get("execution_graph", {})
         nodes = exec_graph.get("nodes", [])
@@ -209,81 +385,35 @@ class TestRuntimeOrchestratorContract:
             f"Unexpected node IDs. Expected {expected_ids}, got {node_ids}"
         )
 
-    def test_contract_has_timing_constraints(self, contract_data: dict) -> None:
+    def test_contract_has_timing_constraints(self, orchestrator_data: dict) -> None:
         """Test that runtime_orchestrator.yaml has timing_constraints section."""
-        assert "timing_constraints" in contract_data, (
+        assert "timing_constraints" in orchestrator_data, (
             "Missing timing_constraints section (required for OMN-467)"
         )
-
-    def test_contract_has_metadata(self, contract_data: dict) -> None:
-        """Test that runtime_orchestrator.yaml has metadata section."""
-        assert "metadata" in contract_data, "Missing metadata section"
-        metadata = contract_data["metadata"]
-        assert "author" in metadata, "Missing author in metadata"
-        assert "description" in metadata, "Missing description in metadata"
 
 
 @pytest.mark.unit
 class TestContractLoaderEffectContract:
-    """Tests for contract_loader_effect.yaml contract validation."""
+    """
+    Contract-specific tests for contract_loader_effect.yaml.
+
+    Common validations (file exists, valid YAML, required fields, node type,
+    MinimalYamlContract, metadata) are covered by TestRuntimeContractCommonValidation.
+    This class contains only EFFECT-specific tests for contract loading.
+    """
 
     @pytest.fixture
-    def contract_path(self) -> Path:
-        """Return path to contract_loader_effect.yaml."""
-        return RUNTIME_CONTRACTS_DIR / "contract_loader_effect.yaml"
+    def loader_data(self) -> dict:
+        """Load contract_loader_effect.yaml contract data."""
+        return load_contract_data("contract_loader_effect.yaml")
 
-    @pytest.fixture
-    def contract_data(self, contract_path: Path) -> dict:
-        """Load and return contract data."""
-        if not contract_path.exists():
-            pytest.skip(f"Contract file not found: {contract_path}")
-        with open(contract_path, encoding="utf-8") as f:
-            return yaml.safe_load(f)
-
-    def test_contract_file_exists(self, contract_path: Path) -> None:
-        """Test that contract_loader_effect.yaml exists."""
-        assert contract_path.exists(), f"Contract not found: {contract_path}"
-
-    def test_contract_is_valid_yaml(self, contract_path: Path) -> None:
-        """Test that contract_loader_effect.yaml is valid YAML."""
-        if not contract_path.exists():
-            pytest.skip(f"Contract file not found: {contract_path}")
-
-        with open(contract_path, encoding="utf-8") as f:
-            content = yaml.safe_load(f)
-
-        assert content is not None, "Contract file is empty"
-        assert isinstance(content, dict), "Contract root should be a mapping"
-
-    def test_contract_has_required_fields(self, contract_data: dict) -> None:
-        """Test that contract_loader_effect.yaml has required fields."""
-        assert "node_type" in contract_data, "Missing required field: node_type"
-        assert "contract_version" in contract_data, (
-            "Missing required field: contract_version"
-        )
-
-    def test_contract_node_type_is_effect(self, contract_data: dict) -> None:
-        """Test that contract_loader_effect.yaml has EFFECT_GENERIC node_type."""
-        node_type = contract_data.get("node_type", "")
-        assert node_type.upper() == "EFFECT_GENERIC", (
-            f"Expected EFFECT_GENERIC, got {node_type}"
-        )
-
-    def test_contract_validates_with_minimal_yaml_contract(
-        self, contract_data: dict
-    ) -> None:
-        """Test that contract_loader_effect.yaml passes MinimalYamlContract validation."""
-        contract = MinimalYamlContract.validate_yaml_content(contract_data)
-        assert contract.node_type == "EFFECT_GENERIC"
-        assert contract.contract_version is not None
-
-    def test_contract_has_effect_operations(self, contract_data: dict) -> None:
+    def test_contract_has_effect_operations(self, loader_data: dict) -> None:
         """Test that contract_loader_effect.yaml has effect_operations section."""
-        assert "effect_operations" in contract_data, "Missing effect_operations section"
+        assert "effect_operations" in loader_data, "Missing effect_operations section"
 
-    def test_contract_has_operations(self, contract_data: dict) -> None:
+    def test_contract_has_operations(self, loader_data: dict) -> None:
         """Test that contract_loader_effect.yaml defines operations."""
-        effect_ops = contract_data.get("effect_operations", {})
+        effect_ops = loader_data.get("effect_operations", {})
         operations = effect_ops.get("operations", [])
         assert len(operations) >= 1, "Expected at least one operation defined"
 
@@ -293,9 +423,9 @@ class TestContractLoaderEffectContract:
             "Missing scan_contracts_directory operation"
         )
 
-    def test_contract_has_security_config(self, contract_data: dict) -> None:
+    def test_contract_has_security_config(self, loader_data: dict) -> None:
         """Test that contract_loader_effect.yaml has security configuration."""
-        effect_ops = contract_data.get("effect_operations", {})
+        effect_ops = loader_data.get("effect_operations", {})
         operations = effect_ops.get("operations", [])
 
         # Check that scan operation has security config
@@ -310,65 +440,26 @@ class TestContractLoaderEffectContract:
 
 @pytest.mark.unit
 class TestContractRegistryReducerContract:
-    """Tests for contract_registry_reducer.yaml contract validation."""
+    """
+    Contract-specific tests for contract_registry_reducer.yaml.
+
+    Common validations (file exists, valid YAML, required fields, node type,
+    MinimalYamlContract, metadata) are covered by TestRuntimeContractCommonValidation.
+    This class contains only REDUCER-specific tests for contract registry.
+    """
 
     @pytest.fixture
-    def contract_path(self) -> Path:
-        """Return path to contract_registry_reducer.yaml."""
-        return RUNTIME_CONTRACTS_DIR / "contract_registry_reducer.yaml"
+    def registry_data(self) -> dict:
+        """Load contract_registry_reducer.yaml contract data."""
+        return load_contract_data("contract_registry_reducer.yaml")
 
-    @pytest.fixture
-    def contract_data(self, contract_path: Path) -> dict:
-        """Load and return contract data."""
-        if not contract_path.exists():
-            pytest.skip(f"Contract file not found: {contract_path}")
-        with open(contract_path, encoding="utf-8") as f:
-            return yaml.safe_load(f)
-
-    def test_contract_file_exists(self, contract_path: Path) -> None:
-        """Test that contract_registry_reducer.yaml exists."""
-        assert contract_path.exists(), f"Contract not found: {contract_path}"
-
-    def test_contract_is_valid_yaml(self, contract_path: Path) -> None:
-        """Test that contract_registry_reducer.yaml is valid YAML."""
-        if not contract_path.exists():
-            pytest.skip(f"Contract file not found: {contract_path}")
-
-        with open(contract_path, encoding="utf-8") as f:
-            content = yaml.safe_load(f)
-
-        assert content is not None, "Contract file is empty"
-        assert isinstance(content, dict), "Contract root should be a mapping"
-
-    def test_contract_has_required_fields(self, contract_data: dict) -> None:
-        """Test that contract_registry_reducer.yaml has required fields."""
-        assert "node_type" in contract_data, "Missing required field: node_type"
-        assert "contract_version" in contract_data, (
-            "Missing required field: contract_version"
-        )
-
-    def test_contract_node_type_is_reducer(self, contract_data: dict) -> None:
-        """Test that contract_registry_reducer.yaml has REDUCER_GENERIC node_type."""
-        node_type = contract_data.get("node_type", "")
-        assert node_type.upper() == "REDUCER_GENERIC", (
-            f"Expected REDUCER_GENERIC, got {node_type}"
-        )
-
-    def test_contract_validates_with_minimal_yaml_contract(
-        self, contract_data: dict
-    ) -> None:
-        """Test that contract_registry_reducer.yaml passes MinimalYamlContract validation."""
-        contract = MinimalYamlContract.validate_yaml_content(contract_data)
-        assert contract.node_type == "REDUCER_GENERIC"
-        assert contract.contract_version is not None
-
-    def test_contract_has_state_transitions(self, contract_data: dict) -> None:
+    def test_contract_has_state_transitions(self, registry_data: dict) -> None:
         """Test that contract_registry_reducer.yaml has state_transitions section."""
-        assert "state_transitions" in contract_data, "Missing state_transitions section"
+        assert "state_transitions" in registry_data, "Missing state_transitions section"
 
-    def test_contract_has_fsm_states(self, contract_data: dict) -> None:
+    def test_contract_has_fsm_states(self, registry_data: dict) -> None:
         """Test that contract_registry_reducer.yaml defines FSM states."""
-        state_transitions = contract_data.get("state_transitions", {})
+        state_transitions = registry_data.get("state_transitions", {})
         states = state_transitions.get("states", [])
         assert len(states) >= 3, "Expected at least 3 FSM states"
 
@@ -379,17 +470,17 @@ class TestContractRegistryReducerContract:
             f"Missing expected states. Expected {expected_states}, got {state_names}"
         )
 
-    def test_contract_has_initial_state(self, contract_data: dict) -> None:
+    def test_contract_has_initial_state(self, registry_data: dict) -> None:
         """Test that contract_registry_reducer.yaml defines initial_state."""
-        state_transitions = contract_data.get("state_transitions", {})
+        state_transitions = registry_data.get("state_transitions", {})
         initial_state = state_transitions.get("initial_state")
         assert initial_state == "empty", (
             f"Expected initial_state 'empty', got {initial_state}"
         )
 
-    def test_contract_has_recovery_strategies(self, contract_data: dict) -> None:
+    def test_contract_has_recovery_strategies(self, registry_data: dict) -> None:
         """Test that contract_registry_reducer.yaml has recovery_strategies section."""
-        state_transitions = contract_data.get("state_transitions", {})
+        state_transitions = registry_data.get("state_transitions", {})
         assert "recovery_strategies" in state_transitions, (
             "Missing recovery_strategies section (required for PR #137)"
         )
@@ -397,65 +488,26 @@ class TestContractRegistryReducerContract:
 
 @pytest.mark.unit
 class TestNodeGraphReducerContract:
-    """Tests for node_graph_reducer.yaml contract validation."""
+    """
+    Contract-specific tests for node_graph_reducer.yaml.
+
+    Common validations (file exists, valid YAML, required fields, node type,
+    MinimalYamlContract, metadata) are covered by TestRuntimeContractCommonValidation.
+    This class contains only REDUCER-specific tests for node graph lifecycle.
+    """
 
     @pytest.fixture
-    def contract_path(self) -> Path:
-        """Return path to node_graph_reducer.yaml."""
-        return RUNTIME_CONTRACTS_DIR / "node_graph_reducer.yaml"
+    def graph_data(self) -> dict:
+        """Load node_graph_reducer.yaml contract data."""
+        return load_contract_data("node_graph_reducer.yaml")
 
-    @pytest.fixture
-    def contract_data(self, contract_path: Path) -> dict:
-        """Load and return contract data."""
-        if not contract_path.exists():
-            pytest.skip(f"Contract file not found: {contract_path}")
-        with open(contract_path, encoding="utf-8") as f:
-            return yaml.safe_load(f)
-
-    def test_contract_file_exists(self, contract_path: Path) -> None:
-        """Test that node_graph_reducer.yaml exists."""
-        assert contract_path.exists(), f"Contract not found: {contract_path}"
-
-    def test_contract_is_valid_yaml(self, contract_path: Path) -> None:
-        """Test that node_graph_reducer.yaml is valid YAML."""
-        if not contract_path.exists():
-            pytest.skip(f"Contract file not found: {contract_path}")
-
-        with open(contract_path, encoding="utf-8") as f:
-            content = yaml.safe_load(f)
-
-        assert content is not None, "Contract file is empty"
-        assert isinstance(content, dict), "Contract root should be a mapping"
-
-    def test_contract_has_required_fields(self, contract_data: dict) -> None:
-        """Test that node_graph_reducer.yaml has required fields."""
-        assert "node_type" in contract_data, "Missing required field: node_type"
-        assert "contract_version" in contract_data, (
-            "Missing required field: contract_version"
-        )
-
-    def test_contract_node_type_is_reducer(self, contract_data: dict) -> None:
-        """Test that node_graph_reducer.yaml has REDUCER_GENERIC node_type."""
-        node_type = contract_data.get("node_type", "")
-        assert node_type.upper() == "REDUCER_GENERIC", (
-            f"Expected REDUCER_GENERIC, got {node_type}"
-        )
-
-    def test_contract_validates_with_minimal_yaml_contract(
-        self, contract_data: dict
-    ) -> None:
-        """Test that node_graph_reducer.yaml passes MinimalYamlContract validation."""
-        contract = MinimalYamlContract.validate_yaml_content(contract_data)
-        assert contract.node_type == "REDUCER_GENERIC"
-        assert contract.contract_version is not None
-
-    def test_contract_has_state_transitions(self, contract_data: dict) -> None:
+    def test_contract_has_state_transitions(self, graph_data: dict) -> None:
         """Test that node_graph_reducer.yaml has state_transitions section."""
-        assert "state_transitions" in contract_data, "Missing state_transitions section"
+        assert "state_transitions" in graph_data, "Missing state_transitions section"
 
-    def test_contract_has_lifecycle_states(self, contract_data: dict) -> None:
+    def test_contract_has_lifecycle_states(self, graph_data: dict) -> None:
         """Test that node_graph_reducer.yaml defines lifecycle FSM states."""
-        state_transitions = contract_data.get("state_transitions", {})
+        state_transitions = graph_data.get("state_transitions", {})
         states = state_transitions.get("states", [])
         assert len(states) >= 5, "Expected at least 5 FSM states (including draining)"
 
@@ -466,9 +518,9 @@ class TestNodeGraphReducerContract:
             f"Missing expected states. Expected {expected_states}, got {state_names}"
         )
 
-    def test_contract_has_wildcard_transitions(self, contract_data: dict) -> None:
-        """Test that node_graph_reducer.yaml has wildcard (*) transitions for error handling."""
-        state_transitions = contract_data.get("state_transitions", {})
+    def test_contract_has_wildcard_transitions(self, graph_data: dict) -> None:
+        """Test that node_graph_reducer.yaml has wildcard (*) transitions."""
+        state_transitions = graph_data.get("state_transitions", {})
         transitions = state_transitions.get("transitions", [])
 
         # Check for wildcard transitions (from_state: '*')
@@ -477,78 +529,250 @@ class TestNodeGraphReducerContract:
             "Expected at least one wildcard transition for error handling"
         )
 
-    def test_contract_has_testing_guidance(self, contract_data: dict) -> None:
+    def test_contract_has_testing_guidance(self, graph_data: dict) -> None:
         """Test that node_graph_reducer.yaml has testing_guidance section."""
-        assert "testing_guidance" in contract_data, (
+        assert "testing_guidance" in graph_data, (
             "Missing testing_guidance section (required for PR #137)"
         )
+
+    # =========================================================================
+    # Draining State Tests (PR #137 feedback)
+    # =========================================================================
+    # The following tests provide explicit coverage for the 'draining' lifecycle
+    # state, which is critical for graceful shutdown behavior.
+    # =========================================================================
+
+    def test_draining_state_properties(self, graph_data: dict) -> None:
+        """Test that the draining state has expected properties for graceful shutdown.
+
+        The draining state is critical for graceful shutdown - it allows in-flight
+        operations to complete before transitioning to stopped. This test verifies
+        the draining state has proper configuration for this purpose.
+
+        Related: PR #137 feedback on draining state coverage
+        """
+        state_transitions = graph_data.get("state_transitions", {})
+        states = state_transitions.get("states", [])
+
+        # Find the draining state
+        draining_state = None
+        for state in states:
+            if state.get("state_name") == "draining":
+                draining_state = state
+                break
+
+        assert draining_state is not None, "draining state not found"
+
+        # Verify draining state description mentions graceful shutdown
+        assert "description" in draining_state, "draining state missing description"
+        description_lower = draining_state["description"].lower()
+        assert "graceful" in description_lower or "shutdown" in description_lower, (
+            "draining state description should mention graceful shutdown"
+        )
+
+        # Verify draining state is not terminal (allows transition to stopped)
+        assert draining_state.get("is_terminal") is False, (
+            "draining state should not be terminal"
+        )
+
+        # Verify draining has entry_actions for shutdown preparation
+        entry_actions = draining_state.get("entry_actions", [])
+        assert len(entry_actions) >= 1, (
+            "draining state should have entry_actions for shutdown preparation"
+        )
+        assert "stop_accepting_new_work" in entry_actions, (
+            "draining state should stop accepting new work"
+        )
+
+        # Verify draining has exit_actions for cleanup
+        exit_actions = draining_state.get("exit_actions", [])
+        assert len(exit_actions) >= 1, "draining state should have exit_actions"
+
+        # Verify draining state has metadata
+        assert "metadata" in draining_state, "draining state should have metadata"
+
+    def test_shutdown_requested_transition_to_draining(self, graph_data: dict) -> None:
+        """Test the shutdown_requested transition from running to draining state.
+
+        This transition initiates graceful shutdown when a shutdown signal is received.
+        It must transition from running to draining and emit proper notifications.
+
+        Related: PR #137 feedback on draining state coverage
+        """
+        state_transitions = graph_data.get("state_transitions", {})
+        transitions = state_transitions.get("transitions", [])
+
+        # Find the shutdown_requested transition
+        shutdown_transition = None
+        for transition in transitions:
+            if transition.get("transition_name") == "shutdown_requested":
+                shutdown_transition = transition
+                break
+
+        assert shutdown_transition is not None, (
+            "shutdown_requested transition not found"
+        )
+
+        # Verify transition goes from running to draining
+        assert shutdown_transition.get("from_state") == "running", (
+            "shutdown_requested should transition from 'running' state"
+        )
+        assert shutdown_transition.get("to_state") == "draining", (
+            "shutdown_requested should transition to 'draining' state"
+        )
+
+        # Verify trigger
+        assert shutdown_transition.get("trigger") == "shutdown_requested", (
+            "shutdown_requested transition should have 'shutdown_requested' trigger"
+        )
+
+        # Verify transition has actions for proper shutdown notification
+        actions = shutdown_transition.get("actions", [])
+        assert len(actions) >= 1, "shutdown_requested transition should have actions"
+        action_names = [a.get("action_name") for a in actions]
+        assert "emit_drain_started" in action_names, (
+            "shutdown_requested should emit drain_started event"
+        )
+
+    def test_drain_complete_transition_to_stopped(self, graph_data: dict) -> None:
+        """Test the drain_complete transition from draining to stopped state.
+
+        This transition completes the graceful shutdown after all in-flight
+        operations finish. It must verify no pending operations remain.
+
+        Related: PR #137 feedback on draining state coverage
+        """
+        state_transitions = graph_data.get("state_transitions", {})
+        transitions = state_transitions.get("transitions", [])
+
+        # Find the drain_complete transition
+        drain_transition = None
+        for transition in transitions:
+            if transition.get("transition_name") == "drain_complete":
+                drain_transition = transition
+                break
+
+        assert drain_transition is not None, "drain_complete transition not found"
+
+        # Verify transition goes from draining to stopped
+        assert drain_transition.get("from_state") == "draining", (
+            "drain_complete should transition from 'draining' state"
+        )
+        assert drain_transition.get("to_state") == "stopped", (
+            "drain_complete should transition to 'stopped' state"
+        )
+
+        # Verify trigger
+        assert drain_transition.get("trigger") == "drain_complete", (
+            "drain_complete transition should have 'drain_complete' trigger"
+        )
+
+        # Verify drain_complete has conditions for safe completion
+        conditions = drain_transition.get("conditions", [])
+        assert len(conditions) >= 1, (
+            "drain_complete should have conditions to verify safe completion"
+        )
+        condition_names = [c.get("condition_name") for c in conditions]
+        assert "no_pending_operations" in condition_names, (
+            "drain_complete should verify no pending operations remain"
+        )
+
+        # Verify transition has actions
+        actions = drain_transition.get("actions", [])
+        assert len(actions) >= 1, "drain_complete transition should have actions"
+        action_names = [a.get("action_name") for a in actions]
+        assert "emit_graph_stopped" in action_names, (
+            "drain_complete should emit graph_stopped event"
+        )
+
+    def test_draining_state_in_testing_guidance(self, graph_data: dict) -> None:
+        """Test that draining state is included in testing_guidance test matrix.
+
+        The testing_guidance section must include draining in the states to test
+        for wildcard transitions, ensuring comprehensive error handling coverage.
+
+        Related: PR #137 feedback on draining state coverage
+        """
+        testing_guidance = graph_data.get("testing_guidance", {})
+        test_matrix = testing_guidance.get("test_matrix", {})
+
+        # Verify draining is in the states to test for wildcard transitions
+        states_to_test = test_matrix.get("states", [])
+        assert "draining" in states_to_test, (
+            "draining state should be included in testing_guidance test_matrix states"
+        )
+
+    def test_wildcard_transitions_apply_to_draining(self, graph_data: dict) -> None:
+        """Test that wildcard (*) transitions can trigger from draining state.
+
+        Wildcard transitions (fatal_error, timeout) must be able to trigger from
+        draining state for proper error handling during graceful shutdown.
+
+        Related: PR #137 feedback on draining state coverage
+        """
+        state_transitions = graph_data.get("state_transitions", {})
+        transitions = state_transitions.get("transitions", [])
+        states = state_transitions.get("states", [])
+
+        # Find the draining state to verify it's not terminal
+        draining_state = None
+        for state in states:
+            if state.get("state_name") == "draining":
+                draining_state = state
+                break
+
+        assert draining_state is not None, "draining state not found"
+        assert draining_state.get("is_terminal") is not True, (
+            "draining must be non-terminal for wildcard transitions to apply"
+        )
+
+        # Find wildcard transitions
+        wildcard_transitions = [t for t in transitions if t.get("from_state") == "*"]
+        assert len(wildcard_transitions) >= 1, (
+            "Should have wildcard transitions for error handling"
+        )
+
+        # Verify fatal_error and timeout wildcards exist
+        wildcard_triggers = {t.get("trigger") for t in wildcard_transitions}
+        assert "fatal_error" in wildcard_triggers, (
+            "Should have fatal_error wildcard transition"
+        )
+        assert "timeout" in wildcard_triggers, "Should have timeout wildcard transition"
+
+        # Wildcard transitions should go to stopped (terminal state)
+        for transition in wildcard_transitions:
+            assert transition.get("to_state") == "stopped", (
+                f"Wildcard transition {transition.get('transition_name')} "
+                "should go to 'stopped' state"
+            )
 
 
 @pytest.mark.unit
 class TestEventBusWiringEffectContract:
-    """Tests for event_bus_wiring_effect.yaml contract validation."""
+    """
+    Contract-specific tests for event_bus_wiring_effect.yaml.
+
+    Common validations (file exists, valid YAML, required fields, node type,
+    MinimalYamlContract, metadata) are covered by TestRuntimeContractCommonValidation.
+    This class contains only EFFECT-specific tests for event bus wiring.
+    """
 
     @pytest.fixture
-    def contract_path(self) -> Path:
-        """Return path to event_bus_wiring_effect.yaml."""
-        return RUNTIME_CONTRACTS_DIR / "event_bus_wiring_effect.yaml"
+    def wiring_data(self) -> dict:
+        """Load event_bus_wiring_effect.yaml contract data."""
+        return load_contract_data("event_bus_wiring_effect.yaml")
 
-    @pytest.fixture
-    def contract_data(self, contract_path: Path) -> dict:
-        """Load and return contract data."""
-        if not contract_path.exists():
-            pytest.skip(f"Contract file not found: {contract_path}")
-        with open(contract_path, encoding="utf-8") as f:
-            return yaml.safe_load(f)
-
-    def test_contract_file_exists(self, contract_path: Path) -> None:
-        """Test that event_bus_wiring_effect.yaml exists."""
-        assert contract_path.exists(), f"Contract not found: {contract_path}"
-
-    def test_contract_is_valid_yaml(self, contract_path: Path) -> None:
-        """Test that event_bus_wiring_effect.yaml is valid YAML."""
-        if not contract_path.exists():
-            pytest.skip(f"Contract file not found: {contract_path}")
-
-        with open(contract_path, encoding="utf-8") as f:
-            content = yaml.safe_load(f)
-
-        assert content is not None, "Contract file is empty"
-        assert isinstance(content, dict), "Contract root should be a mapping"
-
-    def test_contract_has_required_fields(self, contract_data: dict) -> None:
-        """Test that event_bus_wiring_effect.yaml has required fields."""
-        assert "node_type" in contract_data, "Missing required field: node_type"
-        assert "contract_version" in contract_data, (
-            "Missing required field: contract_version"
-        )
-
-    def test_contract_node_type_is_effect(self, contract_data: dict) -> None:
-        """Test that event_bus_wiring_effect.yaml has EFFECT_GENERIC node_type."""
-        node_type = contract_data.get("node_type", "")
-        assert node_type.upper() == "EFFECT_GENERIC", (
-            f"Expected EFFECT_GENERIC, got {node_type}"
-        )
-
-    def test_contract_validates_with_minimal_yaml_contract(
-        self, contract_data: dict
-    ) -> None:
-        """Test that event_bus_wiring_effect.yaml passes MinimalYamlContract validation."""
-        contract = MinimalYamlContract.validate_yaml_content(contract_data)
-        assert contract.node_type == "EFFECT_GENERIC"
-        assert contract.contract_version is not None
-
-    def test_contract_has_effect_section(self, contract_data: dict) -> None:
+    def test_contract_has_effect_section(self, wiring_data: dict) -> None:
         """Test that event_bus_wiring_effect.yaml has effect section."""
-        assert "effect" in contract_data, "Missing effect section"
+        assert "effect" in wiring_data, "Missing effect section"
 
-    def test_contract_has_wiring_config(self, contract_data: dict) -> None:
+    def test_contract_has_wiring_config(self, wiring_data: dict) -> None:
         """Test that event_bus_wiring_effect.yaml has wiring_config section."""
-        assert "wiring_config" in contract_data, "Missing wiring_config section"
+        assert "wiring_config" in wiring_data, "Missing wiring_config section"
 
-    def test_contract_has_topic_validation(self, contract_data: dict) -> None:
+    def test_contract_has_topic_validation(self, wiring_data: dict) -> None:
         """Test that event_bus_wiring_effect.yaml has topic_validation security config."""
-        wiring_config = contract_data.get("wiring_config", {})
+        wiring_config = wiring_data.get("wiring_config", {})
         assert "topic_validation" in wiring_config, (
             "Missing topic_validation in wiring_config (security requirement)"
         )
@@ -564,16 +788,16 @@ class TestEventBusWiringEffectContract:
             "Missing deny_patterns in topic_validation"
         )
 
-    def test_contract_has_subscriptions(self, contract_data: dict) -> None:
+    def test_contract_has_subscriptions(self, wiring_data: dict) -> None:
         """Test that event_bus_wiring_effect.yaml defines subscriptions."""
-        assert "subscriptions" in contract_data, "Missing subscriptions section"
-        subscriptions = contract_data["subscriptions"]
+        assert "subscriptions" in wiring_data, "Missing subscriptions section"
+        subscriptions = wiring_data["subscriptions"]
         assert len(subscriptions) >= 1, "Expected at least one subscription defined"
 
-    def test_contract_has_publications(self, contract_data: dict) -> None:
+    def test_contract_has_publications(self, wiring_data: dict) -> None:
         """Test that event_bus_wiring_effect.yaml defines publications."""
-        assert "publications" in contract_data, "Missing publications section"
-        publications = contract_data["publications"]
+        assert "publications" in wiring_data, "Missing publications section"
+        publications = wiring_data["publications"]
         assert len(publications) >= 1, "Expected at least one publication defined"
 
         # Check for runtime.ready publication
