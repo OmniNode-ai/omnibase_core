@@ -22,7 +22,7 @@ This document explains when and how timeouts are checked during effect execution
 
 ## Timeout Check Points
 
-```
+```text
 +---------------------------------------------------------------------+
 |                    Effect Execution Timeline                         |
 +---------------------------------------------------------------------+
@@ -50,7 +50,7 @@ Legend:
 
 ### Detailed Sequence Diagram
 
-```
+```text
 Time
   |
   v
@@ -197,7 +197,7 @@ If an operation takes longer than the configured timeout:
 
 The actual total execution time may exceed the configured timeout due to in-flight operations:
 
-```
+```text
 Configured timeout: 10000ms
 
 Actual timeline:
@@ -228,7 +228,7 @@ This means repeatedly slow operations that eventually fail will trip the circuit
 
 ### Example 1: Success on First Attempt
 
-```
+```text
 Time 0ms:      Check timeout (OK, elapsed=0ms)
                -> Start HTTP call
 Time 3000ms:   HTTP call completes with success
@@ -240,7 +240,7 @@ Result: SUCCESS
 
 ### Example 2: Success After Retry
 
-```
+```text
 Time 0ms:      Check timeout (OK, elapsed=0ms)
                -> Start HTTP call
 Time 5000ms:   HTTP call fails
@@ -257,7 +257,7 @@ Result: SUCCESS (retry_count=1)
 
 ### Example 3: Timeout After First Attempt
 
-```
+```text
 Time 0ms:       Check timeout (OK, elapsed=0ms)
                 -> Start HTTP call
 Time 25000ms:   HTTP call fails
@@ -275,7 +275,7 @@ Note: Timeout was 30000ms but check happened after backoff wait
 
 ### Example 4: Operation Exceeds Timeout But Succeeds
 
-```
+```text
 Configuration: operation_timeout_ms=5000, retry_enabled=true, max_retries=3
 
 Time 0ms:      Check timeout (OK, elapsed=0ms)
@@ -292,7 +292,7 @@ The operation succeeded before any retry was needed.
 
 ### Example 5: Long Operation Fails, Timeout on Retry
 
-```
+```text
 Configuration: operation_timeout_ms=10000, retry_enabled=true, max_retries=3
 
 Time 0ms:      Check timeout (OK, elapsed=0ms)
@@ -382,7 +382,7 @@ effect_subcontract:
 
 With exponential backoff, total time grows quickly:
 
-```
+```text
 Attempt 1:  0ms    (immediate)
 Backoff:    1000ms
 Attempt 2:  1000ms

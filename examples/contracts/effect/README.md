@@ -272,8 +272,10 @@ effect_operations:
   # Operation implementation version
   operation_version: {major: 1, minor: 0, patch: 0}
 
-  # How operations are executed (EnumExecutionOrder)
-  execution_order: forward  # or reverse, parallel
+  # How operations are executed (see execution_mode in ModelEffectSubcontract)
+  # "sequential_abort" (default): Stop on first failure, raise error
+  # "sequential_continue": Run all operations, report all outcomes
+  execution_mode: sequential_abort
 
   operations:
     - operation_name: example_operation
@@ -447,15 +449,21 @@ The `base_delay_ms` and `max_delay_ms` define the delay bounds.
 
 ### Timeouts
 
-Multiple levels of timeout protection:
+Timeout configuration at different levels:
 
 ```yaml
-operation_timeout_ms: 60000      # Total for all operations
-query_timeout_ms: 5000           # Database query timeout
-timeout_ms: 15000                # HTTP request timeout
-connect_timeout_ms: 5000         # Connection establishment timeout
-read_timeout_ms: 10000           # Response read timeout
+# Operation-level timeout (in ModelEffectOperation)
+operation_timeout_ms: 60000      # Overall timeout including all retries
+
+# Handler-level timeout (in io_config for each handler type)
+io_config:
+  handler_type: http
+  timeout_ms: 15000              # Individual request/query timeout (default: 30000ms)
 ```
+
+**Note**: Each IO config type (HTTP, DB, Kafka, Filesystem) has its own `timeout_ms` field
+that controls the individual operation timeout. The `operation_timeout_ms` at the operation
+level guards against retry stacking by setting an overall time limit including all retries.
 
 ### Observability
 
@@ -486,14 +494,13 @@ headers:
 ### 2. Set Appropriate Timeouts
 
 Follow the timeout hierarchy:
-- `operation_timeout_ms` > sum of individual operation timeouts
-- `request_timeout_ms` > `connect_timeout_ms` + `read_timeout_ms`
+- `operation_timeout_ms` > `io_config.timeout_ms` (to allow for retries)
+- Set `operation_timeout_ms` to accommodate retry delays plus operation time
 
 ### 3. Choose Correct Execution Mode
 
-- **sequential_abort**: Payment processing (stop on failure)
-- **sequential_continue**: Batch operations (continue on failures)
-- **concurrent**: Independent operations (parallel execution)
+- **sequential_abort** (default): Payment processing (stop on first failure, raise error)
+- **sequential_continue**: Batch operations (run all operations, report all outcomes)
 
 ### 4. Configure Retries Based on Operation Type
 

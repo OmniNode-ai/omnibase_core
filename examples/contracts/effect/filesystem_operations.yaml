@@ -79,16 +79,22 @@ effect_operations:
     # OPERATION 1: CREATE DIRECTORY STRUCTURE
     # =========================================================================
     # Creates a directory structure for organizing documents.
-    # Demonstrates directory creation with parent support.
+    # Demonstrates directory creation by writing a marker file with create_dirs=true.
     #
     # Handler Type: Filesystem
-    # Operation: CREATE_DIRECTORY
+    # Operation: WRITE
     # Purpose: Ensure target directory exists before writing files
-    # Input: Directory path from operation_data
-    # Output: Created directory path and metadata
+    # Input: Directory path from operation_data, plus marker file content
+    # Output: Created marker file path and metadata
+    #
+    # NOTE: Pure directory creation is not directly supported. Instead, we write
+    # a small marker file (e.g., .directory_created) with create_dirs=true.
+    # This ensures the directory structure is created atomically.
+    # The content for the marker file comes from input.directory_marker_content
+    # or defaults to a timestamp.
 
     - operation_name: create_user_directory
-      description: "Creates directory structure for user documents"
+      description: "Creates directory structure for user documents by writing a marker file"
 
       # I/O configuration for filesystem handler
       # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
@@ -97,11 +103,11 @@ effect_operations:
         handler_type: filesystem
 
         # File path template with ${} placeholders
-        # For directory creation, this is the directory path to create
-        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}"
+        # We write a hidden marker file to ensure the directory is created
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}/.directory_created"
 
         # Operation type: read, write, delete, move, copy
-        # NOTE: Directory creation uses 'write' operation with create_dirs=true
+        # NOTE: Write operation with create_dirs=true ensures directory exists
         operation: write
 
         # Timeout in milliseconds (1s - 10min)
@@ -113,25 +119,29 @@ effect_operations:
         # File encoding (used for write operations)
         encoding: "utf-8"
 
-        # Atomic write disabled for directory creation
+        # Non-atomic write for marker file (not critical)
         atomic: false
 
-      # Retry policy matching ModelEffectRetryConfig schema
+        # File permission mode for the marker file
+        mode: "0644"
+
+      # Retry policy matching ModelEffectRetryPolicy schema
       retry_policy:
-        max_attempts: 3
+        enabled: true
+        max_retries: 2
         backoff_strategy: linear
-        base_delay_ms: 100
-        max_delay_ms: 1000
-        jitter_enabled: false
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.0
 
       response_handling:
         extract_fields:
-          # Absolute path of created directory
-          directory_path: "$.path"
-          # Whether directory was created or already existed
+          # Path of created marker file (directory is parent)
+          marker_path: "$.path"
+          # Size of marker file
+          size_bytes: "$.size_bytes"
+          # Whether marker was created or already existed
           created: "$.created"
-          # Directory metadata
-          permissions: "$.permissions"
         fail_on_empty: false
         extraction_engine: jsonpath
 
@@ -182,13 +192,14 @@ effect_operations:
         # File permission mode (e.g., '0644')
         mode: "0644"
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       retry_policy:
-        max_attempts: 3
+        enabled: true
+        max_retries: 2
         backoff_strategy: linear
-        base_delay_ms: 200
-        max_delay_ms: 2000
-        jitter_enabled: false
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.0
 
       response_handling:
         extract_fields:
@@ -204,7 +215,7 @@ effect_operations:
       # Observability configuration matching ModelEffectObservability schema
       observability:
         log_request: true
-        log_response: false  # Don't log file content
+        log_response: false  # Don't log file content (may contain sensitive data)
         emit_metrics: true
         trace_propagation: true
 
@@ -243,13 +254,14 @@ effect_operations:
         atomic: false
         create_dirs: false
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       retry_policy:
-        max_attempts: 4
+        enabled: true
+        max_retries: 3
         backoff_strategy: linear
-        base_delay_ms: 100
-        max_delay_ms: 1000
-        jitter_enabled: false
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.0
 
       response_handling:
         extract_fields:
@@ -265,7 +277,7 @@ effect_operations:
       # Observability configuration matching ModelEffectObservability schema
       observability:
         log_request: true
-        log_response: false  # Don't log file content
+        log_response: false  # Don't log file content (may contain sensitive data)
         emit_metrics: true
         trace_propagation: true
 
@@ -307,13 +319,14 @@ effect_operations:
         atomic: false
         encoding: "utf-8"
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       retry_policy:
-        max_attempts: 3
+        enabled: true
+        max_retries: 2
         backoff_strategy: linear
-        base_delay_ms: 200
-        max_delay_ms: 2000
-        jitter_enabled: false
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.0
 
       response_handling:
         extract_fields:
@@ -368,15 +381,19 @@ effect_operations:
         atomic: false
         create_dirs: false
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       retry_policy:
-        max_attempts: 3
+        enabled: true
+        max_retries: 2
         backoff_strategy: linear
-        base_delay_ms: 100
-        max_delay_ms: 1000
-        jitter_enabled: false
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.0
 
       response_handling:
+        # NOTE: extract_fields only supports extracting primitive values (strings, numbers, booleans).
+        # Complex nested arrays like "files" must be accessed from the full response object
+        # in the operation result, not through extract_fields.
         extract_fields:
           directory_path: "$.directory_path"
           file_count: "$.file_count"
@@ -426,13 +443,14 @@ effect_operations:
         atomic: false
         create_dirs: false
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       retry_policy:
-        max_attempts: 2  # Minimal retry for deletion
+        enabled: true
+        max_retries: 1  # Minimal retry for deletion
         backoff_strategy: linear
-        base_delay_ms: 100
-        max_delay_ms: 500
-        jitter_enabled: false
+        base_delay_ms: 1000
+        max_delay_ms: 3000
+        jitter_factor: 0.0
 
       response_handling:
         extract_fields:
@@ -455,12 +473,13 @@ effect_operations:
 # ---------------------------------------------------------------------------
 
 # Example Input (ModelEffectInput.operation_data):
+# NOTE: Content for write operations must be provided via "file_content" or "content" key.
 # {
 #   "tenant_id": "tenant_001",
 #   "user_id": "usr_12345",
 #   "document_id": "doc_abc123",
 #   "document_title": "Project Proposal",
-#   "document_content": "This is the document content...",
+#   "file_content": "This is the document content...",  # Required for write operations
 #   "author_id": "usr_12345",
 #   "created_at": "2024-12-08T12:00:00Z",
 #   "content_type": "application/json",
@@ -473,14 +492,16 @@ effect_operations:
 # }
 
 # Example Output (ModelEffectOutput.result_data):
+# NOTE: extract_fields only extracts primitive values. Complex data like file arrays
+# must be accessed from the full operation response, not extracted_fields.
 # {
 #   "operations": {
 #     "create_user_directory": {
 #       "success": true,
 #       "extracted_fields": {
-#         "directory_path": "/data/documents/tenant_001/users/usr_12345",
-#         "created": true,
-#         "permissions": "0755"
+#         "marker_path": "/data/documents/tenant_001/users/usr_12345/.directory_created",
+#         "size_bytes": 28,
+#         "created": true
 #       }
 #     },
 #     "write_document": {
@@ -507,9 +528,9 @@ effect_operations:
 #       "extracted_fields": {
 #         "directory_path": "/data/documents/tenant_001/users/usr_12345",
 #         "file_count": 15,
-#         "total_size_bytes": 61440,
-#         "files": [/* array of file metadata */]
+#         "total_size_bytes": 61440
 #       }
+#       # NOTE: Full file list available in response_data, not extracted_fields
 #     }
 #   }
 # }

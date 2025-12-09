@@ -1552,12 +1552,18 @@ class TestFilesystemContentResolution:
         assert result.content is None
 
 
-@pytest.mark.integration
+@pytest.mark.slow
 class TestMixinEffectExecutionIntegration:
-    """Integration tests for MixinEffectExecution.
+    """Integration-style tests for MixinEffectExecution.
 
     These tests verify the full execution path including handler dispatch,
     retry logic, and circuit breaker behavior working together.
+
+    Note:
+        These tests are marked @pytest.mark.slow rather than @pytest.mark.integration
+        because they test mixin behavior in isolation with mocked dependencies (no real
+        external services). They exercise multi-component interactions but don't require
+        external infrastructure. The module-level pytestmark = pytest.mark.unit applies.
     """
 
     @pytest.mark.asyncio
@@ -1669,10 +1675,21 @@ class TestTimeoutBehavior:
     ) -> None:
         """Test that operation timeout triggers on retry attempt.
 
+        This test exercises the timeout path in _execute_with_retry() at line 1006:
+            if elapsed_ms >= operation_timeout_ms:
+                raise ModelOnexError(..., error_code=EnumCoreErrorCode.TIMEOUT_EXCEEDED)
+
         The timeout check occurs at the START of each retry attempt. To properly
         exercise this path, we need:
         1. First attempt to fail (to trigger a retry)
         2. Enough time to elapse that the second attempt hits timeout
+
+        Test Flow:
+            t=0ms:   First attempt starts, timeout check passes (0 < 30)
+            t=50ms:  Handler fails after 50ms delay
+            t=50ms:  Retry triggered, but timeout check at loop start finds
+                     elapsed_ms (50) >= operation_timeout_ms (30)
+            t=50ms:  TIMEOUT_EXCEEDED raised before second attempt begins
 
         This test uses a handler that fails with a delay, ensuring the timeout
         check on the retry attempt finds elapsed_ms >= operation_timeout_ms.

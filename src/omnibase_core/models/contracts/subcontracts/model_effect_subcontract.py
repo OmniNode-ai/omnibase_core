@@ -182,7 +182,12 @@ class ModelEffectSubcontract(BaseModel):
             )
 
         # Check all use same connection
-        # Use isinstance for type narrowing (we've already validated all ops are DB above)
+        # NOTE: isinstance is required for type narrowing to access ModelDbIOConfig.connection_name.
+        # This is NOT a violation of duck-typing guidelines - it's Pydantic discriminated union
+        # type narrowing. We've already validated all ops are DB (line 176 check), but mypy
+        # cannot narrow the union type based on handler_type string comparison. The isinstance
+        # check enables mypy to verify .connection_name access is safe.
+        # See: mixin_effect_execution.py line 645-646 for similar pattern explanation.
         connection_names = {
             op.io_config.connection_name
             for op in self.operations

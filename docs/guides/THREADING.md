@@ -703,7 +703,7 @@ thread.join()
 ```
 
 Error output:
-```
+```text
 ModelOnexError: Thread safety violation: node instance accessed from different thread
   error_code: ONEX_CORE_261_THREAD_SAFETY_VIOLATION
   context:

@@ -139,7 +139,9 @@ class MixinEffectExecution:
         container (ModelONEXContainer): Expected to be provided by the mixing
             class. Used for handler resolution and service lookup.
         _circuit_breakers (dict): Internal circuit breaker state, keyed by
-            operation_id (UUID). Process-local only in v1.0.
+            operation_id (UUID). Each operation gets its own circuit breaker
+            to track failure/success patterns independently. Process-local only
+            in v1.0 (no cross-process state sharing).
 
     Example:
         >>> class MyEffectNode(NodeEffect, MixinEffectExecution):
@@ -368,21 +370,51 @@ class MixinEffectExecution:
                 subcontract_ops = []
 
             # Transform subcontract operations to operation_data format
+            # This preserves all operation-level configs including response_handling,
+            # retry_policy, and circuit_breaker for use by handlers and execution.
             for op in subcontract_ops:
                 if isinstance(op, dict):
                     operations_config.append(op)
                 elif hasattr(op, "model_dump"):
-                    # Pydantic model - serialize to dict
+                    # Pydantic model - serialize to dict preserving all fields
                     operations_config.append(op.model_dump())
                 elif hasattr(op, "io_config"):
-                    # ModelEffectOperation-like object
+                    # ModelEffectOperation-like object - extract all relevant fields
                     op_dict: dict[str, Any] = {}
+
+                    # Required: io_config
                     if hasattr(op.io_config, "model_dump"):
                         op_dict["io_config"] = op.io_config.model_dump()
                     else:
                         op_dict["io_config"] = op.io_config
+
+                    # Optional: operation metadata
+                    if hasattr(op, "operation_name"):
+                        op_dict["operation_name"] = op.operation_name
+                    if hasattr(op, "description"):
+                        op_dict["description"] = op.description
                     if hasattr(op, "operation_timeout_ms"):
                         op_dict["operation_timeout_ms"] = op.operation_timeout_ms
+
+                    # Optional: response handling for field extraction
+                    if hasattr(op, "response_handling") and op.response_handling:
+                        if hasattr(op.response_handling, "model_dump"):
+                            op_dict["response_handling"] = op.response_handling.model_dump()
+                        else:
+                            op_dict["response_handling"] = op.response_handling
+
+                    # Optional: per-operation resilience configs
+                    if hasattr(op, "retry_policy") and op.retry_policy:
+                        if hasattr(op.retry_policy, "model_dump"):
+                            op_dict["retry_policy"] = op.retry_policy.model_dump()
+                        else:
+                            op_dict["retry_policy"] = op.retry_policy
+                    if hasattr(op, "circuit_breaker") and op.circuit_breaker:
+                        if hasattr(op.circuit_breaker, "model_dump"):
+                            op_dict["circuit_breaker"] = op.circuit_breaker.model_dump()
+                        else:
+                            op_dict["circuit_breaker"] = op.circuit_breaker
+
                     operations_config.append(op_dict)
 
         # Fallback to direct operations list if subcontract not provided
@@ -437,10 +469,12 @@ class MixinEffectExecution:
             resolved_context = self._resolve_io_context(io_config, input_data)
 
             # Execute operation with retry and circuit breaker
+            # Pass operation_config for access to response_handling, retry_policy, etc.
             result, retry_count = await self._execute_with_retry(
                 resolved_context,
                 input_data,
                 operation_timeout_ms,
+                operation_config=operation_config,
             )
 
             final_result = result
@@ -898,6 +932,7 @@ class MixinEffectExecution:
         resolved_context: ResolvedIOContext,
         input_data: ModelEffectInput,
         operation_timeout_ms: int,
+        operation_config: dict[str, Any] | None = None,
     ) -> tuple[EffectResultType, int]:
         """
         Execute operation with retry logic and circuit breaker.
@@ -968,6 +1003,10 @@ class MixinEffectExecution:
             resolved_context: Fully resolved IO context.
             input_data: Effect input with retry configuration.
             operation_timeout_ms: Overall operation timeout including all retries.
+            operation_config: Optional operation configuration dict containing
+                response_handling, retry_policy, circuit_breaker, and other
+                per-operation settings. Passed through to _execute_operation
+                for handler access.
 
         Returns:
             Tuple of (result, retry_count) where retry_count is the number of
@@ -1024,8 +1063,10 @@ class MixinEffectExecution:
                     )
 
             try:
-                # Execute operation
-                result = await self._execute_operation(resolved_context, input_data)
+                # Execute operation with operation_config for response_handling access
+                result = await self._execute_operation(
+                    resolved_context, input_data, operation_config
+                )
 
                 # Record success in circuit breaker
                 if input_data.circuit_breaker_enabled:
@@ -1089,6 +1130,7 @@ class MixinEffectExecution:
         self,
         resolved_context: ResolvedIOContext,
         input_data: ModelEffectInput,
+        operation_config: dict[str, Any] | None = None,
     ) -> EffectResultType:
         """
         Execute single operation by dispatching to appropriate handler.
@@ -1122,6 +1164,21 @@ class MixinEffectExecution:
             If no handler is registered for a handler type, a ModelOnexError will
             be raised with HANDLER_EXECUTION_ERROR code.
 
+        Response Handling:
+            The operation_config may contain a "response_handling" dict with:
+            - success_codes: HTTP status codes considered successful (e.g., [200, 201])
+            - extract_fields: Map of output_name to JSONPath/dotpath expression
+            - fail_on_empty: Whether to fail if extraction returns empty/null
+            - extraction_engine: "jsonpath" or "dotpath"
+
+            Handlers MAY use response_handling to:
+            1. Validate response status against success_codes
+            2. Extract fields using _extract_response_fields() utility method
+
+            Note: Field extraction is NOT automatically performed by this mixin.
+            Handlers are responsible for calling _extract_response_fields() if needed,
+            because handlers own response interpretation (they know the response format).
+
         Thread Safety:
             Thread-safe if handlers are thread-safe. Handlers should be
             stateless or use their own synchronization.
@@ -1129,6 +1186,10 @@ class MixinEffectExecution:
         Args:
             resolved_context: Fully resolved IO context.
             input_data: Effect input with operation metadata.
+            operation_config: Optional operation configuration containing
+                response_handling, retry_policy, circuit_breaker, and other
+                per-operation settings. Handlers may access response_handling
+                for field extraction and success code validation.
 
         Returns:
             Operation result (type depends on handler).

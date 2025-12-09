@@ -145,15 +145,16 @@ effect_operations:
         # WARNING: Setting to false is insecure for production
         verify_ssl: true
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       # NOTE: Exponential backoff uses base_delay_ms as the initial delay
       # and doubles on each retry up to max_delay_ms
       retry_policy:
-        max_attempts: 4
+        enabled: true
+        max_retries: 3
         backoff_strategy: exponential
         base_delay_ms: 1000
-        max_delay_ms: 10000
-        jitter_enabled: true
+        max_delay_ms: 30000
+        jitter_factor: 0.1
 
       # Response handling configuration
       response_handling:
@@ -246,13 +247,14 @@ effect_operations:
         verify_ssl: true
 
       # Different retry policy for GET (can be more aggressive)
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       retry_policy:
-        max_attempts: 6
+        enabled: true
+        max_retries: 5
         backoff_strategy: exponential
-        base_delay_ms: 500
-        max_delay_ms: 5000
-        jitter_enabled: true
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
 
       response_handling:
         success_codes:
@@ -327,14 +329,15 @@ effect_operations:
         verify_ssl: true
 
       # Conservative retry policy for mutations
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       # NOTE: Fewer retries for mutations to prevent duplicates
       retry_policy:
-        max_attempts: 3
+        enabled: true
+        max_retries: 2
         backoff_strategy: exponential
         base_delay_ms: 2000
-        max_delay_ms: 8000
-        jitter_enabled: true
+        max_delay_ms: 30000
+        jitter_factor: 0.1
 
       response_handling:
         success_codes:

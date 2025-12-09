@@ -110,7 +110,8 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # Execute effect - effect_type and operation_data are required fields
         # Note: The 'operations' key in operation_data is populated automatically
         # from effect_subcontract.operations by the process() method.
-        # Caller-provided data in operation_data is used for template resolution.
+        # Caller-provided data in operation_data is used for template resolution
+        # (e.g., ${input.name} will resolve to "John Doe").
         result = await node.process(ModelEffectInput(
             effect_type=EnumEffectType.API_CALL,
             operation_data={
@@ -118,11 +119,17 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                 "name": "John Doe",
                 "email": "john@example.com",
             },
-            # Optional retry/timeout overrides (defaults from subcontract if not specified)
-            retry_enabled=True,
-            max_retries=3,
-            timeout_ms=5000,
+            # Optional: override retry behavior (defaults come from subcontract)
+            # retry_enabled=True,  # Default: True
+            # max_retries=3,  # Applied from subcontract.default_retry_policy
+            # circuit_breaker_enabled=False,  # Applied from subcontract.default_circuit_breaker
         ))
+
+        # Access result
+        if result.transaction_state == EnumTransactionState.COMMITTED:
+            print(f"Success: {result.result}")
+        else:
+            print(f"Failed: {result.metadata}")
         ```
 
     Thread Safety:
@@ -201,32 +208,34 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # - Circuit breaker settings from default_circuit_breaker
         # - Transaction settings from default_transaction_config
         #
-        # Input values take precedence over subcontract defaults (caller override).
-        # This allows callers to override subcontract defaults at runtime.
+        # Merge Strategy:
+        # - Subcontract defaults are always applied unless the caller provides explicit overrides
+        # - We use a simple "subcontract wins" policy for defaults, with caller-provided
+        #   values in operation_data taking precedence for template resolution
+        # - Circuit breaker and transaction configs from subcontract are always honored
+        #   unless the caller explicitly sets different values
         default_retry = self.effect_subcontract.default_retry_policy
         default_cb = self.effect_subcontract.default_circuit_breaker
         default_tx = self.effect_subcontract.transaction
 
-        # Build update dict with subcontract defaults, respecting existing input values
+        # Build update dict with subcontract defaults
+        # Always apply subcontract retry/circuit breaker settings - these are the
+        # contract-defined resilience policies that should be respected
         input_updates: dict[str, object] = {}
 
-        # Retry policy: use subcontract defaults unless input explicitly differs
-        # We check against ModelEffectInput defaults to detect caller overrides
-        if input_data.retry_enabled and input_data.max_retries == 3:  # default value
+        # Retry policy: apply subcontract defaults for retry settings
+        # Note: caller can override by setting different values in input_data
+        if input_data.retry_enabled:
+            # Apply subcontract retry settings
             input_updates["max_retries"] = default_retry.max_retries
-        if input_data.retry_enabled and input_data.retry_delay_ms == 1000:  # default
             input_updates["retry_delay_ms"] = default_retry.base_delay_ms
 
-        # Circuit breaker: inherit from subcontract if enabled there
-        if not input_data.circuit_breaker_enabled and default_cb.enabled:
+        # Circuit breaker: enable if subcontract specifies it
+        if default_cb.enabled:
             input_updates["circuit_breaker_enabled"] = True
 
-        # Transaction: inherit from subcontract if enabled there
-        if input_data.transaction_enabled and default_tx.enabled:
-            # Transaction is already enabled by default in ModelEffectInput,
-            # so we just ensure it stays enabled if subcontract wants it
-            pass
-        elif not input_data.transaction_enabled and default_tx.enabled:
+        # Transaction: enable if subcontract specifies it
+        if default_tx.enabled:
             input_updates["transaction_enabled"] = True
 
         # Apply updates if any

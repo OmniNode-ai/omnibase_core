@@ -145,15 +145,16 @@ effect_operations:
         # Message compression (none, gzip, snappy, lz4, zstd)
         compression: snappy
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       # NOTE: For Kafka operations, exponential backoff is recommended
       # for handling transient broker failures and network issues
       retry_policy:
-        max_attempts: 4
+        enabled: true
+        max_retries: 3
         backoff_strategy: exponential
-        base_delay_ms: 500
-        max_delay_ms: 5000
-        jitter_enabled: true
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
 
       # Response handling
       response_handling:
@@ -230,14 +231,15 @@ effect_operations:
         # Fast compression for analytics
         compression: lz4
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       # Fewer retries for analytics (lower durability requirements)
       retry_policy:
-        max_attempts: 3
+        enabled: true
+        max_retries: 2
         backoff_strategy: exponential
-        base_delay_ms: 200
-        max_delay_ms: 2000
-        jitter_enabled: true
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.1
 
       response_handling:
         extract_fields:
@@ -322,13 +324,14 @@ effect_operations:
         compression: none
 
       # Aggressive retry for audit logs (maximum durability required)
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       retry_policy:
-        max_attempts: 6
+        enabled: true
+        max_retries: 5
         backoff_strategy: exponential
         base_delay_ms: 1000
-        max_delay_ms: 10000
-        jitter_enabled: true
+        max_delay_ms: 30000
+        jitter_factor: 0.1
 
       response_handling:
         extract_fields:

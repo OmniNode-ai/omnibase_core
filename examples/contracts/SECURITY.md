@@ -177,7 +177,7 @@ extract_fields:
   user_id: "$.metadata.ids.user_id"
 ```
 
-**Security Considerations:**
+#### Security Considerations
 
 1. **Validate JSONPath patterns** before execution
 2. **Limit result set size** to prevent memory exhaustion
@@ -260,7 +260,7 @@ headers:
   Authorization: "Bearer ${input.auth_token}"
 ```
 
-**Production Requirements:**
+#### Production Requirements
 
 1. **Never log authentication tokens**:
    ```yaml
@@ -286,7 +286,7 @@ headers:
   X-Idempotency-Key: "${input.idempotency_key}"
 ```
 
-**Security Considerations:**
+#### Security Considerations
 
 1. **Generate cryptographically secure keys**:
    ```python
@@ -347,7 +347,7 @@ headers:
   X-Correlation-ID: "${input.correlation_id}"
 ```
 
-**Security Considerations:**
+#### Security Considerations
 
 1. **Generate correlation IDs server-side** - don't trust client-provided IDs
 2. **Validate correlation ID format** to prevent injection

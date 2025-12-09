@@ -100,7 +100,12 @@ class TestNodeEffectSignatureSnapshot:
     .. versionchanged:: 0.4.0
         NodeEffect refactored to contract-driven implementation.
         Removed on_rollback_failure parameter (now handled via YAML contracts).
-        Legacy code-driven implementation available in nodes/legacy/node_effect_legacy.py
+        Legacy code-driven NodeEffectLegacy removed entirely in v0.4.0.
+        All effect nodes now use declarative YAML contracts for rollback handling.
+
+    See Also:
+        - omnibase_core.nodes.NodeEffect: The contract-driven implementation
+        - omnibase_core.models.contracts.subcontracts.model_effect_subcontract: Effect contracts
     """
 
     @pytest.mark.unit

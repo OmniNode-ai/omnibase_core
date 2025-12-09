@@ -173,14 +173,15 @@ effect_operations:
         timeout_ms: 60000
         half_open_requests: 1
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       # NOTE: Conservative retries for payment mutations
       retry_policy:
-        max_attempts: 4
+        enabled: true
+        max_retries: 3
         backoff_strategy: exponential
         base_delay_ms: 1000
-        max_delay_ms: 10000
-        jitter_enabled: true
+        max_delay_ms: 30000
+        jitter_factor: 0.1
 
       # Response handling with validation
       response_handling:
@@ -260,14 +261,15 @@ effect_operations:
         timeout_ms: 30000
         half_open_requests: 1
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       # More retries for GET operations
       retry_policy:
-        max_attempts: 6
+        enabled: true
+        max_retries: 5
         backoff_strategy: exponential
-        base_delay_ms: 500
-        max_delay_ms: 5000
-        jitter_enabled: true
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
 
       response_handling:
         success_codes:
@@ -355,19 +357,21 @@ effect_operations:
         timeout_ms: 60000
         half_open_requests: 1
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       retry_policy:
-        max_attempts: 3
+        enabled: true
+        max_retries: 2
         backoff_strategy: exponential
-        base_delay_ms: 500
-        max_delay_ms: 5000
-        jitter_enabled: true
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
 
       response_handling:
         extract_fields:
           record_id: "$.id"
           created_at: "$.created_at"
 
+        # Database INSERT should always return a row
         fail_on_empty: true
 
         extraction_engine: jsonpath
@@ -434,13 +438,14 @@ effect_operations:
         timeout_ms: 60000
         half_open_requests: 1
 
-      # Retry policy matching ModelEffectRetryConfig schema
+      # Retry policy matching ModelEffectRetryPolicy schema
       retry_policy:
-        max_attempts: 6
+        enabled: true
+        max_retries: 5
         backoff_strategy: exponential
         base_delay_ms: 1000
-        max_delay_ms: 10000
-        jitter_enabled: true
+        max_delay_ms: 30000
+        jitter_factor: 0.1
 
       response_handling:
         extract_fields:
@@ -448,6 +453,7 @@ effect_operations:
           offset: "$.offset"
           timestamp: "$.timestamp"
 
+        # Kafka produce may not return metadata in all ack modes
         fail_on_empty: false
 
         extraction_engine: jsonpath
