@@ -16,8 +16,8 @@ from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
-class TestInputState:
-    """Test input state model."""
+class MockInputState:
+    """Mock input state model."""
 
     def __init__(self, data=None, **kwargs):
         self.data = data
@@ -25,8 +25,8 @@ class TestInputState:
             setattr(self, key, value)
 
 
-class TestOutputState:
-    """Test output state model."""
+class MockOutputState:
+    """Mock output state model."""
 
     def __init__(self, result=None, **kwargs):
         self.result = result
@@ -37,18 +37,18 @@ class TestOutputState:
         return {"result": self.result}
 
 
-class TestNode(MixinEventListener[TestInputState, TestOutputState]):
-    """Test node class that uses MixinEventListener."""
+class MockNode(MixinEventListener[MockInputState, MockOutputState]):
+    """Mock node class that uses MixinEventListener."""
 
     def __init__(self, event_bus=None):
         self.event_bus = event_bus
         self._processed_events = []
         super().__init__()
 
-    def process(self, input_state: TestInputState) -> TestOutputState:
+    def process(self, input_state: MockInputState) -> MockOutputState:
         """Process input and return output."""
         self._processed_events.append(input_state)
-        return TestOutputState(result="processed")
+        return MockOutputState(result="processed")
 
 
 class TestMixinEventListener:
@@ -57,7 +57,7 @@ class TestMixinEventListener:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_initialization(self):
         """Test mixin initialization."""
-        node = TestNode()
+        node = MockNode()
 
         assert hasattr(node, "start_event_listener")
         assert hasattr(node, "stop_event_listener")
@@ -69,7 +69,7 @@ class TestMixinEventListener:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_node_name_from_attribute(self):
         """Test getting node name from node_name attribute."""
-        node = TestNode()
+        node = MockNode()
         node.node_name = "custom_node_name"
 
         name = node.get_node_name()
@@ -79,7 +79,7 @@ class TestMixinEventListener:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_node_name_from_class(self):
         """Test getting node name from class name."""
-        node = TestNode()
+        node = MockNode()
 
         name = node.get_node_name()
 
@@ -91,7 +91,7 @@ class TestMixinEventListener:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_bus_property(self):
         """Test event_bus property getter and setter."""
-        node = TestNode()
+        node = MockNode()
 
         # Test getter
         assert node.event_bus is None
@@ -114,7 +114,7 @@ class TestMixinEventListener:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_event_patterns_default(self):
         """Test getting default event patterns."""
-        node = TestNode()
+        node = MockNode()
 
         patterns = node.get_event_patterns()
 
@@ -124,7 +124,7 @@ class TestMixinEventListener:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_event_patterns_from_contract(self, tmp_path):
         """Test getting event patterns from contract YAML."""
-        node = TestNode()
+        node = MockNode()
 
         # Create a mock contract file with required fields (ModelSemVer structure)
         contract_path = tmp_path / "contract.yaml"
@@ -148,7 +148,7 @@ event_subscriptions:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_completion_event_type_basic(self):
         """Test getting completion event type."""
-        node = TestNode()
+        node = MockNode()
 
         completion = node.get_completion_event_type("domain.contract.validate")
 
@@ -162,7 +162,7 @@ event_subscriptions:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_completion_event_type_known_mappings(self):
         """Test completion event type with known mappings."""
-        node = TestNode()
+        node = MockNode()
 
         test_cases = [
             ("generation.contract.validate", "generation.validation.complete"),
@@ -178,7 +178,7 @@ event_subscriptions:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_completion_event_type_unknown(self):
         """Test completion event type with unknown pattern."""
-        node = TestNode()
+        node = MockNode()
 
         completion = node.get_completion_event_type("unknown.event.type")
 
@@ -187,7 +187,7 @@ event_subscriptions:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_start_event_listener_without_event_bus(self):
         """Test starting event listener without event bus."""
-        node = TestNode(event_bus=None)
+        node = MockNode(event_bus=None)
 
         # Should not raise, just return early
         node.start_event_listener()
@@ -200,7 +200,7 @@ event_subscriptions:
         mock_event_bus = Mock()
         mock_event_bus.subscribe = Mock()
 
-        node = TestNode(event_bus=mock_event_bus)
+        node = MockNode(event_bus=mock_event_bus)
 
         # Mock get_event_patterns to avoid contract file reading
         with patch.object(node, "get_event_patterns", return_value=["test.pattern"]):
@@ -220,7 +220,7 @@ event_subscriptions:
     def test_start_event_listener_already_running(self):
         """Test starting event listener when already running."""
         mock_event_bus = Mock()
-        node = TestNode(event_bus=mock_event_bus)
+        node = MockNode(event_bus=mock_event_bus)
 
         with patch.object(node, "get_event_patterns", return_value=["test.pattern"]):
             node.start_event_listener()
@@ -243,7 +243,7 @@ event_subscriptions:
         mock_event_bus.subscribe = Mock(return_value="subscription")
         mock_event_bus.unsubscribe = Mock()
 
-        node = TestNode(event_bus=mock_event_bus)
+        node = MockNode(event_bus=mock_event_bus)
 
         # Mock emit_log_event to prevent JSON encoding issues with Mock objects
         with patch("omnibase_core.mixins.mixin_event_listener.emit_log_event"):
@@ -266,7 +266,7 @@ event_subscriptions:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_to_input_state_with_dict_data(self):
         """Test converting event to input state with dict data."""
-        node = TestNode()
+        node = MockNode()
 
         event = ModelOnexEvent(
             event_type="test.event",
@@ -276,15 +276,15 @@ event_subscriptions:
         )
 
         # Mock _get_input_state_class
-        with patch.object(node, "_get_input_state_class", return_value=TestInputState):
+        with patch.object(node, "_get_input_state_class", return_value=MockInputState):
             input_state = node._event_to_input_state(event)
 
-            assert isinstance(input_state, TestInputState)
+            assert isinstance(input_state, MockInputState)
 
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_to_input_state_with_model_data(self):
         """Test converting event to input state with model data."""
-        node = TestNode()
+        node = MockNode()
 
         # Create event with actual dict data (Pydantic v2 requires actual dict, not Mock)
         event = ModelOnexEvent(
@@ -294,15 +294,15 @@ event_subscriptions:
             data={"key": "value"},
         )
 
-        with patch.object(node, "_get_input_state_class", return_value=TestInputState):
+        with patch.object(node, "_get_input_state_class", return_value=MockInputState):
             input_state = node._event_to_input_state(event)
 
-            assert isinstance(input_state, TestInputState)
+            assert isinstance(input_state, MockInputState)
 
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_to_input_state_no_class_found(self):
         """Test event to input state when no class found."""
-        node = TestNode()
+        node = MockNode()
 
         event = ModelOnexEvent(
             event_type="test.event",
@@ -322,7 +322,7 @@ event_subscriptions:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_event_to_input_state_conversion_error(self):
         """Test event to input state with conversion error."""
-        node = TestNode()
+        node = MockNode()
 
         # Use valid dict data for Pydantic validation, test conversion error in class instantiation
         event = ModelOnexEvent(
@@ -350,13 +350,13 @@ event_subscriptions:
             def __init__(self):
                 super().__init__()
 
-            def process(self, input_state: TestInputState):
+            def process(self, input_state: MockInputState):
                 pass
 
         node = AnnotatedNode()
         input_class = node._get_input_state_class()
 
-        assert input_class == TestInputState
+        assert input_class == MockInputState
 
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_input_state_class_not_found(self):
@@ -386,7 +386,7 @@ event_subscriptions:
         mock_event_bus = Mock()
         mock_event_bus.publish_async = Mock()
 
-        node = TestNode(event_bus=mock_event_bus)
+        node = MockNode(event_bus=mock_event_bus)
 
         input_event = ModelOnexEvent(
             event_type="test.event",
@@ -395,7 +395,7 @@ event_subscriptions:
             data={},
         )
 
-        output_state = TestOutputState(result="success")
+        output_state = MockOutputState(result="success")
 
         node._publish_completion_event(input_event, output_state)
 
@@ -408,7 +408,7 @@ event_subscriptions:
         mock_event_bus = Mock()
         mock_event_bus.publish_async = Mock()
 
-        node = TestNode(event_bus=mock_event_bus)
+        node = MockNode(event_bus=mock_event_bus)
 
         input_event = ModelOnexEvent(
             event_type="test.event",
@@ -428,7 +428,7 @@ event_subscriptions:
         mock_event_bus = Mock()
         mock_event_bus.publish_async = Mock()
 
-        node = TestNode(event_bus=mock_event_bus)
+        node = MockNode(event_bus=mock_event_bus)
 
         input_event = ModelOnexEvent(
             event_type="test.event",
@@ -445,7 +445,7 @@ event_subscriptions:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_create_event_handler(self):
         """Test creating event handler."""
-        node = TestNode()
+        node = MockNode()
 
         handler = node._create_event_handler("test.pattern")
 
@@ -457,7 +457,7 @@ event_subscriptions:
         mock_event_bus = Mock()
         mock_event_bus.publish_async = Mock()
 
-        node = TestNode(event_bus=mock_event_bus)
+        node = MockNode(event_bus=mock_event_bus)
 
         # Create mock envelope
         mock_event = ModelOnexEvent(
@@ -476,9 +476,9 @@ event_subscriptions:
 
             # Mock dependencies
             with patch.object(
-                node, "_event_to_input_state", return_value=TestInputState()
+                node, "_event_to_input_state", return_value=MockInputState()
             ):
-                with patch.object(node, "process", return_value=TestOutputState()):
+                with patch.object(node, "process", return_value=MockOutputState()):
                     handler(mock_envelope)
 
         # Should have published completion event
@@ -490,7 +490,7 @@ event_subscriptions:
         mock_event_bus = Mock()
         mock_event_bus.publish_async = Mock()
 
-        node = TestNode(event_bus=mock_event_bus)
+        node = MockNode(event_bus=mock_event_bus)
 
         mock_event = ModelOnexEvent(
             event_type="test.event",
@@ -501,8 +501,8 @@ event_subscriptions:
 
         handler = node._create_event_handler("test.pattern")
 
-        with patch.object(node, "_event_to_input_state", return_value=TestInputState()):
-            with patch.object(node, "process", return_value=TestOutputState()):
+        with patch.object(node, "_event_to_input_state", return_value=MockInputState()):
+            with patch.object(node, "process", return_value=MockOutputState()):
                 handler(mock_event)
 
         assert mock_event_bus.publish_async.called
@@ -513,7 +513,7 @@ event_subscriptions:
         mock_event_bus = Mock()
         mock_event_bus.publish_async = Mock()
 
-        node = TestNode(event_bus=mock_event_bus)
+        node = MockNode(event_bus=mock_event_bus)
 
         mock_event = ModelOnexEvent(
             event_type="test.event",
@@ -536,7 +536,7 @@ event_subscriptions:
     def test_event_handler_with_specific_handler_method(self):
         """Test event handler with specific handler method."""
 
-        class NodeWithSpecificHandler(TestNode):
+        class NodeWithSpecificHandler(MockNode):
             def __init__(self):
                 super().__init__()
                 self.specific_handler_called = False
@@ -563,7 +563,7 @@ event_subscriptions:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_get_event_patterns_with_invalid_contract(self, tmp_path):
         """Test getting event patterns with invalid contract YAML."""
-        node = TestNode()
+        node = MockNode()
 
         # Create invalid contract file
         contract_path = tmp_path / "contract.yaml"
@@ -581,7 +581,7 @@ event_subscriptions:
         mock_event_bus = Mock()
         mock_event_bus.subscribe = Mock(return_value="subscription")
 
-        node = TestNode(event_bus=mock_event_bus)
+        node = MockNode(event_bus=mock_event_bus)
 
         with patch.object(node, "get_event_patterns", return_value=["test.pattern"]):
             node.start_event_listener()
@@ -601,9 +601,9 @@ event_subscriptions:
 
         # Node should auto-start listener if event bus provided
         with patch.object(
-            TestNode, "get_event_patterns", return_value=["test.pattern"]
+            MockNode, "get_event_patterns", return_value=["test.pattern"]
         ):
-            node = TestNode(event_bus=mock_event_bus)
+            node = MockNode(event_bus=mock_event_bus)
 
             # Give auto-start time to execute
             time.sleep(0.3)
@@ -622,7 +622,7 @@ event_subscriptions:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     def test_node_name_to_uuid_conversion(self):
         """Test node name to UUID conversion."""
-        node = TestNode()
+        node = MockNode()
         node.node_name = "test_node_name"
 
         mock_event_bus = Mock()
@@ -636,7 +636,7 @@ event_subscriptions:
             data={},
         )
 
-        output_state = TestOutputState(result="success")
+        output_state = MockOutputState(result="success")
 
         # Should handle node name to UUID conversion
         node._publish_completion_event(input_event, output_state)

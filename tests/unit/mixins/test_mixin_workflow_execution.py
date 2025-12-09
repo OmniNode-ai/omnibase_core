@@ -31,12 +31,12 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
-# Test node using the mixin
-class TestNodeWithWorkflowMixin(MixinWorkflowExecution):
-    """Test node implementing MixinWorkflowExecution."""
+# Mock node using the mixin
+class MockNodeWithWorkflowMixin(MixinWorkflowExecution):
+    """Mock node implementing MixinWorkflowExecution."""
 
     def __init__(self):
-        """Initialize test node."""
+        """Initialize mock node."""
         super().__init__()
 
 
@@ -139,7 +139,7 @@ class TestMixinWorkflowExecution:
         simple_steps: list[ModelWorkflowStep],
     ):
         """Test executing workflow from contract in sequential mode."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
         workflow_id = uuid4()
 
         result = await node.execute_workflow_from_contract(
@@ -162,7 +162,7 @@ class TestMixinWorkflowExecution:
         parallel_steps: list[ModelWorkflowStep],
     ):
         """Test executing workflow from contract in parallel mode."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
         workflow_id = uuid4()
 
         result = await node.execute_workflow_from_contract(
@@ -184,7 +184,7 @@ class TestMixinWorkflowExecution:
         simple_steps: list[ModelWorkflowStep],
     ):
         """Test execution uses mode from definition when not overridden."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
         workflow_id = uuid4()
 
         # Definition specifies sequential mode
@@ -202,7 +202,7 @@ class TestMixinWorkflowExecution:
         simple_steps: list[ModelWorkflowStep],
     ):
         """Test workflow execution emits actions for all steps."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
         workflow_id = uuid4()
 
         result = await node.execute_workflow_from_contract(
@@ -229,7 +229,7 @@ class TestMixinWorkflowExecution:
         simple_steps: list[ModelWorkflowStep],
     ):
         """Test workflow execution tracks execution time."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
 
         result = await node.execute_workflow_from_contract(
             workflow_definition, simple_steps, uuid4()
@@ -249,7 +249,7 @@ class TestMixinWorkflowValidation:
         simple_steps: list[ModelWorkflowStep],
     ):
         """Test validation passes for valid workflow."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
 
         errors = await node.validate_workflow_contract(
             workflow_definition, simple_steps
@@ -262,7 +262,7 @@ class TestMixinWorkflowValidation:
         self, workflow_definition: ModelWorkflowDefinition
     ):
         """Test validation fails for workflow with no steps."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
 
         errors = await node.validate_workflow_contract(workflow_definition, [])
 
@@ -274,7 +274,7 @@ class TestMixinWorkflowValidation:
         self, workflow_definition: ModelWorkflowDefinition
     ):
         """Test validation fails for invalid step dependency."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
         invalid_dep_id = uuid4()
 
         steps = [
@@ -295,7 +295,7 @@ class TestMixinWorkflowValidation:
         self, workflow_definition: ModelWorkflowDefinition
     ):
         """Test validation detects circular dependencies."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
         step1_id = uuid4()
         step2_id = uuid4()
 
@@ -327,7 +327,7 @@ class TestMixinExecutionOrder:
         self, simple_steps: list[ModelWorkflowStep]
     ):
         """Test getting execution order for simple workflow."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
 
         order = node.get_workflow_execution_order(simple_steps)
 
@@ -351,7 +351,7 @@ class TestMixinExecutionOrder:
         self, parallel_steps: list[ModelWorkflowStep]
     ):
         """Test getting execution order for parallel workflow."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
 
         order = node.get_workflow_execution_order(parallel_steps)
 
@@ -368,7 +368,7 @@ class TestMixinExecutionOrder:
 
     def test_get_workflow_execution_order_with_cycle_raises_error(self):
         """Test execution order with cycle raises error."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
         step1_id = uuid4()
         step2_id = uuid4()
 
@@ -398,7 +398,7 @@ class TestMixinStepCreation:
 
     def test_create_workflow_steps_from_config(self):
         """Test creating ModelWorkflowStep instances from config dicts."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
 
         step1_id = uuid4()
         step2_id = uuid4()
@@ -440,7 +440,7 @@ class TestMixinStepCreation:
 
     def test_create_workflow_steps_from_config_empty(self):
         """Test creating steps from empty config."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
 
         steps = node.create_workflow_steps_from_config([])
 
@@ -458,7 +458,7 @@ class TestMixinIntegration:
         simple_steps: list[ModelWorkflowStep],
     ):
         """Test mixin correctly delegates to workflow executor."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
         workflow_id = uuid4()
 
         # Execute workflow through mixin
@@ -477,7 +477,7 @@ class TestMixinIntegration:
         self, workflow_definition: ModelWorkflowDefinition
     ):
         """Test mixin properly handles executor errors."""
-        node = TestNodeWithWorkflowMixin()
+        node = MockNodeWithWorkflowMixin()
 
         # Empty steps should trigger validation error
         with pytest.raises(ModelOnexError) as exc_info:

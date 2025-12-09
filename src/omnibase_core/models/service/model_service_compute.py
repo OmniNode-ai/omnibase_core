@@ -58,9 +58,9 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.nodes.node_compute import NodeCompute
 
 
-class ModelServiceCompute(
+class ModelServiceCompute[T_Input, T_Output](
     MixinNodeService,
-    NodeCompute,
+    NodeCompute[T_Input, T_Output],
     MixinHealthCheck,
     MixinCaching,
     MixinMetrics,

@@ -22,20 +22,20 @@ from omnibase_core.models.reducer.model_intent_publish_result import (
 )
 
 
-class TestEventModel(BaseModel):
-    """Test event model for intent publishing tests."""
+class MockEventModel(BaseModel):
+    """Mock event model for intent publishing tests."""
 
     event_id: UUID
     message: str
     value: int
 
 
-class TestNodeWithIntentPublisher(MixinIntentPublisher):
-    """Test node class that uses MixinIntentPublisher."""
+class MockNodeWithIntentPublisher(MixinIntentPublisher):
+    """Mock node class that uses MixinIntentPublisher."""
 
     def __init__(self, container: Any):
         """
-        Initialize test node with intent publisher.
+        Initialize mock node with intent publisher.
 
         Args:
             container: Mock container with kafka_client service
@@ -82,9 +82,9 @@ class TestMixinIntentPublisher:
             mock_container: Mock container fixture
 
         Returns:
-            TestNodeWithIntentPublisher: Initialized test node
+            MockNodeWithIntentPublisher: Initialized test node
         """
-        return TestNodeWithIntentPublisher(mock_container)
+        return MockNodeWithIntentPublisher(mock_container)
 
     @pytest.fixture
     def test_event(self):
@@ -92,9 +92,9 @@ class TestMixinIntentPublisher:
         Create test event model for publishing.
 
         Returns:
-            TestEventModel: Sample event instance
+            MockEventModel: Sample event instance
         """
-        return TestEventModel(
+        return MockEventModel(
             event_id=uuid4(),
             message="Test event",
             value=42,
@@ -106,7 +106,7 @@ class TestMixinIntentPublisher:
 
         Validates that the mixin properly initializes with required services.
         """
-        node = TestNodeWithIntentPublisher(mock_container)
+        node = MockNodeWithIntentPublisher(mock_container)
 
         # Verify initialization
         assert hasattr(node, "_intent_kafka_client")
@@ -125,7 +125,7 @@ class TestMixinIntentPublisher:
         container.get_service = Mock(return_value=None)
 
         with pytest.raises(ModelOnexError) as exc_info:
-            TestNodeWithIntentPublisher(container)
+            MockNodeWithIntentPublisher(container)
 
         assert "kafka_client" in str(exc_info.value)
         assert "requires" in str(exc_info.value).lower()
@@ -374,7 +374,7 @@ class TestMixinIntentPublisher:
 
         # Verify node class name would be in created_by
         # (This is set in ModelEventPublishIntent creation)
-        assert test_node.__class__.__name__ == "TestNodeWithIntentPublisher"
+        assert test_node.__class__.__name__ == "MockNodeWithIntentPublisher"
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
@@ -390,8 +390,8 @@ class TestMixinIntentPublisher:
             event=test_event,
         )
 
-        # Event type should be TestEventModel.__name__
-        assert test_event.__class__.__name__ == "TestEventModel"
+        # Event type should be MockEventModel.__name__
+        assert test_event.__class__.__name__ == "MockEventModel"
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests

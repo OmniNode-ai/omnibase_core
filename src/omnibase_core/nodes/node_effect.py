@@ -46,6 +46,19 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
             # No custom code needed - driven entirely by YAML contract
             pass
 
+    .. versionadded:: 0.4.0
+        Primary EFFECT node implementation for ONEX 4-node architecture.
+        Provides transaction management, retry policies, and circuit breaker
+        patterns for external I/O operations.
+
+    Key Features:
+    - ModelEffectTransaction management with rollback support
+    - Retry policies with exponential backoff
+    - Circuit breaker patterns for failure handling
+    - Atomic file operations for data integrity
+    - Event bus integration for state changes
+    - Performance monitoring and logging
+
     Contract Injection:
         The node requires an effect subcontract to be provided. Two approaches:
 

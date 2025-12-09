@@ -26,13 +26,14 @@ import hashlib
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
-# Type variables for generic compute input/output
-T_Input = TypeVar("T_Input")
-T_Output = TypeVar("T_Output")
+if TYPE_CHECKING:
+    from omnibase_core.models.contracts.model_contract_compute import (
+        ModelContractCompute,
+    )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -44,29 +45,204 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure import ModelComputeCache
 
 
-class NodeCompute(NodeCoreBase):
+class NodeCompute[T_Input, T_Output](NodeCoreBase):
     """
     STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
 
     Pure computation node for deterministic operations.
 
-    Implements computational pipeline with input → transform → output pattern.
+    Implements computational pipeline with input -> transform -> output pattern.
     Provides caching, parallel processing, and performance optimization for
     compute-intensive operations.
 
+    .. versionadded:: 0.4.0
+        Added PEP 695 generic type parameters and execute_compute() contract interface.
+
+    Type Parameters:
+        T_Input: The input data type for computations.
+            Example: dict[str, Any], ModelUserData, list[ModelMetric]
+        T_Output: The output data type from computations.
+            Example: ModelComputeResult, dict[str, float], list[ModelPrediction]
+
+    Type flow:
+        Input data (T_Input) -> computation -> Output result (T_Output)
+        T_Output is typically the same as T_Input or a transformation thereof.
+
+    Example with concrete types::
+
+        class NodeStringProcessor(NodeCompute[str, str]):
+            '''Process string inputs to string outputs.'''
+
+            async def process(
+                self, input_data: ModelComputeInput[str]
+            ) -> ModelComputeOutput[str]:
+                result = input_data.data.upper()
+                return ModelComputeOutput(
+                    result=result,
+                    operation_id=input_data.operation_id,
+                    computation_type=input_data.computation_type,
+                    processing_time_ms=0.0,
+                    cache_hit=False,
+                    parallel_execution_used=False,
+                    metadata={},
+                )
+
+        class NodeMetricsAggregator(NodeCompute[list[float], dict[str, float]]):
+            '''Aggregate numeric metrics into statistics.'''
+
+            async def process(
+                self, input_data: ModelComputeInput[list[float]]
+            ) -> ModelComputeOutput[dict[str, float]]:
+                values = input_data.data
+                result = {
+                    "sum": sum(values),
+                    "avg": sum(values) / len(values) if values else 0.0,
+                    "count": float(len(values)),
+                }
+                return ModelComputeOutput(
+                    result=result,
+                    operation_id=input_data.operation_id,
+                    computation_type="metrics_aggregation",
+                    processing_time_ms=0.0,
+                    cache_hit=False,
+                    parallel_execution_used=False,
+                    metadata={},
+                )
+
     Key Features:
-    - Pure function patterns (no side effects)
-    - Deterministic operation guarantees
-    - Parallel processing support for batch operations
-    - Intelligent caching layer for expensive computations
-    - Performance monitoring and optimization
-    - Type-safe input/output handling
+        - Pure function patterns (no side effects)
+        - Deterministic operation guarantees
+        - Parallel processing support for batch operations
+        - Intelligent caching layer for expensive computations
+        - Performance monitoring and optimization
+        - Type-safe input/output handling
+
+    Caching Strategy:
+        NodeCompute implements a deterministic caching layer to optimize expensive
+        computations. The caching system uses a content-addressable approach with
+        SHA256 hashing to ensure consistent cache behavior.
+
+        **Cache Key Generation**:
+            Cache keys are generated using SHA256 hashing of the input data combined
+            with the computation type. This approach provides:
+
+            - **Determinism**: Identical inputs always produce identical cache keys,
+              ensuring consistent cache behavior across process restarts
+            - **Collision Resistance**: SHA256's cryptographic properties virtually
+              eliminate hash collisions, preventing incorrect cache hits
+            - **Cross-Process Consistency**: Unlike Python's built-in ``hash()``,
+              SHA256 produces consistent results across different Python processes
+              and interpreter sessions
+
+            Format: ``{computation_type}:{sha256_hex_digest}``
+
+            Example: ``sum_numbers:a3b2c1d4e5f6...``
+
+        **Cache Invalidation Policies**:
+            The cache supports multiple invalidation strategies:
+
+            1. **TTL-Based Expiration** (Primary):
+               - Each cached entry has a time-to-live (TTL) configured via
+                 ``cache_ttl_minutes`` (default: 30 minutes)
+               - Expired entries are automatically detected on access and removed
+               - TTL can be customized per-entry or globally via container config
+
+            2. **Manual Cache Clearing**:
+               - Call ``computation_cache.clear()`` to invalidate all entries
+               - Useful for forced refresh or during node cleanup
+               - Automatically called during ``_cleanup_node_resources()``
+
+            3. **Eviction Policy** (Memory Management):
+               - Configured via ``ModelComputeCache.eviction_policy``
+               - **LRU** (Least Recently Used): Evicts entries not accessed recently
+               - **LFU** (Least Frequently Used): Evicts entries with lowest access count
+               - **FIFO** (First In First Out): Evicts oldest entries by insertion time
+               - Eviction triggers when cache reaches ``max_size`` (default: 1000)
+
+        **Cache Configuration**:
+            Cache behavior is configured through ``ModelONEXContainer.compute_cache_config``:
+
+            - ``max_size``: Maximum number of cached entries (default: 1000)
+            - ``ttl_seconds``: Time-to-live in seconds (default: 1800 = 30 min)
+            - ``eviction_policy``: LRU, LFU, or FIFO (default: LRU)
+            - ``enable_stats``: Enable hit/miss tracking (default: True)
+
+            **Configuration Example**::
+
+                from omnibase_core.models.container import ModelONEXContainer
+                from omnibase_core.models.infrastructure import ModelComputeCacheConfig
+
+                # Create cache configuration
+                cache_config = ModelComputeCacheConfig(
+                    max_size=5000,           # Cache up to 5000 entries
+                    ttl_seconds=3600,        # 1 hour TTL
+                    eviction_policy="LRU",   # Least Recently Used eviction
+                    enable_stats=True,       # Enable hit/miss tracking
+                )
+
+                # Create container with custom cache configuration
+                container = ModelONEXContainer(
+                    compute_cache_config=cache_config,
+                )
+
+                # Create node with configured caching
+                node = NodeCompute(container)
+
+            **Runtime Configuration** (via NodeConfigProvider)::
+
+                # Cache settings can also be loaded from NodeConfigProvider
+                # if registered in the container. Keys used:
+                #   - "compute.cache_ttl_minutes": Cache TTL in minutes
+                #   - "compute.max_parallel_workers": Thread pool size
+                #   - "compute.performance_threshold_ms": Warning threshold
+
+        **Cache Implications**:
+            - **Cache Hits**: Return cached result with ``processing_time_ms=0.0``.
+              This value represents *semantic computation time* (no actual computation
+              work was performed), not total elapsed time. Cache lookup overhead
+              (SHA256 hashing, dictionary access) is intentionally excluded to
+              distinguish "work done" from "time elapsed".
+            - **Cache Misses**: Execute computation, cache result if ``cache_enabled=True``
+            - **String Serialization**: Input data is converted to string for hashing;
+              complex objects should implement consistent ``__str__`` methods
 
     Thread Safety:
         - Instance NOT thread-safe due to mutable cache state
         - Use separate instances per thread OR implement cache locking
         - Parallel processing via ThreadPoolExecutor is internally managed
         - See docs/THREADING.md for production guidelines and examples
+
+    Note:
+        **Parallel Processing Guidance**
+
+        When to enable parallel processing (``parallel_enabled=True``):
+            - Batch operations on independent data items (e.g., transforming a list of records)
+            - CPU-bound computations that can be partitioned (e.g., processing chunks of data)
+            - Map operations where each element is processed independently
+
+        Computation types that benefit from parallelization:
+            - **Batch transformations**: Processing lists/tuples of independent items
+            - **Aggregations over large datasets**: sum, average, statistical computations
+            - **Independent element processing**: Operations where each list item is processed
+              without dependencies on other items
+
+        Computation types that do NOT benefit from parallelization:
+            - **Single-value operations**: String transformations, single object processing
+            - **Sequential dependencies**: Operations where item N depends on item N-1
+            - **Small datasets**: Overhead of thread pool exceeds computation time
+            - **I/O-bound operations**: Use NodeEffect for I/O; parallel threads don't help
+
+        Thread pool configuration:
+            - Default: 4 workers (configurable via ``max_parallel_workers``)
+            - Pool is lazily initialized during ``_initialize_node_resources()``
+            - Workers are reused across computations for efficiency
+            - Shutdown with 5s timeout during ``_cleanup_node_resources()``
+
+        Performance considerations:
+            - Parallel execution adds overhead (~1-5ms for thread pool dispatch)
+            - Only use for computations where per-item processing > 10ms
+            - Data must be a list or tuple with more than 1 element
+            - If data is not parallelizable, falls back to sequential execution with a warning
     """
 
     def __init__(self, container: ModelONEXContainer) -> None:
@@ -106,26 +282,378 @@ class NodeCompute(NodeCoreBase):
 
         # Performance tracking
         self.computation_metrics: dict[str, dict[str, float]] = {}
+        self.parallel_execution_warning_count: int = (
+            0  # Track parallel misconfigurations
+        )
 
         # Register built-in computations
         self._register_builtin_computations()
+
+    async def execute_compute(
+        self,
+        contract: "ModelContractCompute",  # Quoted for TYPE_CHECKING import (avoids circular dependency)
+    ) -> ModelComputeOutput[T_Output]:
+        """
+        Execute compute operation based on contract specification.
+
+        REQUIRED INTERFACE: This public method implements the ModelContractCompute
+        interface per ONEX guidelines. It provides a contract-based entry point
+        that delegates to the internal process() method.
+
+        This method validates the contract type before processing to ensure
+        type safety and provide clear error messages for invalid contracts.
+
+        .. versionadded:: 0.4.0
+
+        Args:
+            contract: The compute contract specification. Must be an instance of
+                ModelContractCompute. The contract should contain:
+                - input_state: Input data for computation (required)
+                - metadata: Optional metadata dict with computation_type, cache_enabled,
+                  and parallel_enabled settings
+
+        Returns:
+            ModelComputeOutput[T_Output]: Computation results containing:
+                - result: The computed output value
+                - operation_id: Unique identifier for this operation
+                - computation_type: Type of computation performed
+                - processing_time_ms: Time taken for computation
+                - cache_hit: Whether result was retrieved from cache
+                - parallel_execution_used: Whether parallel processing was used
+                - metadata: Additional operation metadata
+
+        Raises:
+            ModelOnexError: If contract type is invalid (not ModelContractCompute),
+                computation fails, or input validation fails. Error codes:
+                - VALIDATION_ERROR: Invalid contract type or missing required fields
+                - OPERATION_FAILED: Computation execution failure
+
+        Example:
+            Using the built-in ``string_uppercase`` computation::
+
+                >>> from omnibase_core.models.contracts import ModelContractCompute
+                >>> from omnibase_core.models.contracts import ModelContractAlgorithm
+                >>> contract = ModelContractCompute(
+                ...     name="uppercase_transform",
+                ...     version="1.0.0",
+                ...     input_state="hello world",  # Direct string input for string_uppercase
+                ...     algorithm=ModelContractAlgorithm(algorithm_type="string_uppercase"),
+                ... )
+                >>> result = await node.execute_compute(contract)
+                >>> print(result.result)  # "HELLO WORLD"
+
+            Using the built-in ``sum_numbers`` computation::
+
+                >>> contract = ModelContractCompute(
+                ...     name="sum_values",
+                ...     version="1.0.0",
+                ...     input_state=[1.0, 2.0, 3.0, 4.0],  # Direct list input for sum_numbers
+                ...     algorithm=ModelContractAlgorithm(algorithm_type="sum_numbers"),
+                ... )
+                >>> result = await node.execute_compute(contract)
+                >>> print(result.result)  # 10.0
+
+        Note:
+            This method requires a ModelContractCompute instance. If you need
+            to process raw input data directly, use the process() method with
+            a ModelComputeInput instance instead.
+        """
+        # Import here to avoid circular dependency
+        from omnibase_core.models.contracts.model_contract_compute import (
+            ModelContractCompute,
+        )
+
+        if not isinstance(contract, ModelContractCompute):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Invalid contract type - must be ModelContractCompute",
+                context={
+                    "node_id": str(self.node_id),
+                    "provided_type": type(contract).__name__,
+                    "expected_type": "ModelContractCompute",
+                },
+            )
+
+        # Convert contract to ModelComputeInput
+        compute_input = self._contract_to_input(contract)
+        return await self.process(compute_input)
+
+    def _extract_computation_type(
+        self,
+        metadata: dict[str, Any],
+        contract_algorithm: Any,
+        contract_computation_type: Any,
+    ) -> str:
+        """
+        Extract computation type from cached contract attributes or metadata.
+
+        Uses a priority-based extraction strategy to find the computation type
+        from various locations in the contract structure, supporting both
+        algorithm-based contracts and metadata-based configurations.
+
+        Priority order:
+            1. contract_algorithm.algorithm_type (preferred for ModelContractCompute)
+            2. metadata["computation_type"] (for legacy or custom contracts)
+            3. contract_computation_type (direct attribute, if exists)
+            4. Default: "default" (identity transformation)
+
+        Args:
+            metadata: Extracted metadata dictionary, may contain "computation_type"
+                key as an alternative source.
+            contract_algorithm: Pre-cached algorithm attribute from contract (or None).
+                Expected to have an optional algorithm_type attribute.
+            contract_computation_type: Pre-cached computation_type attribute from
+                contract (or None).
+
+        Returns:
+            str: The computation type identifier to use for looking up the
+                registered computation function. Returns "default" if no
+                computation type is found in any source.
+
+        Example:
+            >>> # Contract with algorithm configuration (preferred)
+            >>> contract.algorithm.algorithm_type = "sum_numbers"
+            >>> _extract_computation_type({}, contract.algorithm, None)
+            "sum_numbers"
+
+            >>> # Contract with metadata-based type
+            >>> _extract_computation_type({"computation_type": "custom"}, None, None)
+            "custom"
+        """
+        # Check algorithm configuration first (preferred for ModelContractCompute)
+        if contract_algorithm is not None:
+            algorithm_type = getattr(contract_algorithm, "algorithm_type", None)
+            if algorithm_type is not None:
+                return str(algorithm_type)
+
+        # Check metadata next
+        if "computation_type" in metadata:
+            return str(metadata["computation_type"])
+
+        # Check contract attribute (pre-cached value)
+        if contract_computation_type is not None:
+            return str(contract_computation_type)
+
+        return "default"
+
+    def _contract_to_input(self, contract: Any) -> ModelComputeInput[Any]:
+        """
+        Convert ModelContractCompute to ModelComputeInput for processing.
+
+        This method extracts computation parameters from a validated contract
+        and constructs a ModelComputeInput instance suitable for the process()
+        method. It enforces that input data is present and logs warnings for
+        missing optional fields.
+
+        Args:
+            contract: The compute contract to convert. Must be a validated
+                ModelContractCompute instance with:
+                - input_state (required): Input data for computation (any serializable type)
+                - metadata (optional): Dict with computation settings
+                - algorithm (optional): Algorithm configuration with computation_type
+
+        Returns:
+            ModelComputeInput[Any]: Input model configured with:
+                - data: The input data from contract.input_state
+                - computation_type: Type of computation to perform
+                - cache_enabled: Whether to use caching (default: True)
+                - parallel_enabled: Whether to enable parallel processing (default: False)
+                - metadata: Additional metadata from contract
+
+        Raises:
+            ModelOnexError: If contract.input_state is missing or None, indicating
+                a contract configuration error. Error code: VALIDATION_ERROR
+
+        Example:
+            Converting a contract for ``sum_numbers`` computation::
+
+                >>> from omnibase_core.models.contracts import ModelContractCompute
+                >>> from omnibase_core.models.contracts import ModelContractAlgorithm
+                >>> contract = ModelContractCompute(
+                ...     name="sum_values",
+                ...     version="1.0.0",
+                ...     input_state=[1.0, 2.0, 3.0],  # Direct list - sum_numbers expects list[float]
+                ...     algorithm=ModelContractAlgorithm(algorithm_type="sum_numbers"),
+                ... )
+                >>> compute_input = node._contract_to_input(contract)
+                >>> # compute_input.data == [1.0, 2.0, 3.0]
+                >>> # compute_input.computation_type == "sum_numbers"
+
+            Converting a contract for ``string_uppercase`` computation::
+
+                >>> contract = ModelContractCompute(
+                ...     name="uppercase",
+                ...     version="1.0.0",
+                ...     input_state="hello",  # Direct string - string_uppercase expects str
+                ...     algorithm=ModelContractAlgorithm(algorithm_type="string_uppercase"),
+                ... )
+                >>> compute_input = node._contract_to_input(contract)
+                >>> # compute_input.data == "hello"
+                >>> # compute_input.computation_type == "string_uppercase"
+
+        Note:
+            This method expects execute_compute() to have already validated
+            that contract is a ModelContractCompute instance. Direct calls
+            should ensure proper contract type validation.
+        """
+        # Cache contract attributes to avoid redundant getattr calls
+        contract_input_state = getattr(contract, "input_state", None)
+        contract_input_data = getattr(contract, "input_data", None)
+        contract_metadata = getattr(contract, "metadata", None)
+        contract_algorithm = getattr(contract, "algorithm", None)
+        contract_computation_type = getattr(contract, "computation_type", None)
+
+        # Extract input_state from contract - this is the primary input data field
+        # for ModelContractCompute (not input_data which is used in simpler contracts)
+        input_data: Any = contract_input_state
+
+        # Validate that input_state is present - it's required for computation
+        if input_data is None:
+            # Check for legacy input_data attribute as fallback
+            input_data = contract_input_data
+
+            if input_data is None:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Contract must have 'input_state' or 'input_data' attribute with computation input",
+                    context={
+                        "node_id": str(self.node_id),
+                        "contract_type": type(contract).__name__,
+                        "checked_attributes": ["input_state", "input_data"],
+                        "input_state_value": "None",
+                        "input_data_value": "None",
+                        "hint": "Ensure contract.input_state contains the data to be processed",
+                    },
+                )
+
+            # Log warning for legacy input_data usage
+            emit_log_event(
+                LogLevel.WARNING,
+                "Contract uses legacy 'input_data' instead of 'input_state'",
+                {
+                    "node_id": str(self.node_id),
+                    "contract_type": type(contract).__name__,
+                    "recommendation": "Migrate to using 'input_state' field",
+                },
+            )
+
+        # Extract metadata from contract (optional field)
+        # Use empty dict as default for falsy values (None, empty dict)
+        metadata: dict[str, Any] = contract_metadata or {}
+
+        # Extract computation_type using helper method with cached contract attributes
+        computation_type = self._extract_computation_type(
+            metadata, contract_algorithm, contract_computation_type
+        )
+
+        # Extract cache and parallel settings from metadata or use defaults
+        # NOTE: bool() coerces truthy/falsy values per Python semantics.
+        # Runtime warnings are emitted below when string values are detected.
+        cache_value = metadata.get("cache_enabled", True)
+        if isinstance(cache_value, str):
+            # Warn about string coercion - common mistake that's hard to debug
+            # e.g., string "false" coerces to True, which is unexpected
+            emit_log_event(
+                LogLevel.WARNING,
+                "cache_enabled received string value instead of boolean. "
+                "String values coerce to True (including 'false'). Use actual booleans.",
+                {
+                    "node_id": str(self.node_id),
+                    "received_value": cache_value,
+                    "coerced_to": bool(cache_value),
+                    "recommendation": "Pass cache_enabled=False (boolean) not cache_enabled='false' (string)",
+                },
+            )
+        cache_enabled: bool = bool(cache_value)
+
+        parallel_value = metadata.get("parallel_enabled", False)
+        if isinstance(parallel_value, str):
+            # Warn about string coercion - common mistake that's hard to debug
+            # e.g., string "false" coerces to True, which is unexpected
+            emit_log_event(
+                LogLevel.WARNING,
+                "parallel_enabled received string value instead of boolean. "
+                "String values coerce to True (including 'false'). Use actual booleans.",
+                {
+                    "node_id": str(self.node_id),
+                    "received_value": parallel_value,
+                    "coerced_to": bool(parallel_value),
+                    "recommendation": "Pass parallel_enabled=True (boolean) not parallel_enabled='true' (string)",
+                },
+            )
+        parallel_enabled: bool = bool(parallel_value)
+
+        return ModelComputeInput(
+            data=input_data,
+            computation_type=computation_type,
+            cache_enabled=cache_enabled,
+            parallel_enabled=parallel_enabled,
+            metadata=metadata,
+        )
 
     async def process(
         self, input_data: ModelComputeInput[T_Input]
     ) -> ModelComputeOutput[T_Output]:
         """
-        REQUIRED: Execute pure computation.
+        Execute pure computation with caching and parallel processing support.
 
         STABLE INTERFACE: This method signature is frozen for code generation.
+        Subclasses should override this method to implement custom computation logic.
+
+        This is the primary entry point for direct computation without contract
+        validation. It handles:
+        - Cache lookup and storage (when cache_enabled=True)
+        - Parallel execution (when parallel_enabled=True and data is parallelizable)
+        - Performance monitoring and threshold warnings
+        - Metrics tracking for observability
 
         Args:
-            input_data: Strongly typed computation input
+            input_data: Strongly typed computation input containing:
+                - data (T_Input): The input data to process
+                - computation_type (str): Registered computation type to execute
+                - cache_enabled (bool): Whether to use caching (default: True)
+                - parallel_enabled (bool): Whether to use parallel execution (default: False)
+                - operation_id (UUID): Unique identifier for this operation
+                - metadata (dict): Optional additional metadata
 
         Returns:
-            Strongly typed computation output with performance metrics
+            ModelComputeOutput[T_Output]: Computation results containing:
+                - result (T_Output): The computed output value
+                - operation_id (UUID): Echoed from input for correlation
+                - computation_type (str): The computation type that was executed
+                - processing_time_ms (float): Time taken in milliseconds
+                - cache_hit (bool): True if result was retrieved from cache
+                - parallel_execution_used (bool): True if parallel processing was used
+                - metadata (dict): Additional output metadata
 
         Raises:
-            ModelOnexError: If computation fails or performance threshold exceeded
+            ModelOnexError: If computation fails. Error codes:
+                - VALIDATION_ERROR: Invalid input data structure
+                - OPERATION_FAILED: Computation execution failure or unknown computation type
+
+        Example:
+            Direct usage with ModelComputeInput::
+
+                >>> from omnibase_core.models.compute import ModelComputeInput
+                >>> input_data = ModelComputeInput(
+                ...     data=[1.0, 2.0, 3.0, 4.0],
+                ...     computation_type="sum_numbers",
+                ...     cache_enabled=True,
+                ...     parallel_enabled=False,
+                ... )
+                >>> result = await node.process(input_data)
+                >>> print(result.result)  # 10.0
+                >>> print(result.cache_hit)  # False (first call)
+
+            Subsequent call with same input (cache hit)::
+
+                >>> result2 = await node.process(input_data)
+                >>> print(result2.cache_hit)  # True
+
+        Note:
+            For contract-based execution with validation, use execute_compute() instead.
+            Performance warnings are logged when processing_time_ms exceeds
+            performance_threshold_ms (default: 100ms).
         """
         # Use time.perf_counter() for accurate duration measurement
         # (monotonic, unaffected by system clock adjustments)
@@ -134,30 +662,61 @@ class NodeCompute(NodeCoreBase):
         try:
             self._validate_compute_input(input_data)
 
-            # Generate cache key
-            cache_key = self._generate_cache_key(input_data)
-
             # Check cache first if enabled
+            # Measure cache lookup time separately for observability
+            cache_lookup_time_ms = 0.0
+            cache_key: str | None = None
             if input_data.cache_enabled:
+                cache_lookup_start = time.perf_counter()
+                cache_key = self._generate_cache_key(input_data)
                 cached_result = self.computation_cache.get(cache_key)
+                cache_lookup_time_ms = (time.perf_counter() - cache_lookup_start) * 1000
+
                 if cached_result is not None:
                     return ModelComputeOutput(
                         result=cached_result,
                         operation_id=input_data.operation_id,
                         computation_type=input_data.computation_type,
-                        processing_time_ms=0.0,
+                        processing_time_ms=0.0,  # Semantic: no computation work
+                        cache_lookup_time_ms=cache_lookup_time_ms,  # Actual elapsed time
                         cache_hit=True,
                         parallel_execution_used=False,
                         metadata={"cache_retrieval": True},
                     )
+            # No else branch needed - cache_key remains None when cache_enabled=False
 
             # Execute computation
-            if input_data.parallel_enabled and self._supports_parallel_execution(
-                input_data
-            ):
+            supports_parallel = self._supports_parallel_execution(input_data)
+            if input_data.parallel_enabled and supports_parallel:
                 result = await self._execute_parallel_computation(input_data)
                 parallel_used = True
             else:
+                # Warn if parallel was requested but data is not parallelizable
+                if input_data.parallel_enabled and not supports_parallel:
+                    self.parallel_execution_warning_count += (
+                        1  # Track for observability
+                    )
+                    data_type = type(input_data.data).__name__
+                    data_length = (
+                        len(input_data.data)
+                        if isinstance(input_data.data, (list, tuple))
+                        else "N/A"
+                    )
+                    emit_log_event(
+                        LogLevel.WARNING,
+                        "Parallel execution requested but data is not parallelizable. "
+                        "Falling back to sequential execution. "
+                        "Parallel requires list/tuple with >1 element.",
+                        {
+                            "node_id": str(self.node_id),
+                            "operation_id": str(input_data.operation_id),
+                            "computation_type": input_data.computation_type,
+                            "data_type": data_type,
+                            "data_length": str(data_length),
+                            "recommendation": "Set parallel_enabled=False for non-batch data, "
+                            "or provide a list/tuple with multiple elements",
+                        },
+                    )
                 result = await self._execute_sequential_computation(input_data)
                 parallel_used = False
 
@@ -175,8 +734,8 @@ class NodeCompute(NodeCoreBase):
                     },
                 )
 
-            # Cache result if enabled
-            if input_data.cache_enabled:
+            # Cache result if enabled (cache_key is always set when cache_enabled=True)
+            if input_data.cache_enabled and cache_key is not None:
                 self.computation_cache.put(cache_key, result, self.cache_ttl_minutes)
 
             # Update metrics
@@ -193,6 +752,7 @@ class NodeCompute(NodeCoreBase):
                 operation_id=input_data.operation_id,
                 computation_type=input_data.computation_type,
                 processing_time_ms=processing_time,
+                cache_lookup_time_ms=0.0,  # No cache lookup on miss or disabled
                 cache_hit=False,
                 parallel_execution_used=parallel_used,
                 metadata={
@@ -212,6 +772,9 @@ class NodeCompute(NodeCoreBase):
             )
             await self._update_processing_metrics(processing_time, False)
 
+            # Preserve original exception context for debugging
+            # Include error_type to distinguish validation vs runtime errors
+            # Include cache_enabled and parallel_enabled for configuration debugging
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Computation failed: {e!s}",
@@ -219,6 +782,10 @@ class NodeCompute(NodeCoreBase):
                     "node_id": str(self.node_id),
                     "operation_id": str(input_data.operation_id),
                     "computation_type": input_data.computation_type,
+                    "error_type": type(e).__name__,
+                    "processing_time_ms": processing_time,
+                    "cache_enabled": input_data.cache_enabled,
+                    "parallel_enabled": input_data.parallel_enabled,
                 },
             ) from e
 
@@ -226,14 +793,47 @@ class NodeCompute(NodeCoreBase):
         self, computation_type: str, computation_func: Callable[..., Any]
     ) -> None:
         """
-        Register custom computation function.
+        Register a custom computation function for use with this node.
+
+        Registered computations can be invoked via process() or execute_compute()
+        by specifying the computation_type. Functions should be pure (no side effects)
+        for deterministic behavior and safe caching.
 
         Args:
-            computation_type: Type identifier for computation
-            computation_func: Pure function to register
+            computation_type: Unique string identifier for the computation.
+                Used to look up the function during execution.
+                Example: "calculate_average", "transform_json", "validate_schema"
+            computation_func: Pure function to register. Must be callable and accept
+                the input data as its first argument. The function signature should
+                match the expected T_Input type for this node.
+                Example: ``def my_func(data: list[float]) -> float``
 
         Raises:
-            ModelOnexError: If computation type already registered
+            ModelOnexError: If validation fails. Error codes:
+                - VALIDATION_ERROR: computation_type already registered or
+                  computation_func is not callable
+
+        Example:
+            Registering a custom average computation::
+
+                >>> def calculate_average(data: list[float]) -> float:
+                ...     if not data:
+                ...         return 0.0
+                ...     return sum(data) / len(data)
+                >>> node.register_computation("calculate_average", calculate_average)
+
+            Using the registered computation::
+
+                >>> input_data = ModelComputeInput(
+                ...     data=[10.0, 20.0, 30.0],
+                ...     computation_type="calculate_average",
+                ... )
+                >>> result = await node.process(input_data)
+                >>> print(result.result)  # 20.0
+
+        Note:
+            Built-in computations ("default", "string_uppercase", "sum_numbers")
+            are registered automatically during node initialization.
         """
         if computation_type in self.computation_registry:
             raise ModelOnexError(
@@ -258,7 +858,40 @@ class NodeCompute(NodeCoreBase):
         )
 
     async def get_computation_metrics(self) -> dict[str, dict[str, float]]:
-        """Get detailed computation performance metrics."""
+        """
+        Get detailed computation performance metrics for monitoring and observability.
+
+        Aggregates metrics from multiple sources including computation execution
+        statistics, cache performance, and parallel processing utilization.
+
+        Returns:
+            dict[str, dict[str, float]]: Nested metrics dictionary containing:
+                - Per-computation-type metrics (keyed by computation_type):
+                    - total_executions: Number of times this computation ran
+                    - avg_processing_time_ms: Average execution time
+                    - success_rate: Ratio of successful executions
+                - "cache_performance": Cache statistics
+                    - total_entries: Total entries in cache
+                    - valid_entries: Non-expired entries
+                    - cache_utilization: valid_entries / max_size ratio
+                    - ttl_minutes: Cache time-to-live setting
+                - "parallel_processing": Thread pool status
+                    - max_workers: Maximum parallel workers configured
+                    - thread_pool_active: 1.0 if pool is active, 0.0 otherwise
+                    - execution_warnings: Count of times parallel was requested but not used
+
+        Example:
+            >>> metrics = await node.get_computation_metrics()
+            >>> print(metrics["cache_performance"]["cache_utilization"])
+            0.75
+            >>> print(metrics["sum_numbers"]["avg_processing_time_ms"])
+            2.5
+
+        Note:
+            Metrics are cumulative for the lifetime of the node instance.
+            Call this periodically for monitoring or after specific operations
+            for performance analysis.
+        """
         cache_stats = self.computation_cache.get_stats()
 
         return {
@@ -273,6 +906,7 @@ class NodeCompute(NodeCoreBase):
             "parallel_processing": {
                 "max_workers": float(self.max_parallel_workers),
                 "thread_pool_active": float(1 if self.thread_pool else 0),
+                "execution_warnings": float(self.parallel_execution_warning_count),
             },
         }
 
@@ -363,14 +997,201 @@ class NodeCompute(NodeCoreBase):
             )
 
     def _generate_cache_key(self, input_data: ModelComputeInput[Any]) -> str:
-        """Generate deterministic cache key for computation input."""
+        """
+        Generate a deterministic cache key for computation input.
+
+        This method creates a unique, reproducible cache key by combining the
+        computation type with a SHA256 hash of the input data. The resulting key
+        is used to store and retrieve cached computation results.
+
+        **Cache Key Generation Strategy**:
+
+        The cache key is generated using a content-addressable approach:
+
+        1. **Input Serialization**: The input data is converted to its string
+           representation using Python's ``str()`` function. This creates a
+           canonical text form of the data that can be hashed.
+
+        2. **SHA256 Hashing**: The string representation is encoded to UTF-8 bytes
+           and hashed using SHA256. SHA256 was chosen for several reasons:
+
+           - **Determinism**: Unlike Python's built-in ``hash()`` function, which
+             uses randomized salting (PYTHONHASHSEED) and produces different values
+             across interpreter sessions, SHA256 always produces the same output
+             for the same input, ensuring cache consistency across process restarts.
+
+           - **Collision Resistance**: SHA256's 256-bit output space (2^256 possible
+             values) makes hash collisions astronomically unlikely. This prevents
+             incorrect cache hits where different inputs might map to the same key.
+
+           - **Cross-Process Consistency**: The same input will produce the same
+             cache key regardless of which Python process or machine generates it,
+             enabling distributed caching scenarios if needed in the future.
+
+        3. **Key Composition**: The final key combines the computation type and hash
+           in the format ``{computation_type}:{sha256_hex_digest}``. Including the
+           computation type ensures that identical data processed by different
+           computation functions will have distinct cache keys.
+
+        **Key Format**::
+
+            {computation_type}:{64_character_hex_digest}
+
+        **Examples**::
+
+            "sum_numbers:a3b4c5d6e7f8...9a0b"  (64 hex chars after colon)
+            "string_uppercase:1234abcd5678..."
+
+        **Cache Key Implications**:
+
+        - **Cache Hits**: When the same input data and computation type are
+          processed again, the identical cache key will be generated, allowing
+          retrieval of the previously computed result.
+
+        - **Cache Misses**: Any change to the input data (even whitespace) or
+          computation type will produce a different hash, resulting in a cache miss.
+
+        - **String Serialization Caveat**: Complex objects should implement
+          consistent ``__str__`` methods to ensure deterministic serialization.
+          Objects with non-deterministic string representations (e.g., including
+          memory addresses or timestamps) will not cache effectively.
+
+        Args:
+            input_data: The computation input containing:
+                - ``data``: The input data to be hashed (any type with ``__str__``)
+                - ``computation_type``: The type of computation to be performed
+
+        Returns:
+            str: A cache key in the format ``{computation_type}:{sha256_hex_digest}``
+                where the hex digest is a 64-character lowercase hexadecimal string.
+
+        Example:
+            >>> input_data = ModelComputeInput(
+            ...     data=[1.0, 2.0, 3.0],
+            ...     computation_type="sum_numbers",
+            ... )
+            >>> key = node._generate_cache_key(input_data)
+            >>> print(key)
+            "sum_numbers:7c9e1d8a3f2b..."  # 64 hex chars after colon
+
+            >>> # Same input produces same key (deterministic)
+            >>> key2 = node._generate_cache_key(input_data)
+            >>> assert key == key2
+
+            >>> # Different input produces different key
+            >>> different_input = ModelComputeInput(
+            ...     data=[1.0, 2.0, 4.0],  # Changed value
+            ...     computation_type="sum_numbers",
+            ... )
+            >>> different_key = node._generate_cache_key(different_input)
+            >>> assert key != different_key
+
+        Note:
+            - This is a private method called internally by ``process()``
+            - The cache key is used with ``ModelComputeCache.get()`` and ``put()``
+            - See the class-level "Caching Strategy" documentation for full details
+              on cache invalidation policies and configuration options
+
+        Security Note:
+            Cache keys are used for **internal deterministic caching only** and are
+            not cryptographically sensitive. SHA256 is chosen for its collision
+            resistance and determinism, not for cryptographic security.
+
+            **Current Security Model**:
+                - Cache is process-local (not shared over network by default)
+                - No authentication required for cache access within the process
+                - No HMAC signing of cache entries
+
+            **For Distributed Caching** (if implemented in future):
+                If cross-process cache sharing over untrusted networks is required,
+                additional security measures should be implemented:
+
+                - **HMAC-based authentication**: Sign cache entries with a shared secret
+                  to prevent cache poisoning attacks
+                - **Encryption**: Encrypt sensitive cached data at rest
+                - **Access control**: Implement per-key or per-namespace access policies
+                - **Cache isolation**: Use separate cache instances for different
+                  security domains
+
+            The current implementation assumes a trusted execution environment where
+            all cache access originates from the same process or trusted processes.
+        """
         data_str = str(input_data.data)
         # Use hashlib for deterministic hashing across Python processes
         data_hash = hashlib.sha256(data_str.encode()).hexdigest()
         return f"{input_data.computation_type}:{data_hash}"
 
     def _supports_parallel_execution(self, input_data: ModelComputeInput[Any]) -> bool:
-        """Check if computation supports parallel execution."""
+        """
+        Check if computation input data supports parallel execution.
+
+        Determines whether the input data structure is suitable for parallel
+        processing based on its type and size. Parallel execution is only
+        beneficial when data can be partitioned into independent chunks.
+
+        Parallelizable Data Requirements:
+            - Must be a ``list`` or ``tuple`` (iterable with known length)
+            - Must contain more than 1 element (otherwise no parallelism benefit)
+            - Elements should be independently processable (no inter-element dependencies)
+
+        Computation Types That Benefit from Parallelization:
+            - **Batch transformations**: Processing lists of records, documents, or objects
+              where each item can be transformed independently
+            - **Map operations**: Applying the same function to each element
+              (e.g., converting a list of strings to uppercase)
+            - **Aggregations over large datasets**: Operations like sum, average,
+              or statistical computations that can be partitioned and merged
+            - **Independent validations**: Validating each item in a batch independently
+
+        Computation Types That Do NOT Benefit:
+            - **Single-value operations**: Strings, numbers, single objects - no partitioning possible
+            - **Small datasets**: Lists with 0-1 elements have no parallel work to distribute
+            - **Sequential dependencies**: Operations where item N depends on item N-1
+            - **Fold/reduce with order**: Sequential reductions where order matters
+
+        Performance Implications:
+            - Parallel execution adds ~1-5ms overhead for thread pool dispatch
+            - Only beneficial when per-item computation exceeds ~10ms
+            - Thread pool workers (default: 4) are reused across calls
+            - For small lists (2-10 items), overhead may exceed benefit
+            - Large datasets (100+ items) with CPU-bound operations see best gains
+
+        Args:
+            input_data: The computation input containing the data to check.
+                The ``data`` attribute is examined for type and length.
+
+        Returns:
+            bool: True if data is a list/tuple with more than 1 element,
+                False otherwise. When False, the process() method will
+                use sequential execution instead.
+
+        Example:
+            >>> # Parallelizable - list with multiple elements
+            >>> input_data = ModelComputeInput(data=[1, 2, 3, 4, 5], ...)
+            >>> node._supports_parallel_execution(input_data)
+            True
+
+            >>> # NOT parallelizable - single string value
+            >>> input_data = ModelComputeInput(data="hello", ...)
+            >>> node._supports_parallel_execution(input_data)
+            False
+
+            >>> # NOT parallelizable - list with only 1 element
+            >>> input_data = ModelComputeInput(data=[42], ...)
+            >>> node._supports_parallel_execution(input_data)
+            False
+
+            >>> # NOT parallelizable - empty list
+            >>> input_data = ModelComputeInput(data=[], ...)
+            >>> node._supports_parallel_execution(input_data)
+            False
+
+        Note:
+            When ``parallel_enabled=True`` but this method returns False,
+            a WARNING log is emitted in ``process()`` to alert developers
+            that parallel execution was requested but could not be used.
+            The computation will fall back to sequential execution automatically.
+        """
         return bool(
             isinstance(input_data.data, (list, tuple)) and len(input_data.data) > 1
         )
