@@ -12,6 +12,7 @@ Author: ONEX Framework Team
 Version: 1.0.0
 """
 
+from collections.abc import Callable
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -97,6 +98,44 @@ def test_container() -> ModelONEXContainer:
 def node(test_container: ModelONEXContainer) -> NodeCompute[Any, Any]:
     """Create a NodeCompute instance for testing."""
     return NodeCompute(test_container)
+
+
+@pytest.fixture
+def mock_contract_factory() -> Callable[..., MagicMock]:
+    """
+    Factory fixture for creating mock contracts with consistent defaults.
+
+    This fixture provides a callable that wraps _create_mock_contract(),
+    allowing tests to create mock contracts with a consistent interface.
+
+    Returns:
+        A callable that creates MagicMock contracts with the specified attributes.
+
+    Example:
+        def test_example(mock_contract_factory):
+            contract = mock_contract_factory(
+                input_state={"data": "value"},
+                metadata={"key": "value"},
+            )
+            assert contract.input_state == {"data": "value"}
+    """
+
+    def _factory(
+        input_state: Any = None,
+        input_data: Any = None,
+        metadata: dict[str, Any] | None = None,
+        algorithm: Any = None,
+        computation_type: str | None = None,
+    ) -> MagicMock:
+        return _create_mock_contract(
+            input_state=input_state,
+            input_data=input_data,
+            metadata=metadata,
+            algorithm=algorithm,
+            computation_type=computation_type,
+        )
+
+    return _factory
 
 
 @pytest.mark.unit
@@ -292,9 +331,10 @@ class TestNodeComputeContractToInput:
     def test_contract_to_input_with_input_state(
         self,
         node: NodeCompute[Any, Any],
+        mock_contract_factory: Callable[..., MagicMock],
     ) -> None:
         """Test _contract_to_input extracts input_state correctly."""
-        mock_contract = _create_mock_contract(
+        mock_contract = mock_contract_factory(
             input_state={"text": "hello world"},
             algorithm=MagicMock(algorithm_type="default"),
         )
@@ -307,10 +347,11 @@ class TestNodeComputeContractToInput:
     def test_contract_to_input_extracts_metadata(
         self,
         node: NodeCompute[Any, Any],
+        mock_contract_factory: Callable[..., MagicMock],
     ) -> None:
         """Test _contract_to_input extracts metadata correctly."""
         metadata = {"custom_key": "custom_value", "priority": "high"}
-        mock_contract = _create_mock_contract(
+        mock_contract = mock_contract_factory(
             input_state={"data": "value"},
             metadata=metadata,
             algorithm=MagicMock(algorithm_type="default"),
@@ -323,9 +364,10 @@ class TestNodeComputeContractToInput:
     def test_contract_to_input_with_legacy_input_data(
         self,
         node: NodeCompute[Any, Any],
+        mock_contract_factory: Callable[..., MagicMock],
     ) -> None:
         """Test _contract_to_input falls back to input_data when input_state is None."""
-        mock_contract = _create_mock_contract(
+        mock_contract = mock_contract_factory(
             input_state=None,
             input_data={"legacy": "data"},
         )
@@ -347,9 +389,10 @@ class TestNodeComputeContractToInput:
     def test_contract_to_input_missing_both_fields_raises_error(
         self,
         node: NodeCompute[Any, Any],
+        mock_contract_factory: Callable[..., MagicMock],
     ) -> None:
         """Test _contract_to_input raises error when both input_state and input_data are None."""
-        mock_contract = _create_mock_contract(
+        mock_contract = mock_contract_factory(
             input_state=None,
             input_data=None,
         )
@@ -375,12 +418,13 @@ class TestNodeComputeContractToInput:
     def test_contract_to_input_computation_type_from_algorithm(
         self,
         node: NodeCompute[Any, Any],
+        mock_contract_factory: Callable[..., MagicMock],
     ) -> None:
         """Test computation_type is extracted from algorithm.algorithm_type."""
         mock_algorithm = MagicMock()
         mock_algorithm.algorithm_type = "string_uppercase"
 
-        mock_contract = _create_mock_contract(
+        mock_contract = mock_contract_factory(
             input_state={"data": "value"},
             algorithm=mock_algorithm,
         )
@@ -751,3 +795,214 @@ class TestNodeComputeExecuteComputeIntegration:
 
         assert result.computation_type == "double_values"
         assert result.result == [2, 4, 6]
+
+
+@pytest.mark.unit
+class TestNodeComputeEdgeCases:
+    """Edge case tests for NodeCompute execution scenarios."""
+
+    @pytest.mark.asyncio
+    async def test_execute_compute_with_empty_list_input_state(
+        self,
+        node: NodeCompute[Any, Any],
+    ) -> None:
+        """Test execute_compute handles empty list input_state correctly.
+
+        Verifies that an empty list is a valid input_state value and
+        passes through to the computation without raising validation errors.
+        The default computation should return the empty list unchanged.
+        """
+        mock_contract = MagicMock(spec=ModelContractCompute)
+        mock_contract.input_state = []
+        mock_contract.metadata = {}
+        mock_contract.algorithm = MagicMock()
+        mock_contract.algorithm.algorithm_type = "default"
+
+        result = await node.execute_compute(mock_contract)
+
+        assert isinstance(result, ModelComputeOutput)
+        assert result.computation_type == "default"
+        assert result.result == []
+        assert result.cache_hit is False
+
+    @pytest.mark.asyncio
+    async def test_execute_compute_with_empty_dict_input_state(
+        self,
+        node: NodeCompute[Any, Any],
+    ) -> None:
+        """Test execute_compute handles empty dict input_state correctly.
+
+        Verifies that an empty dict is a valid input_state value and
+        passes through to the computation without raising validation errors.
+        The default computation should return the empty dict unchanged.
+        """
+        mock_contract = MagicMock(spec=ModelContractCompute)
+        mock_contract.input_state = {}
+        mock_contract.metadata = {}
+        mock_contract.algorithm = MagicMock()
+        mock_contract.algorithm.algorithm_type = "default"
+
+        result = await node.execute_compute(mock_contract)
+
+        assert isinstance(result, ModelComputeOutput)
+        assert result.computation_type == "default"
+        assert result.result == {}
+        assert result.cache_hit is False
+
+    @pytest.mark.asyncio
+    async def test_execute_compute_parallel_warning_single_value(
+        self,
+        node: NodeCompute[Any, Any],
+    ) -> None:
+        """Test that parallel execution with non-parallelizable data triggers warning.
+
+        When parallel_enabled=True but data is a single string (not list/tuple
+        with >1 element), a WARNING should be logged indicating that parallel
+        execution was requested but data is not parallelizable, and sequential
+        execution is used instead.
+        """
+        mock_contract = MagicMock(spec=ModelContractCompute)
+        mock_contract.input_state = "single string value"
+        mock_contract.metadata = {"parallel_enabled": True}
+        mock_contract.algorithm = MagicMock()
+        mock_contract.algorithm.algorithm_type = "default"
+
+        with patch("omnibase_core.nodes.node_compute.emit_log_event") as mock_log:
+            result = await node.execute_compute(mock_contract)
+
+            # Verify result is correct (computation still works)
+            assert isinstance(result, ModelComputeOutput)
+            assert result.result == "single string value"
+            assert result.parallel_execution_used is False
+
+            # Find the WARNING call about parallel execution
+            warning_calls = [
+                call
+                for call in mock_log.call_args_list
+                if "WARNING" in str(call[0][0]) and "parallel" in call[0][1].lower()
+            ]
+            assert len(warning_calls) >= 1, (
+                "Expected WARNING log about parallel execution not being supported"
+            )
+
+            # Verify warning message content
+            warning_call = warning_calls[0]
+            warning_message = warning_call[0][1]
+            assert "not parallelizable" in warning_message.lower()
+            assert "sequential" in warning_message.lower()
+
+    @pytest.mark.asyncio
+    async def test_execute_compute_parallel_warning_single_element_list(
+        self,
+        node: NodeCompute[Any, Any],
+    ) -> None:
+        """Test parallel warning when list has only 1 element.
+
+        When parallel_enabled=True but data is a list with only 1 element,
+        a WARNING should be logged since parallel execution requires >1 element
+        to distribute work across threads.
+        """
+        mock_contract = MagicMock(spec=ModelContractCompute)
+        mock_contract.input_state = ["single_element"]
+        mock_contract.metadata = {"parallel_enabled": True}
+        mock_contract.algorithm = MagicMock()
+        mock_contract.algorithm.algorithm_type = "default"
+
+        with patch("omnibase_core.nodes.node_compute.emit_log_event") as mock_log:
+            result = await node.execute_compute(mock_contract)
+
+            # Verify result is correct
+            assert isinstance(result, ModelComputeOutput)
+            assert result.result == ["single_element"]
+            assert result.parallel_execution_used is False
+
+            # Find the WARNING call about parallel execution
+            warning_calls = [
+                call
+                for call in mock_log.call_args_list
+                if "WARNING" in str(call[0][0]) and "parallel" in call[0][1].lower()
+            ]
+            assert len(warning_calls) >= 1, (
+                "Expected WARNING log when parallel requested with single-element list"
+            )
+
+    @pytest.mark.asyncio
+    async def test_execute_compute_with_none_algorithm_type(
+        self,
+        node: NodeCompute[Any, Any],
+    ) -> None:
+        """Test fallback when algorithm exists but algorithm_type is None.
+
+        When contract has an algorithm object but algorithm.algorithm_type is None,
+        the computation_type should fall back to metadata['computation_type'],
+        then to contract.computation_type, then to 'default'.
+
+        This test verifies the fallback chain works correctly when the primary
+        source (algorithm.algorithm_type) is explicitly None.
+        """
+        # Case 1: Falls back to metadata
+        mock_contract = MagicMock(spec=ModelContractCompute)
+        mock_contract.input_state = {"test": "data"}
+        mock_contract.metadata = {"computation_type": "metadata_fallback"}
+        mock_contract.algorithm = MagicMock()
+        mock_contract.algorithm.algorithm_type = None  # Explicitly None
+        mock_contract.computation_type = "attribute_fallback"
+
+        # Register the custom computation type
+        node.register_computation("metadata_fallback", lambda data: data)
+
+        result = await node.execute_compute(mock_contract)
+
+        assert isinstance(result, ModelComputeOutput)
+        # Should use metadata computation_type since algorithm_type is None
+        assert result.computation_type == "metadata_fallback"
+        assert result.result == {"test": "data"}
+
+    @pytest.mark.asyncio
+    async def test_execute_compute_with_none_algorithm_type_uses_contract_attribute(
+        self,
+        node: NodeCompute[Any, Any],
+    ) -> None:
+        """Test fallback to contract.computation_type when algorithm_type is None.
+
+        When both algorithm.algorithm_type and metadata['computation_type'] are
+        unavailable, should fall back to contract.computation_type attribute.
+        """
+        mock_contract = MagicMock(spec=ModelContractCompute)
+        mock_contract.input_state = {"test": "data"}
+        mock_contract.metadata = {}  # No computation_type in metadata
+        mock_contract.algorithm = MagicMock()
+        mock_contract.algorithm.algorithm_type = None  # Explicitly None
+        mock_contract.computation_type = "attribute_computation"
+
+        # Register the custom computation type
+        node.register_computation("attribute_computation", lambda data: data)
+
+        result = await node.execute_compute(mock_contract)
+
+        assert isinstance(result, ModelComputeOutput)
+        assert result.computation_type == "attribute_computation"
+
+    @pytest.mark.asyncio
+    async def test_execute_compute_with_none_algorithm_type_defaults(
+        self,
+        node: NodeCompute[Any, Any],
+    ) -> None:
+        """Test defaults to 'default' when all computation_type sources are None.
+
+        When algorithm.algorithm_type is None, metadata has no computation_type,
+        and contract.computation_type is None, should default to 'default'.
+        """
+        mock_contract = MagicMock(spec=ModelContractCompute)
+        mock_contract.input_state = {"test": "data"}
+        mock_contract.metadata = {}  # No computation_type
+        mock_contract.algorithm = MagicMock()
+        mock_contract.algorithm.algorithm_type = None
+        mock_contract.computation_type = None
+
+        result = await node.execute_compute(mock_contract)
+
+        assert isinstance(result, ModelComputeOutput)
+        assert result.computation_type == "default"
+        # Default computation returns input unchanged
+        assert result.result == {"test": "data"}

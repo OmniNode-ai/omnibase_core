@@ -163,7 +163,11 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             - ``enable_stats``: Enable hit/miss tracking (default: True)
 
         **Cache Implications**:
-            - **Cache Hits**: Return cached result with ``processing_time_ms=0.0``
+            - **Cache Hits**: Return cached result with ``processing_time_ms=0.0``.
+              This value represents *semantic computation time* (no actual computation
+              work was performed), not total elapsed time. Cache lookup overhead
+              (SHA256 hashing, dictionary access) is intentionally excluded to
+              distinguish "work done" from "time elapsed".
             - **Cache Misses**: Execute computation, cache result if ``cache_enabled=True``
             - **String Serialization**: Input data is converted to string for hashing;
               complex objects should implement consistent ``__str__`` methods
@@ -337,26 +341,32 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         compute_input = self._contract_to_input(contract)
         return await self.process(compute_input)
 
-    def _extract_computation_type(self, contract: Any, metadata: dict[str, Any]) -> str:
+    def _extract_computation_type(
+        self,
+        metadata: dict[str, Any],
+        contract_algorithm: Any,
+        contract_computation_type: Any,
+    ) -> str:
         """
-        Extract computation type from contract or metadata with fallback chain.
+        Extract computation type from cached contract attributes or metadata.
 
         Uses a priority-based extraction strategy to find the computation type
         from various locations in the contract structure, supporting both
         algorithm-based contracts and metadata-based configurations.
 
         Priority order:
-            1. contract.algorithm.algorithm_type (preferred for ModelContractCompute)
+            1. contract_algorithm.algorithm_type (preferred for ModelContractCompute)
             2. metadata["computation_type"] (for legacy or custom contracts)
-            3. contract.computation_type (direct attribute, if exists)
+            3. contract_computation_type (direct attribute, if exists)
             4. Default: "default" (identity transformation)
 
         Args:
-            contract: The compute contract. Expected to be ModelContractCompute
-                or compatible object with optional algorithm and computation_type
-                attributes.
             metadata: Extracted metadata dictionary, may contain "computation_type"
                 key as an alternative source.
+            contract_algorithm: Pre-cached algorithm attribute from contract (or None).
+                Expected to have an optional algorithm_type attribute.
+            contract_computation_type: Pre-cached computation_type attribute from
+                contract (or None).
 
         Returns:
             str: The computation type identifier to use for looking up the
@@ -366,14 +376,14 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         Example:
             >>> # Contract with algorithm configuration (preferred)
             >>> contract.algorithm.algorithm_type = "sum_numbers"
-            >>> _extract_computation_type(contract, {})  # Returns "sum_numbers"
+            >>> _extract_computation_type({}, contract.algorithm, None)
+            "sum_numbers"
 
             >>> # Contract with metadata-based type
-            >>> _extract_computation_type(contract, {"computation_type": "custom"})
-            "custom"  # Only if algorithm.algorithm_type not set
+            >>> _extract_computation_type({"computation_type": "custom"}, None, None)
+            "custom"
         """
         # Check algorithm configuration first (preferred for ModelContractCompute)
-        contract_algorithm = getattr(contract, "algorithm", None)
         if contract_algorithm is not None:
             algorithm_type = getattr(contract_algorithm, "algorithm_type", None)
             if algorithm_type is not None:
@@ -383,8 +393,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         if "computation_type" in metadata:
             return str(metadata["computation_type"])
 
-        # Check contract attribute
-        contract_computation_type = getattr(contract, "computation_type", None)
+        # Check contract attribute (pre-cached value)
         if contract_computation_type is not None:
             return str(contract_computation_type)
 
@@ -454,6 +463,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         contract_input_state = getattr(contract, "input_state", None)
         contract_input_data = getattr(contract, "input_data", None)
         contract_metadata = getattr(contract, "metadata", None)
+        contract_algorithm = getattr(contract, "algorithm", None)
+        contract_computation_type = getattr(contract, "computation_type", None)
 
         # Extract input_state from contract - this is the primary input data field
         # for ModelContractCompute (not input_data which is used in simpler contracts)
@@ -493,10 +504,14 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         # Use empty dict as default for falsy values (None, empty dict)
         metadata: dict[str, Any] = contract_metadata or {}
 
-        # Extract computation_type using helper method
-        computation_type = self._extract_computation_type(contract, metadata)
+        # Extract computation_type using helper method with cached contract attributes
+        computation_type = self._extract_computation_type(
+            metadata, contract_algorithm, contract_computation_type
+        )
 
         # Extract cache and parallel settings from metadata or use defaults
+        # NOTE: bool() coerces truthy/falsy values per Python semantics.
+        # Warning: string "false" coerces to True. Consumers should pass actual booleans.
         cache_enabled: bool = bool(metadata.get("cache_enabled", True))
         parallel_enabled: bool = bool(metadata.get("parallel_enabled", False))
 
