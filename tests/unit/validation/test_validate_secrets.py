@@ -6,6 +6,18 @@ Tests secret detection for:
 - Environment variable usage validation
 - Bypass comment handling
 - Various secret pattern detection
+
+SECURITY NOTE:
+This test file intentionally contains realistic-looking secrets (JWT tokens, API keys,
+passwords, connection strings) as test fixtures. These are NOT real credentials - they
+are synthetic test data used to verify that the secret validator correctly detects
+secret patterns. The test tokens are either:
+1. Publicly known test tokens from documentation (e.g., jwt.io example tokens)
+2. Synthetic patterns that match secret formats but contain no actual secrets
+3. Invalid signatures that cannot be used for authentication
+
+Do NOT replace these with obviously fake values - the validator needs realistic
+patterns to test its detection capabilities.
 """
 
 import importlib.util

@@ -229,7 +229,7 @@ class ModelEffectTransactionConfig(BaseModel):
     Transaction boundary configuration for database operations.
 
     WARNING: Only applicable to DB handler type. Using transaction config
-    with non-DB handlers will be ignored.
+    with non-DB handlers will raise a validation error when enabled=True.
 
     Provides ACID transaction semantics for database operations with
     configurable isolation levels and rollback behavior.

@@ -92,7 +92,7 @@ Template variables allow arbitrary field access from input data. Without proper 
 
 #### Secure Template Patterns
 
-**1. Limit Field Extraction Depth**
+#### 1. Limit Field Extraction Depth
 
 The `_extract_field()` function should enforce a maximum depth limit:
 
@@ -108,7 +108,7 @@ def _extract_field(data: dict, path: str) -> Any:
     # ... extraction logic
 ```
 
-**2. Whitelist Allowed Fields**
+#### 2. Whitelist Allowed Fields
 
 Define explicit allowed fields in contracts rather than allowing arbitrary access:
 
@@ -133,7 +133,7 @@ body_template: |
   }
 ```
 
-**3. Validate Field Names**
+#### 3. Validate Field Names
 
 Reject field names with suspicious patterns:
 
@@ -147,7 +147,7 @@ def validate_field_name(field_name: str) -> bool:
     return bool(SAFE_FIELD_PATTERN.match(field_name))
 ```
 
-**4. Sanitize Template Output**
+#### 4. Sanitize Template Output
 
 For templates generating JSON, HTML, or SQL, sanitize the substituted values:
 
@@ -203,8 +203,8 @@ When creating or modifying example contracts, follow these guidelines:
 #### JWT Tokens and API Keys
 
 ```yaml
-# INSECURE - Realistic-looking token
-auth_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0..."
+# INSECURE - Hardcoded token (even if it looks fake, don't do this)
+auth_token: "EXAMPLE_TOKEN_DO_NOT_USE_IN_PRODUCTION"
 
 # SECURE - Obviously placeholder token
 auth_token: "${input.auth_token}"  # Retrieved from secure storage

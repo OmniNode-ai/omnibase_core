@@ -564,35 +564,35 @@ class TestExtractField:
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
         unsafe_paths = [
-            "eval()",           # Parentheses not allowed
-            "foo;bar",          # Semicolon not allowed
-            "path/../etc",      # Path traversal via ../
-            "a[0]",             # Brackets not allowed
-            "${var}",           # Template syntax not allowed
-            "foo bar",          # Spaces not allowed
-            "foo\nbar",         # Newlines not allowed
-            "foo\tbar",         # Tabs not allowed
-            "foo|bar",          # Pipe not allowed
-            "foo&bar",          # Ampersand not allowed
-            "foo>bar",          # Greater than not allowed
-            "foo<bar",          # Less than not allowed
-            'foo"bar',          # Quotes not allowed
-            "foo'bar",          # Single quotes not allowed
-            "foo`bar",          # Backticks not allowed
-            "foo!bar",          # Exclamation not allowed
-            "foo@bar",          # At symbol not allowed
-            "foo#bar",          # Hash not allowed
-            "foo%bar",          # Percent not allowed
-            "foo^bar",          # Caret not allowed
-            "foo*bar",          # Asterisk not allowed
-            "foo+bar",          # Plus not allowed
-            "foo=bar",          # Equals not allowed
-            "foo~bar",          # Tilde not allowed
-            "foo\\bar",         # Backslash not allowed
-            "foo/bar",          # Forward slash not allowed
-            "foo:bar",          # Colon not allowed
-            "foo?bar",          # Question mark not allowed
-            "foo,bar",          # Comma not allowed
+            "eval()",  # Parentheses not allowed
+            "foo;bar",  # Semicolon not allowed
+            "path/../etc",  # Path traversal via ../
+            "a[0]",  # Brackets not allowed
+            "${var}",  # Template syntax not allowed
+            "foo bar",  # Spaces not allowed
+            "foo\nbar",  # Newlines not allowed
+            "foo\tbar",  # Tabs not allowed
+            "foo|bar",  # Pipe not allowed
+            "foo&bar",  # Ampersand not allowed
+            "foo>bar",  # Greater than not allowed
+            "foo<bar",  # Less than not allowed
+            'foo"bar',  # Quotes not allowed
+            "foo'bar",  # Single quotes not allowed
+            "foo`bar",  # Backticks not allowed
+            "foo!bar",  # Exclamation not allowed
+            "foo@bar",  # At symbol not allowed
+            "foo#bar",  # Hash not allowed
+            "foo%bar",  # Percent not allowed
+            "foo^bar",  # Caret not allowed
+            "foo*bar",  # Asterisk not allowed
+            "foo+bar",  # Plus not allowed
+            "foo=bar",  # Equals not allowed
+            "foo~bar",  # Tilde not allowed
+            "foo\\bar",  # Backslash not allowed
+            "foo/bar",  # Forward slash not allowed
+            "foo:bar",  # Colon not allowed
+            "foo?bar",  # Question mark not allowed
+            "foo,bar",  # Comma not allowed
         ]
         data = {"foo": {"bar": "value"}}
 
@@ -1645,22 +1645,46 @@ class TestMixinEffectExecutionIntegration:
 
 
 class TestTimeoutBehavior:
-    """Test timeout behavior in effect execution."""
+    """Test timeout behavior in effect execution.
+
+    Timeout Behavior Note:
+        The operation_timeout_ms is checked at the START of each retry attempt,
+        not during handler execution. This means:
+        - First attempt: timeout check at t=0ms usually passes
+        - Handler executes (may take longer than timeout)
+        - If handler fails and retry is enabled, timeout checked before next attempt
+        - Timeout triggers if elapsed >= operation_timeout_ms at retry loop start
+
+        This design is intentional - it guards against cumulative retry time
+        exceeding limits, not individual operation duration. Handler-level
+        timeouts should be set via io_config.timeout_ms for per-operation limits.
+    """
 
     @pytest.mark.asyncio
-    async def test_operation_timeout_exceeded(
+    async def test_operation_timeout_exceeded_on_retry(
         self, test_node: TestNode, mock_container: MockContainer
     ) -> None:
-        """Test that operation timeout triggers appropriate error."""
+        """Test that operation timeout triggers on retry attempt.
+
+        The timeout check occurs at the START of each retry attempt. To properly
+        exercise this path, we need:
+        1. First attempt to fail (to trigger a retry)
+        2. Enough time to elapse that the second attempt hits timeout
+
+        This test uses a handler that fails with a delay, ensuring the timeout
+        check on the retry attempt finds elapsed_ms >= operation_timeout_ms.
+        """
         import asyncio
 
-        # Register mock handler that takes too long
-        async def slow_handler(context: Any) -> dict[str, Any]:
-            await asyncio.sleep(0.2)  # 200ms
-            return {"status": "ok"}
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        # Handler that fails after a delay (simulating slow network failure)
+        async def slow_failing_handler(context: Any) -> dict[str, Any]:
+            await asyncio.sleep(0.05)  # 50ms
+            raise ValueError("Simulated failure after delay")
 
         mock_handler = AsyncMock()
-        mock_handler.execute = slow_handler
+        mock_handler.execute = slow_failing_handler
         mock_container.register_service("ProtocolEffectHandler_HTTP", mock_handler)
 
         input_data = ModelEffectInput(
@@ -1673,22 +1697,24 @@ class TestTimeoutBehavior:
                             "url_template": "https://api.example.com/test",
                             "method": "GET",
                         },
-                        "operation_timeout_ms": 1,  # 1ms - will timeout
+                        # 30ms timeout - first attempt takes 50ms, so retry check fails
+                        "operation_timeout_ms": 30,
                     }
                 ]
             },
             retry_enabled=True,
-            max_retries=0,  # No retries
+            max_retries=3,  # Enable retries so timeout is checked on retry
+            retry_delay_ms=1,  # Minimal delay
             circuit_breaker_enabled=False,
         )
 
-        # This may or may not timeout depending on how fast the mock executes
-        # The key is testing the timeout path exists
-        try:
+        # Should raise timeout error when attempting retry after first failure
+        with pytest.raises(ModelOnexError) as exc_info:
             await test_node.execute_effect(input_data)
-        except ModelOnexError as e:
-            # Expected - either timeout or handler completed before check
-            pass
+
+        # Verify it's actually a timeout error, not the handler's ValueError
+        assert exc_info.value.error_code == EnumCoreErrorCode.TIMEOUT_EXCEEDED
+        assert "timeout" in exc_info.value.message.lower()
 
 
 class TestEdgeCases:

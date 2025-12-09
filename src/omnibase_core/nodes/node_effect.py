@@ -70,6 +70,12 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
           operation_name: user_api_effect
           operation_version: "1.0.0"
           description: "Create user via REST API"
+          # execution_order controls the sequence of operation execution:
+          #   - forward: Execute operations in defined order (normal workflow)
+          #   - reverse: Execute in reverse order (compensation/rollback)
+          #   - parallel: Execute concurrently where possible (v2.0+)
+          # Note: v1.0 only supports single-operation effects; execution_order
+          # becomes relevant for multi-operation effects in v2.0+.
           execution_order: forward
 
           default_retry_policy:

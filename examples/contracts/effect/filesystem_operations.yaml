@@ -54,14 +54,21 @@ node_type: effect
 # ---------------------------------------------------------------------------
 
 effect_operations:
-  version: "1.0.0"
+  # Schema version for forward compatibility - must use dict format for ModelSemVer
+  version: {major: 1, minor: 0, patch: 0}
+
+  # Unique operation set name (required by ModelEffectSubcontract)
+  operation_name: "filesystem_operations_effect"
+
+  # Operation implementation version
+  operation_version: {major: 1, minor: 0, patch: 0}
 
   # Execute operations sequentially for proper dependency handling
-  # Example: Create directory → Write file → Read file
-  execution_mode: sequential_abort
+  # Example: Create directory -> Write file -> Read file
+  execution_order: forward
 
-  # Total timeout for all filesystem operations
-  operation_timeout_ms: 30000
+  # NOTE: Timeouts are configured per-operation in the io_config.timeout_ms field
+  # There is no global operation_timeout_ms in ModelEffectSubcontract
 
   # ---------------------------------------------------------------------------
   # OPERATIONS: Sequential list of filesystem operations
@@ -125,16 +132,15 @@ effect_operations:
           created: "$.created"
           # Directory metadata
           permissions: "$.permissions"
+        fail_on_empty: false
+        extraction_engine: jsonpath
 
-        store_full_response: true
-
+      # Observability configuration matching ModelEffectObservability schema
       observability:
-        log_operations: true
-        log_paths: true
+        log_request: true
+        log_response: true
         emit_metrics: true
-        metric_labels:
-          operation: "create_user_directory"
-          operation_type: "CREATE_DIRECTORY"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 2: WRITE FILE (Atomic Write)
@@ -192,17 +198,15 @@ effect_operations:
           created: "$.created"
           overwritten: "$.overwritten"
           backup_path: "$.backup_path"
+        fail_on_empty: false
+        extraction_engine: jsonpath
 
-        store_full_response: true
-
+      # Observability configuration matching ModelEffectObservability schema
       observability:
-        log_operations: true
-        log_paths: true
-        log_content: false  # Don't log file content
+        log_request: true
+        log_response: false  # Don't log file content
         emit_metrics: true
-        metric_labels:
-          operation: "write_document"
-          operation_type: "WRITE"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 3: READ FILE
@@ -255,17 +259,15 @@ effect_operations:
           checksum: "$.checksum"
           encoding: "$.encoding"
           modified_at: "$.modified_at"
+        fail_on_empty: false
+        extraction_engine: jsonpath
 
-        store_full_response: true
-
+      # Observability configuration matching ModelEffectObservability schema
       observability:
-        log_operations: true
-        log_paths: true
-        log_content: false  # Don't log file content
+        log_request: true
+        log_response: false  # Don't log file content
         emit_metrics: true
-        metric_labels:
-          operation: "read_document"
-          operation_type: "READ"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 4: MOVE FILE
@@ -319,16 +321,15 @@ effect_operations:
           destination_path: "$.destination_path"
           renamed: "$.renamed"
           final_path: "$.final_path"
+        fail_on_empty: false
+        extraction_engine: jsonpath
 
-        store_full_response: true
-
+      # Observability configuration matching ModelEffectObservability schema
       observability:
-        log_operations: true
-        log_paths: true
+        log_request: true
+        log_response: true
         emit_metrics: true
-        metric_labels:
-          operation: "archive_document"
-          operation_type: "MOVE"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 5: LIST DIRECTORY
@@ -380,18 +381,15 @@ effect_operations:
           directory_path: "$.directory_path"
           file_count: "$.file_count"
           total_size_bytes: "$.total_size_bytes"
-          # files is an array of file metadata objects
-          files: "$.files"
+        fail_on_empty: false
+        extraction_engine: jsonpath
 
-        store_full_response: true
-
+      # Observability configuration matching ModelEffectObservability schema
       observability:
-        log_operations: true
-        log_paths: true
+        log_request: true
+        log_response: true
         emit_metrics: true
-        metric_labels:
-          operation: "list_user_documents"
-          operation_type: "LIST"
+        trace_propagation: true
 
     # =========================================================================
     # OPERATION 6: DELETE FILE
@@ -442,16 +440,15 @@ effect_operations:
           deleted: "$.deleted"
           moved_to_trash: "$.moved_to_trash"
           trash_path: "$.trash_path"
+        fail_on_empty: false
+        extraction_engine: jsonpath
 
-        store_full_response: true
-
+      # Observability configuration matching ModelEffectObservability schema
       observability:
-        log_operations: true
-        log_paths: true
+        log_request: true
+        log_response: true
         emit_metrics: true
-        metric_labels:
-          operation: "delete_document"
-          operation_type: "DELETE"
+        trace_propagation: true
 
 # ---------------------------------------------------------------------------
 # EXAMPLE INPUT/OUTPUT

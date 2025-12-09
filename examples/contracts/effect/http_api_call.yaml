@@ -56,27 +56,26 @@ node_type: effect
 # like APIs, databases, message queues, or filesystems.
 
 effect_operations:
-  # Schema version for forward compatibility
-  version:
-    major: 1
-    minor: 0
-    patch: 0
+  # Schema version for forward compatibility - must use dict format for ModelSemVer
+  version: {major: 1, minor: 0, patch: 0}
 
-  # Execution mode: how operations are executed
-  # - sequential_abort: Execute in order, abort on first failure
-  # - sequential_continue: Execute in order, continue on failures
-  # - concurrent: Execute all operations in parallel
-  execution_mode: sequential_abort
+  # Unique operation set name (required by ModelEffectSubcontract)
+  operation_name: "http_api_call_effect"
 
-  # Operation-level timeout (milliseconds)
-  # Maximum time allowed for all operations combined
-  operation_timeout_ms: 30000
+  # Operation implementation version
+  operation_version: {major: 1, minor: 0, patch: 0}
+
+  # Execution order: how operations are executed
+  # - forward: Execute in order (first to last)
+  # - reverse: Execute in reverse order (last to first, for rollback)
+  # - parallel: Execute all operations concurrently
+  execution_order: forward
 
   # ---------------------------------------------------------------------------
   # OPERATIONS: Sequential list of I/O operations
   # ---------------------------------------------------------------------------
   # Each operation represents a single interaction with an external system.
-  # Operations are executed according to execution_mode.
+  # Operations are executed according to execution_order.
 
   operations:
     # =========================================================================
@@ -423,9 +422,10 @@ effect_operations:
 # ---------------------------------------------------------------------------
 # How to use this contract with NodeEffect:
 #
+# import os
+# import yaml
 # from omnibase_core.nodes import NodeEffect
 # from omnibase_core.models import ModelEffectInput
-# import yaml
 #
 # # Load contract
 # with open("http_api_call.yaml") as f:

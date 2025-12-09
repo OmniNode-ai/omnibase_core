@@ -52,13 +52,20 @@ node_type: effect
 # ---------------------------------------------------------------------------
 
 effect_operations:
-  version: "1.0.0"
+  # Schema version for forward compatibility - must use dict format for ModelSemVer
+  version: {major: 1, minor: 0, patch: 0}
+
+  # Unique operation set name (required by ModelEffectSubcontract)
+  operation_name: "db_query_effect"
+
+  # Operation implementation version
+  operation_version: {major: 1, minor: 0, patch: 0}
 
   # Execute operations sequentially with transaction semantics
-  execution_mode: sequential_abort
+  execution_order: forward
 
-  # Total timeout for all database operations
-  operation_timeout_ms: 30000
+  # NOTE: Timeouts are configured per-operation in the io_config.timeout_ms field
+  # There is no global operation_timeout_ms in ModelEffectSubcontract
 
   # ---------------------------------------------------------------------------
   # OPERATIONS: Sequential list of database operations
@@ -142,7 +149,7 @@ effect_operations:
           status: "$.status"
           version: "$.version"
 
-        # Fail if query returns no rows
+        # Don't fail if query returns no rows (user may not exist)
         fail_on_empty: false
 
         # Extraction engine for path-based extraction

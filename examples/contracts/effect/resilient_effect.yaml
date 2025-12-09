@@ -60,55 +60,38 @@ node_type: effect
 # ---------------------------------------------------------------------------
 
 effect_operations:
-  version: "1.0.0"
+  # Schema version for forward compatibility - must use dict format for ModelSemVer
+  version: {major: 1, minor: 0, patch: 0}
+
+  # Unique operation set name (required by ModelEffectSubcontract)
+  operation_name: "resilient_payment_effect"
+
+  # Operation implementation version
+  operation_version: {major: 1, minor: 0, patch: 0}
 
   # Sequential execution with abort-on-failure for payment consistency
-  execution_mode: sequential_abort
+  execution_order: forward
 
-  # Global timeout for entire operation chain
-  operation_timeout_ms: 60000
-
-  # Global circuit breaker configuration (shared across operations)
-  global_circuit_breaker:
+  # Default circuit breaker configuration for all operations
+  # Operations can override this at the operation level
+  default_circuit_breaker:
     enabled: true
-
-    # Failure threshold: open circuit after N failures
     failure_threshold: 5
-
-    # Success threshold: close circuit after N successes in half-open state
     success_threshold: 2
-
-    # Open state timeout: how long to wait before trying again (milliseconds)
     timeout_ms: 30000
+    half_open_requests: 2
 
-    # Half-open state: allow limited requests to test recovery
-    half_open_max_requests: 2
-
-    # Count only consecutive failures (vs. total failures in window)
-    count_consecutive_failures: true
-
-    # Failure window: time window for counting failures (milliseconds)
-    failure_window_ms: 60000
-
-    # Error types that should trip circuit breaker
-    trip_on_errors:
-      - TIMEOUT
-      - CONNECTION_ERROR
-      - INTERNAL_SERVER_ERROR
-      - SERVICE_UNAVAILABLE
-
-  # Global rate limiting (optional)
-  global_rate_limit:
-    enabled: true
-
-    # Maximum requests per second
-    max_requests_per_second: 100
-
-    # Burst capacity (allow brief spikes)
-    burst_capacity: 150
-
-    # Rate limit strategy: token_bucket, fixed_window, sliding_window
-    strategy: token_bucket
+  # NOTE: The following fields are documented but NOT part of the current
+  # ModelEffectSubcontract schema. They are included as comments for
+  # future reference when implementing these features:
+  #
+  # operation_timeout_ms: 60000  # Global timeout for entire operation chain
+  #
+  # global_rate_limit:  # Rate limiting is not yet supported at subcontract level
+  #   enabled: true
+  #   max_requests_per_second: 100
+  #   burst_capacity: 150
+  #   strategy: token_bucket
 
   # ---------------------------------------------------------------------------
   # OPERATIONS: Resilient payment processing operations

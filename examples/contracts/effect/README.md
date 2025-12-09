@@ -263,13 +263,17 @@ All effect contracts follow this structure:
 
 ```yaml
 effect_operations:
-  version: "1.0.0"
+  # Schema version (ModelSemVer format)
+  version: {major: 1, minor: 0, patch: 0}
 
-  # How operations are executed
-  execution_mode: sequential_abort  # or sequential_continue, concurrent
+  # Required: Unique operation set name
+  operation_name: "example_effect"
 
-  # Global timeout for all operations
-  operation_timeout_ms: 30000
+  # Operation implementation version
+  operation_version: {major: 1, minor: 0, patch: 0}
+
+  # How operations are executed (EnumExecutionOrder)
+  execution_order: forward  # or reverse, parallel
 
   operations:
     - operation_name: example_operation

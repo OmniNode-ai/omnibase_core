@@ -54,14 +54,22 @@ node_type: effect
 # ---------------------------------------------------------------------------
 
 effect_operations:
-  version: "1.0.0"
+  # Schema version for forward compatibility - must use dict format for ModelSemVer
+  version: {major: 1, minor: 0, patch: 0}
+
+  # Unique operation set name (required by ModelEffectSubcontract)
+  operation_name: "kafka_produce_effect"
+
+  # Operation implementation version
+  operation_version: {major: 1, minor: 0, patch: 0}
 
   # Concurrent execution for independent message publishing
   # Each operation publishes to a different topic
-  execution_mode: concurrent
+  # NOTE: Using 'parallel' which is the valid EnumExecutionOrder value
+  execution_order: parallel
 
-  # Total timeout for all Kafka operations
-  operation_timeout_ms: 30000
+  # NOTE: Timeouts are configured per-operation in the io_config.timeout_ms field
+  # There is no global operation_timeout_ms in ModelEffectSubcontract
 
   # ---------------------------------------------------------------------------
   # OPERATIONS: Kafka message production operations
