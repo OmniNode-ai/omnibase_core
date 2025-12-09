@@ -231,10 +231,20 @@ class OptionalUsageAuditor:
             and not has_field_justification
         )
 
+        # Get relative path for display, fallback to absolute if not under base_path
+        try:
+            display_path = str(file_path.relative_to(self.base_path))
+        except ValueError:
+            # File is not under base_path, use path relative to cwd or absolute
+            try:
+                display_path = str(file_path.relative_to(Path.cwd()))
+            except ValueError:
+                display_path = str(file_path)
+
         if needs_justification:
             self.violations.append(
                 OptionalViolation(
-                    file_path=str(file_path.relative_to(self.base_path)),
+                    file_path=display_path,
                     line_number=line_num,
                     variable_name=var_name,
                     context=line_content.strip(),
@@ -257,7 +267,7 @@ class OptionalUsageAuditor:
 
             self.violations.append(
                 OptionalViolation(
-                    file_path=str(file_path.relative_to(self.base_path)),
+                    file_path=display_path,
                     line_number=line_num,
                     variable_name=var_name,
                     context=line_content.strip(),
@@ -377,7 +387,14 @@ class OptionalUsageAuditor:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Audit Optional type usage in omni* ecosystem"
+        description="Audit Optional type usage in omni* ecosystem",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+    python scripts/validation/audit_optional.py .                    # Audit entire repo
+    python scripts/validation/audit_optional.py src/omnibase_core    # Audit specific directory
+    python scripts/validation/audit_optional.py file1.py file2.py   # Audit specific files (pre-commit)
+        """,
     )
     parser.add_argument(
         "paths",

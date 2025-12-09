@@ -232,12 +232,12 @@ class PydanticPatternValidator:
         # If we can't determine context, assume it's Pydantic (safer for preventing regression)
         return True
 
-    def validate_project(self, src_dir: Path, allowed_errors: int = 0) -> bool:
+    def validate_files(self, files: list[Path], allowed_errors: int = 0) -> bool:
         """
-        Validate Pydantic patterns across the entire project.
+        Validate Pydantic patterns in specific files.
 
         Args:
-            src_dir: Source directory to scan
+            files: List of file paths to validate
             allowed_errors: Number of allowed errors before failing (default: 0)
 
         Returns:
@@ -247,9 +247,13 @@ class PydanticPatternValidator:
         print("=" * 55)
         print("📋 Preventing regression of legacy Pydantic v1 patterns")
 
-        # Find all Python files
-        python_files = list(src_dir.rglob("*.py"))
-        print(f"📁 Scanning {len(python_files)} Python files...")
+        # Filter to only Python files that exist
+        python_files = [f for f in files if f.suffix == ".py" and f.exists()]
+        print(f"📁 Scanning {len(python_files)} Python file(s)...")
+
+        if not python_files:
+            print("⚠️  No Python files to validate")
+            return True
 
         total_errors = 0
         total_warnings = 0
@@ -258,8 +262,7 @@ class PydanticPatternValidator:
         for py_file in python_files:
             findings = self.find_legacy_patterns_in_file(py_file)
             if findings:
-                relative_path = py_file.relative_to(src_dir.parent)
-                files_with_issues[str(relative_path)] = findings
+                files_with_issues[str(py_file)] = findings
 
                 # Count errors vs warnings
                 for pattern, _, _ in findings:
@@ -336,12 +339,12 @@ class PydanticPatternValidator:
 
         return success
 
-    def validate_files(self, files: list[Path], allowed_errors: int = 0) -> bool:
+    def validate_project(self, src_dir: Path, allowed_errors: int = 0) -> bool:
         """
-        Validate Pydantic patterns in specific files.
+        Validate Pydantic patterns across the entire project.
 
         Args:
-            files: List of file paths to validate
+            src_dir: Source directory to scan
             allowed_errors: Number of allowed errors before failing (default: 0)
 
         Returns:
@@ -351,14 +354,29 @@ class PydanticPatternValidator:
         print("=" * 55)
         print("📋 Preventing regression of legacy Pydantic v1 patterns")
 
-        # Filter to only Python files that exist
-        python_files = [f for f in files if f.suffix == ".py" and f.exists()]
-        print(f"📁 Scanning {len(python_files)} Python file(s)...")
+        # Find all Python files
+        python_files = list(src_dir.rglob("*.py"))
+        print(f"📁 Scanning {len(python_files)} Python files...")
 
-        if not python_files:
-            print("⚠️  No Python files to validate")
-            return True
+        return self._validate_files_internal(python_files, allowed_errors, src_dir)
 
+    def _validate_files_internal(
+        self,
+        python_files: list[Path],
+        allowed_errors: int = 0,
+        base_dir: Path | None = None,
+    ) -> bool:
+        """
+        Internal method to validate a list of Python files.
+
+        Args:
+            python_files: List of Python file paths to validate
+            allowed_errors: Number of allowed errors before failing
+            base_dir: Base directory for relative path display (optional)
+
+        Returns:
+            True if validation passes, False otherwise
+        """
         total_errors = 0
         total_warnings = 0
         files_with_issues: dict[str, list[tuple[LegacyPattern, int, str]]] = {}
@@ -366,7 +384,15 @@ class PydanticPatternValidator:
         for py_file in python_files:
             findings = self.find_legacy_patterns_in_file(py_file)
             if findings:
-                files_with_issues[str(py_file)] = findings
+                # Use relative path if base_dir provided, otherwise use file name
+                if base_dir:
+                    try:
+                        relative_path = py_file.relative_to(base_dir.parent)
+                    except ValueError:
+                        relative_path = py_file
+                else:
+                    relative_path = py_file
+                files_with_issues[str(relative_path)] = findings
 
                 # Count errors vs warnings
                 for pattern, _, _ in findings:

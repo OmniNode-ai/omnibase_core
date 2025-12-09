@@ -1368,15 +1368,12 @@ INVALID PATTERNS:
 
 The validator focuses on type safety and semantic coherence rather than arbitrary limits.
 
-USAGE:
-  # Scan entire src/ directory (default behavior)
-  python validate-union-usage.py src/
-
-  # Validate only specific files (for pre-commit)
-  python validate-union-usage.py file1.py file2.py file3.py
-
-  # Mix of options and files
-  python validate-union-usage.py --allow-invalid 5 file1.py file2.py
+Examples:
+    poetry run python scripts/validation/validate-union-usage.py                              # Check current directory
+    poetry run python scripts/validation/validate-union-usage.py src/                         # Check src directory
+    poetry run python scripts/validation/validate-union-usage.py --strict --show-statistics   # Strict mode with stats
+    poetry run python scripts/validation/validate-union-usage.py file1.py file2.py file3.py   # Check specific files (pre-commit)
+    poetry run python scripts/validation/validate-union-usage.py --allow-invalid 5 file1.py   # Mix options and files
         """,
     )
     parser.add_argument(
@@ -1417,6 +1414,13 @@ USAGE:
         python_files = [Path(f) for f in args.files if f.endswith(".py")]
         # Sort files for deterministic order
         python_files.sort(key=lambda p: str(p))
+        if not python_files:
+            # Files provided but none were Python files - inform user
+            print(
+                f"Info: Union validation: {len(args.files)} file(s) provided, "
+                "but none were Python files (.py)"
+            )
+            return 0
     else:
         # No files provided - fall back to scanning src/ directory
         base_path = Path("src")
