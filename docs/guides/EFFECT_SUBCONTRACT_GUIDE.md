@@ -72,6 +72,12 @@ EFFECT nodes handle all external I/O: API calls, database operations, message qu
 
 ## Core Concepts
 
+- [Discriminated Union IO Configs](#1-discriminated-union-io-configs)
+- [Idempotency Awareness](#2-idempotency-awareness)
+- [Execution Modes](#3-execution-modes)
+- [Template Variables](#4-template-variables)
+- [Transaction Isolation Levels](#5-transaction-isolation-levels)
+
 ### 1. Discriminated Union IO Configs
 
 Each operation uses a handler-specific IO config validated at contract load time:
@@ -115,6 +121,89 @@ Use `${input.*}` and `${env.*}` placeholders in templates:
 url_template="https://api.example.com/users/${input.user_id}"
 headers={"Authorization": "Bearer ${env.API_TOKEN}"}
 ```
+
+### 5. Transaction Isolation Levels
+
+When using `ModelEffectTransactionConfig`, the `isolation_level` field controls how transactions interact with concurrent operations. Choosing the right level is critical for both correctness and performance.
+
+#### Isolation Level Reference
+
+| Level | Use Case | Trade-off | SELECT Retry Allowed |
+|-------|----------|-----------|---------------------|
+| `read_committed` | Most operations, general CRUD workflows | May see committed changes mid-transaction (non-repeatable reads) | Yes |
+| `repeatable_read` | Snapshot consistency needed, reporting queries | Cannot retry SELECT operations; higher lock contention | No |
+| `serializable` | Strict ordering required, financial transactions | Performance impact, retry restrictions, highest lock contention | No |
+
+#### Detailed Guidance
+
+**`read_committed`** (Recommended Default)
+- Each statement sees only data committed before the statement began
+- Allows SELECT retry because each retry gets fresh, consistent data
+- Best for typical CRUD operations where snapshot consistency is not required
+- Lowest performance overhead
+
+```python
+# Good for most operations
+transaction=ModelEffectTransactionConfig(
+    enabled=True,
+    isolation_level="read_committed",  # Default, allows retry
+)
+```
+
+**`repeatable_read`**
+- Transaction sees a snapshot of data as of the transaction start
+- SELECT operations within the transaction always return the same result
+- Retry is forbidden because retrying would expect a new snapshot but operates on the original one
+- Use when you need consistent reads across multiple SELECT operations
+
+```python
+# Use for consistent snapshot reads
+transaction=ModelEffectTransactionConfig(
+    enabled=True,
+    isolation_level="repeatable_read",  # No SELECT retry allowed
+)
+```
+
+**`serializable`**
+- Strongest isolation: transactions execute as if they ran sequentially
+- Prevents phantom reads, non-repeatable reads, and dirty reads
+- Highest performance cost due to lock contention and potential serialization failures
+- Retry forbidden for SELECT operations (same reason as `repeatable_read`)
+- Use for financial transactions, inventory management, or strict ordering requirements
+
+```python
+# Use for critical financial operations
+transaction=ModelEffectTransactionConfig(
+    enabled=True,
+    isolation_level="serializable",  # Strictest, no SELECT retry
+)
+```
+
+#### SELECT Retry Restriction
+
+When using `repeatable_read` or `serializable` isolation, SELECT operations with retry enabled will be rejected by the `validate_select_retry_in_transaction` validator. This prevents subtle consistency bugs:
+
+```python
+# INVALID - Will raise validation error
+ModelEffectSubcontract(
+    operations=[
+        ModelEffectOperation(
+            operation_name="read_balance",
+            io_config=ModelDbIOConfig(operation="select", ...),
+            retry_policy=ModelEffectRetryPolicy(enabled=True),  # FAILS
+        ),
+    ],
+    transaction=ModelEffectTransactionConfig(
+        enabled=True,
+        isolation_level="repeatable_read",
+    ),
+)
+# Error: "Operation 'read_balance' is a SELECT with retry enabled inside a repeatable_read transaction"
+```
+
+**Why?** In snapshot-based isolation, the first SELECT establishes the transaction's view of data. If that SELECT fails and retries, the retry would reset internal state but continue using the original snapshot, leading to potential inconsistencies between what the retry "expects" and what the snapshot "provides."
+
+**Solution**: Either use `read_committed` (where each query sees fresh data), or disable retry for SELECT operations in snapshot-based transactions.
 
 ---
 
