@@ -126,7 +126,9 @@ class ModelEffectOperation(BaseModel):
                 # 'raw' operations default to non-idempotent for safety
                 if op_type == "RAW":
                     return False
-            case _:  # Defensive: unknown handler types
-                return True  # type: ignore[unreachable]  # Conservative default
+            case _:  # Defensive: unknown handler types default to non-idempotent
+                return False  # type: ignore[unreachable]  # Safety-first: prevent accidental retries of unknown operations
 
-        return defaults.get(op_type, True)
+        return defaults.get(
+            op_type, False
+        )  # Safety-first: unknown operations are non-idempotent
