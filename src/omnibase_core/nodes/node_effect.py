@@ -15,6 +15,7 @@ Author: ONEX Framework Team
 
 from uuid import UUID
 
+from omnibase_core.constants.constants_effect import DEFAULT_OPERATION_TIMEOUT_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumTransactionState
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -66,19 +67,16 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
             major: 1
             minor: 0
             patch: 0
-          operation_name: user_api_effect
-          operation_version: "1.0.0"
+          subcontract_name: user_api_effect
           description: "Create user via REST API"
-          # execution_order controls the sequence of operation execution:
-          #   - forward: Execute operations in defined order (normal workflow)
-          #   - reverse: Execute in reverse order (compensation/rollback)
-          #   - parallel: Execute concurrently where possible (v2.0+)
-          # Note: v1.0 only supports single-operation effects; execution_order
-          # becomes relevant for multi-operation effects in v2.0+.
-          execution_order: forward
+          # execution_mode controls failure handling behavior:
+          #   - sequential_abort: Stop on first failure, raise immediately (default)
+          #   - sequential_continue: Run all operations, report all outcomes
+          # Note: v1.0 only supports single-operation effects.
+          execution_mode: sequential_abort
 
           default_retry_policy:
-            max_attempts: 3
+            max_retries: 3
             backoff_strategy: exponential
             base_delay_ms: 1000
 
@@ -250,12 +248,12 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
             operations: list[dict[str, object]] = []
             for op in self.effect_subcontract.operations:
                 # Timeout fallback: use operation-specific timeout if defined,
-                # otherwise fall back to 30s as a safe default.
+                # otherwise fall back to DEFAULT_OPERATION_TIMEOUT_MS (30s).
                 # NOTE: We intentionally do NOT use max_delay_ms (max delay between
                 # retries) as a fallback because it has different semantics.
                 # For precise control, always set operation_timeout_ms explicitly
                 # in the operation definition.
-                timeout_ms = op.operation_timeout_ms or 30000
+                timeout_ms = op.operation_timeout_ms or DEFAULT_OPERATION_TIMEOUT_MS
 
                 # Merge operation-level overrides with subcontract defaults
                 # Operation retry_policy/circuit_breaker override subcontract defaults

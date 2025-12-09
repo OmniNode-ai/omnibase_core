@@ -57,16 +57,12 @@ effect_operations:
   # Schema version for forward compatibility - must use dict format for ModelSemVer
   version: {major: 1, minor: 0, patch: 0}
 
-  # Unique operation set name (required by ModelEffectSubcontract)
-  operation_name: "kafka_produce_effect"
+  # Unique subcontract name (required by ModelEffectSubcontract)
+  subcontract_name: "kafka_produce_effect"
 
-  # Operation implementation version
-  operation_version: {major: 1, minor: 0, patch: 0}
-
-  # Concurrent execution for independent message publishing
-  # Each operation publishes to a different topic
-  # NOTE: Using 'parallel' which is the valid EnumExecutionOrder value
-  execution_order: parallel
+  # Execution mode: sequential_continue to attempt all operations
+  # NOTE: v1.0 supports sequential execution only. Parallel is planned for v2.0.
+  execution_mode: sequential_continue
 
   # NOTE: Timeouts are configured per-operation in the io_config.timeout_ms field
   # There is no global operation_timeout_ms in ModelEffectSubcontract
@@ -90,6 +86,9 @@ effect_operations:
 
     - operation_name: publish_user_registration
       description: "Publishes user registration event to Kafka with acks=all"
+
+      # Mark as idempotent: we use idempotent producer and X-Idempotency-Key header
+      idempotent: true
 
       # I/O configuration for Kafka handler
       # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
@@ -171,11 +170,6 @@ effect_operations:
 
         extraction_engine: jsonpath
 
-      observability:
-        log_request: true
-        log_response: false  # Can be verbose
-        emit_metrics: true
-        trace_propagation: true
 
     # =========================================================================
     # OPERATION 2: PUBLISH USER ACTIVITY EVENT
@@ -191,6 +185,9 @@ effect_operations:
 
     - operation_name: publish_user_activity
       description: "Publishes user activity event for analytics"
+
+      # Mark as idempotent: activity events are deduplicated by consumer
+      idempotent: true
 
       # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
       io_config:
@@ -250,11 +247,6 @@ effect_operations:
 
         extraction_engine: jsonpath
 
-      observability:
-        log_request: false  # Too verbose for analytics
-        log_response: false
-        emit_metrics: true
-        trace_propagation: true
 
     # =========================================================================
     # OPERATION 3: PUBLISH AUDIT LOG EVENT
@@ -270,6 +262,9 @@ effect_operations:
 
     - operation_name: publish_audit_log
       description: "Publishes audit log event with guaranteed delivery"
+
+      # Mark as idempotent: we use idempotent producer for guaranteed delivery
+      idempotent: true
 
       # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
       io_config:
@@ -343,11 +338,6 @@ effect_operations:
 
         extraction_engine: jsonpath
 
-      observability:
-        log_request: true
-        log_response: false
-        emit_metrics: true
-        trace_propagation: true
 
 # ---------------------------------------------------------------------------
 # EXAMPLE INPUT/OUTPUT
@@ -412,9 +402,10 @@ effect_operations:
 # USAGE EXAMPLE
 # ---------------------------------------------------------------------------
 
+# import yaml
 # from omnibase_core.nodes import NodeEffect
 # from omnibase_core.models import ModelEffectInput
-# import yaml
+# from omnibase_core.models.contracts.subcontracts import ModelEffectSubcontract
 #
 # # Load contract
 # with open("kafka_produce.yaml") as f:
@@ -424,7 +415,9 @@ effect_operations:
 # class NodeUserEventsKafkaEffect(NodeEffect):
 #     pass
 #
-# node = NodeUserEventsKafkaEffect(container, contract=contract_data)
+# # Instantiate node with container, then inject the contract
+# node = NodeUserEventsKafkaEffect(container)
+# node.effect_subcontract = ModelEffectSubcontract(**contract_data["effect_operations"])
 #
 # # Publish events to Kafka
 # input_data = ModelEffectInput(

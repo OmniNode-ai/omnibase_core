@@ -15,6 +15,7 @@ from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.models.infrastructure.model_timeout import ModelTimeout
 
 
+@pytest.mark.performance
 class TestModelTimeoutPerformance:
     """Performance tests for ModelTimeout operations."""
 

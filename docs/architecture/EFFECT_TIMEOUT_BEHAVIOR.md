@@ -24,7 +24,7 @@ This document explains when and how timeouts are checked during effect execution
 
 ```text
 +---------------------------------------------------------------------+
-|                    Effect Execution Timeline                         |
+|                    Effect Execution Timeline                        |
 +---------------------------------------------------------------------+
 |                                                                      |
 |  Start --> [CHECK TIMEOUT] --> Execute Operation --> Success? -->   |

@@ -16,9 +16,17 @@ References:
 """
 
 from types import MappingProxyType
+from typing import Literal
+
+# Type aliases for handler types (used for type-safe lookups)
+HandlerType = Literal["http", "db", "kafka", "filesystem"]
+HttpMethod = Literal["GET", "HEAD", "OPTIONS", "PUT", "DELETE", "POST", "PATCH"]
+DbOperation = Literal["SELECT", "INSERT", "UPDATE", "DELETE", "UPSERT"]
+KafkaOperation = Literal["produce"]
+FilesystemOperation = Literal["read", "write", "delete", "move", "copy"]
 
 # Private mutable dict used only for initialization
-_IDEMPOTENCY_DEFAULTS_MUTABLE: dict[str, dict[str, bool]] = {
+_IDEMPOTENCY_DEFAULTS_MUTABLE: dict[HandlerType, dict[str, bool]] = {
     "http": {
         "GET": True,
         "HEAD": True,
@@ -48,10 +56,19 @@ _IDEMPOTENCY_DEFAULTS_MUTABLE: dict[str, dict[str, bool]] = {
 }
 
 # Immutable nested MappingProxyType - both outer and inner dicts are read-only
+# Note: Uses `str` key type for runtime compatibility with dynamic handler lookups
+# HandlerType is exported for static type checking when desired
 IDEMPOTENCY_DEFAULTS: MappingProxyType[str, MappingProxyType[str, bool]] = (
     MappingProxyType(
         {k: MappingProxyType(v) for k, v in _IDEMPOTENCY_DEFAULTS_MUTABLE.items()}
     )
 )
 
-__all__ = ["IDEMPOTENCY_DEFAULTS"]
+__all__ = [
+    "IDEMPOTENCY_DEFAULTS",
+    "HandlerType",
+    "HttpMethod",
+    "DbOperation",
+    "KafkaOperation",
+    "FilesystemOperation",
+]

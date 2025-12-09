@@ -63,6 +63,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+@pytest.mark.performance
 class TestSourceNodeIdOverhead:
     """Performance tests for source_node_id field overhead."""
 
@@ -474,6 +475,7 @@ class TestSourceNodeIdOverhead:
         )
 
 
+@pytest.mark.performance
 class TestPerformanceRegression:
     """Regression tests to detect performance degradation over time."""
 

@@ -63,14 +63,11 @@ effect_operations:
   # Schema version for forward compatibility - must use dict format for ModelSemVer
   version: {major: 1, minor: 0, patch: 0}
 
-  # Unique operation set name (required by ModelEffectSubcontract)
-  operation_name: "resilient_payment_effect"
-
-  # Operation implementation version
-  operation_version: {major: 1, minor: 0, patch: 0}
+  # Unique subcontract name (required by ModelEffectSubcontract)
+  subcontract_name: "resilient_payment_effect"
 
   # Sequential execution with abort-on-failure for payment consistency
-  execution_order: forward
+  execution_mode: sequential_abort
 
   # Default circuit breaker configuration for all operations
   # Operations can override this at the operation level
@@ -111,6 +108,9 @@ effect_operations:
 
     - operation_name: process_payment
       description: "Processes payment through external gateway with full resilience"
+
+      # Mark as idempotent: we use X-Idempotency-Key header for payment deduplication
+      idempotent: true
 
       # NOTE: Uses flat structure matching ModelHttpIOConfig schema
       # Fields are direct children of io_config (no http_config wrapper)
@@ -205,18 +205,6 @@ effect_operations:
 
         extraction_engine: jsonpath
 
-      # Observability configuration
-      observability:
-        # Comprehensive logging
-        log_request: true
-        log_response: true
-
-        # Emit metrics
-        emit_metrics: true
-
-        # Distributed tracing
-        trace_propagation: true
-
     # =========================================================================
     # OPERATION 2: VERIFY PAYMENT STATUS (HTTP GET with Polling)
     # =========================================================================
@@ -286,11 +274,6 @@ effect_operations:
 
         extraction_engine: jsonpath
 
-      observability:
-        log_request: true
-        log_response: true
-        emit_metrics: true
-        trace_propagation: true
 
     # =========================================================================
     # OPERATION 3: RECORD PAYMENT TRANSACTION (Database with Transaction)
@@ -305,6 +288,9 @@ effect_operations:
 
     - operation_name: record_payment_transaction
       description: "Records payment in database with transaction and resilience"
+
+      # Mark as idempotent: we use transaction_id as natural key preventing duplicates
+      idempotent: true
 
       # NOTE: Uses flat structure matching ModelDbIOConfig schema
       # Fields are direct children of io_config (no db_config wrapper)
@@ -376,11 +362,6 @@ effect_operations:
 
         extraction_engine: jsonpath
 
-      observability:
-        log_request: true
-        log_response: false
-        emit_metrics: true
-        trace_propagation: true
 
     # =========================================================================
     # OPERATION 4: PUBLISH PAYMENT EVENT (Kafka with Guaranteed Delivery)
@@ -395,6 +376,9 @@ effect_operations:
 
     - operation_name: publish_payment_event
       description: "Publishes payment event to Kafka with guaranteed delivery"
+
+      # Mark as idempotent: we use idempotent producer and X-Idempotency-Key header
+      idempotent: true
 
       # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
       # Fields are direct children of io_config (no kafka_config wrapper)
@@ -458,11 +442,6 @@ effect_operations:
 
         extraction_engine: jsonpath
 
-      observability:
-        log_request: true
-        log_response: false
-        emit_metrics: true
-        trace_propagation: true
 
 # ---------------------------------------------------------------------------
 # CONTRACT METADATA

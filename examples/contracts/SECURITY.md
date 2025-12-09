@@ -428,7 +428,7 @@ io_config:
 
 The secret resolution follows this flow:
 
-```
+```text
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │  YAML Contract  │────▶│  Template Engine │────▶│  Secret Backend │
 │  ${secrets.key} │     │  _resolve_secret │     │  (Vault/Env/KMS)│
@@ -628,8 +628,9 @@ To migrate from inline secrets to the resolution mechanism:
 
 ```yaml
 # BEFORE (insecure - inline secret)
+# NOTE: This is an obviously fake example token - NEVER use real tokens in code!
 headers:
-  Authorization: "Bearer sk-live-abc123..."
+  Authorization: "Bearer EXAMPLE_TOKEN_DO_NOT_USE_IN_PRODUCTION"
 
 # AFTER (secure - secret reference)
 headers:

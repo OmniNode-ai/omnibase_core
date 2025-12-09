@@ -20,7 +20,14 @@ from omnibase_core.constants.constants_effect import (
     MIN_EFFECT_SUBCONTRACT_MINOR_VERSION,
     SUPPORTED_EFFECT_SUBCONTRACT_MAJOR_VERSIONS,
 )
-from omnibase_core.constants.constants_effect_idempotency import IDEMPOTENCY_DEFAULTS
+from omnibase_core.constants.constants_effect_idempotency import (
+    IDEMPOTENCY_DEFAULTS,
+    DbOperation,
+    FilesystemOperation,
+    HandlerType,
+    HttpMethod,
+    KafkaOperation,
+)
 from omnibase_core.constants.constants_effect_limits import (
     EFFECT_AUTHOR_MAX_LENGTH,
     EFFECT_MAX_OPERATIONS,
@@ -86,8 +93,13 @@ __all__ = [
     "DEFAULT_RETRY_JITTER_FACTOR",
     "MIN_EFFECT_SUBCONTRACT_MINOR_VERSION",
     "SUPPORTED_EFFECT_SUBCONTRACT_MAJOR_VERSIONS",
-    # Effect idempotency defaults
+    # Effect idempotency defaults and type aliases
     "IDEMPOTENCY_DEFAULTS",
+    "DbOperation",
+    "FilesystemOperation",
+    "HandlerType",
+    "HttpMethod",
+    "KafkaOperation",
     # Effect subcontract limits
     "EFFECT_AUTHOR_MAX_LENGTH",
     "EFFECT_MAX_OPERATIONS",

@@ -55,14 +55,11 @@ effect_operations:
   # Schema version for forward compatibility - must use dict format for ModelSemVer
   version: {major: 1, minor: 0, patch: 0}
 
-  # Unique operation set name (required by ModelEffectSubcontract)
-  operation_name: "db_query_effect"
+  # Unique subcontract name (required by ModelEffectSubcontract)
+  subcontract_name: "db_query_effect"
 
-  # Operation implementation version
-  operation_version: {major: 1, minor: 0, patch: 0}
-
-  # Execute operations sequentially with transaction semantics
-  execution_order: forward
+  # Execution mode: sequential_abort (stop on first failure) or sequential_continue (run all)
+  execution_mode: sequential_abort
 
   # NOTE: Timeouts are configured per-operation in the io_config.timeout_ms field
   # There is no global operation_timeout_ms in ModelEffectSubcontract
@@ -155,12 +152,6 @@ effect_operations:
         # Extraction engine for path-based extraction
         extraction_engine: jsonpath
 
-      observability:
-        log_request: true
-        log_response: false  # Don't log sensitive data
-        emit_metrics: true
-        trace_propagation: true
-
     # =========================================================================
     # OPERATION 2: INSERT NEW USER (Transactional Insert)
     # =========================================================================
@@ -175,6 +166,10 @@ effect_operations:
 
     - operation_name: insert_user
       description: "Inserts new user with transaction support"
+
+      # Mark as idempotent because we use ON CONFLICT or application-level deduplication
+      # This allows retry on transient failures (deadlocks, connection drops)
+      idempotent: true
 
       # NOTE: Uses flat structure matching ModelDbIOConfig schema
       io_config:
@@ -236,12 +231,6 @@ effect_operations:
 
         # Extraction engine for path-based extraction
         extraction_engine: jsonpath
-
-      observability:
-        log_request: true
-        log_response: false  # Sensitive data (password_hash)
-        emit_metrics: true
-        trace_propagation: true
 
     # =========================================================================
     # OPERATION 3: UPDATE USER STATUS (Optimistic Locking)
@@ -309,12 +298,6 @@ effect_operations:
         # Extraction engine for path-based extraction
         extraction_engine: jsonpath
 
-      observability:
-        log_request: true
-        log_response: false
-        emit_metrics: true
-        trace_propagation: true
-
     # =========================================================================
     # OPERATION 4: DELETE USER (Soft Delete)
     # =========================================================================
@@ -377,12 +360,6 @@ effect_operations:
         # Extraction engine for path-based extraction
         extraction_engine: jsonpath
 
-      observability:
-        log_request: true
-        log_response: false
-        emit_metrics: true
-        trace_propagation: true
-
 # ---------------------------------------------------------------------------
 # EXAMPLE INPUT/OUTPUT
 # ---------------------------------------------------------------------------
@@ -440,9 +417,10 @@ effect_operations:
 # USAGE EXAMPLE
 # ---------------------------------------------------------------------------
 
+# import yaml
 # from omnibase_core.nodes import NodeEffect
 # from omnibase_core.models import ModelEffectInput
-# import yaml
+# from omnibase_core.models.contracts.subcontracts import ModelEffectSubcontract
 #
 # # Load contract
 # with open("db_query.yaml") as f:
@@ -452,7 +430,9 @@ effect_operations:
 # class NodeUserDbEffect(NodeEffect):
 #     pass
 #
-# node = NodeUserDbEffect(container, contract=contract_data)
+# # Instantiate node with container, then inject the contract
+# node = NodeUserDbEffect(container)
+# node.effect_subcontract = ModelEffectSubcontract(**contract_data["effect_operations"])
 #
 # # Execute database operations
 # input_data = ModelEffectInput(

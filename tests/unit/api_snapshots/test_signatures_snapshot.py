@@ -100,12 +100,13 @@ class TestNodeEffectSignatureSnapshot:
     .. versionchanged:: 0.4.0
         NodeEffect refactored to contract-driven implementation.
         Removed on_rollback_failure parameter (now handled via YAML contracts).
-        Legacy code-driven NodeEffectLegacy removed entirely in v0.4.0.
+        The legacy code-driven implementation was replaced by the contract-driven
+        approach - there is no separate legacy class.
         All effect nodes now use declarative YAML contracts for rollback handling.
 
     See Also:
-        - omnibase_core.nodes.NodeEffect: The contract-driven implementation
-        - omnibase_core.models.contracts.subcontracts.model_effect_subcontract: Effect contracts
+        - :class:`omnibase_core.nodes.NodeEffect`: The contract-driven implementation
+        - :mod:`omnibase_core.models.contracts.subcontracts.model_effect_subcontract`: Effect contracts
     """
 
     @pytest.mark.unit
@@ -609,12 +610,13 @@ class TestSignatureComprehensiveSummary:
     def test_no_node_has_callback_param(self) -> None:
         """Verify no node class has on_rollback_failure callback parameter.
 
-        As of v0.4.0, the legacy code-driven NodeEffectLegacy has been removed.
+        As of v0.4.0, the legacy code-driven NodeEffect implementation was refactored.
         The contract-driven NodeEffect (v0.4.0+) does NOT have this parameter.
         Rollback handling is now declarative via effect subcontracts.
 
         .. versionchanged:: 0.4.0
-            Legacy NodeEffectLegacy removed. All nodes now contract-driven.
+            Legacy code-driven NodeEffect refactored to contract-driven.
+            All nodes now use declarative YAML contracts.
         """
         from omnibase_core.nodes import (
             NodeCompute,

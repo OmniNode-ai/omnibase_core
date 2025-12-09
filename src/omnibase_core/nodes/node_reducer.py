@@ -45,6 +45,15 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
     Enables creating reducer nodes entirely from YAML contracts without custom Python code.
     State transitions, conditions, and actions are all defined in FSM subcontracts.
 
+    Thread Safety:
+        NodeReducer instances are NOT thread-safe due to mutable FSM state:
+        - Current state tracking
+        - State transition history
+        - Context accumulation
+
+        Each thread should have its own NodeReducer instance, or implement
+        explicit synchronization. See docs/guides/THREADING.md for patterns.
+
     Pattern:
         class NodeMyReducer(NodeReducer):
             # No custom code needed - driven entirely by YAML contract

@@ -59,17 +59,11 @@ effect_operations:
   # Schema version for forward compatibility - must use dict format for ModelSemVer
   version: {major: 1, minor: 0, patch: 0}
 
-  # Unique operation set name (required by ModelEffectSubcontract)
-  operation_name: "http_api_call_effect"
+  # Unique subcontract name (required by ModelEffectSubcontract)
+  subcontract_name: "http_api_call_effect"
 
-  # Operation implementation version
-  operation_version: {major: 1, minor: 0, patch: 0}
-
-  # Execution order: how operations are executed
-  # - forward: Execute in order (first to last)
-  # - reverse: Execute in reverse order (last to first, for rollback)
-  # - parallel: Execute all operations concurrently
-  execution_order: forward
+  # Execution mode: sequential_abort (stop on first failure) or sequential_continue
+  execution_mode: sequential_abort
 
   # ---------------------------------------------------------------------------
   # OPERATIONS: Sequential list of I/O operations
@@ -92,6 +86,9 @@ effect_operations:
 
     - operation_name: create_user
       description: "Creates a new user account via API POST request"
+
+      # Mark as idempotent: we use X-Idempotency-Key header for request deduplication
+      idempotent: true
 
       # I/O configuration for HTTP handler
       # NOTE: Uses flat structure matching ModelHttpIOConfig schema
@@ -190,18 +187,6 @@ effect_operations:
         timeout_ms: 60000
         half_open_requests: 1
 
-      # Observability configuration
-      observability:
-        # Enable request/response logging
-        log_request: true
-        log_response: true
-
-        # Emit metrics for this operation
-        emit_metrics: true
-
-        # Propagate distributed trace context
-        trace_propagation: true
-
     # =========================================================================
     # OPERATION 2: GET USER (HTTP GET)
     # =========================================================================
@@ -277,11 +262,6 @@ effect_operations:
 
         extraction_engine: jsonpath
 
-      observability:
-        log_request: true
-        log_response: true
-        emit_metrics: true
-        trace_propagation: true
 
     # =========================================================================
     # OPERATION 3: UPDATE USER STATUS (HTTP PATCH)
@@ -297,6 +277,9 @@ effect_operations:
 
     - operation_name: update_user_status
       description: "Updates user status field via API PATCH request"
+
+      # Mark as idempotent: we use X-Idempotency-Key header for request deduplication
+      idempotent: true
 
       # NOTE: Uses flat structure matching ModelHttpIOConfig schema
       io_config:
@@ -353,11 +336,6 @@ effect_operations:
 
         extraction_engine: jsonpath
 
-      observability:
-        log_request: true
-        log_response: true
-        emit_metrics: true
-        trace_propagation: true
 
 # ---------------------------------------------------------------------------
 # EXAMPLE INPUT/OUTPUT
@@ -439,7 +417,9 @@ effect_operations:
 # class NodeUserApiEffect(NodeEffect):
 #     pass
 #
-# node = NodeUserApiEffect(container, contract=contract_data)
+# # Instantiate node with container, then inject the contract
+# node = NodeUserApiEffect(container)
+# node.effect_subcontract = ModelEffectSubcontract(**contract_data["effect_operations"])
 #
 # # Execute operations
 # # NOTE: auth_token should be loaded from secure environment, never hardcoded

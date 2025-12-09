@@ -204,6 +204,29 @@ compute_node.computation_cache = ThreadSafeComputeCache(
 - Multiple threads may incorrectly trip/reset breaker state
 - Dictionary updates (`_circuit_breakers[op_id] = breaker`) are not atomic
 
+#### Dictionary Update Thread Safety (CRITICAL)
+
+The `_circuit_breakers` dictionary itself is subject to race conditions:
+
+```python
+# Race condition in _check_circuit_breaker() and _record_circuit_breaker_result()
+# Thread 1 and Thread 2 both check for operation_id simultaneously:
+
+# Thread 1                          # Thread 2
+if op_id not in self._circuit_breakers:  # True
+                                    if op_id not in self._circuit_breakers:  # True
+    breaker = ModelCircuitBreaker.create_resilient()
+    self._circuit_breakers[op_id] = breaker  # Creates breaker
+                                    breaker = ModelCircuitBreaker.create_resilient()
+                                    self._circuit_breakers[op_id] = breaker  # Overwrites!
+
+# Result: Thread 1's circuit breaker state is lost
+# Both threads now use Thread 2's breaker, losing failure tracking from Thread 1
+```
+
+This is why **thread-local NodeEffect instances are strongly recommended** - each thread
+maintains its own `_circuit_breakers` dictionary with no possibility of race conditions.
+
 #### Impact Under Concurrent Load
 
 - Circuit breakers may fail to trip when they should (missed failures)

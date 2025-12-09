@@ -459,9 +459,13 @@ class TestNodeOrchestrator:
         assert order[1] == step2_id  # Step 2 second
 
 
-@pytest.mark.unit
+@pytest.mark.integration
 class TestDeclarativeNodesIntegration:
-    """Integration tests for declarative nodes."""
+    """Integration tests for declarative nodes.
+
+    Note: These tests are in tests/unit/ for convenience but test integration
+    of multiple node components together (reducer workflows, orchestrator steps).
+    """
 
     @pytest.mark.asyncio
     async def test_reducer_full_workflow(

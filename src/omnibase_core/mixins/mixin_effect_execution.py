@@ -399,7 +399,9 @@ class MixinEffectExecution:
                     # Optional: response handling for field extraction
                     if hasattr(op, "response_handling") and op.response_handling:
                         if hasattr(op.response_handling, "model_dump"):
-                            op_dict["response_handling"] = op.response_handling.model_dump()
+                            op_dict["response_handling"] = (
+                                op.response_handling.model_dump()
+                            )
                         else:
                             op_dict["response_handling"] = op.response_handling
 
@@ -1164,20 +1166,27 @@ class MixinEffectExecution:
             If no handler is registered for a handler type, a ModelOnexError will
             be raised with HANDLER_EXECUTION_ERROR code.
 
-        Response Handling:
+        Response Handling (Handler-Owned - Not Passed to Handlers):
             The operation_config may contain a "response_handling" dict with:
             - success_codes: HTTP status codes considered successful (e.g., [200, 201])
             - extract_fields: Map of output_name to JSONPath/dotpath expression
             - fail_on_empty: Whether to fail if extraction returns empty/null
             - extraction_engine: "jsonpath" or "dotpath"
 
-            Handlers MAY use response_handling to:
-            1. Validate response status against success_codes
-            2. Extract fields using _extract_response_fields() utility method
+            IMPORTANT: response_handling is NOT passed to handlers. Handlers only receive
+            the resolved_context (fully resolved IO parameters). This is by design:
 
-            Note: Field extraction is NOT automatically performed by this mixin.
-            Handlers are responsible for calling _extract_response_fields() if needed,
-            because handlers own response interpretation (they know the response format).
+            1. Handlers are kept simple - they only execute I/O operations
+            2. Response processing is CALLER responsibility (NodeEffect.process())
+            3. Field extraction via _extract_response_fields() is a utility for callers
+
+            The intended flow is:
+            1. Handler executes operation with resolved_context → returns raw response
+            2. Caller (NodeEffect.process) uses _extract_response_fields() on response
+            3. Caller applies response_handling.success_codes validation if needed
+
+            This separation keeps handlers focused on I/O while giving callers full
+            control over response interpretation and field extraction.
 
         Thread Safety:
             Thread-safe if handlers are thread-safe. Handlers should be
@@ -1188,8 +1197,9 @@ class MixinEffectExecution:
             input_data: Effect input with operation metadata.
             operation_config: Optional operation configuration containing
                 response_handling, retry_policy, circuit_breaker, and other
-                per-operation settings. Handlers may access response_handling
-                for field extraction and success code validation.
+                per-operation settings. NOTE: This config is NOT passed to handlers;
+                it is available for caller-side response processing after handler
+                returns. Handlers only receive resolved_context.
 
         Returns:
             Operation result (type depends on handler).
@@ -1300,17 +1310,26 @@ class MixinEffectExecution:
         """
         Extract fields from response using JSONPath or dotpath.
 
-        NOTE: This is a utility method provided for handler implementations.
-        It is NOT automatically called during effect execution - handlers are
-        responsible for calling this method if they need response field extraction.
+        This is a CALLER UTILITY method - intended for use by NodeEffect.process()
+        or other code that calls execute_effect(), NOT by effect handlers themselves.
 
-        The design rationale is:
-        1. Handlers own response interpretation (they know the response format)
-        2. Not all responses need field extraction (some are pass-through)
-        3. Extraction logic may be handler-specific (HTTP status vs DB rows)
+        Usage Pattern:
+            # In NodeEffect.process() after execute_effect() returns:
+            result = await self.execute_effect(input_data)
+            if result.result and isinstance(result.result, dict):
+                extracted = self._extract_response_fields(
+                    result.result,
+                    operation_config.get("response_handling", {})
+                )
 
-        Handlers can access this method via the mixin and use the response_handling
-        config from ModelEffectOperation.response_handling.
+        Design Rationale:
+            1. Handlers only execute I/O and return raw responses
+            2. Response interpretation is CALLER responsibility
+            3. Not all responses need field extraction (some are pass-through)
+            4. Callers have access to operation_config with response_handling
+
+        This method is NOT automatically called during effect execution. The
+        caller must explicitly invoke it after receiving the handler response.
 
         Extraction Engines:
             - jsonpath: Full JSONPath syntax (requires jsonpath-ng)

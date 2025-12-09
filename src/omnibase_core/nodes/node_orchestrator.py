@@ -38,6 +38,15 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         Enables creating orchestrator nodes entirely from YAML contracts without custom Python code.
         Workflow steps, dependencies, and execution modes are all defined in workflow definitions.
 
+        Thread Safety:
+            NodeOrchestrator instances are NOT thread-safe due to mutable workflow state:
+            - Active workflow execution tracking
+            - Step completion status
+            - Workflow context accumulation
+
+            Each thread should have its own NodeOrchestrator instance, or implement
+            explicit synchronization. See docs/guides/THREADING.md for patterns.
+
         Pattern:
             class NodeMyOrchestrator(NodeOrchestrator):
                 # No custom code needed - driven entirely by YAML contract

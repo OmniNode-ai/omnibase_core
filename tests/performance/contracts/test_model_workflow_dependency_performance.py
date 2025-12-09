@@ -26,6 +26,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
 
 
+@pytest.mark.performance
 class TestModelWorkflowDependencyPerformance:
     """Performance benchmarks for workflow dependency validation operations."""
 

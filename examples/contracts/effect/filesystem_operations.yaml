@@ -57,15 +57,12 @@ effect_operations:
   # Schema version for forward compatibility - must use dict format for ModelSemVer
   version: {major: 1, minor: 0, patch: 0}
 
-  # Unique operation set name (required by ModelEffectSubcontract)
-  operation_name: "filesystem_operations_effect"
-
-  # Operation implementation version
-  operation_version: {major: 1, minor: 0, patch: 0}
+  # Unique subcontract name (required by ModelEffectSubcontract)
+  subcontract_name: "filesystem_operations_effect"
 
   # Execute operations sequentially for proper dependency handling
   # Example: Create directory -> Write file -> Read file
-  execution_order: forward
+  execution_mode: sequential_abort
 
   # NOTE: Timeouts are configured per-operation in the io_config.timeout_ms field
   # There is no global operation_timeout_ms in ModelEffectSubcontract
@@ -95,6 +92,9 @@ effect_operations:
 
     - operation_name: create_user_directory
       description: "Creates directory structure for user documents by writing a marker file"
+
+      # Mark as idempotent: creating existing directory is a no-op
+      idempotent: true
 
       # I/O configuration for filesystem handler
       # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
@@ -145,12 +145,6 @@ effect_operations:
         fail_on_empty: false
         extraction_engine: jsonpath
 
-      # Observability configuration matching ModelEffectObservability schema
-      observability:
-        log_request: true
-        log_response: true
-        emit_metrics: true
-        trace_propagation: true
 
     # =========================================================================
     # OPERATION 2: WRITE FILE (Atomic Write)
@@ -166,6 +160,9 @@ effect_operations:
 
     - operation_name: write_document
       description: "Writes document file with atomic operation"
+
+      # Mark as idempotent: atomic writes ensure consistent content on retry
+      idempotent: true
 
       # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
       io_config:
@@ -212,12 +209,6 @@ effect_operations:
         fail_on_empty: false
         extraction_engine: jsonpath
 
-      # Observability configuration matching ModelEffectObservability schema
-      observability:
-        log_request: true
-        log_response: false  # Don't log file content (may contain sensitive data)
-        emit_metrics: true
-        trace_propagation: true
 
     # =========================================================================
     # OPERATION 3: READ FILE
@@ -274,12 +265,6 @@ effect_operations:
         fail_on_empty: false
         extraction_engine: jsonpath
 
-      # Observability configuration matching ModelEffectObservability schema
-      observability:
-        log_request: true
-        log_response: false  # Don't log file content (may contain sensitive data)
-        emit_metrics: true
-        trace_propagation: true
 
     # =========================================================================
     # OPERATION 4: MOVE FILE
@@ -295,6 +280,9 @@ effect_operations:
 
     - operation_name: archive_document
       description: "Moves document to archive directory"
+
+      # Mark as idempotent: move operation with overwrite-on-exists semantics
+      idempotent: true
 
       # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
       io_config:
@@ -337,12 +325,6 @@ effect_operations:
         fail_on_empty: false
         extraction_engine: jsonpath
 
-      # Observability configuration matching ModelEffectObservability schema
-      observability:
-        log_request: true
-        log_response: true
-        emit_metrics: true
-        trace_propagation: true
 
     # =========================================================================
     # OPERATION 5: LIST DIRECTORY
@@ -401,12 +383,6 @@ effect_operations:
         fail_on_empty: false
         extraction_engine: jsonpath
 
-      # Observability configuration matching ModelEffectObservability schema
-      observability:
-        log_request: true
-        log_response: true
-        emit_metrics: true
-        trace_propagation: true
 
     # =========================================================================
     # OPERATION 6: DELETE FILE
@@ -461,12 +437,6 @@ effect_operations:
         fail_on_empty: false
         extraction_engine: jsonpath
 
-      # Observability configuration matching ModelEffectObservability schema
-      observability:
-        log_request: true
-        log_response: true
-        emit_metrics: true
-        trace_propagation: true
 
 # ---------------------------------------------------------------------------
 # EXAMPLE INPUT/OUTPUT
@@ -539,9 +509,10 @@ effect_operations:
 # USAGE EXAMPLE
 # ---------------------------------------------------------------------------
 
+# import yaml
 # from omnibase_core.nodes import NodeEffect
 # from omnibase_core.models import ModelEffectInput
-# import yaml
+# from omnibase_core.models.contracts.subcontracts import ModelEffectSubcontract
 #
 # # Load contract
 # with open("filesystem_operations.yaml") as f:
@@ -551,7 +522,9 @@ effect_operations:
 # class NodeDocumentFilesystemEffect(NodeEffect):
 #     pass
 #
-# node = NodeDocumentFilesystemEffect(container, contract=contract_data)
+# # Instantiate node with container, then inject the contract
+# node = NodeDocumentFilesystemEffect(container)
+# node.effect_subcontract = ModelEffectSubcontract(**contract_data["effect_operations"])
 #
 # # Execute filesystem operations
 # input_data = ModelEffectInput(
