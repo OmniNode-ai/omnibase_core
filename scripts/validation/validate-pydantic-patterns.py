@@ -231,6 +231,30 @@ class PydanticPatternValidator:
         # If we can't determine context, assume it's Pydantic (safer for preventing regression)
         return True
 
+    def validate_files(self, files: list[Path], allowed_errors: int = 0) -> bool:
+        """
+        Validate Pydantic patterns in specific files.
+
+        This method is used for pre-commit integration where only staged files
+        are checked, providing faster feedback during development.
+
+        Args:
+            files: List of file paths to validate
+            allowed_errors: Number of allowed errors before failing (default: 0)
+
+        Returns:
+            True if validation passes, False otherwise
+        """
+        print("🔍 ONEX Pydantic Legacy Pattern Validation (file mode)")
+        print("=" * 55)
+        print("📋 Preventing regression of legacy Pydantic v1 patterns")
+
+        # Filter to only existing Python files
+        python_files = [f for f in files if f.exists() and f.suffix == ".py"]
+        print(f"📁 Scanning {len(python_files)} Python files...")
+
+        return self._validate_files_internal(python_files, allowed_errors)
+
     def validate_project(self, src_dir: Path, allowed_errors: int = 0) -> bool:
         """
         Validate Pydantic patterns across the entire project.
@@ -250,6 +274,25 @@ class PydanticPatternValidator:
         python_files = list(src_dir.rglob("*.py"))
         print(f"📁 Scanning {len(python_files)} Python files...")
 
+        return self._validate_files_internal(python_files, allowed_errors, src_dir)
+
+    def _validate_files_internal(
+        self,
+        python_files: list[Path],
+        allowed_errors: int = 0,
+        base_dir: Path | None = None,
+    ) -> bool:
+        """
+        Internal method to validate a list of Python files.
+
+        Args:
+            python_files: List of Python file paths to validate
+            allowed_errors: Number of allowed errors before failing
+            base_dir: Base directory for relative path display (optional)
+
+        Returns:
+            True if validation passes, False otherwise
+        """
         total_errors = 0
         total_warnings = 0
         files_with_issues: dict[str, list[tuple[LegacyPattern, int, str]]] = {}
@@ -257,7 +300,14 @@ class PydanticPatternValidator:
         for py_file in python_files:
             findings = self.find_legacy_patterns_in_file(py_file)
             if findings:
-                relative_path = py_file.relative_to(src_dir.parent)
+                # Use relative path if base_dir provided, otherwise use file name
+                if base_dir:
+                    try:
+                        relative_path = py_file.relative_to(base_dir.parent)
+                    except ValueError:
+                        relative_path = py_file
+                else:
+                    relative_path = py_file
                 files_with_issues[str(relative_path)] = findings
 
                 # Count errors vs warnings
@@ -348,6 +398,7 @@ Examples:
     python scripts/validate-pydantic-patterns.py              # Check for errors only
     python scripts/validate-pydantic-patterns.py --strict     # Check errors and warnings
     python scripts/validate-pydantic-patterns.py --allow-errors 3  # Allow up to 3 errors
+    python scripts/validate-pydantic-patterns.py file1.py file2.py  # Check specific files
         """,
     )
     parser.add_argument(
@@ -364,17 +415,30 @@ Examples:
         "-s",
         type=Path,
         default=Path("src"),
-        help="Source directory to scan (default: src)",
+        help="Source directory to scan (default: src, ignored if files provided)",
+    )
+    parser.add_argument(
+        "files",
+        nargs="*",
+        type=Path,
+        help="Specific files to check (for pre-commit integration)",
     )
 
     args = parser.parse_args()
 
-    if not args.src_dir.exists():
-        print(f"❌ Source directory not found: {args.src_dir}")
-        sys.exit(1)
-
     validator = PydanticPatternValidator(strict=args.strict)
-    success = validator.validate_project(args.src_dir, allowed_errors=args.allow_errors)
+
+    # If specific files are provided, check only those files
+    if args.files:
+        success = validator.validate_files(args.files, allowed_errors=args.allow_errors)
+    else:
+        # Otherwise scan the entire src directory
+        if not args.src_dir.exists():
+            print(f"❌ Source directory not found: {args.src_dir}")
+            sys.exit(1)
+        success = validator.validate_project(
+            args.src_dir, allowed_errors=args.allow_errors
+        )
 
     if not success:
         print("\n🚫 Pydantic pattern validation failed!")
