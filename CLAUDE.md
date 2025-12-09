@@ -827,7 +827,7 @@ class MyNode(NodeCoreBase, MixinDiscoveryResponder):
    ```
 
 8. **Poll background jobs repeatedly (AI Agent Anti-Pattern)**
-   ```
+   ```text
    # WRONG - Burns tokens polling every few seconds
    BashOutput(bash_id) → still running
    BashOutput(bash_id) → still running

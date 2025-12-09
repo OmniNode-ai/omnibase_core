@@ -26,9 +26,14 @@ import hashlib
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+if TYPE_CHECKING:
+    from omnibase_core.models.contracts.model_contract_compute import (
+        ModelContractCompute,
+    )
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -248,14 +253,16 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
 
         # Performance tracking
         self.computation_metrics: dict[str, dict[str, float]] = {}
-        self.parallel_execution_warning_count: int = 0  # Track parallel misconfigurations
+        self.parallel_execution_warning_count: int = (
+            0  # Track parallel misconfigurations
+        )
 
         # Register built-in computations
         self._register_builtin_computations()
 
     async def execute_compute(
         self,
-        contract: Any,  # ModelContractCompute - imported in method to avoid circular dependency
+        contract: "ModelContractCompute",  # Quoted for TYPE_CHECKING import (avoids circular dependency)
     ) -> ModelComputeOutput[T_Output]:
         """
         Execute compute operation based on contract specification.
@@ -412,7 +419,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         Args:
             contract: The compute contract to convert. Must be a validated
                 ModelContractCompute instance with:
-                - input_state (required): Dict containing input data for computation
+                - input_state (required): Input data for computation (any serializable type)
                 - metadata (optional): Dict with computation settings
                 - algorithm (optional): Algorithm configuration with computation_type
 
@@ -658,7 +665,9 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             else:
                 # Warn if parallel was requested but data is not parallelizable
                 if input_data.parallel_enabled and not supports_parallel:
-                    self.parallel_execution_warning_count += 1  # Track for observability
+                    self.parallel_execution_warning_count += (
+                        1  # Track for observability
+                    )
                     data_type = type(input_data.data).__name__
                     data_length = (
                         len(input_data.data)
