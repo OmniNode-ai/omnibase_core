@@ -322,7 +322,7 @@ repos:
         pass_filenames: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
-        stages: [pre-push]  # Moved to pre-push: full codebase scan
+        stages: [pre-commit]
 
       - id: no-pydantic-bypass-in-prod
         name: ONEX Pydantic Bypass Prevention

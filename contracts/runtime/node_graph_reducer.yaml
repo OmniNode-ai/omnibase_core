@@ -1,0 +1,322 @@
+---
+node_type: REDUCER_GENERIC
+contract_version: {major: 1, minor: 0, patch: 0}
+state_transitions:
+  version: {major: 1, minor: 0, patch: 0}
+  state_machine_version: {major: 1, minor: 0, patch: 0}
+  state_machine_name: node_graph_fsm
+  description: Maintains instantiated node graph state with FSM-driven lifecycle management
+  initial_state: initializing
+  states:
+    - state_name: initializing
+      description: Setting up the node graph - loading registry and preparing infrastructure
+      entry_actions:
+        - load_node_registry
+        - initialize_graph_structure
+        - prepare_dependency_resolver
+      exit_actions:
+        - log_initialization_complete
+      is_terminal: false
+      metadata:
+        ui_color: '#3B82F6'
+        icon: loader
+      version: {major: 1, minor: 0, patch: 0}
+      state_type: operational
+    - state_name: wiring
+      description: Connecting nodes based on dependencies and establishing communication channels
+      entry_actions:
+        - resolve_node_dependencies
+        - establish_node_connections
+        - validate_connection_graph
+      exit_actions:
+        - finalize_wiring
+        - log_wiring_statistics
+      is_terminal: false
+      metadata:
+        ui_color: '#8B5CF6'
+        icon: git-branch
+      version: {major: 1, minor: 0, patch: 0}
+      state_type: operational
+    - state_name: running
+      description: Node graph is active and processing - all nodes are wired and operational
+      entry_actions:
+        - activate_all_nodes
+        - start_health_monitoring
+        - emit_graph_ready_event
+      exit_actions:
+        - stop_health_monitoring
+        - prepare_for_shutdown
+      is_terminal: false
+      metadata:
+        ui_color: '#10B981'
+        icon: play
+      version: {major: 1, minor: 0, patch: 0}
+      state_type: operational
+    - state_name: draining
+      description: Gracefully shutting down - allowing in-flight operations to complete
+      entry_actions:
+        - stop_accepting_new_work
+        - notify_nodes_of_shutdown
+        - start_drain_timer
+      exit_actions:
+        - force_complete_remaining_work
+        - log_drain_statistics
+      is_terminal: false
+      metadata:
+        ui_color: '#FBBF24'
+        icon: hourglass
+      version: {major: 1, minor: 0, patch: 0}
+      state_type: operational
+    - state_name: stopped
+      description: Node graph is fully stopped - all resources released
+      entry_actions:
+        - release_all_resources
+        - disconnect_all_nodes
+        - emit_graph_stopped_event
+        - cleanup_graph_state
+      exit_actions: []
+      is_terminal: true
+      metadata:
+        ui_color: '#6B7280'
+        icon: stop-circle
+        idempotency_note: |
+          All entry_actions MUST be idempotent as this state can be reached
+          from ANY state via fatal_error or timeout wildcards (from_state: '*').
+
+          Idempotency guarantees for each action:
+          - release_all_resources: Safe to call multiple times (no-op if already released)
+          - disconnect_all_nodes: Safe to call on already-disconnected nodes
+          - emit_graph_stopped_event: Event bus handles duplicate events gracefully
+          - cleanup_graph_state: Clears state to empty (idempotent by design)
+
+          This is critical because wildcard transitions can trigger from any
+          non-terminal state, and the stopped state may be entered multiple
+          times during error recovery or restart scenarios.
+      version: {major: 1, minor: 0, patch: 0}
+      state_type: terminal
+  transitions:
+    - transition_name: registry_ready
+      from_state: initializing
+      to_state: wiring
+      trigger: registry_ready
+      description: Node registry is loaded and ready, begin wiring nodes
+      conditions:
+        - condition_name: registry_loaded
+          expression: node_registry is_not_empty
+          required: true
+          description: Node registry must contain at least one node definition
+          version: {major: 1, minor: 0, patch: 0}
+          condition_type: data_validation
+        - condition_name: no_registry_errors
+          expression: registry_errors equals 0
+          required: true
+          description: Registry must load without errors
+          version: {major: 1, minor: 0, patch: 0}
+          condition_type: data_validation
+      actions:
+        - action_name: emit_wiring_started
+          action_type: event
+          is_critical: false
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: snapshot_registry_state
+          action_type: data_capture
+          is_critical: true
+          timeout_ms: 2000
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
+    - transition_name: wiring_complete
+      from_state: wiring
+      to_state: running
+      trigger: wiring_complete
+      description: All node connections established successfully, activate graph
+      conditions:
+        - condition_name: all_nodes_wired
+          expression: unwired_nodes equals 0
+          required: true
+          description: All nodes must be successfully wired
+          version: {major: 1, minor: 0, patch: 0}
+          condition_type: data_validation
+        - condition_name: no_circular_dependencies
+          expression: circular_dependency_count equals 0
+          required: true
+          description: Graph must not contain circular dependencies
+          version: {major: 1, minor: 0, patch: 0}
+          condition_type: data_validation
+      actions:
+        - action_name: emit_graph_running
+          action_type: event
+          is_critical: true
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: log_graph_topology
+          action_type: logging
+          is_critical: false
+          timeout_ms: 500
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
+    - transition_name: shutdown_requested
+      from_state: running
+      to_state: draining
+      trigger: shutdown_requested
+      description: Shutdown signal received, begin graceful drain
+      conditions: []
+      actions:
+        - action_name: emit_drain_started
+          action_type: event
+          is_critical: true
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: log_shutdown_request
+          action_type: logging
+          is_critical: false
+          timeout_ms: 500
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: capture_in_flight_operations
+          action_type: data_capture
+          is_critical: true
+          timeout_ms: 2000
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
+    - transition_name: drain_complete
+      from_state: draining
+      to_state: stopped
+      trigger: drain_complete
+      description: All in-flight operations completed, fully stop the graph
+      conditions:
+        - condition_name: no_pending_operations
+          expression: pending_operations equals 0
+          required: true
+          description: All pending operations must complete before stopping
+          version: {major: 1, minor: 0, patch: 0}
+          condition_type: data_validation
+      actions:
+        - action_name: persist_final_state
+          action_type: persistence
+          is_critical: true
+          timeout_ms: 5000
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: emit_graph_stopped
+          action_type: event
+          is_critical: true
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
+    - transition_name: fatal_error
+      from_state: '*'
+      to_state: stopped
+      trigger: fatal_error
+      description: Critical error occurred, immediately stop the graph from any state
+      conditions: []
+      actions:
+        - action_name: log_fatal_error
+          action_type: logging
+          is_critical: true
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: emit_fatal_error_alert
+          action_type: alert
+          is_critical: true
+          timeout_ms: 2000
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: capture_error_diagnostics
+          action_type: data_capture
+          is_critical: false
+          timeout_ms: 3000
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: emergency_resource_cleanup
+          action_type: cleanup
+          is_critical: true
+          timeout_ms: 5000
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
+    - transition_name: handle_timeout
+      from_state: '*'
+      to_state: stopped
+      trigger: timeout
+      description: Operation timeout from any non-terminal state - stop the graph
+      conditions: []
+      actions:
+        - action_name: log_timeout_event
+          action_type: logging
+          is_critical: true
+          timeout_ms: 1000
+          version: {major: 1, minor: 0, patch: 0}
+        - action_name: emit_timeout_alert
+          action_type: alert
+          is_critical: false
+          timeout_ms: 2000
+          version: {major: 1, minor: 0, patch: 0}
+      version: {major: 1, minor: 0, patch: 0}
+  terminal_states:
+    - stopped
+  error_states:
+    - stopped
+  persistence_enabled: true
+  recovery_enabled: true
+  operations:
+    - operation_name: force_stop
+      description: Force immediate stop of the node graph without graceful drain
+      trigger: force_stop
+      target_state: stopped
+      requires_permission: true
+      is_destructive: true
+      rollback_transitions: []
+      version: {major: 1, minor: 0, patch: 0}
+      operation_type: administrative
+    - operation_name: restart_graph
+      description: Restart the node graph from stopped state
+      trigger: restart
+      target_state: initializing
+      requires_permission: true
+      is_destructive: false
+      rollback_transitions:
+        - transition_name: rollback_restart
+          from_state: initializing
+          to_state: stopped
+          trigger: undo_restart
+      version: {major: 1, minor: 0, patch: 0}
+      operation_type: administrative
+    - operation_name: rewire_graph
+      description: Re-establish node connections while running (hot rewiring)
+      trigger: rewire
+      target_state: wiring
+      requires_permission: true
+      is_destructive: false
+      rollback_transitions:
+        - transition_name: rollback_rewire
+          from_state: wiring
+          to_state: running
+          trigger: undo_rewire
+      version: {major: 1, minor: 0, patch: 0}
+      operation_type: administrative
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: ONEX Framework Team
+  description: Node graph lifecycle reducer using FSM pattern for ONEX runtime self-hosting
+  tags:
+    - reducer
+    - fsm
+    - declarative
+    - node-graph
+    - runtime
+    - lifecycle
+  documentation_url: https://docs.onex.ai/reducers/node-graph
+
+# Testing Guidance: Wildcard Transitions (from_state: '*')
+# Wildcards bypass normal flow; stopped entry_actions MUST be idempotent.
+testing_guidance:
+  transitions: [fatal_error, handle_timeout]
+  test_matrix:
+    # Test fatal_error and timeout from each non-terminal state to stopped
+    states: [initializing, wiring, running, draining]
+    triggers: [fatal_error, timeout]
+    verify: [resources_released, error_logged, state_clean, no_orphans]
+  idempotency:
+    # Entry actions must tolerate repeated calls (double-trigger, timeout+fatal, restart cycles)
+    scenarios: [double_trigger, timeout_then_fatal, restart_after_fatal]
+    verify: [no_exceptions, single_cleanup, consistent_state]
+  edge_cases:
+    # Concurrent triggers and in-flight action handling
+    - concurrent_triggers_single_execution
+    - pending_actions_cancelled_cleanly

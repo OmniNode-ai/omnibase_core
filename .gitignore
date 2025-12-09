@@ -110,6 +110,7 @@ cover/
 .test_durations
 nosetests.xml
 junit-*.xml
+test_split_results/
 
 # ONEX-specific test caches
 .onex_cache/

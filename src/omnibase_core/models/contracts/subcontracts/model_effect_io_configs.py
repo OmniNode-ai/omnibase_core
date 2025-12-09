@@ -44,6 +44,11 @@ from pydantic import (
     model_validator,
 )
 
+from omnibase_core.constants.constants_effect_limits import (
+    EFFECT_TIMEOUT_DEFAULT_MS,
+    EFFECT_TIMEOUT_MAX_MS,
+    EFFECT_TIMEOUT_MIN_MS,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 from omnibase_core.models.common.model_error_context import ModelErrorContext
@@ -118,9 +123,9 @@ class ModelHttpIOConfig(BaseModel):
     )
 
     timeout_ms: int = Field(
-        default=30000,
-        ge=1000,  # 1000ms = 1 second minimum for realistic production I/O
-        le=600000,  # 600000ms = 10 minutes maximum timeout
+        default=EFFECT_TIMEOUT_DEFAULT_MS,
+        ge=EFFECT_TIMEOUT_MIN_MS,
+        le=EFFECT_TIMEOUT_MAX_MS,
         description="Request timeout in milliseconds (1s - 10min)",
     )
 
@@ -251,9 +256,9 @@ class ModelDbIOConfig(BaseModel):
     )
 
     timeout_ms: int = Field(
-        default=30000,
-        ge=1000,  # 1000ms = 1 second minimum for realistic production I/O
-        le=600000,  # 600000ms = 10 minutes maximum timeout
+        default=EFFECT_TIMEOUT_DEFAULT_MS,
+        ge=EFFECT_TIMEOUT_MIN_MS,
+        le=EFFECT_TIMEOUT_MAX_MS,
         description="Query timeout in milliseconds (1s - 10min)",
     )
 
@@ -507,9 +512,9 @@ class ModelKafkaIOConfig(BaseModel):
     )
 
     timeout_ms: int = Field(
-        default=30000,
-        ge=1000,  # 1000ms = 1 second minimum for realistic production I/O
-        le=600000,  # 600000ms = 10 minutes maximum timeout
+        default=EFFECT_TIMEOUT_DEFAULT_MS,
+        ge=EFFECT_TIMEOUT_MIN_MS,
+        le=EFFECT_TIMEOUT_MAX_MS,
         description="Producer timeout in milliseconds (1s - 10min)",
     )
 
@@ -677,9 +682,9 @@ class ModelFilesystemIOConfig(BaseModel):
     )
 
     timeout_ms: int = Field(
-        default=30000,
-        ge=1000,  # 1000ms = 1 second minimum for realistic production I/O
-        le=600000,  # 600000ms = 10 minutes maximum timeout
+        default=EFFECT_TIMEOUT_DEFAULT_MS,
+        ge=EFFECT_TIMEOUT_MIN_MS,
+        le=EFFECT_TIMEOUT_MAX_MS,
         description="Operation timeout in milliseconds (1s - 10min)",
     )
 
