@@ -39,8 +39,8 @@ from omnibase_core.models.security.model_secure_credentials import (
 
 
 # Concrete implementation for testing abstract base class
-class TestCredentials(ModelSecureCredentials):
-    """Test implementation of ModelSecureCredentials."""
+class SampleCredentials(ModelSecureCredentials):
+    """Sample implementation of ModelSecureCredentials for testing."""
 
     username: str = "test_user"
     password: SecretStr = SecretStr("default_password")
@@ -70,7 +70,7 @@ class TestModelSecureCredentialsBasicBehavior:
 
     def test_credentials_creation_with_defaults(self):
         """Test credentials creation with default values."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         assert creds.username == "test_user"
         assert creds.password.get_secret_value() == "default_password"
@@ -79,7 +79,7 @@ class TestModelSecureCredentialsBasicBehavior:
 
     def test_credentials_creation_with_custom_values(self):
         """Test credentials creation with custom values."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             username="custom_user",
             password=SecretStr("custom_password"),
             host="example.com",
@@ -93,7 +93,7 @@ class TestModelSecureCredentialsBasicBehavior:
 
     def test_credentials_with_secret_fields(self):
         """Test that SecretStr fields are properly handled."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("secret_value"),
             api_key=SecretStr("api_secret_key"),
         )
@@ -119,7 +119,7 @@ class TestModelSecureCredentialsSecretMasking:
 
     def test_get_masked_dict_standard_masking(self):
         """Test standard masking level."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             username="test_user",
             password=SecretStr("my_secret_password"),
             api_key=SecretStr("sk_test_1234567890"),
@@ -139,7 +139,7 @@ class TestModelSecureCredentialsSecretMasking:
 
     def test_get_masked_dict_minimal_masking(self):
         """Test minimal masking level (shows partial values)."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("password123"),
             api_key=SecretStr("sk_1234567890"),
         )
@@ -155,7 +155,7 @@ class TestModelSecureCredentialsSecretMasking:
 
     def test_get_masked_dict_aggressive_masking(self):
         """Test aggressive masking level."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("my_password"),
             api_key=SecretStr("api_key_123"),
         )
@@ -169,7 +169,7 @@ class TestModelSecureCredentialsSecretMasking:
 
     def test_mask_secret_value_short_secrets(self):
         """Test masking of short secret values."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         # Short secrets (4 chars or less) should be fully masked
         assert creds._mask_secret_value("ab", "minimal") == "**"
@@ -177,7 +177,7 @@ class TestModelSecureCredentialsSecretMasking:
 
     def test_mask_secret_value_empty_secrets(self):
         """Test masking of empty secrets."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         assert creds._mask_secret_value("", "standard") == ""
         assert creds._mask_secret_value("", "minimal") == ""
@@ -185,7 +185,7 @@ class TestModelSecureCredentialsSecretMasking:
 
     def test_mask_if_sensitive_string_patterns(self):
         """Test detection and masking of sensitive string patterns."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         # Base64-encoded pattern (40+ chars)
         base64_value = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY3ODkwYWJjZGVm"
@@ -215,7 +215,7 @@ class TestModelSecureCredentialsSecretMasking:
 
     def test_mask_secrets_recursive_dict(self):
         """Test recursive masking of nested dictionaries."""
-        creds = TestCredentials(password=SecretStr("secret123"))
+        creds = SampleCredentials(password=SecretStr("secret123"))
 
         data = {
             "config": {"password": SecretStr("nested_secret"), "host": "localhost"},
@@ -230,7 +230,7 @@ class TestModelSecureCredentialsSecretMasking:
 
     def test_mask_secrets_recursive_list(self):
         """Test recursive masking of lists."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         data = [
             SecretStr("secret1"),
@@ -250,7 +250,7 @@ class TestModelSecureCredentialsStrengthAssessment:
 
     def test_get_credential_strength_assessment_strong(self):
         """Test strength assessment with strong credentials."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("VeryStrongPassword123!@#"),
             api_key=SecretStr("sk_live_very_long_secure_api_key_here"),
         )
@@ -265,7 +265,7 @@ class TestModelSecureCredentialsStrengthAssessment:
 
     def test_get_credential_strength_assessment_weak(self):
         """Test strength assessment with weak credentials."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("weak"),  # Too short
             api_key=SecretStr("short"),  # Too short
         )
@@ -280,7 +280,7 @@ class TestModelSecureCredentialsStrengthAssessment:
 
     def test_get_credential_strength_assessment_empty(self):
         """Test strength assessment with empty credentials."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr(""),  # Empty
             api_key=None,
         )
@@ -293,7 +293,7 @@ class TestModelSecureCredentialsStrengthAssessment:
 
     def test_get_credential_strength_assessment_mixed(self):
         """Test strength assessment with mixed credential quality."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("VeryStrongPassword123!"),  # Strong
             api_key=SecretStr("weak"),  # Weak
         )
@@ -311,7 +311,7 @@ class TestModelSecureCredentialsSecurityClassification:
 
     def test_get_security_classification_secret_fields(self):
         """Test classification of SecretStr fields."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("secret"),
             api_key=SecretStr("key"),
         )
@@ -324,7 +324,7 @@ class TestModelSecureCredentialsSecurityClassification:
     def test_get_security_classification_sensitive_fields(self):
         """Test classification of sensitive field names."""
         # Note: This test assumes the model would have fields with these names
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         classification = creds.get_security_classification()
 
@@ -334,7 +334,7 @@ class TestModelSecureCredentialsSecurityClassification:
 
     def test_get_security_classification_pii_fields(self):
         """Test classification of PII fields."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         classification = creds.get_security_classification()
 
@@ -356,7 +356,7 @@ class TestModelSecureCredentialsEnvironmentIntegration:
     )
     def test_load_from_env_with_custom_prefix(self):
         """Test loading from environment with custom prefix."""
-        creds = TestCredentials.load_from_env(env_prefix="TEST_")
+        creds = SampleCredentials.load_from_env(env_prefix="TEST_")
 
         assert creds.username == "env_user"
         assert creds.password.get_secret_value() == "env_password"
@@ -366,15 +366,15 @@ class TestModelSecureCredentialsEnvironmentIntegration:
     @patch.dict(os.environ, {}, clear=True)
     def test_load_from_env_with_defaults(self):
         """Test loading from environment falls back to defaults."""
-        creds = TestCredentials.load_from_env(env_prefix="MISSING_")
+        creds = SampleCredentials.load_from_env(env_prefix="MISSING_")
 
         assert creds.username == "test_user"  # Default value
         assert creds.password.get_secret_value() == "default_password"
 
     def test_validate_environment_variables_all_present(self):
         """Test environment variable validation when all present."""
-        # TestCredentials has no required fields beyond defaults
-        creds = TestCredentials()
+        # SampleCredentials has no required fields beyond defaults
+        creds = SampleCredentials()
 
         issues = creds.validate_environment_variables(env_prefix="TEST_")
 
@@ -383,7 +383,7 @@ class TestModelSecureCredentialsEnvironmentIntegration:
 
     def test_get_environment_mapping(self):
         """Test environment variable mapping generation."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         mapping = creds.get_environment_mapping(env_prefix="ONEX_")
 
@@ -400,7 +400,7 @@ class TestModelSecureCredentialsEnvironmentIntegration:
     )
     def test_load_from_environment_with_validation(self):
         """Test loading from environment with validation."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         issues = creds.load_from_environment_with_validation(env_prefix="TEST_")
 
@@ -415,7 +415,7 @@ class TestModelSecureCredentialsSerialization:
 
     def test_to_log_safe_dict(self):
         """Test log-safe dictionary generation."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             username="test_user",
             password=SecretStr("secret_password"),
             host="localhost",
@@ -429,7 +429,7 @@ class TestModelSecureCredentialsSerialization:
 
     def test_to_debug_dict(self):
         """Test debug dictionary generation."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             username="debug_user",
             password=SecretStr("debug_password"),
         )
@@ -441,7 +441,7 @@ class TestModelSecureCredentialsSerialization:
 
     def test_to_audit_dict(self):
         """Test audit dictionary generation."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             username="audit_user",
             password=SecretStr("audit_password"),
         )
@@ -450,14 +450,14 @@ class TestModelSecureCredentialsSerialization:
 
         assert isinstance(audit_data, ModelAuditData)
         assert audit_data.action == "credential_access"
-        assert audit_data.resource == "TestCredentials"
+        assert audit_data.resource == "SampleCredentials"
         assert audit_data.result == "masked"
         assert audit_data.security_level == "audit"
         assert "credential_masking" in audit_data.compliance_tags
 
     def test_export_to_env_template(self):
         """Test environment variable template export."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         template = creds.export_to_env_template(env_prefix="MYAPP_")
 
@@ -475,7 +475,7 @@ class TestModelSecureCredentialsValidation:
 
     def test_validate_credentials_all_valid(self):
         """Test validation with all valid credentials."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             username="valid_user",
             password=SecretStr("VeryStrongPassword123!"),
             api_key=SecretStr("sk_live_very_long_api_key"),
@@ -490,7 +490,7 @@ class TestModelSecureCredentialsValidation:
 
     def test_validate_credentials_with_weak_secrets(self):
         """Test validation with weak secrets."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             username="test_user",
             password=SecretStr("weak"),  # Too short
         )
@@ -521,7 +521,7 @@ class TestModelSecureCredentialsValidation:
 
     def test_can_connect(self):
         """Test connection capability check."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             username="test_user",
             password=SecretStr("ValidPassword123"),
         )
@@ -543,7 +543,7 @@ class TestModelSecureCredentialsFactoryMethods:
     )
     def test_create_from_env_with_fallbacks_primary_success(self):
         """Test factory with successful primary prefix."""
-        creds = TestCredentials.create_from_env_with_fallbacks(
+        creds = SampleCredentials.create_from_env_with_fallbacks(
             env_prefix="PRIMARY_", fallback_prefixes=["SECONDARY_", "TERTIARY_"]
         )
 
@@ -559,7 +559,7 @@ class TestModelSecureCredentialsFactoryMethods:
     )
     def test_create_from_env_with_fallbacks_fallback_success(self):
         """Test factory falls back to secondary prefix."""
-        creds = TestCredentials.create_from_env_with_fallbacks(
+        creds = SampleCredentials.create_from_env_with_fallbacks(
             env_prefix="PRIMARY_",  # Missing
             fallback_prefixes=["SECONDARY_"],
         )
@@ -570,7 +570,7 @@ class TestModelSecureCredentialsFactoryMethods:
     @patch.dict(os.environ, {}, clear=True)
     def test_create_from_env_with_fallbacks_all_fail(self):
         """Test factory when all prefixes fail (creates with defaults)."""
-        creds = TestCredentials.create_from_env_with_fallbacks(
+        creds = SampleCredentials.create_from_env_with_fallbacks(
             env_prefix="PRIMARY_", fallback_prefixes=["SECONDARY_"]
         )
 
@@ -579,9 +579,9 @@ class TestModelSecureCredentialsFactoryMethods:
 
     def test_create_empty_template(self):
         """Test empty template creation."""
-        template = TestCredentials.create_empty_template()
+        template = SampleCredentials.create_empty_template()
 
-        assert isinstance(template, TestCredentials)
+        assert isinstance(template, SampleCredentials)
         # Should have default values
         assert template.username == "test_user"
         assert isinstance(template.password, SecretStr)
@@ -592,7 +592,7 @@ class TestModelSecureCredentialsSecurityBestPractices:
 
     def test_no_plaintext_secrets_in_repr(self):
         """Test that secrets don't appear in string representation."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("SuperSecretPassword123!"),
             api_key=SecretStr("sk_live_secret_key_12345"),
         )
@@ -608,7 +608,7 @@ class TestModelSecureCredentialsSecurityBestPractices:
 
     def test_no_plaintext_secrets_in_dict_dump(self):
         """Test that model_dump doesn't expose raw SecretStr values."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("secret123"),
             api_key=SecretStr("api_key_456"),
         )
@@ -621,7 +621,7 @@ class TestModelSecureCredentialsSecurityBestPractices:
 
     def test_secret_masking_prevents_exposure(self):
         """Test that masking prevents secret exposure."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("MySecretPassword"),
             api_key=SecretStr("MySecretAPIKey"),
         )
@@ -639,7 +639,7 @@ class TestModelSecureCredentialsSecurityBestPractices:
 
     def test_audit_logging_masks_secrets(self):
         """Test that audit logs mask secrets."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             username="audit_test",
             password=SecretStr("AuditSecretPassword"),
         )
@@ -656,7 +656,7 @@ class TestModelSecureCredentialsEdgeCases:
 
     def test_credentials_with_none_optional_fields(self):
         """Test credentials with None values for optional fields."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             username="test_user",
             password=SecretStr("password"),
             api_key=None,
@@ -673,7 +673,7 @@ class TestModelSecureCredentialsEdgeCases:
     def test_credentials_with_very_long_secrets(self):
         """Test credentials with very long secret values."""
         long_secret = "a" * 10000
-        creds = TestCredentials(password=SecretStr(long_secret))
+        creds = SampleCredentials(password=SecretStr(long_secret))
 
         # Should handle long secrets in masking
         masked = creds.get_masked_dict(mask_level="minimal")
@@ -686,7 +686,7 @@ class TestModelSecureCredentialsEdgeCases:
     def test_credentials_with_special_characters(self):
         """Test credentials with special characters."""
         special_password = "P@ssw0rd!#$%^&*()[]{}|\\:;\"'<>,.?/"
-        creds = TestCredentials(password=SecretStr(special_password))
+        creds = SampleCredentials(password=SecretStr(special_password))
 
         # Should handle special characters
         masked = creds.get_masked_dict(mask_level="standard")
@@ -699,7 +699,7 @@ class TestModelSecureCredentialsEdgeCases:
     def test_credentials_with_unicode_secrets(self):
         """Test credentials with unicode characters."""
         unicode_password = "Pass你好🔐word"
-        creds = TestCredentials(password=SecretStr(unicode_password))
+        creds = SampleCredentials(password=SecretStr(unicode_password))
 
         # Should handle unicode
         masked = creds.get_masked_dict()
@@ -707,7 +707,7 @@ class TestModelSecureCredentialsEdgeCases:
 
     def test_environment_mapping_with_special_field_names(self):
         """Test environment mapping handles field names correctly."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         mapping = creds.get_environment_mapping(env_prefix="TEST_")
 
@@ -735,7 +735,7 @@ class TestModelSecureCredentialsEdgeCases:
 
     def test_recursive_masking_deeply_nested_structure(self):
         """Test recursive masking with deeply nested structures."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         nested_data = {
             "level1": {
@@ -759,7 +759,7 @@ class TestModelSecureCredentialsEdgeCases:
 
     def test_validation_comprehensive_report(self):
         """Test that validation returns comprehensive report."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("weak"),  # Weak password
             api_key=SecretStr("short"),  # Short key
         )
@@ -783,7 +783,7 @@ class TestModelSecureCredentialsBranchCoverage:
 
     def test_mask_secret_value_unknown_level_defaults_to_masked(self):
         """Test masking with unknown level defaults to standard (line 92)."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         # Unknown masking level should default to standard
         masked = creds._mask_secret_value("secret_value", "unknown_level")
@@ -792,7 +792,7 @@ class TestModelSecureCredentialsBranchCoverage:
     def test_get_credential_strength_assessment_with_16char_secret(self):
         """Test strength assessment boundary at 16 characters (line 137-138)."""
         # Exactly 16 characters - should be strong
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("1234567890123456"),  # Exactly 16 chars
             api_key=SecretStr("abcdefghijklmnop"),  # Exactly 16 chars
         )
@@ -806,7 +806,7 @@ class TestModelSecureCredentialsBranchCoverage:
     def test_get_credential_strength_assessment_with_8to15char_secret(self):
         """Test strength assessment with 8-15 character secret (line 136-138)."""
         # Between 8 and 15 characters - considered weak
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("12345678"),  # 8 chars
             api_key=SecretStr("123456789012"),  # 12 chars
         )
@@ -844,7 +844,7 @@ class TestModelSecureCredentialsBranchCoverage:
 
     def test_load_from_environment_with_validation_error_handling(self):
         """Test environment loading handles errors gracefully (lines 244-254)."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         # The method doesn't actually perform type conversion, it just loads string values
         # So we test that it handles loading without errors
@@ -858,7 +858,7 @@ class TestModelSecureCredentialsBranchCoverage:
 
     def test_export_to_env_template_with_optional_fields(self):
         """Test template export distinguishes required vs optional (line 364)."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         template = creds.export_to_env_template(env_prefix="TEST_")
 
@@ -893,7 +893,7 @@ class TestModelSecureCredentialsBranchCoverage:
         """Test fallback handling when primary prefix throws exception (lines 442-443)."""
         with patch.dict(os.environ, {"PRIMARY_USERNAME": "user1"}, clear=True):
             # Mock load_from_env to raise exception for primary
-            original_load = TestCredentials.load_from_env
+            original_load = SampleCredentials.load_from_env
 
             def mock_load_primary(env_prefix):
                 if env_prefix == "PRIMARY_":
@@ -901,21 +901,21 @@ class TestModelSecureCredentialsBranchCoverage:
                 return original_load(env_prefix)
 
             with patch.object(
-                TestCredentials, "load_from_env", side_effect=mock_load_primary
+                SampleCredentials, "load_from_env", side_effect=mock_load_primary
             ):
                 # Should fall back to defaults
-                creds = TestCredentials.create_from_env_with_fallbacks(
+                creds = SampleCredentials.create_from_env_with_fallbacks(
                     env_prefix="PRIMARY_", fallback_prefixes=[]
                 )
 
                 # Should create with defaults due to exception
-                assert isinstance(creds, TestCredentials)
+                assert isinstance(creds, SampleCredentials)
 
     def test_create_from_env_with_fallbacks_exception_in_fallback(self):
         """Test fallback handling when fallback prefix throws exception (lines 453-458)."""
         with patch.dict(os.environ, {}, clear=True):
             # Mock load_from_env to raise exception for fallback
-            original_load = TestCredentials.load_from_env
+            original_load = SampleCredentials.load_from_env
 
             call_count = [0]
 
@@ -926,19 +926,19 @@ class TestModelSecureCredentialsBranchCoverage:
                 return original_load(env_prefix)
 
             with patch.object(
-                TestCredentials, "load_from_env", side_effect=mock_load_fallback
+                SampleCredentials, "load_from_env", side_effect=mock_load_fallback
             ):
                 # Should try fallback, catch exception, and create with defaults
-                creds = TestCredentials.create_from_env_with_fallbacks(
+                creds = SampleCredentials.create_from_env_with_fallbacks(
                     env_prefix="PRIMARY_", fallback_prefixes=["FALLBACK_"]
                 )
 
                 # Should create with defaults
-                assert isinstance(creds, TestCredentials)
+                assert isinstance(creds, SampleCredentials)
 
     def test_load_from_environment_with_validation_issues_logged(self):
         """Test that validation issues are properly collected (line 474)."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         # Mock a scenario where loading succeeds but returns issues
         with patch.dict(
@@ -951,7 +951,7 @@ class TestModelSecureCredentialsBranchCoverage:
 
     def test_get_masked_dict_returns_non_dict_type(self):
         """Test masked dict handling when result is not a dict (line 58)."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         # The get_masked_dict should always return ModelMaskData
         masked = creds.get_masked_dict(mask_level="standard")
@@ -961,7 +961,7 @@ class TestModelSecureCredentialsBranchCoverage:
 
     def test_mask_if_sensitive_string_with_non_aggressive_level(self):
         """Test sensitive string masking only applies in aggressive mode."""
-        creds = TestCredentials()
+        creds = SampleCredentials()
 
         # Base64 pattern should NOT be masked in standard mode
         base64_value = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY3ODkwYWJjZGVm"
@@ -972,7 +972,7 @@ class TestModelSecureCredentialsBranchCoverage:
 
     def test_validate_credentials_with_weak_secret_count(self):
         """Test validation properly counts weak secrets (lines 400-406)."""
-        creds = TestCredentials(
+        creds = SampleCredentials(
             password=SecretStr("weak1"),  # Weak
             api_key=SecretStr("weak2"),  # Weak
         )

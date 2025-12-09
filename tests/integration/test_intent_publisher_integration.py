@@ -36,11 +36,11 @@ from omnibase_core.models.reducer.model_intent_publish_result import (
 )
 
 # ============================================================================
-# Test Event Models
+# Sample Event Models (prefixed with Sample to avoid pytest collection)
 # ============================================================================
 
 
-class TestMetricsEvent(BaseModel):
+class SampleMetricsEvent(BaseModel):
     """Sample domain event for testing."""
 
     metrics_id: UUID = Field(default_factory=uuid4)
@@ -50,7 +50,7 @@ class TestMetricsEvent(BaseModel):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
-class TestTaskCompletedEvent(BaseModel):
+class SampleTaskCompletedEvent(BaseModel):
     """Another sample domain event for testing."""
 
     task_id: UUID = Field(default_factory=uuid4)
@@ -60,15 +60,15 @@ class TestTaskCompletedEvent(BaseModel):
 
 
 # ============================================================================
-# Test Node Classes
+# Mock Node Classes (prefixed with Mock to avoid pytest collection)
 # ============================================================================
 
 
-class TestReducerWithIntentPublisher(MixinIntentPublisher):
-    """Test reducer node that uses intent publishing."""
+class MockReducerWithIntentPublisher(MixinIntentPublisher):
+    """Mock reducer node that uses intent publishing."""
 
     def __init__(self, container: ModelONEXContainer):
-        """Initialize test reducer."""
+        """Initialize mock reducer."""
         self.container = container
         self._init_intent_publisher(container)
 
@@ -84,7 +84,7 @@ class TestReducerWithIntentPublisher(MixinIntentPublisher):
         success_count = sum(1 for e in events if e.get("success", False))
 
         # Build metrics event
-        metrics_event = TestMetricsEvent(
+        metrics_event = SampleMetricsEvent(
             operation_name="batch_processing",
             duration_ms=total_duration,
             success=success_count == len(events),
@@ -104,11 +104,11 @@ class TestReducerWithIntentPublisher(MixinIntentPublisher):
         }
 
 
-class TestOrchestratorWithIntentPublisher(MixinIntentPublisher):
-    """Test orchestrator node that uses intent publishing."""
+class MockOrchestratorWithIntentPublisher(MixinIntentPublisher):
+    """Mock orchestrator node that uses intent publishing."""
 
     def __init__(self, container: ModelONEXContainer):
-        """Initialize test orchestrator."""
+        """Initialize mock orchestrator."""
         self.container = container
         self._init_intent_publisher(container)
 
@@ -125,7 +125,7 @@ class TestOrchestratorWithIntentPublisher(MixinIntentPublisher):
         workflow_result = {"steps_completed": 3, "total_steps": 3}
 
         # Build completion event
-        completion_event = TestTaskCompletedEvent(
+        completion_event = SampleTaskCompletedEvent(
             task_id=workflow_id,
             task_type="workflow_execution",
             result=workflow_result,
@@ -227,7 +227,7 @@ class TestIntentPublisherIntegration:
         self, container_with_kafka, mock_kafka_client
     ):
         """Test basic intent publishing workflow."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
         # Execute reduction that publishes intent
         events = [
@@ -248,8 +248,8 @@ class TestIntentPublisherIntegration:
 
         # Verify intent payload
         assert intent["target_topic"] == "dev.omninode.metrics.v1"
-        assert intent["target_event_type"] == "TestMetricsEvent"
-        assert intent["created_by"] == "TestReducerWithIntentPublisher"
+        assert intent["target_event_type"] == "SampleMetricsEvent"
+        assert intent["created_by"] == "MockReducerWithIntentPublisher"
         assert "target_event_payload" in intent
 
         # Verify result includes intent_id
@@ -261,10 +261,10 @@ class TestIntentPublisherIntegration:
         self, container_with_kafka, mock_kafka_client
     ):
         """Test that ModelIntentPublishResult is properly populated."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
         # Create test event
-        metrics_event = TestMetricsEvent(
+        metrics_event = SampleMetricsEvent(
             operation_name="test_operation", duration_ms=150.5, success=True
         )
 
@@ -298,7 +298,7 @@ class TestIntentPublisherIntegration:
         self, container_with_kafka, mock_kafka_client
     ):
         """Test correlation ID preservation through entire workflow."""
-        orchestrator = TestOrchestratorWithIntentPublisher(container_with_kafka)
+        orchestrator = MockOrchestratorWithIntentPublisher(container_with_kafka)
 
         workflow_id = uuid4()
         correlation_id = uuid4()
@@ -320,9 +320,9 @@ class TestIntentPublisherIntegration:
         self, container_with_kafka, mock_kafka_client
     ):
         """Test that correlation ID is auto-generated when not provided."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
-        metrics_event = TestMetricsEvent(
+        metrics_event = SampleMetricsEvent(
             operation_name="test", duration_ms=100, success=True
         )
 
@@ -347,10 +347,10 @@ class TestIntentPublisherIntegration:
         self, container_with_kafka, mock_kafka_client
     ):
         """Test correlation ID propagation for intent executor tracing."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
         correlation_id = uuid4()
 
-        metrics_event = TestMetricsEvent(
+        metrics_event = SampleMetricsEvent(
             operation_name="traced_operation", duration_ms=200, success=True
         )
 
@@ -391,10 +391,10 @@ class TestIntentPublisherIntegration:
         self, container_with_kafka, mock_kafka_client
     ):
         """Test that complete event payload is delivered in intent."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
         # Create event with detailed payload
-        metrics_event = TestMetricsEvent(
+        metrics_event = SampleMetricsEvent(
             metrics_id=uuid4(),
             operation_name="complex_operation",
             duration_ms=350.75,
@@ -424,9 +424,9 @@ class TestIntentPublisherIntegration:
         self, container_with_kafka, mock_kafka_client
     ):
         """Test that intent includes all required metadata fields."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
-        metrics_event = TestMetricsEvent(
+        metrics_event = SampleMetricsEvent(
             operation_name="metadata_test", duration_ms=100, success=True
         )
 
@@ -445,10 +445,10 @@ class TestIntentPublisherIntegration:
         assert "intent_id" in intent
         assert "correlation_id" in intent
         assert "created_at" in intent
-        assert intent["created_by"] == "TestReducerWithIntentPublisher"
+        assert intent["created_by"] == "MockReducerWithIntentPublisher"
         assert intent["target_topic"] == "dev.omninode.metrics.v1"
         assert intent["target_key"] == "metadata-key"
-        assert intent["target_event_type"] == "TestMetricsEvent"
+        assert intent["target_event_type"] == "SampleMetricsEvent"
         assert intent["priority"] == 7
 
         # Verify intent_id matches result
@@ -461,9 +461,9 @@ class TestIntentPublisherIntegration:
     @pytest.mark.asyncio
     async def test_priority_handling(self, container_with_kafka, mock_kafka_client):
         """Test that priority is properly set and validated."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
-        event = TestMetricsEvent(
+        event = SampleMetricsEvent(
             operation_name="priority_test", duration_ms=100, success=True
         )
 
@@ -487,9 +487,9 @@ class TestIntentPublisherIntegration:
     @pytest.mark.asyncio
     async def test_invalid_priority_rejected(self, container_with_kafka):
         """Test that invalid priority values are rejected."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
-        event = TestMetricsEvent(operation_name="test", duration_ms=100, success=True)
+        event = SampleMetricsEvent(operation_name="test", duration_ms=100, success=True)
 
         # Test priority < 1
         with pytest.raises(ModelOnexError, match="Priority must be 1-10"):
@@ -516,7 +516,7 @@ class TestIntentPublisherIntegration:
     @pytest.mark.asyncio
     async def test_kafka_unavailable_error(self, container_with_kafka):
         """Test handling when Kafka client is unavailable."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
         # Make Kafka publish fail
         kafka_client = container_with_kafka.get_service("kafka_client")
@@ -526,7 +526,7 @@ class TestIntentPublisherIntegration:
 
         kafka_client.publish = failing_publish
 
-        event = TestMetricsEvent(operation_name="test", duration_ms=100, success=True)
+        event = SampleMetricsEvent(operation_name="test", duration_ms=100, success=True)
 
         # Should propagate Kafka error
         with pytest.raises(ConnectionError, match="Kafka broker unavailable"):
@@ -539,7 +539,7 @@ class TestIntentPublisherIntegration:
     @pytest.mark.asyncio
     async def test_malformed_event_rejected(self, container_with_kafka):
         """Test that non-Pydantic events are rejected."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
         # Create object without model_dump method
         invalid_event = {"not": "a pydantic model"}
@@ -570,7 +570,7 @@ class TestIntentPublisherIntegration:
         with pytest.raises(
             ModelOnexError, match="MixinIntentPublisher requires 'kafka_client' service"
         ):
-            TestReducerWithIntentPublisher(container)
+            MockReducerWithIntentPublisher(container)
 
     # ========================================================================
     # Multi-Node Integration Tests
@@ -581,11 +581,11 @@ class TestIntentPublisherIntegration:
         self, container_with_kafka, mock_kafka_client
     ):
         """Test that multiple nodes can share the same Kafka client."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
-        orchestrator = TestOrchestratorWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
+        orchestrator = MockOrchestratorWithIntentPublisher(container_with_kafka)
 
         # Both nodes publish intents
-        metrics_event = TestMetricsEvent(
+        metrics_event = SampleMetricsEvent(
             operation_name="shared_test", duration_ms=100, success=True
         )
         await reducer.publish_event_intent(
@@ -594,7 +594,7 @@ class TestIntentPublisherIntegration:
             event=metrics_event,
         )
 
-        task_event = TestTaskCompletedEvent(
+        task_event = SampleTaskCompletedEvent(
             task_type="shared_test", result={"status": "ok"}
         )
         await orchestrator.publish_event_intent(
@@ -614,19 +614,19 @@ class TestIntentPublisherIntegration:
             mock_kafka_client.published_messages[1]["value"]
         )
 
-        assert intent1["created_by"] == "TestReducerWithIntentPublisher"
-        assert intent2["created_by"] == "TestOrchestratorWithIntentPublisher"
+        assert intent1["created_by"] == "MockReducerWithIntentPublisher"
+        assert intent2["created_by"] == "MockOrchestratorWithIntentPublisher"
 
     @pytest.mark.asyncio
     async def test_concurrent_intent_publishing(
         self, container_with_kafka, mock_kafka_client
     ):
         """Test concurrent intent publishing from multiple nodes."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
         # Publish multiple intents concurrently
         events = [
-            TestMetricsEvent(
+            SampleMetricsEvent(
                 operation_name=f"concurrent_{i}", duration_ms=100 + i, success=True
             )
             for i in range(10)
@@ -666,11 +666,11 @@ class TestIntentPublisherIntegration:
         3. Executor publishes execution result
         4. Validate correlation throughout
         """
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
         correlation_id = uuid4()
 
         # Step 1: Reducer publishes intent
-        metrics_event = TestMetricsEvent(
+        metrics_event = SampleMetricsEvent(
             operation_name="workflow_test", duration_ms=250, success=True
         )
 
@@ -690,7 +690,7 @@ class TestIntentPublisherIntegration:
         assert intent.correlation_id == correlation_id
         assert intent.target_topic == "dev.omninode.metrics.v1"
         assert intent.target_key == "workflow-key"
-        assert intent.target_event_type == "TestMetricsEvent"
+        assert intent.target_event_type == "SampleMetricsEvent"
 
         # Step 3: Simulate executor publishing to target topic
         # (In real system, executor would call Effect node)
@@ -719,9 +719,9 @@ class TestIntentPublisherIntegration:
     @pytest.mark.asyncio
     async def test_intent_retry_scenario(self, container_with_kafka, mock_kafka_client):
         """Test intent publishing with retry configuration."""
-        reducer = TestReducerWithIntentPublisher(container_with_kafka)
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
-        event = TestMetricsEvent(
+        event = SampleMetricsEvent(
             operation_name="retry_test", duration_ms=100, success=False
         )
 

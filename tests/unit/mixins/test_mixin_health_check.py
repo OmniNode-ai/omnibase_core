@@ -13,8 +13,8 @@ from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 from omnibase_core.models.health.model_health_status import ModelHealthStatus
 
 
-class TestNode(MixinHealthCheck):
-    """Test node class that uses MixinHealthCheck."""
+class MockNode(MixinHealthCheck):
+    """Mock node class that uses MixinHealthCheck."""
 
     def __init__(self):
         super().__init__()
@@ -30,7 +30,7 @@ class TestMixinHealthCheck:
 
     def test_initialization(self):
         """Test mixin initialization."""
-        node = TestNode()
+        node = MockNode()
 
         assert hasattr(node, "health_check")
         assert hasattr(node, "health_check_async")
@@ -39,7 +39,7 @@ class TestMixinHealthCheck:
 
     def test_health_check_basic(self):
         """Test basic health check with no custom checks."""
-        node = TestNode()
+        node = MockNode()
 
         result = node.health_check()
 
@@ -53,7 +53,7 @@ class TestMixinHealthCheck:
         def custom_check():
             return ModelHealthStatus.create_healthy(score=1.0)
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [custom_check]
 
         result = node.health_check()
@@ -75,7 +75,7 @@ class TestMixinHealthCheck:
                 ],
             )
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [custom_check]
 
         result = node.health_check()
@@ -98,7 +98,7 @@ class TestMixinHealthCheck:
                 ],
             )
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [custom_check]
 
         result = node.health_check()
@@ -116,7 +116,7 @@ class TestMixinHealthCheck:
         def check2():
             return ModelHealthStatus.create_healthy(score=1.0)
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [check1, check2]
 
         result = node.health_check()
@@ -141,7 +141,7 @@ class TestMixinHealthCheck:
                 ],
             )
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [check1, check2]
 
         result = node.health_check()
@@ -154,7 +154,7 @@ class TestMixinHealthCheck:
         def failing_check():
             raise RuntimeError("Check failed with exception")
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [failing_check]
 
         result = node.health_check()
@@ -187,7 +187,7 @@ class TestMixinHealthCheck:
                 ],
             )
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [check1, check2]
 
         result = node.health_check()
@@ -198,7 +198,7 @@ class TestMixinHealthCheck:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_health_check_async_basic(self):
         """Test async health check with no custom checks."""
-        node = TestNode()
+        node = MockNode()
 
         result = await node.health_check_async()
 
@@ -214,7 +214,7 @@ class TestMixinHealthCheck:
         def sync_check():
             return ModelHealthStatus.create_healthy(score=1.0)
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [sync_check]
 
         result = await node.health_check_async()
@@ -231,7 +231,7 @@ class TestMixinHealthCheck:
             await asyncio.sleep(0.01)  # Simulate async work
             return ModelHealthStatus.create_healthy(score=1.0)
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [async_check]
 
         result = await node.health_check_async()
@@ -251,7 +251,7 @@ class TestMixinHealthCheck:
             await asyncio.sleep(0.01)
             return ModelHealthStatus.create_healthy(score=1.0)
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [sync_check, async_check]
 
         result = await node.health_check_async()
@@ -267,7 +267,7 @@ class TestMixinHealthCheck:
         async def failing_check():
             raise RuntimeError("Async check failed")
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [failing_check]
 
         result = await node.health_check_async()
@@ -276,7 +276,7 @@ class TestMixinHealthCheck:
 
     def test_check_dependency_health_available(self):
         """Test check_dependency_health with available dependency."""
-        node = TestNode()
+        node = MockNode()
 
         def check_func():
             return True
@@ -289,7 +289,7 @@ class TestMixinHealthCheck:
 
     def test_check_dependency_health_unavailable(self):
         """Test check_dependency_health with unavailable dependency."""
-        node = TestNode()
+        node = MockNode()
 
         def check_func():
             return False
@@ -304,7 +304,7 @@ class TestMixinHealthCheck:
 
     def test_check_dependency_health_with_exception(self):
         """Test check_dependency_health when check function raises exception."""
-        node = TestNode()
+        node = MockNode()
 
         def check_func():
             raise ConnectionError("Cannot connect to dependency")
@@ -323,7 +323,7 @@ class TestMixinHealthCheck:
         def invalid_check():
             return "not a health status object"
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [invalid_check]
 
         result = node.health_check()
@@ -337,7 +337,7 @@ class TestMixinHealthCheck:
         async def async_check():
             return ModelHealthStatus.create_healthy(score=1.0)
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [async_check]
 
         # Should handle async check in sync context
@@ -365,7 +365,7 @@ class TestMixinHealthCheck:
                 ],
             )
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [check1, check2, check3]
 
         result = node.health_check()
@@ -390,7 +390,7 @@ class TestMixinHealthCheck:
         async def invalid_check():
             return "not a health status"
 
-        node = TestNode()
+        node = MockNode()
         node.custom_checks = [invalid_check]
 
         result = await node.health_check_async()
@@ -399,7 +399,7 @@ class TestMixinHealthCheck:
 
     def test_check_dependency_health_with_none_check_result(self):
         """Test check_dependency_health when check returns None."""
-        node = TestNode()
+        node = MockNode()
 
         def check_func():
             return None
@@ -411,7 +411,7 @@ class TestMixinHealthCheck:
 
     def test_check_dependency_health_with_truthy_values(self):
         """Test check_dependency_health with various truthy values."""
-        node = TestNode()
+        node = MockNode()
 
         test_cases = [
             (True, "healthy"),
@@ -430,7 +430,7 @@ class TestMixinHealthCheck:
 
     def test_check_dependency_health_with_falsy_values(self):
         """Test check_dependency_health with various falsy values."""
-        node = TestNode()
+        node = MockNode()
 
         test_cases = [False, 0, "", [], None]
 

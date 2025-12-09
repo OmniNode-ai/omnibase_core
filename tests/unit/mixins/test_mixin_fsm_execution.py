@@ -78,11 +78,11 @@ def test_fsm() -> ModelFSMSubcontract:
     )
 
 
-class TestNode(MixinFSMExecution):
-    """Test node class using FSM mixin."""
+class MockNode(MixinFSMExecution):
+    """Mock node class using FSM mixin."""
 
     def __init__(self):
-        """Initialize test node."""
+        """Initialize mock node."""
         super().__init__()
 
 
@@ -92,7 +92,7 @@ class TestMixinFSMExecution:
     @pytest.mark.asyncio
     async def test_mixin_execute_transition(self, test_fsm: ModelFSMSubcontract):
         """Test executing transition through mixin."""
-        node = TestNode()
+        node = MockNode()
 
         result = await node.execute_fsm_transition(
             test_fsm,
@@ -107,7 +107,7 @@ class TestMixinFSMExecution:
     @pytest.mark.asyncio
     async def test_mixin_state_tracking(self, test_fsm: ModelFSMSubcontract):
         """Test that mixin tracks current state."""
-        node = TestNode()
+        node = MockNode()
 
         # Initially no state
         assert node.get_current_fsm_state() is None
@@ -135,7 +135,7 @@ class TestMixinFSMExecution:
     @pytest.mark.asyncio
     async def test_mixin_history_tracking(self, test_fsm: ModelFSMSubcontract):
         """Test that mixin tracks state history."""
-        node = TestNode()
+        node = MockNode()
 
         # Execute first transition
         await node.execute_fsm_transition(
@@ -161,7 +161,7 @@ class TestMixinFSMExecution:
     @pytest.mark.asyncio
     async def test_mixin_reset_state(self, test_fsm: ModelFSMSubcontract):
         """Test resetting FSM state."""
-        node = TestNode()
+        node = MockNode()
 
         # Execute transition
         await node.execute_fsm_transition(
@@ -181,7 +181,7 @@ class TestMixinFSMExecution:
     @pytest.mark.asyncio
     async def test_mixin_initialize_state(self, test_fsm: ModelFSMSubcontract):
         """Test initializing FSM state with context."""
-        node = TestNode()
+        node = MockNode()
 
         context = {"initial": "context", "batch_size": 100}
         node.initialize_fsm_state(test_fsm, context=context)
@@ -191,7 +191,7 @@ class TestMixinFSMExecution:
     @pytest.mark.asyncio
     async def test_mixin_is_terminal_state(self, test_fsm: ModelFSMSubcontract):
         """Test checking for terminal state."""
-        node = TestNode()
+        node = MockNode()
 
         # Initially not in terminal state
         node.initialize_fsm_state(test_fsm)
@@ -216,7 +216,7 @@ class TestMixinFSMExecution:
     @pytest.mark.asyncio
     async def test_mixin_validate_contract(self, test_fsm: ModelFSMSubcontract):
         """Test validating FSM contract through mixin."""
-        node = TestNode()
+        node = MockNode()
 
         errors = await node.validate_fsm_contract(test_fsm)
         assert len(errors) == 0
@@ -224,7 +224,7 @@ class TestMixinFSMExecution:
     @pytest.mark.asyncio
     async def test_mixin_validate_invalid_contract(self):
         """Test validating invalid FSM contract."""
-        node = TestNode()
+        node = MockNode()
 
         # Create invalid FSM using model_construct to bypass validators
         # (initial state doesn't exist in states list)
@@ -271,7 +271,7 @@ class TestMixinFSMExecution:
         """Test that failed transitions don't update mixin state."""
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-        node = TestNode()
+        node = MockNode()
         node.initialize_fsm_state(test_fsm)
 
         # Try invalid transition - should raise ModelOnexError

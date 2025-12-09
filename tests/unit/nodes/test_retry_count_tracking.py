@@ -29,6 +29,7 @@ def service_effect(mock_container):
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestRetryCountTracking:
     """Test that retry_count is correctly tracked and returned."""
 
@@ -123,8 +124,10 @@ class TestRetryCountTracking:
             retry_delay_ms=10,
         )
 
-        # Should fail after max_retries
-        with pytest.raises(Exception):
+        # Should fail after max_retries - NodeEffect wraps exceptions in ModelOnexError
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+        with pytest.raises(ModelOnexError, match="Always fails"):
             await service_effect.process(effect_input)
 
         # Note: When the operation fails, we can't check the retry_count in the output

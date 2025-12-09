@@ -7,8 +7,8 @@ Coverage target: 60%+ (stub implementation with defensive attribute handling)
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 
 
-class TestNode(MixinMetrics):
-    """Test node class that uses MixinMetrics."""
+class MockNode(MixinMetrics):
+    """Mock node class that uses MixinMetrics."""
 
 
 class TestMixinMetricsInit:
@@ -16,14 +16,14 @@ class TestMixinMetricsInit:
 
     def test_init_sets_metrics_enabled(self):
         """Test that __init__ sets _metrics_enabled to True."""
-        node = TestNode()
+        node = MockNode()
         # Use object.__getattribute__() to access the attribute
         metrics_enabled = object.__getattribute__(node, "_metrics_enabled")
         assert metrics_enabled is True
 
     def test_init_creates_empty_metrics_dict(self):
         """Test that __init__ creates empty _metrics_data dict."""
-        node = TestNode()
+        node = MockNode()
         metrics_data = object.__getattribute__(node, "_metrics_data")
         assert metrics_data == {}
         assert isinstance(metrics_data, dict)
@@ -34,7 +34,7 @@ class TestRecordMetric:
 
     def test_record_metric_basic(self):
         """Test basic metric recording."""
-        node = TestNode()
+        node = MockNode()
 
         node.record_metric("test_metric", 42.5)
 
@@ -45,7 +45,7 @@ class TestRecordMetric:
 
     def test_record_metric_with_tags(self):
         """Test metric recording with tags."""
-        node = TestNode()
+        node = MockNode()
         tags = {"env": "test", "service": "api"}
 
         node.record_metric("request_time", 123.45, tags=tags)
@@ -56,7 +56,7 @@ class TestRecordMetric:
 
     def test_record_metric_overwrites_existing(self):
         """Test that recording a metric overwrites existing value."""
-        node = TestNode()
+        node = MockNode()
 
         node.record_metric("metric1", 10.0)
         node.record_metric("metric1", 20.0)
@@ -66,7 +66,7 @@ class TestRecordMetric:
 
     def test_record_metric_multiple_metrics(self):
         """Test recording multiple different metrics."""
-        node = TestNode()
+        node = MockNode()
 
         node.record_metric("metric_a", 1.0)
         node.record_metric("metric_b", 2.0)
@@ -80,7 +80,7 @@ class TestRecordMetric:
 
     def test_record_metric_with_empty_tags(self):
         """Test recording metric with explicitly empty tags."""
-        node = TestNode()
+        node = MockNode()
 
         node.record_metric("metric1", 100.0, tags={})
 
@@ -89,7 +89,7 @@ class TestRecordMetric:
 
     def test_record_metric_with_negative_value(self):
         """Test recording metric with negative value."""
-        node = TestNode()
+        node = MockNode()
 
         node.record_metric("temperature", -15.5)
 
@@ -98,7 +98,7 @@ class TestRecordMetric:
 
     def test_record_metric_with_zero_value(self):
         """Test recording metric with zero value."""
-        node = TestNode()
+        node = MockNode()
 
         node.record_metric("error_count", 0.0)
 
@@ -107,7 +107,7 @@ class TestRecordMetric:
 
     def test_record_metric_defensive_initialization(self):
         """Test that record_metric handles missing initialization gracefully."""
-        node = TestNode()
+        node = MockNode()
 
         # Delete the metrics attributes to test defensive initialization
         try:
@@ -130,7 +130,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_default_increment(self):
         """Test counter increment with default value (1)."""
-        node = TestNode()
+        node = MockNode()
 
         node.increment_counter("requests")
 
@@ -139,7 +139,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_custom_increment(self):
         """Test counter increment with custom value."""
-        node = TestNode()
+        node = MockNode()
 
         node.increment_counter("bytes_sent", value=1024)
 
@@ -148,7 +148,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_multiple_times(self):
         """Test incrementing counter multiple times."""
-        node = TestNode()
+        node = MockNode()
 
         node.increment_counter("api_calls")
         node.increment_counter("api_calls")
@@ -159,7 +159,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_with_custom_values(self):
         """Test incrementing counter with varying custom values."""
-        node = TestNode()
+        node = MockNode()
 
         node.increment_counter("total_bytes", value=100)
         node.increment_counter("total_bytes", value=200)
@@ -170,7 +170,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_from_zero(self):
         """Test that counter starts from zero."""
-        node = TestNode()
+        node = MockNode()
 
         # First increment should start from 0
         node.increment_counter("new_counter", value=5)
@@ -180,7 +180,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_negative_value(self):
         """Test incrementing counter with negative value (decrement)."""
-        node = TestNode()
+        node = MockNode()
 
         node.increment_counter("balance", value=100)
         node.increment_counter("balance", value=-30)
@@ -190,7 +190,7 @@ class TestIncrementCounter:
 
     def test_increment_counter_defensive_initialization(self):
         """Test that increment_counter handles missing initialization gracefully."""
-        node = TestNode()
+        node = MockNode()
 
         # Should work even if attributes are missing (defensive initialization)
         node.increment_counter("test_counter", value=10)
@@ -204,7 +204,7 @@ class TestGetMetrics:
 
     def test_get_metrics_empty(self):
         """Test get_metrics on empty metrics data."""
-        node = TestNode()
+        node = MockNode()
 
         metrics = node.get_metrics()
 
@@ -213,7 +213,7 @@ class TestGetMetrics:
 
     def test_get_metrics_returns_copy(self):
         """Test that get_metrics returns a copy, not reference."""
-        node = TestNode()
+        node = MockNode()
 
         node.record_metric("metric1", 100.0)
 
@@ -226,7 +226,7 @@ class TestGetMetrics:
 
     def test_get_metrics_after_recording(self):
         """Test get_metrics returns all recorded metrics."""
-        node = TestNode()
+        node = MockNode()
 
         node.record_metric("metric_a", 1.0, tags={"tag1": "value1"})
         node.increment_counter("counter_b", value=5)
@@ -240,7 +240,7 @@ class TestGetMetrics:
 
     def test_get_metrics_defensive_initialization(self):
         """Test that get_metrics handles missing initialization gracefully."""
-        node = TestNode()
+        node = MockNode()
 
         # Should work even if _metrics_data doesn't exist
         metrics = node.get_metrics()
@@ -249,7 +249,7 @@ class TestGetMetrics:
 
     def test_get_metrics_with_multiple_metrics(self):
         """Test get_metrics with various metric types."""
-        node = TestNode()
+        node = MockNode()
 
         node.record_metric("response_time", 45.2, tags={"endpoint": "/api/users"})
         node.increment_counter("requests_total")
@@ -269,7 +269,7 @@ class TestResetMetrics:
 
     def test_reset_metrics_clears_all_data(self):
         """Test that reset_metrics clears all metrics data."""
-        node = TestNode()
+        node = MockNode()
 
         # Record some metrics
         node.record_metric("metric1", 10.0)
@@ -290,7 +290,7 @@ class TestResetMetrics:
 
     def test_reset_metrics_on_empty(self):
         """Test reset_metrics on already empty metrics."""
-        node = TestNode()
+        node = MockNode()
 
         # Should not raise error
         node.reset_metrics()
@@ -300,7 +300,7 @@ class TestResetMetrics:
 
     def test_reset_metrics_defensive_initialization(self):
         """Test that reset_metrics handles missing initialization gracefully."""
-        node = TestNode()
+        node = MockNode()
 
         # Should work even if attributes don't exist
         node.reset_metrics()
@@ -316,7 +316,7 @@ class TestMetricsIntegration:
 
     def test_full_metrics_workflow(self):
         """Test complete metrics workflow: record, increment, get, reset."""
-        node = TestNode()
+        node = MockNode()
 
         # Record various metrics
         node.record_metric("latency_ms", 250.5, tags={"service": "api"})
@@ -344,7 +344,7 @@ class TestMetricsIntegration:
 
     def test_counter_and_metric_coexistence(self):
         """Test that counters and regular metrics work together."""
-        node = TestNode()
+        node = MockNode()
 
         # Mix of counters and regular metrics
         node.increment_counter("request_count", value=10)
@@ -362,7 +362,7 @@ class TestMetricsIntegration:
 
     def test_metric_overwrite_behavior(self):
         """Test how metrics behave when overwritten."""
-        node = TestNode()
+        node = MockNode()
 
         # Record initial value
         node.record_metric("temperature", 20.0, tags={"unit": "celsius"})
@@ -385,7 +385,7 @@ class TestMetricsIntegration:
 
     def test_large_number_of_metrics(self):
         """Test handling of many metrics."""
-        node = TestNode()
+        node = MockNode()
 
         # Record many metrics
         for i in range(100):
@@ -401,7 +401,7 @@ class TestMetricsIntegration:
 
     def test_metrics_with_special_characters_in_names(self):
         """Test metrics with special characters in names."""
-        node = TestNode()
+        node = MockNode()
 
         node.record_metric("api.requests.total", 100.0)
         node.record_metric("cache:hit_rate", 0.85)

@@ -50,8 +50,8 @@ class NestedTestModel(BaseModel):
     metadata: dict[str, Any]
 
 
-class TestModelWithValidation(BaseModel):
-    """Test model with field validation."""
+class SampleModelWithValidation(BaseModel):
+    """Sample model with field validation."""
 
     email: str
     age: int
@@ -201,7 +201,7 @@ age: 30
 """,
         )
 
-        result = load_and_validate_yaml_model(yaml_file, TestModelWithValidation)
+        result = load_and_validate_yaml_model(yaml_file, SampleModelWithValidation)
         assert result.email == "test@example.com"
         assert result.age == 30
 
@@ -216,7 +216,7 @@ age: 30
         )
 
         with pytest.raises(ModelOnexError) as exc_info:
-            load_and_validate_yaml_model(yaml_file, TestModelWithValidation)
+            load_and_validate_yaml_model(yaml_file, SampleModelWithValidation)
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_load_yaml_unicode_content(self, tmp_path: Path) -> None:
