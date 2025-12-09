@@ -9,8 +9,8 @@ import pytest
 from omnibase_core.mixins.mixin_caching import MixinCaching
 
 
-class TestNode(MixinCaching):
-    """Test node class that uses MixinCaching."""
+class MockNode(MixinCaching):
+    """Mock node class that uses MixinCaching."""
 
 
 class TestMixinCachingInit:
@@ -18,12 +18,12 @@ class TestMixinCachingInit:
 
     def test_init_sets_cache_enabled(self):
         """Test that __init__ sets _cache_enabled to True."""
-        node = TestNode()
+        node = MockNode()
         assert node._cache_enabled is True
 
     def test_init_creates_empty_cache_dict(self):
         """Test that __init__ creates empty _cache_data dict."""
-        node = TestNode()
+        node = MockNode()
         assert node._cache_data == {}
         assert isinstance(node._cache_data, dict)
 
@@ -33,7 +33,7 @@ class TestGenerateCacheKey:
 
     def test_generate_key_from_dict(self):
         """Test cache key generation from dictionary."""
-        node = TestNode()
+        node = MockNode()
         data = {"key1": "value1", "key2": "value2"}
 
         cache_key = node.generate_cache_key(data)
@@ -45,7 +45,7 @@ class TestGenerateCacheKey:
 
     def test_generate_key_from_string(self):
         """Test cache key generation from string."""
-        node = TestNode()
+        node = MockNode()
         data = "test_string"
 
         cache_key = node.generate_cache_key(data)
@@ -57,7 +57,7 @@ class TestGenerateCacheKey:
 
     def test_generate_key_from_int(self):
         """Test cache key generation from integer."""
-        node = TestNode()
+        node = MockNode()
         data = 12345
 
         cache_key = node.generate_cache_key(data)
@@ -67,7 +67,7 @@ class TestGenerateCacheKey:
 
     def test_generate_key_from_list(self):
         """Test cache key generation from list."""
-        node = TestNode()
+        node = MockNode()
         data = [1, 2, 3, "test"]
 
         cache_key = node.generate_cache_key(data)
@@ -77,7 +77,7 @@ class TestGenerateCacheKey:
 
     def test_generate_key_consistent_for_same_dict(self):
         """Test that same dictionary produces same key."""
-        node = TestNode()
+        node = MockNode()
         dict1 = {"a": 1, "b": 2}
         dict2 = {"b": 2, "a": 1}  # Different order, but same content
 
@@ -89,7 +89,7 @@ class TestGenerateCacheKey:
 
     def test_generate_key_handles_non_serializable_data(self):
         """Test cache key generation with non-JSON-serializable data."""
-        node = TestNode()
+        node = MockNode()
 
         # Object that can't be serialized to JSON
         class CustomObject:
@@ -106,7 +106,7 @@ class TestGenerateCacheKey:
 
     def test_generate_key_different_for_different_data(self):
         """Test that different data produces different keys."""
-        node = TestNode()
+        node = MockNode()
 
         key1 = node.generate_cache_key({"data": "value1"})
         key2 = node.generate_cache_key({"data": "value2"})
@@ -121,7 +121,7 @@ class TestGetCached:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_get_cached_returns_none_when_not_found(self):
         """Test that get_cached returns None for non-existent key."""
-        node = TestNode()
+        node = MockNode()
 
         result = await node.get_cached("nonexistent_key")
 
@@ -131,7 +131,7 @@ class TestGetCached:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_get_cached_returns_value_when_found(self):
         """Test that get_cached returns stored value."""
-        node = TestNode()
+        node = MockNode()
         cache_key = "test_key"
         cache_value = {"result": "success"}
 
@@ -146,7 +146,7 @@ class TestGetCached:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_get_cached_respects_disabled_flag(self):
         """Test that get_cached returns None when caching is disabled."""
-        node = TestNode()
+        node = MockNode()
         cache_key = "test_key"
         cache_value = "test_value"
 
@@ -168,7 +168,7 @@ class TestSetCached:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_set_cached_stores_value(self):
         """Test that set_cached stores value in cache."""
-        node = TestNode()
+        node = MockNode()
         cache_key = "test_key"
         cache_value = "test_value"
 
@@ -180,7 +180,7 @@ class TestSetCached:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_set_cached_with_ttl(self):
         """Test that set_cached accepts TTL parameter (even though it's ignored in stub)."""
-        node = TestNode()
+        node = MockNode()
         cache_key = "test_key"
         cache_value = "test_value"
 
@@ -193,7 +193,7 @@ class TestSetCached:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_set_cached_overwrites_existing_value(self):
         """Test that set_cached overwrites existing cached value."""
-        node = TestNode()
+        node = MockNode()
         cache_key = "test_key"
 
         await node.set_cached(cache_key, "value1")
@@ -206,7 +206,7 @@ class TestSetCached:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_set_cached_respects_disabled_flag(self):
         """Test that set_cached does not store when caching is disabled."""
-        node = TestNode()
+        node = MockNode()
         node._cache_enabled = False
 
         await node.set_cached("test_key", "test_value")
@@ -217,7 +217,7 @@ class TestSetCached:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_set_cached_handles_complex_values(self):
         """Test that set_cached can store complex data structures."""
-        node = TestNode()
+        node = MockNode()
         complex_value = {
             "nested": {"data": [1, 2, 3]},
             "list": ["a", "b", "c"],
@@ -235,7 +235,7 @@ class TestInvalidateCache:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_invalidate_cache_removes_key(self):
         """Test that invalidate_cache removes specified key."""
-        node = TestNode()
+        node = MockNode()
         cache_key = "test_key"
 
         # Set value first
@@ -251,7 +251,7 @@ class TestInvalidateCache:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_invalidate_cache_nonexistent_key(self):
         """Test that invalidate_cache handles non-existent key gracefully."""
-        node = TestNode()
+        node = MockNode()
 
         # Should not raise error
         await node.invalidate_cache("nonexistent_key")
@@ -260,7 +260,7 @@ class TestInvalidateCache:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_invalidate_cache_leaves_other_keys(self):
         """Test that invalidate_cache only removes specified key."""
-        node = TestNode()
+        node = MockNode()
 
         # Set multiple values
         await node.set_cached("key1", "value1")
@@ -283,7 +283,7 @@ class TestClearCache:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_clear_cache_removes_all_entries(self):
         """Test that clear_cache removes all cached entries."""
-        node = TestNode()
+        node = MockNode()
 
         # Set multiple values
         await node.set_cached("key1", "value1")
@@ -302,7 +302,7 @@ class TestClearCache:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_clear_cache_on_empty_cache(self):
         """Test that clear_cache handles empty cache gracefully."""
-        node = TestNode()
+        node = MockNode()
 
         # Should not raise error
         await node.clear_cache()
@@ -315,7 +315,7 @@ class TestGetCacheStats:
 
     def test_get_cache_stats_structure(self):
         """Test that get_cache_stats returns proper structure."""
-        node = TestNode()
+        node = MockNode()
 
         stats = node.get_cache_stats()
 
@@ -326,7 +326,7 @@ class TestGetCacheStats:
 
     def test_get_cache_stats_enabled_flag(self):
         """Test that get_cache_stats includes enabled flag."""
-        node = TestNode()
+        node = MockNode()
 
         stats = node.get_cache_stats()
         assert stats["enabled"] is True
@@ -337,7 +337,7 @@ class TestGetCacheStats:
 
     def test_get_cache_stats_entry_count(self):
         """Test that get_cache_stats reports correct entry count."""
-        node = TestNode()
+        node = MockNode()
 
         # Empty cache
         stats = node.get_cache_stats()
@@ -352,7 +352,7 @@ class TestGetCacheStats:
 
     def test_get_cache_stats_keys_list(self):
         """Test that get_cache_stats includes list of keys."""
-        node = TestNode()
+        node = MockNode()
 
         node._cache_data["key1"] = "value1"
         node._cache_data["key2"] = "value2"
@@ -372,7 +372,7 @@ class TestCachingIntegration:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_full_cache_workflow(self):
         """Test complete caching workflow: generate key, set, get, invalidate."""
-        node = TestNode()
+        node = MockNode()
 
         # Generate key from data
         data = {"param1": "value1", "param2": 123}
@@ -398,7 +398,7 @@ class TestCachingIntegration:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_cache_with_ttl_parameter(self):
         """Test caching workflow with TTL (ignored in stub but should not error)."""
-        node = TestNode()
+        node = MockNode()
 
         data = "test_data"
         cache_key = node.generate_cache_key(data)
@@ -414,7 +414,7 @@ class TestCachingIntegration:
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
     async def test_disabled_cache_workflow(self):
         """Test that caching can be disabled and re-enabled."""
-        node = TestNode()
+        node = MockNode()
         cache_key = "test_key"
 
         # Set value with caching enabled

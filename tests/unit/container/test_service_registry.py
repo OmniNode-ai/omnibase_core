@@ -19,12 +19,12 @@ class ITestService:
         """Execute service logic."""
 
 
-# Test Implementation
-class TestServiceImplementation(ITestService):
-    """Test service implementation."""
+# Mock Implementation (not a test class - prefix avoids pytest collection)
+class MockServiceImplementation(ITestService):
+    """Mock service implementation for testing."""
 
     def __init__(self, name: str = "test") -> None:
-        """Initialize test service."""
+        """Initialize mock service."""
         self.name = name
         self.execution_count = 0
 
@@ -57,7 +57,7 @@ class TestServiceRegistry:
     async def test_register_instance(self, registry: ServiceRegistry) -> None:
         """Test registering service instance."""
         # Create test service
-        test_service = TestServiceImplementation("test1")
+        test_service = MockServiceImplementation("test1")
 
         # Register instance
         registration_id = await registry.register_instance(
@@ -71,7 +71,7 @@ class TestServiceRegistry:
         assert registration_id is not None
         registration = await registry.get_registration(registration_id)
         assert registration is not None
-        assert registration.service_metadata.service_name == "TestServiceImplementation"
+        assert registration.service_metadata.service_name == "MockServiceImplementation"
         assert registration.lifecycle == "singleton"
         assert registration.scope == "global"
         assert registration.registration_status == "registered"
@@ -82,7 +82,7 @@ class TestServiceRegistry:
     ) -> None:
         """Test resolving service by interface."""
         # Register service
-        test_service = TestServiceImplementation("test2")
+        test_service = MockServiceImplementation("test2")
         await registry.register_instance(
             interface=ITestService,
             instance=test_service,
@@ -94,7 +94,7 @@ class TestServiceRegistry:
 
         # Verify resolution
         assert resolved_service is not None
-        assert isinstance(resolved_service, TestServiceImplementation)
+        assert isinstance(resolved_service, MockServiceImplementation)
         assert resolved_service.name == "test2"
 
         # Test execution
@@ -106,7 +106,7 @@ class TestServiceRegistry:
     async def test_singleton_lifecycle(self, registry: ServiceRegistry) -> None:
         """Test singleton lifecycle returns same instance."""
         # Register singleton
-        test_service = TestServiceImplementation("singleton")
+        test_service = MockServiceImplementation("singleton")
         await registry.register_instance(
             interface=ITestService,
             instance=test_service,
@@ -150,7 +150,7 @@ class TestServiceRegistry:
     async def test_unregister_service(self, registry: ServiceRegistry) -> None:
         """Test unregistering service."""
         # Register service
-        test_service = TestServiceImplementation("test3")
+        test_service = MockServiceImplementation("test3")
         registration_id = await registry.register_instance(
             interface=ITestService,
             instance=test_service,
@@ -177,8 +177,8 @@ class TestServiceRegistry:
     async def test_get_all_registrations(self, registry: ServiceRegistry) -> None:
         """Test getting all registrations."""
         # Register multiple services
-        service1 = TestServiceImplementation("service1")
-        service2 = TestServiceImplementation("service2")
+        service1 = MockServiceImplementation("service1")
+        service2 = MockServiceImplementation("service2")
 
         await registry.register_instance(
             interface=ITestService,
@@ -207,7 +207,7 @@ class TestServiceRegistry:
     ) -> None:
         """Test getting registrations by interface."""
         # Register services
-        service1 = TestServiceImplementation("service1")
+        service1 = MockServiceImplementation("service1")
         await registry.register_instance(
             interface=ITestService,
             instance=service1,
@@ -225,7 +225,7 @@ class TestServiceRegistry:
     async def test_get_active_instances(self, registry: ServiceRegistry) -> None:
         """Test getting active instances."""
         # Register service
-        test_service = TestServiceImplementation("test4")
+        test_service = MockServiceImplementation("test4")
         registration_id = await registry.register_instance(
             interface=ITestService,
             instance=test_service,
@@ -244,7 +244,7 @@ class TestServiceRegistry:
     async def test_dispose_instances(self, registry: ServiceRegistry) -> None:
         """Test disposing instances."""
         # Register service
-        test_service = TestServiceImplementation("test5")
+        test_service = MockServiceImplementation("test5")
         registration_id = await registry.register_instance(
             interface=ITestService,
             instance=test_service,
@@ -265,8 +265,8 @@ class TestServiceRegistry:
     async def test_get_registry_status(self, registry: ServiceRegistry) -> None:
         """Test getting registry status."""
         # Register services
-        service1 = TestServiceImplementation("service1")
-        service2 = TestServiceImplementation("service2")
+        service1 = MockServiceImplementation("service1")
+        service2 = MockServiceImplementation("service2")
 
         await registry.register_instance(
             interface=ITestService,
@@ -297,8 +297,8 @@ class TestServiceRegistry:
     async def test_resolve_all_services(self, registry: ServiceRegistry) -> None:
         """Test resolving all services for interface."""
         # Register multiple services
-        service1 = TestServiceImplementation("service1")
-        service2 = TestServiceImplementation("service2")
+        service1 = MockServiceImplementation("service1")
+        service2 = MockServiceImplementation("service2")
 
         await registry.register_instance(
             interface=ITestService,
@@ -316,7 +316,7 @@ class TestServiceRegistry:
 
         # Verify
         assert len(all_services) >= 2
-        assert all(isinstance(svc, TestServiceImplementation) for svc in all_services)
+        assert all(isinstance(svc, MockServiceImplementation) for svc in all_services)
 
     @pytest.mark.asyncio
     async def test_update_service_configuration(
@@ -324,7 +324,7 @@ class TestServiceRegistry:
     ) -> None:
         """Test updating service configuration."""
         # Register service
-        test_service = TestServiceImplementation("test6")
+        test_service = MockServiceImplementation("test6")
         registration_id = await registry.register_instance(
             interface=ITestService,
             instance=test_service,
@@ -352,7 +352,7 @@ class TestServiceRegistry:
     async def test_validate_registration(self, registry: ServiceRegistry) -> None:
         """Test validating registration."""
         # Register service
-        test_service = TestServiceImplementation("test7")
+        test_service = MockServiceImplementation("test7")
         registration_id = await registry.register_instance(
             interface=ITestService,
             instance=test_service,
@@ -372,7 +372,7 @@ class TestServiceRegistry:
     ) -> None:
         """Test registration access count tracking."""
         # Register service
-        test_service = TestServiceImplementation("test8")
+        test_service = MockServiceImplementation("test8")
         registration_id = await registry.register_instance(
             interface=ITestService,
             instance=test_service,
@@ -420,7 +420,7 @@ class TestContainerIntegration:
         container = await create_model_onex_container(enable_service_registry=True)
 
         # Register a test service in the registry
-        test_service = TestServiceImplementation("container_test")
+        test_service = MockServiceImplementation("container_test")
         await container.service_registry.register_instance(
             interface=ITestService,
             instance=test_service,
@@ -432,7 +432,7 @@ class TestContainerIntegration:
 
         # Verify
         assert resolved is not None
-        assert isinstance(resolved, TestServiceImplementation)
+        assert isinstance(resolved, MockServiceImplementation)
         assert resolved.name == "container_test"
 
     @pytest.mark.asyncio
