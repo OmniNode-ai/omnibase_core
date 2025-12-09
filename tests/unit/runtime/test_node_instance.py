@@ -245,6 +245,11 @@ class TestNodeInstanceFrozenBehavior:
         with pytest.raises((ValidationError, AttributeError, TypeError)):
             instance.node_type = EnumNodeType.EFFECT_GENERIC  # type: ignore[misc]
 
+        # Also test contract immutability
+        another_mock_contract = Mock()
+        with pytest.raises((ValidationError, AttributeError, TypeError)):
+            instance.contract = another_mock_contract  # type: ignore[misc]
+
     def test_extra_fields_rejected(
         self,
         sample_slug: str,
@@ -745,9 +750,7 @@ class TestNodeInstanceRuntimeIntegration:
 
         # Do NOT set runtime - calling handle should raise because not initialized
 
-        with pytest.raises(
-            (RuntimeError, ValueError, AttributeError, ModelOnexError)
-        ) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             await instance.handle(sample_envelope)
 
         # Error should mention runtime or initialized
@@ -1173,9 +1176,9 @@ class TestNodeInstanceModelConfig:
         # Check model config (Pydantic v2 style)
         config = instance.model_config
 
-        # Verify frozen is True (if applicable)
-        # Note: frozen may be True or the model may use other immutability patterns
-        assert "frozen" in config or "extra" in config
+        # Verify ONEX-required configuration
+        assert config.get("frozen") is True, "Model must be frozen (immutable)"
+        assert config.get("extra") == "forbid", "Model must forbid extra fields"
 
     def test_serialization_to_dict(
         self,

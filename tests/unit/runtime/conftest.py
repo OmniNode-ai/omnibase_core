@@ -45,6 +45,11 @@ def sample_envelope(default_version: ModelSemVer) -> ModelOnexEnvelope:
 
     Provides a minimal valid envelope with sensible defaults
     for testing node instance handle() methods.
+
+    Note: For tests requiring specialized envelope configurations (e.g., with
+    target_node for routing tests), create the envelope inline using this
+    fixture as a template pattern. This avoids fixture proliferation while
+    keeping test setup explicit and readable.
     """
     return ModelOnexEnvelope(
         envelope_id=uuid4(),
@@ -53,25 +58,6 @@ def sample_envelope(default_version: ModelSemVer) -> ModelOnexEnvelope:
         source_node="test_source",
         operation="TEST_OPERATION",
         payload={"test_key": "test_value"},
-        timestamp=datetime.now(UTC),
-    )
-
-
-@pytest.fixture
-def sample_envelope_with_target(default_version: ModelSemVer) -> ModelOnexEnvelope:
-    """
-    Create a sample envelope with target node specified.
-
-    Used for testing routing and delegation patterns.
-    """
-    return ModelOnexEnvelope(
-        envelope_id=uuid4(),
-        envelope_version=default_version,
-        correlation_id=uuid4(),
-        source_node="test_source",
-        target_node="test_target",
-        operation="TARGETED_OPERATION",
-        payload={"request": "data"},
         timestamp=datetime.now(UTC),
     )
 
