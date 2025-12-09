@@ -110,7 +110,8 @@ effect_operations:
           Content-Type: "application/json"
           Accept: "application/json"
           # Authorization header can be templated from input
-          Authorization: "Bearer ${input.auth_token}"
+          # NOTE: Use obviously fake tokens in examples - never commit real credentials
+          Authorization: "Bearer ${input.auth_token}"  # Runtime: use secure token management
           # Custom correlation header for request tracing
           X-Correlation-ID: "${input.correlation_id}"
 
@@ -370,7 +371,7 @@ effect_operations:
 #   "display_name": "John Smith",            # PLACEHOLDER - use real name
 #   "role": "developer",
 #   "created_by": "admin_user",
-#   "auth_token": "<YOUR_JWT_TOKEN_HERE>",   # PLACEHOLDER - use real token (never commit!)
+#   "auth_token": "FAKE_TOKEN_DO_NOT_USE_abc123xyz789",  # PLACEHOLDER - use secure token mgmt
 #   "correlation_id": "req_abc123xyz",
 #   "user_id": "usr_12345",                  # PLACEHOLDER - use real user ID
 #   "new_status": "active",

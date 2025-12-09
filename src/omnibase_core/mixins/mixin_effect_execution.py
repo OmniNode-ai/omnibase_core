@@ -201,8 +201,10 @@ class MixinEffectExecution:
         # This ensures container and node_id are available on self.
         super().__init__(**kwargs)
 
-        # Circuit breaker state: operation_id -> ModelCircuitBreaker
+        # Circuit breaker state: operation_id (UUID) -> ModelCircuitBreaker
         # Initialized AFTER super().__init__() to ensure base class setup completes first.
+        # This ordering is critical for MRO: base classes set up container/node_id first,
+        # then mixin initializes its own state. See __init__ docstring for full MRO details.
         # Thread Safety: NOT thread-safe - see class docstring for details.
         # Each operation_id gets its own circuit breaker instance.
         self._circuit_breakers: dict[UUID, ModelCircuitBreaker] = {}
@@ -344,8 +346,48 @@ class MixinEffectExecution:
         operation_id = input_data.operation_id
 
         # Extract operation configuration from input_data.operation_data
-        # For v1.0, we expect a single operation configuration
-        operations_config = input_data.operation_data.get("operations", [])
+        # Priority order for operations:
+        # 1. "effect_subcontract" key - if present, extract operations from subcontract
+        # 2. "operations" key - direct operations list (legacy/alternative pattern)
+        #
+        # The subcontract pattern is preferred when the caller provides the full
+        # subcontract object, allowing this mixin to extract operations directly.
+        # For v1.0, we expect a single operation configuration.
+        operations_config: list[dict[str, Any]] = []
+
+        # Check for subcontract first (preferred pattern)
+        effect_subcontract = input_data.operation_data.get("effect_subcontract")
+        if effect_subcontract is not None:
+            # Subcontract can be a dict (serialized) or object with .operations attribute
+            if isinstance(effect_subcontract, dict):
+                subcontract_ops = effect_subcontract.get("operations", [])
+            elif hasattr(effect_subcontract, "operations"):
+                subcontract_ops = effect_subcontract.operations
+            else:
+                subcontract_ops = []
+
+            # Transform subcontract operations to operation_data format
+            for op in subcontract_ops:
+                if isinstance(op, dict):
+                    operations_config.append(op)
+                elif hasattr(op, "model_dump"):
+                    # Pydantic model - serialize to dict
+                    operations_config.append(op.model_dump())
+                elif hasattr(op, "io_config"):
+                    # ModelEffectOperation-like object
+                    op_dict: dict[str, Any] = {}
+                    if hasattr(op.io_config, "model_dump"):
+                        op_dict["io_config"] = op.io_config.model_dump()
+                    else:
+                        op_dict["io_config"] = op.io_config
+                    if hasattr(op, "operation_timeout_ms"):
+                        op_dict["operation_timeout_ms"] = op.operation_timeout_ms
+                    operations_config.append(op_dict)
+
+        # Fallback to direct operations list if subcontract not provided
+        if not operations_config:
+            operations_config = input_data.operation_data.get("operations", [])
+
         if not operations_config:
             raise ModelOnexError(
                 message="No operations defined in effect input",
@@ -369,6 +411,10 @@ class MixinEffectExecution:
 
         # Sequential execution with abort-on-first-failure (v1.0)
         retry_count = 0
+        # NOTE: Union type annotation ("primitive_soup" pattern) is intentional.
+        # Effect operations can return various primitive types depending on handler.
+        # This explicit union provides type safety while supporting diverse return types.
+        # Potential v2.0 enhancement: Use a generic result wrapper instead.
         final_result: str | int | float | bool | dict[str, Any] | list[Any] = {}
         transaction_state = EnumTransactionState.PENDING
 

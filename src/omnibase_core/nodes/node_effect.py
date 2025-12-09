@@ -109,12 +109,17 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         node.effect_subcontract = effect_subcontract  # Or auto-loaded from contract
 
         # Execute effect - effect_type and operation_data are required fields
+        # Note: The 'operations' key in operation_data is populated automatically
+        # from effect_subcontract.operations by the process() method.
+        # Caller-provided data in operation_data is used for template resolution.
         result = await node.process(ModelEffectInput(
             effect_type=EnumEffectType.API_CALL,
             operation_data={
+                # Template resolution context - values used in ${input.field} templates
                 "name": "John Doe",
                 "email": "john@example.com",
             },
+            # Optional retry/timeout overrides (defaults from subcontract if not specified)
             retry_enabled=True,
             max_retries=3,
             timeout_ms=5000,

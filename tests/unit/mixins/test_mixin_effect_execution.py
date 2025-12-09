@@ -23,6 +23,9 @@ from uuid import UUID, uuid4
 
 import pytest
 
+# Module-level pytest marker for all tests in this file
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
 from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
