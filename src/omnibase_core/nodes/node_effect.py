@@ -9,7 +9,6 @@ STABILITY GUARANTEE: Effect subcontract interface is stable.
 
 .. versionchanged:: 0.4.0
     Refactored from code-driven to contract-driven implementation.
-    Legacy code-driven implementation available in nodes/legacy/node_effect_legacy.py
 
 Author: ONEX Framework Team
 """

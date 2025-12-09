@@ -55,10 +55,7 @@ from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-
-# Use legacy code-driven NodeEffect for ModelServiceEffect
-# This maintains backward compatibility with existing code that uses effect_handlers
-from omnibase_core.nodes.legacy.node_effect_legacy import NodeEffectLegacy
+from omnibase_core.nodes.node_effect import NodeEffect
 
 # Type aliases for MixinEventBus generic parameters
 # These use Any for flexibility in the base ModelServiceEffect class.
@@ -76,19 +73,15 @@ ServiceOutputState = Any
 
 class ModelServiceEffect(  # type: ignore[misc]
     MixinNodeService,
-    NodeEffectLegacy,
+    NodeEffect,
     MixinHealthCheck,
     MixinEventBus[ServiceInputState, ServiceOutputState],
     MixinMetrics,
 ):
     """
-    Standard Effect Node Service (Legacy).
+    Standard Effect Node Service.
 
-    .. note::
-        This service uses NodeEffectLegacy (code-driven) for backward compatibility.
-        For new code, consider using the contract-driven NodeEffect directly.
-
-    Combines NodeEffectLegacy base class with essential production mixins:
+    Combines NodeEffect base class with essential production mixins:
     - Persistent service mode (MixinNodeService) - run as long-lived tool service
     - Effect semantics (transaction mgmt, retry, circuit breaker)
     - Health monitoring (MixinHealthCheck)
@@ -96,7 +89,7 @@ class ModelServiceEffect(  # type: ignore[misc]
     - Performance metrics (MixinMetrics)
 
     Method Resolution Order (MRO):
-        ModelServiceEffect → MixinNodeService → NodeEffectLegacy → MixinHealthCheck
+        ModelServiceEffect → MixinNodeService → NodeEffect → MixinHealthCheck
         → MixinEventBus → MixinMetrics → NodeCoreBase → ABC
 
     This composition is optimized for:
