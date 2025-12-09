@@ -38,10 +38,14 @@ from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig
 from .model_lifecycle_config import ModelLifecycleConfig
 from .model_memory_management_config import ModelMemoryManagementConfig
+from .model_node_ref import ModelNodeRef
 from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
 from .model_performance_requirements import ModelPerformanceRequirements
 from .model_reduction_config import ModelReductionConfig
+from .model_runtime_event_bus_config import ModelRuntimeEventBusConfig
+from .model_runtime_handler_config import ModelRuntimeHandlerConfig
+from .model_runtime_host_contract import ModelRuntimeHostContract
 from .model_streaming_config import ModelStreamingConfig
 from .model_transaction_config import ModelTransactionConfig
 from .model_trigger_mappings import ModelTriggerMappings
@@ -59,11 +63,14 @@ __all__ = [
     "ModelContractBase",
     "ModelContractVersion",
     "ModelDependency",
+    "ModelNodeRef",
     # Primary contract models
     "ModelContractCompute",
     "ModelContractEffect",
     "ModelContractOrchestrator",
     "ModelContractReducer",
+    # Runtime Host Contract models
+    "ModelRuntimeHostContract",
     # Configuration models
     "ModelAlgorithmConfig",
     "ModelAlgorithmFactorConfig",
@@ -72,11 +79,13 @@ __all__ = [
     "ModelCachingConfig",
     "ModelConflictResolutionConfig",
     "ModelEffectRetryConfig",
+    "ModelRuntimeEventBusConfig",
     "ModelEventCoordinationConfig",
     "ModelEventDescriptor",
     "ModelEventRegistryConfig",
     "ModelEventSubscription",
     "ModelExternalServiceConfig",
+    "ModelRuntimeHandlerConfig",
     "ModelInputValidationConfig",
     "ModelIOOperationConfig",
     "ModelLifecycleConfig",
