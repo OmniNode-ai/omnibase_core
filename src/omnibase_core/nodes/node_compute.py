@@ -119,7 +119,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
 
     async def execute_compute(
         self,
-        contract: Any,  # ModelContractCompute when available
+        contract: Any,  # ModelContractCompute - imported in method to avoid circular dependency
     ) -> ModelComputeOutput[T_Output]:
         """
         Execute compute operation based on contract specification.
@@ -128,62 +128,160 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         interface per ONEX guidelines. It provides a contract-based entry point
         that delegates to the internal process() method.
 
+        This method validates the contract type before processing to ensure
+        type safety and provide clear error messages for invalid contracts.
+
         .. versionadded:: 0.4.0
 
         Args:
-            contract: The compute contract specification. Expected to have
-                input_data and metadata attributes, but gracefully handles
-                contracts without these fields.
+            contract: The compute contract specification. Must be an instance of
+                ModelContractCompute. The contract should contain:
+                - input_state: Input data for computation (required)
+                - metadata: Optional metadata dict with computation_type, cache_enabled,
+                  and parallel_enabled settings
 
         Returns:
-            ModelComputeOutput containing computation results with performance
-            metrics and cache status.
+            ModelComputeOutput[T_Output]: Computation results containing:
+                - result: The computed output value
+                - operation_id: Unique identifier for this operation
+                - computation_type: Type of computation performed
+                - processing_time_ms: Time taken for computation
+                - cache_hit: Whether result was retrieved from cache
+                - parallel_execution_used: Whether parallel processing was used
+                - metadata: Additional operation metadata
 
         Raises:
-            ModelOnexError: If computation fails or input validation fails.
+            ModelOnexError: If contract type is invalid (not ModelContractCompute),
+                computation fails, or input validation fails. Error codes:
+                - VALIDATION_ERROR: Invalid contract type or missing required fields
+                - OPERATION_FAILED: Computation execution failure
 
         Example:
+            >>> from omnibase_core.models.contracts import ModelContractCompute
             >>> contract = ModelContractCompute(
-            ...     input_data={"text": "hello"},
-            ...     metadata={"computation_type": "string_uppercase"},
+            ...     name="uppercase_transform",
+            ...     version="1.0.0",
+            ...     input_state={"text": "hello"},
+            ...     algorithm={"algorithm_type": "string_uppercase", "factors": [...]},
             ... )
             >>> result = await node.execute_compute(contract)
             >>> print(result.result)  # "HELLO"
+
+        Note:
+            This method requires a ModelContractCompute instance. If you need
+            to process raw input data directly, use the process() method with
+            a ModelComputeInput instance instead.
         """
+        # Import here to avoid circular dependency
+        from omnibase_core.models.contracts.model_contract_compute import (
+            ModelContractCompute,
+        )
+
+        if not isinstance(contract, ModelContractCompute):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Invalid contract type - must be ModelContractCompute",
+                context={
+                    "node_id": str(self.node_id),
+                    "provided_type": type(contract).__name__,
+                    "expected_type": "ModelContractCompute",
+                },
+            )
+
         # Convert contract to ModelComputeInput
         compute_input = self._contract_to_input(contract)
         return await self.process(compute_input)
 
     def _contract_to_input(self, contract: Any) -> ModelComputeInput[Any]:
         """
-        Convert contract to ModelComputeInput.
+        Convert ModelContractCompute to ModelComputeInput for processing.
+
+        This method extracts computation parameters from a validated contract
+        and constructs a ModelComputeInput instance suitable for the process()
+        method. It enforces that input data is present and logs warnings for
+        missing optional fields.
 
         Args:
-            contract: The compute contract to convert. Expected to have
-                input_data and metadata attributes.
+            contract: The compute contract to convert. Must be a validated
+                ModelContractCompute instance with:
+                - input_state (required): Dict containing input data for computation
+                - metadata (optional): Dict with computation settings
+                - algorithm (optional): Algorithm configuration with computation_type
 
         Returns:
-            ModelComputeInput instance ready for process() method.
+            ModelComputeInput[Any]: Input model configured with:
+                - data: The input data from contract.input_state
+                - computation_type: Type of computation to perform
+                - cache_enabled: Whether to use caching (default: True)
+                - parallel_enabled: Whether to enable parallel processing (default: False)
+                - metadata: Additional metadata from contract
+
+        Raises:
+            ModelOnexError: If contract.input_state is missing or None, indicating
+                a contract configuration error. Error code: VALIDATION_ERROR
+
+        Example:
+            >>> contract = ModelContractCompute(
+            ...     input_state={"values": [1, 2, 3]},
+            ...     algorithm={"algorithm_type": "sum_numbers", ...},
+            ... )
+            >>> compute_input = node._contract_to_input(contract)
+            >>> # compute_input.data == {"values": [1, 2, 3]}
 
         Note:
-            This method gracefully handles contracts that may not have all
-            expected attributes, using sensible defaults where needed.
+            This method expects execute_compute() to have already validated
+            that contract is a ModelContractCompute instance. Direct calls
+            should ensure proper contract type validation.
         """
-        # Extract input_data from contract (required field)
-        input_data: Any = getattr(contract, "input_data", {})
+        # Extract input_state from contract - this is the primary input data field
+        # for ModelContractCompute (not input_data which is used in simpler contracts)
+        input_data: Any = getattr(contract, "input_state", None)
+
+        # Validate that input_state is present - it's required for computation
+        if input_data is None:
+            # Check for legacy input_data attribute as fallback
+            input_data = getattr(contract, "input_data", None)
+
+            if input_data is None:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message="Contract must have 'input_state' or 'input_data' attribute with computation input",
+                    context={
+                        "node_id": str(self.node_id),
+                        "contract_type": type(contract).__name__,
+                        "hint": "Ensure contract.input_state contains the data to be processed",
+                    },
+                )
+
+            # Log warning for legacy input_data usage
+            emit_log_event(
+                LogLevel.WARNING,
+                "Contract uses legacy 'input_data' instead of 'input_state'",
+                {
+                    "node_id": str(self.node_id),
+                    "contract_type": type(contract).__name__,
+                    "recommendation": "Migrate to using 'input_state' field",
+                },
+            )
 
         # Extract metadata from contract (optional field)
-        metadata: dict[str, Any] = getattr(contract, "metadata", {})
+        metadata: dict[str, Any] = getattr(contract, "metadata", None) or {}
 
-        # Extract computation_type from metadata or contract
-        computation_type: str = metadata.get(
-            "computation_type",
-            getattr(contract, "computation_type", "default"),
-        )
+        # Extract computation_type from algorithm config, metadata, or use default
+        computation_type: str = "default"
+
+        # First check algorithm configuration (preferred for ModelContractCompute)
+        algorithm = getattr(contract, "algorithm", None)
+        if algorithm is not None and hasattr(algorithm, "algorithm_type"):
+            computation_type = str(algorithm.algorithm_type)
+        elif "computation_type" in metadata:
+            computation_type = str(metadata["computation_type"])
+        elif hasattr(contract, "computation_type"):
+            computation_type = str(contract.computation_type)
 
         # Extract cache and parallel settings from metadata or use defaults
-        cache_enabled: bool = metadata.get("cache_enabled", True)
-        parallel_enabled: bool = metadata.get("parallel_enabled", False)
+        cache_enabled: bool = bool(metadata.get("cache_enabled", True))
+        parallel_enabled: bool = bool(metadata.get("parallel_enabled", False))
 
         return ModelComputeInput(
             data=input_data,
