@@ -112,11 +112,99 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         - Performance monitoring and optimization
         - Type-safe input/output handling
 
+    Caching Strategy:
+        NodeCompute implements a deterministic caching layer to optimize expensive
+        computations. The caching system uses a content-addressable approach with
+        SHA256 hashing to ensure consistent cache behavior.
+
+        **Cache Key Generation**:
+            Cache keys are generated using SHA256 hashing of the input data combined
+            with the computation type. This approach provides:
+
+            - **Determinism**: Identical inputs always produce identical cache keys,
+              ensuring consistent cache behavior across process restarts
+            - **Collision Resistance**: SHA256's cryptographic properties virtually
+              eliminate hash collisions, preventing incorrect cache hits
+            - **Cross-Process Consistency**: Unlike Python's built-in ``hash()``,
+              SHA256 produces consistent results across different Python processes
+              and interpreter sessions
+
+            Format: ``{computation_type}:{sha256_hex_digest}``
+
+            Example: ``sum_numbers:a3b2c1d4e5f6...``
+
+        **Cache Invalidation Policies**:
+            The cache supports multiple invalidation strategies:
+
+            1. **TTL-Based Expiration** (Primary):
+               - Each cached entry has a time-to-live (TTL) configured via
+                 ``cache_ttl_minutes`` (default: 30 minutes)
+               - Expired entries are automatically detected on access and removed
+               - TTL can be customized per-entry or globally via container config
+
+            2. **Manual Cache Clearing**:
+               - Call ``computation_cache.clear()`` to invalidate all entries
+               - Useful for forced refresh or during node cleanup
+               - Automatically called during ``_cleanup_node_resources()``
+
+            3. **Eviction Policy** (Memory Management):
+               - Configured via ``ModelComputeCache.eviction_policy``
+               - **LRU** (Least Recently Used): Evicts entries not accessed recently
+               - **LFU** (Least Frequently Used): Evicts entries with lowest access count
+               - **FIFO** (First In First Out): Evicts oldest entries by insertion time
+               - Eviction triggers when cache reaches ``max_size`` (default: 1000)
+
+        **Cache Configuration**:
+            Cache behavior is configured through ``ModelONEXContainer.compute_cache_config``:
+
+            - ``max_size``: Maximum number of cached entries (default: 1000)
+            - ``ttl_seconds``: Time-to-live in seconds (default: 1800 = 30 min)
+            - ``eviction_policy``: LRU, LFU, or FIFO (default: LRU)
+            - ``enable_stats``: Enable hit/miss tracking (default: True)
+
+        **Cache Implications**:
+            - **Cache Hits**: Return cached result with ``processing_time_ms=0.0``
+            - **Cache Misses**: Execute computation, cache result if ``cache_enabled=True``
+            - **String Serialization**: Input data is converted to string for hashing;
+              complex objects should implement consistent ``__str__`` methods
+
     Thread Safety:
         - Instance NOT thread-safe due to mutable cache state
         - Use separate instances per thread OR implement cache locking
         - Parallel processing via ThreadPoolExecutor is internally managed
         - See docs/THREADING.md for production guidelines and examples
+
+    Note:
+        **Parallel Processing Guidance**
+
+        When to enable parallel processing (``parallel_enabled=True``):
+            - Batch operations on independent data items (e.g., transforming a list of records)
+            - CPU-bound computations that can be partitioned (e.g., processing chunks of data)
+            - Map operations where each element is processed independently
+
+        Computation types that benefit from parallelization:
+            - **Batch transformations**: Processing lists/tuples of independent items
+            - **Aggregations over large datasets**: sum, average, statistical computations
+            - **Independent element processing**: Operations where each list item is processed
+              without dependencies on other items
+
+        Computation types that do NOT benefit from parallelization:
+            - **Single-value operations**: String transformations, single object processing
+            - **Sequential dependencies**: Operations where item N depends on item N-1
+            - **Small datasets**: Overhead of thread pool exceeds computation time
+            - **I/O-bound operations**: Use NodeEffect for I/O; parallel threads don't help
+
+        Thread pool configuration:
+            - Default: 4 workers (configurable via ``max_parallel_workers``)
+            - Pool is lazily initialized during ``_initialize_node_resources()``
+            - Workers are reused across computations for efficiency
+            - Shutdown with 5s timeout during ``_cleanup_node_resources()``
+
+        Performance considerations:
+            - Parallel execution adds overhead (~1-5ms for thread pool dispatch)
+            - Only use for computations where per-item processing > 10ms
+            - Data must be a list or tuple with more than 1 element
+            - If data is not parallelizable, falls back to sequential execution with a warning
     """
 
     def __init__(self, container: ModelONEXContainer) -> None:
@@ -509,12 +597,34 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                     )
 
             # Execute computation
-            if input_data.parallel_enabled and self._supports_parallel_execution(
-                input_data
-            ):
+            supports_parallel = self._supports_parallel_execution(input_data)
+            if input_data.parallel_enabled and supports_parallel:
                 result = await self._execute_parallel_computation(input_data)
                 parallel_used = True
             else:
+                # Warn if parallel was requested but data is not parallelizable
+                if input_data.parallel_enabled and not supports_parallel:
+                    data_type = type(input_data.data).__name__
+                    data_length = (
+                        len(input_data.data)
+                        if isinstance(input_data.data, (list, tuple))
+                        else "N/A"
+                    )
+                    emit_log_event(
+                        LogLevel.WARNING,
+                        "Parallel execution requested but data is not parallelizable. "
+                        "Falling back to sequential execution. "
+                        "Parallel requires list/tuple with >1 element.",
+                        {
+                            "node_id": str(self.node_id),
+                            "operation_id": str(input_data.operation_id),
+                            "computation_type": input_data.computation_type,
+                            "data_type": data_type,
+                            "data_length": str(data_length),
+                            "recommendation": "Set parallel_enabled=False for non-batch data, "
+                            "or provide a list/tuple with multiple elements",
+                        },
+                    )
                 result = await self._execute_sequential_computation(input_data)
                 parallel_used = False
 
@@ -571,6 +681,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
 
             # Preserve original exception context for debugging
             # Include error_type to distinguish validation vs runtime errors
+            # Include cache_enabled and parallel_enabled for configuration debugging
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Computation failed: {e!s}",
@@ -580,6 +691,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                     "computation_type": input_data.computation_type,
                     "error_type": type(e).__name__,
                     "processing_time_ms": processing_time,
+                    "cache_enabled": input_data.cache_enabled,
+                    "parallel_enabled": input_data.parallel_enabled,
                 },
             ) from e
 
@@ -789,14 +902,177 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             )
 
     def _generate_cache_key(self, input_data: ModelComputeInput[Any]) -> str:
-        """Generate deterministic cache key for computation input."""
+        """
+        Generate a deterministic cache key for computation input.
+
+        This method creates a unique, reproducible cache key by combining the
+        computation type with a SHA256 hash of the input data. The resulting key
+        is used to store and retrieve cached computation results.
+
+        **Cache Key Generation Strategy**:
+
+        The cache key is generated using a content-addressable approach:
+
+        1. **Input Serialization**: The input data is converted to its string
+           representation using Python's ``str()`` function. This creates a
+           canonical text form of the data that can be hashed.
+
+        2. **SHA256 Hashing**: The string representation is encoded to UTF-8 bytes
+           and hashed using SHA256. SHA256 was chosen for several reasons:
+
+           - **Determinism**: Unlike Python's built-in ``hash()`` function, which
+             uses randomized salting (PYTHONHASHSEED) and produces different values
+             across interpreter sessions, SHA256 always produces the same output
+             for the same input, ensuring cache consistency across process restarts.
+
+           - **Collision Resistance**: SHA256's 256-bit output space (2^256 possible
+             values) makes hash collisions astronomically unlikely. This prevents
+             incorrect cache hits where different inputs might map to the same key.
+
+           - **Cross-Process Consistency**: The same input will produce the same
+             cache key regardless of which Python process or machine generates it,
+             enabling distributed caching scenarios if needed in the future.
+
+        3. **Key Composition**: The final key combines the computation type and hash
+           in the format ``{computation_type}:{sha256_hex_digest}``. Including the
+           computation type ensures that identical data processed by different
+           computation functions will have distinct cache keys.
+
+        **Key Format**::
+
+            {computation_type}:{64_character_hex_digest}
+
+        **Examples**::
+
+            "sum_numbers:a3b4c5d6e7f8...9a0b"  (64 hex chars after colon)
+            "string_uppercase:1234abcd5678..."
+
+        **Cache Key Implications**:
+
+        - **Cache Hits**: When the same input data and computation type are
+          processed again, the identical cache key will be generated, allowing
+          retrieval of the previously computed result.
+
+        - **Cache Misses**: Any change to the input data (even whitespace) or
+          computation type will produce a different hash, resulting in a cache miss.
+
+        - **String Serialization Caveat**: Complex objects should implement
+          consistent ``__str__`` methods to ensure deterministic serialization.
+          Objects with non-deterministic string representations (e.g., including
+          memory addresses or timestamps) will not cache effectively.
+
+        Args:
+            input_data: The computation input containing:
+                - ``data``: The input data to be hashed (any type with ``__str__``)
+                - ``computation_type``: The type of computation to be performed
+
+        Returns:
+            str: A cache key in the format ``{computation_type}:{sha256_hex_digest}``
+                where the hex digest is a 64-character lowercase hexadecimal string.
+
+        Example:
+            >>> input_data = ModelComputeInput(
+            ...     data=[1.0, 2.0, 3.0],
+            ...     computation_type="sum_numbers",
+            ... )
+            >>> key = node._generate_cache_key(input_data)
+            >>> print(key)
+            "sum_numbers:7c9e1d8a3f2b..."  # 64 hex chars after colon
+
+            >>> # Same input produces same key (deterministic)
+            >>> key2 = node._generate_cache_key(input_data)
+            >>> assert key == key2
+
+            >>> # Different input produces different key
+            >>> different_input = ModelComputeInput(
+            ...     data=[1.0, 2.0, 4.0],  # Changed value
+            ...     computation_type="sum_numbers",
+            ... )
+            >>> different_key = node._generate_cache_key(different_input)
+            >>> assert key != different_key
+
+        Note:
+            - This is a private method called internally by ``process()``
+            - The cache key is used with ``ModelComputeCache.get()`` and ``put()``
+            - See the class-level "Caching Strategy" documentation for full details
+              on cache invalidation policies and configuration options
+        """
         data_str = str(input_data.data)
         # Use hashlib for deterministic hashing across Python processes
         data_hash = hashlib.sha256(data_str.encode()).hexdigest()
         return f"{input_data.computation_type}:{data_hash}"
 
     def _supports_parallel_execution(self, input_data: ModelComputeInput[Any]) -> bool:
-        """Check if computation supports parallel execution."""
+        """
+        Check if computation input data supports parallel execution.
+
+        Determines whether the input data structure is suitable for parallel
+        processing based on its type and size. Parallel execution is only
+        beneficial when data can be partitioned into independent chunks.
+
+        Parallelizable Data Requirements:
+            - Must be a ``list`` or ``tuple`` (iterable with known length)
+            - Must contain more than 1 element (otherwise no parallelism benefit)
+            - Elements should be independently processable (no inter-element dependencies)
+
+        Computation Types That Benefit from Parallelization:
+            - **Batch transformations**: Processing lists of records, documents, or objects
+              where each item can be transformed independently
+            - **Map operations**: Applying the same function to each element
+              (e.g., converting a list of strings to uppercase)
+            - **Aggregations over large datasets**: Operations like sum, average,
+              or statistical computations that can be partitioned and merged
+            - **Independent validations**: Validating each item in a batch independently
+
+        Computation Types That Do NOT Benefit:
+            - **Single-value operations**: Strings, numbers, single objects - no partitioning possible
+            - **Small datasets**: Lists with 0-1 elements have no parallel work to distribute
+            - **Sequential dependencies**: Operations where item N depends on item N-1
+            - **Fold/reduce with order**: Sequential reductions where order matters
+
+        Performance Implications:
+            - Parallel execution adds ~1-5ms overhead for thread pool dispatch
+            - Only beneficial when per-item computation exceeds ~10ms
+            - Thread pool workers (default: 4) are reused across calls
+            - For small lists (2-10 items), overhead may exceed benefit
+            - Large datasets (100+ items) with CPU-bound operations see best gains
+
+        Args:
+            input_data: The computation input containing the data to check.
+                The ``data`` attribute is examined for type and length.
+
+        Returns:
+            bool: True if data is a list/tuple with more than 1 element,
+                False otherwise. When False, the process() method will
+                use sequential execution instead.
+
+        Example:
+            >>> # Parallelizable - list with multiple elements
+            >>> input_data = ModelComputeInput(data=[1, 2, 3, 4, 5], ...)
+            >>> node._supports_parallel_execution(input_data)
+            True
+
+            >>> # NOT parallelizable - single string value
+            >>> input_data = ModelComputeInput(data="hello", ...)
+            >>> node._supports_parallel_execution(input_data)
+            False
+
+            >>> # NOT parallelizable - list with only 1 element
+            >>> input_data = ModelComputeInput(data=[42], ...)
+            >>> node._supports_parallel_execution(input_data)
+            False
+
+            >>> # NOT parallelizable - empty list
+            >>> input_data = ModelComputeInput(data=[], ...)
+            >>> node._supports_parallel_execution(input_data)
+            False
+
+        Note:
+            When ``parallel_enabled=True`` but this method returns False,
+            a WARNING log is emitted in ``process()`` to alert developers
+            that parallel execution was requested but could not be used.
+            The computation will fall back to sequential execution automatically.
+        """
         return bool(
             isinstance(input_data.data, (list, tuple)) and len(input_data.data) > 1
         )

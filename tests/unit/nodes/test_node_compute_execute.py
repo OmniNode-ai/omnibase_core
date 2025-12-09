@@ -691,6 +691,48 @@ class TestNodeComputeExecuteComputeIntegration:
         assert _get_context_value(error, "processing_time_ms") is not None
 
     @pytest.mark.asyncio
+    async def test_execute_compute_error_context_includes_cache_and_parallel_status(
+        self,
+        node: NodeCompute[Any, Any],
+    ) -> None:
+        """Test error context includes cache_enabled and parallel_enabled for debugging."""
+        mock_contract = MagicMock(spec=ModelContractCompute)
+        mock_contract.input_state = {"data": "value"}
+        mock_contract.metadata = {"cache_enabled": False, "parallel_enabled": True}
+        mock_contract.algorithm = MagicMock()
+        mock_contract.algorithm.algorithm_type = "nonexistent_computation"
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await node.execute_compute(mock_contract)
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.OPERATION_FAILED
+        # Verify cache_enabled and parallel_enabled are in error context
+        assert _get_context_value(error, "cache_enabled") is False
+        assert _get_context_value(error, "parallel_enabled") is True
+
+    @pytest.mark.asyncio
+    async def test_execute_compute_error_context_default_cache_and_parallel_values(
+        self,
+        node: NodeCompute[Any, Any],
+    ) -> None:
+        """Test error context includes default values for cache_enabled and parallel_enabled."""
+        mock_contract = MagicMock(spec=ModelContractCompute)
+        mock_contract.input_state = {"data": "value"}
+        mock_contract.metadata = {}  # No explicit settings - use defaults
+        mock_contract.algorithm = MagicMock()
+        mock_contract.algorithm.algorithm_type = "nonexistent_computation"
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await node.execute_compute(mock_contract)
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.OPERATION_FAILED
+        # Verify default values: cache_enabled=True, parallel_enabled=False
+        assert _get_context_value(error, "cache_enabled") is True
+        assert _get_context_value(error, "parallel_enabled") is False
+
+    @pytest.mark.asyncio
     async def test_execute_compute_with_custom_registered_computation(
         self,
         node: NodeCompute[Any, Any],
