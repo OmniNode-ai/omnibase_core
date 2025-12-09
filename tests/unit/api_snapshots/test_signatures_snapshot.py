@@ -140,26 +140,6 @@ class TestNodeEffectSignatureSnapshot:
         )
 
     @pytest.mark.unit
-    def test_node_effect_legacy_on_rollback_failure_optional(self) -> None:
-        """Verify on_rollback_failure parameter is optional with None default.
-
-        Tests the LEGACY NodeEffectLegacy class for backward compatibility.
-        The new contract-driven NodeEffect (v0.4.0+) does not have this parameter.
-
-        .. versionchanged:: 0.4.0
-            Moved to test NodeEffectLegacy instead of NodeEffect.
-        """
-        from omnibase_core.nodes.legacy.node_effect_legacy import NodeEffectLegacy
-
-        sig = inspect.signature(NodeEffectLegacy.__init__)
-        callback_param = sig.parameters["on_rollback_failure"]
-
-        assert callback_param.default is None, (
-            "NodeEffectLegacy.__init__ on_rollback_failure should default to None. "
-            f"Got default: {callback_param.default}"
-        )
-
-    @pytest.mark.unit
     def test_node_effect_init_return_type(self) -> None:
         """Verify NodeEffect.__init__ return type annotation is None."""
         from omnibase_core.nodes import NodeEffect
@@ -621,17 +601,15 @@ class TestSignatureComprehensiveSummary:
             )
 
     @pytest.mark.unit
-    def test_node_effect_legacy_is_only_node_with_callback_param(self) -> None:
-        """Verify only NodeEffectLegacy has on_rollback_failure callback parameter.
+    def test_no_node_has_callback_param(self) -> None:
+        """Verify no node class has on_rollback_failure callback parameter.
 
-        NodeEffectLegacy (legacy code-driven implementation) is unique in accepting
-        an optional callback for rollback failures.
-
-        The new contract-driven NodeEffect (v0.4.0+) does NOT have this parameter.
+        As of v0.4.0, the legacy code-driven NodeEffectLegacy has been removed.
+        The contract-driven NodeEffect (v0.4.0+) does NOT have this parameter.
         Rollback handling is now declarative via effect subcontracts.
 
         .. versionchanged:: 0.4.0
-            Updated to test NodeEffectLegacy instead of NodeEffect.
+            Legacy NodeEffectLegacy removed. All nodes now contract-driven.
         """
         from omnibase_core.nodes import (
             NodeCompute,
@@ -639,28 +617,14 @@ class TestSignatureComprehensiveSummary:
             NodeOrchestrator,
             NodeReducer,
         )
-        from omnibase_core.nodes.legacy.node_effect_legacy import NodeEffectLegacy
 
-        # NodeEffectLegacy should have on_rollback_failure
-        legacy_sig = inspect.signature(NodeEffectLegacy.__init__)
-        assert "on_rollback_failure" in legacy_sig.parameters, (
-            "NodeEffectLegacy.__init__ must have 'on_rollback_failure' parameter"
-        )
-
-        # New NodeEffect should NOT have it (contract-driven)
-        effect_sig = inspect.signature(NodeEffect.__init__)
-        assert "on_rollback_failure" not in effect_sig.parameters, (
-            "NodeEffect.__init__ (v0.4.0+) should NOT have 'on_rollback_failure' "
-            "parameter (moved to declarative contracts)"
-        )
-
-        # Other nodes should NOT have it
-        other_classes = [NodeCompute, NodeOrchestrator, NodeReducer]
-        for node_class in other_classes:
+        # All nodes should NOT have on_rollback_failure (contract-driven)
+        all_node_classes = [NodeEffect, NodeCompute, NodeOrchestrator, NodeReducer]
+        for node_class in all_node_classes:
             sig = inspect.signature(node_class.__init__)
             assert "on_rollback_failure" not in sig.parameters, (
                 f"{node_class.__name__}.__init__ should not have 'on_rollback_failure' "
-                "parameter"
+                "parameter (v0.4.0+: rollback handling is declarative via contracts)"
             )
 
     @pytest.mark.unit

@@ -11,12 +11,10 @@ need for thread-safe wrappers in production.
 See docs/THREADING.md for mitigation strategies.
 """
 
-import asyncio
 import threading
 import time
 from collections.abc import Callable
 from typing import Any
-from uuid import UUID, uuid4
 
 import pytest
 
@@ -24,9 +22,6 @@ from omnibase_core.enums.enum_effect_types import EnumCircuitBreakerState
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
-
-# Use legacy NodeEffect for tests that depend on code-driven behavior
-from omnibase_core.nodes.legacy.node_effect_legacy import NodeEffectLegacy as NodeEffect
 from omnibase_core.nodes.node_compute import NodeCompute
 
 
@@ -464,54 +459,6 @@ class TestThreadSafeWrappers:
         print(
             f"Successfully created {len(set(instance_ids))} thread-local NodeCompute instances"
         )
-
-
-class TestTransactionIsolation:
-    """
-    Test suite for transaction thread safety.
-
-    Transactions must NEVER be shared across threads.
-    """
-
-    def test_transaction_isolation_requirement(self):
-        """
-        Demonstrate that transactions must be isolated per operation.
-
-        This test shows the CORRECT pattern: one transaction per operation,
-        never shared across threads.
-        """
-        container = ModelONEXContainer()
-
-        async def isolated_effect_operation(operation_id: UUID) -> bool:
-            """Each operation gets its own transaction."""
-            effect_node = NodeEffect(container)
-
-            # Create transaction for this specific operation
-            async with effect_node.transaction_context() as transaction:
-                # Transaction is isolated to this context
-                # Do NOT share across threads
-                return True
-
-        # Multiple threads, each with isolated transactions
-        results = []
-
-        def worker(op_id: UUID):
-            """Run isolated operation."""
-            result = asyncio.run(isolated_effect_operation(op_id))
-            results.append(result)
-
-        threads = []
-        for i in range(5):
-            thread = threading.Thread(target=worker, args=(uuid4(),))
-            threads.append(thread)
-            thread.start()
-
-        for thread in threads:
-            thread.join()
-
-        # All operations completed with isolated transactions
-        assert all(results), "All operations should succeed with isolated transactions"
-        print(f"Successfully completed {len(results)} isolated transactions")
 
 
 class TestDocumentationExamples:
