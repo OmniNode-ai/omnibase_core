@@ -1,21 +1,62 @@
-"""
-ONEX Contracts Module.
+"""ONEX Contracts Module.
 
-This module provides:
-1. Meta-models and contract definitions that all declarative node contracts
-   must adhere to, ensuring cross-node consistency in the ONEX 4-node architecture.
-2. Deterministic SHA256 fingerprinting for ONEX contracts, enabling drift
-   detection between declarative and legacy versions during migration.
+This module provides the contract infrastructure for the ONEX 4-node architecture:
 
-See: CONTRACT_STABILITY_SPEC.md for detailed specification.
+1. **Contract Fingerprinting**: Deterministic SHA256 fingerprinting for ONEX contracts,
+   enabling drift detection between declarative and legacy versions during migration.
 
-VERSION: 1.0.0 - Meta-model definition added
+2. **Meta-Models**: Contract definitions that all declarative node contracts must
+   adhere to, ensuring cross-node consistency in the ONEX architecture.
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
-- Breaking changes require major version bump
+3. **Drift Detection**: Tools for detecting when contracts have changed from their
+   registered fingerprints, supporting safe migration workflows.
+
+Exports:
+    ContractData: Type alias for contract dictionaries (dict[str, object]).
+    ContractHashRegistry: Registry for storing and retrieving contract fingerprints.
+    ModelContractFingerprint: Pydantic model for contract fingerprints.
+    ModelContractMeta: Meta-model for contract validation.
+    ModelContractNodeMetadata: Node metadata contract model.
+    ModelContractNormalizationConfig: Configuration for contract normalization.
+    ModelDriftDetails: Detailed drift information.
+    ModelDriftResult: Result of drift detection.
+    ModelNodeExtensions: Extension points for nodes.
+    compute_contract_fingerprint: Compute SHA256 fingerprint for a contract.
+    normalize_contract: Normalize contract for deterministic hashing.
+    is_valid_meta_model: Check if a model is a valid meta-model.
+    validate_meta_model: Validate a model against meta-model requirements.
+
+Example:
+    Basic fingerprinting workflow::
+
+        from omnibase_core.contracts import (
+            ContractHashRegistry,
+            compute_contract_fingerprint,
+        )
+
+        # Compute fingerprint for a contract
+        contract = {"name": "my_node", "version": "0.4.0", "type": "compute"}
+        fingerprint = compute_contract_fingerprint(contract)
+        print(fingerprint)  # Output: 0.4.0:8fa1e2b4c9d1
+
+        # Register and detect drift
+        registry = ContractHashRegistry()
+        registry.register("my_node", fingerprint)
+        drift_result = registry.detect_drift_from_contract("my_node", contract)
+        print(drift_result.has_drift)  # Output: False
+
+See Also:
+    CONTRACT_STABILITY_SPEC.md: Detailed specification for contract stability.
+    docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md: ONEX architecture overview.
+
+Version:
+    1.0.0 - Meta-model definition added
+
+Stability Guarantee:
+    - All fields, methods, and validators are stable interfaces
+    - New optional fields may be added in minor versions only
+    - Existing fields cannot be removed or have types/constraints changed
+    - Breaking changes require major version bump
 """
 
 from omnibase_core.contracts.hash_registry import (

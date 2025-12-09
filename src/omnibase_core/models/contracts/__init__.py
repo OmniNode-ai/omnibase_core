@@ -1,7 +1,63 @@
-"""
-Contract Models
+"""Contract Models for ONEX Four-Node Architecture.
 
-Models for validating various contract formats and subcontract compositions.
+This module provides Pydantic models for validating and managing contract
+definitions across the ONEX four-node architecture (EFFECT, COMPUTE, REDUCER,
+ORCHESTRATOR). Contracts define the interface and behavior expectations for
+nodes in the system.
+
+Key Model Categories:
+    Foundation Models:
+        Models that define core contract structures and metadata.
+        - ModelContractBase: Base class for all contract types
+        - ModelContractFingerprint: Cryptographic fingerprint for contract integrity
+        - ModelContractMeta: Meta-model defining schema for all node contracts
+        - ModelContractNodeMetadata: Contract-specific node metadata
+        - ModelContractVersion: Semantic versioning for contracts
+        - ModelDriftDetails: Structured details about contract drift
+        - ModelDriftResult: Result of drift detection between contract versions
+
+    Primary Contract Models:
+        Contract definitions for each node type in the ONEX architecture.
+        - ModelContractCompute: Contract for COMPUTE nodes (data processing)
+        - ModelContractEffect: Contract for EFFECT nodes (external I/O)
+        - ModelContractOrchestrator: Contract for ORCHESTRATOR nodes (workflow)
+        - ModelContractReducer: Contract for REDUCER nodes (state management)
+
+    Configuration Models:
+        Models for configuring various aspects of node behavior.
+        - ModelCachingConfig: Caching behavior configuration
+        - ModelRetryConfig: Retry policy configuration
+        - ModelPerformanceRequirements: Performance SLA definitions
+        - ModelValidationRules: Input/output validation rules
+
+    Workflow Models:
+        Models for defining and managing workflows.
+        - ModelWorkflowConfig: Workflow orchestration configuration
+        - ModelWorkflowStep: Individual workflow step definition
+        - ModelWorkflowCondition: Conditional execution rules
+
+    Subcontracts:
+        Reusable contract components imported from the subcontracts subpackage.
+
+Example:
+    Creating a basic contract meta:
+
+    >>> from uuid import uuid4
+    >>> from omnibase_core.enums import EnumNodeKind
+    >>> from omnibase_core.models.contracts import ModelContractMeta
+    >>> meta = ModelContractMeta(
+    ...     node_id=uuid4(),
+    ...     node_kind=EnumNodeKind.COMPUTE,
+    ...     version="1.0.0",
+    ...     name="DataTransformer",
+    ...     description="Transforms input data format",
+    ...     input_schema="omnibase_core.models.ModelInput",
+    ...     output_schema="omnibase_core.models.ModelOutput",
+    ... )
+
+See Also:
+    - CONTRACT_STABILITY_SPEC.md: Detailed specification for contract stability
+    - docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md: Architecture overview
 """
 
 from omnibase_core.mixins.mixin_node_type_validator import MixinNodeTypeValidator

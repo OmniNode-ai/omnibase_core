@@ -1,11 +1,26 @@
 """Contract Fingerprint Model.
 
-Represents a computed contract fingerprint with version and hash.
+This module provides the ModelContractFingerprint class for representing
+computed contract fingerprints that combine semantic versioning with
+cryptographic hashing for contract integrity verification.
 
 Format: `<semver>:<sha256-first-N-hex-chars>`
 Example: `0.4.0:8fa1e2b4c9d1`
 
-See: CONTRACT_STABILITY_SPEC.md for detailed specification.
+The fingerprint serves two purposes:
+    1. Version tracking: The semantic version provides human-readable context
+       about the contract's compatibility level.
+    2. Integrity verification: The hash prefix (from SHA256) ensures the
+       contract content hasn't been modified unexpectedly.
+
+Typical Usage:
+    - Computed during contract registration to establish a baseline
+    - Compared during drift detection to identify unauthorized changes
+    - Stored in contract registries for versioned contract management
+
+See Also:
+    CONTRACT_STABILITY_SPEC.md: Detailed specification for fingerprint format
+    and computation algorithm.
 """
 
 from __future__ import annotations
@@ -20,13 +35,34 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelContractFingerprint(BaseModel):
-    """Represents a computed contract fingerprint.
+    """Represents a computed contract fingerprint for integrity verification.
+
+    A contract fingerprint uniquely identifies a specific version and content
+    of a contract. It combines semantic versioning for human-readable version
+    tracking with a cryptographic hash for content integrity verification.
 
     Format: `<semver>:<sha256-first-N-hex-chars>`
     Example: `0.4.0:8fa1e2b4c9d1`
 
-    The fingerprint combines semantic version for human context with
-    cryptographic hash for integrity verification.
+    The fingerprint is immutable (frozen) once created to ensure integrity
+    throughout its lifecycle.
+
+    Attributes:
+        version: Semantic version of the contract (ModelContractVersion).
+        hash_prefix: First N characters of the SHA256 hash (8-64 chars, lowercase hex).
+        full_hash: Complete 64-character SHA256 hash for detailed comparison.
+        computed_at: UTC timestamp when the fingerprint was computed.
+        normalized_content: Optional normalized JSON content for debugging.
+
+    Example:
+        >>> from omnibase_core.models.contracts import ModelContractVersion
+        >>> fingerprint = ModelContractFingerprint(
+        ...     version=ModelContractVersion.from_string("1.0.0"),
+        ...     hash_prefix="8fa1e2b4c9d1",
+        ...     full_hash="8fa1e2b4c9d1" + "0" * 52,
+        ... )
+        >>> str(fingerprint)
+        '1.0.0:8fa1e2b4c9d1'
     """
 
     version: ModelContractVersion = Field(
@@ -63,11 +99,26 @@ class ModelContractFingerprint(BaseModel):
     )
 
     def __str__(self) -> str:
-        """Return fingerprint in canonical format: `<semver>:<hash_prefix>`."""
+        """Return fingerprint in canonical string format.
+
+        Returns:
+            String in format `<semver>:<hash_prefix>`, e.g., '1.0.0:8fa1e2b4c9d1'.
+        """
         return f"{self.version}:{self.hash_prefix}"
 
     def __eq__(self, other: object) -> bool:
-        """Check equality based on version and hash prefix."""
+        """Check equality based on version and hash prefix.
+
+        Two fingerprints are equal if they have the same version and hash prefix.
+        Also supports comparison with fingerprint strings.
+
+        Args:
+            other: Another ModelContractFingerprint or a fingerprint string.
+
+        Returns:
+            True if fingerprints match, False otherwise.
+            NotImplemented if other is not a supported type.
+        """
         if isinstance(other, ModelContractFingerprint):
             return (
                 self.version == other.version and self.hash_prefix == other.hash_prefix
@@ -77,7 +128,14 @@ class ModelContractFingerprint(BaseModel):
         return NotImplemented
 
     def __hash__(self) -> int:
-        """Return hash for use in sets/dicts."""
+        """Return hash for use in sets and dictionaries.
+
+        The hash is computed from the version string and hash prefix,
+        ensuring consistent hashing for fingerprint objects.
+
+        Returns:
+            Integer hash value.
+        """
         return hash((str(self.version), self.hash_prefix))
 
     @classmethod
@@ -133,12 +191,15 @@ class ModelContractFingerprint(BaseModel):
                 hash_prefix=hash_prefix,
             )
 
-        # For parsed fingerprints, use hash_prefix as full_hash placeholder
-        # (full hash not available from string representation)
+        # For parsed fingerprints, use hash_prefix as full_hash placeholder.
+        # The full hash is not available from string representation (strings only
+        # contain the prefix). This padded value is a synthetic placeholder - it
+        # will NOT match any real computed hash. Use matches() for comparison,
+        # which uses hash_prefix, not full_hash.
         return cls(
             version=version,
             hash_prefix=hash_prefix.lower(),
-            full_hash=hash_prefix.lower().ljust(64, "0"),  # Pad to 64 chars
+            full_hash=hash_prefix.lower().ljust(64, "0"),  # Synthetic placeholder
         )
 
     def matches(self, other: ModelContractFingerprint | str) -> bool:

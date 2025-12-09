@@ -360,15 +360,30 @@ VALID_NODE_BASE_CLASSES = frozenset(
 
 
 class NodeTypeFinder(ast.NodeVisitor):
-    """First pass: Find node classes and determine if file contains pure nodes."""
+    """First pass AST visitor to find node classes and determine purity requirements.
+
+    This visitor scans the AST to identify ONEX node classes and determine
+    whether they should be subject to purity checks. COMPUTE and REDUCER
+    nodes require purity; EFFECT and ORCHESTRATOR nodes do not.
+
+    Attributes:
+        node_class_name: Name of the node class found, if any.
+        node_type: Type of node ('compute', 'reducer', 'effect', 'orchestrator').
+        is_pure_node: True if this is a COMPUTE or REDUCER node requiring purity.
+    """
 
     def __init__(self) -> None:
+        """Initialize the NodeTypeFinder with default values."""
         self.node_class_name: str | None = None
         self.node_type: str | None = None
         self.is_pure_node: bool = False
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Find node class definitions."""
+        """Find node class definitions and determine their type.
+
+        Args:
+            node: AST class definition node to analyze.
+        """
         if self._is_node_class(node):
             self.node_class_name = node.name
             self.node_type = self._determine_node_type(node)
@@ -376,7 +391,17 @@ class NodeTypeFinder(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _is_node_class(self, node: ast.ClassDef) -> bool:
-        """Check if class is a Node class."""
+        """Check if class is an ONEX Node class (first pass).
+
+        Used during the initial AST traversal to identify node classes
+        for purity requirement determination.
+
+        Args:
+            node: AST class definition node to check.
+
+        Returns:
+            True if class inherits from a Node base class.
+        """
         for base in node.bases:
             base_name = self._get_base_name(base)
             if base_name in (
@@ -392,7 +417,18 @@ class NodeTypeFinder(ast.NodeVisitor):
         return False
 
     def _determine_node_type(self, node: ast.ClassDef) -> str | None:
-        """Determine the type of node (compute, effect, reducer, orchestrator)."""
+        """Determine the type of node from class name or base classes (first pass).
+
+        Used during initial AST traversal to classify node type for
+        purity requirement determination.
+
+        Args:
+            node: AST class definition node to analyze.
+
+        Returns:
+            Node type string ('compute', 'effect', 'reducer', 'orchestrator')
+            or None if type cannot be determined.
+        """
         class_name = node.name.lower()
 
         if "compute" in class_name:
@@ -420,7 +456,14 @@ class NodeTypeFinder(ast.NodeVisitor):
         return None
 
     def _get_base_name(self, base: ast.expr) -> str | None:
-        """Extract base class name from AST node."""
+        """Extract base class name from AST expression (first pass helper).
+
+        Args:
+            base: AST expression representing a base class.
+
+        Returns:
+            String name of the base class, or None if cannot be extracted.
+        """
         if isinstance(base, ast.Name):
             return base.id
         if isinstance(base, ast.Attribute):
@@ -433,7 +476,21 @@ class NodeTypeFinder(ast.NodeVisitor):
 
 @dataclass
 class PurityAnalyzer(ast.NodeVisitor):
-    """AST visitor to analyze node purity (second pass)."""
+    """AST visitor to analyze node purity violations (second pass).
+
+    Scans the AST for patterns that violate purity guarantees in
+    COMPUTE and REDUCER nodes, including forbidden imports, I/O operations,
+    mutable class data, and caching decorators.
+
+    Attributes:
+        file_path: Path to the file being analyzed.
+        source_lines: List of source code lines for snippet extraction.
+        violations: List of detected purity violations.
+        node_type: Type of the node being analyzed.
+        node_class_name: Name of the node class being analyzed.
+        is_pure_node: Whether this node requires purity checking.
+        current_class: Name of the class currently being visited.
+    """
 
     file_path: Path
     source_lines: list[str]
@@ -444,14 +501,22 @@ class PurityAnalyzer(ast.NodeVisitor):
     current_class: str | None = None
 
     def visit_Import(self, node: ast.Import) -> None:
-        """Check import statements."""
+        """Check import statements for forbidden modules.
+
+        Args:
+            node: AST import node to check.
+        """
         for alias in node.names:
             module_name = alias.name
             self._check_module_import(node, module_name)
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        """Check from ... import statements."""
+        """Check 'from ... import ...' statements for forbidden modules.
+
+        Args:
+            node: AST import-from node to check.
+        """
         module_name = node.module or ""
 
         # Check the module itself
@@ -476,7 +541,14 @@ class PurityAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Analyze class definitions for purity violations."""
+        """Analyze class definitions for purity violations.
+
+        Checks inheritance, class-level mutable data, and other
+        class-specific purity constraints.
+
+        Args:
+            node: AST class definition node to analyze.
+        """
         if not self.is_pure_node:
             self.generic_visit(node)
             return
@@ -495,17 +567,32 @@ class PurityAnalyzer(ast.NodeVisitor):
         self.current_class = prev_class
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        """Check function definitions for forbidden decorators."""
+        """Check function definitions for forbidden decorators.
+
+        Args:
+            node: AST function definition node to check.
+        """
         self._check_decorators(node)
         self.generic_visit(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        """Check async function definitions for forbidden decorators."""
+        """Check async function definitions for forbidden decorators.
+
+        Args:
+            node: AST async function definition node to check.
+        """
         self._check_decorators(node)
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
-        """Check function calls for forbidden operations."""
+        """Check function calls for forbidden operations.
+
+        Detects forbidden filesystem operations, pathlib write methods,
+        and other side-effect-producing function calls.
+
+        Args:
+            node: AST call node to check.
+        """
         if not self.is_pure_node:
             self.generic_visit(node)
             return
@@ -547,7 +634,12 @@ class PurityAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _check_module_import(self, node: ast.AST, module_name: str) -> None:
-        """Check if a module import is allowed."""
+        """Check if a module import is allowed in a pure node.
+
+        Args:
+            node: AST node for error location reporting.
+            module_name: Fully qualified module name to check.
+        """
         if not self.is_pure_node:
             return
 
@@ -611,7 +703,11 @@ class PurityAnalyzer(ast.NodeVisitor):
             )
 
     def _check_inheritance(self, node: ast.ClassDef) -> None:
-        """Check that node class only inherits from allowed base classes."""
+        """Check that node class only inherits from allowed base classes.
+
+        Args:
+            node: AST class definition node to check.
+        """
         for base in node.bases:
             base_name = self._get_base_name(base)
             if base_name and base_name not in VALID_NODE_BASE_CLASSES:
@@ -626,7 +722,14 @@ class PurityAnalyzer(ast.NodeVisitor):
                     )
 
     def _check_class_attributes(self, node: ast.ClassDef) -> None:
-        """Check for class-level mutable data."""
+        """Check for class-level mutable data that violates purity.
+
+        Mutable class attributes (lists, dicts, sets) are forbidden
+        because they introduce shared state between instances.
+
+        Args:
+            node: AST class definition node to check.
+        """
         for item in node.body:
             if isinstance(item, ast.Assign):
                 for target in item.targets:
@@ -657,7 +760,14 @@ class PurityAnalyzer(ast.NodeVisitor):
                             )
 
     def _check_decorators(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
-        """Check function decorators for forbidden caching decorators."""
+        """Check function decorators for forbidden caching decorators.
+
+        Caching decorators like @lru_cache introduce mutable state
+        and are forbidden in pure nodes.
+
+        Args:
+            node: AST function definition node to check.
+        """
         if not self.is_pure_node:
             return
 
@@ -673,7 +783,14 @@ class PurityAnalyzer(ast.NodeVisitor):
                 )
 
     def _is_node_class(self, node: ast.ClassDef) -> bool:
-        """Check if class is a Node class."""
+        """Check if class is an ONEX Node class.
+
+        Args:
+            node: AST class definition node to check.
+
+        Returns:
+            True if class inherits from a Node base class.
+        """
         # Check if it inherits from NodeCoreBase or Node* classes
         for base in node.bases:
             base_name = self._get_base_name(base)
@@ -690,7 +807,15 @@ class PurityAnalyzer(ast.NodeVisitor):
         return False
 
     def _determine_node_type(self, node: ast.ClassDef) -> str | None:
-        """Determine the type of node (compute, effect, reducer, orchestrator)."""
+        """Determine the type of node from class name or base classes.
+
+        Args:
+            node: AST class definition node to analyze.
+
+        Returns:
+            Node type string ('compute', 'effect', 'reducer', 'orchestrator')
+            or None if type cannot be determined.
+        """
         class_name = node.name.lower()
 
         # Check class name
@@ -720,7 +845,14 @@ class PurityAnalyzer(ast.NodeVisitor):
         return None
 
     def _get_base_name(self, base: ast.expr) -> str | None:
-        """Extract base class name from AST node."""
+        """Extract base class name from AST expression.
+
+        Args:
+            base: AST expression representing a base class.
+
+        Returns:
+            String name of the base class, or None if cannot be extracted.
+        """
         if isinstance(base, ast.Name):
             return base.id
         if isinstance(base, ast.Attribute):
@@ -732,7 +864,14 @@ class PurityAnalyzer(ast.NodeVisitor):
         return None
 
     def _get_decorator_name(self, decorator: ast.expr) -> str:
-        """Extract decorator name from AST node."""
+        """Extract decorator name from AST expression.
+
+        Args:
+            decorator: AST expression representing a decorator.
+
+        Returns:
+            String name of the decorator, or empty string if cannot be extracted.
+        """
         if isinstance(decorator, ast.Name):
             return decorator.id
         if isinstance(decorator, ast.Attribute):
@@ -742,7 +881,14 @@ class PurityAnalyzer(ast.NodeVisitor):
         return ""
 
     def _get_call_name(self, node: ast.Call) -> str:
-        """Extract function name from call node."""
+        """Extract function name from call node.
+
+        Args:
+            node: AST call node to analyze.
+
+        Returns:
+            String name of the called function, or empty string if cannot be extracted.
+        """
         if isinstance(node.func, ast.Name):
             return node.func.id
         if isinstance(node.func, ast.Attribute):
@@ -752,7 +898,14 @@ class PurityAnalyzer(ast.NodeVisitor):
         return ""
 
     def _is_mutable_default(self, value: ast.expr) -> bool:
-        """Check if a value is a mutable default (list, dict, set)."""
+        """Check if a value is a mutable default (list, dict, set).
+
+        Args:
+            value: AST expression representing a default value.
+
+        Returns:
+            True if value is a mutable data structure.
+        """
         if isinstance(value, ast.List):
             return True
         if isinstance(value, ast.Dict):
@@ -766,7 +919,14 @@ class PurityAnalyzer(ast.NodeVisitor):
         return False
 
     def _is_write_mode_open(self, node: ast.Call) -> bool:
-        """Check if open() call is in write mode."""
+        """Check if open() call is in write mode.
+
+        Args:
+            node: AST call node for an open() call.
+
+        Returns:
+            True if open() is called with write, append, or create mode.
+        """
         # Check positional mode argument
         if len(node.args) >= 2:
             mode_arg = node.args[1]
@@ -788,7 +948,15 @@ class PurityAnalyzer(ast.NodeVisitor):
     def _matches_forbidden_module(
         self, module_name: str, forbidden_set: frozenset[str]
     ) -> bool:
-        """Check if module matches any forbidden module."""
+        """Check if module matches any forbidden module.
+
+        Args:
+            module_name: Fully qualified module name to check.
+            forbidden_set: Set of forbidden module names/prefixes.
+
+        Returns:
+            True if module is in the forbidden set or matches a prefix.
+        """
         if module_name in forbidden_set:
             return True
         # Check prefixes
@@ -798,7 +966,14 @@ class PurityAnalyzer(ast.NodeVisitor):
         return False
 
     def _is_allowed_module(self, module_name: str) -> bool:
-        """Check if module is in the allowed list."""
+        """Check if module is in the allowed list for pure nodes.
+
+        Args:
+            module_name: Fully qualified module name to check.
+
+        Returns:
+            True if module is allowed (stdlib pure modules or framework).
+        """
         # Check stdlib
         root_module = module_name.split(".")[0]
         if (
@@ -822,7 +997,15 @@ class PurityAnalyzer(ast.NodeVisitor):
         message: str,
         suggestion: str,
     ) -> None:
-        """Add a violation to the list."""
+        """Add a violation to the list.
+
+        Args:
+            node: AST node where violation was detected.
+            violation_type: Type of purity violation.
+            severity: Severity level (ERROR or WARNING).
+            message: Human-readable description of the violation.
+            suggestion: Suggested fix for the violation.
+        """
         line_number = getattr(node, "lineno", 0)
         column = getattr(node, "col_offset", 0)
 
@@ -939,14 +1122,16 @@ def analyze_file(file_path: Path) -> PurityCheckResult:
 
 
 def find_node_files(src_dir: Path) -> list[Path]:
-    """
-    Find all node files to analyze.
+    """Find all node files to analyze.
+
+    Searches for Python files matching the node_*.py pattern in the
+    nodes/ and infrastructure/ directories.
 
     Args:
-        src_dir: Source directory to search
+        src_dir: Source directory to search (typically src/omnibase_core).
 
     Returns:
-        List of node file paths
+        Sorted list of paths to node files.
     """
     node_files: list[Path] = []
 
@@ -967,7 +1152,17 @@ def find_node_files(src_dir: Path) -> list[Path]:
 
 
 def main() -> int:
-    """Main entry point."""
+    """Main entry point for the node purity validation script.
+
+    Parses command line arguments, finds node files, runs purity analysis,
+    and reports results.
+
+    Returns:
+        Exit code:
+        - 0: All nodes pass purity checks
+        - 1: Purity violations detected
+        - 2: Script error (invalid arguments, file not found, etc.)
+    """
     parser = argparse.ArgumentParser(
         description="Validate ONEX node purity guarantees using AST analysis"
     )

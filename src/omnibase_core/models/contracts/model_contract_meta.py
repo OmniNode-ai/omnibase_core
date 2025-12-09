@@ -176,10 +176,19 @@ class ModelContractMeta(BaseModel):
     @field_validator("node_kind", mode="before")
     @classmethod
     def validate_node_kind(cls, v: object) -> EnumNodeKind:
-        """
-        Validate and convert node_kind to EnumNodeKind.
+        """Validate and convert node_kind to EnumNodeKind.
 
-        Supports both EnumNodeKind instances and string values for YAML compatibility.
+        Supports both EnumNodeKind instances and string values for YAML
+        compatibility. String values are case-insensitive.
+
+        Args:
+            v: Input value - EnumNodeKind instance or string.
+
+        Returns:
+            Validated EnumNodeKind instance.
+
+        Raises:
+            ModelOnexError: If the value is not a valid node kind.
         """
         if isinstance(v, EnumNodeKind):
             return v
@@ -202,10 +211,21 @@ class ModelContractMeta(BaseModel):
     @field_validator("version", mode="before")
     @classmethod
     def validate_version(cls, v: object) -> ModelContractVersion:
-        """
-        Validate and convert version to ModelContractVersion.
+        """Validate and convert version to ModelContractVersion.
 
-        Supports both ModelContractVersion instances and semver strings.
+        Supports multiple input formats for flexible contract definition:
+        - ModelContractVersion instances (passed through)
+        - Semver strings (e.g., "1.0.0", "2.1.0-beta")
+        - Dictionary representations
+
+        Args:
+            v: Input value - ModelContractVersion, string, or dict.
+
+        Returns:
+            Validated ModelContractVersion instance.
+
+        Raises:
+            ModelOnexError: If the value cannot be converted to a valid version.
         """
         if isinstance(v, ModelContractVersion):
             return v
@@ -224,7 +244,21 @@ class ModelContractMeta(BaseModel):
     )
     @classmethod
     def strip_and_validate_non_empty(cls, v: object) -> str:
-        """Strip whitespace and validate non-empty strings."""
+        """Strip whitespace and validate non-empty strings.
+
+        Ensures required string fields contain meaningful content by:
+        1. Stripping leading/trailing whitespace
+        2. Rejecting empty or whitespace-only strings
+
+        Args:
+            v: Input value expected to be a string.
+
+        Returns:
+            Stripped string value.
+
+        Raises:
+            ModelOnexError: If value is not a string or is empty after stripping.
+        """
         if not isinstance(v, str):
             raise ModelOnexError(
                 message=f"Expected string, got {type(v).__name__}",
@@ -242,7 +276,19 @@ class ModelContractMeta(BaseModel):
     @field_validator("node_id", mode="before")
     @classmethod
     def validate_node_id(cls, v: object) -> UUID:
-        """Validate and convert node_id to UUID."""
+        """Validate and convert node_id to UUID.
+
+        Accepts either a UUID object or a valid UUID string representation.
+
+        Args:
+            v: Input value - UUID instance or UUID string.
+
+        Returns:
+            Validated UUID instance.
+
+        Raises:
+            ModelOnexError: If the value is not a valid UUID format.
+        """
         if isinstance(v, UUID):
             return v
         if isinstance(v, str):
@@ -261,10 +307,18 @@ class ModelContractMeta(BaseModel):
 
     @model_validator(mode="after")
     def validate_cross_node_consistency(self) -> ModelContractMeta:
-        """
-        Validate cross-node consistency requirements.
+        """Validate cross-node consistency requirements.
 
-        Ensures that the meta-model adheres to ONEX standards.
+        Performs additional validation to ensure the meta-model adheres to
+        ONEX standards. Currently validates that input/output schemas follow
+        ONEX naming patterns (allowing external models with warnings).
+
+        Returns:
+            The validated ModelContractMeta instance.
+
+        Note:
+            External models (not prefixed with 'omnibase_') are allowed but
+            may generate warnings in logging contexts.
         """
         # Validate input_schema follows ONEX patterns
         if not self.input_schema.startswith(
@@ -287,30 +341,48 @@ class ModelContractMeta(BaseModel):
     # ========================================================================
 
     def __eq__(self, other: object) -> bool:
-        """Check equality based on node_id."""
+        """Check equality based on node_id.
+
+        Two ModelContractMeta instances are considered equal if they have
+        the same node_id, regardless of other field values.
+
+        Args:
+            other: Another object to compare with.
+
+        Returns:
+            True if both have the same node_id, NotImplemented for non-meta types.
+        """
         if not isinstance(other, ModelContractMeta):
             return NotImplemented
         return self.node_id == other.node_id
 
     def __hash__(self) -> int:
-        """Return hash based on node_id for use in sets and dicts."""
+        """Return hash based on node_id for use in sets and dicts.
+
+        Returns:
+            Integer hash value derived from node_id.
+        """
         return hash(self.node_id)
 
     def is_core_node_type(self) -> bool:
-        """
-        Check if this is a core ONEX node type.
+        """Check if this is a core ONEX node type.
+
+        Core node types are the four primary architectural roles in ONEX:
+        EFFECT, COMPUTE, REDUCER, and ORCHESTRATOR.
 
         Returns:
-            True if node_kind is EFFECT, COMPUTE, REDUCER, or ORCHESTRATOR
+            True if node_kind is EFFECT, COMPUTE, REDUCER, or ORCHESTRATOR.
         """
         return EnumNodeKind.is_core_node_type(self.node_kind)
 
     def is_infrastructure_type(self) -> bool:
-        """
-        Check if this is an infrastructure node type.
+        """Check if this is an infrastructure node type.
+
+        Infrastructure node types provide runtime support and coordination
+        rather than processing data directly.
 
         Returns:
-            True if node_kind is RUNTIME_HOST
+            True if node_kind is RUNTIME_HOST.
         """
         return EnumNodeKind.is_infrastructure_type(self.node_kind)
 

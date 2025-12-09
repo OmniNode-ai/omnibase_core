@@ -1,17 +1,40 @@
 """Contract Hash Registry.
 
-Provides deterministic SHA256 fingerprinting for ONEX contracts with:
-- Normalization pipeline (defaults resolution, null removal, canonical ordering)
-- Fingerprint format: `<semver>:<sha256-first-12-hex-chars>`
-- Registry for storing/retrieving contract hashes
-- Drift detection between declarative and legacy versions
+This module provides deterministic SHA256 fingerprinting for ONEX contracts,
+enabling drift detection between declarative and legacy versions during migration.
 
-See: CONTRACT_STABILITY_SPEC.md for detailed specification.
+Features:
+    - **Normalization Pipeline**: Defaults resolution, null removal, canonical ordering
+    - **Fingerprint Format**: `<semver>:<sha256-first-12-hex-chars>` (e.g., `0.4.0:8fa1e2b4c9d1`)
+    - **Registry**: Store and retrieve contract fingerprints by name
+    - **Drift Detection**: Compare computed fingerprints against registered baselines
 
-STABILITY GUARANTEE:
-- Fingerprint computation is deterministic across Python versions (3.10-3.12)
-- Same contract produces identical fingerprint before and after migration
-- Normalization is idempotent: normalize(normalize(c)) == normalize(c)
+Example:
+    Basic usage::
+
+        from omnibase_core.contracts.hash_registry import (
+            ContractHashRegistry,
+            compute_contract_fingerprint,
+            normalize_contract,
+        )
+
+        # Normalize and fingerprint a contract
+        contract = {"name": "my_node", "version": "0.4.0", "type": "compute"}
+        normalized = normalize_contract(contract)
+        fingerprint = compute_contract_fingerprint(contract)
+
+        # Register and verify
+        registry = ContractHashRegistry()
+        registry.register("my_node", fingerprint)
+        assert registry.verify("my_node", fingerprint)
+
+See Also:
+    CONTRACT_STABILITY_SPEC.md: Detailed specification for contract stability.
+
+Stability Guarantee:
+    - Fingerprint computation is deterministic across Python versions (3.10-3.12)
+    - Same contract produces identical fingerprint before and after migration
+    - Normalization is idempotent: ``normalize(normalize(c)) == normalize(c)``
 """
 
 from __future__ import annotations
@@ -249,17 +272,39 @@ class ContractHashRegistry:
     Stores deterministic SHA256 fingerprints for loaded contracts,
     enabling drift detection between declarative and legacy versions.
 
+    This registry provides a central location to track contract versions
+    and detect when contracts have changed unexpectedly. It supports
+    both registration of known-good fingerprints and verification of
+    computed fingerprints against registered baselines.
+
+    Attributes:
+        _registry: Internal dictionary mapping contract names to fingerprints.
+        _created_at: Timestamp when the registry was created (UTC).
+
     Thread Safety:
         This class is NOT thread-safe. Use external synchronization
-        if accessing from multiple threads.
+        (e.g., threading.Lock) if accessing from multiple threads.
 
     Example:
-        >>> registry = ContractHashRegistry()
-        >>> registry.register("my_contract", fingerprint)
-        >>> registry.lookup("my_contract")
-        '0.4.0:8fa1e2b4c9d1'
-        >>> registry.detect_drift("my_contract", computed_fingerprint)
-        ModelDriftResult(has_drift=False, ...)
+        Basic registration and lookup::
+
+            >>> registry = ContractHashRegistry()
+            >>> registry.register("my_contract", fingerprint)
+            >>> registry.lookup("my_contract")
+            ModelContractFingerprint(version='0.4.0', hash_prefix='8fa1e2b4c9d1')
+            >>> registry.lookup_string("my_contract")
+            '0.4.0:8fa1e2b4c9d1'
+
+        Drift detection::
+
+            >>> drift_result = registry.detect_drift("my_contract", computed_fingerprint)
+            >>> drift_result.has_drift
+            False
+
+        Import/export::
+
+            >>> exported = registry.to_dict()
+            >>> new_registry = ContractHashRegistry.from_dict(exported)
     """
 
     def __init__(self) -> None:

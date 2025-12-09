@@ -1,5 +1,36 @@
 #!/usr/bin/env python3
-"""Naming convention validation for omni* ecosystem."""
+"""Naming convention validation for omni* ecosystem.
+
+This script validates that Python classes follow the ONEX naming conventions
+across the codebase. It enforces consistent naming patterns for:
+
+- Models: Must start with 'Model' (e.g., ModelUserAuth)
+- Protocols: Must start with 'Protocol' (e.g., ProtocolEventBus)
+- Enums: Must start with 'Enum' (e.g., EnumWorkflowType)
+- Services: Must start with 'Service' (e.g., ServiceAuth)
+- Mixins: Must start with 'Mixin' (e.g., MixinHealthCheck)
+- Nodes: Must start with 'Node' (e.g., NodeEffectUserData)
+- TypedDicts: Must start with 'TypedDict' (e.g., TypedDictUserParams)
+
+Usage:
+    poetry run python scripts/validation/validate_naming.py /path/to/repo
+    poetry run python scripts/validation/validate_naming.py . --verbose
+    poetry run python scripts/validation/validate_naming.py . --fail-on-warnings
+
+Examples:
+    # Validate current repository
+    poetry run python scripts/validation/validate_naming.py .
+
+    # Validate with verbose output
+    poetry run python scripts/validation/validate_naming.py . -v
+
+    # Fail on warnings (for CI)
+    poetry run python scripts/validation/validate_naming.py . --fail-on-warnings
+
+Exit Codes:
+    0 - All naming conventions are compliant
+    1 - Naming violations detected (errors, or warnings with --fail-on-warnings)
+"""
 
 from __future__ import annotations
 
@@ -13,6 +44,17 @@ from pathlib import Path
 
 @dataclass
 class NamingViolation:
+    """Represents a single naming convention violation.
+
+    Attributes:
+        file_path: Absolute path to the file containing the violation.
+        line_number: Line number where the violation occurs.
+        class_name: Name of the class that violates the convention.
+        expected_pattern: The regex pattern or description of expected naming.
+        description: Human-readable description of the naming rule.
+        severity: Violation severity ('error' or 'warning').
+    """
+
     file_path: str
     line_number: int
     class_name: str
@@ -24,7 +66,7 @@ class NamingViolation:
 class NamingConventionValidator:
     """Validates naming conventions across Python codebase."""
 
-    NAMING_PATTERNS = {
+    NAMING_PATTERNS: dict[str, dict[str, str | None]] = {
         "models": {
             "pattern": r"^Model[A-Z][A-Za-z0-9]*$",
             "file_prefix": "model_",
@@ -130,8 +172,12 @@ class NamingConventionValidator:
         are placed outside their typical naming convention directory for valid
         architectural reasons (e.g., utilities, primitives, infrastructure).
 
+        Args:
+            class_name: Name of the class to check.
+            file_path: Path to the file containing the class.
+
         Returns:
-            True if class is architecturally exempt from standard naming rules
+            True if class is architecturally exempt from standard naming rules.
         """
         for (
             directory,
@@ -154,19 +200,42 @@ class NamingConventionValidator:
 
         return False
 
-    def __init__(self, repo_path: Path):
+    def __init__(self, repo_path: Path) -> None:
+        """Initialize the naming convention validator.
+
+        Args:
+            repo_path: Path to the repository root directory to validate.
+        """
         self.repo_path = repo_path
         self.violations: list[NamingViolation] = []
 
     def validate_naming_conventions(self) -> bool:
-        """Validate all naming conventions."""
+        """Validate all naming conventions across the repository.
+
+        Scans the repository for Python files and validates that class names
+        follow the ONEX naming conventions based on their category and location.
+
+        Returns:
+            True if no errors were found, False otherwise.
+        """
         for category, rules in self.NAMING_PATTERNS.items():
             self._validate_category_files(category, rules)
 
         return len([v for v in self.violations if v.severity == "error"]) == 0
 
-    def _validate_category_files(self, category: str, rules: dict[str, str]):
-        """Validate naming conventions for a specific category."""
+    def _validate_category_files(
+        self, category: str, rules: dict[str, str | None]
+    ) -> None:
+        """Validate naming conventions for a specific category.
+
+        Args:
+            category: The category to validate (e.g., 'models', 'enums').
+            rules: Dictionary containing validation rules including:
+                - pattern: Regex pattern for valid class names
+                - file_prefix: Expected file name prefix
+                - description: Human-readable rule description
+                - directory: Expected directory for this category
+        """
         # Special handling for TypedDict - scan all Python files
         if category == "typeddicts":
             for file_path in self.repo_path.rglob("*.py"):
@@ -176,16 +245,20 @@ class NamingConventionValidator:
             return
 
         # Find all files matching the prefix pattern
-        for file_path in self.repo_path.rglob(f"{rules['file_prefix']}*.py"):
-            # Skip __pycache__, archived directories, and similar
-            if "__pycache__" in str(file_path) or "/archived/" in str(file_path):
-                continue
+        file_prefix = rules["file_prefix"]
+        if file_prefix:
+            for file_path in self.repo_path.rglob(f"{file_prefix}*.py"):
+                # Skip __pycache__, archived directories, and similar
+                if "__pycache__" in str(file_path) or "/archived/" in str(file_path):
+                    continue
 
-            self._validate_file_naming(file_path, category, rules)
+                self._validate_file_naming(file_path, category, rules)
 
         # Also check files in the expected directory structure
-        directory_path = self.repo_path / "src" / "*" / rules["directory"]
-        for file_path in self.repo_path.rglob(f"*/{rules['directory']}/*.py"):
+        directory = rules["directory"]
+        if not directory:
+            return
+        for file_path in self.repo_path.rglob(f"*/{directory}/*.py"):
             if file_path.name == "__init__.py":
                 continue
             if "__pycache__" in str(file_path) or "/archived/" in str(file_path):
@@ -212,28 +285,40 @@ class NamingConventionValidator:
                 continue
 
             # Skip files we've already processed to avoid duplicate violations
-            already_processed = file_path.name.startswith(rules["file_prefix"]) or (
-                rules["directory"] and rules["directory"] in str(file_path)
-            )
+            file_prefix = rules["file_prefix"]
+            already_processed = (
+                file_prefix and file_path.name.startswith(file_prefix)
+            ) or (directory and directory in str(file_path))
             if not already_processed:
                 self._validate_all_classes_in_file(file_path, category, rules)
 
     def _validate_file_naming(
-        self, file_path: Path, category: str, rules: dict[str, str]
-    ):
-        """Validate naming conventions in a specific file."""
+        self, file_path: Path, category: str, rules: dict[str, str | None]
+    ) -> None:
+        """Validate naming conventions in a specific file.
+
+        Parses the Python file and checks all class definitions against
+        the naming conventions for the specified category.
+
+        Args:
+            file_path: Path to the Python file to validate.
+            category: The category being validated.
+            rules: Dictionary containing validation rules.
+        """
         try:
             with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Check if file name follows convention
             expected_prefix = rules["file_prefix"]
+            pattern = rules["pattern"]
             if (
-                not file_path.name.startswith(expected_prefix)
+                expected_prefix
+                and not file_path.name.startswith(expected_prefix)
                 and file_path.name != "__init__.py"
             ):
                 # Only flag this for files that contain classes matching the pattern
-                if self._contains_relevant_classes(content, rules["pattern"]):
+                if pattern and self._contains_relevant_classes(content, pattern):
                     self.violations.append(
                         NamingViolation(
                             file_path=str(file_path),
@@ -255,9 +340,18 @@ class NamingConventionValidator:
             print(f"Warning: Could not parse {file_path}: {e}")
 
     def _validate_typeddict_in_file(
-        self, file_path: Path, category: str, rules: dict[str, str]
-    ):
-        """Validate TypedDict classes in any file."""
+        self, file_path: Path, category: str, rules: dict[str, str | None]
+    ) -> None:
+        """Validate TypedDict classes in any file.
+
+        TypedDict classes can appear in any Python file, so this method
+        scans all files for TypedDict subclasses and validates their naming.
+
+        Args:
+            file_path: Path to the Python file to validate.
+            category: The category being validated (should be 'typeddicts').
+            rules: Dictionary containing validation rules.
+        """
         try:
             with open(file_path, encoding="utf-8") as f:
                 content = f.read()
@@ -274,9 +368,18 @@ class NamingConventionValidator:
             print(f"Warning: Could not parse {file_path}: {e}")
 
     def _validate_all_classes_in_file(
-        self, file_path: Path, category: str, rules: dict[str, str]
-    ):
-        """Validate classes in any file that should match the category pattern."""
+        self, file_path: Path, category: str, rules: dict[str, str | None]
+    ) -> None:
+        """Validate classes in any file that should match the category pattern.
+
+        Scans files that haven't been processed by category-specific validation
+        to catch misplaced classes or violations in unexpected locations.
+
+        Args:
+            file_path: Path to the Python file to validate.
+            category: The category being validated.
+            rules: Dictionary containing validation rules.
+        """
         try:
             with open(file_path, encoding="utf-8") as f:
                 content = f.read()
@@ -296,7 +399,14 @@ class NamingConventionValidator:
             print(f"Warning: Could not parse {file_path}: {e}")
 
     def _is_typeddict_class(self, node: ast.ClassDef) -> bool:
-        """Check if a class definition inherits from TypedDict."""
+        """Check if a class definition inherits from TypedDict.
+
+        Args:
+            node: AST class definition node to check.
+
+        Returns:
+            True if the class inherits from TypedDict.
+        """
         for base in node.bases:
             if isinstance(base, ast.Name) and base.id == "TypedDict":
                 return True
@@ -306,7 +416,14 @@ class NamingConventionValidator:
         return False
 
     def _is_basemodel_class(self, node: ast.ClassDef) -> bool:
-        """Check if a class definition inherits from Pydantic BaseModel."""
+        """Check if a class definition inherits from Pydantic BaseModel.
+
+        Args:
+            node: AST class definition node to check.
+
+        Returns:
+            True if the class inherits from Pydantic BaseModel.
+        """
         for base in node.bases:
             if isinstance(base, ast.Name) and base.id == "BaseModel":
                 return True
@@ -316,7 +433,14 @@ class NamingConventionValidator:
         return False
 
     def _is_enum_class(self, node: ast.ClassDef) -> bool:
-        """Check if a class definition inherits from Enum."""
+        """Check if a class definition inherits from Enum.
+
+        Args:
+            node: AST class definition node to check.
+
+        Returns:
+            True if the class inherits from Enum.
+        """
         for base in node.bases:
             if isinstance(base, ast.Name) and base.id == "Enum":
                 return True
@@ -326,7 +450,14 @@ class NamingConventionValidator:
         return False
 
     def _is_protocol_class(self, node: ast.ClassDef) -> bool:
-        """Check if a class definition inherits from Protocol."""
+        """Check if a class definition inherits from Protocol.
+
+        Args:
+            node: AST class definition node to check.
+
+        Returns:
+            True if the class inherits from Protocol.
+        """
         for base in node.bases:
             if isinstance(base, ast.Name) and base.id == "Protocol":
                 return True
@@ -336,7 +467,15 @@ class NamingConventionValidator:
         return False
 
     def _contains_relevant_classes(self, content: str, pattern: str) -> bool:
-        """Check if file contains classes that should match the pattern."""
+        """Check if file contains classes that should match the pattern.
+
+        Args:
+            content: Python source code content.
+            pattern: Regex pattern to check against.
+
+        Returns:
+            True if file contains classes that should follow the pattern.
+        """
         try:
             tree = ast.parse(content)
             for node in ast.walk(tree):
@@ -350,11 +489,30 @@ class NamingConventionValidator:
         return False
 
     def _check_class_naming(
-        self, file_path: Path, node: ast.ClassDef, category: str, rules: dict
-    ):
-        """Check if class name follows conventions."""
+        self,
+        file_path: Path,
+        node: ast.ClassDef,
+        category: str,
+        rules: dict[str, str | None],
+    ) -> None:
+        """Check if class name follows conventions.
+
+        Validates the class name against the category's naming pattern and
+        adds violations to the violations list if rules are not followed.
+
+        Args:
+            file_path: Path to the file containing the class.
+            node: AST class definition node.
+            category: The category being validated.
+            rules: Dictionary containing validation rules.
+        """
         class_name = node.name
         pattern = rules["pattern"]
+        description = rules["description"]
+
+        # Skip if no pattern defined
+        if not pattern:
+            return
 
         # Skip exception patterns
         if self._is_exception_class(class_name):
@@ -436,25 +594,55 @@ class NamingConventionValidator:
                     line_number=node.lineno,
                     class_name=class_name,
                     expected_pattern=pattern,
-                    description=rules["description"],
+                    description=description
+                    or f"Must follow {category} naming conventions",
                     severity="error",
                 )
             )
 
     def _is_exception_class(self, class_name: str) -> bool:
-        """Check if class name matches exception patterns."""
+        """Check if class name matches exception patterns.
+
+        Exception patterns include private classes, test classes, and
+        exception/error classes that don't need to follow standard naming.
+
+        Args:
+            class_name: Name of the class to check.
+
+        Returns:
+            True if class matches an exception pattern.
+        """
         return any(re.match(pattern, class_name) for pattern in self.EXCEPTION_PATTERNS)
 
     def _is_in_category_directory(
         self, file_path: Path, expected_dir: str | None
     ) -> bool:
-        """Check if file is in the expected category directory."""
+        """Check if file is in the expected category directory.
+
+        Args:
+            file_path: Path to the file to check.
+            expected_dir: Expected directory name for the category.
+
+        Returns:
+            True if file is in the expected directory.
+        """
         if expected_dir is None:
             return False
         return expected_dir in str(file_path)
 
     def _should_match_pattern(self, class_name: str, category: str) -> bool:
-        """Determine if a class should match the pattern for a category."""
+        """Determine if a class should match the pattern for a category.
+
+        Uses heuristics based on keywords in the class name to determine
+        if it should follow the naming conventions for a specific category.
+
+        Args:
+            class_name: Name of the class to check.
+            category: The category to check against.
+
+        Returns:
+            True if the class name suggests it should follow the category's pattern.
+        """
         # Heuristics to determine if a class should follow naming conventions
 
         category_indicators = {
@@ -474,15 +662,29 @@ class NamingConventionValidator:
         return any(indicator in class_lower for indicator in indicators)
 
     def _matches_any_valid_pattern(self, class_name: str) -> bool:
-        """Check if a class name matches any valid naming pattern."""
+        """Check if a class name matches any valid naming pattern.
+
+        Args:
+            class_name: Name of the class to check.
+
+        Returns:
+            True if class name matches any of the defined naming patterns.
+        """
         for category, rules in self.NAMING_PATTERNS.items():
             pattern = rules["pattern"]
-            if re.match(pattern, class_name):
+            if pattern and re.match(pattern, class_name):
                 return True
         return False
 
     def generate_report(self) -> str:
-        """Generate naming convention report."""
+        """Generate naming convention validation report.
+
+        Creates a human-readable report of all violations found during
+        validation, grouped by severity (errors and warnings).
+
+        Returns:
+            Formatted string report with violation details and naming reference.
+        """
         if not self.violations:
             return "✅ All naming conventions are compliant!"
 
@@ -515,17 +717,29 @@ class NamingConventionValidator:
         report += "📚 NAMING CONVENTION REFERENCE:\n"
         report += "=" * 33 + "\n"
         for category, rules in self.NAMING_PATTERNS.items():
-            report += f"• {category.title()}: {rules['description']}\n"
-            if rules["file_prefix"]:
-                report += f"  File Pattern: {rules['file_prefix']}*.py\n"
+            description = (
+                rules["description"] or f"{category.title()} naming convention"
+            )
+            file_prefix = rules["file_prefix"]
+            pattern = rules["pattern"] or "N/A"
+            report += f"• {category.title()}: {description}\n"
+            if file_prefix:
+                report += f"  File Pattern: {file_prefix}*.py\n"
             else:
                 report += "  File Pattern: Any .py file\n"
-            report += f"  Class Pattern: {rules['pattern']}\n\n"
+            report += f"  Class Pattern: {pattern}\n\n"
 
         return report
 
 
-def main():
+def main() -> int:
+    """Main entry point for the naming convention validator.
+
+    Parses command line arguments, runs validation, and prints the report.
+
+    Returns:
+        Exit code (0 for success, 1 for failure).
+    """
     parser = argparse.ArgumentParser(description="Validate omni* naming conventions")
     parser.add_argument("repo_path", help="Path to repository root")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")

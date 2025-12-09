@@ -1,19 +1,35 @@
-"""
-Contract Node Metadata Model - ONEX Standards Compliant.
+"""Contract Node Metadata Model - ONEX Standards Compliant.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
-- Breaking changes require major version bump
+This module defines the metadata model for declarative node contracts, providing
+structured storage for contract-specific information like source files, package
+names, and deprecation status.
 
-This module defines the metadata model for declarative node contracts.
+Stability Guarantee:
+    - All fields, methods, and validators are stable interfaces
+    - New optional fields may be added in minor versions only
+    - Existing fields cannot be removed or have types/constraints changed
+    - Breaking changes require major version bump
 
-NOTE: This is distinct from omnibase_core.models.core.model_node_metadata.ModelNodeMetadata
-which is used for general node metadata. This class is specifically for
-contract-level metadata in the NodeMetaModel.
+Important Distinction:
+    This ModelContractNodeMetadata is specifically for contract-level metadata
+    within the NodeMetaModel. It is distinct from:
+    - omnibase_core.models.core.model_node_metadata.ModelNodeMetadata
+      (used for general node metadata throughout the system)
+
+Typical Usage:
+    Used within ModelContractMeta to store additional contract metadata:
+    - Source file location for code generation
+    - Package information for module resolution
+    - Deprecation tracking for version migration
+
+Example:
+    >>> metadata = ModelContractNodeMetadata(
+    ...     source_file="src/nodes/my_node.py",
+    ...     package_name="omnibase_core.nodes",
+    ...     deprecated=False,
+    ... )
 """
 
 from __future__ import annotations
@@ -24,11 +40,31 @@ from pydantic import BaseModel, ConfigDict, Field
 class ModelContractNodeMetadata(BaseModel):
     """Typed model for additional node contract metadata.
 
-    Provides structured typed fields for metadata (replaces untyped dict).
-    This is used within NodeMetaModel for contract-specific metadata.
+    Provides structured, typed fields for contract metadata, replacing untyped
+    dictionaries with a schema-enforced model. This model is immutable (frozen)
+    after creation to ensure contract stability.
 
-    NOTE: This is distinct from omnibase_core.models.core.model_node_metadata.ModelNodeMetadata
-    which is used for general node metadata throughout the system.
+    This is used within ModelContractMeta for contract-specific metadata that
+    describes where the node is defined, its package context, and deprecation status.
+
+    Note:
+        This is distinct from omnibase_core.models.core.model_node_metadata.ModelNodeMetadata
+        which is used for general node metadata throughout the system.
+
+    Attributes:
+        source_file: Filesystem path where the node is defined.
+        package_name: Python package containing the node.
+        documentation_url: URL to external documentation.
+        deprecated: Whether this node is deprecated.
+        deprecation_message: Human-readable deprecation notice.
+
+    Example:
+        >>> metadata = ModelContractNodeMetadata(
+        ...     source_file="src/omnibase_core/nodes/compute.py",
+        ...     package_name="omnibase_core.nodes",
+        ...     documentation_url="https://docs.example.com/compute",
+        ...     deprecated=False,
+        ... )
     """
 
     # Common metadata fields
