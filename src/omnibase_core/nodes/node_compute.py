@@ -26,13 +26,9 @@ import hashlib
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, TypeVar
+from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-
-# Type variables for generic compute input/output
-T_Input = TypeVar("T_Input")
-T_Output = TypeVar("T_Output")
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -44,15 +40,26 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure import ModelComputeCache
 
 
-class NodeCompute(NodeCoreBase):
+class NodeCompute[T_Input, T_Output](NodeCoreBase):
     """
     STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
 
     Pure computation node for deterministic operations.
 
-    Implements computational pipeline with input → transform → output pattern.
+    Implements computational pipeline with input -> transform -> output pattern.
     Provides caching, parallel processing, and performance optimization for
     compute-intensive operations.
+
+    .. versionadded:: 0.4.0
+        Added PEP 695 generic type parameters and execute_compute() contract interface.
+
+    Generic type parameters:
+        T_Input: Type of input data items (flows from ModelComputeInput[T_Input])
+        T_Output: Type of output result (flows to ModelComputeOutput[T_Output])
+
+    Type flow:
+        Input data (T_Input) -> computation -> Output result (T_Output)
+        T_Output is typically the same as T_Input or a transformation thereof.
 
     Key Features:
     - Pure function patterns (no side effects)
@@ -109,6 +116,82 @@ class NodeCompute(NodeCoreBase):
 
         # Register built-in computations
         self._register_builtin_computations()
+
+    async def execute_compute(
+        self,
+        contract: Any,  # ModelContractCompute when available
+    ) -> ModelComputeOutput[T_Output]:
+        """
+        Execute compute operation based on contract specification.
+
+        REQUIRED INTERFACE: This public method implements the ModelContractCompute
+        interface per ONEX guidelines. It provides a contract-based entry point
+        that delegates to the internal process() method.
+
+        .. versionadded:: 0.4.0
+
+        Args:
+            contract: The compute contract specification. Expected to have
+                input_data and metadata attributes, but gracefully handles
+                contracts without these fields.
+
+        Returns:
+            ModelComputeOutput containing computation results with performance
+            metrics and cache status.
+
+        Raises:
+            ModelOnexError: If computation fails or input validation fails.
+
+        Example:
+            >>> contract = ModelContractCompute(
+            ...     input_data={"text": "hello"},
+            ...     metadata={"computation_type": "string_uppercase"},
+            ... )
+            >>> result = await node.execute_compute(contract)
+            >>> print(result.result)  # "HELLO"
+        """
+        # Convert contract to ModelComputeInput
+        compute_input = self._contract_to_input(contract)
+        return await self.process(compute_input)
+
+    def _contract_to_input(self, contract: Any) -> ModelComputeInput[Any]:
+        """
+        Convert contract to ModelComputeInput.
+
+        Args:
+            contract: The compute contract to convert. Expected to have
+                input_data and metadata attributes.
+
+        Returns:
+            ModelComputeInput instance ready for process() method.
+
+        Note:
+            This method gracefully handles contracts that may not have all
+            expected attributes, using sensible defaults where needed.
+        """
+        # Extract input_data from contract (required field)
+        input_data: Any = getattr(contract, "input_data", {})
+
+        # Extract metadata from contract (optional field)
+        metadata: dict[str, Any] = getattr(contract, "metadata", {})
+
+        # Extract computation_type from metadata or contract
+        computation_type: str = metadata.get(
+            "computation_type",
+            getattr(contract, "computation_type", "default"),
+        )
+
+        # Extract cache and parallel settings from metadata or use defaults
+        cache_enabled: bool = metadata.get("cache_enabled", True)
+        parallel_enabled: bool = metadata.get("parallel_enabled", False)
+
+        return ModelComputeInput(
+            data=input_data,
+            computation_type=computation_type,
+            cache_enabled=cache_enabled,
+            parallel_enabled=parallel_enabled,
+            metadata=metadata,
+        )
 
     async def process(
         self, input_data: ModelComputeInput[T_Input]
