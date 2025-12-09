@@ -826,6 +826,16 @@ class MyNode(NodeCoreBase, MixinDiscoveryResponder):
        pass
    ```
 
+8. **Poll background jobs repeatedly (AI Agent Anti-Pattern)**
+   ```text
+   # WRONG - Burns tokens polling every few seconds
+   BashOutput(bash_id) → still running
+   BashOutput(bash_id) → still running
+   BashOutput(bash_id) → still running
+   ... (repeated 10+ times)
+   ```
+   **Instead**: Call `BashOutput` once with a longer `wait_up_to` timeout (e.g., 300 seconds), or continue working on other tasks while waiting. Pre-commit/pre-push hooks can take 2-5 minutes on this codebase (1865+ source files with mypy strict).
+
 ### ✅ Do
 
 1. **Always call super().__init__()**

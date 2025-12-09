@@ -60,6 +60,11 @@ class NodeEffect(NodeCoreBase):
     and circuit breaker patterns. Handles I/O operations, file management,
     event emission, and external service interactions.
 
+    .. versionadded:: 0.4.0
+        Primary EFFECT node implementation for ONEX 4-node architecture.
+        Provides transaction management, retry policies, and circuit breaker
+        patterns for external I/O operations.
+
     Key Features:
     - ModelEffectTransaction management with rollback support
     - Retry policies with exponential backoff

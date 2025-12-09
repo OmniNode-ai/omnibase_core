@@ -14,7 +14,7 @@
 #   - Fast pattern validations
 #
 # PRE-PUSH (quick validation before sharing):
-#   - mypy type checking (~5-10s)
+#   - mypy type checking (changed files only, ~1-5s)
 #   - validate-naming-conventions (~14s)
 #   - Documentation link validation
 #   - Protocol UUID enforcement (~6s)
@@ -81,6 +81,7 @@ repos:
         args: [--show-error-codes, --no-error-summary]
         files: ^src/omnibase_core/.*\.py$
         exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
+        pass_filenames: true  # Only check changed files, not entire codebase
         stages: [pre-push]  # Moved to pre-push: ~5-10s
 
       # Cleanup: Clear tmp/ directory before commits
