@@ -8,8 +8,7 @@ Provides reusable fixtures for:
 """
 
 from datetime import UTC, datetime
-from typing import Any
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
@@ -103,12 +102,17 @@ def mock_runtime() -> MagicMock:
     """
     Create a mock runtime for testing delegation patterns.
 
-    Returns a MagicMock that can be used to verify:
-    - execute_with_handler() calls
-    - Envelope forwarding
+    Returns a MagicMock configured with AsyncMock for execute_with_handler(),
+    which correctly handles async/await patterns in tests.
+
+    Verifiable behaviors:
+    - execute_with_handler() calls and arguments
+    - Envelope forwarding to runtime
     - Return value handling
 
-    Note: execute_with_handler returns an awaitable to match the async protocol.
+    Note: Uses AsyncMock which is the recommended approach for mocking
+    async methods. AsyncMock automatically handles async/await properly,
+    making it cleaner than manually defining async functions with side_effect.
     """
     from unittest.mock import AsyncMock
 
@@ -120,24 +124,6 @@ def mock_runtime() -> MagicMock:
             "result": {"processed": True},
         }
     )
-    return runtime
-
-
-@pytest.fixture
-def mock_runtime_async() -> MagicMock:
-    """
-    Create a mock runtime with async method support.
-
-    Used for testing async handle() patterns.
-    """
-    import asyncio
-
-    runtime = MagicMock()
-
-    async def mock_execute(*args: Any, **kwargs: Any) -> dict[str, Any]:
-        return {"status": "success", "result": {"processed": True}}
-
-    runtime.execute_with_handler = Mock(side_effect=mock_execute)
     return runtime
 
 

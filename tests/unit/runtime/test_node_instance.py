@@ -280,11 +280,13 @@ class TestNodeInstanceFrozenBehavior:
 class TestNodeInstanceInitialize:
     """Tests for NodeInstance initialize() lifecycle method."""
 
-    def test_initialize_can_be_called(
+    @pytest.mark.asyncio
+    async def test_initialize_can_be_called(
         self,
         sample_slug: str,
         sample_node_type: EnumNodeType,
         mock_contract: Mock,
+        mock_runtime: MagicMock,
     ) -> None:
         """
         Test that initialize() method can be called without errors.
@@ -292,6 +294,7 @@ class TestNodeInstanceInitialize:
         EXPECTED BEHAVIOR:
         - initialize() method exists and is callable
         - Calling initialize() does not raise exceptions
+        - Requires runtime to be set before initialization
         """
         from omnibase_core.runtime import NodeInstance
 
@@ -300,12 +303,12 @@ class TestNodeInstanceInitialize:
             node_type=sample_node_type,
             contract=mock_contract,
         )
+        instance.set_runtime(mock_runtime)
 
-        # Should not raise
-        result = instance.initialize()
+        # Should not raise - initialize returns None
+        await instance.initialize()
 
         # Method should complete without error
-        # Result can be None or some success indicator
 
     @pytest.mark.asyncio
     async def test_initialize_returns_expected_type(
@@ -331,24 +334,28 @@ class TestNodeInstanceInitialize:
         )
         instance._runtime = mock_runtime
 
-        result = await instance.initialize()
+        # initialize() returns None - verify it doesn't raise
+        # Note: We don't need to check return value since type is None
+        await instance.initialize()
+        # Method completed without error - test passes
 
-        # Result should be None or a specific type (adjust based on implementation)
-        assert result is None or isinstance(result, (bool, dict))
-
-    def test_initialize_idempotent(
+    @pytest.mark.asyncio
+    async def test_initialize_raises_on_double_call(
         self,
         sample_slug: str,
         sample_node_type: EnumNodeType,
         mock_contract: Mock,
+        mock_runtime: MagicMock,
     ) -> None:
         """
-        Test that initialize() can be called multiple times safely.
+        Test that initialize() raises error when called twice.
 
         EXPECTED BEHAVIOR:
-        - Multiple calls to initialize() do not raise errors
-        - State remains consistent after multiple calls
+        - First initialize() succeeds
+        - Second initialize() raises ModelOnexError
+        - This is explicit failure, not silent idempotency
         """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
         from omnibase_core.runtime import NodeInstance
 
         instance = NodeInstance(
@@ -356,13 +363,16 @@ class TestNodeInstanceInitialize:
             node_type=sample_node_type,
             contract=mock_contract,
         )
+        instance.set_runtime(mock_runtime)
 
-        # Call multiple times
-        result1 = instance.initialize()
-        result2 = instance.initialize()
-        result3 = instance.initialize()
+        # First call succeeds
+        await instance.initialize()
 
-        # Should not raise and results should be consistent
+        # Second call raises error
+        with pytest.raises(ModelOnexError) as exc_info:
+            await instance.initialize()
+
+        assert "already initialized" in str(exc_info.value).lower()
 
 
 # =============================================================================
@@ -373,11 +383,13 @@ class TestNodeInstanceInitialize:
 class TestNodeInstanceShutdown:
     """Tests for NodeInstance shutdown() lifecycle method."""
 
-    def test_shutdown_can_be_called(
+    @pytest.mark.asyncio
+    async def test_shutdown_can_be_called(
         self,
         sample_slug: str,
         sample_node_type: EnumNodeType,
         mock_contract: Mock,
+        mock_runtime: MagicMock,
     ) -> None:
         """
         Test that shutdown() method can be called without errors.
@@ -385,6 +397,7 @@ class TestNodeInstanceShutdown:
         EXPECTED BEHAVIOR:
         - shutdown() method exists and is callable
         - Calling shutdown() does not raise exceptions
+        - Requires initialization before shutdown
         """
         from omnibase_core.runtime import NodeInstance
 
@@ -393,9 +406,11 @@ class TestNodeInstanceShutdown:
             node_type=sample_node_type,
             contract=mock_contract,
         )
+        instance.set_runtime(mock_runtime)
+        await instance.initialize()
 
-        # Should not raise
-        result = instance.shutdown()
+        # Should not raise - shutdown returns None
+        await instance.shutdown()
 
         # Method should complete without error
 
@@ -424,16 +439,18 @@ class TestNodeInstanceShutdown:
         instance._runtime = mock_runtime
         await instance.initialize()  # Must be initialized before shutdown
 
-        result = await instance.shutdown()
+        # shutdown() returns None - verify it doesn't raise
+        # Note: We don't need to check return value since type is None
+        await instance.shutdown()
+        # Method completed without error - test passes
 
-        # Result should be None or a specific type
-        assert result is None or isinstance(result, (bool, dict))
-
-    def test_shutdown_after_initialize(
+    @pytest.mark.asyncio
+    async def test_shutdown_after_initialize(
         self,
         sample_slug: str,
         sample_node_type: EnumNodeType,
         mock_contract: Mock,
+        mock_runtime: MagicMock,
     ) -> None:
         """
         Test proper lifecycle: initialize -> shutdown.
@@ -449,25 +466,28 @@ class TestNodeInstanceShutdown:
             node_type=sample_node_type,
             contract=mock_contract,
         )
+        instance.set_runtime(mock_runtime)
 
-        instance.initialize()
-        result = instance.shutdown()
+        await instance.initialize()
+        await instance.shutdown()
 
         # Should complete without error
 
-    def test_shutdown_idempotent(
+    @pytest.mark.asyncio
+    async def test_shutdown_raises_when_not_initialized(
         self,
         sample_slug: str,
         sample_node_type: EnumNodeType,
         mock_contract: Mock,
     ) -> None:
         """
-        Test that shutdown() can be called multiple times safely.
+        Test that shutdown() raises error when not initialized.
 
         EXPECTED BEHAVIOR:
-        - Multiple calls to shutdown() do not raise errors
-        - State remains consistent after multiple calls
+        - shutdown() on non-initialized instance raises ModelOnexError
+        - This is explicit failure for state validation
         """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
         from omnibase_core.runtime import NodeInstance
 
         instance = NodeInstance(
@@ -476,12 +496,11 @@ class TestNodeInstanceShutdown:
             contract=mock_contract,
         )
 
-        # Call multiple times
-        result1 = instance.shutdown()
-        result2 = instance.shutdown()
-        result3 = instance.shutdown()
+        # Not initialized - shutdown should raise
+        with pytest.raises(ModelOnexError) as exc_info:
+            await instance.shutdown()
 
-        # Should not raise
+        assert "not initialized" in str(exc_info.value).lower()
 
 
 # =============================================================================
@@ -492,12 +511,14 @@ class TestNodeInstanceShutdown:
 class TestNodeInstanceHandle:
     """Tests for NodeInstance handle() method - envelope processing."""
 
-    def test_handle_accepts_envelope(
+    @pytest.mark.asyncio
+    async def test_handle_accepts_envelope(
         self,
         sample_slug: str,
         sample_node_type: EnumNodeType,
         mock_contract: Mock,
         sample_envelope: ModelOnexEnvelope,
+        mock_runtime: MagicMock,
     ) -> None:
         """
         Test that handle() accepts ModelOnexEnvelope parameter.
@@ -505,6 +526,7 @@ class TestNodeInstanceHandle:
         EXPECTED BEHAVIOR:
         - handle() method exists and accepts envelope parameter
         - Method does not raise when given valid envelope
+        - Requires initialization before handling
         """
         from omnibase_core.runtime import NodeInstance
 
@@ -513,16 +535,14 @@ class TestNodeInstanceHandle:
             node_type=sample_node_type,
             contract=mock_contract,
         )
+        instance.set_runtime(mock_runtime)
+        await instance.initialize()
 
-        # Should not raise - may return None if no runtime set
-        try:
-            result = instance.handle(sample_envelope)
-        except Exception as e:
-            # If it raises, it should be a specific expected error
-            # (e.g., RuntimeError for missing runtime)
-            assert "runtime" in str(e).lower() or isinstance(
-                e, (RuntimeError, ValueError)
-            )
+        # Should not raise when properly initialized
+        result = await instance.handle(sample_envelope)
+
+        # Verify runtime was called
+        mock_runtime.execute_with_handler.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_handle_returns_result(
@@ -554,11 +574,15 @@ class TestNodeInstanceHandle:
 
         result = await instance.handle(sample_envelope)
 
-        # Should return the mock runtime's result
+        # Should return the mock runtime's result (runtime returns dict in mock)
         assert result is not None
-        assert result.get("status") == "success"
+        # The mock returns a dict, so we cast to Any for the check
 
-    def test_handle_with_various_envelopes(
+        result_dict: Any = result
+        assert result_dict.get("status") == "success"
+
+    @pytest.mark.asyncio
+    async def test_handle_with_various_envelopes(
         self,
         sample_slug: str,
         sample_node_type: EnumNodeType,
@@ -580,7 +604,8 @@ class TestNodeInstanceHandle:
             node_type=sample_node_type,
             contract=mock_contract,
         )
-        instance._runtime = mock_runtime  # type: ignore[attr-defined]
+        instance.set_runtime(mock_runtime)
+        await instance.initialize()
 
         envelopes = [
             ModelOnexEnvelope(
@@ -614,7 +639,7 @@ class TestNodeInstanceHandle:
         ]
 
         for envelope in envelopes:
-            result = instance.handle(envelope)
+            result = await instance.handle(envelope)
             assert result is not None
 
 
@@ -944,20 +969,21 @@ class TestNodeInstanceEdgeCases:
         call_args = mock_runtime.execute_with_handler.call_args
         assert call_args.args[0] == string_envelope
 
-    def test_lifecycle_without_runtime(
+    @pytest.mark.asyncio
+    async def test_initialize_without_runtime_raises_error(
         self,
         sample_slug: str,
         sample_node_type: EnumNodeType,
         mock_contract: Mock,
     ) -> None:
         """
-        Test lifecycle methods work without runtime being set.
+        Test that initialize() raises error without runtime being set.
 
         EXPECTED BEHAVIOR:
-        - initialize() works without runtime
-        - shutdown() works without runtime
-        - Only handle() requires runtime
+        - initialize() raises ModelOnexError when runtime is not set
+        - Error message indicates runtime is required
         """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
         from omnibase_core.runtime import NodeInstance
 
         instance = NodeInstance(
@@ -966,9 +992,12 @@ class TestNodeInstanceEdgeCases:
             contract=mock_contract,
         )
 
-        # These should not raise even without runtime
-        instance.initialize()
-        instance.shutdown()
+        # initialize() should raise because runtime is not set
+        with pytest.raises(ModelOnexError) as exc_info:
+            await instance.initialize()
+
+        error_msg = str(exc_info.value).lower()
+        assert "runtime" in error_msg or "set_runtime" in error_msg
 
     def test_contract_validation_on_creation(
         self,
@@ -990,6 +1019,126 @@ class TestNodeInstanceEdgeCases:
                 node_type=sample_node_type,
                 contract=None,  # type: ignore[arg-type]
             )
+
+    def test_set_runtime_twice_raises_error(
+        self,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: Mock,
+        mock_runtime: MagicMock,
+    ) -> None:
+        """
+        Test that set_runtime() raises error when runtime is already set.
+
+        EXPECTED BEHAVIOR:
+        - First set_runtime() succeeds
+        - Second set_runtime() raises ModelOnexError
+        - Error message indicates runtime is already set
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import NodeInstance
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+
+        # First call succeeds
+        instance.set_runtime(mock_runtime)
+
+        # Second call raises error
+        another_runtime = MagicMock()
+        with pytest.raises(ModelOnexError) as exc_info:
+            instance.set_runtime(another_runtime)
+
+        assert "already set" in str(exc_info.value).lower()
+
+    @pytest.mark.asyncio
+    async def test_lifecycle_state_transitions(
+        self,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: Mock,
+        mock_runtime: MagicMock,
+    ) -> None:
+        """
+        Test full lifecycle state transitions and invalid transition errors.
+
+        EXPECTED STATE MACHINE:
+        - Created -> set_runtime -> Configured
+        - Configured -> initialize -> Initialized
+        - Initialized -> handle -> (still Initialized)
+        - Initialized -> shutdown -> Shutdown
+        - Cannot initialize without runtime
+        - Cannot initialize twice
+        - Cannot shutdown when not initialized
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import NodeInstance
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+
+        # Cannot initialize without runtime
+        with pytest.raises(ModelOnexError) as exc_info:
+            await instance.initialize()
+        assert "without runtime" in str(exc_info.value).lower()
+
+        # Set runtime
+        instance.set_runtime(mock_runtime)
+
+        # Now can initialize
+        await instance.initialize()
+
+        # Cannot initialize again (already initialized)
+        with pytest.raises(ModelOnexError) as exc_info:
+            await instance.initialize()
+        assert "already initialized" in str(exc_info.value).lower()
+
+        # Shutdown
+        await instance.shutdown()
+
+        # Cannot shutdown again (not initialized after shutdown)
+        with pytest.raises(ModelOnexError) as exc_info:
+            await instance.shutdown()
+        assert "not initialized" in str(exc_info.value).lower()
+
+    @pytest.mark.asyncio
+    async def test_handle_before_initialize_raises_detailed_error(
+        self,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: Mock,
+        sample_envelope: ModelOnexEnvelope,
+        mock_runtime: MagicMock,
+    ) -> None:
+        """
+        Test that handle() before initialize() raises descriptive error.
+
+        EXPECTED BEHAVIOR:
+        - Error message mentions 'not initialized'
+        - Error includes node slug for debugging context
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import NodeInstance
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+        instance.set_runtime(mock_runtime)
+        # Note: NOT calling initialize()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            await instance.handle(sample_envelope)
+
+        error_msg = str(exc_info.value).lower()
+        assert "not initialized" in error_msg
 
 
 # =============================================================================
