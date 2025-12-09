@@ -318,7 +318,7 @@ class NamingConventionValidator:
                 and file_path.name != "__init__.py"
             ):
                 # Only flag this for files that contain classes matching the pattern
-                if pattern and self._contains_relevant_classes(content, pattern):
+                if pattern and self._contains_relevant_classes(content):
                     self.violations.append(
                         NamingViolation(
                             file_path=str(file_path),
@@ -466,15 +466,14 @@ class NamingConventionValidator:
                 return True
         return False
 
-    def _contains_relevant_classes(self, content: str, pattern: str) -> bool:
-        """Check if file contains classes that should match the pattern.
+    def _contains_relevant_classes(self, content: str) -> bool:
+        """Check if file contains classes that should follow naming conventions.
 
         Args:
             content: Python source code content.
-            pattern: Regex pattern to check against.
 
         Returns:
-            True if file contains classes that should follow the pattern.
+            True if file contains classes that should follow naming conventions.
         """
         try:
             tree = ast.parse(content)
@@ -732,13 +731,11 @@ class NamingConventionValidator:
         return report
 
 
-def main() -> int:
+def main() -> None:
     """Main entry point for the naming convention validator.
 
     Parses command line arguments, runs validation, and prints the report.
-
-    Returns:
-        Exit code (0 for success, 1 for failure).
+    Exits the process with appropriate exit code (0 for success, 1 for failure).
     """
     parser = argparse.ArgumentParser(description="Validate omni* naming conventions")
     parser.add_argument("repo_path", help="Path to repository root")

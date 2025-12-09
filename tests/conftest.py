@@ -357,6 +357,23 @@ def cleanup_service_tasks(
                     # Cancel health monitor tasks specifically
                     for task in health_tasks:
                         task.cancel()
+
+                    # Await task cancellation to ensure cleanup completes properly
+                    # Similar to event_loop_cleanup fixture pattern
+                    try:
+
+                        async def cancel_health_tasks() -> None:
+                            await asyncio.gather(*health_tasks, return_exceptions=True)
+
+                        loop.run_until_complete(
+                            asyncio.wait_for(cancel_health_tasks(), timeout=1.0)
+                        )
+                    except TimeoutError:
+                        # Tasks didn't cancel in time - best effort cleanup
+                        pass
+                    except Exception:
+                        # Best effort cleanup - don't fail tests
+                        pass
             finally:
                 # Restore original exception handler
                 loop.set_exception_handler(old_exception_handler)

@@ -602,7 +602,7 @@ from omnibase_core.models.core.model_container import ModelContainer  # NOT for 
 
 ### Dependency Direction (v0.3.6+)
 
-```
+```text
 omnibase_infra  ──implements──►  omnibase_spi  ──imports──►  omnibase_core
 ```
 

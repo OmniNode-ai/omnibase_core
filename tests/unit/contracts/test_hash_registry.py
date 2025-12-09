@@ -247,6 +247,11 @@ class TestNormalizationPipeline:
         # This tests the local canonical ordering step
         assert isinstance(result, str)
 
+        # Verify result is valid JSON and contains expected content
+        parsed = json.loads(result)
+        assert "name" in parsed
+        assert parsed["name"] == "zebra_test"
+
     def test_normalize_empty_contract(self) -> None:
         """Test normalizing an empty/default contract."""
         contract = ModelTestContract()
