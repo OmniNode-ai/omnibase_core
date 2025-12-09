@@ -200,15 +200,29 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                 - OPERATION_FAILED: Computation execution failure
 
         Example:
-            >>> from omnibase_core.models.contracts import ModelContractCompute
-            >>> contract = ModelContractCompute(
-            ...     name="uppercase_transform",
-            ...     version="1.0.0",
-            ...     input_state={"text": "hello"},
-            ...     algorithm={"algorithm_type": "string_uppercase", "factors": [...]},
-            ... )
-            >>> result = await node.execute_compute(contract)
-            >>> print(result.result)  # "HELLO"
+            Using the built-in ``string_uppercase`` computation::
+
+                >>> from omnibase_core.models.contracts import ModelContractCompute
+                >>> from omnibase_core.models.contracts import ModelContractAlgorithm
+                >>> contract = ModelContractCompute(
+                ...     name="uppercase_transform",
+                ...     version="1.0.0",
+                ...     input_state="hello world",  # Direct string input for string_uppercase
+                ...     algorithm=ModelContractAlgorithm(algorithm_type="string_uppercase"),
+                ... )
+                >>> result = await node.execute_compute(contract)
+                >>> print(result.result)  # "HELLO WORLD"
+
+            Using the built-in ``sum_numbers`` computation::
+
+                >>> contract = ModelContractCompute(
+                ...     name="sum_values",
+                ...     version="1.0.0",
+                ...     input_state=[1.0, 2.0, 3.0, 4.0],  # Direct list input for sum_numbers
+                ...     algorithm=ModelContractAlgorithm(algorithm_type="sum_numbers"),
+                ... )
+                >>> result = await node.execute_compute(contract)
+                >>> print(result.result)  # 10.0
 
         Note:
             This method requires a ModelContractCompute instance. If you need
@@ -237,20 +251,38 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
 
     def _extract_computation_type(self, contract: Any, metadata: dict[str, Any]) -> str:
         """
-        Extract computation type from contract or metadata.
+        Extract computation type from contract or metadata with fallback chain.
+
+        Uses a priority-based extraction strategy to find the computation type
+        from various locations in the contract structure, supporting both
+        algorithm-based contracts and metadata-based configurations.
 
         Priority order:
             1. contract.algorithm.algorithm_type (preferred for ModelContractCompute)
-            2. metadata["computation_type"]
-            3. contract.computation_type (if exists)
-            4. Default: "default"
+            2. metadata["computation_type"] (for legacy or custom contracts)
+            3. contract.computation_type (direct attribute, if exists)
+            4. Default: "default" (identity transformation)
 
         Args:
-            contract: The compute contract
-            metadata: Extracted metadata dict
+            contract: The compute contract. Expected to be ModelContractCompute
+                or compatible object with optional algorithm and computation_type
+                attributes.
+            metadata: Extracted metadata dictionary, may contain "computation_type"
+                key as an alternative source.
 
         Returns:
-            Computation type string
+            str: The computation type identifier to use for looking up the
+                registered computation function. Returns "default" if no
+                computation type is found in any source.
+
+        Example:
+            >>> # Contract with algorithm configuration (preferred)
+            >>> contract.algorithm.algorithm_type = "sum_numbers"
+            >>> _extract_computation_type(contract, {})  # Returns "sum_numbers"
+
+            >>> # Contract with metadata-based type
+            >>> _extract_computation_type(contract, {"computation_type": "custom"})
+            "custom"  # Only if algorithm.algorithm_type not set
         """
         # Check algorithm configuration first (preferred for ModelContractCompute)
         contract_algorithm = getattr(contract, "algorithm", None)
@@ -299,12 +331,31 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                 a contract configuration error. Error code: VALIDATION_ERROR
 
         Example:
-            >>> contract = ModelContractCompute(
-            ...     input_state={"values": [1, 2, 3]},
-            ...     algorithm={"algorithm_type": "sum_numbers", ...},
-            ... )
-            >>> compute_input = node._contract_to_input(contract)
-            >>> # compute_input.data == {"values": [1, 2, 3]}
+            Converting a contract for ``sum_numbers`` computation::
+
+                >>> from omnibase_core.models.contracts import ModelContractCompute
+                >>> from omnibase_core.models.contracts import ModelContractAlgorithm
+                >>> contract = ModelContractCompute(
+                ...     name="sum_values",
+                ...     version="1.0.0",
+                ...     input_state=[1.0, 2.0, 3.0],  # Direct list - sum_numbers expects list[float]
+                ...     algorithm=ModelContractAlgorithm(algorithm_type="sum_numbers"),
+                ... )
+                >>> compute_input = node._contract_to_input(contract)
+                >>> # compute_input.data == [1.0, 2.0, 3.0]
+                >>> # compute_input.computation_type == "sum_numbers"
+
+            Converting a contract for ``string_uppercase`` computation::
+
+                >>> contract = ModelContractCompute(
+                ...     name="uppercase",
+                ...     version="1.0.0",
+                ...     input_state="hello",  # Direct string - string_uppercase expects str
+                ...     algorithm=ModelContractAlgorithm(algorithm_type="string_uppercase"),
+                ... )
+                >>> compute_input = node._contract_to_input(contract)
+                >>> # compute_input.data == "hello"
+                >>> # compute_input.computation_type == "string_uppercase"
 
         Note:
             This method expects execute_compute() to have already validated
@@ -332,6 +383,9 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                     context={
                         "node_id": str(self.node_id),
                         "contract_type": type(contract).__name__,
+                        "checked_attributes": ["input_state", "input_data"],
+                        "input_state_value": "None",
+                        "input_data_value": "None",
                         "hint": "Ensure contract.input_state contains the data to be processed",
                     },
                 )
@@ -370,18 +424,65 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         self, input_data: ModelComputeInput[T_Input]
     ) -> ModelComputeOutput[T_Output]:
         """
-        REQUIRED: Execute pure computation.
+        Execute pure computation with caching and parallel processing support.
 
         STABLE INTERFACE: This method signature is frozen for code generation.
+        Subclasses should override this method to implement custom computation logic.
+
+        This is the primary entry point for direct computation without contract
+        validation. It handles:
+        - Cache lookup and storage (when cache_enabled=True)
+        - Parallel execution (when parallel_enabled=True and data is parallelizable)
+        - Performance monitoring and threshold warnings
+        - Metrics tracking for observability
 
         Args:
-            input_data: Strongly typed computation input
+            input_data: Strongly typed computation input containing:
+                - data (T_Input): The input data to process
+                - computation_type (str): Registered computation type to execute
+                - cache_enabled (bool): Whether to use caching (default: True)
+                - parallel_enabled (bool): Whether to use parallel execution (default: False)
+                - operation_id (UUID): Unique identifier for this operation
+                - metadata (dict): Optional additional metadata
 
         Returns:
-            Strongly typed computation output with performance metrics
+            ModelComputeOutput[T_Output]: Computation results containing:
+                - result (T_Output): The computed output value
+                - operation_id (UUID): Echoed from input for correlation
+                - computation_type (str): The computation type that was executed
+                - processing_time_ms (float): Time taken in milliseconds
+                - cache_hit (bool): True if result was retrieved from cache
+                - parallel_execution_used (bool): True if parallel processing was used
+                - metadata (dict): Additional output metadata
 
         Raises:
-            ModelOnexError: If computation fails or performance threshold exceeded
+            ModelOnexError: If computation fails. Error codes:
+                - VALIDATION_ERROR: Invalid input data structure
+                - OPERATION_FAILED: Computation execution failure or unknown computation type
+
+        Example:
+            Direct usage with ModelComputeInput::
+
+                >>> from omnibase_core.models.compute import ModelComputeInput
+                >>> input_data = ModelComputeInput(
+                ...     data=[1.0, 2.0, 3.0, 4.0],
+                ...     computation_type="sum_numbers",
+                ...     cache_enabled=True,
+                ...     parallel_enabled=False,
+                ... )
+                >>> result = await node.process(input_data)
+                >>> print(result.result)  # 10.0
+                >>> print(result.cache_hit)  # False (first call)
+
+            Subsequent call with same input (cache hit)::
+
+                >>> result2 = await node.process(input_data)
+                >>> print(result2.cache_hit)  # True
+
+        Note:
+            For contract-based execution with validation, use execute_compute() instead.
+            Performance warnings are logged when processing_time_ms exceeds
+            performance_threshold_ms (default: 100ms).
         """
         # Use time.perf_counter() for accurate duration measurement
         # (monotonic, unaffected by system clock adjustments)
@@ -468,6 +569,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             )
             await self._update_processing_metrics(processing_time, False)
 
+            # Preserve original exception context for debugging
+            # Include error_type to distinguish validation vs runtime errors
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Computation failed: {e!s}",
@@ -475,6 +578,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                     "node_id": str(self.node_id),
                     "operation_id": str(input_data.operation_id),
                     "computation_type": input_data.computation_type,
+                    "error_type": type(e).__name__,
+                    "processing_time_ms": processing_time,
                 },
             ) from e
 
@@ -482,14 +587,47 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         self, computation_type: str, computation_func: Callable[..., Any]
     ) -> None:
         """
-        Register custom computation function.
+        Register a custom computation function for use with this node.
+
+        Registered computations can be invoked via process() or execute_compute()
+        by specifying the computation_type. Functions should be pure (no side effects)
+        for deterministic behavior and safe caching.
 
         Args:
-            computation_type: Type identifier for computation
-            computation_func: Pure function to register
+            computation_type: Unique string identifier for the computation.
+                Used to look up the function during execution.
+                Example: "calculate_average", "transform_json", "validate_schema"
+            computation_func: Pure function to register. Must be callable and accept
+                the input data as its first argument. The function signature should
+                match the expected T_Input type for this node.
+                Example: ``def my_func(data: list[float]) -> float``
 
         Raises:
-            ModelOnexError: If computation type already registered
+            ModelOnexError: If validation fails. Error codes:
+                - VALIDATION_ERROR: computation_type already registered or
+                  computation_func is not callable
+
+        Example:
+            Registering a custom average computation::
+
+                >>> def calculate_average(data: list[float]) -> float:
+                ...     if not data:
+                ...         return 0.0
+                ...     return sum(data) / len(data)
+                >>> node.register_computation("calculate_average", calculate_average)
+
+            Using the registered computation::
+
+                >>> input_data = ModelComputeInput(
+                ...     data=[10.0, 20.0, 30.0],
+                ...     computation_type="calculate_average",
+                ... )
+                >>> result = await node.process(input_data)
+                >>> print(result.result)  # 20.0
+
+        Note:
+            Built-in computations ("default", "string_uppercase", "sum_numbers")
+            are registered automatically during node initialization.
         """
         if computation_type in self.computation_registry:
             raise ModelOnexError(
@@ -514,7 +652,39 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         )
 
     async def get_computation_metrics(self) -> dict[str, dict[str, float]]:
-        """Get detailed computation performance metrics."""
+        """
+        Get detailed computation performance metrics for monitoring and observability.
+
+        Aggregates metrics from multiple sources including computation execution
+        statistics, cache performance, and parallel processing utilization.
+
+        Returns:
+            dict[str, dict[str, float]]: Nested metrics dictionary containing:
+                - Per-computation-type metrics (keyed by computation_type):
+                    - total_executions: Number of times this computation ran
+                    - avg_processing_time_ms: Average execution time
+                    - success_rate: Ratio of successful executions
+                - "cache_performance": Cache statistics
+                    - total_entries: Total entries in cache
+                    - valid_entries: Non-expired entries
+                    - cache_utilization: valid_entries / max_size ratio
+                    - ttl_minutes: Cache time-to-live setting
+                - "parallel_processing": Thread pool status
+                    - max_workers: Maximum parallel workers configured
+                    - thread_pool_active: 1.0 if pool is active, 0.0 otherwise
+
+        Example:
+            >>> metrics = await node.get_computation_metrics()
+            >>> print(metrics["cache_performance"]["cache_utilization"])
+            0.75
+            >>> print(metrics["sum_numbers"]["avg_processing_time_ms"])
+            2.5
+
+        Note:
+            Metrics are cumulative for the lifetime of the node instance.
+            Call this periodically for monitoring or after specific operations
+            for performance analysis.
+        """
         cache_stats = self.computation_cache.get_stats()
 
         return {

@@ -364,6 +364,13 @@ class TestNodeComputeContractToInput:
         assert error.context is not None
         assert _get_context_value(error, "node_id") is not None
         assert _get_context_value(error, "hint") is not None
+        # Verify enhanced error context for debugging
+        assert _get_context_value(error, "checked_attributes") == [
+            "input_state",
+            "input_data",
+        ]
+        assert _get_context_value(error, "input_state_value") == "None"
+        assert _get_context_value(error, "input_data_value") == "None"
 
     def test_contract_to_input_computation_type_from_algorithm(
         self,
@@ -675,6 +682,13 @@ class TestNodeComputeExecuteComputeIntegration:
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.OPERATION_FAILED
         assert "Unknown computation type" in str(error.message)
+        # Verify enhanced error context includes error_type for debugging
+        assert _get_context_value(error, "error_type") == "ModelOnexError"
+        assert (
+            _get_context_value(error, "computation_type") == "nonexistent_computation"
+        )
+        # Verify processing_time_ms is captured
+        assert _get_context_value(error, "processing_time_ms") is not None
 
     @pytest.mark.asyncio
     async def test_execute_compute_with_custom_registered_computation(
