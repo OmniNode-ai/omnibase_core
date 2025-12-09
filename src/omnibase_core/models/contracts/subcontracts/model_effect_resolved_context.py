@@ -1,7 +1,7 @@
 """
 Resolved Context Models for NodeEffect Handler Contract.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
 
 These models represent resolved (template-free) contexts that handlers receive
 after template resolution by the effect executor.

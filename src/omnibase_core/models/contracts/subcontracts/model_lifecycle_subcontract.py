@@ -1,12 +1,7 @@
 """
 Lifecycle Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for node lifecycle management providing:
 - Node startup and shutdown timeout configuration

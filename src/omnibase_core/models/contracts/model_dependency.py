@@ -4,7 +4,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
-Model Dependency Dependency Specification.
+Model Dependency Specification.
 
 Unified dependency model that handles multiple input formats while providing
 a clean, consistent interface for contract dependencies.

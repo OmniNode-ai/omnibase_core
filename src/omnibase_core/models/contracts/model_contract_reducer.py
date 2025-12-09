@@ -1,13 +1,6 @@
 """
 Reducer Contract Model (Clean ModelArchitecture).
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
-
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
-
 Specialized contract model for NodeReducer implementations providing:
 - Reduction operation specifications with subcontract composition
 - Clean separation between node logic and subcontract functionality

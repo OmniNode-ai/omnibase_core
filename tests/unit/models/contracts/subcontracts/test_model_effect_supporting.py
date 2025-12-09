@@ -9,7 +9,7 @@ Comprehensive tests for Effect subcontract supporting models:
 - ModelEffectResponseHandling
 - IDEMPOTENCY_DEFAULTS constant
 
-Implements: OMN-524, OMN-525
+Implements: , 
 """
 
 from types import MappingProxyType

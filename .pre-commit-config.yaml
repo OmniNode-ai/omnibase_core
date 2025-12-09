@@ -406,7 +406,7 @@ repos:
 
       # Protocol UUID Enforcement (pre-push only)
       # Verifies protocol type annotations use UUID instead of str
-      # Catches issues like OMN-536/OMN-542 before CI
+      # Catches issues like / before CI
       # ~6s runtime - acceptable for pre-push but too slow for every commit
       - id: pytest-protocol-uuid-enforcement
         name: Protocol UUID Enforcement Check

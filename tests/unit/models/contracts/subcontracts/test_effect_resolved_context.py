@@ -9,7 +9,7 @@ Comprehensive test coverage for resolved context models including:
 - Handler type discrimination
 - Edge cases and boundary conditions
 
-VERSION: 1.0.0 - Tests for Contract-Driven NodeEffect resolved contexts (OMN-523)
+VERSION: 1.0.0 - Tests for Contract-Driven NodeEffect resolved contexts ()
 """
 
 import pytest

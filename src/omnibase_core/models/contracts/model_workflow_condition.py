@@ -3,7 +3,7 @@ from pydantic import Field, ValidationInfo, field_validator
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
-Model Workflow Condition Workflow Condition Specification.
+Model Workflow Condition Specification.
 
 Strongly-typed condition model for workflow dependency conditions that eliminates
 string-based condition support and enforces structured condition evaluation.

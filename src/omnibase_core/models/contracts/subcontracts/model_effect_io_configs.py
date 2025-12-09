@@ -1,7 +1,7 @@
 """
 Effect IO Configuration Models.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
 
 Handler-specific IO configuration models using Pydantic discriminated unions.
 Each model provides configuration for a specific type of external I/O operation:

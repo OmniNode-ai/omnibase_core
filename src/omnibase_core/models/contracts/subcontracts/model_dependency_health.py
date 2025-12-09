@@ -1,7 +1,7 @@
 """
 Dependency Health Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
 
 Provides health status tracking for external dependencies.
 

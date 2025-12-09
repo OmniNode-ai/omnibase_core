@@ -7,7 +7,7 @@ Tests the 4 critical validators in ModelEffectSubcontract:
 3. validate_select_retry_in_transaction - Cannot retry SELECT in repeatable_read/serializable transactions
 4. validate_no_raw_in_transaction - No raw DB operations in transactions
 
-Implements: OMN-524, OMN-525
+Implements: , 
 """
 
 import pytest

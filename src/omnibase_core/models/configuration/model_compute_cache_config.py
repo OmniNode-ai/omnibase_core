@@ -1,7 +1,5 @@
 """
 VERSION: 1.0.0
-STABILITY GUARANTEE: Configuration model for production cache tuning.
-
 ModelComputeCacheConfig - Configuration for NodeCompute caching behavior.
 
 Provides tunable cache parameters for production deployment, allowing

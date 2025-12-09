@@ -4,7 +4,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
-Model Workflow Dependency Workflow Dependency Specification.
+Model Workflow Dependency Specification.
 
 Strongly-typed dependency model for workflow orchestration patterns that eliminates
 legacy string-based dependency support and enforces architectural consistency.

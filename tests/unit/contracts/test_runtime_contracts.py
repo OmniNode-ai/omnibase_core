@@ -387,7 +387,7 @@ class TestRuntimeOrchestratorContract:
     def test_contract_has_timing_constraints(self, orchestrator_data: dict) -> None:
         """Test that runtime_orchestrator.yaml has timing_constraints section."""
         assert "timing_constraints" in orchestrator_data, (
-            "Missing timing_constraints section (required for OMN-467)"
+            "Missing timing_constraints section (required for )"
         )
 
 

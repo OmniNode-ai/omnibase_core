@@ -17,7 +17,7 @@ VERSION: 1.0.0 (API stability guarantee per node modules)
 STABILITY: Node signatures are frozen for code generation.
            Breaking changes require major version bump.
 
-Captured: 2025-12-03 (OMN-149)
+Captured: 2025-12-03 ()
 """
 
 import inspect

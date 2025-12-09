@@ -1,12 +1,7 @@
 """
 Routing Subcontract Model - ONEX Microservices ModelArchitecture Compliant.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Advanced subcontract model for ONEX microservices routing functionality providing:
 - Route definitions with conditions and service targets

@@ -1,12 +1,7 @@
 """
 Health Check Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Provides Pydantic models for standardized health monitoring and status reporting
 for all ONEX node types, leveraging existing health infrastructure.

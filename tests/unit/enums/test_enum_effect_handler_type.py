@@ -1,7 +1,7 @@
 """
 Tests for EnumEffectHandlerType enum.
 
-Part of the Contract-Driven NodeEffect v1.0 implementation (OMN-521).
+Part of the Contract-Driven NodeEffect v1.0 implementation ().
 """
 
 from enum import Enum

@@ -1,8 +1,5 @@
 """
 VERSION: 1.0.0
-STABILITY GUARANTEE: Abstract method signatures frozen.
-Breaking changes require major version bump.
-
 ModelComputeCache - Caching Layer for Compute Node Operations.
 
 Provides TTL-based caching with memory management and LRU eviction for expensive
