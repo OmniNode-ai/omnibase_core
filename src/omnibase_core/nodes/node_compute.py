@@ -167,6 +167,35 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             - ``eviction_policy``: LRU, LFU, or FIFO (default: LRU)
             - ``enable_stats``: Enable hit/miss tracking (default: True)
 
+            **Configuration Example**::
+
+                from omnibase_core.models.container import ModelONEXContainer
+                from omnibase_core.models.infrastructure import ModelComputeCacheConfig
+
+                # Create cache configuration
+                cache_config = ModelComputeCacheConfig(
+                    max_size=5000,           # Cache up to 5000 entries
+                    ttl_seconds=3600,        # 1 hour TTL
+                    eviction_policy="LRU",   # Least Recently Used eviction
+                    enable_stats=True,       # Enable hit/miss tracking
+                )
+
+                # Create container with custom cache configuration
+                container = ModelONEXContainer(
+                    compute_cache_config=cache_config,
+                )
+
+                # Create node with configured caching
+                node = NodeCompute(container)
+
+            **Runtime Configuration** (via NodeConfigProvider)::
+
+                # Cache settings can also be loaded from NodeConfigProvider
+                # if registered in the container. Keys used:
+                #   - "compute.cache_ttl_minutes": Cache TTL in minutes
+                #   - "compute.max_parallel_workers": Thread pool size
+                #   - "compute.performance_threshold_ms": Warning threshold
+
         **Cache Implications**:
             - **Cache Hits**: Return cached result with ``processing_time_ms=0.0``.
               This value represents *semantic computation time* (no actual computation
@@ -1062,6 +1091,30 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             - The cache key is used with ``ModelComputeCache.get()`` and ``put()``
             - See the class-level "Caching Strategy" documentation for full details
               on cache invalidation policies and configuration options
+
+        Security Note:
+            Cache keys are used for **internal deterministic caching only** and are
+            not cryptographically sensitive. SHA256 is chosen for its collision
+            resistance and determinism, not for cryptographic security.
+
+            **Current Security Model**:
+                - Cache is process-local (not shared over network by default)
+                - No authentication required for cache access within the process
+                - No HMAC signing of cache entries
+
+            **For Distributed Caching** (if implemented in future):
+                If cross-process cache sharing over untrusted networks is required,
+                additional security measures should be implemented:
+
+                - **HMAC-based authentication**: Sign cache entries with a shared secret
+                  to prevent cache poisoning attacks
+                - **Encryption**: Encrypt sensitive cached data at rest
+                - **Access control**: Implement per-key or per-namespace access policies
+                - **Cache isolation**: Use separate cache instances for different
+                  security domains
+
+            The current implementation assumes a trusted execution environment where
+            all cache access originates from the same process or trusted processes.
         """
         data_str = str(input_data.data)
         # Use hashlib for deterministic hashing across Python processes
