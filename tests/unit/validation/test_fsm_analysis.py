@@ -1,9 +1,7 @@
 """
 Unit tests for FSM (Finite State Machine) Analysis Module.
 
-TDD Tests for OMN-175: Write tests FIRST before implementation.
-
-Tests comprehensive FSM validation functionality including:
+Tests comprehensive FSM semantic validation functionality including:
 - Unreachable states detection
 - Cycles without exit paths
 - Ambiguous transitions
@@ -12,7 +10,7 @@ Tests comprehensive FSM validation functionality including:
 - Duplicate state names
 - Valid FSM scenarios
 
-All tests are expected to FAIL initially until implementation is complete.
+See src/omnibase_core/validation/fsm_analysis.py for implementation.
 """
 
 import pytest
@@ -1054,6 +1052,192 @@ class TestFSMAnalysisAmbiguousTransitions:
         assert result.is_valid, "Different priorities should not be ambiguous"
         assert len(result.ambiguous_transitions) == 0
 
+    def test_wildcard_to_wildcard_ambiguous(self, base_version: ModelSemVer) -> None:
+        """
+        Test that multiple wildcard transitions with same trigger and priority
+        going to DIFFERENT targets are detected as ambiguous.
+
+        Wildcard-to-wildcard ambiguity: '*' + trigger -> {stateA, stateB} at same priority
+        is ambiguous because no precedence rule applies between wildcards.
+        """
+        states = [
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="idle",
+                state_type="operational",
+                description="Initial",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="error_state_a",
+                state_type="error",
+                description="Error handler A",
+                is_terminal=True,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="error_state_b",
+                state_type="error",
+                description="Error handler B",
+                is_terminal=True,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="completed",
+                state_type="terminal",
+                description="Terminal",
+                is_terminal=True,
+            ),
+        ]
+
+        transitions = [
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="start",
+                from_state="idle",
+                to_state="completed",
+                trigger="finish",
+                priority=1,
+            ),
+            # AMBIGUOUS: Two wildcard transitions with same trigger and priority
+            # but different targets - this IS ambiguous
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="global_error_a",
+                from_state="*",
+                to_state="error_state_a",
+                trigger="error",
+                priority=1,  # Same priority
+            ),
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="global_error_b",
+                from_state="*",
+                to_state="error_state_b",
+                trigger="error",
+                priority=1,  # Same priority - AMBIGUOUS!
+            ),
+        ]
+
+        fsm = ModelFSMSubcontract(
+            version=base_version,
+            state_machine_name="WildcardAmbiguous",
+            state_machine_version=base_version,
+            description="FSM with ambiguous wildcard transitions",
+            states=states,
+            initial_state="idle",
+            terminal_states=["completed", "error_state_a", "error_state_b"],
+            error_states=["error_state_a", "error_state_b"],
+            transitions=transitions,
+        )
+
+        result = analyze_fsm(fsm)
+
+        # Should be invalid - wildcard-to-wildcard ambiguity detected
+        assert not result.is_valid, "Wildcard-to-wildcard ambiguity should be detected"
+        assert len(result.ambiguous_transitions) > 0
+
+        # Check that the wildcard ambiguous transition is reported
+        found = any(
+            amb.from_state == "*" and amb.trigger == "error"
+            for amb in result.ambiguous_transitions
+        )
+        assert found, "Expected ambiguous transition for (*, error)"
+
+        # Check that both targets are reported
+        for amb in result.ambiguous_transitions:
+            if amb.from_state == "*" and amb.trigger == "error":
+                assert "error_state_a" in amb.target_states
+                assert "error_state_b" in amb.target_states
+
+    def test_wildcard_different_priority_not_ambiguous(
+        self, base_version: ModelSemVer
+    ) -> None:
+        """
+        Test that wildcard transitions with DIFFERENT priorities are NOT ambiguous.
+
+        Different priorities provide deterministic resolution even for wildcards.
+        """
+        states = [
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="idle",
+                state_type="operational",
+                description="Initial",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="error_state_a",
+                state_type="error",
+                description="High priority error handler",
+                is_terminal=True,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="error_state_b",
+                state_type="error",
+                description="Low priority error handler",
+                is_terminal=True,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="completed",
+                state_type="terminal",
+                description="Terminal",
+                is_terminal=True,
+            ),
+        ]
+
+        transitions = [
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="start",
+                from_state="idle",
+                to_state="completed",
+                trigger="finish",
+                priority=1,
+            ),
+            # NOT ambiguous: Different priorities
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="global_error_high",
+                from_state="*",
+                to_state="error_state_a",
+                trigger="error",
+                priority=2,  # Higher priority
+            ),
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="global_error_low",
+                from_state="*",
+                to_state="error_state_b",
+                trigger="error",
+                priority=1,  # Lower priority - NOT ambiguous
+            ),
+        ]
+
+        fsm = ModelFSMSubcontract(
+            version=base_version,
+            state_machine_name="WildcardDifferentPriority",
+            state_machine_version=base_version,
+            description="FSM with wildcard transitions at different priorities",
+            states=states,
+            initial_state="idle",
+            terminal_states=["completed", "error_state_a", "error_state_b"],
+            error_states=["error_state_a", "error_state_b"],
+            transitions=transitions,
+        )
+
+        result = analyze_fsm(fsm)
+
+        # Should be valid - different priorities resolve deterministically
+        assert result.is_valid, (
+            "Wildcard transitions with different priorities should not be ambiguous"
+        )
+        assert len(result.ambiguous_transitions) == 0
+
 
 class TestFSMAnalysisMissingTransitions:
     """Test detection of missing transitions (dead-end states)."""
@@ -1472,3 +1656,321 @@ class TestFSMAnalysisEdgeCases:
 
         assert result.is_valid, "Self-loop with exit should be valid"
         assert len(result.cycles_without_exit) == 0
+
+    def test_duplicate_state_names_detected(self, base_version: ModelSemVer) -> None:
+        """
+        Test that duplicate state names are detected.
+
+        State names must be unique within an FSM. If the same name appears
+        multiple times, it should be flagged as invalid.
+        """
+        states = [
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="idle",
+                state_type="operational",
+                description="First idle",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="idle",  # DUPLICATE!
+                state_type="operational",
+                description="Second idle - duplicate",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="completed",
+                state_type="terminal",
+                description="Terminal",
+                is_terminal=True,
+            ),
+        ]
+
+        transitions = [
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="complete",
+                from_state="idle",
+                to_state="completed",
+                trigger="finish",
+                priority=1,
+            ),
+        ]
+
+        fsm = ModelFSMSubcontract(
+            version=base_version,
+            state_machine_name="DuplicateStates",
+            state_machine_version=base_version,
+            description="FSM with duplicate state names",
+            states=states,
+            initial_state="idle",
+            terminal_states=["completed"],
+            transitions=transitions,
+        )
+
+        result = analyze_fsm(fsm)
+
+        assert not result.is_valid, "FSM with duplicate states should be invalid"
+        assert len(result.duplicate_state_names) > 0
+        assert "idle" in result.duplicate_state_names
+        assert any("duplicate" in error.lower() for error in result.errors)
+
+    def test_wildcard_to_wildcard_ambiguous_transitions(
+        self, base_version: ModelSemVer
+    ) -> None:
+        """
+        Test that multiple wildcard transitions with same trigger and priority are ambiguous.
+
+        When two wildcard ('*') transitions have the same trigger and same priority,
+        but different target states, this creates ambiguity because the FSM executor
+        cannot determine which transition to take (no precedence rule applies to
+        wildcard-to-wildcard conflicts).
+        """
+        states = [
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="idle",
+                state_type="operational",
+                description="Initial state",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="processing",
+                state_type="operational",
+                description="Processing state",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="error_a",
+                state_type="error",
+                description="Error handler A",
+                is_terminal=True,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="error_b",
+                state_type="error",
+                description="Error handler B",
+                is_terminal=True,
+            ),
+        ]
+
+        transitions = [
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="start",
+                from_state="idle",
+                to_state="processing",
+                trigger="start",
+                priority=1,
+            ),
+            # Two wildcard transitions with SAME trigger and SAME priority
+            # This creates ambiguity for any state receiving "error" trigger
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="global_error_a",
+                from_state="*",
+                to_state="error_a",
+                trigger="error",
+                priority=1,
+            ),
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="global_error_b",
+                from_state="*",
+                to_state="error_b",
+                trigger="error",
+                priority=1,  # Same priority as global_error_a
+            ),
+        ]
+
+        fsm = ModelFSMSubcontract(
+            version=base_version,
+            state_machine_name="WildcardAmbiguity",
+            state_machine_version=base_version,
+            description="FSM with ambiguous wildcard transitions",
+            states=states,
+            initial_state="idle",
+            terminal_states=["error_a", "error_b"],
+            error_states=["error_a", "error_b"],
+            transitions=transitions,
+        )
+
+        result = analyze_fsm(fsm)
+
+        # Wildcard-to-wildcard ambiguity IS detected when multiple wildcard
+        # transitions have the same trigger and same priority with different targets
+        assert not result.is_valid, (
+            "FSM with ambiguous wildcard transitions should be invalid"
+        )
+        assert len(result.ambiguous_transitions) > 0, (
+            "Should detect ambiguous wildcard transitions"
+        )
+
+        # Check that the ambiguous wildcard transition is correctly reported
+        found_wildcard_ambiguity = any(
+            amb.from_state == "*" and amb.trigger == "error"
+            for amb in result.ambiguous_transitions
+        )
+        assert found_wildcard_ambiguity, (
+            "Expected ambiguous transition for (*, error) - got: "
+            f"{result.ambiguous_transitions}"
+        )
+        assert any("ambiguous" in error.lower() for error in result.errors)
+
+
+class TestFSMAnalysisInitialStateValidation:
+    """Test validation of initial state existence.
+
+    Note: ModelFSMSubcontract already validates initial state existence at
+    construction time via Pydantic model_validator. The semantic analysis
+    module provides defense-in-depth validation for cases where an FSM
+    object might bypass Pydantic validation (e.g., via model_construct).
+    """
+
+    def test_invalid_initial_state_caught_by_pydantic(
+        self, base_version: ModelSemVer
+    ) -> None:
+        """
+        Test that Pydantic catches invalid initial state at construction.
+
+        This is structural validation - Pydantic raises ModelOnexError
+        when initial_state is not in states list.
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+        states = [
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="processing",
+                state_type="operational",
+                description="Processing state",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="completed",
+                state_type="terminal",
+                description="Terminal state",
+                is_terminal=True,
+            ),
+        ]
+
+        transitions = [
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="finish",
+                from_state="processing",
+                to_state="completed",
+                trigger="finish",
+                priority=1,
+            ),
+        ]
+
+        # Pydantic should raise ModelOnexError at construction time
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelFSMSubcontract(
+                version=base_version,
+                state_machine_name="InvalidInitialState",
+                state_machine_version=base_version,
+                description="FSM with initial state not in states list",
+                states=states,
+                initial_state="nonexistent",  # This state is not defined
+                terminal_states=["completed"],
+                transitions=transitions,
+            )
+
+        # Verify the error message
+        assert "nonexistent" in str(exc_info.value)
+        assert "not found in states" in str(exc_info.value).lower()
+
+    def test_semantic_analysis_validates_initial_state_defense_in_depth(
+        self, base_version: ModelSemVer
+    ) -> None:
+        """
+        Test that semantic analysis also validates initial state (defense-in-depth).
+
+        Uses model_construct to bypass Pydantic validation and verify that
+        analyze_fsm() catches the invalid initial state.
+        """
+        states = [
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="processing",
+                state_type="operational",
+                description="Processing state",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="completed",
+                state_type="terminal",
+                description="Terminal state",
+                is_terminal=True,
+            ),
+        ]
+
+        transitions = [
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="finish",
+                from_state="processing",
+                to_state="completed",
+                trigger="finish",
+                priority=1,
+            ),
+        ]
+
+        # Use model_construct to bypass Pydantic validation
+        fsm = ModelFSMSubcontract.model_construct(
+            version=base_version,
+            state_machine_name="InvalidInitialState",
+            state_machine_version=base_version,
+            description="FSM with initial state not in states list",
+            states=tuple(states),
+            initial_state="nonexistent",  # This state is not defined
+            terminal_states=("completed",),
+            error_states=(),
+            transitions=tuple(transitions),
+            operations=(),
+            max_transition_depth=100,
+            allow_self_transitions=True,
+            transition_timeout_seconds=30.0,
+            persist_state=False,
+            state_history_limit=10,
+            log_transitions=True,
+        )
+
+        result = analyze_fsm(fsm)
+
+        assert not result.is_valid, "FSM with invalid initial state should be invalid"
+        assert len(result.errors) > 0, "Should have at least one error"
+        # Check for the specific error message
+        found_initial_state_error = any(
+            "Initial state 'nonexistent' is not defined in states list" in error
+            for error in result.errors
+        )
+        assert found_initial_state_error, (
+            f"Expected initial state error, got: {result.errors}"
+        )
+
+    def test_valid_initial_state_passes(self, valid_fsm: ModelFSMSubcontract) -> None:
+        """
+        Test that a valid initial state passes validation.
+
+        When initial_state exists in states list, no error should be raised.
+        """
+        result = analyze_fsm(valid_fsm)
+
+        assert result.is_valid, "FSM with valid initial state should be valid"
+        # Verify no initial state error
+        initial_state_errors = [
+            error for error in result.errors if "Initial state" in error
+        ]
+        assert len(initial_state_errors) == 0, (
+            f"Should have no initial state errors, got: {initial_state_errors}"
+        )

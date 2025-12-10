@@ -22,7 +22,8 @@ class ModelAmbiguousTransition(BaseModel):
     Attributes:
         from_state: Source state name where ambiguity occurs
         trigger: Trigger name that causes the ambiguity
-        target_states: List of possible target states (2+ states means ambiguity)
+        target_states: Immutable set of possible target states (2+ states means ambiguity)
+        priority: Priority level at which the ambiguity occurs
     """
 
     from_state: str = Field(
@@ -37,10 +38,14 @@ class ModelAmbiguousTransition(BaseModel):
         min_length=1,
     )
 
-    target_states: list[str] = Field(
+    target_states: frozenset[str] = Field(
         ...,
-        description="List of possible target states (2+ indicates ambiguity)",
-        min_length=2,
+        description="Immutable set of possible target states (2+ indicates ambiguity)",
+    )
+
+    priority: int = Field(
+        ...,
+        description="Priority level at which the ambiguity occurs",
     )
 
     model_config = ConfigDict(
