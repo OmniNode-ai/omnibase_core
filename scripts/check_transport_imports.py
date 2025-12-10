@@ -548,11 +548,18 @@ def get_changed_files(src_dir: Path) -> list[Path]:
 
         if result.returncode == 0 and result.stdout.strip():
             changed_files = []
+            src_dir_resolved = src_dir.resolve()
             for line in result.stdout.strip().split("\n"):
                 file_path = Path(line)
-                # Only include files within src_dir
-                if file_path.exists() and str(src_dir) in str(file_path.resolve()):
-                    changed_files.append(file_path.resolve())
+                # Only include files within src_dir using proper path comparison
+                # (avoids false positives from string containment)
+                if file_path.exists():
+                    resolved = file_path.resolve()
+                    try:
+                        resolved.relative_to(src_dir_resolved)
+                        changed_files.append(resolved)
+                    except ValueError:
+                        pass  # File is not within src_dir
             return sorted(changed_files)
     except FileNotFoundError:
         pass  # git not available
