@@ -34,6 +34,7 @@ Related:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -114,10 +115,11 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         WARNING: EnvelopeRouter is NOT thread-safe. The handler and node registries
         use dict without synchronization.
 
-        Recommended Pattern (Read-Only After Init):
-            The simplest and most common approach is to register all handlers
-            and nodes during application startup, then treat the router as
-            read-only. This is safe for concurrent reads with no locking overhead.
+        Recommended Pattern (Freeze After Init):
+            The safest approach is to register all handlers and nodes during
+            application startup, then call ``freeze()`` to prevent further
+            modifications. This enforces the read-only contract and is safe for
+            concurrent reads with no locking overhead.
 
             .. code-block:: python
 
@@ -126,10 +128,14 @@ class EnvelopeRouter(ProtocolNodeRuntime):
                 router.register_handler(http_handler)
                 router.register_handler(db_handler)
                 router.register_node(compute_node)
+                router.freeze()  # Prevent further registration
 
-                # After initialization, router is read-only (thread-safe for reads)
-                # All subsequent operations are route_envelope() and execute_with_handler()
+                # After freeze, router is read-only (thread-safe for reads)
+                # Any registration attempt raises ModelOnexError(INVALID_STATE)
                 response = await router.execute_with_handler(envelope, node)
+
+                # Check frozen state if needed
+                assert router.is_frozen  # True
 
         Mitigation Strategies (choose one):
 
@@ -189,6 +195,8 @@ class EnvelopeRouter(ProtocolNodeRuntime):
     Attributes:
         _handlers: Registry of handlers by EnumHandlerType key.
         _nodes: Registry of node instances by slug.
+        _frozen: If True, registration methods will raise ModelOnexError.
+            Use ``freeze()`` to set this and ``is_frozen`` property to check.
 
     See Also:
         - :class:`~omnibase_core.protocols.runtime.protocol_handler.ProtocolHandler`:
@@ -210,11 +218,13 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         Initialize EnvelopeRouter with empty registries.
 
         Creates empty handler and node registries. Handlers and nodes must be
-        registered before envelope execution.
+        registered before envelope execution. Call ``freeze()`` after registration
+        to prevent further modifications and enable safe concurrent access.
         """
         self._handlers: dict[EnumHandlerType, ProtocolHandler] = {}
         self._nodes: dict[str, RuntimeNodeInstance] = {}
         self._repr_cache: str | None = None
+        self._frozen: bool = False
 
     @standard_error_handling("Handler registration")
     def register_handler(
@@ -240,6 +250,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
                 accidental duplicate registrations.
 
         Raises:
+            ModelOnexError: If the router is frozen (INVALID_STATE).
             ModelOnexError: If handler is None.
             ModelOnexError: If handler lacks handler_type property.
             ModelOnexError: If handler.handler_type is not EnumHandlerType.
@@ -261,14 +272,27 @@ class EnvelopeRouter(ProtocolNodeRuntime):
                 runtime.register_handler(database_handler, replace=False)
                 runtime.register_handler(other_db_handler, replace=False)  # Raises!
 
+                # After freeze, registration raises
+                runtime.freeze()
+                runtime.register_handler(another_handler)  # Raises INVALID_STATE!
+
         Note:
             Registration is idempotent for the same handler instance. When
             ``replace=True`` (default), registering a different handler with
             the same handler_type replaces the previous handler without warning.
             Use ``replace=False`` during initialization to catch configuration
             errors where multiple handlers are accidentally registered for the
-            same type.
+            same type. After calling ``freeze()``, all registration attempts
+            will raise ModelOnexError with INVALID_STATE.
         """
+        # Check frozen state first - fail fast before any validation
+        if self._frozen:
+            raise ModelOnexError(
+                message="Cannot register handler: EnvelopeRouter is frozen. "
+                "Registration is not allowed after freeze() has been called.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+            )
+
         if handler is None:
             raise ModelOnexError(
                 message="Cannot register None handler. Handler is required.",
@@ -340,6 +364,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             node: A RuntimeNodeInstance with a unique slug.
 
         Raises:
+            ModelOnexError: If the router is frozen (INVALID_STATE).
             ModelOnexError: If node is None.
             ModelOnexError: If a node with the same slug is already registered.
 
@@ -350,11 +375,24 @@ class EnvelopeRouter(ProtocolNodeRuntime):
                 runtime.register_node(compute_node)
                 runtime.register_node(effect_node)
 
+                # After freeze, registration raises
+                runtime.freeze()
+                runtime.register_node(another_node)  # Raises INVALID_STATE!
+
         Note:
             Node slugs must be unique within the runtime. Attempting to register
             a second node with the same slug will raise ModelOnexError with
-            DUPLICATE_REGISTRATION error code.
+            DUPLICATE_REGISTRATION error code. After calling ``freeze()``, all
+            registration attempts will raise ModelOnexError with INVALID_STATE.
         """
+        # Check frozen state first - fail fast before any validation
+        if self._frozen:
+            raise ModelOnexError(
+                message="Cannot register node: EnvelopeRouter is frozen. "
+                "Registration is not allowed after freeze() has been called.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+            )
+
         if node is None:
             raise ModelOnexError(
                 message="Cannot register None node. RuntimeNodeInstance is required.",
@@ -372,6 +410,64 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
         self._nodes[slug] = node
         self._repr_cache = None  # Invalidate cache
+
+    def freeze(self) -> None:
+        """
+        Freeze the router to prevent further handler and node registration.
+
+        Once frozen, any calls to ``register_handler()`` or ``register_node()``
+        will raise ModelOnexError with INVALID_STATE error code. This enforces
+        the read-only-after-init pattern for thread safety.
+
+        The freeze operation is idempotent - calling freeze() multiple times
+        has no additional effect.
+
+        Example:
+            .. code-block:: python
+
+                router = EnvelopeRouter()
+                router.register_handler(http_handler)
+                router.register_node(compute_node)
+
+                # Freeze to prevent further modifications
+                router.freeze()
+                assert router.is_frozen
+
+                # Subsequent registration attempts raise INVALID_STATE
+                router.register_handler(another_handler)  # Raises!
+
+        Note:
+            Freezing also invalidates the repr cache to ensure the frozen state
+            is reflected in debug output. This is a one-way operation - there
+            is no ``unfreeze()`` method by design, as unfreezing would defeat
+            the thread-safety guarantees.
+
+        .. versionadded:: 0.4.0
+        """
+        self._frozen = True
+        self._repr_cache = None  # Invalidate cache to reflect frozen state
+
+    @property
+    def is_frozen(self) -> bool:
+        """
+        Check if the router is frozen.
+
+        Returns:
+            bool: True if the router is frozen and registration is disabled,
+                False if registration is still allowed.
+
+        Example:
+            .. code-block:: python
+
+                router = EnvelopeRouter()
+                assert not router.is_frozen  # Initially unfrozen
+
+                router.freeze()
+                assert router.is_frozen  # Now frozen
+
+        .. versionadded:: 0.4.0
+        """
+        return self._frozen
 
     @standard_error_handling("Envelope routing")
     def route_envelope(self, envelope: ModelOnexEnvelope) -> TypedDictRoutingInfo:
@@ -525,12 +621,26 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         handler: ProtocolHandler = routing_info["handler"]
 
         # Execute handler and handle errors
-        # fallback-ok: Handler exceptions are intentionally caught and converted to
-        # error envelopes. This is the documented contract - EnvelopeRouter never raises
-        # from handler execution, instead returning error envelopes for observability.
+        #
+        # Exception Handling Strategy:
+        # 1. NEVER catch cancellation/exit signals (SystemExit, KeyboardInterrupt,
+        #    GeneratorExit, asyncio.CancelledError) - these must propagate for proper
+        #    shutdown and task cancellation semantics.
+        # 2. All other exceptions are converted to error envelopes - this is the
+        #    documented contract for EnvelopeRouter (never raises from handler
+        #    execution, returns error envelopes for observability instead).
+        #
+        # fallback-ok: Handler exceptions (except cancellation signals) are intentionally
+        # caught and converted to error envelopes per the EnvelopeRouter contract.
         try:
             response = await handler.execute(envelope)
             return response
+        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            # Never catch cancellation/exit signals - they must propagate
+            raise
+        except asyncio.CancelledError:
+            # Never suppress async cancellation - required for proper task cleanup
+            raise
         except Exception as e:
             # Log the error for observability before converting to error envelope
             logger.warning(
@@ -554,10 +664,11 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         Human-readable string representation.
 
         Returns:
-            str: Format "EnvelopeRouter[handlers=N, nodes=M]"
+            str: Format "EnvelopeRouter[handlers=N, nodes=M, frozen=bool]"
         """
         return (
-            f"EnvelopeRouter[handlers={len(self._handlers)}, nodes={len(self._nodes)}]"
+            f"EnvelopeRouter[handlers={len(self._handlers)}, "
+            f"nodes={len(self._nodes)}, frozen={self._frozen}]"
         )
 
     def __repr__(self) -> str:
@@ -570,10 +681,12 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             - Small registries (<=10 items): Show full list of handler types/slugs
             - Large registries (>10 items): Show count only to avoid performance impact
 
-            The result is cached and invalidated when handlers or nodes are registered.
+            The result is cached and invalidated when handlers or nodes are registered,
+            or when the router is frozen.
 
         Returns:
-            str: Detailed format including handler types and node slugs (or counts)
+            str: Detailed format including handler types, node slugs (or counts),
+                and frozen state
         """
         if self._repr_cache is not None:
             return self._repr_cache
@@ -592,7 +705,10 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         else:
             node_repr = f"<{node_count} nodes>"
 
-        self._repr_cache = f"EnvelopeRouter(handlers={handler_repr}, nodes={node_repr})"
+        self._repr_cache = (
+            f"EnvelopeRouter(handlers={handler_repr}, nodes={node_repr}, "
+            f"frozen={self._frozen})"
+        )
         return self._repr_cache
 
 

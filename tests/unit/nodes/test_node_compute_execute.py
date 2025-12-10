@@ -12,6 +12,8 @@ Author: ONEX Framework Team
 Version: 1.0.0
 """
 
+from __future__ import annotations
+
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch

@@ -34,6 +34,9 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure import ModelComputeCache
 
+# Type alias for contract (avoids circular import at module level)
+ContractComputeType = Any  # ModelContractCompute - imported in method
+
 
 class NodeCompute(NodeCoreBase):
     """
@@ -206,8 +209,157 @@ class NodeCompute(NodeCoreBase):
                     "node_id": str(self.node_id),
                     "operation_id": str(input_data.operation_id),
                     "computation_type": input_data.computation_type,
+                    "cache_enabled": input_data.cache_enabled,
+                    "parallel_enabled": input_data.parallel_enabled,
+                    "error_type": type(e).__name__,
+                    "processing_time_ms": processing_time,
                 },
             ) from e
+
+    async def execute_compute(
+        self,
+        contract: ContractComputeType,
+    ) -> ModelComputeOutput[T_Output]:
+        """
+        Execute computation based on contract specification.
+
+        REQUIRED INTERFACE: This public method implements the ModelContractCompute interface
+        per ONEX guidelines. Subclasses implementing custom compute nodes should override
+        this method or use the default contract-to-input conversion.
+
+        Args:
+            contract: Compute contract specifying the operation configuration
+
+        Returns:
+            ModelComputeOutput: Computation results with performance metrics
+
+        Raises:
+            ModelOnexError: If computation fails or contract is invalid
+        """
+        # Import here to avoid circular dependency
+        from omnibase_core.models.contracts.model_contract_compute import (
+            ModelContractCompute,
+        )
+
+        if not isinstance(contract, ModelContractCompute):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid contract type - expected ModelContractCompute, got {type(contract).__name__}",
+                context={
+                    "node_id": str(self.node_id),
+                    "provided_type": type(contract).__name__,
+                    "expected_type": "ModelContractCompute",
+                },
+            )
+
+        # Convert contract to ModelComputeInput
+        compute_input: ModelComputeInput[Any] = self._contract_to_input(contract)
+
+        # Execute via existing process() method
+        return await self.process(compute_input)
+
+    def _contract_to_input(
+        self,
+        contract: ContractComputeType,
+    ) -> ModelComputeInput[T_Input]:
+        """
+        Convert ModelContractCompute to ModelComputeInput.
+
+        Args:
+            contract: Compute contract to convert
+
+        Returns:
+            ModelComputeInput: Input model for process() method
+
+        Raises:
+            ModelOnexError: If contract has no input_state or conversion fails
+        """
+        # Extract input data from contract (input_state preferred, input_data as legacy fallback)
+        input_data: Any = None
+        if hasattr(contract, "input_state") and contract.input_state is not None:
+            input_data = contract.input_state
+        elif hasattr(contract, "input_data") and contract.input_data is not None:
+            # Legacy fallback with deprecation warning
+            emit_log_event(
+                LogLevel.WARNING,
+                "Using legacy 'input_data' field - please migrate to 'input_state'",
+                {"node_id": str(self.node_id)},
+            )
+            input_data = contract.input_data
+
+        if input_data is None:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Contract must have either 'input_state' or 'input_data' field",
+                context={
+                    "node_id": str(self.node_id),
+                    "hint": "Provide input_state (preferred) or input_data (legacy) in contract",
+                    "checked_attributes": ["input_state", "input_data"],
+                    "input_state_value": str(getattr(contract, "input_state", None)),
+                    "input_data_value": str(getattr(contract, "input_data", None)),
+                },
+            )
+
+        # Extract computation_type with fallback chain:
+        # 1. algorithm.algorithm_type (preferred)
+        # 2. metadata.computation_type
+        # 3. contract.computation_type attribute
+        # 4. Default to "default"
+        computation_type: str = "default"
+
+        # Try algorithm.algorithm_type first
+        if hasattr(contract, "algorithm") and contract.algorithm is not None:
+            if (
+                hasattr(contract.algorithm, "algorithm_type")
+                and contract.algorithm.algorithm_type is not None
+            ):
+                computation_type = contract.algorithm.algorithm_type
+
+        # Fallback to metadata.computation_type
+        if computation_type == "default":
+            contract_metadata = getattr(contract, "metadata", None) or {}
+            if (
+                isinstance(contract_metadata, dict)
+                and "computation_type" in contract_metadata
+            ):
+                computation_type = contract_metadata["computation_type"]
+
+        # Fallback to contract.computation_type attribute
+        if computation_type == "default":
+            if (
+                hasattr(contract, "computation_type")
+                and contract.computation_type is not None
+            ):
+                computation_type = contract.computation_type
+
+        # Extract metadata (normalize None to empty dict)
+        # Type matches ModelComputeInput.metadata field
+        metadata = getattr(contract, "metadata", None) or {}
+
+        # Extract optional execution settings from metadata
+        cache_enabled = metadata.get("cache_enabled", True)
+        parallel_enabled = metadata.get("parallel_enabled", False)
+
+        # Log warning if parallel_enabled but data is not parallelizable
+        if parallel_enabled and not self._supports_parallel_execution(
+            ModelComputeInput(
+                data=input_data,
+                computation_type=computation_type,
+            )
+        ):
+            emit_log_event(
+                LogLevel.WARNING,
+                "Parallel execution requested but data is not parallelizable, using sequential execution",
+                {"node_id": str(self.node_id), "computation_type": computation_type},
+            )
+
+        return ModelComputeInput(
+            data=input_data,
+            computation_type=computation_type,
+            metadata=metadata,
+            cache_enabled=cache_enabled,
+            parallel_enabled=parallel_enabled,
+        )
 
     def register_computation(
         self, computation_type: str, computation_func: Callable[..., Any]
