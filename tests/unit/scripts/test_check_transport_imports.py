@@ -251,6 +251,30 @@ from aiokafka import AIOKafkaProducer
 
         assert len(analyzer.violations) == 1
 
+    def test_detects_multiline_from_kafka_import(self) -> None:
+        """Test detection of multi-line 'from kafka import (...)' statements."""
+        skip_if_module_not_loaded()
+
+        code = """
+from kafka import (
+    KafkaProducer,
+    KafkaConsumer,
+    KafkaAdminClient,
+)
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+
+        analyzer = TransportImportAnalyzer(
+            file_path=Path("/test.py"),
+            source_lines=source_lines,
+        )
+        analyzer.visit(tree)
+
+        # Multi-line imports should still be detected
+        assert len(analyzer.violations) == 1
+        assert "kafka" in analyzer.violations[0].message.lower()
+
 
 class TestBannedRedisImports:
     """Tests detection of banned Redis/Valkey library imports."""
@@ -310,6 +334,28 @@ import valkey
 
         assert len(analyzer.violations) == 1
         assert "valkey" in analyzer.violations[0].message
+
+    def test_detects_multiline_import_redis(self) -> None:
+        """Test detection of multi-line import statements with multiple modules."""
+        skip_if_module_not_loaded()
+
+        # Note: Regular `import` statements don't support parentheses syntax.
+        # But they do support comma-separated multiple imports on one line.
+        code = """
+import redis, json, typing
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+
+        analyzer = TransportImportAnalyzer(
+            file_path=Path("/test.py"),
+            source_lines=source_lines,
+        )
+        analyzer.visit(tree)
+
+        # Should detect redis but not json or typing
+        assert len(analyzer.violations) == 1
+        assert "redis" in analyzer.violations[0].message
 
 
 class TestBannedHttpImports:
@@ -697,6 +743,36 @@ if t.TYPE_CHECKING:
         analyzer.visit(tree)
 
         # Imports inside aliased TYPE_CHECKING should be allowed
+        assert len(analyzer.violations) == 0
+
+    def test_allows_nested_type_checking_blocks(self) -> None:
+        """Test that nested conditions inside TYPE_CHECKING blocks are handled.
+
+        Some codebases may have additional conditions inside TYPE_CHECKING
+        blocks, like version checks or platform checks.
+        """
+        skip_if_module_not_loaded()
+
+        code = """
+from typing import TYPE_CHECKING
+import sys
+
+if TYPE_CHECKING:
+    if sys.version_info >= (3, 11):
+        import kafka
+    else:
+        from kafka import KafkaProducer
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+
+        analyzer = TransportImportAnalyzer(
+            file_path=Path("/test.py"),
+            source_lines=source_lines,
+        )
+        analyzer.visit(tree)
+
+        # Imports inside nested TYPE_CHECKING should be allowed
         assert len(analyzer.violations) == 0
 
 

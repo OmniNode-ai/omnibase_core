@@ -46,6 +46,7 @@ import ast
 import json
 import sys
 from dataclasses import dataclass, field
+from datetime import date
 from enum import Enum
 from pathlib import Path
 from typing import NamedTuple
@@ -169,6 +170,10 @@ TEMPORARY_ALLOWLIST: frozenset[str] = frozenset(
         "mixins/mixin_health_check.py",
     }
 )
+
+# Allowlist expiration date - CI should warn when this approaches
+ALLOWLIST_EXPIRATION_DATE: date = date(2026, 6, 10)
+ALLOWLIST_WARNING_DAYS: int = 30  # Warn this many days before expiration
 
 
 # ==============================================================================
@@ -378,6 +383,11 @@ def analyze_file(file_path: Path) -> TransportCheckResult:
         )
 
     except SyntaxError as e:
+        # Log to stderr for CI visibility - helps debug syntax issues in source files
+        print(
+            f"Warning: Syntax error in {file_path}: {e.msg}",
+            file=sys.stderr,
+        )
         return TransportCheckResult(
             file_path=file_path,
             violations=[
@@ -395,6 +405,11 @@ def analyze_file(file_path: Path) -> TransportCheckResult:
             skip_reason=f"Syntax error: {e.msg}",
         )
     except Exception as e:
+        # Log to stderr for CI visibility - helps debug unexpected failures
+        print(
+            f"Warning: Failed to analyze {file_path}: {type(e).__name__}: {e}",
+            file=sys.stderr,
+        )
         # Create a proper violation for unexpected errors rather than masking them
         # with an empty violations list. This ensures errors are visible in reports
         # and prevents silent failures during CI checks.
@@ -473,6 +488,78 @@ def _is_allowlisted(file_path: Path, src_dir: Path) -> bool:
         return False
 
 
+def check_allowlist_expiration() -> tuple[bool, str]:
+    """Check if allowlist expiration date is approaching or passed.
+
+    Returns:
+        Tuple of (is_warning, message). is_warning is True if expiration
+        is approaching or passed.
+    """
+    from datetime import UTC, datetime
+
+    today = datetime.now(tz=UTC).date()
+    days_until_expiration = (ALLOWLIST_EXPIRATION_DATE - today).days
+
+    if days_until_expiration < 0:
+        return True, (
+            f"ALLOWLIST EXPIRED: The temporary allowlist expired on "
+            f"{ALLOWLIST_EXPIRATION_DATE}. Please review and remove allowlisted "
+            f"items or update the expiration date."
+        )
+    elif days_until_expiration <= ALLOWLIST_WARNING_DAYS:
+        return True, (
+            f"ALLOWLIST EXPIRING SOON: The temporary allowlist expires in "
+            f"{days_until_expiration} days ({ALLOWLIST_EXPIRATION_DATE}). "
+            f"Please review allowlisted items."
+        )
+    return False, ""
+
+
+def get_changed_files(src_dir: Path) -> list[Path]:
+    """Get Python files changed in current git branch compared to main.
+
+    Uses git diff to find changed .py files. Falls back to all files
+    if git is unavailable or not in a git repository.
+
+    Args:
+        src_dir: Source directory to filter results.
+
+    Returns:
+        List of changed Python file paths within src_dir.
+    """
+    import subprocess
+
+    try:
+        # Get files changed compared to main/master branch
+        result = subprocess.run(
+            ["git", "diff", "--name-only", "origin/main", "--", "*.py"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            # Try master if main doesn't exist
+            result = subprocess.run(
+                ["git", "diff", "--name-only", "origin/master", "--", "*.py"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+        if result.returncode == 0 and result.stdout.strip():
+            changed_files = []
+            for line in result.stdout.strip().split("\n"):
+                file_path = Path(line)
+                # Only include files within src_dir
+                if file_path.exists() and str(src_dir) in str(file_path.resolve()):
+                    changed_files.append(file_path.resolve())
+            return sorted(changed_files)
+    except FileNotFoundError:
+        pass  # git not available
+
+    return []  # Return empty list if git fails
+
+
 def main() -> int:
     """Main entry point for the transport import validation script.
 
@@ -511,6 +598,11 @@ def main() -> int:
         action="store_true",
         help="Output results as JSON for machine processing",
     )
+    parser.add_argument(
+        "--changed-files",
+        action="store_true",
+        help="Only check files changed in current git branch (speeds up CI)",
+    )
 
     args = parser.parse_args()
 
@@ -546,6 +638,18 @@ def main() -> int:
     else:
         python_files = find_python_files(src_dir)
 
+    # Filter to only changed files if --changed-files flag is set
+    if args.changed_files:
+        changed = get_changed_files(src_dir)
+        if changed:
+            python_files = [f for f in python_files if f in changed]
+            if args.verbose and not args.json:
+                print(
+                    f"Checking {len(python_files)} changed files (--changed-files mode)"
+                )
+        elif args.verbose and not args.json:
+            print("No changed Python files detected, checking all files")
+
     if not python_files:
         if args.json:
             print(
@@ -567,6 +671,12 @@ def main() -> int:
 
     if args.verbose and not args.json:
         print(f"Analyzing {len(python_files)} Python files in {src_dir}")
+        print()
+
+    # Check allowlist expiration
+    is_expiring, expiration_msg = check_allowlist_expiration()
+    if is_expiring and not args.json:
+        print(f"WARNING: {expiration_msg}", file=sys.stderr)
         print()
 
     # Analyze each file
@@ -595,13 +705,14 @@ def main() -> int:
 
     # Output results
     if args.json:
-        output = {
+        output: dict[str, object] = {
             "summary": {
                 "total_files": total_files,
                 "clean_files": clean_files,
                 "files_with_violations": files_with_violations,
                 "total_violations": total_violations,
                 "allowlisted_files": allowlisted_count,
+                "allowlist_expiration_warning": expiration_msg if is_expiring else None,
             },
             "results": [
                 {
