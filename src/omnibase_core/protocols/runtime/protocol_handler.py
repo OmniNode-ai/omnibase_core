@@ -1,14 +1,14 @@
 """
 ProtocolHandler - Protocol for ONEX runtime handlers.
 
-This module provides the protocol definition for handlers used by NodeRuntime
+This module provides the protocol definition for handlers used by EnvelopeRouter
 to execute envelope-based operations. Handlers are the primary execution units
 that process ModelOnexEnvelope instances in the ONEX runtime.
 
 Design:
     This protocol uses dependency inversion - Core defines the interface,
     and implementations (in SPI or other packages) satisfy the contract.
-    This allows NodeRuntime to work with handlers without importing SPI.
+    This allows EnvelopeRouter to work with handlers without importing SPI.
 
 Architecture:
     Handlers receive a ModelOnexEnvelope, perform their operation (HTTP call,
@@ -46,7 +46,7 @@ Usage:
 
 Related:
     - OMN-226: ProtocolHandler interface definition
-    - OMN-228: NodeRuntime transport-agnostic orchestrator
+    - OMN-228: EnvelopeRouter transport-agnostic orchestrator
     - EnumHandlerType: Handler type classification enum
     - ModelOnexEnvelope: Canonical envelope format for handler I/O
 

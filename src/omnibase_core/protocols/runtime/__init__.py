@@ -1,5 +1,5 @@
 """
-Runtime protocols for ONEX NodeRuntime and handler integration.
+Runtime protocols for ONEX EnvelopeRouter and handler integration.
 
 This module provides Core-native protocol definitions for runtime handlers.
 These protocols establish the contracts that handler implementations (in SPI
@@ -31,7 +31,7 @@ Usage:
 
 Related:
     - OMN-226: ProtocolHandler interface definition
-    - OMN-228: NodeRuntime transport-agnostic orchestrator
+    - OMN-228: EnvelopeRouter transport-agnostic orchestrator
 
 .. versionadded:: 0.4.0
 """

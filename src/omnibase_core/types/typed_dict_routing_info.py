@@ -1,12 +1,12 @@
 """
 TypedDict for envelope routing information.
 
-This TypedDict defines the structure returned by NodeRuntime.route_envelope(),
+This TypedDict defines the structure returned by EnvelopeRouter.route_envelope(),
 providing typed access to the resolved handler and handler type.
 
 Related:
-    - OMN-228: NodeRuntime transport-agnostic orchestrator
-    - NodeRuntime.route_envelope(): Returns this type
+    - OMN-228: EnvelopeRouter transport-agnostic orchestrator
+    - EnvelopeRouter.route_envelope(): Returns this type
 
 .. versionadded:: 0.4.0
 """

@@ -114,6 +114,23 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         WARNING: EnvelopeRouter is NOT thread-safe. The handler and node registries
         use dict without synchronization.
 
+        Recommended Pattern (Read-Only After Init):
+            The simplest and most common approach is to register all handlers
+            and nodes during application startup, then treat the router as
+            read-only. This is safe for concurrent reads with no locking overhead.
+
+            .. code-block:: python
+
+                # During application startup (single-threaded)
+                router = EnvelopeRouter()
+                router.register_handler(http_handler)
+                router.register_handler(db_handler)
+                router.register_node(compute_node)
+
+                # After initialization, router is read-only (thread-safe for reads)
+                # All subsequent operations are route_envelope() and execute_with_handler()
+                response = await router.execute_with_handler(envelope, node)
+
         Mitigation Strategies (choose one):
 
         1. **External Locking (sync contexts)**: Wrap all register/route calls with
@@ -197,6 +214,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         """
         self._handlers: dict[EnumHandlerType, ProtocolHandler] = {}
         self._nodes: dict[str, RuntimeNodeInstance] = {}
+        self._repr_cache: str | None = None
 
     @standard_error_handling("Handler registration")
     def register_handler(
@@ -300,7 +318,15 @@ class EnvelopeRouter(ProtocolNodeRuntime):
                 error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
             )
 
+        # Log warning when replacing existing handler
+        if handler_type in self._handlers:
+            logger.warning(
+                "Replacing existing handler for type '%s' with new handler",
+                handler_type.value,
+            )
+
         self._handlers[handler_type] = handler
+        self._repr_cache = None  # Invalidate cache
 
     @standard_error_handling("Node registration")
     def register_node(self, node: RuntimeNodeInstance) -> None:
@@ -345,6 +371,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             )
 
         self._nodes[slug] = node
+        self._repr_cache = None  # Invalidate cache
 
     @standard_error_handling("Envelope routing")
     def route_envelope(self, envelope: ModelOnexEnvelope) -> TypedDictRoutingInfo:
@@ -384,6 +411,13 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         if envelope is None:
             raise ModelOnexError(
                 message="Cannot route None envelope. Envelope is required.",
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            )
+
+        # Validate envelope type for defensive programming
+        if not isinstance(envelope, ModelOnexEnvelope):
+            raise ModelOnexError(
+                message=f"Expected ModelOnexEnvelope, got {type(envelope).__name__}",
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 
@@ -536,9 +570,14 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             - Small registries (<=10 items): Show full list of handler types/slugs
             - Large registries (>10 items): Show count only to avoid performance impact
 
+            The result is cached and invalidated when handlers or nodes are registered.
+
         Returns:
             str: Detailed format including handler types and node slugs (or counts)
         """
+        if self._repr_cache is not None:
+            return self._repr_cache
+
         # Optimize handler representation for large registries
         handler_count = len(self._handlers)
         if handler_count <= self._REPR_ITEM_THRESHOLD:
@@ -553,7 +592,8 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         else:
             node_repr = f"<{node_count} nodes>"
 
-        return f"EnvelopeRouter(handlers={handler_repr}, nodes={node_repr})"
+        self._repr_cache = f"EnvelopeRouter(handlers={handler_repr}, nodes={node_repr})"
+        return self._repr_cache
 
 
 __all__ = ["EnvelopeRouter"]

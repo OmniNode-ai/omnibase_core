@@ -3,12 +3,12 @@ RuntimeNodeInstance - Lightweight execution wrapper for ONEX nodes.
 
 This module provides the RuntimeNodeInstance class, which serves as a lightweight
 wrapper around node execution. It handles lifecycle management (initialize/shutdown)
-and envelope reception, delegating actual execution to NodeRuntime.
+and envelope reception, delegating actual execution to EnvelopeRouter.
 
 Architecture Pattern - Delegation:
     RuntimeNodeInstance follows the ONEX delegation pattern where the instance itself
     contains NO business logic or I/O operations. All execution is delegated
-    to the NodeRuntime, which handles:
+    to the EnvelopeRouter, which handles:
 
     - Handler dispatch (routing envelopes to appropriate handlers)
     - Error handling and recovery
@@ -71,7 +71,7 @@ Thread Safety:
         5. Call handle() concurrently (thread safety is runtime's responsibility)
         6. Call shutdown() (single thread, after all handle() calls complete)
 
-    The NodeRuntime implementation is responsible for thread safety of the
+    The EnvelopeRouter implementation is responsible for thread safety of the
     actual execution within handle(). See CLAUDE.md thread safety matrix.
 
     Concurrent handle() and shutdown() Behavior:
@@ -84,7 +84,7 @@ Thread Safety:
 
 Related:
     - OMN-227: NodeInstance execution wrapper
-    - OMN-228: NodeRuntime with execute_with_handler (future)
+    - OMN-228: EnvelopeRouter with execute_with_handler
     - ModelOnexEnvelope: The envelope format handled by this instance
     - ModelContractBase: The contract defining node behavior
 
@@ -140,7 +140,7 @@ class RuntimeNodeInstance(BaseModel):
     - Receives envelopes and delegates to runtime
 
     This class contains NO business logic or I/O operations. All execution
-    is delegated to the NodeRuntime via execute_with_handler().
+    is delegated to the EnvelopeRouter via execute_with_handler().
 
     Attributes:
         slug: Unique identifier for this node instance. Used for routing,
