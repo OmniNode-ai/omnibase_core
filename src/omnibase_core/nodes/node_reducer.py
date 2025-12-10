@@ -97,7 +97,7 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         # Initialize FSM state
         node.initialize_fsm_state(
-            node.contract.state_transitions,
+            node.contract.state_machine,
             context={"batch_size": 1000}
         )
 
@@ -133,22 +133,23 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         super().__init__(container)
 
         # Load FSM contract from node contract
-        # This assumes the node contract has a state_transitions field
+        # This assumes the node contract has a state_machine field
         # If not present, FSM capabilities are not active
         self.fsm_contract: ModelFSMSubcontract | None = None
 
         # Try to load FSM contract if available in node contract
-        if hasattr(self, "contract") and hasattr(self.contract, "state_transitions"):
-            self.fsm_contract = self.contract.state_transitions
+        if hasattr(self, "contract") and hasattr(self.contract, "state_machine"):
+            self.fsm_contract = self.contract.state_machine
 
             # Auto-initialize FSM state if contract is present
-            self.initialize_fsm_state(self.fsm_contract, context={})
+            if self.fsm_contract is not None:
+                self.initialize_fsm_state(self.fsm_contract, context={})
         else:
-            # FSM capabilities inactive - no state_transitions in contract
+            # FSM capabilities inactive - no state_machine in contract
             emit_log_event(
                 LogLevel.DEBUG,
                 f"FSM capabilities inactive for {self.__class__.__name__}: "
-                "no state_transitions found in contract",
+                "no state_machine found in contract",
                 {"node_id": str(self.node_id), "node_type": self.__class__.__name__},
             )
 
