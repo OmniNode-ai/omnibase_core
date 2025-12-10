@@ -44,7 +44,7 @@ class ModelFSMSubcontract(BaseModel):
     """
 
     # Interface version for code generation stability
-    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=5, patch=0)
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
@@ -274,6 +274,6 @@ class ModelFSMSubcontract(BaseModel):
 
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts
+        frozen=True,  # Immutability after creation for thread safety
         use_enum_values=False,  # Keep enum objects, don't convert to strings
-        validate_assignment=True,
     )

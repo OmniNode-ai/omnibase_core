@@ -74,7 +74,7 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
     """
 
     # Interface version for code generation stability
-    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=5, patch=0)
 
     # Default node type for REDUCER contracts (used by MixinNodeTypeValidator)
     _DEFAULT_NODE_TYPE: ClassVar[EnumNodeType] = EnumNodeType.REDUCER_GENERIC
@@ -86,6 +86,13 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
     correlation_id: UUID = Field(
         default_factory=uuid4,
         description="Unique correlation ID for traceability",
+    )
+
+    # Contract fingerprint for drift detection
+    fingerprint: str | None = Field(
+        default=None,
+        description="Contract fingerprint in format <semver>:<sha256_12> for drift detection",
+        pattern=r"^\d+\.\d+\.\d+:[a-f0-9]{12}$",
     )
 
     node_type: EnumNodeType = Field(
@@ -189,10 +196,12 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
     # === SUBCONTRACT COMPOSITION ===
     # These fields provide clean subcontract integration
 
-    # FSM subcontract (simplified type to avoid complex union)
-    state_transitions: object | None = Field(
+    # FSM subcontract for state machine definition
+    # Alias supports legacy YAML contracts using state_transitions field name
+    state_machine: ModelFSMSubcontract | None = Field(
         default=None,
-        description="FSM subcontract (embedded definition or $ref reference)",
+        alias="state_transitions",
+        description="FSM subcontract for state machine definition",
     )
 
     # Event-driven architecture subcontract
@@ -318,11 +327,8 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
                         ),
                     )
 
-        # Validate FSM subcontract if it's not a $ref
-        if self.state_transitions and isinstance(
-            self.state_transitions,
-            ModelFSMSubcontract,
-        ):
+        # Validate FSM subcontract if present
+        if self.state_machine is not None:
             self._validate_fsm_subcontract()
 
         # Validate subcontract constraints
@@ -349,22 +355,26 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
             contract_data = self.model_dump()
         violations = []
 
-        # REDUCER nodes should have state_transitions for proper state management
-        if "state_transitions" not in contract_data:
+        # REDUCER nodes should have state_machine for proper state management
+        # Check both field name and alias for YAML contract validation
+        if (
+            "state_machine" not in contract_data
+            and "state_transitions" not in contract_data
+        ):
             violations.append(
-                "⚠️ MISSING SUBCONTRACT: REDUCER nodes should have state_transitions subcontracts",
+                "MISSING SUBCONTRACT: REDUCER nodes should have state_machine subcontracts",
             )
             violations.append(
-                "   💡 Add state_transitions for proper stateful workflow management",
+                "   Add state_machine for proper stateful workflow management",
             )
 
         # All nodes should have event_type subcontracts
         if "event_type" not in contract_data:
             violations.append(
-                "⚠️ MISSING SUBCONTRACT: All nodes should define event_type subcontracts",
+                "MISSING SUBCONTRACT: All nodes should define event_type subcontracts",
             )
             violations.append(
-                "   💡 Add event_type configuration for event-driven architecture",
+                "   Add event_type configuration for event-driven architecture",
             )
 
         if violations:
@@ -387,8 +397,8 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
 
         Contract-driven validation - validates what's in the FSM definition.
         """
-        fsm = self.state_transitions
-        if not isinstance(fsm, ModelFSMSubcontract):
+        fsm = self.state_machine
+        if fsm is None:
             return
 
         # Basic structural validation
@@ -459,10 +469,12 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
 
     model_config = ConfigDict(
         extra="forbid",  # Strict validation - reject unknown fields
+        frozen=True,  # Thread safety and immutability
         use_enum_values=False,  # Keep enum objects, don't convert to strings
         validate_assignment=True,
         str_strip_whitespace=True,
         validate_default=True,
+        populate_by_name=True,  # Allow both field name and alias for YAML flexibility
     )
 
     def to_yaml(self) -> str:
