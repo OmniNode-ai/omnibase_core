@@ -300,7 +300,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
         .. code-block:: python
 
-            from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+            from omnibase_core.runtime import EnvelopeRouter, RuntimeNodeInstance
 
             runtime = EnvelopeRouter()
             runtime.register_handler(http_handler)
