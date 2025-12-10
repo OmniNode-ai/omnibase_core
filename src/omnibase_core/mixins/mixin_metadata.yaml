@@ -2573,7 +2573,7 @@ mixin_fsm_execution:
           async def process(self, input_data):
               # FSM-driven processing
               result = await self.execute_fsm_transition(
-                  self.contract.state_transitions,
+                  self.contract.state_machine,
                   trigger=input_data.trigger,
                   context={"data": input_data.data}
               )
@@ -2596,7 +2596,7 @@ mixin_fsm_execution:
 
               # Validate FSM contract (async operation)
               errors = await instance.validate_fsm_contract(
-                  contract.state_transitions
+                  contract.state_machine
               )
               if errors:
                   raise ValidationError(f"FSM invalid: {errors}")
@@ -2608,13 +2608,13 @@ mixin_fsm_execution:
           async def process(self, input_data):
               # Execute transition
               result = await self.execute_fsm_transition(
-                  self.contract.state_transitions,
+                  self.contract.state_machine,
                   trigger=input_data.trigger,
                   context={"data": input_data.data}
               )
 
               # Check if reached terminal state
-              if self.is_terminal_state(self.contract.state_transitions):
+              if self.is_terminal_state(self.contract.state_machine):
                   # Emit completion intent
                   result.intents.append(
                       ModelIntent(
@@ -2666,7 +2666,7 @@ mixin_fsm_execution:
         async def execute_workflow(self, input_data):
             # Transition to running
             await self.execute_fsm_transition(
-                self.contract.state_transitions,
+                self.contract.state_machine,
                 trigger="workflow_start",
                 context={"workflow_id": input_data.workflow_id}
             )
@@ -2675,7 +2675,7 @@ mixin_fsm_execution:
 
             # Transition to completed
             result = await self.execute_fsm_transition(
-                self.contract.state_transitions,
+                self.contract.state_machine,
                 trigger="workflow_complete",
                 context={"results": final_results}
             )

@@ -1,5 +1,5 @@
 """
-Reducer Contract Model (Clean ModelArchitecture).
+Reducer Contract Model (Clean ModelArchitecture) - v1.5.0 Schema.
 
 Specialized contract model for NodeReducer implementations providing:
 - Reduction operation specifications with subcontract composition
@@ -7,6 +7,9 @@ Specialized contract model for NodeReducer implementations providing:
 - Support for both FSM patterns and simple infrastructure patterns
 - Flexible field definitions supporting YAML contract variations
 - UUID correlation tracking for traceability
+- Contract fingerprint for drift detection (v1.5.0)
+- Field aliasing for YAML flexibility (state_machine/state_transitions)
+- Thread-safe immutable instances via frozen=True
 
 Strict typing is enforced: No Any types allowed in implementation.
 """
@@ -63,18 +66,44 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
     """
-    Contract model for NodeReducer implementations - Clean ModelArchitecture.
+    Contract model for NodeReducer implementations - v1.5.0 Schema.
 
     Specialized contract for data aggregation nodes using subcontract composition
     for clean separation between node logic and functionality patterns.
     Supports both FSM complex patterns and simple infrastructure patterns.
     Includes UUID correlation tracking for full traceability.
 
+    Schema Version:
+        v1.5.0 - Added fingerprint field for contract drift detection,
+        state_machine field with alias support, and frozen model configuration.
+
+    Key Features:
+        - fingerprint: Contract identity in format ``<semver>:<sha256_12>`` enabling
+          drift detection between YAML contracts and generated code. The semver
+          portion tracks schema version, while the 12-character SHA256 hash
+          identifies the specific contract content.
+        - state_machine: FSM subcontract field with ``alias="state_transitions"``
+          allowing YAML contracts to use either field name for flexibility
+          with existing contracts.
+        - frozen=True: Model instances are immutable after creation, providing
+          thread safety for concurrent access and preventing accidental mutation
+          of contract state during validation or serialization.
+
+    Note:
+        While this model uses ``frozen=True`` for immutability, instances containing
+        nested mutable objects (such as lists, dicts, or non-frozen Pydantic models)
+        are **not hashable**. This is expected Pydantic behavior: the ``frozen=True``
+        configuration prevents field modification but does not make nested mutable
+        objects hashable. Attempting to call ``hash()`` on such instances will raise
+        ``TypeError: unhashable type``. See tests in
+        ``tests/unit/models/contracts/test_model_contract_reducer_v150.py`` for
+        detailed documentation of this behavior.
+
     Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability
-    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=5, patch=0)
 
     # Default node type for REDUCER contracts (used by MixinNodeTypeValidator)
     _DEFAULT_NODE_TYPE: ClassVar[EnumNodeType] = EnumNodeType.REDUCER_GENERIC
@@ -86,6 +115,22 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
     correlation_id: UUID = Field(
         default_factory=uuid4,
         description="Unique correlation ID for traceability",
+    )
+
+    # Contract fingerprint for drift detection (v1.5.0)
+    # Format: <semver>:<sha256_12> where semver is the schema version (e.g., 1.5.0)
+    # and sha256_12 is the first 12 characters of the SHA256 hash of the contract content.
+    # Used to detect when YAML contracts drift from generated code.
+    fingerprint: str | None = Field(
+        default=None,
+        description=(
+            "Contract fingerprint for drift detection. Format: <semver>:<sha256_12> "
+            "where semver is the schema version (e.g., '1.5.0') and sha256_12 is the "
+            "first 12 hex characters of the SHA256 hash of the canonical contract content. "
+            "Example: '1.5.0:a1b2c3d4e5f6'. Used to detect contract changes between "
+            "YAML definitions and generated code artifacts."
+        ),
+        pattern=r"^\d+\.\d+\.\d+:[a-f0-9]{12}$",
     )
 
     node_type: EnumNodeType = Field(
@@ -189,10 +234,19 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
     # === SUBCONTRACT COMPOSITION ===
     # These fields provide clean subcontract integration
 
-    # FSM subcontract (simplified type to avoid complex union)
-    state_transitions: object | None = Field(
+    # FSM subcontract for state machine definition (v1.5.0 naming)
+    # The alias="state_transitions" supports YAML contracts using the legacy field name.
+    # Both field names are accepted when loading from YAML due to populate_by_name=True.
+    state_machine: ModelFSMSubcontract | None = Field(
         default=None,
-        description="FSM subcontract (embedded definition or $ref reference)",
+        alias="state_transitions",
+        description=(
+            "FSM subcontract defining state machine behavior for reducer nodes. "
+            "Accepts both 'state_machine' (preferred) and 'state_transitions' (legacy) "
+            "field names in YAML contracts via the alias mechanism. The subcontract "
+            "defines states, transitions, initial state, and FSM operations with "
+            "atomic execution and rollback guarantees for critical operations."
+        ),
     )
 
     # Event-driven architecture subcontract
@@ -318,11 +372,8 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
                         ),
                     )
 
-        # Validate FSM subcontract if it's not a $ref
-        if self.state_transitions and isinstance(
-            self.state_transitions,
-            ModelFSMSubcontract,
-        ):
+        # Validate FSM subcontract if present
+        if self.state_machine is not None:
             self._validate_fsm_subcontract()
 
         # Validate subcontract constraints
@@ -349,22 +400,26 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
             contract_data = self.model_dump()
         violations = []
 
-        # REDUCER nodes should have state_transitions for proper state management
-        if "state_transitions" not in contract_data:
+        # REDUCER nodes should have state_machine for proper state management
+        # Check both field name and alias for YAML contract validation
+        if (
+            "state_machine" not in contract_data
+            and "state_transitions" not in contract_data
+        ):
             violations.append(
-                "⚠️ MISSING SUBCONTRACT: REDUCER nodes should have state_transitions subcontracts",
+                "MISSING SUBCONTRACT: REDUCER nodes should have state_machine subcontracts",
             )
             violations.append(
-                "   💡 Add state_transitions for proper stateful workflow management",
+                "   Add state_machine for proper stateful workflow management",
             )
 
         # All nodes should have event_type subcontracts
         if "event_type" not in contract_data:
             violations.append(
-                "⚠️ MISSING SUBCONTRACT: All nodes should define event_type subcontracts",
+                "MISSING SUBCONTRACT: All nodes should define event_type subcontracts",
             )
             violations.append(
-                "   💡 Add event_type configuration for event-driven architecture",
+                "   Add event_type configuration for event-driven architecture",
             )
 
         if violations:
@@ -386,9 +441,25 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
         Validate FSM subcontract configuration for reducer nodes.
 
         Contract-driven validation - validates what's in the FSM definition.
+
+        Defense-in-Depth Pattern:
+            This validation intentionally duplicates some checks that ModelFSMSubcontract
+            performs via its @model_validator. This is deliberate:
+
+            1. FSM validators run during FSM construction (ModelFSMSubcontract instantiation)
+            2. Contract validators run during contract validation (ModelContractReducer validation)
+            3. These are separate validation phases that may execute independently
+
+            By duplicating critical checks here, we:
+            - Protect against changes in FSM validation behavior
+            - Ensure contract-level invariants hold regardless of FSM implementation details
+            - Provide clearer error messages in the contract validation context
+            - Enable contracts to enforce stricter requirements than the base FSM model
+
+            This follows the principle: "validate at trust boundaries, not just at the source."
         """
-        fsm = self.state_transitions
-        if not isinstance(fsm, ModelFSMSubcontract):
+        fsm = self.state_machine
+        if fsm is None:
             return
 
         # Basic structural validation
@@ -457,12 +528,21 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
                         ),
                     )
 
+    # Pydantic model configuration (v1.5.0)
+    # frozen=True ensures thread safety by making instances immutable after creation.
+    # This prevents accidental mutation during concurrent access, validation, or
+    # serialization operations. Any attempt to modify fields after instantiation
+    # will raise a ValidationError.
+    # populate_by_name=True enables both field names and aliases to be used when
+    # loading from YAML, supporting legacy contracts using state_transitions.
     model_config = ConfigDict(
         extra="forbid",  # Strict validation - reject unknown fields
+        frozen=True,  # Thread safety and immutability - instances cannot be modified
         use_enum_values=False,  # Keep enum objects, don't convert to strings
-        validate_assignment=True,
-        str_strip_whitespace=True,
-        validate_default=True,
+        validate_assignment=True,  # Explicit for documentation - redundant with frozen=True but kept for clarity
+        str_strip_whitespace=True,  # Clean string inputs
+        validate_default=True,  # Validate default values at model definition time
+        populate_by_name=True,  # Allow both field name and alias for YAML flexibility
     )
 
     def to_yaml(self) -> str:

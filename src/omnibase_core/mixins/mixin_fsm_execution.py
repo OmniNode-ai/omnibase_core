@@ -73,7 +73,7 @@ class MixinFSMExecution:
 
         Example:
             result = await self.execute_fsm_transition(
-                self.contract.state_transitions,
+                self.contract.state_machine,
                 trigger="collect_metrics",
                 context={"data_sources": [...]},
             )
@@ -130,7 +130,7 @@ class MixinFSMExecution:
 
         Example:
             errors = await self.validate_fsm_contract(
-                self.contract.state_transitions
+                self.contract.state_machine
             )
 
             if errors:
@@ -176,7 +176,7 @@ class MixinFSMExecution:
 
         Example:
             # Reset to clean initial state
-            self.reset_fsm_state(self.contract.state_transitions)
+            self.reset_fsm_state(self.contract.state_machine)
             assert self.get_current_fsm_state() == "idle"
         """
         self._fsm_state = get_initial_state(fsm_contract)
@@ -194,7 +194,7 @@ class MixinFSMExecution:
         Example:
             # Initialize with context
             self.initialize_fsm_state(
-                self.contract.state_transitions,
+                self.contract.state_machine,
                 context={"batch_size": 1000}
             )
         """
@@ -215,7 +215,7 @@ class MixinFSMExecution:
             True if current state is terminal, False otherwise
 
         Example:
-            if self.is_terminal_state(self.contract.state_transitions):
+            if self.is_terminal_state(self.contract.state_machine):
                 print("FSM has reached terminal state")
                 # No more transitions possible
         """
