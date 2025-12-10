@@ -34,6 +34,7 @@ Related:
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -46,6 +47,8 @@ from omnibase_core.types.typed_dict_routing_info import TypedDictRoutingInfo
 if TYPE_CHECKING:
     from omnibase_core.protocols.runtime.protocol_handler import ProtocolHandler
     from omnibase_core.runtime.runtime_node_instance import RuntimeNodeInstance
+
+logger = logging.getLogger(__name__)
 
 
 class EnvelopeRouter(ProtocolNodeRuntime):
@@ -65,29 +68,60 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
     Registration Semantics:
         Handlers and nodes have different registration semantics:
-        - **Handlers**: Allow replacement (last-write-wins). Registering a handler
-          with the same handler_type silently replaces the previous handler. This
-          enables handler hot-swapping and testing patterns.
+        - **Handlers**: By default, allow replacement (last-write-wins). Registering
+          a handler with the same handler_type silently replaces the previous handler.
+          This enables handler hot-swapping (e.g., switching from test to production
+          handlers at runtime) and testing patterns (e.g., injecting mock handlers).
+          Use ``replace=False`` for strict registration that raises on duplicates.
         - **Nodes**: Raise on duplicate slugs. Node slugs must be unique within
           the runtime. Attempting to register a second node with the same slug
           raises ModelOnexError. This prevents accidental overwriting of node
-          configurations.
+          configurations and ensures deterministic routing by slug.
 
     Thread Safety:
         WARNING: EnvelopeRouter is NOT thread-safe. The handler and node registries
-        use dict without synchronization. For concurrent access:
-        - Use external locking (e.g., threading.Lock around register/route calls), or
-        - Create separate EnvelopeRouter instances per thread/coroutine
-        - Consider using asyncio.Lock for async contexts
+        use dict without synchronization.
 
-        Example with external locking:
-            .. code-block:: python
+        Mitigation Strategies (choose one):
 
-                import threading
-                lock = threading.Lock()
+        1. **External Locking (sync contexts)**: Wrap all register/route calls with
+           threading.Lock when sharing across threads.
 
-                with lock:
-                    runtime.register_handler(handler)
+           .. code-block:: python
+
+               import threading
+               lock = threading.Lock()
+
+               with lock:
+                   runtime.register_handler(handler)
+
+        2. **Async Locking (async contexts)**: Use asyncio.Lock for coroutine-safe
+           access when sharing across async tasks.
+
+           .. code-block:: python
+
+               import asyncio
+               lock = asyncio.Lock()
+
+               async with lock:
+                   runtime.register_handler(handler)
+
+        3. **Per-Thread Instances**: Create separate EnvelopeRouter instances per
+           thread/coroutine. This avoids locking overhead entirely.
+
+           .. code-block:: python
+
+               import threading
+               _thread_local = threading.local()
+
+               def get_router() -> EnvelopeRouter:
+                   if not hasattr(_thread_local, "router"):
+                       _thread_local.router = EnvelopeRouter()
+                   return _thread_local.router
+
+        4. **Read-Only After Initialization**: Register all handlers/nodes during
+           startup, then treat the router as read-only. Safe for concurrent reads
+           if no writes occur after initialization.
 
         As per coding guidelines: "Never share node instances across threads
         without explicit synchronization."
@@ -126,33 +160,57 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         self._handlers: dict[EnumHandlerType, ProtocolHandler] = {}
         self._nodes: dict[str, RuntimeNodeInstance] = {}
 
-    def register_handler(self, handler: ProtocolHandler) -> None:
+    def register_handler(
+        self, handler: ProtocolHandler, *, replace: bool = True
+    ) -> None:
         """
         Register a handler by its handler_type.
 
         Handlers are stored using their handler_type property as the key.
-        If a handler with the same handler_type is already registered, it
-        will be silently replaced (last-write-wins semantics).
+        By default, if a handler with the same handler_type is already registered,
+        it will be silently replaced (last-write-wins semantics). This behavior
+        can be changed using the ``replace`` parameter.
 
         Args:
-            handler: A handler implementing ProtocolHandler. Must have a
-                handler_type property returning EnumHandlerType.
+            handler: A handler implementing ProtocolHandler. Must have:
+                - handler_type property returning EnumHandlerType
+                - callable execute method for envelope processing
+                - callable describe method for handler metadata
+            replace: If True (default), silently replace any existing handler
+                with the same handler_type. If False, raise ModelOnexError when
+                attempting to register a handler_type that is already registered.
+                Use ``replace=False`` for strict registration that catches
+                accidental duplicate registrations.
 
         Raises:
             ModelOnexError: If handler is None.
-            AttributeError: If handler lacks handler_type property.
+            ModelOnexError: If handler lacks handler_type property.
+            ModelOnexError: If handler.handler_type is not EnumHandlerType.
+            ModelOnexError: If handler lacks callable execute method.
+            ModelOnexError: If handler lacks callable describe method.
+            ModelOnexError: If replace=False and a handler with the same
+                handler_type is already registered (DUPLICATE_REGISTRATION).
 
         Example:
             .. code-block:: python
 
                 runtime = EnvelopeRouter()
+
+                # Default behavior: silent replacement
                 runtime.register_handler(http_handler)
-                runtime.register_handler(database_handler)
+                runtime.register_handler(new_http_handler)  # Replaces previous
+
+                # Strict mode: raise on duplicate
+                runtime.register_handler(database_handler, replace=False)
+                runtime.register_handler(other_db_handler, replace=False)  # Raises!
 
         Note:
-            Registration is idempotent for the same handler instance. Registering
-            a different handler with the same handler_type replaces the previous
-            handler without warning.
+            Registration is idempotent for the same handler instance. When
+            ``replace=True`` (default), registering a different handler with
+            the same handler_type replaces the previous handler without warning.
+            Use ``replace=False`` during initialization to catch configuration
+            errors where multiple handlers are accidentally registered for the
+            same type.
         """
         if handler is None:
             raise ModelOnexError(
@@ -160,12 +218,47 @@ class EnvelopeRouter(ProtocolNodeRuntime):
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 
-        # Access handler_type - will raise AttributeError if not present
+        # Validate handler_type property exists
+        if not hasattr(handler, "handler_type"):
+            raise ModelOnexError(
+                message="Handler must have 'handler_type' property. "
+                "Ensure handler implements ProtocolHandler interface.",
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            )
+
+        # Access handler_type and validate it's the correct type
         handler_type = handler.handler_type
         if not isinstance(handler_type, EnumHandlerType):
             raise ModelOnexError(
                 message=f"Handler handler_type must be EnumHandlerType, got {type(handler_type).__name__}",
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            )
+
+        # Validate execute method is callable
+        if not hasattr(handler, "execute") or not callable(
+            getattr(handler, "execute", None)
+        ):
+            raise ModelOnexError(
+                message="Handler must have callable 'execute' method. "
+                "Ensure handler implements ProtocolHandler interface.",
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            )
+
+        # Validate describe method is callable
+        if not hasattr(handler, "describe") or not callable(
+            getattr(handler, "describe", None)
+        ):
+            raise ModelOnexError(
+                message="Handler must have callable 'describe' method. "
+                "Ensure handler implements ProtocolHandler interface.",
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            )
+
+        if not replace and handler_type in self._handlers:
+            raise ModelOnexError(
+                message=f"Handler for type '{handler_type.value}' already registered. "
+                "Use replace=True to overwrite.",
+                error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
             )
 
         self._handlers[handler_type] = handler
@@ -364,6 +457,14 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             response = await handler.execute(envelope)
             return response
         except Exception as e:  # fallback-ok: intentional - convert to error envelope
+            # Log the error for observability before converting to error envelope
+            logger.warning(
+                "Handler execution failed for envelope %s with handler type %s: %s",
+                envelope.envelope_id,
+                routing_info["handler_type"].value,
+                str(e),
+                exc_info=True,
+            )
             # Convert exception to error envelope - this is intentional behavior
             # per the EnvelopeRouter contract (see docstring)
             return ModelOnexEnvelope.create_response(

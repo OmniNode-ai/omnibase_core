@@ -48,6 +48,7 @@ from omnibase_core.enums.enum_handler_type import EnumHandlerType
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.typed_dict_handler_metadata import TypedDictHandlerMetadata
 
 
 class MockTestContract(ModelContractBase):
@@ -192,7 +193,13 @@ def _create_mock_handler(
     This internal helper creates handlers that implement the protocol:
     - handler_type property: Returns the EnumHandlerType
     - execute(envelope): Async method that processes envelopes
-    - describe(): Returns handler metadata dict
+    - describe(): Returns handler metadata (TypedDictHandlerMetadata-compliant)
+
+    The describe() method returns a dict matching TypedDictHandlerMetadata with:
+    - name: Handler name (e.g., "mock_http_handler")
+    - version: ModelSemVer instance
+    - description: Human-readable description
+    - capabilities: List of capability strings
 
     Args:
         handler_type: The handler type classification
@@ -217,13 +224,14 @@ def _create_mock_handler(
 
     handler.execute = AsyncMock(side_effect=mock_execute)
 
-    # Describe method for handler introspection (TypedDictHandlerMetadata)
-    handler.describe.return_value = {
+    # Describe method for handler introspection - returns TypedDictHandlerMetadata
+    describe_metadata: TypedDictHandlerMetadata = {
         "name": f"mock_{handler_type.value}_handler",
         "version": ModelSemVer(major=1, minor=0, patch=0),
         "description": f"Mock handler for {handler_type.value}",
         "capabilities": ["test", "mock"],
     }
+    handler.describe.return_value = describe_metadata
 
     return handler
 
@@ -263,8 +271,14 @@ def mock_handler_alternate() -> MagicMock:
     Same as mock_handler but a different instance - useful for testing
     handler replacement behavior when registering a second handler
     with the same handler_type.
+
+    Note:
+        The describe() metadata includes an extra "alternate" field beyond
+        the standard TypedDictHandlerMetadata fields. This is allowed since
+        TypedDictHandlerMetadata uses total=False, permitting extension fields.
     """
     handler = _create_mock_handler(EnumHandlerType.HTTP)
+    # Extension field for test identification (TypedDictHandlerMetadata allows extras)
     handler.describe.return_value["alternate"] = True
     return handler
 
@@ -307,7 +321,12 @@ def mock_handler_with_error() -> MagicMock:
     The handler:
     - Has handler_type = HTTP
     - execute() raises RuntimeError("Handler execution failed")
-    - describe() returns handler metadata
+    - describe() returns handler metadata (TypedDictHandlerMetadata-compliant)
+
+    Note:
+        The describe() metadata includes an extra "error_mode" field beyond
+        the standard TypedDictHandlerMetadata fields. This is allowed since
+        TypedDictHandlerMetadata uses total=False, permitting extension fields.
 
     Usage::
 
@@ -326,12 +345,14 @@ def mock_handler_with_error() -> MagicMock:
     # Execute raises an error
     handler.execute = AsyncMock(side_effect=RuntimeError("Handler execution failed"))
 
-    handler.describe.return_value = {
+    # Describe returns TypedDictHandlerMetadata with extension field
+    describe_metadata: TypedDictHandlerMetadata = {
         "name": "mock_http_error_handler",
         "version": ModelSemVer(major=1, minor=0, patch=0),
         "description": "Mock handler that simulates execution errors",
         "capabilities": ["test", "error"],
-        "error_mode": True,
     }
+    # Extension field for test identification (TypedDictHandlerMetadata allows extras)
+    handler.describe.return_value = {**describe_metadata, "error_mode": True}
 
     return handler

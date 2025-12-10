@@ -36,10 +36,11 @@ Usage:
                     success=True,
                 )
 
-            def describe(self) -> dict[str, Any]:
+            def describe(self) -> TypedDictHandlerMetadata:
                 return {
                     "name": "http_handler",
-                    "version": "1.0.0",
+                    "version": ModelSemVer(major=1, minor=0, patch=0),
+                    "description": "HTTP request handler",
                     "capabilities": ["GET", "POST", "PUT", "DELETE"],
                 }
 
@@ -121,11 +122,12 @@ class ProtocolHandler(Protocol):
                             error=str(e),
                         )
 
-                def describe(self) -> dict[str, Any]:
+                def describe(self) -> TypedDictHandlerMetadata:
                     return {
                         "name": "database_handler",
-                        "version": "1.0.0",
-                        "supported_operations": ["SELECT", "INSERT", "UPDATE"],
+                        "version": ModelSemVer(major=1, minor=0, patch=0),
+                        "description": "Database query handler",
+                        "capabilities": ["SELECT", "INSERT", "UPDATE"],
                     }
 
             # Verify protocol compliance

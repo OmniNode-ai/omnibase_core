@@ -117,8 +117,10 @@ class TestEnvelopeRouterRegisterHandler:
         # Result should be None or runtime for chaining
         assert result is None or result is runtime
 
-        # Verify handler is registered (indirectly via route_envelope)
-        # This will be tested more thoroughly in route_envelope tests
+        # Verify handler is registered
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
 
     def test_register_handler_accepts_protocol_handler(
         self,
@@ -143,6 +145,9 @@ class TestEnvelopeRouterRegisterHandler:
 
         # Should not raise
         runtime.register_handler(mock_handler)
+
+        # Verify handler was registered
+        assert len(runtime._handlers) == 1
 
     def test_register_handler_replaces_existing(
         self,
@@ -181,6 +186,13 @@ class TestEnvelopeRouterRegisterHandler:
         result = runtime.route_envelope(envelope)
         # Alternate handler should have 'alternate' key in describe()
         assert result["handler"].describe().get("alternate") is True
+
+        # Verify only one handler is registered (replacement, not addition)
+        assert len(runtime._handlers) == 1
+
+        # Verify the original handler is no longer in the registry
+        assert mock_handler not in runtime._handlers.values()
+        assert mock_handler_alternate in runtime._handlers.values()
 
     def test_register_handler_none_raises_error(self) -> None:
         """
@@ -237,6 +249,10 @@ class TestEnvelopeRouterRegisterNode:
         # Result should be None or runtime for chaining
         assert result is None or result is runtime
 
+        # Verify node was registered
+        assert len(runtime._nodes) == 1
+        assert sample_slug in runtime._nodes
+
     def test_register_node_accepts_runtime_node_instance(
         self,
         sample_slug: str,
@@ -262,6 +278,13 @@ class TestEnvelopeRouterRegisterNode:
 
         # Should not raise
         runtime.register_node(instance)
+
+        # Verify node was registered with correct properties
+        assert len(runtime._nodes) == 1
+        assert sample_slug in runtime._nodes
+        registered_node = runtime._nodes[sample_slug]
+        assert registered_node.slug == sample_slug
+        assert registered_node.node_type == sample_node_type
 
     def test_register_node_duplicate_slug_raises_error(
         self,
@@ -711,6 +734,14 @@ class TestEnvelopeRouterEdgeCases:
         runtime.register_handler(mock_handler_database)  # DATABASE
         runtime.register_handler(mock_handler_kafka)  # KAFKA
 
+        # Verify exact count of handlers registered
+        assert len(runtime._handlers) == 3
+
+        # Verify each handler type is stored correctly
+        assert EnumHandlerType.HTTP in runtime._handlers
+        assert EnumHandlerType.DATABASE in runtime._handlers
+        assert EnumHandlerType.KAFKA in runtime._handlers
+
         # Verify each handler type can be routed
         for handler in [mock_handler, mock_handler_database, mock_handler_kafka]:
             envelope = ModelOnexEnvelope(
@@ -791,6 +822,125 @@ class TestEnvelopeRouterEdgeCases:
 
         with pytest.raises((AttributeError, ModelOnexError, TypeError)):
             runtime.register_handler(invalid_handler)
+
+    def test_register_handler_without_execute_method_raises_error(self) -> None:
+        """
+        Test that handler without callable execute method raises error.
+
+        EXPECTED BEHAVIOR:
+        - Handler with handler_type but missing execute method raises ModelOnexError
+        - Error message indicates execute method is required
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # Create handler with handler_type but no execute method
+        invalid_handler = MagicMock(spec=["handler_type", "describe"])
+        invalid_handler.handler_type = EnumHandlerType.HTTP
+        invalid_handler.describe = MagicMock(return_value={})
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.register_handler(invalid_handler)
+
+        assert "execute" in str(exc_info.value).lower()
+
+    def test_register_handler_without_describe_method_raises_error(self) -> None:
+        """
+        Test that handler without callable describe method raises error.
+
+        EXPECTED BEHAVIOR:
+        - Handler with handler_type and execute but missing describe raises ModelOnexError
+        - Error message indicates describe method is required
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # Create handler with handler_type and execute, but no describe method
+        invalid_handler = MagicMock(spec=["handler_type", "execute"])
+        invalid_handler.handler_type = EnumHandlerType.HTTP
+        invalid_handler.execute = MagicMock()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.register_handler(invalid_handler)
+
+        assert "describe" in str(exc_info.value).lower()
+
+    def test_register_handler_with_non_callable_execute_raises_error(self) -> None:
+        """
+        Test that handler with non-callable execute attribute raises error.
+
+        EXPECTED BEHAVIOR:
+        - Handler with execute as non-callable (e.g., string) raises ModelOnexError
+        - Error message indicates execute must be callable
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # Create handler with non-callable execute
+        invalid_handler = MagicMock()
+        invalid_handler.handler_type = EnumHandlerType.HTTP
+        invalid_handler.execute = "not_callable"  # String, not callable
+        invalid_handler.describe = MagicMock(return_value={})
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.register_handler(invalid_handler)
+
+        assert "execute" in str(exc_info.value).lower()
+
+    def test_register_handler_with_non_callable_describe_raises_error(self) -> None:
+        """
+        Test that handler with non-callable describe attribute raises error.
+
+        EXPECTED BEHAVIOR:
+        - Handler with describe as non-callable (e.g., string) raises ModelOnexError
+        - Error message indicates describe must be callable
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # Create handler with non-callable describe
+        invalid_handler = MagicMock()
+        invalid_handler.handler_type = EnumHandlerType.HTTP
+        invalid_handler.execute = MagicMock()
+        invalid_handler.describe = "not_callable"  # String, not callable
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.register_handler(invalid_handler)
+
+        assert "describe" in str(exc_info.value).lower()
+
+    def test_register_handler_with_missing_handler_type_property_raises_error(
+        self,
+    ) -> None:
+        """
+        Test that handler without handler_type property raises ModelOnexError.
+
+        EXPECTED BEHAVIOR:
+        - Handler without handler_type property raises ModelOnexError (not AttributeError)
+        - Error message indicates handler_type property is required
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # Create handler without handler_type using spec to restrict attributes
+        invalid_handler = MagicMock(spec=["execute", "describe"])
+        invalid_handler.execute = MagicMock()
+        invalid_handler.describe = MagicMock(return_value={})
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.register_handler(invalid_handler)
+
+        assert "handler_type" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
     async def test_execute_with_none_envelope_raises_error(
@@ -1042,3 +1192,10 @@ class TestEnvelopeRouterIntegrationPatterns:
             runtime.register_node(instance)
 
         # All nodes should be registered
+        assert len(runtime._nodes) == len(node_types)  # Should be 4
+
+        # Verify each node is stored by its unique slug
+        for i, node_type in enumerate(node_types):
+            expected_slug = f"node-{node_type.value}-{i}"
+            assert expected_slug in runtime._nodes
+            assert runtime._nodes[expected_slug].node_type == node_type
