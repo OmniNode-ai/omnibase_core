@@ -284,6 +284,13 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # - We compare against ModelEffectInput's Pydantic field defaults
         # - If value differs from the field default, caller explicitly set it
         # - This approach is robust to model changes (uses Pydantic introspection)
+        #
+        # IMPORTANT LIMITATION: If caller explicitly sets a value that equals the
+        # model default (e.g., max_retries=3), the subcontract default will be applied
+        # instead. This is a detection limitation - we cannot distinguish "caller set
+        # to default value" from "caller omitted and Pydantic used default". If you
+        # need precise control, ensure caller values differ from ModelEffectInput
+        # defaults, or set subcontract defaults to match desired fallback values.
         default_retry = self.effect_subcontract.default_retry_policy
         default_cb = self.effect_subcontract.default_circuit_breaker
         default_tx = self.effect_subcontract.transaction

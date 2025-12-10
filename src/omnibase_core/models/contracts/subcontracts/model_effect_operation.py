@@ -85,7 +85,7 @@ class ModelEffectOperation(BaseModel):
         ge=EFFECT_TIMEOUT_MIN_MS,
         le=EFFECT_TIMEOUT_MAX_MS,
         description="Overall operation timeout including all retries. "
-        "If None, defaults to 60000ms (60s). "
+        "If None, defaults to 30000ms (30s) via DEFAULT_OPERATION_TIMEOUT_MS. "
         "Prevents retry stacking from exceeding intended limits.",
     )
 

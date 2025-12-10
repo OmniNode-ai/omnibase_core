@@ -147,13 +147,16 @@ class MixinEffectExecution:
             logging and tracing purposes.
         container (ModelONEXContainer): Expected to be provided by the mixing
             class. Used for handler resolution and service lookup.
-        _circuit_breakers (dict): Internal circuit breaker state, keyed by
-            operation_id (UUID). Each operation gets its own circuit breaker
-            to track failure/success patterns independently. Process-local only
-            in v1.0 (no cross-process state sharing). IMPORTANT: Must be
-            initialized by the concrete class (e.g., NodeEffect), not by this
-            mixin. The mixin provides methods that operate on this state but
-            does not own its initialization.
+        _circuit_breakers (dict[UUID, ModelCircuitBreaker]): Internal circuit
+            breaker state, keyed by operation_id (UUID). Each operation gets
+            its own circuit breaker to track failure/success patterns
+            independently. Process-local only in v1.0 (no cross-process state
+            sharing). IMPORTANT: Must be initialized by the concrete class
+            (e.g., NodeEffect), not by this mixin. The mixin provides methods
+            that operate on this state but does not own its initialization.
+            Note: The key is operation_id (not correlation_id) because circuit
+            breaker state should be consistent per operation definition across
+            multiple requests.
 
     Example:
         >>> class MyEffectNode(NodeEffect, MixinEffectExecution):
@@ -1038,8 +1041,12 @@ class MixinEffectExecution:
             operation_timeout_ms: Overall operation timeout including all retries.
             operation_config: Optional operation configuration dict containing
                 response_handling, retry_policy, circuit_breaker, and other
-                per-operation settings. Passed through to _execute_operation
-                for handler access.
+                per-operation settings. NOTE: In v1.0, per-operation retry_policy
+                and circuit_breaker configs are serialized but NOT YET wired to
+                the retry loop - only input_data.retry_enabled, input_data.max_retries,
+                and input_data.circuit_breaker_enabled are honored. The operation_config
+                is passed through to _execute_operation for handler access to
+                response_handling and other metadata.
 
         Returns:
             Tuple of (result, retry_count) where retry_count is the number of
@@ -1199,27 +1206,32 @@ class MixinEffectExecution:
             If no handler is registered for a handler type, a ModelOnexError will
             be raised with HANDLER_EXECUTION_ERROR code.
 
-        Response Handling (Handler-Owned - Not Passed to Handlers):
+        Response Handling (Caller-Owned Utility - Not Auto-Applied):
             The operation_config may contain a "response_handling" dict with:
             - success_codes: HTTP status codes considered successful (e.g., [200, 201])
             - extract_fields: Map of output_name to JSONPath/dotpath expression
             - fail_on_empty: Whether to fail if extraction returns empty/null
             - extraction_engine: "jsonpath" or "dotpath"
 
-            IMPORTANT: response_handling is NOT passed to handlers. Handlers only receive
-            the resolved_context (fully resolved IO parameters). This is by design:
+            IMPORTANT: response_handling is NOT automatically applied by this method or
+            by handlers. Handlers only receive the resolved_context (fully resolved IO
+            parameters) and return raw responses. This is by design:
 
             1. Handlers are kept simple - they only execute I/O operations
             2. Response processing is CALLER responsibility (NodeEffect.process())
-            3. Field extraction via _extract_response_fields() is a utility for callers
+            3. Field extraction via _extract_response_fields() is a UTILITY method
+               available to callers but NOT automatically invoked
 
             The intended flow is:
-            1. Handler executes operation with resolved_context → returns raw response
-            2. Caller (NodeEffect.process) uses _extract_response_fields() on response
-            3. Caller applies response_handling.success_codes validation if needed
+            1. Handler executes operation with resolved_context -> returns raw response
+            2. This method returns the raw response to execute_effect()
+            3. Caller (e.g., NodeEffect.process) may optionally use
+               _extract_response_fields() on the response for field extraction
+            4. Caller applies response_handling.success_codes validation if needed
 
             This separation keeps handlers focused on I/O while giving callers full
-            control over response interpretation and field extraction.
+            control over response interpretation and field extraction. The utility
+            method exists for convenience but callers must explicitly invoke it.
 
         Thread Safety:
             Thread-safe if handlers are thread-safe. Handlers should be
@@ -1230,12 +1242,16 @@ class MixinEffectExecution:
             input_data: Effect input with operation metadata.
             operation_config: Optional operation configuration containing
                 response_handling, retry_policy, circuit_breaker, and other
-                per-operation settings. NOTE: This config is NOT passed to handlers;
-                it is available for caller-side response processing after handler
-                returns. Handlers only receive resolved_context.
+                per-operation settings. NOTE: This config is NOT passed to handlers
+                and response_handling is NOT automatically applied. The config is
+                available for caller-side response processing after handler returns.
+                Handlers only receive resolved_context. See "Response Handling"
+                section above for the intended usage pattern.
 
         Returns:
-            Operation result (type depends on handler).
+            Operation result (type depends on handler). This is the RAW response
+            from the handler - no field extraction or response_handling processing
+            is applied.
 
         Raises:
             ModelOnexError: On handler execution failure or if handler protocol

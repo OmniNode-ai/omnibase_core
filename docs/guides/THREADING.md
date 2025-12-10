@@ -208,7 +208,7 @@ compute_node.computation_cache = ThreadSafeComputeCache(
 
 The `_circuit_breakers` dictionary itself is subject to race conditions:
 
-```python
+```text
 # Race condition in _check_circuit_breaker() and _record_circuit_breaker_result()
 # Thread 1 and Thread 2 both check for operation_id simultaneously:
 

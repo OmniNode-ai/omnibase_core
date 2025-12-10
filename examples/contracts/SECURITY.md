@@ -665,7 +665,7 @@ Migration steps:
 If you discover a security vulnerability in these examples or the ONEX framework:
 
 1. **Do not** open a public issue
-2. Contact the security team at [security@onex.ai](mailto:security@onex.ai)
+2. Contact the security team at <security@onex.ai>
 3. Include detailed reproduction steps
 4. Allow 90 days for remediation before disclosure
 

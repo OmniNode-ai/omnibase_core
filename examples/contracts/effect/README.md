@@ -451,7 +451,7 @@ operations:
   - operation_name: example_operation
     # Operation-level timeout (in ModelEffectOperation)
     # Guards against retry stacking by setting overall time limit
-    operation_timeout_ms: 60000    # Overall timeout including all retries (default: 60000ms)
+    operation_timeout_ms: 60000    # Overall timeout including all retries (default: 30000ms)
 
     # Handler-level timeout (in io_config for each handler type)
     io_config:
