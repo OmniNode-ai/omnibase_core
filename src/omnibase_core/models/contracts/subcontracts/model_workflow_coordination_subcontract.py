@@ -1,12 +1,7 @@
 """
-Workflow Coordination Subcontract Model - ONEX Standards Compliant.
+Workflow Coordination Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for workflow coordination functionality providing:
 - Workflow instance management and tracking
@@ -31,7 +26,7 @@ Thread Safety:
     To modify configuration, create a new instance using model_copy():
         new_config = existing_config.model_copy(update={"max_concurrent_workflows": 20})
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -81,7 +76,7 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
         ...     max_concurrent_workflows=5,
         ... )
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

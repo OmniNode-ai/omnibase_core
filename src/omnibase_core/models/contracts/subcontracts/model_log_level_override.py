@@ -1,10 +1,10 @@
 """
-Log Level Override Model - ONEX Standards Compliant.
+Log Level Override Model.
 
 Strongly-typed model for per-module or per-logger log level overrides.
 Replaces dict[str, str] with proper type safety and enum validation.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, Field

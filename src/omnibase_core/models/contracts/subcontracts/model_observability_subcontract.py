@@ -1,12 +1,7 @@
 """
-Observability Subcontract Model - ONEX Standards Compliant.
+Observability Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for observability functionality providing:
 - Unified observability configuration (logging, metrics, tracing)
@@ -18,7 +13,7 @@ Dedicated subcontract model for observability functionality providing:
 This model is composed into node contracts that require comprehensive observability
 functionality, integrating logging, metrics, and distributed tracing capabilities.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar, Self
@@ -47,7 +42,7 @@ class ModelObservabilitySubcontract(BaseModel):
     - Export telemetry data in multiple formats
     - Control observability overhead through sampling and enablement flags
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

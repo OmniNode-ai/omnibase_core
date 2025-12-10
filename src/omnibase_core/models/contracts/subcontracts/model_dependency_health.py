@@ -1,11 +1,11 @@
 """
-Dependency Health Model - ONEX Standards Compliant.
+Dependency Health Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
 
 Provides health status tracking for external dependencies.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from datetime import datetime

@@ -10,8 +10,6 @@ This module provides unified contract loading and resolution functionality
 that supports the new contract architecture with subcontract references,
 $ref resolution, and validation. This is part of PATTERN-005 NodeBase
 implementation to eliminate duplicate node.py code.
-
-Author: ONEX Framework Team
 """
 
 import hashlib

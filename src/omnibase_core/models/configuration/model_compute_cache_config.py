@@ -1,7 +1,4 @@
 """
-VERSION: 1.0.0
-STABILITY GUARANTEE: Configuration model for production cache tuning.
-
 ModelComputeCacheConfig - Configuration for NodeCompute caching behavior.
 
 Provides tunable cache parameters for production deployment, allowing
@@ -15,10 +12,6 @@ Key Capabilities:
 
 Thread Safety: Cache operations must be synchronized by implementation.
 Memory Usage: ~1KB per cached entry (varies by computation size).
-
-STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
-
-Author: ONEX Framework Team
 """
 
 from pydantic import BaseModel, ConfigDict, Field

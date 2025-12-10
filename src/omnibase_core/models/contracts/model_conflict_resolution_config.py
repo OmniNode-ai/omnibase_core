@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Conflict Resolution Configuration Model - ONEX Standards Compliant.
+Conflict Resolution Configuration Model.
 
 Conflict resolution strategies and merge policies for NodeReducer implementations.
 Defines conflict detection, resolution strategies, and merge policies for handling

@@ -1,7 +1,7 @@
 """
 ModelValidationRulesInputValue - Discriminated Union for Validation Rules Input.
 
-ONEX-compliant discriminated union that replaces Union pattern for validation rules.
+ONEX-compatible discriminated union that replaces Union pattern for validation rules.
 """
 
 from typing import Any
@@ -21,7 +21,7 @@ class ModelValidationRulesInputValue(BaseModel):
     Discriminated union for validation rules input values.
 
     Replaces Union[None, dict[str, object], ModelValidationRules, str] with
-    ONEX-compliant discriminated union pattern.
+    ONEX-compatible discriminated union pattern.
     """
 
     input_type: EnumValidationRulesInputType = Field(

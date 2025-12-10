@@ -2,7 +2,7 @@
 
 **Date**: 2025-11-18
 **Scope**: All documentation files (*.md)
-**Auditor**: AI Agent (polymorphic)
+**Auditor**: Automated audit tool
 **Total Files Audited**: 100+ markdown files
 
 ---

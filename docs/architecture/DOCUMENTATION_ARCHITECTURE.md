@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document defines the comprehensive documentation architecture for the omnibase_core repository, designed for both human developers and AI agents building with the ONEX framework.
+This document defines the comprehensive documentation architecture for the omnibase_core repository, designed for developers building with the ONEX framework.
 
 ## Design Principles
 

@@ -1,17 +1,11 @@
 """
-Effect Subcontract Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+Effect Subcontract Model.
 
 Defines declarative effect operations with:
 - Discriminated union IO configs (type-safe per handler)
 - Idempotency-aware retry policies
 - Process-local circuit breaker configuration
 - DB-only transaction boundaries
-
-Implements:
-- OMN-524: ModelEffectOperation and supporting models
-- OMN-525: ModelEffectSubcontract with validators
 """
 
 from typing import Literal

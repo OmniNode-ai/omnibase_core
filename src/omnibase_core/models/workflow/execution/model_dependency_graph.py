@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Dependency Graph Model - ONEX Standards Compliant.
+Dependency Graph Model.
 
 Dependency graph for workflow step ordering and execution coordination.
 

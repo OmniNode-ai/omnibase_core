@@ -4,7 +4,6 @@
 > **Status**: PROTOCOL FROZEN - Implementation Ready
 > **Scope**: omnibase_core
 > **Last Updated**: 2025-12-07
-> **Linear Ticket**: [OMN-466](https://linear.app/omninode/issue/OMN-466)
 > **Revision**: R17 - Architectural audit complete (Core/SPI separation, registry pattern, execution semantics)
 
 ---
@@ -659,7 +658,7 @@ IDEMPOTENCY_DEFAULTS: dict[str, dict[str, bool]] = {
 
 ```python
 """
-Effect Subcontract Model - ONEX Standards Compliant.
+Effect Subcontract Model.
 
 VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
@@ -1211,7 +1210,6 @@ ModelEffectOutput - Strongly-typed output model for NodeEffect operations.
 
 VERSION: 2.0.0 - Zero Any types, explicit result structure
 
-Author: ONEX Framework Team
 """
 
 from datetime import datetime
@@ -3038,7 +3036,7 @@ result = await node.process(input_data)
 
 ## Acceptance Criteria (Revised)
 
-From [OMN-466](https://linear.app/omninode/issue/OMN-466) + Design Review + R3 Improvements + R4 Protocol-Frozen:
+From Design Review + R3 Improvements + R4 Protocol-Frozen:
 
 - [ ] **Discriminated union IO configs** - Type-safe per-handler validation
 - [ ] **EnumEffectHandlerType** - Handler types use enum, not raw strings
@@ -3072,8 +3070,6 @@ From [OMN-466](https://linear.app/omninode/issue/OMN-466) + Design Review + R3 I
 
 ## References
 
-- [OMN-466: Contract-Driven NodeEffect Implementation](https://linear.app/omninode/issue/OMN-466)
-- [OMN-465: Contract-Driven NodeCompute v1.0](https://linear.app/omninode/issue/OMN-465)
 - [PR #115: NodeCompute v1.0 Implementation](https://github.com/OmniNode-ai/omnibase_core/pull/115)
 - [ONEX Four-Node Architecture](./ONEX_FOUR_NODE_ARCHITECTURE.md)
 - [Subcontract Architecture](./SUBCONTRACT_ARCHITECTURE.md)

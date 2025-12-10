@@ -1,5 +1,5 @@
 """
-Action Model - ONEX Standards Compliant.
+Action Model.
 
 Orchestrator-issued Action with lease semantics for single-writer guarantees.
 Converted from NamedTuple to Pydantic BaseModel for better validation.

@@ -1,5 +1,5 @@
 """
-Workflow Execution Enums - ONEX Standards Compliant.
+Workflow Execution Enums.
 
 Enums for workflow orchestration including states, execution modes,
 action types, and branch conditions.

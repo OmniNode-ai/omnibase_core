@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ModelCompensationPlan Comprehensive Unit Tests - Zero Tolerance Testing
+ModelCompensationPlan Comprehensive Unit Tests
 
 This module provides comprehensive test coverage for ModelCompensationPlan,
 the strongly-typed compensation plan model for saga pattern workflows.
@@ -11,7 +11,7 @@ Coverage Requirements:
 - Comprehensive validation scenarios
 - UUID and action identifier validation
 
-ZERO TOLERANCE: Every code path must be tested thoroughly.
+Comprehensive testing required for all code paths.
 """
 
 from uuid import UUID, uuid4

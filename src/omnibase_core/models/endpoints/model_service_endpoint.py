@@ -4,7 +4,6 @@ Service Endpoint Model for ONEX Configuration-Driven Registry System.
 This module provides the ModelServiceEndpoint for service endpoint configuration.
 Extracted from model_service_configuration.py for modular architecture compliance.
 
-Author: OmniNode Team
 """
 
 from typing import Any

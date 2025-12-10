@@ -379,7 +379,7 @@ class TestModelOrchestratorMetricsEdgeCases:
 
 
 class TestModelOrchestratorMetricsTypeSafety:
-    """Test type safety - ZERO TOLERANCE for Any types."""
+    """Test type safety - comprehensive testing required."""
 
     def test_no_any_types_in_annotations(self):
         """Test that model fields don't use Any type."""

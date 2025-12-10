@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Canonicalization Policy Model - ONEX Standards Compliant.
+Canonicalization Policy Model.
 
 Strongly-typed model for canonicalization policies.
 """

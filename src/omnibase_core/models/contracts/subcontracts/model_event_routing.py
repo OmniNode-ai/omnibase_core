@@ -8,7 +8,7 @@ __all__ = [
 ]
 
 """
-Event Routing Model - ONEX Standards Compliant.
+Event Routing Model.
 
 Model for event routing configuration in the ONEX event-driven architecture system.
 """

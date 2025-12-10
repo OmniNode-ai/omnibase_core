@@ -6,7 +6,6 @@ Service Configuration Model for ONEX Configuration-Driven Registry System.
 This module provides the ModelServiceConfiguration for individual service configuration.
 Extracted from the multi-model file for modular architecture compliance.
 
-Author: OmniNode Team
 """
 
 from pydantic import BaseModel

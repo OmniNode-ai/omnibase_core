@@ -52,7 +52,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 # Track if validation warning has been emitted for session deduplication
-# TODO(OMN-497): Refactor to context-based warning tracking instead of global state.
+# TODO(): Refactor to context-based warning tracking instead of global state.
 # This global mutable state is a known exception to the "pure and stateless" principle.
 # It affects only warning output (not computation results) and pipeline execution
 # remains deterministic. See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
@@ -106,7 +106,7 @@ def _get_error_type(error: ModelOnexError) -> str:
         See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
     """
     if error.error_code is None:
-        # TODO(OMN-498): Replace with EnumComputeErrorType.COMPUTE_ERROR
+        # TODO(): Replace with EnumComputeErrorType.COMPUTE_ERROR
         # See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
         return "compute_error"
     if hasattr(error.error_code, "value"):
@@ -114,7 +114,7 @@ def _get_error_type(error: ModelOnexError) -> str:
     return str(error.error_code)
 
 
-# TODO(OMN-499): Migrate to shared utility omnibase_core.utils.compute_path_resolver
+# TODO(): Migrate to shared utility omnibase_core.utils.compute_path_resolver
 # The shared utility has been created with resolve_pipeline_path() which provides
 # equivalent functionality. Replace this function with a thin wrapper or direct import:
 #   from omnibase_core.utils.compute_path_resolver import resolve_pipeline_path
@@ -344,7 +344,7 @@ def execute_validation_step(
             message="validation_config required for validation step",
         )
 
-    # TODO(OMN-500, v1.1): Implement schema validation for validation steps
+    # TODO(, v1.1): Implement schema validation for validation steps
     # Target: v1.1 release
     # - Integrate with schema registry for schema resolution
     # - Support JSON Schema validation
@@ -436,7 +436,7 @@ def execute_pipeline_step(
         )
 
 
-# TODO(OMN-501): Enforce pipeline_timeout_ms - currently declared in contract but not enforced.
+# TODO(): Enforce pipeline_timeout_ms - currently declared in contract but not enforced.
 # Add asyncio.timeout or threading.Timer wrapper to abort pipeline if execution exceeds timeout.
 # See: docs/architecture/NODECOMPUTE_VERSIONING_ROADMAP.md
 def execute_compute_pipeline(
@@ -625,7 +625,7 @@ def execute_compute_pipeline(
             total_time = (time.perf_counter() - start_time) * 1000
 
             # Log unexpected errors for observability
-            # TODO(OMN-502): Wire context.correlation_id to structured logging
+            # TODO(): Wire context.correlation_id to structured logging
             # See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
             logger.exception(
                 "Unexpected error in pipeline step '%s': %s (type: %s, "

@@ -1,10 +1,10 @@
 """
-Aggregation Function Model - ONEX Standards Compliant.
+Aggregation Function Model.
 
 Individual model for aggregation function definitions and configurations.
 Part of the Aggregation Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, Field

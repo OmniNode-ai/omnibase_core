@@ -1,4 +1,4 @@
-"""ONEX-compliant trust policy model for signature and compliance requirements."""
+"""ONEX-compatible trust policy model for signature and compliance requirements."""
 
 import uuid
 from datetime import UTC, datetime

@@ -1,7 +1,7 @@
 """
 Resolved Context Models for NodeEffect Handler Contract.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
 
 These models represent resolved (template-free) contexts that handlers receive
 after template resolution by the effect executor.
@@ -16,7 +16,7 @@ CRITICAL DESIGN PRINCIPLES:
 These models are passed to specialized handlers after the executor resolves all
 template placeholders (${...}) from the configuration layer.
 
-ZERO TOLERANCE: No Any types allowed. No template placeholders in resolved values.
+Strict typing is enforced: No Any types allowed. No template placeholders in resolved values.
 """
 
 from typing import Literal

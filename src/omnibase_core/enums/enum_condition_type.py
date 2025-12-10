@@ -1,5 +1,5 @@
 """
-Condition Type Enum - ONEX Standards Compliant.
+Condition Type Enum.
 
 Type of condition evaluation for workflow conditions.
 """

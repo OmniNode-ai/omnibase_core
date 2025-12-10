@@ -6,7 +6,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
-YAML Contract Validation Model - ONEX Standards Compliant.
+YAML Contract Validation Model.
 
 Pydantic model for validating YAML contract files providing:
 - Contract version validation with semantic versioning

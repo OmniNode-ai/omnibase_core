@@ -8,7 +8,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 Discriminated union model for migration conflicts.
 
 Replaces Union[TypedDictMigrationDuplicateConflictDict, TypedDictMigrationNameConflictDict]
-with ONEX-compliant discriminated union pattern.
+with ONEX-compatible discriminated union pattern.
 """
 
 from pydantic import BaseModel

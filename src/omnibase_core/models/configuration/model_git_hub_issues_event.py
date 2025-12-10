@@ -23,7 +23,7 @@ from .model_git_hub_user import ModelGitHubUser
 
 class ModelGitHubIssuesEvent(BaseModel):
     """
-    ONEX-compliant GitHub issues event model with strong typing and validation.
+    ONEX-compatible GitHub issues event model with strong typing and validation.
 
     Provides structured GitHub issues event handling with proper constructor patterns
     and immutable design following ONEX standards.

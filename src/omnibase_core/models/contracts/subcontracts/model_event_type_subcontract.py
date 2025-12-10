@@ -1,12 +1,7 @@
 """
-Event Type Subcontract Model - ONEX Standards Compliant.
+Event Type Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for event-driven architecture functionality providing:
 - Primary event definitions with categories and routing
@@ -18,7 +13,7 @@ Dedicated subcontract model for event-driven architecture functionality providin
 This model is composed into node contracts that participate in event-driven workflows,
 providing clean separation between node logic and event handling behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -46,7 +41,7 @@ class ModelEventTypeSubcontract(BaseModel):
     transformations, routing, and persistence configuration.
     Designed for composition into node contracts participating in event workflows.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

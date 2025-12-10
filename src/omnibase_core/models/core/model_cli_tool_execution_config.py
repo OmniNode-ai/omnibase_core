@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Model Configuration for CLI Tool Execution Input - ONEX Standards Compliant.
+Model Configuration for CLI Tool Execution Input.
 
 Strongly-typed configuration class for CLI tool execution input.
 """

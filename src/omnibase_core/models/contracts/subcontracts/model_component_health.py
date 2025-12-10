@@ -1,11 +1,11 @@
 """
-Component Health Model - ONEX Standards Compliant.
+Component Health Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
 
 Provides health status tracking for individual node components.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from datetime import datetime

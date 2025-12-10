@@ -4,7 +4,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
-Model Dependency - ONEX Standards Compliant Dependency Specification.
+Model Dependency Specification.
 
 Unified dependency model that handles multiple input formats while providing
 a clean, consistent interface for contract dependencies.
@@ -12,7 +12,7 @@ a clean, consistent interface for contract dependencies.
 Eliminates union type anti-patterns in contract models by handling format
 conversion internally through factory methods.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced - no Any types allowed in implementation.
 """
 
 import re
@@ -35,7 +35,7 @@ class ModelDependency(BaseModel):
     STRONG TYPES ONLY: Only accepts properly typed ModelDependency instances.
     No string or dict[str, Any]fallbacks - use structured initialization only.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced - no Any types allowed in implementation.
     """
 
     name: str = Field(
@@ -346,6 +346,6 @@ class ModelDependency(BaseModel):
     )
 
 
-# ONEX-compliant dependency model - no factory functions or custom serialization
+# ONEX-compatible dependency model - no factory functions or custom serialization
 # Use direct instantiation: ModelDependency(name="...", module="...")
 # Use model_dump() for serialization, not custom to_dict() methods

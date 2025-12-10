@@ -10,7 +10,6 @@ Model for ModelNodeBase representation in ONEX ModelNodeBase implementation.
 This model supports the PATTERN-005 ModelNodeBase functionality for
 universal node state management.
 
-Author: ONEX Framework Team
 """
 
 from pathlib import Path

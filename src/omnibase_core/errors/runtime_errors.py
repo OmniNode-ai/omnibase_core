@@ -1,5 +1,5 @@
 """
-Runtime Host Error Hierarchy (OMN-232).
+Runtime Host Error Hierarchy ().
 
 Minimal MVP error classes for Runtime Host operations with structured error handling.
 

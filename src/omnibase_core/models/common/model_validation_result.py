@@ -17,7 +17,7 @@ __all__ = [
 """
 Consolidated Validation Result Model
 
-Unified ONEX-compliant model for all validation operations across the codebase.
+Unified ONEX-compatible model for all validation operations across the codebase.
 Uses strong typing with no fallbacks - Path objects, not strings; specific types, not Any.
 
 This replaces:

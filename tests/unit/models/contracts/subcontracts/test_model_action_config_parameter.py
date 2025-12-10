@@ -1,5 +1,5 @@
 """
-Unit tests for ModelActionConfigParameter and ModelActionConfigValue - ONEX Standards Compliant.
+Unit tests for ModelActionConfigParameter and ModelActionConfigValue.
 
 Comprehensive test coverage including:
 - ModelActionConfigParameter field validation

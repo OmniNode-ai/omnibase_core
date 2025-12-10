@@ -1,5 +1,5 @@
 """
-Tests for Runtime Host error hierarchy (OMN-232).
+Tests for Runtime Host error hierarchy ().
 
 TDD tests for minimal MVP error classes:
 - RuntimeHostError (base)
@@ -258,7 +258,7 @@ class TestContractValidationError:
 
 @pytest.mark.timeout(10)
 class TestErrorInvariants:
-    """Tests for MVP error invariants from OMN-232."""
+    """Tests for MVP error invariants from ."""
 
     def test_all_errors_include_correlation_id(self) -> None:
         """Test all MVP errors include correlation_id."""

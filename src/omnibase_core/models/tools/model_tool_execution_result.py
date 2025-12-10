@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-Simple Tool Execution Result Model - ONEX Standards Compliant.
+Simple Tool Execution Result Model.
 
 Domain-specific result model for tool execution results.
 Replaces the generic ModelExecutionResult with a focused tool-specific model.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from uuid import UUID, uuid4
@@ -26,7 +26,7 @@ class ModelToolExecutionResult(BaseModel):
     Provides tool-specific execution results with success/failure tracking,
     output data, and error handling.
 
-    ZERO TOLERANCE: No Any types allowed.
+    Strict typing is enforced: No Any types allowed.
     """
 
     execution_id: UUID = Field(

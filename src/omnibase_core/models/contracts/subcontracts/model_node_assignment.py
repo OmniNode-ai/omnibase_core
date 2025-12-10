@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Node Assignment Model - ONEX Standards Compliant.
+Node Assignment Model.
 
 Model for node assignment in workflow execution for the ONEX workflow coordination system.
 """

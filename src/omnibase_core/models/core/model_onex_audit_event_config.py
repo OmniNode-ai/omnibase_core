@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Model Configuration for ONEX Audit Event - ONEX Standards Compliant.
+Model Configuration for ONEX Audit Event.
 
 Strongly-typed configuration class for ONEX audit event.
 """

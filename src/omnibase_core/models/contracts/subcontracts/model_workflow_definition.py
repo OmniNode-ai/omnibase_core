@@ -1,5 +1,5 @@
 """
-Workflow Definition Model - ONEX Standards Compliant.
+Workflow Definition Model.
 
 Model for complete workflow definitions in the ONEX workflow coordination system.
 """

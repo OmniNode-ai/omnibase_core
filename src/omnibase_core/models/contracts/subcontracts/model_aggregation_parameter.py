@@ -1,10 +1,10 @@
 """
-Aggregation Parameter Model - ONEX Standards Compliant.
+Aggregation Parameter Model.
 
 Strongly-typed model for aggregation function parameters.
 Replaces dict[str, PrimitiveValueType] with proper type safety.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, Field

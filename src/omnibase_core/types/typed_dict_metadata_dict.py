@@ -1,5 +1,5 @@
 """
-TypedDictMetadataDict - ONEX Standards Compliant.
+TypedDictMetadataDict.
 
 Typed structure for metadata dictionary in protocol methods.
 """

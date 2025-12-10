@@ -1,5 +1,5 @@
 """
-Runtime Host Contract Model - ONEX Standards Compliant.
+Runtime Host Contract Model.
 
 Main contract model for RuntimeHost configuration combining:
 - Handler configurations for I/O operations
@@ -9,7 +9,7 @@ Main contract model for RuntimeHost configuration combining:
 MVP implementation - simplified for minimal viable product.
 Advanced features (retry policies, rate limits) deferred to Beta.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pathlib import Path

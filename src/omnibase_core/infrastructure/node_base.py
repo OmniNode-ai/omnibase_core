@@ -11,7 +11,6 @@ This module provides the NodeBase class that implements
 LlamaIndex workflow integration, observable state transitions,
 and contract-driven orchestration.
 
-Author: ONEX Framework Team
 """
 
 import asyncio

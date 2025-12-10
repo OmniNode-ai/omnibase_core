@@ -1,5 +1,5 @@
 """
-Unit tests for ModelLogLevelOverride - ONEX Standards Compliant.
+Unit tests for ModelLogLevelOverride.
 
 Comprehensive test coverage for log level override model including:
 - Field validation and constraints

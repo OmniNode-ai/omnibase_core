@@ -1,17 +1,12 @@
 """
-Health Check Subcontract Result Model - ONEX Standards Compliant.
+Health Check Subcontract Result Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Provides result model for Health Check Subcontract operations with comprehensive
 health status information.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -40,7 +35,7 @@ class ModelHealthCheckSubcontractResult(BaseModel):
     This model extends beyond the core ModelHealthCheckResult to provide
     specialized health monitoring data for ONEX nodes with subcontract support.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Model version for instance tracking

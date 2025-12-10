@@ -1,5 +1,5 @@
 """
-RSD Edge Type Enumeration - ONEX Standards Compliant.
+RSD Edge Type Enumeration.
 
 Defines edge types for RSD (Rapid Service Development) ticket relationships.
 """

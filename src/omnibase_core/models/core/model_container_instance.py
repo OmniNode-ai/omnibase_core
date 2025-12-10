@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Container Instance Model - ONEX Standards Compliant.
+Container Instance Model.
 
 Strongly-typed model for ONEX container instances used in service resolution.
 """

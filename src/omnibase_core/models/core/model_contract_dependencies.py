@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Contract Dependencies Model - ONEX Standards Compliant.
+Contract Dependencies Model.
 
 Model representing the dependencies section of a contract.
 """

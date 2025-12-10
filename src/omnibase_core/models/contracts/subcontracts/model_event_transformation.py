@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Event Transformation Model - ONEX Standards Compliant.
+Event Transformation Model.
 
 Model for event transformation specifications in the ONEX event-driven architecture system.
 """

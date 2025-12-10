@@ -22,7 +22,7 @@ from omnibase_core.models.configuration.model_json_field import ModelJsonField
 
 class ModelJsonData(BaseModel):
     """
-    ONEX-compliant strongly typed JSON data model.
+    ONEX-compatible strongly typed JSON data model.
 
     Provides structured JSON data handling with proper constructor patterns
     and immutable design following ONEX standards.
@@ -66,7 +66,7 @@ class ModelJsonData(BaseModel):
         return len(fields) if isinstance(fields, dict) else v
 
     def get_field_value(self, field_name: str) -> Any:
-        """ONEX-compliant field value accessor."""
+        """ONEX-compatible field value accessor."""
         if field_name not in self.fields:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.ITEM_NOT_REGISTERED,

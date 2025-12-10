@@ -5,7 +5,7 @@ Tests the idempotency logic that determines if an operation is safe to retry.
 Covers all handler types (HTTP, DB, Kafka, Filesystem) and their respective
 operations, as well as explicit override behavior.
 
-Implements: OMN-524
+Implements:
 """
 
 import pytest

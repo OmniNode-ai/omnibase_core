@@ -1,5 +1,5 @@
 """
-RSD Trigger Type Enumeration - ONEX Standards Compliant.
+RSD Trigger Type Enumeration.
 
 Defines trigger types for RSD (Rapid Service Development) algorithm.
 """

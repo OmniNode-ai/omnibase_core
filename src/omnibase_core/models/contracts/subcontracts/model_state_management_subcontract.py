@@ -1,12 +1,7 @@
 """
-State Management Subcontract Model - ONEX Standards Compliant.
+State Management Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for state management functionality providing:
 - State persistence and recovery strategies
@@ -18,7 +13,7 @@ Dedicated subcontract model for state management functionality providing:
 This model is composed into node contracts that require state management,
 providing clean separation between node logic and state handling behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -53,7 +48,7 @@ class ModelStateManagementSubcontract(BaseModel):
     validation, synchronization, and versioning capabilities.
     Designed for composition into node contracts requiring state management.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

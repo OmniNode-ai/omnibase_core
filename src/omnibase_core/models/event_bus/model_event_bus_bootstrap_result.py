@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 class ModelEventBusBootstrapResult(BaseModel):
     """
-    Result model for event bus bootstrap operations (canonical, ONEX-compliant).
+    Result model for event bus bootstrap operations (canonical, ONEX-compatible).
     """
 
     status: str = Field(

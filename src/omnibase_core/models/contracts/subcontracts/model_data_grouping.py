@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-Data Grouping Model - ONEX Standards Compliant.
+Data Grouping Model.
 
 Individual model for data grouping configuration.
 Part of the Aggregation Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel

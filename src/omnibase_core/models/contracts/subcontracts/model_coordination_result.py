@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Coordination Result Model - ONEX Standards Compliant.
+Coordination Result Model.
 
 Model for node coordination operation results in the ONEX workflow coordination system.
 """

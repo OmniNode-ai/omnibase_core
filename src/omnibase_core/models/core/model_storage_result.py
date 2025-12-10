@@ -1,5 +1,5 @@
 """
-Storage Result Models - ONEX Standards Compliant.
+Storage Result Models.
 
 Re-export module for storage result components.
 """

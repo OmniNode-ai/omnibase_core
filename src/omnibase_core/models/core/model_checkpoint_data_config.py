@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Model Configuration for Checkpoint Data - ONEX Standards Compliant.
+Model Configuration for Checkpoint Data.
 
 Strongly-typed configuration class for checkpoint data.
 """

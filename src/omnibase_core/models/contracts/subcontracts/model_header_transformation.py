@@ -1,10 +1,10 @@
 """
-Header Transformation Model - ONEX Standards Compliant.
+Header Transformation Model.
 
 Strongly-typed model for HTTP header transformation rules.
 Replaces dict[str, str] with proper type safety.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import Field

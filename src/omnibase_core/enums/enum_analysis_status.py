@@ -1,7 +1,7 @@
 """
 Analysis status enumeration for document analysis operations.
 
-ONEX-compliant enum for standardized analysis status values.
+ONEX-compatible enum for standardized analysis status values.
 """
 
 from enum import Enum

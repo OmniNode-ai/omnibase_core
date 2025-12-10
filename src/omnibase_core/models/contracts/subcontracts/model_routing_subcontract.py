@@ -1,12 +1,7 @@
 """
 Routing Subcontract Model - ONEX Microservices ModelArchitecture Compliant.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Advanced subcontract model for ONEX microservices routing functionality providing:
 - Route definitions with conditions and service targets
@@ -21,7 +16,7 @@ This model is composed into node contracts that require routing functionality,
 providing clean separation between node logic and routing behavior optimized
 for ONEX microservices ecosystem.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -49,7 +44,7 @@ class ModelRoutingSubcontract(BaseModel):
     for ONEX microservices ecosystem. Designed for composition into node
     contracts requiring routing functionality with service mesh integration.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

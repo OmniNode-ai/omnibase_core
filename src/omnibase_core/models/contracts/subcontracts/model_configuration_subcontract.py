@@ -1,11 +1,6 @@
 """
-Configuration Management Subcontract Model - ONEX Standards Compliant.
+Configuration Management Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for configuration management functionality providing:
 - Configuration source specification with priority handling
@@ -17,7 +12,7 @@ Dedicated subcontract model for configuration management functionality providing
 This model is composed into node contracts that require configuration management functionality,
 providing clean separation between node logic and configuration behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pathlib import Path
@@ -53,7 +48,7 @@ class ModelConfigurationSubcontract(BaseModel):
     - Manage sensitive configuration data securely
     - Monitor configuration sources for changes
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

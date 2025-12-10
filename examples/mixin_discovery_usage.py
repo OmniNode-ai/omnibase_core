@@ -2,8 +2,8 @@
 """
 MixinDiscovery API Usage Examples.
 
-Demonstrates how to use the MixinDiscovery API for autonomous code generation,
-intelligent mixin composition, and compatibility checking.
+Demonstrates how to use the MixinDiscovery API for intelligent mixin composition
+and compatibility checking.
 
 Run with: poetry run python examples/mixin_discovery_usage.py
 """

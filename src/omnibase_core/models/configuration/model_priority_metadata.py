@@ -1,4 +1,4 @@
-"""ONEX-compliant Priority Metadata Model.
+"""ONEX-compatible Priority Metadata Model.
 
 Additional metadata for execution priorities with ONEX compliance and validation.
 """
@@ -19,7 +19,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelPriorityMetadata(BaseModel):
-    """ONEX-compliant priority metadata with validation and business logic.
+    """ONEX-compatible priority metadata with validation and business logic.
 
     Additional metadata for execution priorities including:
     - Ownership and approval management

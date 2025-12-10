@@ -1,5 +1,5 @@
 """
-TDD Unit tests for ModelOnexEnvelope (OMN-224).
+TDD Unit tests for ModelOnexEnvelope ().
 
 These tests are written BEFORE the implementation following TDD methodology.
 Tests define the expected behavior of the new ModelOnexEnvelope model which
@@ -19,7 +19,7 @@ Tests verify:
 - Round-trip serialization
 
 Related:
-- OMN-224 - ModelOnexEnvelope refactoring
+-  - ModelOnexEnvelope refactoring
 - PR #71 - Original source_node_id field
 """
 

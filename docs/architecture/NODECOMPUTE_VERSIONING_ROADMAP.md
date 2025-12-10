@@ -3,7 +3,6 @@
 > **Version**: 1.0.0
 > **Date**: 2025-12-07
 > **Status**: Active
-> **Ticket**: [OMN-465](https://linear.app/omninode/issue/OMN-465)
 > **Author**: ONEX Framework Team
 
 ---
@@ -974,7 +973,7 @@ Major version releases will include:
 
 | Ticket | Description |
 |--------|-------------|
-| [OMN-465](https://linear.app/omninode/issue/OMN-465) | Contract-Driven NodeCompute |
+| Contract-Driven NodeCompute | v1.0 implementation |
 
 ### External Resources
 

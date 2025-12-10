@@ -3,7 +3,6 @@ Model for contract dependency representation in ONEX Phase 0 pattern.
 
 This model supports dependency injection configuration in contracts.
 
-Author: ONEX Framework Team
 """
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator

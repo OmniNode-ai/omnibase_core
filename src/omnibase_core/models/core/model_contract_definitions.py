@@ -6,7 +6,6 @@ Model for contract definitions representation in ONEX NodeBase implementation.
 This model supports the PATTERN-005 ContractLoader functionality for
 strongly typed contract definitions section.
 
-Author: ONEX Framework Team
 """
 
 from pydantic import BaseModel, ConfigDict

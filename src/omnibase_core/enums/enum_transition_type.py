@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Transition Type Enum - ONEX Standards Compliant.
+Transition Type Enum.
 
 Enumeration for state transition types in contract-driven state management.
 """

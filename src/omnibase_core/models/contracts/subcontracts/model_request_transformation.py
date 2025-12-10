@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-Request Transformation Model - ONEX Standards Compliant.
+Request Transformation Model.
 
 Individual model for request transformation configuration.
 Part of the Routing Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel

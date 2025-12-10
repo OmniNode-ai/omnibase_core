@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ModelTriggerMappings Comprehensive Unit Tests - Zero Tolerance Testing
+ModelTriggerMappings Comprehensive Unit Tests
 
 This module provides comprehensive test coverage for ModelTriggerMappings,
 the strongly-typed trigger mappings model for event-to-workflow coordination.
@@ -11,7 +11,7 @@ Coverage Requirements:
 - Comprehensive validation scenarios
 - Method testing for get_all_mappings and add_mapping
 
-ZERO TOLERANCE: Every code path must be tested thoroughly.
+Comprehensive testing required for all code paths.
 """
 
 from uuid import UUID
@@ -24,7 +24,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexE
 
 
 class TestModelTriggerMappings:
-    """Comprehensive tests for ModelTriggerMappings with zero tolerance coverage."""
+    """Comprehensive tests for ModelTriggerMappings with full coverage."""
 
     def setup_method(self):
         """Set up test fixtures for each test method."""

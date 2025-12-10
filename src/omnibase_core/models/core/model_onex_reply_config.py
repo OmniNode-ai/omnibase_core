@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Model Configuration for ONEX Reply - ONEX Standards Compliant.
+Model Configuration for ONEX Reply.
 
 Strongly-typed configuration class for ONEX reply with frozen setting
 and custom JSON encoders for UUID and datetime serialization.

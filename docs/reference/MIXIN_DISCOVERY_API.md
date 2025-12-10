@@ -1,10 +1,10 @@
 # Mixin Discovery API
 
-Autonomous code generation support for ONEX mixin composition and compatibility checking.
+Programmatic mixin discovery and compatibility checking for ONEX nodes.
 
 ## Overview
 
-The Mixin Discovery API provides programmatic access to mixin metadata, enabling autonomous code generation systems to intelligently compose ONEX nodes with appropriate mixins based on requirements, compatibility, and dependencies.
+The Mixin Discovery API provides programmatic access to mixin metadata, enabling developers to intelligently compose ONEX nodes with appropriate mixins based on requirements, compatibility, and dependencies.
 
 ## Features
 

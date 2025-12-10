@@ -1,11 +1,11 @@
 """
-Component Health Collection Model - ONEX Standards Compliant.
+Component Health Collection Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+
 
 Provides aggregated component health status tracking.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

@@ -1,8 +1,4 @@
 """
-VERSION: 1.0.0
-STABILITY GUARANTEE: Abstract method signatures frozen.
-Breaking changes require major version bump.
-
 NodeEffect - Side Effect Management Node for 4-Node Architecture.
 
 Specialized node type for managing side effects and external interactions with
@@ -15,11 +11,6 @@ Key Capabilities:
 - Retry policies and circuit breaker patterns
 - Event bus publishing for state changes
 - Atomic file operations for data integrity
-
-STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
-Code generators can target this stable interface.
-
-Author: ONEX Framework Team
 """
 
 import asyncio
@@ -52,8 +43,6 @@ from omnibase_core.models.infrastructure.model_effect_transaction import (
 
 class NodeEffect(NodeCoreBase):
     """
-    STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
-
     Side effect management node for external interactions.
 
     Implements managed side effects with transaction support, retry policies,
@@ -301,8 +290,6 @@ class NodeEffect(NodeCoreBase):
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """
         REQUIRED: Execute side effect operation.
-
-        STABLE INTERFACE: This method signature is frozen for code generation.
 
         Args:
             input_data: Strongly typed effect input with configuration

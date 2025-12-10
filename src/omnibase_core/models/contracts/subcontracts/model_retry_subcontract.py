@@ -1,12 +1,7 @@
 """
-Retry Subcontract Model - ONEX Standards Compliant.
+Retry Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for retry logic providing:
 - Configurable retry attempts with intelligent backoff strategies
@@ -18,7 +13,7 @@ Dedicated subcontract model for retry logic providing:
 This model is composed into node contracts that require retry functionality,
 providing clean separation between node logic and retry behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar, Self
@@ -40,7 +35,7 @@ class ModelRetrySubcontract(BaseModel):
     jitter support, and circuit breaker integration for handling failures
     in distributed operations following ONEX standards.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

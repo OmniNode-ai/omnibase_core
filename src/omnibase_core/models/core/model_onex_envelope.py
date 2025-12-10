@@ -47,7 +47,7 @@ Part of omnibase_core framework - provides standardized event wrapping
 with enhanced tracking and routing capabilities.
 
 Related:
-    - OMN-224: ModelOnexEnvelope refactoring
+    - : ModelOnexEnvelope refactoring
     - ModelOnexEnvelopeV1: Predecessor with simpler fields (deprecated)
 """
 

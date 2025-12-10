@@ -1,12 +1,5 @@
 """
-Reducer Contract Model - ONEX Standards Compliant (Clean ModelArchitecture).
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
-
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
+Reducer Contract Model (Clean ModelArchitecture).
 
 Specialized contract model for NodeReducer implementations providing:
 - Reduction operation specifications with subcontract composition
@@ -15,7 +8,7 @@ Specialized contract model for NodeReducer implementations providing:
 - Flexible field definitions supporting YAML contract variations
 - UUID correlation tracking for traceability
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -25,7 +18,7 @@ from pydantic import ConfigDict, Field, field_validator
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-# Type aliases for structured data - ZERO TOLERANCE for Any types
+# Type aliases for structured data - Strict typing is enforced for Any types
 from omnibase_core.types.constraints import PrimitiveValueType
 
 ParameterValue = PrimitiveValueType
@@ -77,7 +70,7 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
     Supports both FSM complex patterns and simple infrastructure patterns.
     Includes UUID correlation tracking for full traceability.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

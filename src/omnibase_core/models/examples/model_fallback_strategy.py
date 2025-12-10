@@ -11,7 +11,6 @@ This module provides the ModelFallbackStrategy for defining fallback strategies
 when services are unavailable. Extracted from model_service_configuration.py
 for modular architecture compliance.
 
-Author: OmniNode Team
 """
 
 
