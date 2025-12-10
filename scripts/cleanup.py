@@ -7,13 +7,19 @@ not be committed to the repository. It's designed to catch common patterns of
 files generated during development and analysis.
 
 Usage:
-    poetry run python scripts/cleanup.py [--dry-run] [--verbose] [--remove-from-git]
+    poetry run python scripts/cleanup.py [--dry-run] [--verbose] [--remove-from-git] [--tmp-only]
 
 Options:
     --dry-run           Show what would be removed without removing
     --verbose, -v       Show detailed output
     --remove-from-git   Remove tracked files from git index (for tmp/ cleanup)
     --root DIR          Root directory to clean (default: current directory)
+    --tmp-only          Only clean tmp/ directory (preserves caches)
+                        Use this for pre-commit/pre-push hooks!
+
+IMPORTANT: For pre-commit/pre-push hooks, ALWAYS use --tmp-only to avoid
+invalidating mypy_cache, ruff_cache, pytest_cache which take significant
+time to rebuild.
 """
 
 import argparse
@@ -62,8 +68,10 @@ CLEANUP_PATTERNS = [
     r".*\.so$",
 ]
 
-# Directories to clean up entirely
-CLEANUP_DIRECTORIES = [
+# Directories to clean up entirely (FULL cleanup mode only)
+# WARNING: These caches take significant time to rebuild!
+# Use --tmp-only for pre-commit/pre-push hooks to avoid cache invalidation
+CLEANUP_DIRECTORIES_FULL = [
     "__pycache__",
     ".mypy_cache",
     ".ruff_cache",
@@ -76,6 +84,11 @@ CLEANUP_DIRECTORIES = [
     "tmp",  # Temporary files and PR review cache
 ]
 
+# Directories to clean in --tmp-only mode (safe for pre-commit/pre-push)
+CLEANUP_DIRECTORIES_TMP_ONLY = [
+    "tmp",  # Only temporary files, preserves all caches
+]
+
 # Directories to skip entirely during traversal
 SKIP_DIRS = {".git", ".venv", "venv", "ENV", "env", "node_modules"}
 
@@ -85,9 +98,26 @@ def compile_patterns(patterns: list[str]) -> list[Pattern[str]]:
     return [re.compile(pattern) for pattern in patterns]
 
 
-def find_cleanup_files(root_dir: Path, patterns: list[Pattern[str]]) -> list[Path]:
-    """Find files matching cleanup patterns."""
+def find_cleanup_files(
+    root_dir: Path, patterns: list[Pattern[str]], tmp_only: bool = False
+) -> list[Path]:
+    """Find files matching cleanup patterns.
+
+    Args:
+        root_dir: Root directory to search
+        patterns: Compiled regex patterns for file matching
+        tmp_only: If True, only clean tmp/ directory (preserves caches)
+    """
     cleanup_files = []
+
+    # Select which directories to clean based on mode
+    cleanup_dirs = (
+        CLEANUP_DIRECTORIES_TMP_ONLY if tmp_only else CLEANUP_DIRECTORIES_FULL
+    )
+
+    # In tmp_only mode, skip pattern matching entirely - just find tmp dirs
+    if tmp_only:
+        patterns = []
 
     for root, dirs, files in os.walk(root_dir):
         root_path = Path(root)
@@ -95,7 +125,7 @@ def find_cleanup_files(root_dir: Path, patterns: list[Pattern[str]]) -> list[Pat
         # Skip excluded directories
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
 
-        # Check files
+        # Check files (only in full mode)
         for file in files:
             file_path = root_path / file
             relative_path = file_path.relative_to(root_dir)
@@ -107,7 +137,7 @@ def find_cleanup_files(root_dir: Path, patterns: list[Pattern[str]]) -> list[Pat
 
         # Check directories
         for dir_name in dirs[:]:  # Create a copy to modify during iteration
-            if dir_name in CLEANUP_DIRECTORIES:
+            if dir_name in cleanup_dirs:
                 dir_path = root_path / dir_name
                 cleanup_files.append(dir_path)
                 dirs.remove(dir_name)  # Don't recurse into directories we're removing
@@ -212,6 +242,12 @@ def main() -> int:
         default=".",
         help="Root directory to clean (default: current directory)",
     )
+    parser.add_argument(
+        "--tmp-only",
+        action="store_true",
+        help="Only clean tmp/ directory (preserves mypy/ruff/pytest caches). "
+        "Use this for pre-commit/pre-push hooks to avoid cache invalidation.",
+    )
 
     args = parser.parse_args()
 
@@ -247,12 +283,14 @@ def main() -> int:
         logger.info("Cleaning up repository: %s", root_dir)
         if args.dry_run:
             logger.info("DRY RUN MODE - No files will be actually removed")
+        if args.tmp_only:
+            logger.info("TMP-ONLY MODE - Only cleaning tmp/ directory")
 
     # Compile cleanup patterns
     patterns = compile_patterns(CLEANUP_PATTERNS)
 
     # Find files to clean up
-    cleanup_files = find_cleanup_files(root_dir, patterns)
+    cleanup_files = find_cleanup_files(root_dir, patterns, tmp_only=args.tmp_only)
 
     if not cleanup_files:
         if args.verbose:

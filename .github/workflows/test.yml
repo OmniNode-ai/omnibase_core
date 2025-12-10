@@ -10,7 +10,7 @@ on:
 env:
   POETRY_VERSION: "2.2.1"
   PYTHON_VERSION: "3.12"
-  CACHE_VERSION: "0.1.1"
+  CACHE_VERSION: "0.1.4"
 
 jobs:
   # Quick smoke test - fails fast on basic issues (5-10s)
@@ -262,7 +262,12 @@ jobs:
           poetry run mypy --strict \
             scripts/validation/validate-no-direct-io.py \
             scripts/validation/validate-all-exports.py \
-            scripts/validation/validate-no-infra-imports.py
+            scripts/validation/validate-no-infra-imports.py \
+            scripts/check_transport_imports.py
+
+      - name: Check for transport import violations (OMN-220)
+        run: |
+          poetry run python scripts/check_transport_imports.py
 
   docs-validation:
     name: Documentation Validation
