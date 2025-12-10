@@ -1,18 +1,15 @@
 """
-TDD Tests for Declarative Node Error Classes (OMN-177).
+Tests for Declarative Node Error Classes (OMN-177).
 
-These tests define the expected behavior for 4 new error classes that will
-inherit from RuntimeHostError for declarative node validation:
+These tests verify the behavior of 4 error classes that inherit from
+RuntimeHostError for declarative node validation:
 
 - AdapterBindingError: Errors during adapter/handler binding to declarative nodes
 - PurityViolationError: Errors when declarative nodes violate purity constraints
 - NodeExecutionError: Errors during declarative node execution phases
 - UnsupportedCapabilityError: Errors when nodes lack required capabilities
 
-TDD Approach:
-- Tests written BEFORE implementation
-- Tests will FAIL until implementation is complete
-- Tests define the contract that implementation must satisfy
+Implementation: omnibase_core/errors/declarative_errors.py
 
 Error Code Mapping (from EnumCoreErrorCode):
 - ADAPTER_BINDING_ERROR = "ONEX_CORE_271_ADAPTER_BINDING_ERROR"
@@ -38,9 +35,6 @@ import json
 from uuid import UUID, uuid4
 
 import pytest
-
-# NOTE: These imports will fail until implementation exists - this is expected for TDD
-# The implementation should create these classes in omnibase_core/errors/declarative_errors.py
 
 
 @pytest.mark.timeout(10)
@@ -284,6 +278,18 @@ class TestPurityViolationError:
             )
             assert error.violation_type == vtype
 
+    def test_custom_error_code_override(self) -> None:
+        """Test PurityViolationError accepts custom error code."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.errors.declarative_errors import PurityViolationError
+
+        error = PurityViolationError(
+            "Custom code test",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        )
+
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
 
 @pytest.mark.timeout(10)
 class TestNodeExecutionError:
@@ -411,6 +417,18 @@ class TestNodeExecutionError:
             )
             assert error.execution_phase == phase
 
+    def test_custom_error_code_override(self) -> None:
+        """Test NodeExecutionError accepts custom error code."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.errors.declarative_errors import NodeExecutionError
+
+        error = NodeExecutionError(
+            "Custom code test",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        )
+
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
 
 @pytest.mark.timeout(10)
 class TestUnsupportedCapabilityError:
@@ -537,6 +555,18 @@ class TestUnsupportedCapabilityError:
                 capability=cap,
             )
             assert error.capability == cap
+
+    def test_custom_error_code_override(self) -> None:
+        """Test UnsupportedCapabilityError accepts custom error code."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+
+        error = UnsupportedCapabilityError(
+            "Custom code test",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        )
+
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
 @pytest.mark.timeout(10)
@@ -858,3 +888,56 @@ class TestDeclarativeErrorModuleExports:
         assert hasattr(declarative_errors, "__all__")
         for export in expected_exports:
             assert export in declarative_errors.__all__
+
+    def test_all_errors_importable_from_top_level_errors(self) -> None:
+        """Test all error classes can be imported from top-level omnibase_core.errors.
+
+        PR #150 feedback: Ensures declarative errors are accessible via the
+        canonical import path `from omnibase_core.errors import ...` in addition
+        to the module-specific `from omnibase_core.errors.declarative_errors import ...`.
+        """
+        # Import from top-level errors module
+        from omnibase_core.errors import (
+            AdapterBindingError,
+            NodeExecutionError,
+            PurityViolationError,
+            UnsupportedCapabilityError,
+        )
+
+        # Import from declarative_errors module for comparison
+        from omnibase_core.errors.declarative_errors import (
+            AdapterBindingError as AdapterBindingErrorDirect,
+        )
+        from omnibase_core.errors.declarative_errors import (
+            NodeExecutionError as NodeExecutionErrorDirect,
+        )
+        from omnibase_core.errors.declarative_errors import (
+            PurityViolationError as PurityViolationErrorDirect,
+        )
+        from omnibase_core.errors.declarative_errors import (
+            UnsupportedCapabilityError as UnsupportedCapabilityErrorDirect,
+        )
+
+        # Verify imports are not None
+        assert AdapterBindingError is not None
+        assert PurityViolationError is not None
+        assert NodeExecutionError is not None
+        assert UnsupportedCapabilityError is not None
+
+        # Verify they are the same classes (identity check)
+        assert AdapterBindingError is AdapterBindingErrorDirect
+        assert PurityViolationError is PurityViolationErrorDirect
+        assert NodeExecutionError is NodeExecutionErrorDirect
+        assert UnsupportedCapabilityError is UnsupportedCapabilityErrorDirect
+
+        # Verify they can be instantiated via top-level import
+        adapter_err = AdapterBindingError("test adapter binding")
+        purity_err = PurityViolationError("test purity violation")
+        node_err = NodeExecutionError("test node execution")
+        capability_err = UnsupportedCapabilityError("test capability")
+
+        # Verify basic functionality
+        assert "test adapter binding" in str(adapter_err)
+        assert "test purity violation" in str(purity_err)
+        assert "test node execution" in str(node_err)
+        assert "test capability" in str(capability_err)
