@@ -58,15 +58,19 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.nodes.node_compute import NodeCompute
 
 
-class ModelServiceCompute(
+class ModelServiceCompute[T_Input, T_Output](
     MixinNodeService,
-    NodeCompute,
+    NodeCompute[T_Input, T_Output],
     MixinHealthCheck,
     MixinCaching,
     MixinMetrics,
 ):
     """
-    Standard Compute Node Service.
+    Standard Compute Node Service following ONEX model naming conventions.
+
+    Generic type parameters:
+        T_Input: Type of input data (flows from ModelComputeInput[T_Input])
+        T_Output: Type of output result (flows to ModelComputeOutput[T_Output])
 
     Combines NodeCompute base class with essential production mixins:
     - Persistent service mode (MixinNodeService) - long-lived MCP servers, tool invocation
@@ -116,3 +120,7 @@ class ModelServiceCompute(
             container: ONEX container providing service dependencies
         """
         super().__init__(container)
+
+
+# Backwards-compatible alias
+ServiceComputeNode = ModelServiceCompute

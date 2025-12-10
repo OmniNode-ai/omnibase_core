@@ -382,11 +382,22 @@ class TestNodeComputeContractToInput:
 
             # Verify warning was logged
             mock_log.assert_called()
-            call_args = mock_log.call_args
-            # First positional arg is log level (WARNING)
-            assert "WARNING" in str(call_args[0][0])
-            # Second positional arg is message
-            assert "legacy" in call_args[0][1].lower()
+
+            # Check that at least one call contains the legacy input_data warning
+            # (there may be multiple warnings emitted, e.g., for computation_type fallback)
+            legacy_warning_found = False
+            for call in mock_log.call_args_list:
+                if call[0] and len(call[0]) >= 2:
+                    log_level_str = str(call[0][0])
+                    message = call[0][1]
+                    if "WARNING" in log_level_str and "legacy" in message.lower():
+                        legacy_warning_found = True
+                        break
+
+            assert legacy_warning_found, (
+                "Expected warning about legacy 'input_data' field. "
+                f"Logged calls: {[c[0][1] if c[0] else 'no args' for c in mock_log.call_args_list]}"
+            )
 
     def test_contract_to_input_missing_both_fields_raises_error(
         self,

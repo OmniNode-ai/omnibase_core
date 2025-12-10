@@ -53,6 +53,43 @@ class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
     Supports algorithm specifications, parallel processing, and caching via subcontracts.
 
     Strict typing is enforced: No Any types allowed in implementation.
+
+    Field Extraction Precedence (used by NodeCompute._contract_to_input()):
+        The following field extraction order is used for robustness.
+        Warning logs are emitted when using non-preferred fallback sources.
+
+        **input_data extraction** (for computation input):
+            1. input_state (preferred - canonical location)
+            2. input_data (fallback - legacy/deprecated)
+
+        **computation_type extraction** (for algorithm selection):
+            1. algorithm.algorithm_type (preferred - canonical location)
+               The algorithm_type field in ModelAlgorithmConfig is the canonical
+               location for specifying which computation to execute.
+            2. metadata["computation_type"] (fallback - legacy location)
+               Previously used before algorithm configuration was standardized.
+               Warning log emitted when this source is used.
+            3. contract.computation_type attribute (fallback - deprecated)
+               Direct attribute on contract, rarely used.
+               Warning log emitted when this source is used.
+            4. "default" (final fallback - implicit default)
+               Uses the built-in "default" computation type.
+               Warning log emitted recommending explicit configuration.
+
+        **Migration guidance**:
+            To avoid warning logs, ensure your contracts specify:
+            - input_state (not input_data) for computation input
+            - algorithm.algorithm_type for computation type selection
+
+        Example of preferred contract structure::
+
+            algorithm:
+              algorithm_type: "my_computation"
+              factors:
+                factor_1:
+                  weight: 1.0
+            input_state:
+              data: "input value"
     """
 
     # Interface version for code generation stability

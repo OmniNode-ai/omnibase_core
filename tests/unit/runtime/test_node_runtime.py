@@ -1489,3 +1489,372 @@ class TestEnvelopeRouterIntegrationPatterns:
             expected_slug = f"node-{node_type.value}-{i}"
             assert expected_slug in runtime._nodes
             assert runtime._nodes[expected_slug].node_type == node_type
+
+
+# =============================================================================
+# TEST CLASS: Freeze Functionality
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestEnvelopeRouterFreeze:
+    """Tests for EnvelopeRouter freeze() method and is_frozen property."""
+
+    def test_is_frozen_initially_false(self) -> None:
+        """
+        Test that is_frozen property is False on new router.
+
+        EXPECTED BEHAVIOR:
+        - New router instance has is_frozen=False
+        - Registration is allowed before freeze
+        """
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        assert runtime.is_frozen is False
+
+    def test_freeze_sets_is_frozen_to_true(self) -> None:
+        """
+        Test that freeze() sets is_frozen to True.
+
+        EXPECTED BEHAVIOR:
+        - Calling freeze() transitions is_frozen from False to True
+        - Property reflects the frozen state after freeze() call
+        """
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # Initial state
+        assert runtime.is_frozen is False
+
+        # Freeze the router
+        runtime.freeze()
+
+        # Verify frozen state
+        assert runtime.is_frozen is True
+
+    def test_freeze_is_idempotent(self) -> None:
+        """
+        Test that calling freeze() multiple times has no additional effect.
+
+        EXPECTED BEHAVIOR:
+        - Multiple freeze() calls do not raise errors
+        - is_frozen remains True after multiple freeze() calls
+        - Router state is unchanged by subsequent freeze() calls
+        """
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # First freeze
+        runtime.freeze()
+        assert runtime.is_frozen is True
+
+        # Second freeze (should be idempotent)
+        runtime.freeze()
+        assert runtime.is_frozen is True
+
+        # Third freeze (should still be idempotent)
+        runtime.freeze()
+        assert runtime.is_frozen is True
+
+    def test_register_handler_raises_invalid_state_after_freeze(
+        self,
+        mock_handler: MagicMock,
+    ) -> None:
+        """
+        Test that register_handler raises INVALID_STATE after freeze.
+
+        EXPECTED BEHAVIOR:
+        - Calling register_handler() after freeze() raises ModelOnexError
+        - Error code is INVALID_STATE
+        - Error message mentions frozen state
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.freeze()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.register_handler(mock_handler)
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.INVALID_STATE
+        assert "frozen" in str(error).lower()
+
+    def test_register_node_raises_invalid_state_after_freeze(
+        self,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+    ) -> None:
+        """
+        Test that register_node raises INVALID_STATE after freeze.
+
+        EXPECTED BEHAVIOR:
+        - Calling register_node() after freeze() raises ModelOnexError
+        - Error code is INVALID_STATE
+        - Error message mentions frozen state
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+        runtime.freeze()
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.register_node(instance)
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.INVALID_STATE
+        assert "frozen" in str(error).lower()
+
+    def test_routing_works_after_freeze(
+        self,
+        mock_handler: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Test that routing works correctly after freeze.
+
+        EXPECTED BEHAVIOR:
+        - route_envelope() works normally after freeze()
+        - Frozen router can still route envelopes to registered handlers
+        - Read operations are not affected by frozen state
+        """
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+        runtime.freeze()
+
+        # Create envelope for routing
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=uuid4(),
+            source_node="test_source",
+            operation="TEST_OPERATION",
+            payload={},
+            timestamp=datetime.now(UTC),
+            handler_type=mock_handler.handler_type,
+        )
+
+        # Routing should work after freeze
+        result = runtime.route_envelope(envelope)
+
+        assert result is not None
+        assert result["handler"] is mock_handler
+        assert result["handler_type"] == mock_handler.handler_type
+
+    @pytest.mark.asyncio
+    async def test_execution_works_after_freeze(
+        self,
+        mock_handler: MagicMock,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Test that execute_with_handler works correctly after freeze.
+
+        EXPECTED BEHAVIOR:
+        - execute_with_handler() works normally after freeze()
+        - Frozen router can still execute envelopes with handlers
+        - Handler is called and response is returned correctly
+        """
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+        runtime.register_node(instance)
+
+        # Freeze after registration
+        runtime.freeze()
+
+        # Create envelope for execution
+        correlation_id = uuid4()
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=correlation_id,
+            source_node="test_source",
+            operation="TEST_OPERATION",
+            payload={"test": "data"},
+            timestamp=datetime.now(UTC),
+            handler_type=mock_handler.handler_type,
+        )
+
+        # Execution should work after freeze
+        result = await runtime.execute_with_handler(envelope, instance)
+
+        assert isinstance(result, ModelOnexEnvelope)
+        assert result.is_response is True
+        assert result.correlation_id == correlation_id
+        mock_handler.execute.assert_called_once()
+
+    def test_freeze_before_registration_prevents_all_registration(
+        self,
+        mock_handler: MagicMock,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+    ) -> None:
+        """
+        Test that freezing an empty router prevents all registration.
+
+        EXPECTED BEHAVIOR:
+        - Freezing empty router succeeds
+        - Both handler and node registration raise INVALID_STATE
+        - Router remains empty after failed registrations
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+
+        # Freeze immediately (empty router)
+        runtime.freeze()
+        assert runtime.is_frozen is True
+        assert len(runtime._handlers) == 0
+        assert len(runtime._nodes) == 0
+
+        # Handler registration should fail
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.register_handler(mock_handler)
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_STATE
+
+        # Node registration should fail
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.register_node(instance)
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_STATE
+
+        # Verify router is still empty
+        assert len(runtime._handlers) == 0
+        assert len(runtime._nodes) == 0
+
+    def test_str_representation_shows_frozen_state(
+        self,
+        mock_handler: MagicMock,
+    ) -> None:
+        """
+        Test that __str__ includes frozen state.
+
+        EXPECTED BEHAVIOR:
+        - String representation shows frozen=False before freeze
+        - String representation shows frozen=True after freeze
+        """
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+
+        # Before freeze
+        str_before = str(runtime)
+        assert "frozen=False" in str_before
+
+        # After freeze
+        runtime.freeze()
+        str_after = str(runtime)
+        assert "frozen=True" in str_after
+
+    def test_freeze_register_handler_preserves_existing_handlers(
+        self,
+        mock_handler: MagicMock,
+        mock_handler_database: MagicMock,
+    ) -> None:
+        """
+        Test that failed registration after freeze preserves existing handlers.
+
+        EXPECTED BEHAVIOR:
+        - Handlers registered before freeze are preserved
+        - Failed registration after freeze does not modify handler registry
+        - Existing handlers remain accessible
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+        runtime.freeze()
+
+        # Verify handler is registered
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+
+        # Attempt to register another handler (should fail)
+        with pytest.raises(ModelOnexError):
+            runtime.register_handler(mock_handler_database)
+
+        # Original handler should still be registered
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
+    def test_freeze_register_node_preserves_existing_nodes(
+        self,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+    ) -> None:
+        """
+        Test that failed registration after freeze preserves existing nodes.
+
+        EXPECTED BEHAVIOR:
+        - Nodes registered before freeze are preserved
+        - Failed registration after freeze does not modify node registry
+        - Existing nodes remain accessible
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+
+        instance1 = NodeInstance(
+            slug="original-node",
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+        runtime.register_node(instance1)
+        runtime.freeze()
+
+        # Verify node is registered
+        assert len(runtime._nodes) == 1
+        assert "original-node" in runtime._nodes
+
+        # Attempt to register another node (should fail)
+        instance2 = NodeInstance(
+            slug="new-node",
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+        with pytest.raises(ModelOnexError):
+            runtime.register_node(instance2)
+
+        # Original node should still be registered
+        assert len(runtime._nodes) == 1
+        assert "original-node" in runtime._nodes
+        assert runtime._nodes["original-node"] is instance1

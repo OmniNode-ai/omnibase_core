@@ -77,6 +77,9 @@ from .enum_github_runner_os import EnumGithubRunnerOs
 # Group and organization enums
 from .enum_group_status import EnumGroupStatus
 
+# Handler type enums (runtime handler registry)
+from .enum_handler_type import EnumHandlerType
+
 # Header and query parameter transformation enums
 from .enum_header_transformation_type import EnumHeaderTransformationType
 
@@ -326,6 +329,8 @@ __all__ = [
     "EnumMessageType",
     # Group and organization domain
     "EnumGroupStatus",
+    # Handler type domain (runtime handler registry)
+    "EnumHandlerType",
     # Version and contract domain
     "EnumVersionStatus",
     "EnumContractCompliance",

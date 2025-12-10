@@ -17,13 +17,9 @@ import hashlib
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, TypeVar
+from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-
-# Type variables for generic compute input/output
-T_Input = TypeVar("T_Input")
-T_Output = TypeVar("T_Output")
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -38,9 +34,16 @@ from omnibase_core.models.infrastructure import ModelComputeCache
 ContractComputeType = Any  # ModelContractCompute - imported in method
 
 
-class NodeCompute(NodeCoreBase):
+class NodeCompute[T_Input, T_Output](NodeCoreBase):
     """
     Pure computation node for deterministic operations.
+
+    Generic type parameters:
+        T_Input: Type of input data (flows from ModelComputeInput[T_Input])
+        T_Output: Type of output result (flows to ModelComputeOutput[T_Output])
+
+    Type flow:
+        Input data (T_Input) -> Computation -> Output result (T_Output)
 
     Implements computational pipeline with input → transform → output pattern.
     Provides caching, parallel processing, and performance optimization for
@@ -265,6 +268,10 @@ class NodeCompute(NodeCoreBase):
         """
         Convert ModelContractCompute to ModelComputeInput.
 
+        Performs field extraction with fallback chains for robustness.
+        Warning logs are emitted when using non-preferred fallback sources to help
+        identify contracts that should be updated to use preferred field locations.
+
         Args:
             contract: Compute contract to convert
 
@@ -273,6 +280,13 @@ class NodeCompute(NodeCoreBase):
 
         Raises:
             ModelOnexError: If contract has no input_state or conversion fails
+
+        Note:
+            computation_type precedence order (see ModelContractCompute docstring):
+            1. algorithm.algorithm_type (preferred - canonical location)
+            2. metadata["computation_type"] (fallback - legacy location)
+            3. contract.computation_type attribute (fallback - deprecated)
+            4. "default" (final fallback - implicit default)
         """
         # Extract input data from contract (input_state preferred, input_data as legacy fallback)
         input_data: Any = None
@@ -300,22 +314,24 @@ class NodeCompute(NodeCoreBase):
                 },
             )
 
-        # Extract computation_type with fallback chain:
-        # 1. algorithm.algorithm_type (preferred)
-        # 2. metadata.computation_type
-        # 3. contract.computation_type attribute
-        # 4. Default to "default"
+        # Extract computation_type with fallback chain (with warning logs for non-preferred sources):
+        # 1. algorithm.algorithm_type (preferred - canonical location)
+        # 2. metadata["computation_type"] (fallback - legacy location)
+        # 3. contract.computation_type attribute (fallback - deprecated)
+        # 4. "default" (final fallback - implicit default)
         computation_type: str = "default"
+        computation_type_source: str = "default"
 
-        # Try algorithm.algorithm_type first
+        # Try algorithm.algorithm_type first (preferred canonical location)
         if hasattr(contract, "algorithm") and contract.algorithm is not None:
             if (
                 hasattr(contract.algorithm, "algorithm_type")
                 and contract.algorithm.algorithm_type is not None
             ):
                 computation_type = contract.algorithm.algorithm_type
+                computation_type_source = "algorithm.algorithm_type"
 
-        # Fallback to metadata.computation_type
+        # Fallback to metadata.computation_type (legacy location)
         if computation_type == "default":
             contract_metadata = getattr(contract, "metadata", None) or {}
             if (
@@ -323,14 +339,50 @@ class NodeCompute(NodeCoreBase):
                 and "computation_type" in contract_metadata
             ):
                 computation_type = contract_metadata["computation_type"]
+                computation_type_source = "metadata.computation_type"
+                emit_log_event(
+                    LogLevel.WARNING,
+                    "Using 'metadata.computation_type' fallback - "
+                    "please migrate to 'algorithm.algorithm_type' (canonical location)",
+                    {
+                        "node_id": str(self.node_id),
+                        "computation_type": computation_type,
+                        "source": computation_type_source,
+                    },
+                )
 
-        # Fallback to contract.computation_type attribute
+        # Fallback to contract.computation_type attribute (deprecated)
         if computation_type == "default":
             if (
                 hasattr(contract, "computation_type")
                 and contract.computation_type is not None
             ):
                 computation_type = contract.computation_type
+                computation_type_source = "contract.computation_type"
+                emit_log_event(
+                    LogLevel.WARNING,
+                    "Using deprecated 'contract.computation_type' attribute - "
+                    "please migrate to 'algorithm.algorithm_type' (canonical location)",
+                    {
+                        "node_id": str(self.node_id),
+                        "computation_type": computation_type,
+                        "source": computation_type_source,
+                    },
+                )
+
+        # Final fallback to "default" (implicit default)
+        if computation_type == "default":
+            emit_log_event(
+                LogLevel.WARNING,
+                "No computation_type specified in contract - using implicit 'default'. "
+                "Consider specifying 'algorithm.algorithm_type' explicitly",
+                {
+                    "node_id": str(self.node_id),
+                    "computation_type": computation_type,
+                    "source": "implicit_default",
+                    "hint": "Set algorithm.algorithm_type in your contract",
+                },
+            )
 
         # Extract metadata (normalize None to empty dict)
         # Type matches ModelComputeInput.metadata field
