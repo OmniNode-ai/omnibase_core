@@ -95,7 +95,7 @@ def test_container() -> ModelONEXContainer:
 
 
 @pytest.fixture
-def node(test_container: ModelONEXContainer) -> NodeCompute[Any, Any]:
+def node(test_container: ModelONEXContainer) -> NodeCompute:
     """Create a NodeCompute instance for testing."""
     return NodeCompute(test_container)
 
@@ -145,7 +145,7 @@ class TestNodeComputeExecuteCompute:
     @pytest.mark.asyncio
     async def test_execute_compute_valid_contract_calls_process(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test that execute_compute with valid contract calls process()."""
         # Create a real ModelContractCompute instance using MagicMock with spec
@@ -184,7 +184,7 @@ class TestNodeComputeExecuteCompute:
     @pytest.mark.asyncio
     async def test_execute_compute_valid_contract_returns_output(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test that execute_compute returns correct ModelComputeOutput."""
         # Create mock contract with default computation type
@@ -208,7 +208,7 @@ class TestNodeComputeExecuteCompute:
     @pytest.mark.asyncio
     async def test_execute_compute_invalid_contract_type_dict(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test that passing a dict raises ModelOnexError with VALIDATION_ERROR."""
         invalid_contract = {"name": "test", "input_state": {"data": "value"}}
@@ -227,7 +227,7 @@ class TestNodeComputeExecuteCompute:
     @pytest.mark.asyncio
     async def test_execute_compute_invalid_contract_type_string(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test that passing a string raises ModelOnexError with VALIDATION_ERROR."""
         invalid_contract = "not a contract"
@@ -245,7 +245,7 @@ class TestNodeComputeExecuteCompute:
     @pytest.mark.asyncio
     async def test_execute_compute_invalid_contract_type_none(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test that passing None raises ModelOnexError with VALIDATION_ERROR."""
         with pytest.raises(ModelOnexError) as exc_info:
@@ -260,7 +260,7 @@ class TestNodeComputeExecuteCompute:
     @pytest.mark.asyncio
     async def test_execute_compute_invalid_contract_type_wrong_model(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test that passing wrong Pydantic model raises ModelOnexError."""
         # Use ModelComputeInput as a wrong model type
@@ -281,7 +281,7 @@ class TestNodeComputeExecuteCompute:
     @pytest.mark.asyncio
     async def test_execute_compute_contract_with_input_state(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test that contract with input_state field uses it correctly."""
         input_state_data = {"values": [1, 2, 3], "operation": "sum"}
@@ -309,7 +309,7 @@ class TestNodeComputeExecuteCompute:
     @pytest.mark.asyncio
     async def test_execute_compute_error_context_contains_node_id(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test that error context contains node_id for debugging."""
         invalid_contract = 12345  # Integer is invalid
@@ -330,7 +330,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_with_input_state(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
         mock_contract_factory: Callable[..., MagicMock],
     ) -> None:
         """Test _contract_to_input extracts input_state correctly."""
@@ -346,7 +346,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_extracts_metadata(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
         mock_contract_factory: Callable[..., MagicMock],
     ) -> None:
         """Test _contract_to_input extracts metadata correctly."""
@@ -363,7 +363,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_with_legacy_input_data(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
         mock_contract_factory: Callable[..., MagicMock],
     ) -> None:
         """Test _contract_to_input falls back to input_data when input_state is None."""
@@ -388,7 +388,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_missing_both_fields_raises_error(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
         mock_contract_factory: Callable[..., MagicMock],
     ) -> None:
         """Test _contract_to_input raises error when both input_state and input_data are None."""
@@ -417,7 +417,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_computation_type_from_algorithm(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
         mock_contract_factory: Callable[..., MagicMock],
     ) -> None:
         """Test computation_type is extracted from algorithm.algorithm_type."""
@@ -435,7 +435,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_computation_type_from_metadata(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test computation_type is extracted from metadata when algorithm is None."""
         mock_contract = _create_mock_contract(
@@ -450,7 +450,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_computation_type_from_contract_attribute(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test computation_type is extracted from contract.computation_type attribute."""
         mock_contract = _create_mock_contract(
@@ -464,7 +464,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_computation_type_default(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test computation_type defaults to 'default' when not specified."""
         mock_contract = _create_mock_contract(
@@ -477,7 +477,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_cache_enabled_from_metadata(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test cache_enabled is extracted from metadata."""
         mock_contract = _create_mock_contract(
@@ -491,7 +491,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_cache_enabled_default_true(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test cache_enabled defaults to True when not specified."""
         mock_contract = _create_mock_contract(
@@ -504,7 +504,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_parallel_enabled_from_metadata(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test parallel_enabled is extracted from metadata."""
         mock_contract = _create_mock_contract(
@@ -518,7 +518,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_parallel_enabled_default_false(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test parallel_enabled defaults to False when not specified."""
         mock_contract = _create_mock_contract(
@@ -531,7 +531,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_computation_type_priority(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test computation_type priority: algorithm > metadata > contract attribute."""
         # Create mock with all three sources
@@ -552,7 +552,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_metadata_priority_over_attribute(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test metadata computation_type takes priority over contract attribute."""
         mock_contract = _create_mock_contract(
@@ -568,7 +568,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_handles_empty_metadata(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test _contract_to_input handles None metadata gracefully."""
         # Create mock with None metadata (not empty dict)
@@ -585,7 +585,7 @@ class TestNodeComputeContractToInput:
 
     def test_contract_to_input_preserves_complex_input_state(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test _contract_to_input preserves complex nested input_state."""
         complex_input = {
@@ -615,7 +615,7 @@ class TestNodeComputeExecuteComputeIntegration:
     @pytest.mark.asyncio
     async def test_execute_compute_full_pipeline_default(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test full execute_compute pipeline with default computation."""
         mock_contract = MagicMock(spec=ModelContractCompute)
@@ -634,7 +634,7 @@ class TestNodeComputeExecuteComputeIntegration:
     @pytest.mark.asyncio
     async def test_execute_compute_full_pipeline_string_uppercase(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test full execute_compute pipeline with string_uppercase computation."""
         mock_contract = MagicMock(spec=ModelContractCompute)
@@ -652,7 +652,7 @@ class TestNodeComputeExecuteComputeIntegration:
     @pytest.mark.asyncio
     async def test_execute_compute_full_pipeline_sum_numbers(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test full execute_compute pipeline with sum_numbers computation."""
         mock_contract = MagicMock(spec=ModelContractCompute)
@@ -670,7 +670,7 @@ class TestNodeComputeExecuteComputeIntegration:
     @pytest.mark.asyncio
     async def test_execute_compute_with_caching(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test execute_compute uses caching when enabled."""
         mock_contract = MagicMock(spec=ModelContractCompute)
@@ -691,7 +691,7 @@ class TestNodeComputeExecuteComputeIntegration:
     @pytest.mark.asyncio
     async def test_execute_compute_without_caching(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test execute_compute does not cache when disabled."""
         mock_contract = MagicMock(spec=ModelContractCompute)
@@ -711,7 +711,7 @@ class TestNodeComputeExecuteComputeIntegration:
     @pytest.mark.asyncio
     async def test_execute_compute_unknown_computation_type(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test execute_compute raises error for unknown computation type."""
         mock_contract = MagicMock(spec=ModelContractCompute)
@@ -737,7 +737,7 @@ class TestNodeComputeExecuteComputeIntegration:
     @pytest.mark.asyncio
     async def test_execute_compute_error_context_includes_cache_and_parallel_status(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test error context includes cache_enabled and parallel_enabled for debugging."""
         mock_contract = MagicMock(spec=ModelContractCompute)
@@ -758,7 +758,7 @@ class TestNodeComputeExecuteComputeIntegration:
     @pytest.mark.asyncio
     async def test_execute_compute_error_context_default_cache_and_parallel_values(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test error context includes default values for cache_enabled and parallel_enabled."""
         mock_contract = MagicMock(spec=ModelContractCompute)
@@ -779,7 +779,7 @@ class TestNodeComputeExecuteComputeIntegration:
     @pytest.mark.asyncio
     async def test_execute_compute_with_custom_registered_computation(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test execute_compute with a custom registered computation."""
         # Register custom computation
@@ -804,7 +804,7 @@ class TestNodeComputeEdgeCases:
     @pytest.mark.asyncio
     async def test_execute_compute_with_empty_list_input_state(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test execute_compute handles empty list input_state correctly.
 
@@ -828,7 +828,7 @@ class TestNodeComputeEdgeCases:
     @pytest.mark.asyncio
     async def test_execute_compute_with_empty_dict_input_state(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test execute_compute handles empty dict input_state correctly.
 
@@ -852,7 +852,7 @@ class TestNodeComputeEdgeCases:
     @pytest.mark.asyncio
     async def test_execute_compute_parallel_warning_single_value(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test that parallel execution with non-parallelizable data triggers warning.
 
@@ -894,7 +894,7 @@ class TestNodeComputeEdgeCases:
     @pytest.mark.asyncio
     async def test_execute_compute_parallel_warning_single_element_list(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test parallel warning when list has only 1 element.
 
@@ -929,7 +929,7 @@ class TestNodeComputeEdgeCases:
     @pytest.mark.asyncio
     async def test_execute_compute_with_none_algorithm_type(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test fallback when algorithm exists but algorithm_type is None.
 
@@ -961,7 +961,7 @@ class TestNodeComputeEdgeCases:
     @pytest.mark.asyncio
     async def test_execute_compute_with_none_algorithm_type_uses_contract_attribute(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test fallback to contract.computation_type when algorithm_type is None.
 
@@ -986,7 +986,7 @@ class TestNodeComputeEdgeCases:
     @pytest.mark.asyncio
     async def test_execute_compute_with_none_algorithm_type_defaults(
         self,
-        node: NodeCompute[Any, Any],
+        node: NodeCompute,
     ) -> None:
         """Test defaults to 'default' when all computation_type sources are None.
 
