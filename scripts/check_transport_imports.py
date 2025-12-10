@@ -191,6 +191,12 @@ class TransportImportAnalyzer(ast.NodeVisitor):
     libraries. These libraries should not be imported directly in
     omnibase_core - instead, protocols should be used for abstraction.
 
+    Thread Safety Note:
+        This class is NOT thread-safe. It uses mutable state (violations list,
+        in_type_checking_block flag) that would cause race conditions if shared
+        across threads. For parallel file analysis (e.g., with multiprocessing),
+        create a separate analyzer instance per thread/process.
+
     Attributes:
         file_path: Path to the file being analyzed.
         source_lines: List of source code lines for snippet extraction.
@@ -608,24 +614,20 @@ def get_changed_files(src_dir: Path) -> list[Path]:
 
     try:
         # Get files changed compared to main/master branch
-        result = subprocess.run(
-            ["git", "diff", "--name-only", "origin/main", "--", "*.py"],
-            capture_output=True,
-            text=True,
-            check=False,
-            cwd=src_dir.parent.parent,  # Run from repo root for correct paths
-        )
-        if result.returncode != 0:
-            # Try master if main doesn't exist
+        # Use a loop to avoid running two git commands in repos using master
+        result = None
+        for branch in ["origin/main", "origin/master"]:
             result = subprocess.run(
-                ["git", "diff", "--name-only", "origin/master", "--", "*.py"],
+                ["git", "diff", "--name-only", branch, "--", "*.py"],
                 capture_output=True,
                 text=True,
                 check=False,
-                cwd=src_dir.parent.parent,
+                cwd=src_dir.parent.parent,  # Run from repo root for correct paths
             )
+            if result.returncode == 0:
+                break  # Found a valid branch, no need to try others
 
-        if result.returncode == 0 and result.stdout.strip():
+        if result is not None and result.returncode == 0 and result.stdout.strip():
             changed_files = []
             src_dir_resolved = src_dir.resolve()
             repo_root = src_dir.parent.parent.resolve()
