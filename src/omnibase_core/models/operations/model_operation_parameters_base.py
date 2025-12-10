@@ -26,7 +26,7 @@ class ModelOperationParameterValue(BaseModel):
     """
     Discriminated union for operation parameter values.
 
-    Replaces Union[StringParameter, NumericParameter, ...] with ONEX-compliant
+    Replaces Union[StringParameter, NumericParameter, ...] with ONEX-compatible
     discriminated union pattern.
     """
 

@@ -1,5 +1,5 @@
 """
-Tool Manifest Models - ONEX Standards Compliant.
+Tool Manifest Models.
 
 Re-export module for tool manifest components including enums, version,
 dependency, capability, integration, testing, security, and main manifest models.

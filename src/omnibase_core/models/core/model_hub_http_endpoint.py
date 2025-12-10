@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hub HTTP Endpoint Model - ONEX Standards Compliant.
+Hub HTTP Endpoint Model.
 
 Strongly-typed model for HTTP endpoint configuration in hubs.
 """

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Coordination Mode Enum - ONEX Standards Compliant.
+Coordination Mode Enum.
 
 Strongly-typed enum for hub coordination modes.
 """

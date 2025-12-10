@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Protocol Registration Model - ONEX Standards Compliant.
+Protocol Registration Model.
 
 Strongly-typed model for protocol registration entries in container.
 """

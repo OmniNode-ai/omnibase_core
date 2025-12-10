@@ -86,7 +86,7 @@ def __getattr__(name: str) -> Any:
         from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
 
         return ModelCLIAdapter
-    # Runtime host errors (OMN-232)
+    # Runtime host errors ()
     if name == "RuntimeHostError":
         from omnibase_core.errors.runtime_errors import RuntimeHostError
 
@@ -107,7 +107,7 @@ def __getattr__(name: str) -> Any:
         from omnibase_core.errors.runtime_errors import ContractValidationError
 
         return ContractValidationError
-    # Compute pipeline errors (OMN-465)
+    # Compute pipeline errors ()
     if name == "ComputePipelineError":
         from omnibase_core.errors.exception_compute_pipeline_error import (
             ComputePipelineError,

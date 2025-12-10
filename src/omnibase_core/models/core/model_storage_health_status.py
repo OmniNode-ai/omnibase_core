@@ -1,7 +1,7 @@
 from uuid import UUID
 
 """
-Storage Health Status Model - ONEX Standards Compliant.
+Storage Health Status Model.
 
 Strongly-typed model for storage backend health status.
 """

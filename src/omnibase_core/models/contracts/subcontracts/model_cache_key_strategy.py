@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Cache Key Strategy Model - ONEX Standards Compliant.
+Cache Key Strategy Model.
 
 Model for cache key generation strategies in the ONEX caching system.
 """

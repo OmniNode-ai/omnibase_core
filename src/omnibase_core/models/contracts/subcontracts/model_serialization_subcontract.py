@@ -1,12 +1,7 @@
 """
-Serialization Subcontract Model - ONEX Standards Compliant.
+Serialization Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for serialization functionality providing:
 - Serialization format configuration (yaml, json, toml)
@@ -19,7 +14,7 @@ Dedicated subcontract model for serialization functionality providing:
 This model is composed into node contracts that require serialization functionality,
 providing clean separation between node logic and serialization behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -42,7 +37,7 @@ class ModelSerializationSubcontract(BaseModel):
     Designed for composition into node contracts requiring serialization
     functionality.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

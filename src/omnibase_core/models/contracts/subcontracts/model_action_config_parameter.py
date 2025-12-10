@@ -1,10 +1,10 @@
 """
-Action Config Parameter Model - ONEX Standards Compliant.
+Action Config Parameter Model.
 
 Strongly-typed model for action configuration parameters.
 Replaces dict[str, ModelActionConfigValue] with proper structure.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from __future__ import annotations

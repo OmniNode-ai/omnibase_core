@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Checkpoint Data Model - ONEX Standards Compliant.
+Checkpoint Data Model.
 
 Strongly-typed model for checkpoint data in ONEX storage backends.
 """

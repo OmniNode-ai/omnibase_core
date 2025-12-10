@@ -1,5 +1,5 @@
 """
-Tests for Effect supporting models - ONEX Standards Compliant.
+Tests for Effect supporting models.
 
 Comprehensive tests for Effect subcontract supporting models:
 - ModelEffectRetryPolicy
@@ -9,7 +9,7 @@ Comprehensive tests for Effect subcontract supporting models:
 - ModelEffectResponseHandling
 - IDEMPOTENCY_DEFAULTS constant
 
-Implements: OMN-524, OMN-525
+Implements: ,
 """
 
 from types import MappingProxyType

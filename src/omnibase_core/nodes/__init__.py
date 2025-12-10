@@ -3,14 +3,7 @@ Omnibase Core - ONEX Four-Node Architecture
 
 Node implementations for COMPUTE, EFFECT, REDUCER, and ORCHESTRATOR patterns.
 
-VERSION: 2.0.0
-STABILITY GUARANTEE: Node interfaces are frozen for code generation.
-Breaking changes require major version bump.
-
-Changes in v2.0.0:
-- NodeReducer: FSM-driven state management
-- NodeOrchestrator: Workflow-driven coordination
-- All nodes use declarative YAML contracts
+All nodes use declarative YAML contracts for configuration.
 """
 
 from omnibase_core.enums.enum_orchestrator_types import (

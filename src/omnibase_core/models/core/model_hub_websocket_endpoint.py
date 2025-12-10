@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hub WebSocket Endpoint Model - ONEX Standards Compliant.
+Hub WebSocket Endpoint Model.
 
 Strongly-typed model for WebSocket endpoint configuration in hubs.
 """

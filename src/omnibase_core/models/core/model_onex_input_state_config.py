@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ONEX Input State Configuration - ONEX Standards Compliant.
+ONEX Input State Configuration.
 
 Strongly-typed configuration class for ONEX input state.
 """

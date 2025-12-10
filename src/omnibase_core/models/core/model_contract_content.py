@@ -8,7 +8,6 @@ Model for contract content representation in ONEX NodeBase implementation.
 This model supports the PATTERN-005 ContractLoader functionality for
 strongly typed contract content.
 
-Author: ONEX Framework Team
 """
 
 from typing import Any

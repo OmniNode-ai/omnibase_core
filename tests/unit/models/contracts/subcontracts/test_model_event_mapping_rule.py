@@ -1,5 +1,5 @@
 """
-Unit tests for ModelEventMappingRule - ONEX Standards Compliant.
+Unit tests for ModelEventMappingRule.
 
 Comprehensive test coverage for event mapping rule model including:
 - Field validation and constraints

@@ -1,5 +1,5 @@
 """
-Unit tests for ModelRetrySubcontract - ONEX Standards Compliant.
+Unit tests for ModelRetrySubcontract.
 
 Comprehensive test coverage for retry subcontract model including:
 - Field validation and constraints

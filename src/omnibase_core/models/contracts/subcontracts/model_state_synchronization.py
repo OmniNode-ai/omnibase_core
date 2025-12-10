@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-State Synchronization Model - ONEX Standards Compliant.
+State Synchronization Model.
 
 Individual model for state synchronization configuration.
 Part of the State Management Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 

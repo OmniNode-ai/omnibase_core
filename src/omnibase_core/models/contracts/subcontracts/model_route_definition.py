@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-Route Definition Model - ONEX Standards Compliant.
+Route Definition Model.
 
 Individual model for route definition.
 Part of the Routing Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from uuid import UUID, uuid4

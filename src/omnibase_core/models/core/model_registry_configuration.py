@@ -10,7 +10,6 @@ Model for registry configuration representation in ONEX NodeBase implementation.
 This model supports the PATTERN-005 RegistryFactory functionality for
 strongly typed registry configuration.
 
-Author: ONEX Framework Team
 """
 
 from pathlib import Path

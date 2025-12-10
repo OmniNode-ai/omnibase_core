@@ -20,7 +20,6 @@ This base class implements only the core functionality needed by all node types:
 - Event emission for lifecycle transitions
 - Metadata tracking and introspection support
 
-Author: ONEX Framework Team
 """
 
 import time
@@ -48,7 +47,7 @@ class NodeCoreBase(ABC):
     Each node type inherits from this base and adds only the specific capabilities
     it needs for its architectural role.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced - no Any types allowed in implementation.
 
     EnumLifecycle: initialize → process → complete → cleanup
 

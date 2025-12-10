@@ -166,7 +166,7 @@ def default_model_version() -> ModelSemVer:
 
 def parse_semver_from_string(version_str: str) -> ModelSemVer:
     """
-    Parse semantic version string into ModelSemVer using ONEX-compliant patterns.
+    Parse semantic version string into ModelSemVer using ONEX-compatible patterns.
 
     This function replaces the old ModelSemVer.from_string() factory method
     with proper validation through Pydantic's model creation.

@@ -1,12 +1,7 @@
 """
-Security Subcontract Model - ONEX Standards Compliant.
+Security Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for security functionality providing:
 - Sensitive data redaction and pattern detection
@@ -19,7 +14,7 @@ Dedicated subcontract model for security functionality providing:
 This model is composed into node contracts that require security functionality,
 providing clean separation between node logic and security behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -41,7 +36,7 @@ class ModelSecuritySubcontract(BaseModel):
     encryption, audit logging, access control, and input/output validation.
     Designed for composition into node contracts requiring security functionality.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

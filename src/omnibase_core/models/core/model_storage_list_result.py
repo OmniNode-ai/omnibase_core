@@ -1,5 +1,5 @@
 """
-Storage List Result Model - ONEX Standards Compliant.
+Storage List Result Model.
 
 Strongly-typed model for storage backend list operation results.
 """

@@ -4,7 +4,7 @@ Tests for ModelToolExecutionResult.
 Comprehensive test suite for tool execution result model.
 Adapted from archived test_model_execution_result.py.
 
-ZERO TOLERANCE: No Any types in implementation.
+Comprehensive type safety testing required.
 """
 
 from uuid import UUID, uuid4

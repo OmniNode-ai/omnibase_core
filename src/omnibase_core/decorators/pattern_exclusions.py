@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 """
 ONEX Pattern Exclusion Decorators.
-Provides fine-grained control over ONEX zero tolerance standards enforcement.
+Provides fine-grained control over ONEX strict typing standards enforcement.
 """
 
 from typing import Any

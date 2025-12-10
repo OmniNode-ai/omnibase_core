@@ -1,5 +1,5 @@
 """
-Effect Subcontract Limits - ONEX Standards Compliant.
+Effect Subcontract Limits.
 
 Centralized constants for Effect subcontract model validation limits.
 Extracting magic numbers improves maintainability and ensures consistency
@@ -11,8 +11,6 @@ These constants are used by:
 - ModelEffectContractMetadata: author max length
 - ModelHttpIOConfig, ModelDbIOConfig, ModelKafkaIOConfig, ModelFilesystemIOConfig: timeout bounds
 - ModelResolvedHttpContext, ModelResolvedDbContext, etc.: timeout bounds
-
-Implements: OMN-524, OMN-525
 """
 
 # =============================================================================

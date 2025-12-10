@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Cache Invalidation Model - ONEX Standards Compliant.
+Cache Invalidation Model.
 
 Model for cache invalidation policies in the ONEX caching system.
 """

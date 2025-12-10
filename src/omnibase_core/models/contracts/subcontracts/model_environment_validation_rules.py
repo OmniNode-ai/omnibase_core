@@ -1,10 +1,10 @@
 """
-Environment Validation Rules Model - ONEX Standards Compliant.
+Environment Validation Rules Model.
 
 Strongly-typed model for grouping environment-specific validation rules.
 Replaces dict[EnumEnvironment, dict[str, str]] with proper type safety.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 
 Inheritance Modes
 -----------------

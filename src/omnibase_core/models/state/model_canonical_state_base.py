@@ -4,9 +4,6 @@ Canonical State Base Model - Abstract base for version-controlled state storage.
 This abstract base class defines the interface for canonical state management
 in the pure reducer pattern. Implementations provide concrete storage backends
 (PostgreSQL, Redis, DynamoDB, etc.).
-
-Author: ONEX Framework Team
-Version: 1.0.0
 """
 
 from typing import Any

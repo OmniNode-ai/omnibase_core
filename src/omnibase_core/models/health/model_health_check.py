@@ -15,7 +15,6 @@ Health Check Configuration Model for ONEX Configuration-Driven Registry System.
 This module provides the ModelHealthCheck for strongly typed health check configuration.
 Provides scalable health check patterns instead of weak string typing.
 
-Author: OmniNode Team
 """
 
 

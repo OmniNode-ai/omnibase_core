@@ -7,6 +7,14 @@ Zero custom Python code required - all effect logic defined in YAML contracts.
 VERSION: 2.0.0
 STABILITY GUARANTEE: Effect subcontract interface is stable.
 
+Key Capabilities:
+- Side-effect management with external interaction focus
+- I/O operation abstraction (file, database, API calls)
+- ModelEffectTransaction management for rollback support
+- Retry policies and circuit breaker patterns
+- Event bus publishing for state changes
+- Atomic file operations for data integrity
+
 .. versionchanged:: 0.4.0
     Refactored from code-driven to contract-driven implementation.
 

@@ -1,4 +1,4 @@
-"""ONEX-compliant security event collection model for audit trails."""
+"""ONEX-compatible security event collection model for audit trails."""
 
 from __future__ import annotations
 

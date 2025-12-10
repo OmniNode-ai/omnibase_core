@@ -1,8 +1,8 @@
-"""ONEX-compliant Permission Model.
+"""ONEX-compatible Permission Model.
 
 Comprehensive permission model for fine-grained access control with support for
 resource hierarchies, conditional access, approval workflows, and audit trails.
-Fully ONEX-compliant with proper error handling, validation, and business logic.
+Fully ONEX-compatible with proper error handling, validation, and business logic.
 """
 
 import fnmatch
@@ -28,7 +28,7 @@ from omnibase_core.models.security.model_permission_metadata import (
 
 class ModelPermission(BaseModel):
     """
-    ONEX-compliant extensible permission model for fine-grained access control.
+    ONEX-compatible extensible permission model for fine-grained access control.
 
     Supports resource hierarchies, conditional access, enterprise features like
     delegation, approval workflows, and comprehensive audit trails.

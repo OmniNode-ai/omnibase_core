@@ -7,7 +7,6 @@ Detects string fields that should be datetime objects, specifically:
 - Fields typed as `str` with timestamp-like names
 - Provides specific suggestions for proper datetime typing
 
-Author: ONEX Framework Team
 """
 
 import argparse

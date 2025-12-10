@@ -9,7 +9,6 @@ Thread Safety:
     thread-safe for concurrent read access from multiple threads or async tasks.
     This follows the same pattern as ModelComputeOutput.
 
-Author: ONEX Framework Team
 """
 
 from datetime import datetime

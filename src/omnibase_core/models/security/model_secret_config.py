@@ -1,5 +1,5 @@
 """
-ModelSecretConfig - ONEX Standards Compliant.
+ModelSecretConfig.
 
 Enterprise-grade secret management configuration with comprehensive backend
 support, validation, and environment-specific optimizations.

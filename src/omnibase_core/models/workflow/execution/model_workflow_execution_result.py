@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-Simple Workflow Execution Result Model - ONEX Standards Compliant.
+Simple Workflow Execution Result Model.
 
 Domain-specific result model for workflow execution in the ONEX coordination system.
 Replaces the generic ModelExecutionResult with a focused workflow-specific model.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+This implementation does not use Any types.
 """
 
 from uuid import UUID, uuid4
@@ -28,7 +28,7 @@ class ModelWorkflowExecutionResult(BaseModel):
     Provides workflow-specific execution results with coordination metrics
     and performance tracking.
 
-    ZERO TOLERANCE: No Any types allowed.
+    Strict typing is enforced - no Any types allowed.
     """
 
     workflow_id: UUID = Field(default_factory=uuid4, description="Workflow identifier")

@@ -35,7 +35,7 @@ Usage:
 Part of omnibase_core framework - provides typed metadata for event envelopes.
 
 Related:
-    - OMN-224: ModelOnexEnvelope refactoring
+    - : ModelOnexEnvelope refactoring
     - ModelOnexEnvelope: Uses this model for its metadata field
 
 .. versionadded:: 0.3.6

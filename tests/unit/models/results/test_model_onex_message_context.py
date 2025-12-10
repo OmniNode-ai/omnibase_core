@@ -305,7 +305,7 @@ class TestModelOnexMessageContextComplexScenarios:
 
 
 class TestModelOnexMessageContextTypeSafety:
-    """Test type safety - ZERO TOLERANCE for Any types."""
+    """Test type safety - comprehensive testing required."""
 
     def test_value_uses_model_schema_value_not_any(self):
         """Test that value field uses ModelSchemaValue type, not Any."""

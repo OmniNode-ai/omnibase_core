@@ -4,7 +4,6 @@ Projection Watermark Model - Tracks materialization progress for projections.
 Watermarks enable lag detection and ensure eventually consistent reads in
 event-driven projection materialization.
 
-Author: ONEX Framework Team
 Version: 1.0.0
 """
 

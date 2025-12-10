@@ -1,5 +1,5 @@
 """
-Unit tests for ModelComponentHealthDetail - ONEX Standards Compliant.
+Unit tests for ModelComponentHealthDetail.
 
 Comprehensive test coverage for component health detail model including:
 - Field validation and constraints

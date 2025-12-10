@@ -19,5 +19,5 @@ Coverage Requirements:
 - 100% coverage for critical error handling paths
 - Comprehensive edge case and boundary condition testing
 
-ZERO TOLERANCE: All tests must be comprehensive, no shallow testing allowed.
+Strict typing is enforced: All tests must be comprehensive, no shallow testing allowed.
 """

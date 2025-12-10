@@ -1,5 +1,5 @@
 """
-RSD Agent Request Type Enumeration - ONEX Standards Compliant.
+RSD Agent Request Type Enumeration.
 
 Defines agent request types for RSD (Rapid Service Development) system.
 """

@@ -1,12 +1,8 @@
 """
-Effect Transaction Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+Effect Transaction Model.
 
 Transaction boundary configuration for effect operations.
 Only applicable to DB operations with the same connection.
-
-Implements: OMN-524
 """
 
 from typing import Literal

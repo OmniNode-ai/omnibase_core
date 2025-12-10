@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Introspection Contract Info Configuration - ONEX Standards Compliant.
+Introspection Contract Info Configuration.
 
 Strongly-typed configuration class for introspection contract info.
 """

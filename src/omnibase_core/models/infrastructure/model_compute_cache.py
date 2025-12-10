@@ -1,8 +1,4 @@
 """
-VERSION: 1.0.0
-STABILITY GUARANTEE: Abstract method signatures frozen.
-Breaking changes require major version bump.
-
 ModelComputeCache - Caching Layer for Compute Node Operations.
 
 Provides TTL-based caching with memory management and LRU eviction for expensive
@@ -15,10 +11,6 @@ Key Capabilities:
 - Access count tracking
 - Cache statistics and monitoring
 
-STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
-Code generators can target this stable interface.
-
-Author: ONEX Framework Team
 """
 
 from datetime import datetime, timedelta

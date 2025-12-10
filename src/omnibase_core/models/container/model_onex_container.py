@@ -10,7 +10,6 @@ This module provides the ModelONEXContainer that integrates with
 the contract-driven architecture, supporting workflow orchestration
 and observable dependency injection.
 
-Author: ONEX Framework Team
 """
 
 import asyncio

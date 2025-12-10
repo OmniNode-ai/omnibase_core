@@ -2,7 +2,7 @@
 
 > **Version**: v0.4.0
 > **Status**: Complete
-> **Purpose**: Structured, copy-paste-ready templates optimized for AI agents
+> **Purpose**: Structured, copy-paste-ready templates for node development
 > **Format**: Machine-parseable with explicit parameters and validation checklists
 > **Last Updated**: 2025-12-05
 

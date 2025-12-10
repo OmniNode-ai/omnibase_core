@@ -4,7 +4,7 @@ Performance Benchmarks for ModelDependency Validation Operations.
 Tests regex pattern performance, security validation, and large-scale
 dependency resolution to ensure ONEX compliance under load.
 
-ZERO TOLERANCE: Validation must remain fast even with complex patterns.
+Strict typing is enforced: Validation must remain fast even with complex patterns.
 """
 
 import time

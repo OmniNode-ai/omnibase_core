@@ -3,7 +3,7 @@ from __future__ import annotations
 from pydantic import Field
 
 """
-Progress Status Model - ONEX Standards Compliant.
+Progress Status Model.
 
 Model for overall workflow progress status in the ONEX workflow coordination system.
 """

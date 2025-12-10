@@ -4,7 +4,7 @@ ModelValidationRulesConverter - Shared Validation Rules Conversion Utility.
 Provides unified conversion logic for flexible validation rule formats across
 all contract models, eliminating code duplication and ensuring consistency.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced - no Any types allowed in implementation.
 """
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

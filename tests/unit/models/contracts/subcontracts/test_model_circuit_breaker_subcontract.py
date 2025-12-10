@@ -1,5 +1,5 @@
 """
-Unit tests for ModelCircuitBreakerSubcontract - ONEX Standards Compliant.
+Unit tests for ModelCircuitBreakerSubcontract.
 
 Comprehensive test coverage for circuit breaker subcontract model including:
 - Field validation and constraints

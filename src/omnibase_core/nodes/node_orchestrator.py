@@ -3,11 +3,6 @@ NodeOrchestrator - Workflow-driven orchestrator node for coordination.
 
 Primary orchestrator implementation using workflow definitions for coordination.
 Zero custom Python code required - all coordination logic defined declaratively.
-
-VERSION: 2.0.0
-STABILITY GUARANTEE: Workflow definition interface is stable.
-
-Author: ONEX Framework Team
 """
 
 from uuid import UUID

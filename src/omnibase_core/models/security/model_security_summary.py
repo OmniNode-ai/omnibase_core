@@ -1,5 +1,5 @@
 """
-Security Summary Models - ONEX Standards Compliant.
+Security Summary Models.
 
 Re-export module for security summary components including compliance,
 authorization, signature chain, security event, and main summary models.

@@ -1,4 +1,4 @@
-"""ONEX-compliant node signature model for cryptographic operations."""
+"""ONEX-compatible node signature model for cryptographic operations."""
 
 import base64
 import hashlib

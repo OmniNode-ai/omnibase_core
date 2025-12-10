@@ -50,7 +50,7 @@ class TestNodesAPISnapshot:
         exports that existed before any refactoring. If this test fails,
         it means the public API has changed and requires review.
 
-        Pre-refactor snapshot captured: 2025-12-03 (OMN-149)
+        Pre-refactor snapshot captured: 2025-12-03 ()
         Total exports: 20 (4 nodes + 9 models + 7 enums)
         """
         # Pre-refactor API snapshot - captured from nodes/__init__.py

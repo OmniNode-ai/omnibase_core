@@ -5,10 +5,6 @@ This module provides the ModelEffectInput model that wraps side effect
 operations with comprehensive transaction, retry, and circuit breaker
 configuration. Effect nodes handle all external I/O in the ONEX architecture.
 
-VERSION: 1.0.0
-STABILITY GUARANTEE: Model structure frozen.
-Breaking changes require major version bump.
-
 Thread Safety:
     ModelEffectInput is mutable by default. If thread-safety is needed,
     create the instance with all required values and treat as read-only

@@ -6,7 +6,6 @@ Model for contract cache representation in ONEX NodeBase implementation.
 This model supports the PATTERN-005 NodeBase functionality for
 contract caching and performance optimization.
 
-Author: ONEX Framework Team
 """
 
 from datetime import datetime

@@ -3,12 +3,12 @@ from pydantic import Field, field_validator
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
-Workflow Conditions Model - ONEX Standards Compliant.
+Workflow Conditions Model.
 
 Strongly-typed workflow conditions model that replaces dict[str, str | bool | int] patterns
 with proper Pydantic validation and type safety.
 
-ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
+Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 """
 
 from uuid import UUID, uuid4
@@ -25,7 +25,7 @@ class ModelWorkflowConditions(BaseModel):
     Replaces dict[str, str | bool | int] patterns with proper Pydantic model
     providing runtime validation and type safety for conditional workflow execution.
 
-    ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
+    Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
     """
 
     # ONEX correlation tracking

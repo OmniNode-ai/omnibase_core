@@ -2,7 +2,7 @@
 
 **Status**: Active
 **Version**: v0.4.0
-**Target Audience**: Developers and AI agents building ONEX nodes
+**Target Audience**: Developers building ONEX nodes
 **Prerequisites**: Python 3.12+, Poetry, Basic async/await understanding
 
 ## Overview
@@ -73,9 +73,9 @@ Each tutorial takes you from zero to a working, tested node:
 - [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) for testing strategies
 - [Agent Templates](10_AGENT_TEMPLATES.md) for structured templates
 
-## For AI Agents
+## Development Notes
 
-This guide is designed to be agent-friendly with:
+This guide is designed to be developer-friendly with:
 
 - ✅ **Structured formats**: Clear, parseable patterns
 - ✅ **Complete code examples**: Copy-paste ready

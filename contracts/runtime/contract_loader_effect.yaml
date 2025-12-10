@@ -110,7 +110,7 @@ effect_operations:
         extraction_engine: jsonpath
 
       # Override retry for scan operation
-      # Timing Validation [OMN-467]: 500 + 1000 + 2000 + 4000 + 5000(capped) = 12500ms * 1.15 = 14375ms
+      # Timing Validation: 500 + 1000 + 2000 + 4000 + 5000(capped) = 12500ms * 1.15 = 14375ms
       # Worst case retry (14375ms) << timeout (60000ms) - PASS (76% margin)
       retry_policy:
         enabled: true
@@ -174,7 +174,7 @@ effect_operations:
         fail_on_empty: true  # Empty contract file is an error
         extraction_engine: jsonpath
 
-      # Timing Validation [OMN-467]: 200 + 400 + 800 = 1400ms * 1.1 = 1540ms
+      # Timing Validation: 200 + 400 + 800 = 1400ms * 1.1 = 1540ms
       # Worst case retry (1540ms) << timeout (15000ms) - PASS (90% margin)
       retry_policy:
         enabled: true
@@ -216,4 +216,3 @@ metadata:
     - runtime
     - loader
   documentation_url: https://docs.onex.ai/effects/contract-loader
-  linear_ticket: OMN-467

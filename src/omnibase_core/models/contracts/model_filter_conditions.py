@@ -6,12 +6,12 @@ from pydantic import Field, field_validator
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
-Filter Conditions Model - ONEX Standards Compliant.
+Filter Conditions Model.
 
 Strongly-typed filter conditions model that replaces dict[str, str | int | float | bool] patterns
 with proper Pydantic validation and type safety.
 
-ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
+Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 """
 
 from datetime import UTC
@@ -29,7 +29,7 @@ class ModelFilterConditions(BaseModel):
     Replaces dict[str, str | int | float | bool] patterns with proper Pydantic model
     providing runtime validation and type safety for event filtering.
 
-    ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
+    Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
     """
 
     # ONEX correlation tracking

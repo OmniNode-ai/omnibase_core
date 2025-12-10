@@ -4,7 +4,7 @@ Performance Benchmarks for ModelWorkflowDependency Validation Operations.
 Tests validation performance at scale to ensure ONEX compliance with large
 dependency graphs and complex validation scenarios.
 
-ZERO TOLERANCE: Performance must remain acceptable even with 1000+ dependencies.
+Strict typing is enforced: Performance must remain acceptable even with 1000+ dependencies.
 """
 
 import time

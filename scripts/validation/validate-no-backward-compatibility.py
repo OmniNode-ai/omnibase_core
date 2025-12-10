@@ -5,7 +5,7 @@ Backward Compatibility Anti-Pattern Detection Hook
 Detects and rejects backward compatibility patterns in code submissions.
 Backward compatibility == tech debt when there are no consumers.
 
-ZERO TOLERANCE: No backward compatibility patterns allowed.
+Strict typing is enforced: No backward compatibility patterns allowed.
 
 Usage:
     # Pre-commit mode (staged files only)

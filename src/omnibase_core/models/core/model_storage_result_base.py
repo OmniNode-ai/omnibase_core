@@ -1,5 +1,5 @@
 """
-Storage Result Base Model - ONEX Standards Compliant.
+Storage Result Base Model.
 
 Strongly-typed model for storage backend operation results.
 """

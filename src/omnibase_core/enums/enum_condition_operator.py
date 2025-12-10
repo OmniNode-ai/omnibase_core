@@ -1,5 +1,5 @@
 """
-Condition Operator Enum - ONEX Standards Compliant.
+Condition Operator Enum.
 
 Allowed operators for workflow condition evaluation.
 """

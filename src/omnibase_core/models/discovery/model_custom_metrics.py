@@ -2,7 +2,7 @@
 Custom Metrics Model
 
 Strongly typed model for custom metrics to replace Dict[str, Any] usage.
-Follows ONEX canonical patterns with zero tolerance for Any types.
+Follows ONEX canonical patterns with strict typing - no Any types allowed.
 
 Re-exports ModelCustomMetrics, ModelMetricValue, AnyMetricValue, and MetricValueT
 for convenient imports.

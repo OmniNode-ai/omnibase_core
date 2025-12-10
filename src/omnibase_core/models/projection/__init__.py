@@ -4,7 +4,6 @@ Projection Models - Bases for read-optimized state projections.
 Provides abstract base classes and concrete models for projection management
 in CQRS architectures with eventual consistency.
 
-Author: ONEX Framework Team
 Version: 1.0.0
 """
 

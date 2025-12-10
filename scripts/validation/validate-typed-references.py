@@ -7,7 +7,6 @@ Detects generic string references that should be typed entity references:
 - Properties returning `list[str]` for entity collections
 - String fields that should be UUID or typed ID references
 
-Author: ONEX Framework Team
 """
 
 import argparse

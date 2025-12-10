@@ -97,7 +97,7 @@ SimpleValueType = TypeVar("SimpleValueType", str, int, bool, float)
 # Schema value types - standardized types for replacing hardcoded unions
 # These types replace patterns like str | int | float | bool throughout the codebase
 
-# ONEX-compliant type definitions (avoiding primitive soup anti-pattern)
+# ONEX-compatible type definitions (avoiding primitive soup anti-pattern)
 # Use object with runtime validation instead of primitive soup unions
 
 # Standard primitive value type - use object with runtime validation
@@ -209,7 +209,7 @@ def is_metadata_provider(obj: object) -> bool:
     return hasattr(obj, "metadata")
 
 
-# Type guards for ONEX-compliant primitive value validation
+# Type guards for ONEX-compatible primitive value validation
 # These replace primitive soup unions with runtime validation
 
 
@@ -303,7 +303,7 @@ __all__ = [
     "is_identifiable",
     "is_metadata_provider",
     "is_nameable",
-    # ONEX-compliant type validation guards
+    # ONEX-compatible type validation guards
     "is_primitive_value",
     # Type guards
     "is_serializable",

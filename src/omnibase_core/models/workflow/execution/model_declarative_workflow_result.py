@@ -4,7 +4,7 @@ Declarative workflow execution result model.
 Result of declarative workflow execution from workflow_executor utilities.
 Follows ONEX one-model-per-file architecture.
 
-ZERO TOLERANCE: No Any types in implementation.
+Strict typing is enforced - no Any types in implementation.
 """
 
 from datetime import UTC, datetime, timezone

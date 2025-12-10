@@ -3,7 +3,6 @@
 > **Version**: 1.0.0
 > **Date**: 2025-12-07
 > **Status**: DRAFT - Ready for Implementation
-> **Ticket**: [OMN-465](https://linear.app/omninode/issue/OMN-465)
 > **Full Roadmap**: [NODECOMPUTE_VERSIONING_ROADMAP.md](./NODECOMPUTE_VERSIONING_ROADMAP.md)
 
 ---
@@ -1009,7 +1008,6 @@ class NodeTextProcessor(NodeCompute):
 <!-- TODO(v1.1+): Add link to NODECOMPUTE_FULL_DESIGN_V1X_TARGET.md when available -->
 - **Versioning Roadmap**: [NODECOMPUTE_VERSIONING_ROADMAP.md](./NODECOMPUTE_VERSIONING_ROADMAP.md)
 - **Example Contract**: [user_profile_normalizer.yaml](../../examples/contracts/compute/user_profile_normalizer.yaml)
-- **Linear Issue**: [OMN-465](https://linear.app/omninode/issue/OMN-465)
 - **NodeReducer Pattern**: [node_reducer.py](../../src/omnibase_core/nodes/node_reducer.py)
 - **NodeOrchestrator Pattern**: [node_orchestrator.py](../../src/omnibase_core/nodes/node_orchestrator.py)
 
