@@ -30,7 +30,9 @@ import pytest
 # Import the validation script components
 # We need to add the scripts directory to path for testing
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent / "scripts"
-sys.path.insert(0, str(SCRIPTS_DIR))
+scripts_dir = str(SCRIPTS_DIR)
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
 
 # Module-level variables that will be populated when the script loads
 # Using Any type to satisfy mypy since module may not exist at type-check time
@@ -102,7 +104,7 @@ pytestmark = [pytest.mark.unit, pytest.mark.timeout(30)]
 
 
 class TestTransportViolation:
-    """Tests for the TransportViolation dataclass."""
+    """Tests for TransportViolation dataclass creation and formatting."""
 
     def test_violation_creation(self) -> None:
         """Test that TransportViolation can be created with all fields."""
@@ -145,7 +147,7 @@ class TestTransportViolation:
 
 
 class TestBannedModulesConfiguration:
-    """Tests for the banned modules configuration."""
+    """Tests that banned modules configuration is complete."""
 
     def test_banned_modules_contains_kafka(self) -> None:
         """Test that kafka is in the banned modules list."""
@@ -169,7 +171,7 @@ class TestBannedModulesConfiguration:
 
 
 class TestBannedKafkaImports:
-    """Tests for detection of banned Kafka imports."""
+    """Tests detection of banned Kafka library imports."""
 
     def test_detects_import_kafka(self) -> None:
         """Test detection of 'import kafka'."""
@@ -248,7 +250,7 @@ from aiokafka import AIOKafkaProducer
 
 
 class TestBannedRedisImports:
-    """Tests for detection of banned Redis imports."""
+    """Tests detection of banned Redis/Valkey library imports."""
 
     def test_detects_import_redis(self) -> None:
         """Test detection of 'import redis'."""
@@ -308,7 +310,7 @@ import valkey
 
 
 class TestBannedHttpImports:
-    """Tests for detection of banned HTTP client imports."""
+    """Tests detection of banned HTTP client library imports."""
 
     def test_detects_import_httpx(self) -> None:
         """Test detection of 'import httpx'."""
@@ -386,7 +388,7 @@ from aiohttp import ClientSession
 
 
 class TestBannedDatabaseImports:
-    """Tests for detection of banned database imports."""
+    """Tests detection of banned database client imports."""
 
     def test_detects_from_asyncpg_import(self) -> None:
         """Test detection of 'from asyncpg import connect'."""
@@ -465,7 +467,7 @@ import psycopg2
 
 
 class TestBannedInfrastructureImports:
-    """Tests for detection of banned infrastructure imports."""
+    """Tests detection of banned infrastructure library imports."""
 
     def test_detects_import_hvac(self) -> None:
         """Test detection of 'import hvac' (Vault client)."""
@@ -507,7 +509,7 @@ import consul
 
 
 class TestAllowedImports:
-    """Tests for imports that should be allowed."""
+    """Tests that allowed imports pass validation."""
 
     def test_allows_typing_import(self) -> None:
         """Test that 'import typing' is allowed."""
@@ -620,7 +622,7 @@ from abc import ABC, abstractmethod
 
 
 class TestTypeCheckingBlockHandling:
-    """Tests for TYPE_CHECKING block handling."""
+    """Tests that TYPE_CHECKING block imports are allowed."""
 
     def test_allows_imports_in_type_checking_block(self) -> None:
         """Test that imports inside TYPE_CHECKING blocks are allowed."""
@@ -669,7 +671,7 @@ if typing.TYPE_CHECKING:
 
 
 class TestEdgeCases:
-    """Tests for edge cases and error handling."""
+    """Tests edge cases and error handling scenarios."""
 
     def test_handles_empty_file(self, tmp_path: Path) -> None:
         """Test that empty files pass validation."""
@@ -807,7 +809,7 @@ except ImportError:
 
 
 class TestMultipleViolations:
-    """Tests for multiple violation detection."""
+    """Tests detection of multiple violations in single files."""
 
     def test_detects_multiple_violations_same_file(self) -> None:
         """Test that multiple violations in one file are all detected."""
@@ -856,7 +858,7 @@ import redis
 
 
 class TestAnalyzeFileFunction:
-    """Tests for the analyze_file function."""
+    """Tests for the analyze_file() function."""
 
     def test_analyze_clean_file(self, tmp_path: Path) -> None:
         """Test analysis of a clean file with no banned imports."""
@@ -891,7 +893,7 @@ import kafka
 
 
 class TestFindPythonFilesFunction:
-    """Tests for the find_python_files function."""
+    """Tests for the find_python_files() function."""
 
     def test_finds_python_files(self, tmp_path: Path) -> None:
         """Test finding Python files in a directory."""
@@ -922,7 +924,7 @@ class TestFindPythonFilesFunction:
 
 
 class TestExitCodes:
-    """Tests for script exit codes."""
+    """Tests script exit code behavior."""
 
     def test_returns_zero_when_no_violations(self, tmp_path: Path) -> None:
         """Test that exit code is 0 when no violations are found."""
@@ -966,7 +968,7 @@ class TestExitCodes:
 
 
 class TestOutputFormats:
-    """Tests for output format options."""
+    """Tests --verbose and --json output formats."""
 
     def test_verbose_flag_produces_detailed_output(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
@@ -1036,12 +1038,12 @@ class TestOutputFormats:
         captured = capsys.readouterr()
         result = json.loads(captured.out)
         assert isinstance(result, dict)
-        # Summary should show clean files
-        assert result.get("summary", {}).get("violation_count", 0) == 0
+        # Summary should show clean files with no violations
+        assert result.get("summary", {}).get("total_violations", 0) == 0
 
 
 class TestAliasedImports:
-    """Tests for detection of aliased imports."""
+    """Tests detection of aliased imports."""
 
     def test_detects_aliased_kafka_import(self) -> None:
         """Test detection of 'import kafka as k'."""
@@ -1082,7 +1084,7 @@ from redis import Redis as R
 
 
 class TestSubmoduleImports:
-    """Tests for detection of submodule imports."""
+    """Tests detection of submodule imports."""
 
     def test_detects_kafka_submodule_import(self) -> None:
         """Test detection of 'from kafka.errors import KafkaError'."""

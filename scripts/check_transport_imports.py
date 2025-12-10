@@ -55,6 +55,7 @@ class ViolationType(Enum):
     """Types of transport import violations."""
 
     BANNED_TRANSPORT_IMPORT = "banned_transport_import"
+    SYNTAX_ERROR = "syntax_error"
 
 
 class Severity(Enum):
@@ -155,11 +156,13 @@ TRANSPORT_ALTERNATIVES: dict[str, str] = {
 # Temporary allowlist for pre-existing violations
 # These should be fixed and removed from this list
 # Each entry is a relative path from src/omnibase_core/
+#
+# EXPIRATION: Review and remove allowlisted items by 2025-03-01
 # TODO: Create separate tickets to fix these and remove from allowlist
 TEMPORARY_ALLOWLIST: frozenset[str] = frozenset(
     {
-        # OMN-XXX: mixin_health_check.py uses aiohttp directly for HTTP health checks
-        # Should use ProtocolHttpClient instead
+        # TODO: Create ticket - mixin_health_check.py uses aiohttp directly for HTTP
+        # health checks. Should use ProtocolHttpClient instead.
         "mixins/mixin_health_check.py",
     }
 )
@@ -222,13 +225,11 @@ class TransportImportAnalyzer(ast.NodeVisitor):
         """
         if self.in_type_checking_block:
             # Allow type-only imports inside TYPE_CHECKING blocks
-            self.generic_visit(node)
             return
 
         for alias in node.names:
             module_name = alias.name
             self._check_banned_module(node, module_name)
-        self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Check 'from ... import ...' statements for banned transport modules.
@@ -240,12 +241,10 @@ class TransportImportAnalyzer(ast.NodeVisitor):
         """
         if self.in_type_checking_block:
             # Allow type-only imports inside TYPE_CHECKING blocks
-            self.generic_visit(node)
             return
 
         module_name = node.module or ""
         self._check_banned_module(node, module_name)
-        self.generic_visit(node)
 
     def _is_type_checking_condition(self, test: ast.expr) -> bool:
         """Check if condition is TYPE_CHECKING or typing.TYPE_CHECKING.
@@ -372,7 +371,7 @@ def analyze_file(file_path: Path) -> TransportCheckResult:
                     file_path=file_path,
                     line_number=e.lineno or 0,
                     column=e.offset or 0,
-                    violation_type=ViolationType.BANNED_TRANSPORT_IMPORT,
+                    violation_type=ViolationType.SYNTAX_ERROR,
                     severity=Severity.ERROR,
                     message=f"Syntax error: {e.msg}",
                     suggestion="Fix the syntax error before transport check can run",
