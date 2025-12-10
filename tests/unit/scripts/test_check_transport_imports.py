@@ -745,6 +745,33 @@ if t.TYPE_CHECKING:
         # Imports inside aliased TYPE_CHECKING should be allowed
         assert len(analyzer.violations) == 0
 
+    def test_allows_tp_aliased_type_checking_block(self) -> None:
+        """Test that 'import typing as tp' aliased TYPE_CHECKING blocks work.
+
+        The `tp` alias is a common alternative to `t` for the typing module.
+        This test ensures our detection handles various alias names correctly.
+        """
+        skip_if_module_not_loaded()
+
+        code = """
+import typing as tp
+
+if tp.TYPE_CHECKING:
+    import kafka
+    from redis import Redis
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+
+        analyzer = TransportImportAnalyzer(
+            file_path=Path("/test.py"),
+            source_lines=source_lines,
+        )
+        analyzer.visit(tree)
+
+        # Imports inside tp-aliased TYPE_CHECKING should be allowed
+        assert len(analyzer.violations) == 0
+
     def test_allows_nested_type_checking_blocks(self) -> None:
         """Test that nested conditions inside TYPE_CHECKING blocks are handled.
 

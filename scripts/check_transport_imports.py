@@ -36,7 +36,8 @@ Exit Codes:
 
 Related:
     - Linear Ticket: OMN-220
-    - Architecture: docs/architecture/PROTOCOL_ARCHITECTURE.md
+    - Architecture: docs/architecture/DEPENDENCY_INVERSION.md
+    - Protocols: docs/architecture/PROTOCOL_ARCHITECTURE.md
 """
 
 from __future__ import annotations
@@ -160,7 +161,8 @@ TRANSPORT_ALTERNATIVES: dict[str, str] = {
 # Each entry is a relative path from src/omnibase_core/
 #
 # EXPIRATION: Review and remove allowlisted items by 2026-06-10
-# NOTE: This date is for tracking purposes - set to 6 months from last review
+# NOTE: This date is 6 months from initial implementation (2025-12-10).
+#       Update this date when reviewing allowlisted items.
 # TODO [OMN-220]: Create separate tickets to fix these and remove from allowlist
 TEMPORARY_ALLOWLIST: frozenset[str] = frozenset(
     {
@@ -404,6 +406,73 @@ def analyze_file(file_path: Path) -> TransportCheckResult:
             is_clean=False,
             skip_reason=f"Syntax error: {e.msg}",
         )
+    except UnicodeDecodeError as e:
+        # Handle encoding issues explicitly - common with binary or non-UTF-8 files
+        print(
+            f"Warning: Encoding error in {file_path}: {e}",
+            file=sys.stderr,
+        )
+        return TransportCheckResult(
+            file_path=file_path,
+            violations=[
+                TransportViolation(
+                    file_path=file_path,
+                    line_number=0,
+                    column=0,
+                    violation_type=ViolationType.ANALYSIS_ERROR,
+                    severity=Severity.ERROR,
+                    message=f"Encoding error: {e.reason} at position {e.start}",
+                    suggestion="Ensure file is UTF-8 encoded or add to exclusion list "
+                    "if it's a binary/non-Python file",
+                )
+            ],
+            is_clean=False,
+            skip_reason=f"Encoding error: {e.reason}",
+        )
+    except PermissionError as e:
+        # Handle permission issues explicitly - helps diagnose CI/CD environment issues
+        print(
+            f"Warning: Permission denied reading {file_path}: {e}",
+            file=sys.stderr,
+        )
+        return TransportCheckResult(
+            file_path=file_path,
+            violations=[
+                TransportViolation(
+                    file_path=file_path,
+                    line_number=0,
+                    column=0,
+                    violation_type=ViolationType.ANALYSIS_ERROR,
+                    severity=Severity.ERROR,
+                    message="Permission denied: cannot read file",
+                    suggestion="Check file permissions or run with appropriate privileges",
+                )
+            ],
+            is_clean=False,
+            skip_reason="Permission denied",
+        )
+    except FileNotFoundError as e:
+        # Handle race condition where file is deleted between discovery and analysis
+        print(
+            f"Warning: File not found {file_path}: {e}",
+            file=sys.stderr,
+        )
+        return TransportCheckResult(
+            file_path=file_path,
+            violations=[
+                TransportViolation(
+                    file_path=file_path,
+                    line_number=0,
+                    column=0,
+                    violation_type=ViolationType.ANALYSIS_ERROR,
+                    severity=Severity.ERROR,
+                    message="File not found (may have been deleted during analysis)",
+                    suggestion="Re-run the check - file may have been moved or deleted",
+                )
+            ],
+            is_clean=False,
+            skip_reason="File not found",
+        )
     except Exception as e:
         # Log to stderr for CI visibility - helps debug unexpected failures
         print(
@@ -423,8 +492,8 @@ def analyze_file(file_path: Path) -> TransportCheckResult:
                     violation_type=ViolationType.ANALYSIS_ERROR,
                     severity=Severity.ERROR,
                     message=f"Unexpected error during analysis: {type(e).__name__}: {e}",
-                    suggestion="Investigate the error - file may have encoding issues "
-                    "or unexpected content that prevents AST parsing",
+                    suggestion="Investigate the error - this may indicate a bug in the "
+                    "transport checker or an unusual file format",
                 )
             ],
             is_clean=False,
@@ -436,12 +505,13 @@ def find_python_files(src_dir: Path) -> list[Path]:
     """Find all Python files in the source directory.
 
     Recursively searches for .py files, excluding __pycache__ directories.
+    Returns resolved (absolute) paths for consistent comparison.
 
     Args:
         src_dir: Source directory to search (typically src/omnibase_core).
 
     Returns:
-        Sorted list of paths to Python files.
+        Sorted list of resolved paths to Python files.
     """
     python_files: list[Path] = []
 
@@ -449,7 +519,8 @@ def find_python_files(src_dir: Path) -> list[Path]:
         # Skip __pycache__ directories
         if "__pycache__" in py_file.parts:
             continue
-        python_files.append(py_file)
+        # Use resolved paths for consistent comparison with get_changed_files
+        python_files.append(py_file.resolve())
 
     return sorted(python_files)
 
@@ -518,14 +589,20 @@ def check_allowlist_expiration() -> tuple[bool, str]:
 def get_changed_files(src_dir: Path) -> list[Path]:
     """Get Python files changed in current git branch compared to main.
 
-    Uses git diff to find changed .py files. Falls back to all files
-    if git is unavailable or not in a git repository.
+    Uses git diff to find changed .py files. Returns empty list if:
+    - git is not available (FileNotFoundError)
+    - Not in a git repository
+    - Neither origin/main nor origin/master exists
+    - No Python files changed
+
+    The caller should handle empty list by falling back to checking all files.
 
     Args:
-        src_dir: Source directory to filter results.
+        src_dir: Source directory to filter results (resolved paths).
 
     Returns:
-        List of changed Python file paths within src_dir.
+        List of resolved changed Python file paths within src_dir,
+        or empty list if git operations fail.
     """
     import subprocess
 
@@ -536,6 +613,7 @@ def get_changed_files(src_dir: Path) -> list[Path]:
             capture_output=True,
             text=True,
             check=False,
+            cwd=src_dir.parent.parent,  # Run from repo root for correct paths
         )
         if result.returncode != 0:
             # Try master if main doesn't exist
@@ -544,13 +622,16 @@ def get_changed_files(src_dir: Path) -> list[Path]:
                 capture_output=True,
                 text=True,
                 check=False,
+                cwd=src_dir.parent.parent,
             )
 
         if result.returncode == 0 and result.stdout.strip():
             changed_files = []
             src_dir_resolved = src_dir.resolve()
+            repo_root = src_dir.parent.parent.resolve()
             for line in result.stdout.strip().split("\n"):
-                file_path = Path(line)
+                # Git returns paths relative to repo root
+                file_path = repo_root / line
                 # Only include files within src_dir using proper path comparison
                 # (avoids false positives from string containment)
                 if file_path.exists():
@@ -563,6 +644,8 @@ def get_changed_files(src_dir: Path) -> list[Path]:
             return sorted(changed_files)
     except FileNotFoundError:
         pass  # git not available
+    except OSError:
+        pass  # Not in a git repository or other OS error
 
     return []  # Return empty list if git fails
 
