@@ -1,0 +1,261 @@
+---
+# Example: Effect Node - File Processor (Simple)
+#
+# This is a simpler effect contract example demonstrating filesystem operations.
+# It reads data from an input file and writes processed results to an output file.
+#
+# USE CASE: Process data files in a staging directory, writing results to an
+# output directory. Common in ETL pipelines, data transformation jobs, and
+# batch processing systems.
+#
+# Node Implementation (minimal code needed):
+#   from omnibase_core.nodes import NodeEffect
+#   class NodeFileProcessorEffect(NodeEffect):
+#       pass  # All file operations driven by this YAML contract
+#
+# Features Demonstrated:
+# - Filesystem read operation (idempotent)
+# - Filesystem write operation with atomic writes (idempotent via overwrite)
+# - Path templating with ${} placeholders
+# - Atomic write operations (write to temp, then rename)
+# - Auto-creation of parent directories
+#
+# v1.0 Effect Subcontract Schema Version
+# ============================================================================
+
+# Contract required fields
+node_type: EFFECT_GENERIC
+contract_version: {major: 1, minor: 0, patch: 0}
+
+# ---------------------------------------------------------------------------
+# EFFECT SUBCONTRACT: File I/O Operations
+# ---------------------------------------------------------------------------
+
+effect:
+  version: {major: 1, minor: 0, patch: 0}
+  subcontract_name: file_processor
+  description: |
+    Reads data from an input file and writes processed results to an output file.
+    Uses atomic writes to ensure file integrity - partial writes never corrupt
+    the output file.
+
+  # Use abort mode - if read fails, don't attempt write
+  execution_mode: sequential_abort
+
+  operations:
+    # =========================================================================
+    # OPERATION 1: Read Input File
+    # =========================================================================
+    # Reads the contents of the input file for processing.
+    # File reads are naturally idempotent - reading the same file multiple
+    # times returns the same content (assuming no external modifications).
+    #
+    # The file content becomes available to subsequent operations via:
+    #   ${steps.read_input_file.result.content}
+
+    - operation_name: read_input_file
+      description: Read data from the input staging directory
+      idempotent: true  # Read operations are naturally idempotent
+
+      io_config:
+        # Handler type discriminator - selects ModelFilesystemIOConfig
+        handler_type: filesystem
+
+        # Operation type - read returns file content
+        operation: read
+
+        # File path template with input placeholders
+        # At runtime, ${input.filename} is resolved from effect input data
+        file_path_template: "/data/staging/input/${input.date}/${input.filename}"
+
+        # Read timeout - 10 seconds for potentially large files
+        timeout_ms: 10000
+
+        # Text encoding for reading the file
+        encoding: utf-8
+
+        # Note: atomic and create_dirs are not applicable to read operations
+        # Setting atomic: false explicitly (atomic only applies to writes)
+        atomic: false
+
+      # No retry for file reads - either the file exists or it doesn't
+      # If the file doesn't exist, retrying won't help
+      retry_policy:
+        enabled: false
+
+      # No circuit breaker for local filesystem - failures are usually
+      # deterministic (file not found, permission denied) not transient
+      circuit_breaker:
+        enabled: false
+
+      operation_timeout_ms: 15000
+
+    # =========================================================================
+    # OPERATION 2: Write Output File
+    # =========================================================================
+    # Writes the processed results to the output directory.
+    # Using atomic writes ensures that:
+    # 1. Write to a temporary file first
+    # 2. Only rename to final path on success
+    # 3. Partial/failed writes never corrupt the output
+    #
+    # This makes the write operation effectively idempotent - running it
+    # multiple times with the same data produces the same file content.
+
+    - operation_name: write_output_file
+      description: Write processed results to output directory with atomic write
+      idempotent: true  # Atomic write + same content = idempotent
+
+      io_config:
+        handler_type: filesystem
+        operation: write
+
+        # Output path template
+        # Can reference input fields and include date-based partitioning
+        file_path_template: "/data/output/processed/${input.date}/${input.filename}.processed.json"
+
+        # Write timeout - 30 seconds for potentially large outputs
+        timeout_ms: 30000
+
+        # ATOMIC WRITES: Critical for data integrity
+        # - Writes to a temporary file (e.g., .tmp suffix)
+        # - Renames to final path only on successful completion
+        # - If process crashes mid-write, no partial file at final path
+        # - Ensures "all or nothing" semantics
+        atomic: true
+
+        # Create parent directories if they don't exist
+        # Useful for date-partitioned output paths like /data/output/2024/01/15/
+        create_dirs: true
+
+        # Text encoding for the output file
+        encoding: utf-8
+
+        # File permissions (optional) - standard read/write for owner and group
+        mode: "0644"
+
+      # Light retry for write operations
+      # Transient failures (disk full temporarily) might benefit from retry
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: fixed
+        base_delay_ms: 1000
+        retryable_errors: ["ENOSPC", "EAGAIN"]  # Disk full, resource busy
+
+      circuit_breaker:
+        enabled: false  # Local filesystem doesn't benefit from circuit breaker
+
+      operation_timeout_ms: 60000
+
+  # ---------------------------------------------------------------------------
+  # DEFAULT POLICIES
+  # ---------------------------------------------------------------------------
+  # Conservative defaults for filesystem operations.
+
+  default_retry_policy:
+    enabled: false  # File operations are usually deterministic
+    max_retries: 0
+    backoff_strategy: fixed
+    base_delay_ms: 1000
+
+  default_circuit_breaker:
+    enabled: false  # Not useful for local filesystem
+
+  # No transaction support for filesystem operations
+  transaction:
+    enabled: false
+
+  # ---------------------------------------------------------------------------
+  # OBSERVABILITY
+  # ---------------------------------------------------------------------------
+
+  observability:
+    log_request: true  # Log file paths being accessed
+    log_response: false  # Don't log file contents (could be large/sensitive)
+    emit_metrics: true  # Track read/write latencies and success rates
+    trace_propagation: true  # Include in distributed traces
+
+# ---------------------------------------------------------------------------
+# EXAMPLE INPUT/OUTPUT
+# ---------------------------------------------------------------------------
+
+# Example Input:
+# {
+#   "operation_data": {
+#     "date": "2024-01-15",
+#     "filename": "user_events.json"
+#   }
+# }
+
+# Example Output on success:
+# {
+#   "success": true,
+#   "operations_completed": 2,
+#   "operations_failed": 0,
+#   "results": {
+#     "read_input_file": {
+#       "success": true,
+#       "result": {
+#         "content": "{\"events\": [...]}",
+#         "size_bytes": 1024,
+#         "modified_at": "2024-01-15T10:30:00Z"
+#       }
+#     },
+#     "write_output_file": {
+#       "success": true,
+#       "result": {
+#         "path": "/data/output/processed/2024-01-15/user_events.json.processed.json",
+#         "size_bytes": 2048
+#       }
+#     }
+#   }
+# }
+
+# ---------------------------------------------------------------------------
+# USAGE EXAMPLE
+# ---------------------------------------------------------------------------
+#
+# from omnibase_core.nodes import NodeEffect, ModelEffectInput
+# import yaml
+#
+# # Load contract
+# with open("file_processor.yaml") as f:
+#     contract_data = yaml.safe_load(f)
+#
+# # Create node
+# class NodeFileProcessorEffect(NodeEffect):
+#     pass
+#
+# node = NodeFileProcessorEffect(container, contract=contract_data)
+#
+# # Execute
+# input_data = ModelEffectInput(
+#     operation_data={
+#         "date": "2024-01-15",
+#         "filename": "user_events.json"
+#     }
+# )
+#
+# result = await node.execute(input_data)
+# print(f"Input file read: {result.results['read_input_file']['success']}")
+# print(f"Output file written: {result.results['write_output_file']['result']['path']}")
+
+# ---------------------------------------------------------------------------
+# CONTRACT METADATA
+# ---------------------------------------------------------------------------
+
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: ONEX Framework Team
+  description: |
+    Simple effect contract demonstrating filesystem read and write operations.
+    Shows atomic writes, path templating, and auto-directory creation.
+  tags:
+    - effect
+    - filesystem
+    - file-processing
+    - etl
+    - simple
+    - example
+  documentation_url: https://docs.onex.ai/effects/file-processor
