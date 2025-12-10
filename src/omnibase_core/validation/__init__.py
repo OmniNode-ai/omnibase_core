@@ -63,6 +63,14 @@ from .contracts import (
 from .patterns import validate_patterns_directory, validate_patterns_file
 from .types import validate_union_usage_directory, validate_union_usage_file
 from .validation_utils import ModelProtocolInfo
+from .workflow_validator import (
+    ModelCycleDetectionResult,
+    ModelDependencyValidationResult,
+    ModelIsolatedStepResult,
+    ModelUniqueNameResult,
+    ModelWorkflowValidationResult,
+    WorkflowValidator,
+)
 
 
 # Main validation functions (recommended interface)
@@ -142,4 +150,11 @@ __all__ = [
     "validate_union_usage_directory",
     "validate_union_usage_file",
     "validate_yaml_file",
+    # Workflow validation (OMN-176)
+    "ModelCycleDetectionResult",
+    "ModelDependencyValidationResult",
+    "ModelIsolatedStepResult",
+    "ModelUniqueNameResult",
+    "ModelWorkflowValidationResult",
+    "WorkflowValidator",
 ]

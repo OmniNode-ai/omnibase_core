@@ -11,11 +11,17 @@ Import validation models directly when needed:
 """
 
 # Only import non-circular models (Pydantic models that don't import from validation)
+# Workflow validation models (OMN-176) - safe to import
+from .model_cycle_detection_result import ModelCycleDetectionResult
+from .model_dependency_validation_result import ModelDependencyValidationResult
+from .model_isolated_step_result import ModelIsolatedStepResult
 from .model_migration_conflict_union import ModelMigrationConflictUnion
+from .model_unique_name_result import ModelUniqueNameResult
 from .model_validation_base import ModelValidationBase
 from .model_validation_container import ModelValidationContainer
 from .model_validation_error import ModelValidationError
 from .model_validation_value import ModelValidationValue
+from .model_workflow_validation_result import ModelWorkflowValidationResult
 
 # Note: Other validation models (ModelAuditResult, DuplicationInfo, ProtocolSignatureExtractor, etc.)
 # cause circular imports and should be imported directly from their modules when needed
@@ -27,6 +33,12 @@ __all__ = [
     "ModelValidationContainer",
     "ModelValidationError",
     "ModelValidationValue",
+    # Workflow validation models (OMN-176)
+    "ModelCycleDetectionResult",
+    "ModelDependencyValidationResult",
+    "ModelIsolatedStepResult",
+    "ModelUniqueNameResult",
+    "ModelWorkflowValidationResult",
     # Utility classes (import directly from their modules to avoid circular imports)
     # "ModelAuditResult",  # from .model_audit_result
     # "ModelContractValidationResult",  # from .model_contract_validation_result
