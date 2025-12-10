@@ -147,16 +147,22 @@ class EnvelopeRouter(ProtocolNodeRuntime):
                 # 2. Execution phase (thread-safe after freeze)
                 await router.execute_with_handler(envelope, node)
 
-        **Registration Phase** (single-threaded):
+        **Registration Phase** (single-threaded recommended):
             Registration methods (``register_handler``, ``register_node``, ``freeze``)
             are protected by an internal ``threading.Lock``. This ensures:
 
             - Atomic check-then-modify for the frozen flag
             - No race condition between ``freeze()`` and registration attempts
-            - Safe concurrent registration from multiple threads (if needed)
+            - Prevention of data corruption (torn writes) during concurrent access
 
-            However, the **recommended pattern** is single-threaded registration
-            during application startup, followed by ``freeze()``.
+            **Important**: The lock prevents structural corruption but does NOT
+            eliminate all race conditions. For example, application-level check-then-
+            modify patterns (e.g., "check if handler exists, then register") can still
+            race if performed outside the lock. The lock only protects individual
+            method calls, not multi-step application logic.
+
+            The **recommended pattern** is single-threaded registration during
+            application startup, followed by ``freeze()``.
 
             **Requirement**: All ``register_handler()`` and ``register_node()`` calls
             MUST complete before calling ``freeze()``. Once frozen, the router
@@ -619,6 +625,42 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
         This method acts as the DISPATCHER - it selects the correct handler
         based on the envelope's handler_type field and enforces routing rules.
+
+        .. warning::
+
+            **Freeze Contract Required (TOCTOU Safety)**
+
+            This method reads ``self._handlers`` WITHOUT holding a lock. This is
+            intentional for performance - acquiring a lock on every routing operation
+            would be prohibitively expensive in high-throughput scenarios.
+
+            **This is safe ONLY because the router MUST be frozen before use.**
+
+            The freeze contract guarantees:
+
+            1. After ``freeze()`` is called, the handler registry becomes immutable
+            2. No concurrent registration can occur after freeze
+            3. Python dict reads are atomic under the GIL
+
+            **Calling ``route_envelope()`` before ``freeze()`` is UNDEFINED BEHAVIOR.**
+
+            If the freeze contract is violated (i.e., ``register_handler()`` is called
+            concurrently with ``route_envelope()``), the behavior is undefined and
+            may result in:
+
+            - KeyError if handler is removed during lookup
+            - Stale handler reference if handler is replaced mid-routing
+            - Inconsistent state between routing check and handler retrieval
+
+            **Required Pattern**::
+
+                # 1. Registration phase (single-threaded)
+                router = EnvelopeRouter()
+                router.register_handler(http_handler)
+                router.freeze()  # <-- CRITICAL: freeze before any routing
+
+                # 2. Routing phase (safe after freeze)
+                routing_info = router.route_envelope(envelope)
 
         Args:
             envelope: The envelope to route. Must have handler_type set.

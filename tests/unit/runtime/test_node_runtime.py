@@ -3176,3 +3176,289 @@ class TestEnvelopeRouterConcurrencyStress:
 
         # Verify handler call count
         assert mock_handler.execute.call_count == 100
+
+    def test_concurrent_registration_prevents_corruption(
+        self,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+    ) -> None:
+        """
+        Stress test: Concurrent handler and node registration from multiple threads.
+
+        This test validates that the threading.Lock in EnvelopeRouter prevents
+        data corruption when multiple threads attempt registration concurrently.
+
+        EXPECTED BEHAVIOR:
+        - All registration attempts either succeed or fail with ModelOnexError
+        - No data corruption (internal state remains consistent)
+        - Registered handlers/nodes are actually present in the registries
+        - Thread-local state is not corrupted by concurrent access
+
+        Note:
+            This tests that threading.Lock prevents data corruption, NOT that
+            concurrent registration is semantically race-free. Duplicate key
+            registration may raise errors (expected behavior for nodes), and
+            handler registration with replace=True may have last-write-wins
+            semantics. The key invariant is that no corruption occurs.
+
+        Validates docstring claim in envelope_router.py line 156:
+            "Safe concurrent registration from multiple threads (if needed)"
+        """
+        import threading
+
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+
+        # Track outcomes from concurrent registration
+        handler_successes: list[EnumHandlerType] = []
+        handler_errors: list[tuple[EnumHandlerType, Exception]] = []
+        node_successes: list[str] = []
+        node_errors: list[tuple[str, Exception]] = []
+        lock = threading.Lock()
+
+        # Event to synchronize thread start for maximum concurrency
+        start_event = threading.Event()
+
+        def register_handler_task(thread_id: int) -> None:
+            """Register handlers with different handler_types concurrently."""
+            start_event.wait()
+
+            # Use different handler types for different threads to avoid
+            # semantic conflicts while still testing lock protection
+            handler_types = list(EnumHandlerType)
+            handler_type = handler_types[thread_id % len(handler_types)]
+
+            try:
+                handler = MagicMock()
+                handler.handler_type = handler_type
+                handler.execute = MagicMock()
+                handler.describe = MagicMock(
+                    return_value={
+                        "name": f"concurrent_handler_{thread_id}",
+                        "version": ModelSemVer(major=1, minor=0, patch=0),
+                    }
+                )
+
+                # Use replace=True to allow multiple registrations for same type
+                # (this is the default, but explicit for clarity)
+                runtime.register_handler(handler, replace=True)
+                with lock:
+                    handler_successes.append(handler_type)
+            except ModelOnexError as e:
+                with lock:
+                    handler_errors.append((handler_type, e))
+            except Exception as e:
+                with lock:
+                    handler_errors.append((handler_type, e))
+
+        def register_node_task(thread_id: int) -> None:
+            """Register nodes with unique slugs concurrently."""
+            start_event.wait()
+
+            # Each thread gets a unique slug to avoid DUPLICATE_REGISTRATION errors
+            slug = f"concurrent-node-{thread_id}"
+
+            try:
+                instance = NodeInstance(
+                    slug=slug,
+                    node_type=sample_node_type,
+                    contract=mock_contract,
+                )
+                runtime.register_node(instance)
+                with lock:
+                    node_successes.append(slug)
+            except ModelOnexError as e:
+                with lock:
+                    node_errors.append((slug, e))
+            except Exception as e:
+                with lock:
+                    node_errors.append((slug, e))
+
+        # Create threads: 20 handler registrations + 20 node registrations
+        handler_threads = [
+            threading.Thread(target=register_handler_task, args=(i,)) for i in range(20)
+        ]
+        node_threads = [
+            threading.Thread(target=register_node_task, args=(i,)) for i in range(20)
+        ]
+
+        # Start all threads
+        all_threads = handler_threads + node_threads
+        for t in all_threads:
+            t.start()
+
+        # Signal all threads to start simultaneously for maximum concurrency
+        start_event.set()
+
+        # Wait for all threads to complete
+        for t in all_threads:
+            t.join()
+
+        # === VERIFICATION: No data corruption ===
+
+        # 1. No unexpected errors (only ModelOnexError with expected codes is OK)
+        unexpected_handler_errors = [
+            (ht, e)
+            for ht, e in handler_errors
+            if not isinstance(e, ModelOnexError)
+            or e.error_code
+            not in (
+                EnumCoreErrorCode.INVALID_STATE,
+                EnumCoreErrorCode.DUPLICATE_REGISTRATION,
+            )
+        ]
+        assert len(unexpected_handler_errors) == 0, (
+            f"Unexpected handler errors: {unexpected_handler_errors}"
+        )
+
+        unexpected_node_errors = [
+            (slug, e)
+            for slug, e in node_errors
+            if not isinstance(e, ModelOnexError)
+            or e.error_code
+            not in (
+                EnumCoreErrorCode.INVALID_STATE,
+                EnumCoreErrorCode.DUPLICATE_REGISTRATION,
+            )
+        ]
+        assert len(unexpected_node_errors) == 0, (
+            f"Unexpected node errors: {unexpected_node_errors}"
+        )
+
+        # 2. All successful node registrations are actually in the registry
+        for slug in node_successes:
+            assert slug in runtime._nodes, (
+                f"Node {slug} reported success but not in registry"
+            )
+
+        # 3. Registry node count matches successful registrations
+        # (since each thread has unique slug, no duplicates expected)
+        assert len(runtime._nodes) == len(node_successes), (
+            f"Node count mismatch: registry has {len(runtime._nodes)}, successes: {len(node_successes)}"
+        )
+
+        # 4. Handler registry is consistent (handlers may have been replaced,
+        # but registry should contain valid handlers for each registered type)
+        for handler_type in runtime._handlers:
+            handler = runtime._handlers[handler_type]
+            assert handler is not None, f"Handler for {handler_type} is None"
+            assert hasattr(handler, "handler_type"), (
+                f"Handler for {handler_type} missing handler_type"
+            )
+
+        # 5. All operations accounted for (success + expected errors = total attempts)
+        total_handler_outcomes = len(handler_successes) + len(handler_errors)
+        assert total_handler_outcomes == 20, (
+            f"Handler outcomes: {total_handler_outcomes} != 20"
+        )
+
+        total_node_outcomes = len(node_successes) + len(node_errors)
+        assert total_node_outcomes == 20, f"Node outcomes: {total_node_outcomes} != 20"
+
+        # 6. Registry is not in corrupted state (can still perform operations)
+        # This verifies internal data structures weren't corrupted by concurrent access
+        assert isinstance(runtime._handlers, dict), "Handler registry corrupted"
+        assert isinstance(runtime._nodes, dict), "Node registry corrupted"
+        assert isinstance(runtime._frozen, bool), "Frozen flag corrupted"
+
+    def test_concurrent_registration_with_duplicate_slugs(
+        self,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+    ) -> None:
+        """
+        Stress test: Multiple threads trying to register nodes with SAME slug.
+
+        This tests that the lock prevents race conditions where two threads
+        both pass the "slug not in registry" check before either inserts,
+        potentially causing data loss or inconsistent state.
+
+        EXPECTED BEHAVIOR:
+        - Exactly one thread succeeds in registering the slug
+        - All other threads receive DUPLICATE_REGISTRATION error
+        - No data corruption or lost registrations
+        - The successfully registered node is the one in the registry
+        """
+        import threading
+
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+
+        # All threads try to register the SAME slug
+        target_slug = "contested-node-slug"
+
+        successes: list[int] = []  # Thread IDs that succeeded
+        duplicate_errors: list[int] = []  # Thread IDs that got DUPLICATE_REGISTRATION
+        other_errors: list[tuple[int, Exception]] = []
+        lock = threading.Lock()
+
+        # Event to synchronize thread start
+        start_event = threading.Event()
+
+        def register_same_slug_task(thread_id: int) -> None:
+            """All threads try to register the same slug."""
+            start_event.wait()
+
+            try:
+                instance = NodeInstance(
+                    slug=target_slug,
+                    node_type=sample_node_type,
+                    contract=mock_contract,
+                )
+                runtime.register_node(instance)
+                with lock:
+                    successes.append(thread_id)
+            except ModelOnexError as e:
+                with lock:
+                    if e.error_code == EnumCoreErrorCode.DUPLICATE_REGISTRATION:
+                        duplicate_errors.append(thread_id)
+                    else:
+                        other_errors.append((thread_id, e))
+            except Exception as e:
+                with lock:
+                    other_errors.append((thread_id, e))
+
+        # Create 50 threads all trying to register the same slug
+        threads = [
+            threading.Thread(target=register_same_slug_task, args=(i,))
+            for i in range(50)
+        ]
+
+        # Start all threads
+        for t in threads:
+            t.start()
+
+        # Signal all threads to start simultaneously
+        start_event.set()
+
+        # Wait for all threads to complete
+        for t in threads:
+            t.join()
+
+        # === VERIFICATION ===
+
+        # 1. No unexpected errors
+        assert len(other_errors) == 0, f"Unexpected errors: {other_errors}"
+
+        # 2. Exactly one thread succeeded
+        assert len(successes) == 1, (
+            f"Expected exactly 1 success, got {len(successes)}: {successes}"
+        )
+
+        # 3. All other threads got DUPLICATE_REGISTRATION
+        assert len(duplicate_errors) == 49, (
+            f"Expected 49 duplicates, got {len(duplicate_errors)}"
+        )
+
+        # 4. Total outcomes = 50
+        assert len(successes) + len(duplicate_errors) == 50
+
+        # 5. The slug is in the registry exactly once
+        assert target_slug in runtime._nodes
+        assert len(runtime._nodes) == 1
