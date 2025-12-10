@@ -10,7 +10,7 @@ on:
 env:
   POETRY_VERSION: "2.2.1"
   PYTHON_VERSION: "3.12"
-  CACHE_VERSION: "0.1.1"
+  CACHE_VERSION: "0.1.4"
 
 jobs:
   # Quick smoke test - fails fast on basic issues (5-10s)
@@ -262,7 +262,112 @@ jobs:
           poetry run mypy --strict \
             scripts/validation/validate-no-direct-io.py \
             scripts/validation/validate-all-exports.py \
-            scripts/validation/validate-no-infra-imports.py
+            scripts/validation/validate-no-infra-imports.py \
+            scripts/check_transport_imports.py
+
+      # CRITICAL: Transport Import Validation (B+ Hybrid Mode)
+      # This step enforces dependency inversion architecture by preventing omnibase_core
+      # from importing transport-layer modules (kafka, redis, etc.).
+      #
+      # Mode selection:
+      #   - Feature branches: Changed-files mode (fast ~15s feedback)
+      #   - Protected branches (main/develop): Full scan mode (comprehensive validation)
+      #
+      # WARNING: Do not modify the branch detection logic without understanding RISK-009.
+      # See: docs/architecture/decisions/RISK-009-ci-workflow-modification-risk.md
+      - name: Check for transport import violations (OMN-220)
+        id: transport-check
+        run: |
+          set +e  # Don't exit on first error, capture results
+
+          # Determine what checks to run
+          RUN_CHANGED_FILES="false"
+          RUN_FULL_SCAN="false"
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            if [[ "${{ github.base_ref }}" == "main" || "${{ github.base_ref }}" == "develop" ]]; then
+              # PR to protected branch: full scan only (changed-files is redundant)
+              RUN_FULL_SCAN="true"
+              echo "=== Transport Import Check (Full Scan - PR to ${{ github.base_ref }}) ==="
+            else
+              # PR to non-protected branch: changed files only (fast feedback)
+              RUN_CHANGED_FILES="true"
+              echo "=== Transport Import Check (Changed Files - PR to ${{ github.base_ref }}) ==="
+            fi
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            # Only full scan on pushes to protected branches
+            if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/develop" ]]; then
+              RUN_FULL_SCAN="true"
+              echo "=== Transport Import Check (Full Scan - Push to ${GITHUB_REF#refs/heads/}) ==="
+            else
+              # Push to non-protected branch: changed files only
+              RUN_CHANGED_FILES="true"
+              echo "=== Transport Import Check (Changed Files - Push to ${GITHUB_REF#refs/heads/}) ==="
+            fi
+          fi
+
+          CHANGED_FILES_EXIT=0
+          FULL_SCAN_EXIT=0
+
+          if [[ "$RUN_CHANGED_FILES" == "true" ]]; then
+            poetry run python scripts/check_transport_imports.py --changed-files --verbose
+            CHANGED_FILES_EXIT=$?
+          fi
+
+          if [[ "$RUN_FULL_SCAN" == "true" ]]; then
+            poetry run python scripts/check_transport_imports.py --verbose
+            FULL_SCAN_EXIT=$?
+          fi
+
+          # Output for summary step
+          echo "changed_files_exit=$CHANGED_FILES_EXIT" >> $GITHUB_OUTPUT
+          echo "full_scan_exit=$FULL_SCAN_EXIT" >> $GITHUB_OUTPUT
+          echo "run_changed_files=$RUN_CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "run_full_scan=$RUN_FULL_SCAN" >> $GITHUB_OUTPUT
+
+          # Restore strict mode
+          set -e
+
+          # Fail if any check found violations
+          if [[ $CHANGED_FILES_EXIT -ne 0 ]] || [[ $FULL_SCAN_EXIT -ne 0 ]]; then
+            echo ""
+            echo "Transport import violations detected!"
+            exit 1
+          fi
+
+          echo ""
+          echo "All transport import checks passed."
+
+      - name: Transport check summary
+        if: always()
+        run: |
+          echo "## Transport Import Validation (OMN-220)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          RUN_CHANGED="${{ steps.transport-check.outputs.run_changed_files }}"
+          RUN_FULL="${{ steps.transport-check.outputs.run_full_scan }}"
+          CHANGED_EXIT="${{ steps.transport-check.outputs.changed_files_exit }}"
+          FULL_EXIT="${{ steps.transport-check.outputs.full_scan_exit }}"
+
+          if [[ "$RUN_CHANGED" == "true" ]]; then
+            if [[ "$CHANGED_EXIT" == "0" ]]; then
+              echo "- Changed files check: Passed" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- Changed files check: **Failed** (exit code: $CHANGED_EXIT)" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- Changed files check: Skipped (targeting protected branch)" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "$RUN_FULL" == "true" ]]; then
+            if [[ "$FULL_EXIT" == "0" ]]; then
+              echo "- Full scan: Passed" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- Full scan: **Failed** (exit code: $FULL_EXIT)" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "- Full scan: Skipped (not targeting protected branch)" >> $GITHUB_STEP_SUMMARY
+          fi
 
   docs-validation:
     name: Documentation Validation
