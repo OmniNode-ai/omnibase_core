@@ -269,6 +269,12 @@ The script's `--changed-files` mode always compares against `origin/main` or `or
 
 **Impact**: For PRs targeting `develop`, if `develop` diverges significantly from `main`, the changed file detection may not be accurate.
 
+**Example**: If a developer creates branch `feature/my-change` from `main` at commit `abc123`, then `main` advances to commit `def456`, the `--changed-files` mode will compare against `origin/main` (at `def456`), not the original branch point (`abc123`). This means:
+- Files changed in `main` after branching may appear as "unchanged" in the diff
+- Files that were the same at branch point but diverged in `main` may show as "changed"
+
+In practice, this typically results in checking *more* files than strictly necessary (files touched by both the PR and recent main commits), which is a safe failure mode. The risk scenario is if a violation was introduced in `main` after branching and the PR happens to touch the same file - the violation would be detected, but attributed to the PR.
+
 **Accepted for now**: The common case is PRs to `main`, and `develop` should be relatively close to `main`. A `--base-ref` argument can be added when this actually causes problems.
 
 ### Process Requirements (Not Enforced by CI)

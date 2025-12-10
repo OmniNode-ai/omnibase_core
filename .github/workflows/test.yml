@@ -265,6 +265,16 @@ jobs:
             scripts/validation/validate-no-infra-imports.py \
             scripts/check_transport_imports.py
 
+      # CRITICAL: Transport Import Validation (B+ Hybrid Mode)
+      # This step enforces dependency inversion architecture by preventing omnibase_core
+      # from importing transport-layer modules (kafka, redis, etc.).
+      #
+      # Mode selection:
+      #   - Feature branches: Changed-files mode (fast ~15s feedback)
+      #   - Protected branches (main/develop): Full scan mode (comprehensive validation)
+      #
+      # WARNING: Do not modify the branch detection logic without understanding RISK-009.
+      # See: docs/architecture/decisions/RISK-009-ci-workflow-modification-risk.md
       - name: Check for transport import violations (OMN-220)
         id: transport-check
         run: |

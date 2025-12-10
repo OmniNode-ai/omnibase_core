@@ -773,11 +773,16 @@ def main() -> int:
     else:
         python_files = find_python_files(src_dir)
 
+    # Store total files before filtering for summary output
+    all_python_files_count = len(python_files)
+    changed_files_mode_active = False
+
     # Filter to only changed files if --changed-files flag is set
     if args.changed_files:
         changed = get_changed_files(src_dir)
         if changed:
             python_files = [f for f in python_files if f in changed]
+            changed_files_mode_active = True
             if args.verbose and not args.json:
                 print(
                     f"Checking {len(python_files)} changed files (--changed-files mode)"
@@ -842,7 +847,9 @@ def main() -> int:
     if args.json:
         output: dict[str, object] = {
             "summary": {
-                "total_files": total_files,
+                "total_files_in_src": all_python_files_count,
+                "files_checked": total_files,
+                "changed_files_mode": changed_files_mode_active,
                 "clean_files": clean_files,
                 "files_with_violations": files_with_violations,
                 "total_violations": total_violations,
@@ -889,7 +896,12 @@ def main() -> int:
     print("=" * 60)
     print("Transport Import Check Summary")
     print("=" * 60)
-    print(f"  Total files scanned: {total_files}")
+    if changed_files_mode_active:
+        print("  Mode: --changed-files (checking only modified files)")
+        print(f"  Total files in src/: {all_python_files_count}")
+        print(f"  Changed files checked: {total_files}")
+    else:
+        print(f"  Total files scanned: {total_files}")
     print(f"  Clean files: {clean_files}")
     print(f"  Files with violations: {files_with_violations}")
     print(f"  Total violations: {total_violations}")
