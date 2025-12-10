@@ -220,7 +220,12 @@ jobs:
           poetry run mypy --strict \
             scripts/validation/validate-no-direct-io.py \
             scripts/validation/validate-all-exports.py \
-            scripts/validation/validate-no-infra-imports.py
+            scripts/validation/validate-no-infra-imports.py \
+            scripts/check_transport_imports.py
+
+      - name: Check for transport import violations (OMN-220)
+        run: |
+          poetry run python scripts/check_transport_imports.py
 
   docs-validation:
     name: Documentation Validation
