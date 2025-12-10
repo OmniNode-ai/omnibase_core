@@ -215,6 +215,48 @@ jobs:
       - name: Run mypy type checking (strict)
         run: poetry run mypy src/omnibase_core
 
+  # Separate job for validation scripts mypy
+  mypy-validation-scripts:
+    name: Mypy Validation Scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
+        run: poetry install --no-interaction
+
       - name: Run mypy on architectural validation scripts (strict)
         run: |
           poetry run mypy --strict \
@@ -249,7 +291,7 @@ jobs:
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [smoke-test, test-parallel, lint, docs-validation]
+    needs: [smoke-test, test-parallel, lint, mypy-validation-scripts, docs-validation]
     if: always()
 
     steps:
@@ -258,16 +300,19 @@ jobs:
           smoke="${{ needs.smoke-test.result }}"
           parallel="${{ needs.test-parallel.result }}"
           lint="${{ needs.lint.result }}"
+          mypy_scripts="${{ needs.mypy-validation-scripts.result }}"
           docs="${{ needs.docs-validation.result }}"
 
           if [[ "$smoke" == "success" ]] && \
              [[ "$parallel" == "success" ]] && \
              [[ "$lint" == "success" ]] && \
+             [[ "$mypy_scripts" == "success" ]] && \
              [[ "$docs" == "success" ]]; then
             echo "✅ All tests passed successfully"
             echo "Smoke Tests: ✅ Passed"
             echo "Parallel Tests (20 splits): ✅ Passed"
             echo "Code Quality: ✅ Passed"
+            echo "Mypy Validation Scripts: ✅ Passed"
             echo "Documentation: ✅ Passed"
             exit 0
           else
@@ -275,6 +320,7 @@ jobs:
             echo "Smoke Tests: $smoke"
             echo "Parallel Tests: $parallel"
             echo "Lint: $lint"
+            echo "Mypy Scripts: $mypy_scripts"
             echo "Documentation: $docs"
             exit 1
           fi
