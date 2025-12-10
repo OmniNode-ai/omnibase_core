@@ -6,9 +6,9 @@ coordination operations with comprehensive configuration for execution modes,
 parallelism, timeouts, and failure handling strategies.
 
 Thread Safety:
-    ModelOrchestratorInput is mutable by default. If thread-safety is needed,
-    create the instance with all required values and treat as read-only
-    after creation.
+    ModelOrchestratorInput is immutable (frozen=True) and thread-safe.
+    All instances are read-only after creation, making them safe to share
+    across threads without synchronization.
 
 Key Features:
     - Multiple execution modes (SEQUENTIAL, PARALLEL, CONDITIONAL)
@@ -135,4 +135,6 @@ class ModelOrchestratorInput(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         use_enum_values=False,
+        frozen=True,
+        extra="forbid",
     )
