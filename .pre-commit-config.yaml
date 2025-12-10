@@ -212,11 +212,11 @@ repos:
         stages: [pre-commit]
 
       # UNION VALIDATION THRESHOLD:
-      # Current baseline: 256 invalid unions (2025-12-09)
-      # Threshold maintained at 256 by using centralized type aliases
-      # Effect result types now use EffectResultType and DbParamType
-      # from omnibase_core.types.type_effect_result instead of inline unions
-      # TECH DEBT: Union cleanup tracked as follow-up work (reduce toward 0)
+      # Tech debt: Union type threshold set to 256 to allow PR to pass.
+      # Target: Reduce to 0 incrementally. Tracking: OMN-468
+      # Current baseline from v0.4.0 contract-driven NodeEffect refactor (2025-12-09).
+      # Threshold maintained by using centralized type aliases (EffectResultType,
+      # DbParamType from omnibase_core.types.type_effect_result) instead of inline unions.
       - id: validate-union-usage
         name: ONEX Union Usage Validation
         entry: poetry run python scripts/validation/validate-union-usage.py

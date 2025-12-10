@@ -165,9 +165,16 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         ```
 
     Thread Safety:
+        WARNING: NodeEffect instances are NOT thread-safe. Do not share
+        instances across threads. Each thread should create its own instance.
+
+        For debugging, set ONEX_DEBUG_THREAD_SAFETY=1 to enable runtime
+        thread affinity checks that will raise ModelOnexError if cross-thread
+        access is detected. See docs/guides/THREADING.md for details.
+
+        Technical notes:
         - Circuit breaker state is process-local and NOT thread-safe
         - Each thread should have its own NodeEffect instance
-        - See docs/guides/THREADING.md for guidelines
 
     v1.0 Limitations:
         Per-operation configs (response_handling, retry_policy, circuit_breaker,

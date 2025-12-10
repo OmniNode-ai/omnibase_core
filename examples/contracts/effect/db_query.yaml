@@ -67,6 +67,10 @@ effect_operations:
   # ---------------------------------------------------------------------------
   # OPERATIONS: Sequential list of database operations
   # ---------------------------------------------------------------------------
+  # V1.0 LIMITATION: Per-operation configs (retry_policy, circuit_breaker,
+  # response_handling) are PARSED but use SUBCONTRACT-LEVEL DEFAULTS only.
+  # Per-operation overrides will be honored in v2.0. See: OMN-467
+  # ---------------------------------------------------------------------------
 
   operations:
     # =========================================================================

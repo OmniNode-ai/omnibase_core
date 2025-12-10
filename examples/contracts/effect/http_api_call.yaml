@@ -70,6 +70,11 @@ effect_operations:
   # ---------------------------------------------------------------------------
   # Each operation represents a single interaction with an external system.
   # Operations are executed according to execution_order.
+  #
+  # V1.0 LIMITATION: Per-operation configs (retry_policy, circuit_breaker,
+  # response_handling) are PARSED but use SUBCONTRACT-LEVEL DEFAULTS only.
+  # Per-operation overrides will be honored in v2.0. See: OMN-467
+  # ---------------------------------------------------------------------------
 
   operations:
     # =========================================================================
