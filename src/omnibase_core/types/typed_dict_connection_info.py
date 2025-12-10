@@ -19,3 +19,6 @@ class TypedDictConnectionInfo(TypedDict):
     last_activity: datetime
     bytes_sent: int
     bytes_received: int
+
+
+__all__ = ["TypedDictConnectionInfo"]

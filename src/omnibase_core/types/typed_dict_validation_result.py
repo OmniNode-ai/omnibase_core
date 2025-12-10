@@ -16,3 +16,6 @@ class TypedDictValidationResult(TypedDict):
     info_count: int
     validation_time_ms: int
     rules_checked: int
+
+
+__all__ = ["TypedDictValidationResult"]

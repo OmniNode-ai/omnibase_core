@@ -9,8 +9,15 @@ Standard error handling decorators for ONEX framework.
 This module provides decorators that eliminate error handling boilerplate
 and ensure consistent error patterns across all tools, especially important
 for agent-generated tools.
+
+All decorators in this module follow the ONEX exception handling contract:
+- Cancellation/exit signals (SystemExit, KeyboardInterrupt, GeneratorExit,
+  asyncio.CancelledError) ALWAYS propagate - they are never caught.
+- ModelOnexError is always re-raised as-is to preserve error context.
+- Other exceptions are wrapped in ModelOnexError with appropriate error codes.
 """
 
+import asyncio
 import functools
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -41,6 +48,10 @@ def standard_error_handling(
     Pattern Applied:
         try:
             return original_function(*args, **kwargs)
+        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            raise  # Never catch cancellation/exit signals
+        except asyncio.CancelledError:
+            raise  # Never suppress async cancellation
         except ModelOnexError:
             raise  # Always re-raise ModelOnexError as-is
         except Exception as e:
@@ -48,6 +59,11 @@ def standard_error_handling(
                 f"{operation_name} failed: {str(e)}",
                 EnumCoreErrorCode.OPERATION_FAILED
             ) from e
+
+    Note:
+        Cancellation and exit signals (SystemExit, KeyboardInterrupt,
+        GeneratorExit, asyncio.CancelledError) are NEVER caught. These
+        must propagate for proper shutdown and task cancellation semantics.
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -55,6 +71,12 @@ def standard_error_handling(
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
+            except (SystemExit, KeyboardInterrupt, GeneratorExit):
+                # Never catch cancellation/exit signals - they must propagate
+                raise
+            except asyncio.CancelledError:
+                # Never suppress async cancellation - required for proper task cleanup
+                raise
             except ModelOnexError:
                 # Always re-raise ModelOnexError as-is to preserve error context
                 raise
@@ -91,6 +113,11 @@ def validation_error_handling(
         def validate_contract(self, contract_data):
             # Validation logic that may throw ValidationError
             return validation_result
+
+    Note:
+        Cancellation and exit signals (SystemExit, KeyboardInterrupt,
+        GeneratorExit, asyncio.CancelledError) are NEVER caught. These
+        must propagate for proper shutdown and task cancellation semantics.
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -98,6 +125,12 @@ def validation_error_handling(
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
+            except (SystemExit, KeyboardInterrupt, GeneratorExit):
+                # Never catch cancellation/exit signals - they must propagate
+                raise
+            except asyncio.CancelledError:
+                # Never suppress async cancellation - required for proper task cleanup
+                raise
             except ModelOnexError:
                 # Always re-raise ModelOnexError as-is
                 raise
@@ -138,6 +171,11 @@ def io_error_handling(
         def read_contract_file(self, file_path):
             # File I/O logic
             return file_content
+
+    Note:
+        Cancellation and exit signals (SystemExit, KeyboardInterrupt,
+        GeneratorExit, asyncio.CancelledError) are NEVER caught. These
+        must propagate for proper shutdown and task cancellation semantics.
     """
 
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -145,6 +183,12 @@ def io_error_handling(
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return func(*args, **kwargs)
+            except (SystemExit, KeyboardInterrupt, GeneratorExit):
+                # Never catch cancellation/exit signals - they must propagate
+                raise
+            except asyncio.CancelledError:
+                # Never suppress async cancellation - required for proper task cleanup
+                raise
             except ModelOnexError:
                 # Always re-raise ModelOnexError as-is
                 raise

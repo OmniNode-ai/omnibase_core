@@ -18,3 +18,6 @@ class TypedDictErrorDetails(TypedDict):
     timestamp: datetime
     stack_trace: NotRequired[str]
     context: NotRequired[dict[str, str]]
+
+
+__all__ = ["TypedDictErrorDetails"]

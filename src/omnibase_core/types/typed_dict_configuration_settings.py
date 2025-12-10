@@ -16,3 +16,6 @@ class TypedDictConfigurationSettings(TypedDict):
     timeout_ms: int
     retry_attempts: int
     batch_size: int
+
+
+__all__ = ["TypedDictConfigurationSettings"]

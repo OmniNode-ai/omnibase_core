@@ -13,3 +13,6 @@ class TypedDictMetadataParams(TypedDict, total=False):
     description: str
     deprecated: bool
     experimental: bool
+
+
+__all__ = ["TypedDictMetadataParams"]

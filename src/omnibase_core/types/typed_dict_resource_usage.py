@@ -16,3 +16,6 @@ class TypedDictResourceUsage(TypedDict):
     network_in_mb: float
     network_out_mb: float
     open_connections: int
+
+
+__all__ = ["TypedDictResourceUsage"]

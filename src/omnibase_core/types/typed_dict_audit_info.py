@@ -20,3 +20,6 @@ class TypedDictAuditInfo(TypedDict):
     ip_address: NotRequired[str]
     user_agent: NotRequired[str]
     outcome: str  # "success", "failure", "partial"
+
+
+__all__ = ["TypedDictAuditInfo"]

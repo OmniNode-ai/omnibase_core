@@ -20,3 +20,6 @@ class TypedDictNodeConfigurationSummary(TypedDict):
     is_production_ready: bool
     is_performance_optimized: bool
     has_custom_settings: bool
+
+
+__all__ = ["TypedDictNodeConfigurationSummary"]

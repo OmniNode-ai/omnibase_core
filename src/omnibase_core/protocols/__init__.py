@@ -16,6 +16,7 @@ Module Organization:
 - base/: Common type aliases and base protocols (ContextValue, SemVer, etc.)
 - container/: DI container and service registry protocols
 - event_bus/: Event-driven messaging protocols
+- runtime/: Runtime handler protocols (ProtocolHandler)
 - types/: Type constraint protocols (Configurable, Executable, etc.)
 - core.py: Core operation protocols (CanonicalSerializer)
 - schema/: Schema loading protocols
@@ -103,6 +104,11 @@ from omnibase_core.protocols.event_bus import (
     ProtocolKafkaEventBusAdapter,
     ProtocolSyncEventBus,
 )
+
+# =============================================================================
+# Runtime Module Exports
+# =============================================================================
+from omnibase_core.protocols.runtime import ProtocolHandler
 
 # =============================================================================
 # Schema Module Exports
@@ -237,6 +243,10 @@ __all__ = [
     # Core Module
     # ==========================================================================
     "ProtocolCanonicalSerializer",
+    # ==========================================================================
+    # Runtime Module
+    # ==========================================================================
+    "ProtocolHandler",
     # ==========================================================================
     # Schema Module
     # ==========================================================================

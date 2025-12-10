@@ -1,13 +1,13 @@
 """
 ProtocolNodeRuntime - Protocol for node runtime implementations.
 
-This module defines the protocol interface that NodeRuntime implementations
+This module defines the protocol interface that EnvelopeRouter implementations
 must follow. It enables dependency inversion where NodeInstance depends on
 an abstract interface rather than a concrete implementation.
 
 Related:
     - OMN-227: NodeInstance execution wrapper
-    - OMN-228: NodeRuntime implementation (future)
+    - OMN-228: EnvelopeRouter implementation
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ class ProtocolNodeRuntime(Protocol):
 
     This protocol enables dependency inversion - RuntimeNodeInstance depends on
     the abstract ProtocolNodeRuntime interface rather than a concrete
-    NodeRuntime implementation. This allows:
+    EnvelopeRouter implementation. This allows:
 
     - Different runtime implementations (sync, async, distributed)
     - Easy mocking in tests
@@ -39,8 +39,8 @@ class ProtocolNodeRuntime(Protocol):
     - Transaction management
 
     Note:
-        This protocol will be implemented by NodeRuntime (OMN-228).
-        For now, it defines the contract that RuntimeNodeInstance depends on.
+        This protocol is implemented by EnvelopeRouter (OMN-228).
+        It defines the contract that RuntimeNodeInstance depends on.
 
     Design Decision (Type Variance):
         The `instance` parameter uses the concrete `RuntimeNodeInstance` type rather

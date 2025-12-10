@@ -5,9 +5,6 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.container.service_registry import ServiceRegistry
-from omnibase_core.models.container.model_registry_config import (
-    create_default_registry_config,
-)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
@@ -54,20 +51,12 @@ class AnotherServiceImplementation(IAnotherService):
 
 
 class TestServiceRegistryExtended:
-    """Extended test suite for ServiceRegistry covering uncovered paths."""
+    """Extended test suite for ServiceRegistry covering uncovered paths.
 
-    @pytest.fixture
-    def registry(self) -> ServiceRegistry:
-        """Create a test registry instance."""
-        config = create_default_registry_config()
-        return ServiceRegistry(config)
-
-    @pytest.fixture
-    def non_lazy_registry(self) -> ServiceRegistry:
-        """Create a registry with lazy loading disabled."""
-        config = create_default_registry_config()
-        config.lazy_loading_enabled = False
-        return ServiceRegistry(config)
+    Note:
+        Registry fixtures (registry, non_lazy_registry) are provided by conftest.py
+        to avoid duplication across test files.
+    """
 
     # ===== register_service Tests (Lines 118-209) =====
 

@@ -5,9 +5,6 @@ from uuid import UUID
 import pytest
 
 from omnibase_core.container.service_registry import ServiceRegistry
-from omnibase_core.models.container.model_registry_config import (
-    create_default_registry_config,
-)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
@@ -36,13 +33,11 @@ class MockServiceImplementation(ITestService):
 
 @pytest.mark.unit
 class TestServiceRegistry:
-    """Test suite for ServiceRegistry."""
+    """Test suite for ServiceRegistry.
 
-    @pytest.fixture
-    def registry(self) -> ServiceRegistry:
-        """Create a test registry instance."""
-        config = create_default_registry_config()
-        return ServiceRegistry(config)
+    Note:
+        Registry fixture is provided by conftest.py to avoid duplication.
+    """
 
     @pytest.mark.asyncio
     async def test_registry_initialization(self, registry: ServiceRegistry) -> None:

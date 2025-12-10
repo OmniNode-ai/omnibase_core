@@ -64,8 +64,15 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.mark.performance
+@pytest.mark.slow
+@pytest.mark.timeout(120)
 class TestSourceNodeIdOverhead:
-    """Performance tests for source_node_id field overhead."""
+    """Performance tests for source_node_id field overhead.
+
+    Note:
+    - Marked as @slow due to bulk creation and serialization benchmarks
+    - Extended timeout (120s) for comprehensive performance testing
+    """
 
     def time_operation(
         self, func: Any, iterations: int = 100, warmup: int = 5
@@ -477,8 +484,15 @@ class TestSourceNodeIdOverhead:
 
 
 @pytest.mark.performance
+@pytest.mark.slow
+@pytest.mark.timeout(60)
 class TestPerformanceRegression:
-    """Regression tests to detect performance degradation over time."""
+    """Regression tests to detect performance degradation over time.
+
+    Note:
+    - Marked as @slow due to performance regression testing
+    - Timeout (60s) for baseline performance checks
+    """
 
     def test_creation_performance_baseline(self):
         """

@@ -16,8 +16,15 @@ from omnibase_core.models.infrastructure.model_timeout import ModelTimeout
 
 
 @pytest.mark.performance
+@pytest.mark.slow
+@pytest.mark.timeout(60)
 class TestModelTimeoutPerformance:
-    """Performance tests for ModelTimeout operations."""
+    """Performance tests for ModelTimeout operations.
+
+    Note:
+    - Marked as @slow due to performance timing tests
+    - Timeout (60s) for performance measurement tests
+    """
 
     def time_operation(self, func, iterations: int = 100) -> float:
         """Time an operation over multiple iterations."""

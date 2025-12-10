@@ -16,3 +16,6 @@ class TypedDictLegacyError(TypedDict, total=False):
     timestamp: str | None  # String representation of datetime
     stack_trace: str | None
     context: dict[str, str | None] | None
+
+
+__all__ = ["TypedDictLegacyError"]

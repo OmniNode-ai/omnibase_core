@@ -24,3 +24,6 @@ class TypedDictSystemState(TypedDict):
     stats: TypedDictStatsCollection
     services: list[TypedDictServiceInfo]
     dependencies: list[TypedDictDependencyInfo]
+
+
+__all__ = ["TypedDictSystemState"]

@@ -20,9 +20,15 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 @pytest.mark.performance
+@pytest.mark.slow
 @pytest.mark.timeout(60)
 class TestModelDependencyPerformance:
-    """Performance benchmarks for dependency validation operations."""
+    """Performance benchmarks for dependency validation operations.
+
+    Note:
+    - Marked as @slow due to 10000+ iteration performance tests
+    - Timeout (60s) for performance measurement tests
+    """
 
     @pytest.mark.performance
     @pytest.mark.skip(

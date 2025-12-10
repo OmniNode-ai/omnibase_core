@@ -19,3 +19,6 @@ class TypedDictServiceInfo(TypedDict):
     port: NotRequired[int]
     host: NotRequired[str]
     health_check_url: NotRequired[str]
+
+
+__all__ = ["TypedDictServiceInfo"]

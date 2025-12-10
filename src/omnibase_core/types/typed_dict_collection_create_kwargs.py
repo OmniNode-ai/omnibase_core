@@ -14,3 +14,6 @@ class TypedDictCollectionCreateKwargs(TypedDict, total=False):
 
     collection_display_name: str
     collection_id: UUID
+
+
+__all__ = ["TypedDictCollectionCreateKwargs"]

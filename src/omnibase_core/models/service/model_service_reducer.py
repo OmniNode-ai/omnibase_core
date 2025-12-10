@@ -50,6 +50,8 @@ Included Capabilities:
 Node Type: Reducer (Aggregation, state management, persistence)
 """
 
+from typing import Generic, TypeVar
+
 from omnibase_core.mixins.mixin_caching import MixinCaching
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
@@ -57,13 +59,18 @@ from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_reducer import NodeReducer
 
+# TypeVars for generic type parameters (using traditional syntax for mypy compatibility)
+T_Input = TypeVar("T_Input")
+T_Output = TypeVar("T_Output")
 
-class ModelServiceReducer[T_Input, T_Output](
+
+class ModelServiceReducer(
     MixinNodeService,
     NodeReducer[T_Input, T_Output],
     MixinHealthCheck,
     MixinCaching,
     MixinMetrics,
+    Generic[T_Input, T_Output],  # noqa: UP046 - Traditional syntax required for mypy CI compatibility
 ):
     """
     Standard Reducer Node Service following ONEX model naming conventions.

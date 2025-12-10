@@ -48,7 +48,48 @@ Included Capabilities:
     - Cache hit/miss tracking
 
 Node Type: Compute (Pure transformations, deterministic outputs)
+
+Migration Notes:
+    **v0.4.0**: Changed from PEP 695 type parameter syntax to traditional
+    ``TypeVar`` syntax for mypy strict mode compatibility. This is a
+    non-breaking change - the generic behavior is identical.
+
+    Old syntax (PEP 695, not supported by mypy in CI):
+
+    .. code-block:: python
+
+        class ModelServiceCompute[T_Input, T_Output](
+            MixinNodeService,
+            NodeCompute[T_Input, T_Output],
+            ...
+        ):
+            pass
+
+    New syntax (traditional TypeVar, mypy-compatible):
+
+    .. code-block:: python
+
+        T_Input = TypeVar("T_Input")
+        T_Output = TypeVar("T_Output")
+
+        class ModelServiceCompute(
+            MixinNodeService,
+            NodeCompute[T_Input, T_Output],
+            ...,
+            Generic[T_Input, T_Output],
+        ):
+            pass
+
+    Usage remains unchanged:
+
+    .. code-block:: python
+
+        class MyCompute(ModelServiceCompute[MyInput, MyOutput]):
+            async def execute_compute(self, contract: ModelContractCompute) -> dict:
+                ...
 """
+
+from typing import Generic, TypeVar
 
 from omnibase_core.mixins.mixin_caching import MixinCaching
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck
@@ -57,16 +98,25 @@ from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_compute import NodeCompute
 
+# TypeVars for generic type parameters (using traditional syntax for mypy compatibility)
+T_Input = TypeVar("T_Input")
+T_Output = TypeVar("T_Output")
+
 
 class ModelServiceCompute(
     MixinNodeService,
-    NodeCompute,
+    NodeCompute[T_Input, T_Output],
     MixinHealthCheck,
     MixinCaching,
     MixinMetrics,
+    Generic[T_Input, T_Output],  # noqa: UP046 - Traditional syntax required for mypy CI compatibility
 ):
     """
-    Standard Compute Node Service.
+    Standard Compute Node Service following ONEX model naming conventions.
+
+    Generic type parameters:
+        T_Input: Type of input data (flows from ModelComputeInput[T_Input])
+        T_Output: Type of output result (flows to ModelComputeOutput[T_Output])
 
     Combines NodeCompute base class with essential production mixins:
     - Persistent service mode (MixinNodeService) - long-lived MCP servers, tool invocation
@@ -116,3 +166,7 @@ class ModelServiceCompute(
             container: ONEX container providing service dependencies
         """
         super().__init__(container)
+
+
+# Backwards-compatible alias
+ServiceComputeNode = ModelServiceCompute

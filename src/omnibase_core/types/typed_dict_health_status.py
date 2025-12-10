@@ -18,3 +18,6 @@ class TypedDictHealthStatus(TypedDict):
     warning_count: int
     checks_passed: int
     checks_total: int
+
+
+__all__ = ["TypedDictHealthStatus"]

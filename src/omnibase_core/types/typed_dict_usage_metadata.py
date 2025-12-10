@@ -20,3 +20,6 @@ class TypedDictUsageMetadata(TypedDict, total=False):
     version: NotRequired[ModelSemVer]
     tags: NotRequired[list[str]]
     metadata: NotRequired[dict[str, str]]
+
+
+__all__ = ["TypedDictUsageMetadata"]
