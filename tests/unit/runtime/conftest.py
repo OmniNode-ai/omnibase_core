@@ -190,16 +190,22 @@ def _create_mock_handler(
     """
     Create a mock handler with the given handler_type.
 
-    This internal helper creates handlers that implement the protocol:
+    This internal helper creates handlers that implement ProtocolHandler:
     - handler_type property: Returns the EnumHandlerType
     - execute(envelope): Async method that processes envelopes
-    - describe(): Returns handler metadata (TypedDictHandlerMetadata-compliant)
+    - describe(): Returns handler metadata (TypedDictHandlerMetadata)
 
-    The describe() method returns a dict matching TypedDictHandlerMetadata with:
-    - name: Handler name (e.g., "mock_http_handler")
-    - version: ModelSemVer instance
-    - description: Human-readable description
-    - capabilities: List of capability strings
+    The describe() method returns a TypedDictHandlerMetadata dict with:
+    - name (Required[str]): Handler name (e.g., "mock_http_handler")
+    - version (Required[ModelSemVer]): Handler version
+    - description (str): Human-readable description (optional)
+    - capabilities (list[str]): List of capability strings (optional)
+
+    Note:
+        TypedDictHandlerMetadata uses ``total=False`` with ``Required[]`` markers,
+        allowing extension fields beyond the defined schema. This enables test
+        fixtures to add identification fields like "alternate" or "error_mode"
+        while remaining protocol-compliant.
 
     Args:
         handler_type: The handler type classification
@@ -207,7 +213,7 @@ def _create_mock_handler(
         error_message: Error message for failure cases (default None)
 
     Returns:
-        MagicMock configured as a protocol-compliant handler
+        MagicMock: A mock configured as a ProtocolHandler-compliant handler
     """
     handler = MagicMock()
     handler.handler_type = handler_type
@@ -239,17 +245,19 @@ def _create_mock_handler(
 @pytest.fixture
 def mock_handler() -> MagicMock:
     """
-    Create a mock HTTP handler for testing NodeRuntime.
+    Create a mock HTTP handler for testing EnvelopeRouter.
 
-    Returns a MagicMock configured with:
-    - handler_type property returning EnumHandlerType.HTTP
-    - AsyncMock execute() that returns a success response envelope
-    - describe() returning handler metadata
+    Returns:
+        MagicMock: A mock configured as a ProtocolHandler-compliant handler
+            with handler_type=HTTP. Includes:
+            - handler_type property returning EnumHandlerType.HTTP
+            - AsyncMock execute() that returns a success response envelope
+            - describe() returning TypedDictHandlerMetadata
 
     Usage::
 
         def test_example(mock_handler):
-            runtime = NodeRuntime()
+            runtime = EnvelopeRouter()
             runtime.register_handler(mock_handler)
 
             # Verify handler was called
@@ -272,10 +280,11 @@ def mock_handler_alternate() -> MagicMock:
     handler replacement behavior when registering a second handler
     with the same handler_type.
 
-    Note:
-        The describe() metadata includes an extra "alternate" field beyond
-        the standard TypedDictHandlerMetadata fields. This is allowed since
-        TypedDictHandlerMetadata uses total=False, permitting extension fields.
+    Returns:
+        MagicMock: A mock configured as a ProtocolHandler-compliant handler
+            with handler_type=HTTP. The describe() metadata includes an extra
+            "alternate" field beyond the standard TypedDictHandlerMetadata
+            fields (allowed since TypedDictHandlerMetadata uses total=False).
     """
     handler = _create_mock_handler(EnumHandlerType.HTTP)
     # Extension field for test identification (TypedDictHandlerMetadata allows extras)
@@ -288,10 +297,12 @@ def mock_handler_database() -> MagicMock:
     """
     Create a mock DATABASE handler for testing multiple handler types.
 
-    Returns a MagicMock configured with:
-    - handler_type property returning EnumHandlerType.DATABASE
-    - AsyncMock execute() that returns a success response envelope
-    - describe() returning handler metadata
+    Returns:
+        MagicMock: A mock configured as a ProtocolHandler-compliant handler
+            with handler_type=DATABASE. Includes:
+            - handler_type property returning EnumHandlerType.DATABASE
+            - AsyncMock execute() that returns a success response envelope
+            - describe() returning TypedDictHandlerMetadata
     """
     return _create_mock_handler(EnumHandlerType.DATABASE)
 
@@ -301,10 +312,12 @@ def mock_handler_kafka() -> MagicMock:
     """
     Create a mock KAFKA handler for testing multiple handler types.
 
-    Returns a MagicMock configured with:
-    - handler_type property returning EnumHandlerType.KAFKA
-    - AsyncMock execute() that returns a success response envelope
-    - describe() returning handler metadata
+    Returns:
+        MagicMock: A mock configured as a ProtocolHandler-compliant handler
+            with handler_type=KAFKA. Includes:
+            - handler_type property returning EnumHandlerType.KAFKA
+            - AsyncMock execute() that returns a success response envelope
+            - describe() returning TypedDictHandlerMetadata
     """
     return _create_mock_handler(EnumHandlerType.KAFKA)
 
@@ -316,23 +329,20 @@ def mock_handler_with_error() -> MagicMock:
 
     Returns a MagicMock configured to raise an exception when
     execute() is called. Used for testing error handling in
-    NodeRuntime.execute_with_handler().
+    EnvelopeRouter.execute_with_handler().
 
-    The handler:
-    - Has handler_type = HTTP
-    - execute() raises RuntimeError("Handler execution failed")
-    - describe() returns handler metadata (TypedDictHandlerMetadata-compliant)
-
-    Note:
-        The describe() metadata includes an extra "error_mode" field beyond
-        the standard TypedDictHandlerMetadata fields. This is allowed since
-        TypedDictHandlerMetadata uses total=False, permitting extension fields.
+    Returns:
+        MagicMock: A mock configured as a ProtocolHandler-compliant handler
+            with handler_type=HTTP that raises RuntimeError on execute().
+            The describe() metadata includes an extra "error_mode" field
+            beyond the standard TypedDictHandlerMetadata fields (allowed
+            since TypedDictHandlerMetadata uses total=False).
 
     Usage::
 
         @pytest.mark.asyncio
         async def test_error_handling(mock_handler_with_error):
-            runtime = NodeRuntime()
+            runtime = EnvelopeRouter()
             runtime.register_handler(mock_handler_with_error)
 
             result = await runtime.execute_with_handler(envelope, instance)

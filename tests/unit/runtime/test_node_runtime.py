@@ -194,6 +194,78 @@ class TestEnvelopeRouterRegisterHandler:
         assert mock_handler not in runtime._handlers.values()
         assert mock_handler_alternate in runtime._handlers.values()
 
+    def test_register_handler_replace_false_raises_on_duplicate(
+        self,
+        mock_handler: MagicMock,
+        mock_handler_alternate: MagicMock,
+    ) -> None:
+        """
+        Test that replace=False raises error on duplicate handler_type.
+
+        EXPECTED BEHAVIOR:
+        - First registration with replace=False succeeds
+        - Second registration with same handler_type and replace=False raises ModelOnexError
+        - Error code is DUPLICATE_REGISTRATION
+        - Error message mentions the handler type
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # First registration with replace=False succeeds
+        runtime.register_handler(mock_handler, replace=False)
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+
+        # Second registration with same type and replace=False raises error
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.register_handler(mock_handler_alternate, replace=False)
+
+        # Verify error details
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.DUPLICATE_REGISTRATION
+        assert "already registered" in str(error).lower()
+
+        # Verify original handler is still registered (no side effects from failed registration)
+        assert len(runtime._handlers) == 1
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
+    def test_register_handler_replace_true_replaces_silently(
+        self,
+        mock_handler: MagicMock,
+        mock_handler_alternate: MagicMock,
+    ) -> None:
+        """
+        Test that replace=True (default) silently replaces existing handler.
+
+        EXPECTED BEHAVIOR:
+        - First handler is registered successfully
+        - Second handler with same type and replace=True replaces the first
+        - No error is raised
+        - Only one handler remains registered
+        - The new handler is the one registered
+        """
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # Register first handler
+        runtime.register_handler(mock_handler)
+
+        # Verify first handler is registered
+        assert len(runtime._handlers) == 1
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
+        # Register second handler with explicit replace=True
+        runtime.register_handler(mock_handler_alternate, replace=True)
+
+        # Verify replacement occurred
+        assert len(runtime._handlers) == 1
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler_alternate
+        assert mock_handler not in runtime._handlers.values()
+
     def test_register_handler_none_raises_error(self) -> None:
         """
         Test that registering None handler raises error.
@@ -373,6 +445,10 @@ class TestEnvelopeRouterRouteEnvelope:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler was registered before routing
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+
         # Create envelope with handler_type matching mock_handler
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -391,6 +467,8 @@ class TestEnvelopeRouterRouteEnvelope:
         # Result should contain handler
         assert result is not None
         assert "handler" in result or hasattr(result, "handler")
+        # Verify the correct handler is returned
+        assert result["handler"] is mock_handler
 
     def test_route_envelope_no_matching_handler_raises_error(
         self,
@@ -443,6 +521,9 @@ class TestEnvelopeRouterRouteEnvelope:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler registration
+        assert len(runtime._handlers) == 1
+
         # Envelope explicitly specifies handler_type
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -458,6 +539,9 @@ class TestEnvelopeRouterRouteEnvelope:
         result = runtime.route_envelope(envelope)
 
         assert result is not None
+        # Verify the handler returned is the one we registered
+        assert "handler" in result
+        assert result["handler"] is mock_handler
 
 
 # =============================================================================
@@ -490,6 +574,10 @@ class TestEnvelopeRouterExecuteWithHandler:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler registration before execution
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+
         instance = NodeInstance(
             slug=sample_slug,
             node_type=sample_node_type,
@@ -512,6 +600,9 @@ class TestEnvelopeRouterExecuteWithHandler:
         result = await runtime.execute_with_handler(envelope, instance)
 
         assert result is not None
+        # Verify result is a valid response envelope
+        assert isinstance(result, ModelOnexEnvelope)
+        assert result.is_response is True
 
     @pytest.mark.asyncio
     async def test_execute_with_handler_calls_handler_execute(
@@ -1015,13 +1106,14 @@ class TestEnvelopeRouterEdgeCases:
 class TestEnvelopeRouterStringRepresentation:
     """Tests for EnvelopeRouter __str__ and __repr__ methods."""
 
-    def test_str_representation(self) -> None:
+    def test_str_representation_empty_router(self) -> None:
         """
-        Test that string representation is informative.
+        Test that string representation shows zero counts for empty router.
 
         EXPECTED BEHAVIOR:
-        - str(runtime) provides human-readable output
-        - Contains class name or identifier
+        - str(runtime) shows "EnvelopeRouter[handlers=0, nodes=0]" format
+        - Contains class name identifier
+        - Shows correct counts (0 for empty router)
         """
         from omnibase_core.runtime import EnvelopeRouter
 
@@ -1030,17 +1122,71 @@ class TestEnvelopeRouterStringRepresentation:
 
         assert str_repr is not None
         assert len(str_repr) > 0
+        assert "EnvelopeRouter" in str_repr
+        assert "handlers=0" in str_repr
+        assert "nodes=0" in str_repr
 
-    def test_repr_provides_debug_info(
+    def test_str_representation_with_handlers_and_nodes(
+        self,
+        mock_handler: MagicMock,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+    ) -> None:
+        """
+        Test that string representation shows correct counts after registration.
+
+        EXPECTED BEHAVIOR:
+        - str(runtime) reflects accurate handler and node counts
+        - Format is "EnvelopeRouter[handlers=N, nodes=M]"
+        """
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+        runtime.register_node(instance)
+
+        str_repr = str(runtime)
+
+        assert "EnvelopeRouter" in str_repr
+        assert "handlers=1" in str_repr
+        assert "nodes=1" in str_repr
+
+    def test_repr_provides_debug_info_empty_router(self) -> None:
+        """
+        Test that repr shows empty collections for empty router.
+
+        EXPECTED BEHAVIOR:
+        - repr(runtime) includes class name
+        - Shows empty handler list []
+        - Shows empty node list []
+        """
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        repr_str = repr(runtime)
+
+        assert "EnvelopeRouter" in repr_str
+        assert "handlers=[]" in repr_str
+        assert "nodes=[]" in repr_str
+
+    def test_repr_provides_debug_info_with_handlers(
         self,
         mock_handler: MagicMock,
     ) -> None:
         """
-        Test that repr provides useful debug information.
+        Test that repr includes handler type information.
 
         EXPECTED BEHAVIOR:
         - repr(runtime) includes class name
-        - May include handler count or other state info
+        - Shows registered handler types in the list
+        - Handler type value is visible in output
         """
         from omnibase_core.runtime import EnvelopeRouter
 
@@ -1049,7 +1195,70 @@ class TestEnvelopeRouterStringRepresentation:
 
         repr_str = repr(runtime)
 
-        assert "EnvelopeRouter" in repr_str or "runtime" in repr_str.lower()
+        assert "EnvelopeRouter" in repr_str
+        # Should include the handler type value (e.g., 'http')
+        assert mock_handler.handler_type.value in repr_str.lower()
+
+    def test_repr_provides_debug_info_with_nodes(
+        self,
+        mock_handler: MagicMock,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+    ) -> None:
+        """
+        Test that repr includes node slug information.
+
+        EXPECTED BEHAVIOR:
+        - repr(runtime) includes class name
+        - Shows registered node slugs in the list
+        - Node slug is visible in output
+        """
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+        runtime.register_node(instance)
+
+        repr_str = repr(runtime)
+
+        assert "EnvelopeRouter" in repr_str
+        # Should include the node slug
+        assert sample_slug in repr_str
+
+    def test_repr_multiple_handlers_shows_all_types(
+        self,
+        mock_handler: MagicMock,
+        mock_handler_database: MagicMock,
+        mock_handler_kafka: MagicMock,
+    ) -> None:
+        """
+        Test that repr shows all handler types when multiple are registered.
+
+        EXPECTED BEHAVIOR:
+        - All registered handler types are visible in repr
+        - Each handler type value appears in the output
+        """
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+        runtime.register_handler(mock_handler_database)
+        runtime.register_handler(mock_handler_kafka)
+
+        repr_str = repr(runtime)
+
+        assert "EnvelopeRouter" in repr_str
+        # All handler types should be visible
+        assert mock_handler.handler_type.value in repr_str.lower()
+        assert mock_handler_database.handler_type.value in repr_str.lower()
+        assert mock_handler_kafka.handler_type.value in repr_str.lower()
 
 
 # =============================================================================
@@ -1076,14 +1285,24 @@ class TestEnvelopeRouterIntegrationPatterns:
         EXPECTED BEHAVIOR:
         - Complete workflow executes without errors
         - Each step completes successfully
+        - Registration state is verified at each step
         """
         from omnibase_core.runtime import EnvelopeRouter, NodeInstance
 
         # Create runtime
         runtime = EnvelopeRouter()
 
+        # Verify initial empty state
+        assert len(runtime._handlers) == 0
+        assert len(runtime._nodes) == 0
+
         # Register handler
         runtime.register_handler(mock_handler)
+
+        # Verify handler registration
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
 
         # Create and register node
         instance = NodeInstance(
@@ -1093,11 +1312,17 @@ class TestEnvelopeRouterIntegrationPatterns:
         )
         runtime.register_node(instance)
 
+        # Verify node registration
+        assert len(runtime._nodes) == 1
+        assert sample_slug in runtime._nodes
+        assert runtime._nodes[sample_slug] is instance
+
         # Create envelope
+        correlation_id = uuid4()
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
             envelope_version=default_version,
-            correlation_id=uuid4(),
+            correlation_id=correlation_id,
             source_node="test_source",
             target_node=sample_slug,
             operation="TEST_OPERATION",
@@ -1112,6 +1337,9 @@ class TestEnvelopeRouterIntegrationPatterns:
         # Verify result
         assert isinstance(result, ModelOnexEnvelope)
         assert result.is_response is True
+        assert result.correlation_id == correlation_id
+        # Verify handler was invoked
+        mock_handler.execute.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_multiple_executions_same_runtime(

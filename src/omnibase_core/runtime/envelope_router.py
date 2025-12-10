@@ -489,12 +489,32 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         """
         Detailed representation for debugging.
 
+        Performance Note:
+            To avoid expensive dict iteration in large registries, this method
+            shows abbreviated output when collections exceed a threshold.
+            - Small registries (<=10 items): Show full list of handler types/slugs
+            - Large registries (>10 items): Show count only to avoid performance impact
+
         Returns:
-            str: Detailed format including handler types and node slugs
+            str: Detailed format including handler types and node slugs (or counts)
         """
-        handler_types = [ht.value for ht in self._handlers]
-        node_slugs = list(self._nodes.keys())
-        return f"EnvelopeRouter(handlers={handler_types!r}, nodes={node_slugs!r})"
+        _REPR_THRESHOLD = 10  # Show details below this, counts above
+
+        # Optimize handler representation for large registries
+        handler_count = len(self._handlers)
+        if handler_count <= _REPR_THRESHOLD:
+            handler_repr = repr([ht.value for ht in self._handlers])
+        else:
+            handler_repr = f"<{handler_count} handlers>"
+
+        # Optimize node representation for large registries
+        node_count = len(self._nodes)
+        if node_count <= _REPR_THRESHOLD:
+            node_repr = repr(list(self._nodes.keys()))
+        else:
+            node_repr = f"<{node_count} nodes>"
+
+        return f"EnvelopeRouter(handlers={handler_repr}, nodes={node_repr})"
 
 
 __all__ = ["EnvelopeRouter"]
