@@ -192,6 +192,19 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         As per coding guidelines: "Never share node instances across threads
         without explicit synchronization."
 
+        TOCTOU Consideration:
+            After ``freeze()``, read methods (``route_envelope``, ``execute_with_handler``)
+            access ``self._handlers`` and ``self._nodes`` without locking for performance.
+            This is safe because:
+
+            1. The freeze contract guarantees no concurrent registration after freeze()
+            2. Python dict reads are atomic under the GIL
+            3. The data is effectively immutable after freeze()
+
+            If ``register_handler()`` is somehow called concurrently with routing after
+            freeze (violating the contract), the behavior is undefined. The router is
+            explicitly designed for the "register all, then freeze, then route" pattern.
+
     Example:
         .. code-block:: python
 
@@ -725,6 +738,11 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         #
         # fallback-ok: Handler exceptions (except cancellation signals) are intentionally
         # caught and converted to error envelopes per the EnvelopeRouter contract.
+        # Logging Level Strategy:
+        # - Success: DEBUG level - per-operation success logs would create excessive volume
+        #   in production (filtered at INFO+). Useful for development/debugging only.
+        # - Failure: WARNING level - failures warrant production visibility for monitoring
+        #   and alerting. This asymmetry is intentional and consistent with compute_executor.py.
         start_time = time.perf_counter()
         try:
             response = await handler.execute(envelope)
@@ -785,11 +803,24 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             - Large registries (>10 items): Show count only to avoid performance impact
 
         Thread Safety Note:
-            This method does not cache results. Caching was removed to eliminate
-            potential race conditions where cache invalidation could race with
-            cache population in concurrent scenarios. Since __repr__ is primarily
-            used for debugging and the threshold-based abbreviation already bounds
-            the work to O(threshold), the performance impact is negligible.
+            This method does not cache results. While caching could improve
+            performance for repeated calls, it was intentionally avoided because:
+
+            1. **Freeze Race Condition**: Cache invalidation could race with
+               freeze() in edge cases where __repr__ is called during the
+               transition to frozen state.
+
+            2. **Read Safety Post-Freeze**: After freeze(), the handler and node
+               dictionaries are effectively read-only, making live dict reads
+               inherently safe without additional synchronization.
+
+            3. **Bounded Work**: The threshold-based abbreviation (<=10 items
+               shows details, >10 shows counts only) already bounds the work
+               to O(threshold), making the performance impact of not caching
+               negligible for typical debugging scenarios.
+
+            For high-frequency __repr__ calls in performance-critical code,
+            consider storing the result in a local variable.
 
         Returns:
             str: Detailed format including handler types, node slugs (or counts),

@@ -296,7 +296,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             # Legacy fallback with deprecation warning
             emit_log_event(
                 LogLevel.WARNING,
-                "Using legacy 'input_data' field - please migrate to 'input_state'",
+                "Using legacy 'input_data' field - please migrate to 'input_state'. "
+                "This fallback will be removed in v0.5.0.",
                 {"node_id": str(self.node_id)},
             )
             input_data = contract.input_data
@@ -343,7 +344,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                 emit_log_event(
                     LogLevel.WARNING,
                     "Using 'metadata.computation_type' fallback - "
-                    "please migrate to 'algorithm.algorithm_type' (canonical location)",
+                    "please migrate to 'algorithm.algorithm_type' (canonical location). "
+                    "This fallback will be removed in v0.5.0.",
                     {
                         "node_id": str(self.node_id),
                         "computation_type": computation_type,
@@ -362,7 +364,8 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                 emit_log_event(
                     LogLevel.WARNING,
                     "Using deprecated 'contract.computation_type' attribute - "
-                    "please migrate to 'algorithm.algorithm_type' (canonical location)",
+                    "please migrate to 'algorithm.algorithm_type' (canonical location). "
+                    "This fallback will be removed in v0.5.0.",
                     {
                         "node_id": str(self.node_id),
                         "computation_type": computation_type,

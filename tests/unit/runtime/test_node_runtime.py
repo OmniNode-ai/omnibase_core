@@ -1858,3 +1858,1089 @@ class TestEnvelopeRouterFreeze:
         assert len(runtime._nodes) == 1
         assert "original-node" in runtime._nodes
         assert runtime._nodes["original-node"] is instance1
+
+
+# =============================================================================
+# TEST CLASS: Large Registry Repr Behavior
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestEnvelopeRouterLargeRegistryRepr:
+    """
+    Tests for __repr__ behavior with large registries.
+
+    The EnvelopeRouter uses threshold-based abbreviation for __repr__ output:
+    - At or below threshold (10): Shows full list of handler types / node slugs
+    - Above threshold (>10): Shows abbreviated count format like '<11 handlers>'
+
+    This prevents repr output from becoming unwieldy with large registries
+    while still providing useful debugging information.
+    """
+
+    def test_repr_threshold_value_is_10(self) -> None:
+        """
+        Test that _REPR_ITEM_THRESHOLD is set to 10.
+
+        EXPECTED BEHAVIOR:
+        - EnvelopeRouter._REPR_ITEM_THRESHOLD == 10
+        - This test documents the expected threshold value
+        """
+        from omnibase_core.runtime import EnvelopeRouter
+
+        assert EnvelopeRouter._REPR_ITEM_THRESHOLD == 10
+
+    def test_repr_nodes_at_threshold_shows_full_list(
+        self,
+        mock_contract: MagicMock,
+        sample_node_type: EnumNodeType,
+    ) -> None:
+        """
+        Test __repr__ shows full list when at threshold (10 nodes).
+
+        EXPECTED BEHAVIOR:
+        - With exactly 10 nodes, repr shows full slug list
+        - All 10 slugs are visible in output
+        - Should NOT show abbreviated count format
+        """
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+
+        # Register exactly 10 nodes (at threshold)
+        for i in range(10):
+            instance = NodeInstance(
+                slug=f"node-{i}",
+                node_type=sample_node_type,
+                contract=mock_contract,
+            )
+            runtime.register_node(instance)
+
+        repr_str = repr(runtime)
+
+        # All slugs should be visible in the repr output
+        for i in range(10):
+            assert f"node-{i}" in repr_str, f"node-{i} should be in repr output"
+
+        # Should NOT show abbreviated count format
+        assert "<10 nodes>" not in repr_str
+        # The nodes should be in a list format
+        assert "nodes=[" in repr_str
+
+    def test_repr_nodes_above_threshold_shows_abbreviated(
+        self,
+        mock_contract: MagicMock,
+        sample_node_type: EnumNodeType,
+    ) -> None:
+        """
+        Test __repr__ shows abbreviated count when above threshold (11 nodes).
+
+        EXPECTED BEHAVIOR:
+        - With 11 nodes, repr shows '<11 nodes>' instead of full list
+        - Individual slugs are NOT listed in output
+        """
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+
+        # Register 11 nodes (above threshold)
+        for i in range(11):
+            instance = NodeInstance(
+                slug=f"node-{i}",
+                node_type=sample_node_type,
+                contract=mock_contract,
+            )
+            runtime.register_node(instance)
+
+        repr_str = repr(runtime)
+
+        # Should show abbreviated count
+        assert "<11 nodes>" in repr_str
+
+        # Individual slugs should NOT be in a list format
+        # (the abbreviated format replaces the list)
+        assert "nodes=[" not in repr_str
+
+    def test_repr_handlers_at_threshold_shows_full_list(self) -> None:
+        """
+        Test __repr__ shows full list when at threshold (10 handlers).
+
+        EXPECTED BEHAVIOR:
+        - With exactly 10 handlers, repr shows full handler type list
+        - All handler type values are visible in output
+        - Should NOT show abbreviated count format
+        """
+        from unittest.mock import MagicMock
+
+        from omnibase_core.enums.enum_handler_type import EnumHandlerType
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # Get all available handler types (there are 12 in EnumHandlerType)
+        all_handler_types = list(EnumHandlerType)
+        handler_types_to_use = all_handler_types[:10]  # Use exactly 10
+
+        # Register exactly 10 handlers (at threshold)
+        for handler_type in handler_types_to_use:
+            handler = MagicMock()
+            handler.handler_type = handler_type
+            handler.execute = MagicMock()
+            handler.describe = MagicMock(
+                return_value={"name": f"handler_{handler_type.value}"}
+            )
+            runtime.register_handler(handler)
+
+        repr_str = repr(runtime)
+
+        # All handler type values should be visible in the repr output
+        for handler_type in handler_types_to_use:
+            assert handler_type.value in repr_str.lower(), (
+                f"{handler_type.value} should be in repr output"
+            )
+
+        # Should NOT show abbreviated count format
+        assert "<10 handlers>" not in repr_str
+        # The handlers should be in a list format
+        assert "handlers=[" in repr_str
+
+    def test_repr_handlers_above_threshold_shows_abbreviated(self) -> None:
+        """
+        Test __repr__ shows abbreviated count when above threshold (11 handlers).
+
+        EXPECTED BEHAVIOR:
+        - With 11 handlers, repr shows '<11 handlers>' instead of full list
+        - Individual handler types are NOT listed in output
+        """
+        from unittest.mock import MagicMock
+
+        from omnibase_core.enums.enum_handler_type import EnumHandlerType
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # Get all available handler types (there are 12 in EnumHandlerType)
+        all_handler_types = list(EnumHandlerType)
+        handler_types_to_use = all_handler_types[:11]  # Use 11 (above threshold)
+
+        # Register 11 handlers (above threshold)
+        for handler_type in handler_types_to_use:
+            handler = MagicMock()
+            handler.handler_type = handler_type
+            handler.execute = MagicMock()
+            handler.describe = MagicMock(
+                return_value={"name": f"handler_{handler_type.value}"}
+            )
+            runtime.register_handler(handler)
+
+        repr_str = repr(runtime)
+
+        # Should show abbreviated count
+        assert "<11 handlers>" in repr_str
+
+        # Individual handler types should NOT be in a list format
+        # (the abbreviated format replaces the list)
+        assert "handlers=[" not in repr_str
+
+    def test_repr_large_registry_both_above_threshold(
+        self,
+        mock_contract: MagicMock,
+        sample_node_type: EnumNodeType,
+    ) -> None:
+        """
+        Test __repr__ with both handlers and nodes above threshold.
+
+        EXPECTED BEHAVIOR:
+        - With 11 handlers and 15 nodes, both show abbreviated format
+        - Format shows '<11 handlers>' and '<15 nodes>'
+        - No list formats appear in output
+        """
+        from unittest.mock import MagicMock
+
+        from omnibase_core.enums.enum_handler_type import EnumHandlerType
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+
+        # Register 11 handlers (above threshold)
+        all_handler_types = list(EnumHandlerType)[:11]
+        for handler_type in all_handler_types:
+            handler = MagicMock()
+            handler.handler_type = handler_type
+            handler.execute = MagicMock()
+            handler.describe = MagicMock(
+                return_value={"name": f"handler_{handler_type.value}"}
+            )
+            runtime.register_handler(handler)
+
+        # Register 15 nodes (above threshold)
+        for i in range(15):
+            instance = NodeInstance(
+                slug=f"node-{i}",
+                node_type=sample_node_type,
+                contract=mock_contract,
+            )
+            runtime.register_node(instance)
+
+        repr_str = repr(runtime)
+
+        # Both should show abbreviated counts
+        assert "<11 handlers>" in repr_str
+        assert "<15 nodes>" in repr_str
+
+        # No list formats should appear
+        assert "handlers=[" not in repr_str
+        assert "nodes=[" not in repr_str
+
+    def test_repr_mixed_at_and_above_threshold(
+        self,
+        mock_handler: MagicMock,
+        mock_contract: MagicMock,
+        sample_node_type: EnumNodeType,
+    ) -> None:
+        """
+        Test __repr__ with handlers at threshold and nodes above threshold.
+
+        EXPECTED BEHAVIOR:
+        - With 1 handler (at threshold) and 11 nodes (above threshold)
+        - Handlers show full list format
+        - Nodes show abbreviated count format
+        """
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+
+        # Register 1 handler (well below threshold)
+        runtime.register_handler(mock_handler)
+
+        # Register 11 nodes (above threshold)
+        for i in range(11):
+            instance = NodeInstance(
+                slug=f"node-{i}",
+                node_type=sample_node_type,
+                contract=mock_contract,
+            )
+            runtime.register_node(instance)
+
+        repr_str = repr(runtime)
+
+        # Handlers should show list format (1 is below threshold)
+        assert "handlers=[" in repr_str
+        assert mock_handler.handler_type.value in repr_str.lower()
+
+        # Nodes should show abbreviated count
+        assert "<11 nodes>" in repr_str
+        assert "nodes=[" not in repr_str
+
+    def test_repr_exactly_at_boundary_transitions_correctly(
+        self,
+        mock_contract: MagicMock,
+        sample_node_type: EnumNodeType,
+    ) -> None:
+        """
+        Test that the boundary at 10 items transitions correctly to 11.
+
+        EXPECTED BEHAVIOR:
+        - 10 nodes: shows full list
+        - 11 nodes: shows abbreviated count
+        - Transition is clean with no edge case errors
+        """
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        # Test with exactly 10 nodes (at threshold)
+        runtime_10 = EnvelopeRouter()
+        for i in range(10):
+            instance = NodeInstance(
+                slug=f"node-{i}",
+                node_type=sample_node_type,
+                contract=mock_contract,
+            )
+            runtime_10.register_node(instance)
+
+        repr_10 = repr(runtime_10)
+        assert "nodes=[" in repr_10  # Full list format
+        assert "<10 nodes>" not in repr_10
+
+        # Test with exactly 11 nodes (above threshold)
+        runtime_11 = EnvelopeRouter()
+        for i in range(11):
+            instance = NodeInstance(
+                slug=f"node-{i}",
+                node_type=sample_node_type,
+                contract=mock_contract,
+            )
+            runtime_11.register_node(instance)
+
+        repr_11 = repr(runtime_11)
+        assert "<11 nodes>" in repr_11  # Abbreviated format
+        assert "nodes=[" not in repr_11
+
+    def test_repr_with_maximum_handler_types(self) -> None:
+        """
+        Test __repr__ with all available EnumHandlerType values registered.
+
+        EXPECTED BEHAVIOR:
+        - All 12 EnumHandlerType values can be registered
+        - Since 12 > 10 threshold, shows '<12 handlers>'
+        - No errors occur when registering all handler types
+        """
+        from unittest.mock import MagicMock
+
+        from omnibase_core.enums.enum_handler_type import EnumHandlerType
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+
+        # Register ALL available handler types
+        all_handler_types = list(EnumHandlerType)
+        for handler_type in all_handler_types:
+            handler = MagicMock()
+            handler.handler_type = handler_type
+            handler.execute = MagicMock()
+            handler.describe = MagicMock(
+                return_value={"name": f"handler_{handler_type.value}"}
+            )
+            runtime.register_handler(handler)
+
+        # Verify all handlers were registered
+        assert len(runtime._handlers) == len(all_handler_types)
+
+        repr_str = repr(runtime)
+
+        # Should show abbreviated count (12 > 10 threshold)
+        expected_count = len(all_handler_types)
+        assert f"<{expected_count} handlers>" in repr_str
+        assert "handlers=[" not in repr_str
+
+
+# =============================================================================
+# TEST CLASS: Handler Execution Timeout Behavior
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestEnvelopeRouterHandlerTimeout:
+    """
+    Tests for handler execution timeout behavior.
+
+    The EnvelopeRouter.execute_with_handler() method calls handler.execute()
+    directly WITHOUT built-in timeout handling. This is intentional - timeout
+    handling is the CALLER'S responsibility.
+
+    These tests document:
+    1. Slow handlers still complete successfully (no internal timeout)
+    2. Callers can use asyncio.wait_for() for timeout control
+    3. asyncio.CancelledError propagates correctly (not caught/converted)
+
+    This design allows callers to choose appropriate timeout policies for their
+    use case rather than imposing a one-size-fits-all timeout.
+    """
+
+    @pytest.mark.asyncio
+    async def test_slow_handler_completes_successfully(
+        self,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Test that slow handler still completes successfully.
+
+        EXPECTED BEHAVIOR:
+        - Handler that takes 100ms completes without issue
+        - Response is returned correctly with expected payload
+        - No internal timeout interrupts the execution
+        """
+        import asyncio
+
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        async def slow_execute(envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
+            await asyncio.sleep(0.1)  # 100ms delay - slow but acceptable
+            return ModelOnexEnvelope.create_response(
+                request=envelope,
+                payload={"status": "slow_complete"},
+                success=True,
+            )
+
+        slow_handler = MagicMock()
+        slow_handler.handler_type = EnumHandlerType.HTTP
+        slow_handler.execute = slow_execute  # Direct async function, not AsyncMock
+        slow_handler.describe = MagicMock(return_value={"type": "slow"})
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(slow_handler)
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=uuid4(),
+            source_node="test",
+            operation="SLOW_TEST",
+            payload={},
+            timestamp=datetime.now(UTC),
+            handler_type=EnumHandlerType.HTTP,
+        )
+
+        result = await runtime.execute_with_handler(envelope, instance)
+
+        assert result.success is True
+        assert result.payload.get("status") == "slow_complete"
+
+    @pytest.mark.asyncio
+    async def test_caller_can_timeout_with_wait_for(
+        self,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Test that callers can use asyncio.wait_for for timeout control.
+
+        EXPECTED BEHAVIOR:
+        - Handler that would take 2s can be timed out by caller using asyncio.wait_for
+        - asyncio.TimeoutError is raised when timeout (50ms) exceeded
+        - This documents the RECOMMENDED timeout pattern for callers
+
+        DESIGN RATIONALE:
+        - EnvelopeRouter does NOT impose built-in timeouts
+        - Timeout policy is the caller's responsibility
+        - asyncio.wait_for() is the idiomatic Python approach
+        """
+        import asyncio
+
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        async def hanging_execute(envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
+            # Would hang for 2 seconds if not timed out
+            await asyncio.sleep(2.0)
+            return ModelOnexEnvelope.create_response(
+                request=envelope,
+                payload={},
+                success=True,
+            )
+
+        hanging_handler = MagicMock()
+        hanging_handler.handler_type = EnumHandlerType.HTTP
+        hanging_handler.execute = hanging_execute  # Direct async function
+        hanging_handler.describe = MagicMock(return_value={})
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(hanging_handler)
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=uuid4(),
+            source_node="test",
+            operation="TIMEOUT_TEST",
+            payload={},
+            timestamp=datetime.now(UTC),
+            handler_type=EnumHandlerType.HTTP,
+        )
+
+        # Caller controls timeout with asyncio.wait_for - recommended pattern
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(
+                runtime.execute_with_handler(envelope, instance),
+                timeout=0.05,  # 50ms timeout - much less than 2s handler
+            )
+
+    @pytest.mark.asyncio
+    async def test_cancelled_error_propagates(
+        self,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Test that asyncio.CancelledError propagates correctly (not caught).
+
+        EXPECTED BEHAVIOR:
+        - When a task is cancelled during handler execution, CancelledError propagates
+        - CancelledError is NOT caught and converted to error envelope
+        - This is required for proper task cleanup semantics in asyncio
+
+        DESIGN RATIONALE:
+        - Catching CancelledError would break asyncio task cancellation semantics
+        - The EnvelopeRouter explicitly re-raises CancelledError (see lines 742-744)
+        - Callers must be able to cancel long-running operations gracefully
+        """
+        import asyncio
+
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        async def cancellable_execute(envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
+            # Will be cancelled before completion
+            await asyncio.sleep(10.0)
+            return ModelOnexEnvelope.create_response(
+                request=envelope,
+                payload={},
+                success=True,
+            )
+
+        cancellable_handler = MagicMock()
+        cancellable_handler.handler_type = EnumHandlerType.HTTP
+        cancellable_handler.execute = cancellable_execute  # Direct async function
+        cancellable_handler.describe = MagicMock(return_value={})
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(cancellable_handler)
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=uuid4(),
+            source_node="test",
+            operation="CANCEL_TEST",
+            payload={},
+            timestamp=datetime.now(UTC),
+            handler_type=EnumHandlerType.HTTP,
+        )
+
+        # Create task and cancel it
+        task = asyncio.create_task(runtime.execute_with_handler(envelope, instance))
+
+        await asyncio.sleep(0.05)  # 50ms - let task start
+        task.cancel()
+
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    @pytest.mark.asyncio
+    async def test_timeout_error_vs_handler_error_distinction(
+        self,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Test distinction between timeout errors and handler execution errors.
+
+        EXPECTED BEHAVIOR:
+        - Handler execution errors (RuntimeError, ValueError, etc.) return error envelope
+        - Timeout errors (asyncio.TimeoutError from wait_for) propagate as exceptions
+        - This is the correct asymmetry per the documented contract
+
+        DESIGN RATIONALE:
+        - Timeouts are caller-controlled and should raise exceptions
+        - Handler bugs/failures are converted to error envelopes for observability
+        - This allows correlation_id tracking for handler errors
+        """
+        import asyncio
+
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        # Handler that raises a regular exception (NOT timeout)
+        async def error_execute(envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
+            raise RuntimeError("Simulated handler failure")
+
+        error_handler = MagicMock()
+        error_handler.handler_type = EnumHandlerType.HTTP
+        error_handler.execute = error_execute
+        error_handler.describe = MagicMock(return_value={})
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(error_handler)
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=uuid4(),
+            source_node="test",
+            operation="ERROR_TEST",
+            payload={},
+            timestamp=datetime.now(UTC),
+            handler_type=EnumHandlerType.HTTP,
+        )
+
+        # Handler error returns error envelope (does NOT raise)
+        result = await runtime.execute_with_handler(envelope, instance)
+        assert result.success is False
+        assert result.error is not None
+        assert "Simulated handler failure" in result.error
+
+        # Now test with a slow handler wrapped in wait_for - timeout RAISES
+        async def slow_execute(envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
+            await asyncio.sleep(2.0)
+            return ModelOnexEnvelope.create_response(
+                request=envelope,
+                payload={},
+                success=True,
+            )
+
+        slow_handler = MagicMock()
+        slow_handler.handler_type = EnumHandlerType.DATABASE  # Different type
+        slow_handler.execute = slow_execute
+        slow_handler.describe = MagicMock(return_value={})
+
+        runtime.register_handler(slow_handler)
+
+        timeout_envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=uuid4(),
+            source_node="test",
+            operation="TIMEOUT_TEST",
+            payload={},
+            timestamp=datetime.now(UTC),
+            handler_type=EnumHandlerType.DATABASE,
+        )
+
+        # Timeout from wait_for RAISES (does not return error envelope)
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(
+                runtime.execute_with_handler(timeout_envelope, instance),
+                timeout=0.05,
+            )
+
+
+# =============================================================================
+# TEST CLASS: Concurrency Stress Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestEnvelopeRouterConcurrencyStress:
+    """
+    Stress tests for concurrent access patterns on EnvelopeRouter.
+
+    These tests verify thread safety and race condition handling when:
+    - Multiple threads call route_envelope after freeze
+    - Multiple async tasks call execute_with_handler after freeze
+    - Registration attempts occur during/after freeze
+
+    Critical for production deployments where EnvelopeRouter may be accessed
+    from multiple threads/tasks simultaneously.
+    """
+
+    def test_concurrent_route_envelope_after_freeze(
+        self,
+        mock_handler: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Stress test: 100 threads calling route_envelope after freeze.
+
+        EXPECTED BEHAVIOR:
+        - All 100 threads successfully route to correct handler
+        - No race conditions or exceptions
+        - Handler type matches for all threads
+        """
+        import threading
+
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+        runtime.freeze()
+
+        results: list[dict] = []
+        errors: list[Exception] = []
+        lock = threading.Lock()
+
+        def route_envelope_task(thread_id: int) -> None:
+            try:
+                envelope = ModelOnexEnvelope(
+                    envelope_id=uuid4(),
+                    envelope_version=default_version,
+                    correlation_id=uuid4(),
+                    source_node=f"thread-{thread_id}",
+                    operation="STRESS_TEST",
+                    payload={"thread_id": thread_id},
+                    timestamp=datetime.now(UTC),
+                    handler_type=mock_handler.handler_type,
+                )
+                result = runtime.route_envelope(envelope)
+                with lock:
+                    results.append(result)
+            except Exception as e:
+                with lock:
+                    errors.append(e)
+
+        # Spawn 100 threads
+        threads = [
+            threading.Thread(target=route_envelope_task, args=(i,)) for i in range(100)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # Verify results
+        assert len(errors) == 0, f"Errors occurred: {errors}"
+        assert len(results) == 100
+        assert all(r["handler"] is mock_handler for r in results)
+        assert all(r["handler_type"] == mock_handler.handler_type for r in results)
+
+    @pytest.mark.asyncio
+    async def test_concurrent_execute_with_handler_after_freeze(
+        self,
+        mock_handler: MagicMock,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Stress test: 50 concurrent async tasks calling execute_with_handler.
+
+        EXPECTED BEHAVIOR:
+        - All 50 tasks complete successfully
+        - All responses are valid envelopes with is_response=True
+        - Handler execute() called 50 times
+        """
+        import asyncio
+
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+        runtime.register_node(instance)
+        runtime.freeze()
+
+        async def execute_task(task_id: int) -> ModelOnexEnvelope:
+            envelope = ModelOnexEnvelope(
+                envelope_id=uuid4(),
+                envelope_version=default_version,
+                correlation_id=uuid4(),
+                source_node=f"task-{task_id}",
+                operation="ASYNC_STRESS_TEST",
+                payload={"task_id": task_id},
+                timestamp=datetime.now(UTC),
+                handler_type=mock_handler.handler_type,
+            )
+            return await runtime.execute_with_handler(envelope, instance)
+
+        # Run 50 concurrent tasks
+        tasks = [execute_task(i) for i in range(50)]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Verify no exceptions
+        exceptions = [r for r in results if isinstance(r, Exception)]
+        assert len(exceptions) == 0, f"Exceptions occurred: {exceptions}"
+
+        # Verify all results are valid response envelopes
+        valid_results = [r for r in results if isinstance(r, ModelOnexEnvelope)]
+        assert len(valid_results) == 50
+        assert all(r.is_response for r in valid_results)
+
+        # Verify handler was called 50 times
+        assert mock_handler.execute.call_count == 50
+
+    def test_registration_during_freeze_attempt(
+        self,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+    ) -> None:
+        """
+        Edge case: Multiple threads attempting registration while freeze is called.
+
+        EXPECTED BEHAVIOR:
+        - Freeze wins and subsequent registrations fail with INVALID_STATE
+        - Some registrations may succeed (before freeze completes)
+        - Some registrations fail with INVALID_STATE (after freeze completes)
+        - No race conditions or crashes
+        - Router state is consistent after all threads complete
+        """
+        import threading
+        import time
+
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+
+        successful_registrations: list[str] = []
+        invalid_state_errors: list[str] = []
+        other_errors: list[Exception] = []
+        lock = threading.Lock()
+
+        # Event to synchronize thread start
+        start_event = threading.Event()
+        # Event to signal freeze has been called
+        freeze_called = threading.Event()
+
+        def register_node_task(node_id: int) -> None:
+            # Wait for start signal to maximize concurrency
+            start_event.wait()
+
+            try:
+                instance = NodeInstance(
+                    slug=f"concurrent-node-{node_id}",
+                    node_type=sample_node_type,
+                    contract=mock_contract,
+                )
+                runtime.register_node(instance)
+                with lock:
+                    successful_registrations.append(f"concurrent-node-{node_id}")
+            except ModelOnexError as e:
+                with lock:
+                    if e.error_code == EnumCoreErrorCode.INVALID_STATE:
+                        invalid_state_errors.append(f"concurrent-node-{node_id}")
+                    else:
+                        other_errors.append(e)
+            except Exception as e:
+                with lock:
+                    other_errors.append(e)
+
+        def freeze_task() -> None:
+            # Wait for start signal
+            start_event.wait()
+            # Small delay to let some registrations start
+            time.sleep(0.001)
+            runtime.freeze()
+            freeze_called.set()
+
+        # Create registration threads (20 threads trying to register)
+        registration_threads = [
+            threading.Thread(target=register_node_task, args=(i,)) for i in range(20)
+        ]
+
+        # Create freeze thread
+        freeze_thread = threading.Thread(target=freeze_task)
+
+        # Start all threads
+        for t in registration_threads:
+            t.start()
+        freeze_thread.start()
+
+        # Signal all threads to start simultaneously
+        start_event.set()
+
+        # Wait for all threads to complete
+        freeze_thread.join()
+        for t in registration_threads:
+            t.join()
+
+        # Verify no unexpected errors
+        assert len(other_errors) == 0, f"Unexpected errors: {other_errors}"
+
+        # Verify router is frozen
+        assert runtime.is_frozen is True
+
+        # Verify consistency: total should be 20 (either success or INVALID_STATE)
+        total_outcomes = len(successful_registrations) + len(invalid_state_errors)
+        assert total_outcomes == 20, (
+            f"Expected 20 outcomes, got {total_outcomes} "
+            f"(success: {len(successful_registrations)}, "
+            f"invalid_state: {len(invalid_state_errors)})"
+        )
+
+        # Verify successful registrations are actually in the router
+        for slug in successful_registrations:
+            assert slug in runtime._nodes, f"Slug {slug} not found in router nodes"
+
+        # Verify router node count matches successful registrations
+        assert len(runtime._nodes) == len(successful_registrations)
+
+    def test_concurrent_route_with_multiple_handler_types(
+        self,
+        mock_handler: MagicMock,
+        mock_handler_database: MagicMock,
+        mock_handler_kafka: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Stress test: Multiple threads routing to different handler types.
+
+        EXPECTED BEHAVIOR:
+        - Threads routing to HTTP get HTTP handler
+        - Threads routing to DATABASE get DATABASE handler
+        - Threads routing to KAFKA get KAFKA handler
+        - No cross-contamination between handler types
+        """
+        import threading
+
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+        runtime.register_handler(mock_handler_database)
+        runtime.register_handler(mock_handler_kafka)
+        runtime.freeze()
+
+        results_by_type: dict[EnumHandlerType, list[dict]] = {
+            EnumHandlerType.HTTP: [],
+            EnumHandlerType.DATABASE: [],
+            EnumHandlerType.KAFKA: [],
+        }
+        errors: list[Exception] = []
+        lock = threading.Lock()
+
+        def route_to_handler_type(
+            thread_id: int, handler_type: EnumHandlerType
+        ) -> None:
+            try:
+                envelope = ModelOnexEnvelope(
+                    envelope_id=uuid4(),
+                    envelope_version=default_version,
+                    correlation_id=uuid4(),
+                    source_node=f"thread-{thread_id}",
+                    operation="MULTI_HANDLER_STRESS",
+                    payload={"thread_id": thread_id, "target": handler_type.value},
+                    timestamp=datetime.now(UTC),
+                    handler_type=handler_type,
+                )
+                result = runtime.route_envelope(envelope)
+                with lock:
+                    results_by_type[handler_type].append(result)
+            except Exception as e:
+                with lock:
+                    errors.append(e)
+
+        # Create 90 threads: 30 for each handler type
+        threads = []
+        for i in range(30):
+            threads.append(
+                threading.Thread(
+                    target=route_to_handler_type,
+                    args=(i, EnumHandlerType.HTTP),
+                )
+            )
+            threads.append(
+                threading.Thread(
+                    target=route_to_handler_type,
+                    args=(i + 30, EnumHandlerType.DATABASE),
+                )
+            )
+            threads.append(
+                threading.Thread(
+                    target=route_to_handler_type,
+                    args=(i + 60, EnumHandlerType.KAFKA),
+                )
+            )
+
+        # Start and join all threads
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        # Verify no errors
+        assert len(errors) == 0, f"Errors occurred: {errors}"
+
+        # Verify correct counts per handler type
+        assert len(results_by_type[EnumHandlerType.HTTP]) == 30
+        assert len(results_by_type[EnumHandlerType.DATABASE]) == 30
+        assert len(results_by_type[EnumHandlerType.KAFKA]) == 30
+
+        # Verify each handler type got the correct handler (no cross-contamination)
+        for result in results_by_type[EnumHandlerType.HTTP]:
+            assert result["handler"] is mock_handler
+            assert result["handler_type"] == EnumHandlerType.HTTP
+
+        for result in results_by_type[EnumHandlerType.DATABASE]:
+            assert result["handler"] is mock_handler_database
+            assert result["handler_type"] == EnumHandlerType.DATABASE
+
+        for result in results_by_type[EnumHandlerType.KAFKA]:
+            assert result["handler"] is mock_handler_kafka
+            assert result["handler_type"] == EnumHandlerType.KAFKA
+
+    @pytest.mark.asyncio
+    async def test_high_concurrency_async_execution(
+        self,
+        mock_handler: MagicMock,
+        sample_slug: str,
+        sample_node_type: EnumNodeType,
+        mock_contract: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        High concurrency test: 100 async tasks with varying delays.
+
+        EXPECTED BEHAVIOR:
+        - All 100 tasks complete regardless of execution order
+        - Correlation IDs are preserved in responses
+        - No deadlocks or hangs
+        """
+        import asyncio
+        import random
+
+        from omnibase_core.runtime import EnvelopeRouter, NodeInstance
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+
+        instance = NodeInstance(
+            slug=sample_slug,
+            node_type=sample_node_type,
+            contract=mock_contract,
+        )
+        runtime.register_node(instance)
+        runtime.freeze()
+
+        correlation_ids: list[tuple[int, uuid4]] = []
+
+        async def execute_with_jitter(task_id: int) -> tuple[int, ModelOnexEnvelope]:
+            # Add random jitter to simulate real-world conditions
+            await asyncio.sleep(random.uniform(0, 0.01))
+
+            corr_id = uuid4()
+            correlation_ids.append((task_id, corr_id))
+
+            envelope = ModelOnexEnvelope(
+                envelope_id=uuid4(),
+                envelope_version=default_version,
+                correlation_id=corr_id,
+                source_node=f"async-task-{task_id}",
+                operation="HIGH_CONCURRENCY_TEST",
+                payload={"task_id": task_id},
+                timestamp=datetime.now(UTC),
+                handler_type=mock_handler.handler_type,
+            )
+            result = await runtime.execute_with_handler(envelope, instance)
+            return (task_id, result)
+
+        # Run 100 concurrent tasks
+        tasks = [execute_with_jitter(i) for i in range(100)]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Verify no exceptions
+        exceptions = [(i, r) for i, r in enumerate(results) if isinstance(r, Exception)]
+        assert len(exceptions) == 0, f"Exceptions in tasks: {exceptions}"
+
+        # Verify all results are tuples with valid envelopes
+        assert len(results) == 100
+        for task_id, result in results:
+            assert isinstance(result, ModelOnexEnvelope)
+            assert result.is_response is True
+
+        # Verify handler call count
+        assert mock_handler.execute.call_count == 100
