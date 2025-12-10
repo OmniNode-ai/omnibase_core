@@ -884,6 +884,8 @@ class TestAllRuntimeContractsValidation:
                 assert "state_transitions" in data, (
                     f"{name}: Missing state_transitions section"
                 )
+
+
 @pytest.mark.unit
 class TestContractVersionFormats:
     """Tests for contract_version format handling across runtime contracts."""

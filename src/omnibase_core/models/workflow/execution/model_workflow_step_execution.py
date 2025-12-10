@@ -2,7 +2,6 @@
 Workflow Step Execution Model.
 
 Runtime execution tracker for workflow steps with state management.
-"""
 Different from ModelWorkflowStep (configuration) - this tracks execution state.
 
 Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.

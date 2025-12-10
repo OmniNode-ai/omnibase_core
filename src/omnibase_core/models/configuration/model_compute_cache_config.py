@@ -1,5 +1,4 @@
 """
-VERSION: 1.0.0
 ModelComputeCacheConfig - Configuration for NodeCompute caching behavior.
 
 Provides tunable cache parameters for production deployment, allowing
@@ -13,9 +12,6 @@ Key Capabilities:
 
 Thread Safety: Cache operations must be synchronized by implementation.
 Memory Usage: ~1KB per cached entry (varies by computation size).
-
-STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
-
 """
 
 from pydantic import BaseModel, ConfigDict, Field

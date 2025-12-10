@@ -43,8 +43,6 @@ from omnibase_core.models.infrastructure.model_effect_transaction import (
 
 class NodeEffect(NodeCoreBase):
     """
-    STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
-
     Side effect management node for external interactions.
 
     Implements managed side effects with transaction support, retry policies,
@@ -287,8 +285,6 @@ class NodeEffect(NodeCoreBase):
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """
         REQUIRED: Execute side effect operation.
-
-        STABLE INTERFACE: This method signature is frozen for code generation.
 
         Args:
             input_data: Strongly typed effect input with configuration

@@ -37,8 +37,6 @@ from omnibase_core.models.infrastructure import ModelComputeCache
 
 class NodeCompute(NodeCoreBase):
     """
-    STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
-
     Pure computation node for deterministic operations.
 
     Implements computational pipeline with input → transform → output pattern.
@@ -106,8 +104,6 @@ class NodeCompute(NodeCoreBase):
     ) -> ModelComputeOutput[T_Output]:
         """
         REQUIRED: Execute pure computation.
-
-        STABLE INTERFACE: This method signature is frozen for code generation.
 
         Args:
             input_data: Strongly typed computation input

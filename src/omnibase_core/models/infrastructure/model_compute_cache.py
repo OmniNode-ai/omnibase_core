@@ -1,5 +1,4 @@
 """
-VERSION: 1.0.0
 ModelComputeCache - Caching Layer for Compute Node Operations.
 
 Provides TTL-based caching with memory management and LRU eviction for expensive
@@ -11,9 +10,6 @@ Key Capabilities:
 - LRU eviction policy for memory management
 - Access count tracking
 - Cache statistics and monitoring
-
-STABLE INTERFACE v1.0.0 - DO NOT CHANGE without major version bump.
-Code generators can target this stable interface.
 
 """
 
