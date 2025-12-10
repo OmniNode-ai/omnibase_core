@@ -1,13 +1,9 @@
 """
-Effect Retry Policy Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+Effect Retry Policy Model.
 
 Retry policy with idempotency awareness for effect operations.
 Defines configurable retry behavior including backoff strategies,
 retryable status codes, and error handling.
-
-Implements: OMN-524
 """
 
 from typing import Literal

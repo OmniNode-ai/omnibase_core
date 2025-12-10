@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-Caching Configuration Model - ONEX Standards Compliant.
+Caching Configuration Model.
 
 Caching strategy and policies defining caching behavior for expensive computations
 with TTL, size limits, and eviction policies.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 

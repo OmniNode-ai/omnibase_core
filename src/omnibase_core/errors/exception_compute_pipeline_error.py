@@ -1,5 +1,5 @@
 """
-Compute Pipeline Error (OMN-465).
+Compute Pipeline Error ().
 
 Custom exception for compute pipeline execution errors with structured context.
 

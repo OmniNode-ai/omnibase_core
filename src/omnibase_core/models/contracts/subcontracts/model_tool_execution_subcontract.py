@@ -1,12 +1,7 @@
 """
-Tool Execution Subcontract Model - ONEX Standards Compliant.
+Tool Execution Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for tool execution functionality providing:
 - Tool execution enabling/disabling
@@ -19,7 +14,7 @@ Dedicated subcontract model for tool execution functionality providing:
 This model is composed into node contracts that require tool execution capabilities,
 providing clean separation between node logic and tool execution behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar, Self
@@ -50,7 +45,7 @@ class ModelToolExecutionSubcontract(BaseModel):
     - Manage environment variables for tool processes
     - Handle tool execution request events via MixinToolExecution
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

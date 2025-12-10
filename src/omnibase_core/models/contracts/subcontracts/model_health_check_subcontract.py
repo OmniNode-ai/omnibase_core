@@ -1,12 +1,7 @@
 """
-Health Check Subcontract Model - ONEX Standards Compliant.
+Health Check Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Provides Pydantic models for standardized health monitoring and status reporting
 for all ONEX node types, leveraging existing health infrastructure.
@@ -15,7 +10,7 @@ This subcontract provides comprehensive health check capabilities for COMPUTE,
 EFFECT, REDUCER, and ORCHESTRATOR nodes, including component health monitoring,
 dependency health checks, and health score calculation.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -32,7 +27,7 @@ class ModelHealthCheckSubcontract(BaseModel):
     Provides standardized health monitoring and status reporting capabilities
     for COMPUTE, EFFECT, REDUCER, and ORCHESTRATOR nodes.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

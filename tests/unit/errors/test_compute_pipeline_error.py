@@ -1,5 +1,5 @@
 """
-Tests for ComputePipelineError (OMN-465).
+Tests for ComputePipelineError ().
 
 TDD tests for compute pipeline error class used in contract-driven NodeCompute v1.0.
 """

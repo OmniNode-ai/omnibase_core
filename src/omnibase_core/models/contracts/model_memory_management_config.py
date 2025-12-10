@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Memory Management Configuration Model - ONEX Standards Compliant.
+Memory Management Configuration Model.
 
 Memory management configuration for batch processing in NodeReducer implementations.
 Defines memory allocation, garbage collection, and resource management for

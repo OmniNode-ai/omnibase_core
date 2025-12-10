@@ -3,12 +3,12 @@ from pydantic import Field, ValidationInfo, field_validator
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
-Model Workflow Condition - ONEX Standards Compliant Workflow Condition Specification.
+Model Workflow Condition Specification.
 
 Strongly-typed condition model for workflow dependency conditions that eliminates
 string-based condition support and enforces structured condition evaluation.
 
-ZERO TOLERANCE: No string conditions or Any types allowed.
+Strict typing is enforced: No string conditions or Any types allowed.
 """
 
 from typing import cast
@@ -40,7 +40,7 @@ class ModelWorkflowCondition(BaseModel):
     Replaces string-based conditions with structured condition evaluation
     that enables proper validation, type safety, and architectural consistency.
 
-    ZERO TOLERANCE: No string conditions or Any types allowed.
+    Strict typing is enforced: No string conditions or Any types allowed.
     """
 
     condition_type: EnumConditionType = Field(

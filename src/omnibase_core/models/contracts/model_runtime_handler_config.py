@@ -1,5 +1,5 @@
 """
-Handler Configuration Model - ONEX Standards Compliant.
+Handler Configuration Model.
 
 Handler configuration for RuntimeHost contract providing handler type
 classification for handler registry operations.
@@ -7,7 +7,7 @@ classification for handler registry operations.
 MVP implementation with handler type only.
 Retry policies and rate limits deferred to Beta.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced - no Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

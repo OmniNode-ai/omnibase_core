@@ -1,5 +1,5 @@
 """
-Node Core Metadata Models - ONEX Standards Compliant.
+Node Core Metadata Models.
 
 Re-export module for node core metadata components including the main metadata class,
 status classes (active, maintenance, error), and discriminated union types.

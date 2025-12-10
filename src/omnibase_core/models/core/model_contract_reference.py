@@ -6,7 +6,6 @@ Model for contract reference representation in ONEX NodeBase implementation.
 This model supports the PATTERN-005 ContractLoader functionality for
 unified contract loading and $ref resolution.
 
-Author: ONEX Framework Team
 """
 
 from pathlib import Path

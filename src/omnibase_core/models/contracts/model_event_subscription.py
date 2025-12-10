@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-Event Subscription Model - ONEX Standards Compliant.
+Event Subscription Model.
 
 Defines event consumption patterns, filtering rules,
 and handler configuration for event subscriptions.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel

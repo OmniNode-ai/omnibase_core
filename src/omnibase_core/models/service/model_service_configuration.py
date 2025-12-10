@@ -5,7 +5,6 @@ This module provides the foundational Pydantic models for the configuration-driv
 service discovery and registry management system. These models replace hardcoded
 service definitions with YAML-driven configuration.
 
-Author: OmniNode Team
 """
 
 # Import models from extracted files

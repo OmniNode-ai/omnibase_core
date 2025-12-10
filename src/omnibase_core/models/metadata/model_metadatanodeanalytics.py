@@ -1,5 +1,5 @@
 """
-ModelMetadataNodeAnalytics - ONEX Standards Compliant.
+ModelMetadataNodeAnalytics.
 
 Analytics and metrics for metadata node collections with comprehensive
 tracking, validation, and business intelligence capabilities.

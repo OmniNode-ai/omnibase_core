@@ -4,7 +4,6 @@ Projection Base Model - Abstract base for read-optimized state projections.
 This abstract base class defines the interface for projection state management
 in CQRS architectures with eventual consistency guarantees.
 
-Author: ONEX Framework Team
 Version: 1.0.0
 """
 

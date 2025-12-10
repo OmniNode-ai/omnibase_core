@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Model Configuration for Container Instance - ONEX Standards Compliant.
+Model Configuration for Container Instance.
 
 Strongly-typed configuration class for container instance.
 """

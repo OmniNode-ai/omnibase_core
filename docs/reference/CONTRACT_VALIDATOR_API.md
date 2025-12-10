@@ -1,10 +1,10 @@
 # Contract Validator API
 
-**Version**: 1.0.0 - Interface Locked for Autonomous Code Generation
+**Version**: 1.0.0
 
 ## Overview
 
-The Contract Validator API provides programmatic validation of YAML contracts and Pydantic model code against ONEX standards. Designed for autonomous code generation systems to validate contracts before deployment.
+The Contract Validator API provides programmatic validation of YAML contracts and Pydantic model code against ONEX standards.
 
 ## Key Features
 
@@ -305,4 +305,4 @@ For issues or questions:
 ---
 
 **Last Updated**: 2025-10-14
-**Status**: Interface Locked for Autonomous Code Generation
+**Status**: Interface Stable

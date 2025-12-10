@@ -3,7 +3,7 @@ from pydantic import Field
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
-Event Definition Model - ONEX Standards Compliant.
+Event Definition Model.
 
 Model for event definitions in the ONEX event-driven architecture system.
 """

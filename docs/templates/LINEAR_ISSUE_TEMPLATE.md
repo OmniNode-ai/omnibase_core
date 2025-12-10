@@ -23,7 +23,7 @@
 
 ## Dependencies
 
-- *OMN-XXX (if any)*
+- *XXX (if any)*
 
 ## Cross-Repo Impact
 

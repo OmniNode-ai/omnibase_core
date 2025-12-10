@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-FSM State Definition Model - ONEX Standards Compliant.
+FSM State Definition Model.
 
 Individual model for FSM state definition.
 Part of the FSM Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel

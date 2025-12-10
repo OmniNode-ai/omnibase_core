@@ -1,5 +1,5 @@
 """
-Workflow Coordination Enums - ONEX Standards Compliant.
+Workflow Coordination Enums.
 
 Comprehensive enum definitions for workflow coordination functionality including
 workflow status, assignment status, execution patterns, and failure recovery

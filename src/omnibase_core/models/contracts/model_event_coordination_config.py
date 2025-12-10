@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-Event Coordination Configuration Model - ONEX Standards Compliant.
+Event Coordination Configuration Model.
 
 Defines event-to-workflow mappings, trigger conditions,
 and coordination patterns for event-driven execution.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel

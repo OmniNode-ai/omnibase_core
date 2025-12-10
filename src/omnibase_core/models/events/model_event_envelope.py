@@ -7,7 +7,7 @@ from omnibase_core.models.primitives.model_semver import (
     default_model_version,
 )
 
-"\nEvent Envelope Model\n\nONEX-compliant envelope wrapper for all events in the system.\nProvides standardized event wrapping with metadata, correlation IDs, security context,\nQoS features, distributed tracing, and performance optimization.\n\nPattern: Model<Name> - Pydantic model for event envelope\nNode Type: N/A (Data Model)\n"
+"\nEvent Envelope Model\n\nONEX-compatible envelope wrapper for all events in the system.\nProvides standardized event wrapping with metadata, correlation IDs, security context,\nQoS features, distributed tracing, and performance optimization.\n\nPattern: Model<Name> - Pydantic model for event envelope\nNode Type: N/A (Data Model)\n"
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -17,7 +17,7 @@ from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 
 class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
     """
-    ONEX-compliant envelope wrapper for all events.
+    ONEX-compatible envelope wrapper for all events.
 
     Wraps event payloads with standardized metadata, correlation tracking,
     security context, QoS features, distributed tracing, and lazy evaluation

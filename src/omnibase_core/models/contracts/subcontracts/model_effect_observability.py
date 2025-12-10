@@ -1,12 +1,8 @@
 """
-Effect Observability Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+Effect Observability Model.
 
 Observability configuration for effect operations.
 Controls logging, metrics emission, and trace propagation.
-
-Implements: OMN-524
 """
 
 from pydantic import BaseModel, ConfigDict, Field

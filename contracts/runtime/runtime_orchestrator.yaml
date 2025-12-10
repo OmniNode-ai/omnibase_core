@@ -253,7 +253,6 @@ workflow_coordination:
 #   Delays are capped at max_delay_ms when specified
 #
 # Validation Date: 2025-12-08
-# Linear Ticket: OMN-467
 # ─────────────────────────────────────────────────────────────────────────────
 timing_constraints:
   documentation: |
@@ -358,7 +357,6 @@ timing_constraints:
 #   - Sample size: minimum 100 iterations
 #   - Baseline environment: SSD storage, 4 CPU cores, 8GB RAM
 #
-# Linear Ticket: OMN-467
 # ─────────────────────────────────────────────────────────────────────────────
 performance_benchmarks:
   description: Expected performance characteristics for runtime orchestrator operations
@@ -477,7 +475,6 @@ metadata:
     - self-hosted
     - lifecycle
   documentation_url: https://docs.onex.ai/runtime/orchestrator
-  linear_ticket: OMN-467
 
   # Design Decisions Documentation
   # These decisions are architectural constraints that affect runtime behavior
@@ -657,7 +654,6 @@ integration_testing:
 # Production monitoring guidance for the ONEX runtime. Covers health endpoints,
 # metrics, alerting thresholds, and log patterns. Addresses PR #137 feedback.
 #
-# Linear Ticket: OMN-467
 # ─────────────────────────────────────────────────────────────────────────────
 operational_monitoring:
   description: |

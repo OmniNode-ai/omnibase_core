@@ -1,12 +1,7 @@
 """
-Introspection Subcontract Model - ONEX Standards Compliant.
+Introspection Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for introspection functionality providing:
 - Node metadata exposure and discovery
@@ -19,7 +14,7 @@ Dedicated subcontract model for introspection functionality providing:
 This model is composed into node contracts that require introspection functionality,
 providing clean separation between node logic and introspection behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar, Self
@@ -42,7 +37,7 @@ class ModelIntrospectionSubcontract(BaseModel):
     metadata exposure, contract retrieval, capability discovery, and schema export.
     Designed for composition into node contracts requiring introspection functionality.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

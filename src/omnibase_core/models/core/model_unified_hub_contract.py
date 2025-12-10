@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Unified Hub Contract Model - ONEX Standards Compliant.
+Unified Hub Contract Model.
 
 Strongly-typed model that can parse both AI and Generation hub formats.
 """

@@ -1,13 +1,9 @@
 """
-Effect Operation Model - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
+Effect Operation Model.
 
 Single effect operation definition with discriminated union IO config.
 The `io_config` field uses a discriminated union based on `handler_type`.
 This ensures type-safe validation at contract load time.
-
-Implements: OMN-524
 """
 
 from collections.abc import Mapping

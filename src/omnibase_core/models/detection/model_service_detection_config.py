@@ -6,7 +6,6 @@ Service Detection Configuration Model for ONEX Configuration-Driven Registry Sys
 This module provides the ModelServiceDetectionConfig for service detection and health checking.
 Extracted from model_service_configuration.py for modular architecture compliance.
 
-Author: OmniNode Team
 """
 
 from pydantic import BaseModel

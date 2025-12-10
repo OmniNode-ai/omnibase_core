@@ -1,12 +1,7 @@
 """
-Orchestrator Contract Model - ONEX Standards Compliant.
+Orchestrator Contract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Specialized contract model for NodeOrchestrator implementations providing:
 - Thunk emission patterns and deferred execution rules
@@ -15,7 +10,7 @@ Specialized contract model for NodeOrchestrator implementations providing:
 - Workflow state management and checkpointing
 - Event Registry integration for event-driven coordination
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from typing import ClassVar
@@ -54,7 +49,7 @@ class ModelContractOrchestrator(MixinNodeTypeValidator, ModelContractBase):
     emission, conditional branching, and Event Registry integration.
     Includes UUID correlation tracking for operational traceability.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

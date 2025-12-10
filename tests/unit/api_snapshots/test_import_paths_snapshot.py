@@ -3,7 +3,7 @@
 These tests verify that all documented import paths work correctly.
 This ensures backwards compatibility for users importing from specific paths.
 
-Part of OMN-149: Create pre-refactor API snapshot tests.
+Part of : Create pre-refactor API snapshot tests.
 
 The import paths tested here represent the public API contract that must
 be maintained across refactors to avoid breaking user code.

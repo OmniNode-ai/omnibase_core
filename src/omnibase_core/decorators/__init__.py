@@ -1,6 +1,6 @@
 """
 ONEX Pattern Exclusion Decorators.
-Provides decorators to mark legitimate exceptions to ONEX zero tolerance standards.
+Provides decorators to mark legitimate exceptions to ONEX strict typing standards.
 """
 
 from .error_handling import (

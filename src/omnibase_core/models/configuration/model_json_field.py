@@ -10,7 +10,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 class ModelJsonField(BaseModel):
     """
-    ONEX-compliant strongly typed JSON field with protocol constraints.
+    ONEX-compatible strongly typed JSON field with protocol constraints.
 
     Uses discriminated union pattern for type safety without factory methods.
     """
@@ -113,7 +113,7 @@ class ModelJsonField(BaseModel):
         return v
 
     def get_typed_value(self) -> Any:
-        """ONEX-compliant value accessor with strong typing."""
+        """ONEX-compatible value accessor with strong typing."""
         match self.field_type:
             case EnumJsonValueType.STRING:
                 return self.string_value

@@ -16,7 +16,7 @@ class ModelContractData(BaseModel):
     Discriminated union for contract data to replace Union patterns.
 
     Replaces Union[dict[str, ModelSchemaValue], dict[str, object], None] with
-    ONEX-compliant discriminated union pattern.
+    ONEX-compatible discriminated union pattern.
     """
 
     data_type: EnumContractDataType = Field(

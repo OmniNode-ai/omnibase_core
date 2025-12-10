@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Node Progress Model - ONEX Standards Compliant.
+Node Progress Model.
 
 Model for progress information for individual nodes in the ONEX workflow coordination system.
 """

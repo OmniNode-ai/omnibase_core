@@ -6,7 +6,6 @@ Model for registry factory representation in ONEX NodeBase implementation.
 This model supports the PATTERN-005 RegistryFactory functionality for
 factory state management and configuration.
 
-Author: ONEX Framework Team
 """
 
 from pydantic import BaseModel

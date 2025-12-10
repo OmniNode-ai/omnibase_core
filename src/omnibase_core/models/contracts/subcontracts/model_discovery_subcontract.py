@@ -1,12 +1,7 @@
 """
-Discovery Subcontract Model - ONEX Standards Compliant.
+Discovery Subcontract Model.
 
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
 
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
 
 Dedicated subcontract model for service discovery functionality providing:
 - Discovery responder configuration and lifecycle management
@@ -20,7 +15,7 @@ This model is composed into node contracts that require service discovery functi
 enabling nodes to participate in ONEX discovery broadcasts and respond with introspection
 data, health status, and capabilities.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 
 MIXIN INTEGRATION:
 - Designed for use with MixinDiscoveryResponder
@@ -69,7 +64,7 @@ class ModelDiscoverySubcontract(BaseModel):
     ⚠️ Configuration is immutable after initialization (Pydantic frozen=False by default)
     ⚠️ Discovery state managed by MixinDiscoveryResponder (see threading docs)
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    Strict typing is enforced: No Any types allowed in implementation.
     """
 
     # Interface version for code generation stability

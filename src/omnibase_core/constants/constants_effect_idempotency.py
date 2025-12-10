@@ -1,5 +1,5 @@
 """
-Effect idempotency defaults - ONEX Standards Compliant.
+Effect idempotency defaults.
 
 Default idempotency settings by handler type and operation.
 Used by ModelEffectOperation to determine if an operation is safe to retry.

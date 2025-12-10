@@ -17,7 +17,7 @@ Provides dedicated Pydantic models for all ONEX subcontract patterns:
 These models are composed into node contracts via Union types and optional fields,
 providing clean separation between node logic and subcontract functionality.
 
-ONEX Compliance: Strong typing with zero tolerance for Any types.
+Strong typing with comprehensive type safety.
 """
 
 # Re-export constant from canonical location
@@ -49,7 +49,7 @@ from .model_data_grouping import ModelDataGrouping
 from .model_dependency_health import ModelDependencyHealth
 from .model_discovery_subcontract import ModelDiscoverySubcontract
 
-# Effect subcontract imports (Contract-Driven NodeEffect v1.0 - OMN-524, OMN-525)
+# Effect subcontract imports (Contract-Driven NodeEffect v1.0)
 # Individual model imports from split files
 from .model_effect_circuit_breaker import ModelEffectCircuitBreaker
 from .model_effect_contract_metadata import ModelEffectContractMetadata
@@ -142,7 +142,7 @@ __all__ = [
     "ModelResolvedKafkaContext",
     "ModelResolvedFilesystemContext",
     "ResolvedIOContext",
-    # Effect subcontract models (Contract-Driven NodeEffect v1.0 - OMN-524, OMN-525)
+    # Effect subcontract models (Contract-Driven NodeEffect v1.0)
     "ModelEffectRetryPolicy",
     "IDEMPOTENCY_DEFAULTS",
     "ModelEffectCircuitBreaker",

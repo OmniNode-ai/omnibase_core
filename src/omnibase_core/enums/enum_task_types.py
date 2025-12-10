@@ -1,7 +1,7 @@
 """
 [Any]Type Enumerations
 
-ONEX-compliant enums for task types to replace string literals.
+ONEX-compatible enums for task types to replace string literals.
 """
 
 from enum import Enum

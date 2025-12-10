@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Service Resolution Result Configuration - ONEX Standards Compliant.
+Service Resolution Result Configuration.
 
 Strongly-typed configuration class for service resolution result.
 """

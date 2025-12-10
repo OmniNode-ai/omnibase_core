@@ -1,7 +1,7 @@
 from pydantic import Field
 
 """
-Streaming Configuration Model - ONEX Standards Compliant.
+Streaming Configuration Model.
 
 Streaming configuration for large datasets in NodeReducer implementations.
 Defines streaming parameters, buffer management, and memory-efficient processing

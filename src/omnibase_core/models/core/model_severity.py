@@ -18,7 +18,7 @@ from pydantic_core.core_schema import ValidationInfo
 
 class ModelSeverity(BaseModel):
     """
-    ONEX-compliant severity model with strong typing and validation.
+    ONEX-compatible severity model with strong typing and validation.
 
     Provides structured severity handling with proper constructor patterns
     and immutable design following ONEX standards.
@@ -140,17 +140,17 @@ class ModelSeverity(BaseModel):
         return v
 
     def __str__(self) -> str:
-        """ONEX-compliant string representation."""
+        """ONEX-compatible string representation."""
         return self.value
 
     def __eq__(self, other: Any) -> bool:
-        """ONEX-compliant equality comparison - type-safe only."""
+        """ONEX-compatible equality comparison - type-safe only."""
         if isinstance(other, ModelSeverity):
             return self.name == other.name and self.numeric_value == other.numeric_value
         return False
 
     def __lt__(self, other: "ModelSeverity") -> bool:
-        """ONEX-compliant severity comparison by numeric value."""
+        """ONEX-compatible severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
@@ -159,7 +159,7 @@ class ModelSeverity(BaseModel):
         return self.numeric_value < other.numeric_value
 
     def __le__(self, other: "ModelSeverity") -> bool:
-        """ONEX-compliant severity comparison by numeric value."""
+        """ONEX-compatible severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
@@ -168,7 +168,7 @@ class ModelSeverity(BaseModel):
         return self.numeric_value <= other.numeric_value
 
     def __gt__(self, other: "ModelSeverity") -> bool:
-        """ONEX-compliant severity comparison by numeric value."""
+        """ONEX-compatible severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
@@ -177,7 +177,7 @@ class ModelSeverity(BaseModel):
         return self.numeric_value > other.numeric_value
 
     def __ge__(self, other: "ModelSeverity") -> bool:
-        """ONEX-compliant severity comparison by numeric value."""
+        """ONEX-compatible severity comparison by numeric value."""
         if not isinstance(other, ModelSeverity):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
@@ -193,7 +193,7 @@ class ModelSeverity(BaseModel):
         """
         return hash((self.name, self.numeric_value))
 
-    # ONEX-compliant property methods
+    # ONEX-compatible property methods
     def get_severity_level(self) -> int:
         """Get numeric severity level for comparison."""
         return self.numeric_value

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Group Manifest Configuration - ONEX Standards Compliant.
+Group Manifest Configuration.
 
 Strongly-typed configuration class for group manifest data.
 """

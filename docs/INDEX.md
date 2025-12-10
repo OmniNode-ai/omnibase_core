@@ -49,7 +49,7 @@ omnibase_core/docs/
 
 ### Node Building Guide ⭐ CRITICAL PRIORITY
 
-**Complete guide to building ONEX nodes - perfect for developers and AI agents**
+**Complete guide to building ONEX nodes - perfect for developers**
 
 | # | Document | Description | Time | Status |
 |---|----------|-------------|------|--------|
@@ -235,17 +235,17 @@ omnibase_core/docs/
 
 ---
 
-## 🤖 For AI Agents
+## Development Resources
 
-**Special documentation for AI agents building with ONEX**
+**Structured documentation for building ONEX nodes**
 
-### Agent-Friendly Resources
+### Quick Start Resources
 
 - **[Node Building Guide](guides/node-building/README.md)** - Structured, parseable, step-by-step
-- **[Agent Templates](guides/node-building/10_AGENT_TEMPLATES.md)** - Copy-paste ready templates
+- **[Node Templates](guides/node-building/10_AGENT_TEMPLATES.md)** - Copy-paste ready templates
 - **[Node Templates](guides/templates/COMPUTE_NODE_TEMPLATE.md)** - Production-ready reference implementations
 
-### Agent Workflow
+### Development Workflow
 
 1. Read [What is a Node?](guides/node-building/01_WHAT_IS_A_NODE.md) for concepts
 2. Read [Node Types](guides/node-building/02_NODE_TYPES.md) to choose type

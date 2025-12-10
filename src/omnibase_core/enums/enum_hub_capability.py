@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hub Capability Enum - ONEX Standards Compliant.
+Hub Capability Enum.
 
 Strongly-typed enum for hub capability types for different domains.
 """

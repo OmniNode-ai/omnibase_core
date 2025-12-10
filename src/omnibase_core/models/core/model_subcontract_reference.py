@@ -6,7 +6,6 @@ Model for subcontract reference representation in ONEX contracts.
 This model represents the reference structure used in main contracts
 to link to subcontract files with integration fields.
 
-Author: ONEX Framework Team
 """
 
 from pydantic import BaseModel

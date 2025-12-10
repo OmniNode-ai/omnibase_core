@@ -3,12 +3,12 @@ from pydantic import Field, field_validator
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 """
-Algorithm Configuration Model - ONEX Standards Compliant.
+Algorithm Configuration Model.
 
 Algorithm configuration and parameters defining the computational algorithm
 with factors, weights, and execution parameters for contract-driven behavior.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced - no Any types allowed in implementation.
 """
 
 

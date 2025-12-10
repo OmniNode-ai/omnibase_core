@@ -18,7 +18,7 @@ from omnibase_core.models.operations.model_workflow_config_parameter import (
     ModelWorkflowConfigParameter,
 )
 
-# ONEX-compliant discriminated unions (max 4 members each)
+# ONEX-compatible discriminated unions (max 4 members each)
 # Configuration and Execution Parameters Union
 ConfigExecutionParameterUnion = Annotated[
     ModelWorkflowConfigParameter

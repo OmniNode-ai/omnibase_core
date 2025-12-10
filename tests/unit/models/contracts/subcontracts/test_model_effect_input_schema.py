@@ -4,7 +4,7 @@ Tests for ModelEffectInputSchema - v1.1 preparation.
 This model is reserved for v1.1 with minimal implementation in v1.0.
 Tests verify basic model behavior: construction, frozen, and extra="forbid".
 
-Implements: OMN-524, OMN-525
+Implements: ,
 """
 
 import pytest

@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class EnumJsonValueType(str, Enum):
-    """ONEX-compliant JSON value type enumeration."""
+    """ONEX-compatible JSON value type enumeration."""
 
     STRING = "string"
     NUMBER = "number"

@@ -1,5 +1,5 @@
 """
-Storage Configuration Model - ONEX Standards Compliant.
+Storage Configuration Model.
 
 Strongly-typed model for storage backend configuration.
 """

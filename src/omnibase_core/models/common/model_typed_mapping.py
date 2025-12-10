@@ -61,27 +61,27 @@ class ModelTypedMapping(BaseModel):
     )
 
     def set_string(self, key: str, value: str) -> None:
-        """Set a string value using ONEX-compliant direct __init__ calls."""
+        """Set a string value using ONEX-compatible direct __init__ calls."""
         self.data[key] = ModelValueContainer(value=value)
 
     def set_int(self, key: str, value: int) -> None:
-        """Set an integer value using ONEX-compliant direct __init__ calls."""
+        """Set an integer value using ONEX-compatible direct __init__ calls."""
         self.data[key] = ModelValueContainer(value=value)
 
     def set_float(self, key: str, value: float) -> None:
-        """Set a float value using ONEX-compliant direct __init__ calls."""
+        """Set a float value using ONEX-compatible direct __init__ calls."""
         self.data[key] = ModelValueContainer(value=value)
 
     def set_bool(self, key: str, value: bool) -> None:
-        """Set a boolean value using ONEX-compliant direct __init__ calls."""
+        """Set a boolean value using ONEX-compatible direct __init__ calls."""
         self.data[key] = ModelValueContainer(value=value)
 
     def set_list(self, key: str, value: list[Any]) -> None:
-        """Set a list[Any]value using ONEX-compliant direct __init__ calls."""
+        """Set a list[Any]value using ONEX-compatible direct __init__ calls."""
         self.data[key] = ModelValueContainer(value=value)
 
     def set_dict(self, key: str, value: dict[str, Any]) -> None:
-        """Set a dict[str, Any]value with depth checking for security using ONEX-compliant direct __init__ calls."""
+        """Set a dict[str, Any]value with depth checking for security using ONEX-compatible direct __init__ calls."""
         if self.current_depth > self.MAX_DEPTH:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

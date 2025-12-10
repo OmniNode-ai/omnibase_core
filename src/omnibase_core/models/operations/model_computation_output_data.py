@@ -1,5 +1,5 @@
 """
-Computation Output Data Models - ONEX Standards Compliant.
+Computation Output Data Models.
 
 Re-export module for computation output data components including type enums,
 base output classes, and the main discriminated union data model.

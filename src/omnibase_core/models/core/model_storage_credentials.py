@@ -1,5 +1,5 @@
 """
-Storage Credentials Model - ONEX Standards Compliant.
+Storage Credentials Model.
 
 Strongly-typed model for storage backend authentication credentials.
 """

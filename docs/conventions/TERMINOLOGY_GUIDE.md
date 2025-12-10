@@ -1,7 +1,7 @@
 # Terminology Guide
 
 **Purpose**: Standard terminology reference for omnibase_core documentation
-**Audience**: Contributors, technical writers, AI agents
+**Audience**: Contributors, technical writers
 **Last Updated**: 2025-11-18
 
 ---
@@ -353,9 +353,9 @@ class NodeDatabaseWriterEffect(NodeCoreBase):
     pass
 ```
 
-### For AI Agents
+### Pattern Recognition Guidelines
 
-**Pattern Recognition**:
+**Guidelines**:
 - Recognize both `ModelONEXContainer` and `ModelContainer[T]` as distinct types
 - Use version-specific language in generated documentation
 - Follow node type capitalization rules consistently

@@ -1,5 +1,5 @@
 """
-State Management Enums - ONEX Standards Compliant.
+State Management Enums.
 
 Comprehensive enum definitions for state management functionality including
 storage backends, consistency levels, conflict resolution, versioning,

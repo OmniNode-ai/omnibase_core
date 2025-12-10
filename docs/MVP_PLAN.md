@@ -23,11 +23,11 @@
 > **UPDATE (v0.4.0)**: Issues 2.1 (NodeReducerDeclarative -> NodeReducer) and 2.2 (NodeOrchestratorDeclarative -> NodeOrchestrator) are **COMPLETE**. The "Declarative" suffix has been removed because these ARE now the standard implementations.
 
 **Key Completions**:
-- ✅ OMN-222: EnumNodeKind with RUNTIME_HOST value (PR #108)
-- ✅ OMN-223: EnumHandlerType enum for protocol handlers
-- ✅ OMN-224: ModelOnexEnvelope unified message format (PR #112) - In Progress
-- ✅ OMN-232: Core error hierarchy (RuntimeHostError, HandlerExecutionError, etc.)
-- ✅ OMN-241: Contract Linter CLI (omniintelligence)
+- ✅ : EnumNodeKind with RUNTIME_HOST value (PR #108)
+- ✅ : EnumHandlerType enum for protocol handlers
+- ✅ : ModelOnexEnvelope unified message format (PR #112) - In Progress
+- ✅ : Core error hierarchy (RuntimeHostError, HandlerExecutionError, etc.)
+- ✅ : Contract Linter CLI (omniintelligence)
 - ✅ Pre-refactor API snapshot tests (4 test files in `tests/unit/api_snapshots/`)
 - ✅ NodeCoreBase interface frozen (interface tests + documentation)
 - ✅ Issue 2.1: NodeReducerDeclarative renamed to NodeReducer (primary FSM-driven)

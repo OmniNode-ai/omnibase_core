@@ -1,5 +1,5 @@
 """
-Health Check Mixin for ONEX Tool Nodes - ONEX Standards Compliant.
+Health Check Mixin for ONEX Tool Nodes.
 
 Provides standardized health check implementation for tool nodes with comprehensive
 error handling, async support, and business intelligence capabilities.

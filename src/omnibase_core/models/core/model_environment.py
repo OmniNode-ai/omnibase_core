@@ -1,5 +1,5 @@
 """
-Environment Model - ONEX Standards Compliant.
+Environment Model.
 
 Extensible environment configuration model that replaces hardcoded
 environment enums with flexible, user-defined environments.

@@ -22,7 +22,6 @@ Test Coverage:
 
 Related:
     - PR #137: Runtime orchestrator contract validation
-    - Linear Ticket: OMN-467
 """
 
 import importlib.util
@@ -388,7 +387,7 @@ class TestRuntimeOrchestratorContract:
     def test_contract_has_timing_constraints(self, orchestrator_data: dict) -> None:
         """Test that runtime_orchestrator.yaml has timing_constraints section."""
         assert "timing_constraints" in orchestrator_data, (
-            "Missing timing_constraints section (required for OMN-467)"
+            "Missing timing_constraints section (required for )"
         )
 
 
@@ -884,17 +883,6 @@ class TestAllRuntimeContractsValidation:
                 data = all_contracts[name]
                 assert "state_transitions" in data, (
                     f"{name}: Missing state_transitions section"
-                )
-
-    def test_linear_ticket_references(self, all_contracts: dict[str, dict]) -> None:
-        """Test that runtime contracts reference the correct Linear ticket."""
-        for name, data in all_contracts.items():
-            metadata = data.get("metadata", {})
-            linear_ticket = metadata.get("linear_ticket")
-            # Linear ticket should be OMN-467 for runtime contracts
-            if linear_ticket:
-                assert linear_ticket == "OMN-467", (
-                    f"{name}: Expected Linear ticket OMN-467, got {linear_ticket}"
                 )
 
 

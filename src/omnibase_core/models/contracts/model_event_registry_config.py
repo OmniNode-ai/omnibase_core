@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-Event Registry Configuration Model - ONEX Standards Compliant.
+Event Registry Configuration Model.
 
 Defines service discovery, automatic provisioning,
 and registry integration for event management.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 

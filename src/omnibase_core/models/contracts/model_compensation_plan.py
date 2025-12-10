@@ -1,10 +1,10 @@
 """
-Compensation Plan Model - ONEX Standards Compliant.
+Compensation Plan Model.
 
 Strongly-typed compensation plan model that replaces dict[str, str | list[str]] patterns
 with proper Pydantic validation and type safety for saga pattern workflows.
 
-ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
+Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 """
 
 from typing import Literal
@@ -27,7 +27,7 @@ class ModelCompensationPlan(BaseModel):
     Replaces dict[str, str | list[str]] patterns with proper Pydantic model
     providing runtime validation and type safety for compensation actions.
 
-    ZERO TOLERANCE: No Any types or dict[str, Any]patterns allowed.
+    Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
     """
 
     # Plan identification

@@ -1095,7 +1095,7 @@ class TestExampleContractsValidation:
     """Regression tests for example contracts."""
 
     def test_example_contracts_validate(self):
-        """Example contracts pass schema validation (OMN-539 regression)."""
+        """Example contracts pass schema validation ( regression)."""
         example_path = (
             Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
         )
@@ -1121,7 +1121,7 @@ class TestExampleContractsValidation:
         )
 
     def test_example_contracts_have_required_fields(self):
-        """Example contracts have required fields (OMN-539 regression)."""
+        """Example contracts have required fields ( regression)."""
         import yaml
 
         example_path = (

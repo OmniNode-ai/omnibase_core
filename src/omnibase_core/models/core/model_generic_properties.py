@@ -69,7 +69,7 @@ class ModelGenericProperties(BaseModel):
         Create ModelGenericProperties from flat dictionary with automatic type categorization.
 
         Uses proper Pydantic validation and construction patterns.
-        This replaces the old from_dict() factory method with ONEX-compliant implementation.
+        This replaces the old from_dict() factory method with ONEX-compatible implementation.
 
         Args:
             data: Flat dictionary with mixed property types, or None

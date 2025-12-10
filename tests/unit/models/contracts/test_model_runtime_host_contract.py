@@ -15,7 +15,7 @@ Test Categories:
 5. Edge Cases
 6. Error Handling Tests
 
-Requirements from OMN-225:
+Requirements from :
 - All models use extra='forbid' configuration
 - Handler configs use EnumHandlerType for type classification
 - Event bus and node refs use min_length=1 validation

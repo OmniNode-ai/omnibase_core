@@ -1,5 +1,5 @@
 """
-Workflow Step Execution Model - ONEX Standards Compliant.
+Workflow Step Execution Model.
 
 Runtime execution tracker for workflow steps with state management.
 Different from ModelWorkflowStep (configuration) - this tracks execution state.

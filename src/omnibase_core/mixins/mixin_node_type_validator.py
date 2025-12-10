@@ -1,19 +1,12 @@
 """
-Node Type Validator Mixin - ONEX Standards Compliant.
-
-VERSION: 1.0.0 - INTERFACE LOCKED FOR CODE GENERATION
-
-STABILITY GUARANTEE:
-- All fields, methods, and validators are stable interfaces
-- New optional fields may be added in minor versions only
-- Existing fields cannot be removed or have types/constraints changed
+Node Type Validator Mixin.
 
 Provides shared node_type validation logic for contract models:
 - Architecture type to node type mapping
 - Flexible input format support (enum, string, architecture type)
 - Consistent error handling with ModelOnexError
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+This implementation does not use Any types.
 """
 
 from typing import ClassVar
@@ -39,7 +32,7 @@ class MixinNodeTypeValidator:
     Subclasses should define their own _DEFAULT_NODE_TYPE class variable to specify
     the default node type when EnumNodeArchitectureType is provided.
 
-    ZERO TOLERANCE: No Any types allowed in implementation.
+    This implementation does not use Any types.
     """
 
     # Mapping from architecture type strings to EnumNodeType

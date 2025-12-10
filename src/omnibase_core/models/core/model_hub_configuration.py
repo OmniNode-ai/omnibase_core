@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Hub Configuration Model - ONEX Standards Compliant.
+Hub Configuration Model.
 
 Strongly-typed model for unified hub configuration supporting both contract formats.
 """

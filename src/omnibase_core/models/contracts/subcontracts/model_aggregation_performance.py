@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-Aggregation Performance Model - ONEX Standards Compliant.
+Aggregation Performance Model.
 
 Individual model for aggregation performance configuration.
 Part of the Aggregation Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 

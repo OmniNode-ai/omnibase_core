@@ -1,10 +1,10 @@
 """
-Resource Usage Metric Model - ONEX Standards Compliant.
+Resource Usage Metric Model.
 
 Strongly-typed model for resource usage metrics.
 Replaces dict[str, float] with proper type safety and validation.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, Field, model_validator

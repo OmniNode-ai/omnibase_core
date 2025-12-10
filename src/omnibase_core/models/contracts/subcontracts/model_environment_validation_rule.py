@@ -1,10 +1,10 @@
 """
-Environment Validation Rule Model - ONEX Standards Compliant.
+Environment Validation Rule Model.
 
 Strongly-typed model for environment-specific validation rules.
 Replaces dict[str, str] nested structures with proper type safety.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from pydantic import BaseModel, Field, model_validator

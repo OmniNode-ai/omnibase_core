@@ -1,10 +1,10 @@
 """
-Action Configuration Boolean Value Model - ONEX Standards Compliant.
+Action Configuration Boolean Value Model.
 
 Strongly-typed boolean configuration value for FSM transition actions and similar use cases.
 Provides discriminated union support for type-safe action configurations.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 from __future__ import annotations

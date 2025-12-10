@@ -48,7 +48,7 @@ class ModelOnexEnvelope(BaseModel):
     )
 ```
 
-> **Migration Note**: The **model class** `ModelOnexEnvelopeV1` was renamed to `ModelOnexEnvelope` in OMN-224. The `source_node_id` field (optional UUID for tracking node instances) remains unchanged. Note that `source_node_id` is distinct from `source_node`, which is a required string field for the node name.
+> **Migration Note**: The **model class** `ModelOnexEnvelopeV1` was renamed to `ModelOnexEnvelope` in . The `source_node_id` field (optional UUID for tracking node instances) remains unchanged. Note that `source_node_id` is distinct from `source_node`, which is a required string field for the node name.
 
 ### Purpose
 
@@ -533,7 +533,7 @@ tests/performance/test_source_node_id_overhead.py
 
 ## References
 
-- **PR #71**: Added `source_node_id` field to `ModelOnexEnvelopeV1` (Note: Model class renamed to `ModelOnexEnvelope` in OMN-224; the `source_node_id` field remains unchanged)
+- **PR #71**: Added `source_node_id` field to `ModelOnexEnvelopeV1` (Note: Model class renamed to `ModelOnexEnvelope` in ; the `source_node_id` field remains unchanged)
 - **Commit**: 28b0f4df - Implementation commit
 - **Correlation ID**: 95cac850-05a3-43e2-9e57-ccbbef683f43
 - **Model**: `src/omnibase_core/models/core/model_onex_envelope.py` (formerly `model_onex_envelope_v1.py`)

@@ -1,12 +1,12 @@
 from pydantic import Field
 
 """
-Routing Metrics Model - ONEX Standards Compliant.
+Routing Metrics Model.
 
 Individual model for routing metrics configuration.
 Part of the Routing Subcontract Model family.
 
-ZERO TOLERANCE: No Any types allowed in implementation.
+Strict typing is enforced: No Any types allowed in implementation.
 """
 
 
