@@ -66,7 +66,7 @@ def analyze_fsm(fsm: ModelFSMSubcontract) -> ModelFSMAnalysisResult:
     unreachable = _find_unreachable_states(fsm)
     cycles = _find_cycles_without_exit(fsm)
     ambiguous = _find_ambiguous_transitions(fsm)
-    dead = _find_dead_transitions(fsm)
+    dead = _find_dead_transitions(fsm, unreachable_states=unreachable)
     missing = _find_missing_transitions(fsm)
     duplicates = _find_duplicate_state_names(fsm)
 
@@ -334,7 +334,11 @@ def _find_ambiguous_transitions(
     return ambiguous
 
 
-def _find_dead_transitions(fsm: ModelFSMSubcontract) -> list[str]:
+def _find_dead_transitions(
+    fsm: ModelFSMSubcontract,
+    *,
+    unreachable_states: list[str] | None = None,
+) -> list[str]:
     """
     Find transitions that can never fire due to unreachable source states.
 
@@ -350,13 +354,18 @@ def _find_dead_transitions(fsm: ModelFSMSubcontract) -> list[str]:
 
     Args:
         fsm: Immutable FSM subcontract to analyze
+        unreachable_states: Pre-computed unreachable states (optimization).
+            If None, will compute internally.
 
     Returns:
         List of transition names that are dead/unreachable.
         Empty list if all transitions are potentially reachable.
     """
-    # Get unreachable states first
-    unreachable_states = set(_find_unreachable_states(fsm))
+    # Use pre-computed unreachable states if provided, otherwise compute
+    if unreachable_states is None:
+        unreachable_set = set(_find_unreachable_states(fsm))
+    else:
+        unreachable_set = set(unreachable_states)
 
     dead: list[str] = []
     for transition in fsm.transitions:
@@ -365,7 +374,7 @@ def _find_dead_transitions(fsm: ModelFSMSubcontract) -> list[str]:
             continue
 
         # If from_state is unreachable, the transition is dead
-        if transition.from_state in unreachable_states:
+        if transition.from_state in unreachable_set:
             dead.append(transition.transition_name)
 
     return sorted(dead)
