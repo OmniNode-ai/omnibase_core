@@ -330,6 +330,99 @@ class RoutingError(SubcontractExecutionError):
         )
 ```
 
+#### Declarative Node Errors
+
+These error classes support the declarative node validation system introduced in PR #150 (OMN-177). They provide structured error handling for YAML contract binding, purity constraints, runtime execution, and capability validation.
+
+```python
+from omnibase_core.errors import (
+    AdapterBindingError,
+    PurityViolationError,
+    NodeExecutionError,
+    UnsupportedCapabilityError,
+)
+
+# AdapterBindingError - Raised when an adapter cannot bind to a contract
+# Use when: YAML/JSON contract parsing fails or adapter-contract mismatch occurs
+raise AdapterBindingError(
+    "Cannot bind YAML adapter to contract",
+    adapter_type="YamlContractAdapter",
+    contract_path="nodes/compute/contract.yaml",
+)
+
+# With additional context for debugging
+raise AdapterBindingError(
+    "Contract schema version mismatch",
+    adapter_type="YamlContractAdapter",
+    contract_path="nodes/effect/contract.yaml",
+    operation="load_contract",
+    expected_version="2.0",
+    actual_version="1.5",
+)
+
+
+# PurityViolationError - Raised when a node violates purity constraints
+# Use when: COMPUTE nodes access external state or perform I/O operations
+raise PurityViolationError(
+    "COMPUTE node accessed external state",
+    node_id="node-compute-123",
+    violation_type="external_state_access",
+)
+
+# Common violation types: "external_state_access", "io_operation", "network_call"
+raise PurityViolationError(
+    "COMPUTE node performed network I/O during computation",
+    node_id="node-compute-data-transformer",
+    violation_type="network_call",
+    operation="transform_data",
+    detected_at="execution_phase",
+)
+
+
+# NodeExecutionError - Raised when runtime execution fails
+# Use when: Node processing fails due to runtime conditions
+raise NodeExecutionError(
+    "Execution failed during compute phase",
+    node_id="node-compute-abc",
+    execution_phase="compute",
+)
+
+# With retry context for transient failures
+raise NodeExecutionError(
+    "Reducer aggregation timed out",
+    node_id="node-reducer-aggregator",
+    execution_phase="reduce",
+    operation="aggregate_results",
+    retry_count=3,
+    timeout_ms=5000,
+)
+
+
+# UnsupportedCapabilityError - Raised when contract demands unavailable capability
+# Use when: Contract requires features the node cannot provide
+raise UnsupportedCapabilityError(
+    "Node does not support streaming",
+    capability="streaming",
+    node_type="COMPUTE",
+)
+
+# With available capabilities for debugging
+raise UnsupportedCapabilityError(
+    "Required capability 'real_time_processing' not available",
+    capability="real_time_processing",
+    node_type="EFFECT",
+    operation="validate_capabilities",
+    available_capabilities=["batch_processing", "async_io"],
+)
+```
+
+**Key Design Principles**:
+- All errors inherit from `RuntimeHostError` for consistency
+- Include domain-specific attributes (`adapter_type`, `node_id`, `capability`, etc.)
+- Support arbitrary `**context` kwargs for additional debugging information
+- Serializable for event bus and logging integration
+- Default error codes from `EnumCoreErrorCode` (e.g., `ADAPTER_BINDING_ERROR`)
+
 ## Error Handling Patterns
 
 ### Pattern 1: Standard Error Handling Decorator

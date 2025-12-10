@@ -4,6 +4,12 @@ from typing import TYPE_CHECKING, Any
 # These symbols are re-exported via __all__ and resolved at runtime
 # through __getattr__ to avoid circular import dependencies.
 if TYPE_CHECKING:
+    from omnibase_core.errors.declarative_errors import (
+        AdapterBindingError,
+        NodeExecutionError,
+        PurityViolationError,
+        UnsupportedCapabilityError,
+    )
     from omnibase_core.errors.exception_compute_pipeline_error import (
         ComputePipelineError,
     )
@@ -44,6 +50,7 @@ from omnibase_core.errors.error_codes import (
 # to avoid circular dependencies
 
 __all__ = [
+    "AdapterBindingError",
     "ComputePipelineError",
     "ContractValidationError",
     "EnumCLIExitCode",
@@ -56,8 +63,11 @@ __all__ = [
     "ModelOnexError",
     "ModelOnexWarning",
     "ModelRegistryError",
+    "NodeExecutionError",
     "OnexError",
+    "PurityViolationError",
     "RuntimeHostError",
+    "UnsupportedCapabilityError",
     "get_core_error_description",
     "get_error_codes_for_component",
     "get_exit_code_for_core_error",
@@ -114,6 +124,30 @@ def __getattr__(name: str) -> Any:
         )
 
         return ComputePipelineError
+    # -------------------------------------------------------------------------
+    # Declarative node errors (OMN-177)
+    # Canonical error classes for declarative node validation:
+    # - AdapterBindingError: Adapter binding failures
+    # - PurityViolationError: Pure function constraint violations
+    # - NodeExecutionError: Node execution failures
+    # - UnsupportedCapabilityError: Unsupported capability requests
+    # -------------------------------------------------------------------------
+    if name == "AdapterBindingError":
+        from omnibase_core.errors.declarative_errors import AdapterBindingError
+
+        return AdapterBindingError
+    if name == "PurityViolationError":
+        from omnibase_core.errors.declarative_errors import PurityViolationError
+
+        return PurityViolationError
+    if name == "NodeExecutionError":
+        from omnibase_core.errors.declarative_errors import NodeExecutionError
+
+        return NodeExecutionError
+    if name == "UnsupportedCapabilityError":
+        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
+
+        return UnsupportedCapabilityError
     # Raise standard AttributeError for unknown attributes
     # Cannot use ModelOnexError here as it would cause circular import
     raise AttributeError(  # error-ok: avoid circular import in lazy loader

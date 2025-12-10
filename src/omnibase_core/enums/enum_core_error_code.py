@@ -138,6 +138,12 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     # Thread safety and concurrency errors (261-270)
     THREAD_SAFETY_VIOLATION = "ONEX_CORE_261_THREAD_SAFETY_VIOLATION"
 
+    # Declarative node validation errors (271-280)
+    ADAPTER_BINDING_ERROR = "ONEX_CORE_271_ADAPTER_BINDING_ERROR"
+    PURITY_VIOLATION_ERROR = "ONEX_CORE_272_PURITY_VIOLATION_ERROR"
+    NODE_EXECUTION_ERROR = "ONEX_CORE_273_NODE_EXECUTION_ERROR"
+    UNSUPPORTED_CAPABILITY_ERROR = "ONEX_CORE_274_UNSUPPORTED_CAPABILITY_ERROR"
+
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         return "CORE"
@@ -247,6 +253,11 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST: EnumCLIExitCode.ERROR,
     # Thread safety/concurrency errors -> ERROR
     EnumCoreErrorCode.THREAD_SAFETY_VIOLATION: EnumCLIExitCode.ERROR,
+    # Declarative node validation errors -> ERROR
+    EnumCoreErrorCode.ADAPTER_BINDING_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.PURITY_VIOLATION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.NODE_EXECUTION_ERROR: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.UNSUPPORTED_CAPABILITY_ERROR: EnumCLIExitCode.ERROR,
 }
 
 
@@ -360,5 +371,9 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.DISCOVERY_INVALID_NODE: "Discovery invalid node configuration",
         EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST: "Discovery invalid request format",
         EnumCoreErrorCode.THREAD_SAFETY_VIOLATION: "Thread safety violation detected",
+        EnumCoreErrorCode.ADAPTER_BINDING_ERROR: "Adapter binding failed",
+        EnumCoreErrorCode.PURITY_VIOLATION_ERROR: "Purity violation in pure node",
+        EnumCoreErrorCode.NODE_EXECUTION_ERROR: "Node execution failed",
+        EnumCoreErrorCode.UNSUPPORTED_CAPABILITY_ERROR: "Unsupported capability requested",
     }
     return descriptions.get(error_code, "Unknown error")
