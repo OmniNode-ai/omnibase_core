@@ -123,6 +123,7 @@ from .typed_dict_function_relationships_summary import (
     TypedDictFunctionRelationshipsSummary,
 )
 from .typed_dict_generic_metadata_dict import TypedDictGenericMetadataDict
+from .typed_dict_handler_metadata import TypedDictHandlerMetadata
 from .typed_dict_health_status import TypedDictHealthStatus
 from .typed_dict_input_state_fields import TypedDictInputStateFields
 from .typed_dict_input_state_source_type import TypedDictInputStateSourceType
@@ -165,6 +166,7 @@ from .typed_dict_quality_update_data import TypedDictQualityUpdateData
 from .typed_dict_ref_parts import TypedDictRefParts
 from .typed_dict_resource_usage import TypedDictResourceUsage
 from .typed_dict_result_factory_kwargs import TypedDictResultFactoryKwargs
+from .typed_dict_routing_info import TypedDictRoutingInfo
 from .typed_dict_security_context import TypedDictSecurityContext
 
 # New individual TypedDict classes extracted from typed_dict_structured_definitions.py
@@ -250,6 +252,7 @@ __all__ = [
     "TypedDictFunctionDocumentationSummaryType",
     "TypedDictFunctionRelationshipsSummary",
     "TypedDictGenericMetadataDict",
+    "TypedDictHandlerMetadata",
     "TypedDictInputStateSourceType",
     "TypedDictMessageParams",
     "TypedDictMetadataParams",
@@ -273,6 +276,7 @@ __all__ = [
     "TypedDictPropertyMetadata",
     "TypedDictQualityData",
     "TypedDictResultFactoryKwargs",
+    "TypedDictRoutingInfo",
     "TypedDictSSLContextOptions",
     "TypedDictTimestampUpdateData",
     "TypedDictTraceInfoData",

@@ -78,9 +78,77 @@ class ProtocolHandler(Protocol):
     - describe: Method returning handler metadata for discovery/registration
 
     Thread Safety:
-        Handler implementations should be stateless or thread-safe. The runtime
-        may invoke the same handler instance from multiple coroutines. If the
-        handler maintains state, use appropriate synchronization.
+        WARNING: Handler implementations are invoked from the runtime without
+        synchronization. The same handler instance may be called from multiple
+        coroutines concurrently.
+
+        Design Requirements:
+            - **Stateless Handlers (Recommended)**: Keep handlers stateless by
+              extracting all needed data from the envelope. This is the safest
+              approach and requires no synchronization.
+            - **Stateful Handlers**: If state is required, use appropriate
+              synchronization primitives (asyncio.Lock for async, threading.Lock
+              for sync state).
+
+        Mitigation Strategies:
+
+        1. **Stateless Design (Recommended)**: All execution state comes from the
+           envelope, no instance variables modified during execute().
+
+           .. code-block:: python
+
+               class StatelessHandler:
+                   def __init__(self, config: Config):
+                       self._config = config  # Read-only after init
+
+                   async def execute(self, envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
+                       # All state from envelope - no instance mutation
+                       url = envelope.payload.get("url")
+                       return await self._make_request(url)
+
+        2. **Async Locking for Async State**: Use asyncio.Lock when handler state
+           must be modified during async execution.
+
+           .. code-block:: python
+
+               class StatefulHandler:
+                   def __init__(self):
+                       self._lock = asyncio.Lock()
+                       self._cache = {}
+
+                   async def execute(self, envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
+                       async with self._lock:
+                           # Safe to modify self._cache
+                           self._cache[envelope.envelope_id] = result
+                       return response
+
+        3. **Thread-Local Storage**: For thread-specific state without locking.
+
+           .. code-block:: python
+
+               import threading
+
+               class ThreadLocalHandler:
+                   def __init__(self):
+                       self._local = threading.local()
+
+                   async def execute(self, envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
+                       # Thread-local state - no locking needed
+                       if not hasattr(self._local, "counter"):
+                           self._local.counter = 0
+                       self._local.counter += 1
+                       return response
+
+        Registration vs Execution:
+            - **Registration**: Handlers are registered with EnvelopeRouter. By default,
+              handlers can be replaced (same handler_type overwrites previous). Use
+              ``replace=False`` for strict registration that raises on duplicates.
+            - **Execution**: After registration, handlers are invoked concurrently.
+              The handler instance is shared across all executions for that handler_type.
+
+        See Also:
+            :class:`~omnibase_core.runtime.envelope_router.EnvelopeRouter` for
+            registration semantics and runtime thread safety considerations.
 
     Error Handling:
         Handlers should catch internal exceptions and return error envelopes

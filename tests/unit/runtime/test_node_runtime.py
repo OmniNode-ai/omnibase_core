@@ -146,8 +146,11 @@ class TestEnvelopeRouterRegisterHandler:
         # Should not raise
         runtime.register_handler(mock_handler)
 
-        # Verify handler was registered
+        # Verify handler was registered with correct handler_type key
         assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        # Verify the actual handler instance is stored (not a copy or different object)
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
 
     def test_register_handler_replaces_existing(
         self,
@@ -273,14 +276,21 @@ class TestEnvelopeRouterRegisterHandler:
         EXPECTED BEHAVIOR:
         - None handler raises ValueError or TypeError
         - Error message indicates handler is required
+        - No handlers are registered after failed registration
         """
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
         from omnibase_core.runtime import EnvelopeRouter
 
         runtime = EnvelopeRouter()
 
+        # Verify empty state before attempted registration
+        assert len(runtime._handlers) == 0
+
         with pytest.raises((ValueError, TypeError, ModelOnexError)):
             runtime.register_handler(None)  # type: ignore[arg-type]
+
+        # Verify no handlers were registered after failed registration
+        assert len(runtime._handlers) == 0
 
 
 # =============================================================================
@@ -321,9 +331,14 @@ class TestEnvelopeRouterRegisterNode:
         # Result should be None or runtime for chaining
         assert result is None or result is runtime
 
-        # Verify node was registered
+        # Verify node was registered with correct slug key
         assert len(runtime._nodes) == 1
         assert sample_slug in runtime._nodes
+        # Verify the actual instance is stored (not a copy or different object)
+        assert runtime._nodes[sample_slug] is instance
+        # Verify node properties are preserved
+        assert runtime._nodes[sample_slug].slug == sample_slug
+        assert runtime._nodes[sample_slug].node_type == sample_node_type
 
     def test_register_node_accepts_runtime_node_instance(
         self,
@@ -355,8 +370,12 @@ class TestEnvelopeRouterRegisterNode:
         assert len(runtime._nodes) == 1
         assert sample_slug in runtime._nodes
         registered_node = runtime._nodes[sample_slug]
+        # Verify identity - same object, not a copy
+        assert registered_node is instance
+        # Verify all properties are preserved
         assert registered_node.slug == sample_slug
         assert registered_node.node_type == sample_node_type
+        assert registered_node.contract is mock_contract
 
     def test_register_node_duplicate_slug_raises_error(
         self,
@@ -370,6 +389,7 @@ class TestEnvelopeRouterRegisterNode:
         - First registration succeeds
         - Second registration with same slug raises ModelOnexError
         - Error message mentions duplicate slug
+        - Original node is still registered (no side effects from failed registration)
         """
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
         from omnibase_core.runtime import EnvelopeRouter, NodeInstance
@@ -391,6 +411,11 @@ class TestEnvelopeRouterRegisterNode:
         # First registration succeeds
         runtime.register_node(instance1)
 
+        # Verify first node is registered
+        assert len(runtime._nodes) == 1
+        assert "duplicate-slug" in runtime._nodes
+        assert runtime._nodes["duplicate-slug"] is instance1
+
         # Second registration raises error
         with pytest.raises(ModelOnexError) as exc_info:
             runtime.register_node(instance2)
@@ -400,6 +425,15 @@ class TestEnvelopeRouterRegisterNode:
             or "already" in str(exc_info.value).lower()
         )
 
+        # Verify original node is still registered (no side effects from failed registration)
+        assert len(runtime._nodes) == 1
+        assert runtime._nodes["duplicate-slug"] is instance1
+        # Verify the second instance was NOT registered (check by identity, not equality)
+        # Note: instance1 and instance2 have same values but are different objects
+        registered_values = list(runtime._nodes.values())
+        assert all(val is instance1 for val in registered_values)
+        assert not any(val is instance2 for val in registered_values)
+
     def test_register_node_none_raises_error(self) -> None:
         """
         Test that registering None node raises error.
@@ -407,14 +441,21 @@ class TestEnvelopeRouterRegisterNode:
         EXPECTED BEHAVIOR:
         - None node raises ValueError or TypeError
         - Error message indicates node is required
+        - No nodes are registered after failed registration
         """
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
         from omnibase_core.runtime import EnvelopeRouter
 
         runtime = EnvelopeRouter()
 
+        # Verify empty state before attempted registration
+        assert len(runtime._nodes) == 0
+
         with pytest.raises((ValueError, TypeError, ModelOnexError)):
             runtime.register_node(None)  # type: ignore[arg-type]
+
+        # Verify no nodes were registered after failed registration
+        assert len(runtime._nodes) == 0
 
 
 # =============================================================================
@@ -515,14 +556,17 @@ class TestEnvelopeRouterRouteEnvelope:
         EXPECTED BEHAVIOR:
         - Envelope with explicit handler_type routes to matching handler
         - handler_type field is used for routing decision
+        - Returned handler is the exact instance that was registered
         """
         from omnibase_core.runtime import EnvelopeRouter
 
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
-        # Verify handler registration
+        # Verify handler registration before routing
         assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
 
         # Envelope explicitly specifies handler_type
         envelope = ModelOnexEnvelope(
@@ -539,9 +583,11 @@ class TestEnvelopeRouterRouteEnvelope:
         result = runtime.route_envelope(envelope)
 
         assert result is not None
-        # Verify the handler returned is the one we registered
+        # Verify the handler returned is the exact instance we registered
         assert "handler" in result
         assert result["handler"] is mock_handler
+        # Verify handler_type matches what was requested
+        assert result["handler"].handler_type == mock_handler.handler_type
 
 
 # =============================================================================

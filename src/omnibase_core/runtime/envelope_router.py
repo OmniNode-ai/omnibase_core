@@ -37,6 +37,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from omnibase_core.decorators.error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
 from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
@@ -67,16 +68,47 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         (initialize, shutdown) and health checks are deferred to Beta.
 
     Registration Semantics:
-        Handlers and nodes have different registration semantics:
-        - **Handlers**: By default, allow replacement (last-write-wins). Registering
-          a handler with the same handler_type silently replaces the previous handler.
-          This enables handler hot-swapping (e.g., switching from test to production
-          handlers at runtime) and testing patterns (e.g., injecting mock handlers).
-          Use ``replace=False`` for strict registration that raises on duplicates.
-        - **Nodes**: Raise on duplicate slugs. Node slugs must be unique within
-          the runtime. Attempting to register a second node with the same slug
-          raises ModelOnexError. This prevents accidental overwriting of node
-          configurations and ensures deterministic routing by slug.
+        Handlers and nodes have different registration semantics by design:
+
+        +---------------+-------------------+-------------------+---------------------+
+        | Entity        | Key               | Duplicate Action  | Use Case            |
+        +===============+===================+===================+=====================+
+        | **Handler**   | handler_type      | Replace (default) | Hot-swapping,       |
+        |               | (EnumHandlerType) | or Raise          | testing, upgrades   |
+        +---------------+-------------------+-------------------+---------------------+
+        | **Node**      | slug (str)        | Always Raise      | Deterministic       |
+        |               |                   |                   | routing, config     |
+        +---------------+-------------------+-------------------+---------------------+
+
+        **Handlers** (Replaceable by Default):
+            - Keyed by ``handler_type`` (EnumHandlerType enum value)
+            - Default behavior: Silent replacement (last-write-wins)
+            - Use ``replace=False`` for strict mode that raises on duplicates
+            - Rationale: Enables handler hot-swapping (test -> production),
+              mock injection for testing, and runtime handler upgrades
+
+            .. code-block:: python
+
+                # Default: replacement allowed
+                router.register_handler(http_handler_v1)
+                router.register_handler(http_handler_v2)  # Replaces v1 silently
+
+                # Strict: raises on duplicate
+                router.register_handler(db_handler, replace=False)
+                router.register_handler(other_db_handler, replace=False)  # Raises!
+
+        **Nodes** (Always Unique):
+            - Keyed by ``slug`` (string identifier)
+            - Always raises ModelOnexError on duplicate registration
+            - Rationale: Node slugs are used for deterministic routing. Allowing
+              replacement could silently break routing rules and cause hard-to-debug
+              issues. If you need to update a node, unregister first (not yet
+              implemented in MVP).
+
+            .. code-block:: python
+
+                router.register_node(compute_node)  # slug="my-compute"
+                router.register_node(another_node)   # slug="my-compute" -> Raises!
 
     Thread Safety:
         WARNING: EnvelopeRouter is NOT thread-safe. The handler and node registries
@@ -160,6 +192,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         self._handlers: dict[EnumHandlerType, ProtocolHandler] = {}
         self._nodes: dict[str, RuntimeNodeInstance] = {}
 
+    @standard_error_handling("Handler registration")
     def register_handler(
         self, handler: ProtocolHandler, *, replace: bool = True
     ) -> None:
@@ -263,6 +296,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
         self._handlers[handler_type] = handler
 
+    @standard_error_handling("Node registration")
     def register_node(self, node: RuntimeNodeInstance) -> None:
         """
         Register a node instance by its slug.
@@ -306,6 +340,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
         self._nodes[slug] = node
 
+    @standard_error_handling("Envelope routing")
     def route_envelope(self, envelope: ModelOnexEnvelope) -> TypedDictRoutingInfo:
         """
         Route an envelope to the appropriate handler.
