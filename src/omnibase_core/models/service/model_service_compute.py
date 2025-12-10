@@ -48,6 +48,45 @@ Included Capabilities:
     - Cache hit/miss tracking
 
 Node Type: Compute (Pure transformations, deterministic outputs)
+
+Migration Notes:
+    **v0.4.0**: Changed from PEP 695 type parameter syntax to traditional
+    ``TypeVar`` syntax for mypy strict mode compatibility. This is a
+    non-breaking change - the generic behavior is identical.
+
+    Old syntax (PEP 695, not supported by mypy in CI):
+
+    .. code-block:: python
+
+        class ModelServiceCompute[T_Input, T_Output](
+            MixinNodeService,
+            NodeCompute[T_Input, T_Output],
+            ...
+        ):
+            pass
+
+    New syntax (traditional TypeVar, mypy-compatible):
+
+    .. code-block:: python
+
+        T_Input = TypeVar("T_Input")
+        T_Output = TypeVar("T_Output")
+
+        class ModelServiceCompute(
+            MixinNodeService,
+            NodeCompute[T_Input, T_Output],
+            ...,
+            Generic[T_Input, T_Output],
+        ):
+            pass
+
+    Usage remains unchanged:
+
+    .. code-block:: python
+
+        class MyCompute(ModelServiceCompute[MyInput, MyOutput]):
+            async def execute_compute(self, contract: ModelContractCompute) -> dict:
+                ...
 """
 
 from typing import Generic, TypeVar

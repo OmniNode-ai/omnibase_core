@@ -13,13 +13,13 @@ Related:
 
 from __future__ import annotations
 
+__all__ = ["TypedDictRoutingInfo"]
+
 from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_handler_type import EnumHandlerType
     from omnibase_core.protocols.runtime.protocol_handler import ProtocolHandler
-
-__all__ = ["TypedDictRoutingInfo"]
 
 
 class TypedDictRoutingInfo(TypedDict):

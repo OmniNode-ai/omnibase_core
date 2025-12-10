@@ -25,6 +25,9 @@ from omnibase_core.models.infrastructure.model_compute_cache import ModelCompute
 from omnibase_core.nodes.node_compute import NodeCompute
 
 
+@pytest.mark.unit
+@pytest.mark.slow
+@pytest.mark.timeout(60)
 class TestCacheRaceConditions:
     """
     Test suite demonstrating cache race conditions.
@@ -32,6 +35,10 @@ class TestCacheRaceConditions:
     These tests may exhibit non-deterministic failures due to concurrent
     access without synchronization. This is EXPECTED behavior to demonstrate
     the need for thread-safe wrappers.
+
+    Note:
+    - Marked as @slow due to concurrent thread operations
+    - Timeout (60s) to prevent CI hangs
     """
 
     @pytest.mark.xfail(
@@ -200,12 +207,19 @@ class TestCacheRaceConditions:
         )
 
 
+@pytest.mark.unit
+@pytest.mark.slow
+@pytest.mark.timeout(60)
 class TestCircuitBreakerRaceConditions:
     """
     Test suite demonstrating circuit breaker race conditions.
 
     Circuit breaker state transitions are not atomic, leading to potential
     failures under concurrent load.
+
+    Note:
+    - Marked as @slow due to concurrent thread operations
+    - Timeout (60s) to prevent CI hangs
     """
 
     @pytest.mark.xfail(
@@ -295,12 +309,17 @@ class TestCircuitBreakerRaceConditions:
         # due to race conditions - this is the problem we're demonstrating
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestThreadSafeWrappers:
     """
     Test suite demonstrating CORRECT thread-safe patterns.
 
     These tests show how to properly synchronize ONEX components for
     production use.
+
+    Note:
+    - Timeout (60s) to prevent CI hangs from thread operations
     """
 
     def test_thread_safe_cache_wrapper(self):
@@ -461,11 +480,16 @@ class TestThreadSafeWrappers:
         )
 
 
+@pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestDocumentationExamples:
     """
     Test suite validating code examples from docs/THREADING.md.
 
     These tests ensure documentation examples are correct and functional.
+
+    Note:
+    - Timeout (60s) to prevent CI hangs from thread operations
     """
 
     def test_thread_safe_cache_from_docs(self):

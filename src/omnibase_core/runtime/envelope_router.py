@@ -19,6 +19,9 @@ Architecture:
     - Swappable transports without changing runtime code
     - Clear separation between coordination and I/O
 
+Exports:
+    EnvelopeRouter: The main router class
+
 Design Patterns:
     - Dispatcher Pattern: route_envelope() selects handlers based on envelope type
     - Executor Pattern: execute_with_handler() performs actual handler invocation
@@ -33,6 +36,8 @@ Related:
 """
 
 from __future__ import annotations
+
+__all__ = ["EnvelopeRouter"]
 
 import asyncio
 import logging
@@ -125,8 +130,22 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         EnvelopeRouter uses a hybrid thread safety model optimized for the
         "freeze after init" pattern:
 
-        **CRITICAL**: Registration MUST complete before any concurrent access.
-        The router is designed for sequential setup followed by concurrent reads.
+        .. warning::
+
+            **CRITICAL**: All ``register_handler()`` and ``register_node()`` calls
+            MUST complete before any concurrent routing or execution. Call ``freeze()``
+            after registration to enforce read-only mode and enable thread-safe access.
+
+            **Required Pattern**::
+
+                # 1. Registration phase (single-threaded)
+                router = EnvelopeRouter()
+                router.register_handler(handler)
+                router.register_node(node)
+                router.freeze()  # <-- CRITICAL: freeze before sharing
+
+                # 2. Execution phase (thread-safe after freeze)
+                await router.execute_with_handler(envelope, node)
 
         **Registration Phase** (single-threaded):
             Registration methods (``register_handler``, ``register_node``, ``freeze``)
@@ -945,6 +964,3 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             f"EnvelopeRouter(handlers={handler_repr}, nodes={node_repr}, "
             f"frozen={self._frozen})"
         )
-
-
-__all__ = ["EnvelopeRouter"]

@@ -284,8 +284,13 @@ class TestNodeInstanceFrozenBehavior:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestNodeInstanceInitialize:
-    """Tests for NodeInstance initialize() lifecycle method."""
+    """Tests for NodeInstance initialize() lifecycle method.
+
+    Note:
+    - Timeout (60s) for async lifecycle initialization tests
+    """
 
     @pytest.mark.asyncio
     async def test_initialize_can_be_called(
@@ -388,8 +393,13 @@ class TestNodeInstanceInitialize:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestNodeInstanceShutdown:
-    """Tests for NodeInstance shutdown() lifecycle method."""
+    """Tests for NodeInstance shutdown() lifecycle method.
+
+    Note:
+    - Timeout (60s) for async lifecycle shutdown tests
+    """
 
     @pytest.mark.asyncio
     async def test_shutdown_can_be_called(
@@ -517,8 +527,13 @@ class TestNodeInstanceShutdown:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestNodeInstanceHandle:
-    """Tests for NodeInstance handle() method - envelope processing."""
+    """Tests for NodeInstance handle() method - envelope processing.
+
+    Note:
+    - Timeout (60s) for async envelope handling tests
+    """
 
     @pytest.mark.asyncio
     async def test_handle_accepts_envelope(
@@ -659,8 +674,13 @@ class TestNodeInstanceHandle:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestNodeInstanceRuntimeIntegration:
-    """Tests for NodeInstance runtime delegation patterns."""
+    """Tests for NodeInstance runtime delegation patterns.
+
+    Note:
+    - Timeout (60s) for async runtime integration tests
+    """
 
     def test_can_set_runtime_reference(
         self,
@@ -892,8 +912,13 @@ class TestNodeInstanceStringRepresentation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestNodeInstanceEdgeCases:
-    """Tests for NodeInstance edge cases and error conditions."""
+    """Tests for NodeInstance edge cases and error conditions.
+
+    Note:
+    - Timeout (60s) for async edge case tests
+    """
 
     @pytest.mark.asyncio
     async def test_handle_with_none_envelope_raises_error(
@@ -1225,8 +1250,13 @@ class TestNodeInstanceModelConfig:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestNodeInstanceIntegrationPatterns:
-    """Tests for common NodeInstance usage patterns."""
+    """Tests for common NodeInstance usage patterns.
+
+    Note:
+    - Timeout (60s) for async integration pattern tests
+    """
 
     @pytest.mark.asyncio
     async def test_full_lifecycle_pattern(

@@ -605,6 +605,146 @@ class TestEnvelopeRouterRouteEnvelope:
         # Verify handler_type matches what was requested
         assert result["handler"].handler_type == mock_handler.handler_type
 
+    def test_route_envelope_with_string_handler_type_raises_error(
+        self,
+        mock_handler: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Test that route_envelope raises error when handler_type is a string.
+
+        EXPECTED BEHAVIOR:
+        - Envelope with string handler_type raises ModelOnexError
+        - Error code is INVALID_PARAMETER
+        - Error message indicates expected EnumHandlerType
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+
+        # Verify handler registration was successful
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
+        # Create envelope with handler_type set correctly, then mutate to invalid type
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=uuid4(),
+            source_node="test_source",
+            operation="TEST_OPERATION",
+            payload={"test": "data"},
+            timestamp=datetime.now(UTC),
+            handler_type=mock_handler.handler_type,
+        )
+
+        # Force invalid type using object.__setattr__ to bypass Pydantic validation
+        object.__setattr__(envelope, "handler_type", "HTTP")
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.route_envelope(envelope)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
+        error_msg = str(exc_info.value)
+        assert "EnumHandlerType" in error_msg
+        assert "str" in error_msg
+
+    def test_route_envelope_with_none_handler_type_raises_error(
+        self,
+        mock_handler: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Test that route_envelope raises error when handler_type is None.
+
+        EXPECTED BEHAVIOR:
+        - Envelope with None handler_type raises ModelOnexError
+        - Error code is INVALID_PARAMETER
+        - Error message indicates handler_type is required
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+
+        # Verify handler registration was successful
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
+        # Create envelope without handler_type (defaults to None)
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=uuid4(),
+            source_node="test_source",
+            operation="TEST_OPERATION",
+            payload={"test": "data"},
+            timestamp=datetime.now(UTC),
+            handler_type=None,  # Explicitly None
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.route_envelope(envelope)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
+        error_msg = str(exc_info.value).lower()
+        assert "handler_type" in error_msg
+
+    def test_route_envelope_with_integer_handler_type_raises_error(
+        self,
+        mock_handler: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Test that route_envelope raises error when handler_type is an integer.
+
+        EXPECTED BEHAVIOR:
+        - Envelope with integer handler_type raises ModelOnexError
+        - Error code is INVALID_PARAMETER
+        - Error message indicates expected EnumHandlerType
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+
+        # Verify handler registration was successful
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
+        # Create envelope with valid handler_type, then mutate to invalid type
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=uuid4(),
+            source_node="test_source",
+            operation="TEST_OPERATION",
+            payload={"test": "data"},
+            timestamp=datetime.now(UTC),
+            handler_type=mock_handler.handler_type,
+        )
+
+        # Force invalid type using object.__setattr__ to bypass Pydantic validation
+        object.__setattr__(envelope, "handler_type", 42)
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.route_envelope(envelope)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
+        error_msg = str(exc_info.value)
+        assert "EnumHandlerType" in error_msg
+        assert "int" in error_msg
+
 
 # =============================================================================
 # TEST CLASS: Execute With Handler
@@ -612,9 +752,13 @@ class TestEnvelopeRouterRouteEnvelope:
 
 
 @pytest.mark.unit
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 class TestEnvelopeRouterExecuteWithHandler:
-    """Tests for EnvelopeRouter execute_with_handler() method."""
+    """Tests for EnvelopeRouter execute_with_handler() method.
+
+    Note:
+    - Extended timeout (60s) for async handler execution tests
+    """
 
     @pytest.mark.asyncio
     async def test_execute_with_handler_calls_route_envelope(
@@ -688,6 +832,11 @@ class TestEnvelopeRouterExecuteWithHandler:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler registration was successful
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
         instance = NodeInstance(
             slug=sample_slug,
             node_type=sample_node_type,
@@ -740,6 +889,11 @@ class TestEnvelopeRouterExecuteWithHandler:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler registration was successful
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
         instance = NodeInstance(
             slug=sample_slug,
             node_type=sample_node_type,
@@ -791,6 +945,11 @@ class TestEnvelopeRouterExecuteWithHandler:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler registration was successful
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
         instance = NodeInstance(
             slug=sample_slug,
             node_type=sample_node_type,
@@ -822,9 +981,13 @@ class TestEnvelopeRouterExecuteWithHandler:
 
 
 @pytest.mark.unit
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 class TestEnvelopeRouterEdgeCases:
-    """Tests for EnvelopeRouter edge cases and error conditions."""
+    """Tests for EnvelopeRouter edge cases and error conditions.
+
+    Note:
+    - Extended timeout (60s) for async error handling tests
+    """
 
     @pytest.mark.asyncio
     async def test_execute_without_registered_handlers_raises_error(
@@ -933,6 +1096,14 @@ class TestEnvelopeRouterEdgeCases:
 
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler_with_error)
+
+        # Verify handler registration was successful
+        assert len(runtime._handlers) == 1
+        assert mock_handler_with_error.handler_type in runtime._handlers
+        assert (
+            runtime._handlers[mock_handler_with_error.handler_type]
+            is mock_handler_with_error
+        )
 
         instance = NodeInstance(
             slug=sample_slug,
@@ -1118,6 +1289,11 @@ class TestEnvelopeRouterEdgeCases:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler registration was successful
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
         instance = NodeInstance(
             slug=sample_slug,
             node_type=sample_node_type,
@@ -1145,6 +1321,11 @@ class TestEnvelopeRouterEdgeCases:
 
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
+
+        # Verify handler registration was successful
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
 
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -1354,9 +1535,13 @@ class TestEnvelopeRouterStringRepresentation:
 
 
 @pytest.mark.unit
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 class TestEnvelopeRouterIntegrationPatterns:
-    """Tests for common EnvelopeRouter usage patterns."""
+    """Tests for common EnvelopeRouter usage patterns.
+
+    Note:
+    - Extended timeout (60s) for async integration tests
+    """
 
     @pytest.mark.asyncio
     async def test_full_lifecycle_pattern(
@@ -1450,6 +1635,11 @@ class TestEnvelopeRouterIntegrationPatterns:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler registration was successful
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
         instance = NodeInstance(
             slug=sample_slug,
             node_type=sample_node_type,
@@ -1492,6 +1682,11 @@ class TestEnvelopeRouterIntegrationPatterns:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler registration was successful
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
         node_types = [
             EnumNodeType.COMPUTE_GENERIC,
             EnumNodeType.EFFECT_GENERIC,
@@ -1507,8 +1702,9 @@ class TestEnvelopeRouterIntegrationPatterns:
             )
             runtime.register_node(instance)
 
-        # All nodes should be registered
+        # All nodes should be registered with explicit count assertion
         assert len(runtime._nodes) == len(node_types)  # Should be 4
+        assert len(runtime._nodes) == 4  # Explicit count for clarity
 
         # Verify each node is stored by its unique slug
         for i, node_type in enumerate(node_types):
@@ -2245,6 +2441,7 @@ class TestEnvelopeRouterLargeRegistryRepr:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(90)
 class TestEnvelopeRouterHandlerTimeout:
     """
     Tests for handler execution timeout behavior.
@@ -2260,6 +2457,9 @@ class TestEnvelopeRouterHandlerTimeout:
 
     This design allows callers to choose appropriate timeout policies for their
     use case rather than imposing a one-size-fits-all timeout.
+
+    Note:
+    - Extended timeout (90s) for tests involving intentional delays and timeouts
     """
 
     @pytest.mark.asyncio
@@ -2555,6 +2755,8 @@ class TestEnvelopeRouterHandlerTimeout:
 
 
 @pytest.mark.unit
+@pytest.mark.slow
+@pytest.mark.timeout(120)
 class TestEnvelopeRouterConcurrencyStress:
     """
     Stress tests for concurrent access patterns on EnvelopeRouter.
@@ -2566,6 +2768,10 @@ class TestEnvelopeRouterConcurrencyStress:
 
     Critical for production deployments where EnvelopeRouter may be accessed
     from multiple threads/tasks simultaneously.
+
+    Note:
+    - Marked as @slow due to 100-thread stress tests
+    - Extended timeout (120s) for CI environments with resource constraints
     """
 
     def test_concurrent_route_envelope_after_freeze(

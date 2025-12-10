@@ -8,8 +8,11 @@ conventions.
 Fixture Categories:
     - Model fixtures: default_version, sample_envelope, mock_contract
     - Mock fixtures: mock_runtime (async-aware runtime mock)
-    - Handler fixtures: mock_handler, mock_handler_database, mock_handler_kafka
+    - Handler fixtures: mock_handler, mock_handler_database, mock_handler_kafka,
+                        mock_handler_alternate, mock_handler_with_error
     - Identity fixtures: sample_slug, sample_node_type
+    - Composite fixtures: envelope_router, envelope_router_with_handler,
+                          node_instance, envelope_with_handler_type
 
 Usage Pattern:
     Fixtures are auto-discovered by pytest. Use them as function parameters::
@@ -22,6 +25,11 @@ Usage Pattern:
             runtime = NodeRuntime()
             runtime.register_handler(mock_handler)
 
+        # Using composite fixtures to reduce boilerplate:
+        def test_routing(envelope_router_with_handler, envelope_with_handler_type):
+            result = envelope_router_with_handler.route_envelope(envelope_with_handler_type)
+            assert result["handler"] is not None
+
 Note:
     The mock_runtime fixture uses AsyncMock for the execute_with_handler method,
     ensuring proper async/await behavior in tests. Always use set_runtime() to
@@ -30,6 +38,9 @@ Note:
     Handler fixtures (mock_handler, mock_handler_*) implement the handler protocol
     with AsyncMock for the execute method and appropriate handler_type.
 
+    Composite fixtures (envelope_router_with_handler, node_instance) reduce
+    boilerplate by pre-configuring common test objects.
+
 Related:
     - tests/unit/runtime/test_node_instance.py: NodeInstance test consumers
     - tests/unit/runtime/test_node_runtime.py: NodeRuntime test consumers
@@ -37,7 +48,10 @@ Related:
     - src/omnibase_core/runtime/node_runtime.py: NodeRuntime implementation (TBD)
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -49,6 +63,9 @@ from omnibase_core.models.contracts.model_contract_base import ModelContractBase
 from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.typed_dict_handler_metadata import TypedDictHandlerMetadata
+
+if TYPE_CHECKING:
+    from omnibase_core.runtime import EnvelopeRouter, NodeInstance
 
 
 class MockTestContract(ModelContractBase):
@@ -383,3 +400,132 @@ def mock_handler_with_error() -> MagicMock:
     handler.describe.return_value = {**describe_metadata, "error_mode": True}
 
     return handler
+
+
+# =============================================================================
+# Composite Fixtures for Reduced Boilerplate (OMN-228)
+# =============================================================================
+
+
+@pytest.fixture
+def envelope_router() -> EnvelopeRouter:
+    """
+    Create a base EnvelopeRouter instance for tests.
+
+    Returns an empty EnvelopeRouter with no handlers or nodes registered.
+    Use envelope_router_with_handler for tests needing pre-registered handlers.
+
+    Returns:
+        EnvelopeRouter: Empty router instance ready for registration.
+
+    Usage::
+
+        def test_example(envelope_router):
+            envelope_router.register_handler(some_handler)
+            # ... test logic
+    """
+    from omnibase_core.runtime import EnvelopeRouter
+
+    return EnvelopeRouter()
+
+
+@pytest.fixture
+def envelope_router_with_handler(
+    envelope_router: EnvelopeRouter,
+    mock_handler: MagicMock,
+) -> EnvelopeRouter:
+    """
+    Create an EnvelopeRouter with HTTP handler pre-registered.
+
+    This composite fixture reduces boilerplate for tests that need
+    a router with a handler already registered.
+
+    Args:
+        envelope_router: Base router fixture
+        mock_handler: HTTP handler fixture
+
+    Returns:
+        EnvelopeRouter: Router with mock_handler registered.
+
+    Usage::
+
+        def test_routing(envelope_router_with_handler, mock_handler):
+            result = envelope_router_with_handler.route_envelope(envelope)
+            assert result["handler"] is mock_handler
+    """
+    envelope_router.register_handler(mock_handler)
+    return envelope_router
+
+
+@pytest.fixture
+def node_instance(
+    sample_slug: str,
+    sample_node_type: EnumNodeType,
+    mock_contract: MockTestContract,
+) -> NodeInstance:
+    """
+    Create a pre-configured NodeInstance for tests.
+
+    This composite fixture reduces boilerplate for tests that need
+    a NodeInstance with standard test values.
+
+    Args:
+        sample_slug: Node slug fixture
+        sample_node_type: Node type fixture
+        mock_contract: Contract fixture
+
+    Returns:
+        NodeInstance: Configured instance ready for use.
+
+    Usage::
+
+        def test_node_registration(envelope_router, node_instance):
+            envelope_router.register_node(node_instance)
+            assert node_instance.slug in envelope_router._nodes
+    """
+    from omnibase_core.runtime import NodeInstance
+
+    return NodeInstance(
+        slug=sample_slug,
+        node_type=sample_node_type,
+        contract=mock_contract,
+    )
+
+
+@pytest.fixture
+def envelope_with_handler_type(
+    default_version: ModelSemVer,
+    mock_handler: MagicMock,
+) -> ModelOnexEnvelope:
+    """
+    Create a sample envelope with handler_type set for routing tests.
+
+    This fixture extends sample_envelope with handler_type matching
+    the mock_handler, useful for routing and execution tests.
+
+    Args:
+        default_version: Version fixture
+        mock_handler: Handler fixture (used for handler_type)
+
+    Returns:
+        ModelOnexEnvelope: Envelope configured for routing to mock_handler.
+
+    Usage::
+
+        @pytest.mark.asyncio
+        async def test_execution(envelope_router_with_handler, envelope_with_handler_type):
+            result = await envelope_router_with_handler.execute_with_handler(
+                envelope_with_handler_type, node_instance
+            )
+            assert result.is_response is True
+    """
+    return ModelOnexEnvelope(
+        envelope_id=uuid4(),
+        envelope_version=default_version,
+        correlation_id=uuid4(),
+        source_node="test_source",
+        operation="TEST_OPERATION",
+        payload={"test_key": "test_value"},
+        timestamp=datetime.now(UTC),
+        handler_type=mock_handler.handler_type,
+    )

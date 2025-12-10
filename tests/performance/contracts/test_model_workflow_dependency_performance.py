@@ -27,8 +27,15 @@ from omnibase_core.models.security.model_condition_value import ModelConditionVa
 
 
 @pytest.mark.performance
+@pytest.mark.slow
+@pytest.mark.timeout(120)
 class TestModelWorkflowDependencyPerformance:
-    """Performance benchmarks for workflow dependency validation operations."""
+    """Performance benchmarks for workflow dependency validation operations.
+
+    Note:
+    - Marked as @slow due to 1000+ iteration performance tests
+    - Extended timeout (120s) for large-scale dependency graph tests
+    """
 
     def _create_test_dependency(
         self,

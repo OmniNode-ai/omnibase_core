@@ -55,6 +55,8 @@ Related:
 
 from __future__ import annotations
 
+__all__ = ["ProtocolHandler"]
+
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
@@ -311,6 +313,3 @@ class ProtocolHandler(Protocol):
                     }
         """
         ...
-
-
-__all__ = ["ProtocolHandler"]

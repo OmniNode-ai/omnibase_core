@@ -116,6 +116,8 @@ Future Considerations:
 
 from __future__ import annotations
 
+__all__ = ["RuntimeNodeInstance", "NodeInstance"]
+
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
@@ -482,5 +484,3 @@ class RuntimeNodeInstance(BaseModel):
 
 # Primary export alias
 NodeInstance = RuntimeNodeInstance
-
-__all__ = ["RuntimeNodeInstance", "NodeInstance"]

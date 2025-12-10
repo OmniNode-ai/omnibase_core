@@ -17,12 +17,12 @@ Related:
 
 from __future__ import annotations
 
+__all__ = ["TypedDictHandlerMetadata"]
+
 from typing import TYPE_CHECKING, NotRequired, Required, TypedDict
 
 if TYPE_CHECKING:
     from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-__all__ = ["TypedDictHandlerMetadata"]
 
 
 class TypedDictHandlerMetadata(TypedDict, total=False):
