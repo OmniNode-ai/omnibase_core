@@ -1,0 +1,495 @@
+---
+# ===========================================================================
+# WARNING: v1.0 PER-OPERATION CONFIG LIMITATION
+# ===========================================================================
+# Per-operation configs (retry_policy, circuit_breaker, response_handling)
+# are PARSED but NOT HONORED in v1.0. Only NODE-LEVEL/SUBCONTRACT-LEVEL
+# defaults are applied during execution.
+#
+# What this means for you:
+# - retry_policy defined per-operation: IGNORED (uses default_retry_policy)
+# - circuit_breaker defined per-operation: IGNORED (uses default_circuit_breaker)
+# - response_handling.extract_fields: PARSED but NOT automatically applied
+#
+# Workarounds:
+# 1. Set your desired defaults at subcontract level (default_retry_policy, etc.)
+# 2. Implement custom response processing in your handler
+#
+# This will be fully implemented in v2.0. Tracking: OMN-467
+# ===========================================================================
+
+# Example: Contract-Driven NodeEffect - Kafka Message Production
+#
+# This example demonstrates the v1.0 NodeEffect contract-driven Kafka handler
+# for producing messages to Kafka topics with partitioning, retries, and delivery guarantees.
+#
+# USE CASE: Event-Driven User Activity Tracking
+# - Publish user registration events to Kafka
+# - Publish user activity events with partitioning by user_id
+# - Publish audit log events with guaranteed delivery (acks=all)
+# - Handle broker failures with retries and timeout
+# - Support message headers for tracing and metadata
+#
+# Node Implementation (minimal code needed):
+#   class NodeUserEventsKafkaEffect(NodeEffect):
+#       pass  # All Kafka logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - Message production to multiple topics
+# - Partition key templating for consistent hashing
+# - Message header support for correlation/tracing
+# - Delivery guarantees (acks=all for durability)
+# - Compression (gzip, snappy, lz4, zstd)
+# - Retry policy for transient broker failures
+# - Message serialization (JSON)
+#
+# DATA PROTECTION NOTE:
+# This example includes fields that may contain Personally Identifiable Information (PII)
+# such as email, ip_address, and user_agent. When implementing in production:
+# - Ensure compliance with applicable data protection regulations (GDPR, CCPA, etc.)
+# - Consider data retention policies for Kafka topics containing PII
+# - Implement appropriate access controls for topics with sensitive data
+# - Consider data masking or encryption for sensitive fields
+# - Review and follow your organization's data handling policies
+#
+# 📚 For comprehensive security guidance, see: SECURITY.md in this directory
+#
+# v1.0 Contract Schema Version
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# CONTRACT IDENTIFICATION
+# ---------------------------------------------------------------------------
+
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+node_type: effect
+
+# ---------------------------------------------------------------------------
+# EFFECT SUBCONTRACT: Defines Kafka message production operations
+# ---------------------------------------------------------------------------
+
+effect_operations:
+  # Schema version for forward compatibility - must use dict format for ModelSemVer
+  version: {major: 1, minor: 0, patch: 0}
+
+  # Unique subcontract name (required by ModelEffectSubcontract)
+  subcontract_name: "kafka_produce_effect"
+
+  # Human-readable description of the subcontract
+  description: |
+    Contract-driven Kafka message production for event-driven architecture.
+    Demonstrates registration events, activity tracking, and audit logs.
+
+  # Contract metadata (matches ModelEffectContractMetadata schema)
+  metadata:
+    revision: 1
+    author: "ONEX Framework Team"
+    tags:
+      - effect
+      - kafka
+      - event-driven
+      - messaging
+      - audit
+      - example
+
+  # Execution mode: sequential_continue to attempt all operations
+  # NOTE: v1.0 supports sequential execution only. Parallel is planned for v2.0.
+  execution_mode: sequential_continue
+
+  # NOTE: Timeouts are configured per-operation in the io_config.timeout_ms field
+  # There is no global operation_timeout_ms in ModelEffectSubcontract
+
+  # ---------------------------------------------------------------------------
+  # OPERATIONS: Kafka message production operations
+  # ---------------------------------------------------------------------------
+  # V1.0 LIMITATION: Per-operation configs (retry_policy, circuit_breaker,
+  # response_handling) are PARSED but use SUBCONTRACT-LEVEL DEFAULTS only.
+  # Per-operation overrides will be honored in v2.0. See: OMN-467
+  # ---------------------------------------------------------------------------
+
+  operations:
+    # =========================================================================
+    # OPERATION 1: PUBLISH USER REGISTRATION EVENT
+    # =========================================================================
+    # Publishes user registration event to Kafka topic with guaranteed delivery.
+    # Demonstrates message templating, headers, and durability guarantees.
+    #
+    # Handler Type: Kafka
+    # Operation: Produce
+    # Purpose: Publish user registration for downstream consumers
+    # Input: User data from operation_data
+    # Output: Message offset and partition
+
+    - operation_name: publish_user_registration
+      description: "Publishes user registration event to Kafka with acks=all"
+
+      # Mark as idempotent: we use idempotent producer and X-Idempotency-Key header
+      idempotent: true
+
+      # I/O configuration for Kafka handler
+      # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
+      # Fields are direct children of io_config (no kafka_config wrapper)
+      io_config:
+        handler_type: kafka
+
+        # Target Kafka topic
+        topic: "user.events.registration"
+
+        # Message payload template with ${} placeholders
+        # Will be serialized as JSON
+        payload_template: |
+          {
+            "event_type": "user.registered",
+            "event_version": "1.0.0",
+            "timestamp": "${input.timestamp}",
+            "user_id": "${input.user_id}",
+            "email": "${input.email}",
+            "display_name": "${input.display_name}",
+            "role": "${input.role}",
+            "source": "user-service",
+            "metadata": {
+              "registration_method": "${input.registration_method}",
+              "referral_code": "${input.referral_code}",
+              "ip_address": "${input.ip_address}",
+              "user_agent": "${input.user_agent}"
+            }
+          }
+
+        # Partition key template (ensures same user goes to same partition)
+        # Uses consistent hashing for partitioning
+        partition_key_template: "${input.user_id}"
+
+        # Message headers (key-value pairs)
+        # Useful for tracing, routing, and metadata
+        headers:
+          X-Correlation-ID: "${input.correlation_id}"
+          X-Schema-Version: "1.0.0"
+          X-Source-Service: "user-service"
+          X-Event-Timestamp: "${input.timestamp}"
+          X-Idempotency-Key: "${input.idempotency_key}"
+
+        # Producer timeout in milliseconds (1s - 10min)
+        timeout_ms: 30000
+
+        # Acknowledgment level for message durability
+        # "all": Leader AND all in-sync replicas must acknowledge (strongest)
+        # "1": Only leader must acknowledge
+        # "0": No acknowledgment (fire and forget) - requires acks_zero_acknowledged=true
+        acks: "all"
+
+        # Message compression (none, gzip, snappy, lz4, zstd)
+        compression: snappy
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      # NOTE: For Kafka operations, exponential backoff is recommended
+      # for handling transient broker failures and network issues
+      retry_policy:
+        enabled: true
+        max_retries: 3
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
+
+      # Response handling
+      response_handling:
+        # Extract message metadata from produce result
+        extract_fields:
+          # Partition where message was written
+          partition: "$.partition"
+          # Offset of the message in the partition
+          offset: "$.offset"
+          # Timestamp assigned by broker
+          timestamp: "$.timestamp"
+
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
+
+
+    # =========================================================================
+    # OPERATION 2: PUBLISH USER ACTIVITY EVENT
+    # =========================================================================
+    # Publishes user activity events (login, logout, action) to Kafka.
+    # Demonstrates high-throughput with leader-only acknowledgment.
+    #
+    # Handler Type: Kafka
+    # Operation: Produce
+    # Purpose: Track user activities for analytics
+    # Input: Activity data from operation_data
+    # Output: Message metadata (if acks enabled)
+
+    - operation_name: publish_user_activity
+      description: "Publishes user activity event for analytics"
+
+      # Mark as idempotent: activity events are deduplicated by consumer
+      idempotent: true
+
+      # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
+      io_config:
+        handler_type: kafka
+
+        topic: "user.events.activity"
+
+        payload_template: |
+          {
+            "event_type": "user.activity",
+            "event_version": "1.0.0",
+            "timestamp": "${input.timestamp}",
+            "user_id": "${input.user_id}",
+            "activity_type": "${input.activity_type}",
+            "activity_data": {
+              "action": "${input.action}",
+              "resource": "${input.resource}",
+              "result": "${input.result}"
+            },
+            "session_id": "${input.session_id}",
+            "ip_address": "${input.ip_address}"
+          }
+
+        # Partition by user_id for ordered activity history
+        partition_key_template: "${input.user_id}"
+
+        headers:
+          X-Correlation-ID: "${input.correlation_id}"
+          X-Schema-Version: "1.0.0"
+          X-Event-Type: "activity"
+
+        timeout_ms: 10000
+
+        # Lower durability for high-throughput analytics
+        # Only leader acknowledgment needed
+        acks: "1"
+
+        # Fast compression for analytics
+        compression: lz4
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      # Fewer retries for analytics (lower durability requirements)
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.1
+
+      response_handling:
+        extract_fields:
+          partition: "$.partition"
+          offset: "$.offset"
+
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
+
+
+    # =========================================================================
+    # OPERATION 3: PUBLISH AUDIT LOG EVENT
+    # =========================================================================
+    # Publishes audit log events with maximum durability guarantees.
+    # Demonstrates acks=all for compliance requirements.
+    #
+    # Handler Type: Kafka
+    # Operation: Produce
+    # Purpose: Audit trail for compliance and security
+    # Input: Audit event data
+    # Output: Message metadata with full confirmation
+
+    - operation_name: publish_audit_log
+      description: "Publishes audit log event with guaranteed delivery"
+
+      # Mark as idempotent: we use idempotent producer for guaranteed delivery
+      idempotent: true
+
+      # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
+      io_config:
+        handler_type: kafka
+
+        topic: "security.audit.logs"
+
+        payload_template: |
+          {
+            "event_type": "audit.user.action",
+            "event_version": "1.0.0",
+            "timestamp": "${input.timestamp}",
+            "tenant_id": "${input.tenant_id}",
+            "user_id": "${input.user_id}",
+            "actor": {
+              "id": "${input.actor_id}",
+              "type": "${input.actor_type}",
+              "ip_address": "${input.ip_address}",
+              "user_agent": "${input.user_agent}"
+            },
+            "action": {
+              "type": "${input.action_type}",
+              "resource": "${input.resource}",
+              "resource_id": "${input.resource_id}",
+              "operation": "${input.operation}",
+              "result": "${input.result}",
+              "reason": "${input.reason}"
+            },
+            "metadata": {
+              "correlation_id": "${input.correlation_id}",
+              "session_id": "${input.session_id}",
+              "request_id": "${input.request_id}"
+            }
+          }
+
+        # Partition by tenant_id for multi-tenant isolation
+        partition_key_template: "${input.tenant_id}"
+
+        headers:
+          X-Correlation-ID: "${input.correlation_id}"
+          X-Schema-Version: "1.0.0"
+          X-Event-Type: "audit"
+          X-Tenant-ID: "${input.tenant_id}"
+          X-Compliance-Required: "true"
+
+        timeout_ms: 30000
+
+        # Maximum durability for audit logs
+        acks: "all"
+
+        # No compression for audit logs (prioritize integrity)
+        compression: none
+
+      # Aggressive retry for audit logs (maximum durability required)
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 5
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 30000
+        jitter_factor: 0.1
+
+      response_handling:
+        extract_fields:
+          partition: "$.partition"
+          offset: "$.offset"
+          timestamp: "$.timestamp"
+
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
+
+
+# ---------------------------------------------------------------------------
+# EXAMPLE INPUT/OUTPUT
+# ---------------------------------------------------------------------------
+
+# Example Input (ModelEffectInput.operation_data):
+# {
+#   "user_id": "usr_12345",
+#   "email": "john.smith@example.com",
+#   "display_name": "John Smith",
+#   "role": "developer",
+#   "timestamp": "2024-12-08T12:00:00.000Z",
+#   "correlation_id": "req_abc123",
+#   "idempotency_key": "idem_xyz789",
+#   "registration_method": "email",
+#   "referral_code": "REF123",
+#   "ip_address": "192.168.1.100",
+#   "user_agent": "Mozilla/5.0...",
+#   "activity_type": "login",
+#   "action": "login",
+#   "resource": "api",
+#   "result": "success",
+#   "session_id": "sess_abc123",
+#   "tenant_id": "tenant_001",
+#   "actor_id": "usr_12345",
+#   "actor_type": "user",
+#   "action_type": "access",
+#   "resource_id": "user_12345",
+#   "operation": "read"
+# }
+
+# Example Output (ModelEffectOutput.result_data):
+# {
+#   "operations": {
+#     "publish_user_registration": {
+#       "success": true,
+#       "extracted_fields": {
+#         "partition": 3,
+#         "offset": 12345,
+#         "timestamp": 1702040400000
+#       }
+#     },
+#     "publish_user_activity": {
+#       "success": true,
+#       "extracted_fields": {
+#         "partition": 7,
+#         "offset": 98765
+#       }
+#     },
+#     "publish_audit_log": {
+#       "success": true,
+#       "extracted_fields": {
+#         "partition": 2,
+#         "offset": 54321,
+#         "timestamp": 1702040400000
+#       }
+#     }
+#   }
+# }
+
+# ---------------------------------------------------------------------------
+# USAGE EXAMPLE
+# ---------------------------------------------------------------------------
+
+# import yaml
+# from omnibase_core.nodes import NodeEffect
+# from omnibase_core.models import ModelEffectInput
+# from omnibase_core.models.contracts.subcontracts import ModelEffectSubcontract
+#
+# # Load contract
+# with open("kafka_produce.yaml") as f:
+#     contract_data = yaml.safe_load(f)
+#
+# # Create node
+# class NodeUserEventsKafkaEffect(NodeEffect):
+#     pass
+#
+# # Instantiate node with container, then inject the contract
+# node = NodeUserEventsKafkaEffect(container)
+# node.effect_subcontract = ModelEffectSubcontract(**contract_data["effect_operations"])
+#
+# # Publish events to Kafka
+# input_data = ModelEffectInput(
+#     operation_data={
+#         "user_id": "usr_12345",
+#         "email": "john.smith@example.com",
+#         "timestamp": "2024-12-08T12:00:00.000Z",
+#         "correlation_id": "req_abc123"
+#     }
+# )
+#
+# result = await node.process(input_data)
+# print(result.result_data["operations"]["publish_user_registration"]["extracted_fields"]["offset"])
+
+# ---------------------------------------------------------------------------
+# CONTRACT METADATA (Top-Level)
+# ---------------------------------------------------------------------------
+# NOTE: This top-level metadata section is for documentation/tooling purposes.
+# The ModelEffectSubcontract.metadata field uses ModelEffectContractMetadata schema,
+# which is configured in the effect_operations.metadata section above.
+
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: "ONEX Framework Team"
+  description: |
+    Contract-driven Kafka message production for event-driven architecture.
+    Demonstrates registration events, activity tracking, and audit logs.
+  tags:
+    - effect
+    - kafka
+    - event-driven
+    - messaging
+    - audit
+    - example
+  documentation_url: "https://docs.onex.ai/effect/kafka-produce"

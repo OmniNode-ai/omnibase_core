@@ -5,11 +5,8 @@ Node implementations for COMPUTE, EFFECT, REDUCER, and ORCHESTRATOR patterns.
 
 All nodes use declarative YAML contracts for configuration.
 
-STABILITY: This module's public API is frozen as of VERSION 1.0.0.
-The exported symbols (NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator)
-are guaranteed stable and will not change without deprecation warnings.
-
-.. versionadded:: 0.4.0
+STABILITY: This module's public API is frozen as of v0.4.0.
+Exported symbols in __all__ are guaranteed stable for the v0.x series.
 """
 
 from omnibase_core.enums.enum_orchestrator_types import (

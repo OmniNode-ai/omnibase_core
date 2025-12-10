@@ -28,6 +28,7 @@ from omnibase_core.mixins.mixin_compute_execution import MixinComputeExecution
 
 # Models and protocols extracted from mixin_event_bus
 from omnibase_core.mixins.mixin_completion_data import MixinCompletionData
+from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
 from omnibase_core.mixins.mixin_contract_metadata import MixinContractMetadata
 from omnibase_core.mixins.mixin_contract_state_reducer import MixinContractStateReducer
 from omnibase_core.mixins.mixin_debug_discovery_logging import (
@@ -77,6 +78,7 @@ from omnibase_core.mixins.mixin_yaml_serialization import MixinYAMLSerialization
 __all__ = [
     "MixinCanonicalYAMLSerializer",
     "MixinComputeExecution",
+    "MixinEffectExecution",
     "MixinDiscoveryResponder",
     "MixinHashComputation",
     "MixinCLIHandler",

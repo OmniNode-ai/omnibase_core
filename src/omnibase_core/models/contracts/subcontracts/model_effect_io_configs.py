@@ -14,7 +14,21 @@ DISCRIMINATED UNION:
 The EffectIOConfig union type uses handler_type as the discriminator field,
 enabling Pydantic to automatically select the correct model during validation.
 
-Strict typing is enforced: No Any types allowed in implementation.
+ZERO TOLERANCE: No Any types allowed in implementation.
+
+Thread Safety:
+    All IO configuration models are immutable (frozen=True) after creation,
+    making them thread-safe for concurrent read access.
+
+See Also:
+    - :class:`ModelEffectSubcontract`: Parent contract using these IO configs
+    - :mod:`omnibase_core.models.contracts.subcontracts.model_effect_resolved_context`:
+        Resolved context models after template substitution
+    - :class:`NodeEffect`: The primary node using these configurations
+    - docs/architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md: Full specification
+    - examples/contracts/effect/: Example YAML contracts
+
+Author: ONEX Framework Team
 """
 
 import re
@@ -57,13 +71,24 @@ class ModelHttpIOConfig(BaseModel):
     Provides URL templating with ${} placeholders, HTTP method configuration,
     headers, body templates, query parameters, and connection settings.
 
+    Attributes:
+        handler_type: Discriminator field identifying this as an HTTP handler.
+        url_template: URL with ${} placeholders for variable substitution.
+        method: HTTP method (GET, POST, PUT, PATCH, DELETE).
+        headers: HTTP headers with optional ${} placeholders.
+        body_template: Request body template with ${} placeholders.
+        query_params: Query parameters with optional ${} placeholders.
+        timeout_ms: Request timeout in milliseconds (1s - 10min).
+        follow_redirects: Whether to follow HTTP redirects.
+        verify_ssl: Whether to verify SSL certificates.
+
     Example:
-        config = ModelHttpIOConfig(
-            url_template="https://api.example.com/users/${input.user_id}",
-            method="GET",
-            headers={"Authorization": "Bearer ${env.API_TOKEN}"},
-            timeout_ms=5000,
-        )
+        >>> config = ModelHttpIOConfig(
+        ...     url_template="https://api.example.com/users/${input.user_id}",
+        ...     method="GET",
+        ...     headers={"Authorization": "Bearer ${env.API_TOKEN}"},
+        ...     timeout_ms=5000,
+        ... )
     """
 
     handler_type: Literal[EnumEffectHandlerType.HTTP] = Field(
@@ -117,7 +142,15 @@ class ModelHttpIOConfig(BaseModel):
     @field_validator("verify_ssl", mode="after")
     @classmethod
     def warn_on_disabled_ssl_verification(cls, value: bool) -> bool:
-        """Emit a security warning when SSL verification is disabled."""
+        """
+        Emit a security warning when SSL verification is disabled.
+
+        Args:
+            value: The verify_ssl field value.
+
+        Returns:
+            The unchanged value after emitting warning if False.
+        """
         if not value:
             warnings.warn(
                 "verify_ssl=False disables SSL certificate validation. "
@@ -129,7 +162,18 @@ class ModelHttpIOConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_body_for_method(self) -> "ModelHttpIOConfig":
-        """Require body_template for POST/PUT/PATCH methods."""
+        """
+        Require body_template for POST/PUT/PATCH methods.
+
+        These HTTP methods typically carry a request body, so a body_template
+        is required to ensure the request is properly configured.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ModelOnexError: If body_template is None for POST/PUT/PATCH.
+        """
         methods_requiring_body = {"POST", "PUT", "PATCH"}
         if self.method in methods_requiring_body and self.body_template is None:
             raise ModelOnexError(
@@ -161,13 +205,23 @@ class ModelDbIOConfig(BaseModel):
         Raw queries are validated to prevent SQL injection via ${input.*} patterns.
         Use parameterized queries ($1, $2, ...) for user input instead.
 
+    Attributes:
+        handler_type: Discriminator field identifying this as a DB handler.
+        operation: Database operation type (select, insert, update, delete, upsert, raw).
+        connection_name: Named connection reference from connection pool.
+        query_template: SQL query with $1, $2, ... positional parameters.
+        query_params: Parameter values/templates for positional placeholders.
+        timeout_ms: Query timeout in milliseconds (1s - 10min).
+        fetch_size: Fetch size for cursor-based retrieval.
+        read_only: Whether to execute in read-only transaction mode.
+
     Example:
-        config = ModelDbIOConfig(
-            operation="select",
-            connection_name="primary_db",
-            query_template="SELECT * FROM users WHERE id = $1 AND status = $2",
-            query_params=["${input.user_id}", "${input.status}"],
-        )
+        >>> config = ModelDbIOConfig(
+        ...     operation="select",
+        ...     connection_name="primary_db",
+        ...     query_template="SELECT * FROM users WHERE id = $1 AND status = $2",
+        ...     query_params=["${input.user_id}", "${input.status}"],
+        ... )
     """
 
     # Pre-compiled regex patterns for better performance in validators
@@ -223,7 +277,18 @@ class ModelDbIOConfig(BaseModel):
     @field_validator("operation", mode="before")
     @classmethod
     def normalize_operation(cls, value: object) -> object:
-        """Normalize operation to lowercase."""
+        """
+        Normalize operation to lowercase.
+
+        Ensures consistent operation type comparison by converting string
+        values to lowercase and stripping whitespace.
+
+        Args:
+            value: The operation field value to normalize.
+
+        Returns:
+            Normalized lowercase string if input is string, otherwise unchanged.
+        """
         if isinstance(value, str):
             return value.lower().strip()
         # Return non-string values as-is; Pydantic will validate them
@@ -231,7 +296,18 @@ class ModelDbIOConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_sql_injection_prevention(self) -> "ModelDbIOConfig":
-        """Prevent SQL injection via ${input.*} patterns in raw queries."""
+        """
+        Prevent SQL injection via ${input.*} patterns in raw queries.
+
+        Raw queries must use parameterized placeholders ($1, $2, ...) instead
+        of direct template substitution to prevent SQL injection attacks.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ModelOnexError: If raw query contains ${input.*} patterns.
+        """
         if self.operation == "raw":
             # Check for potentially dangerous ${input.*} patterns in query_template
             if self._INPUT_PATTERN.search(self.query_template):
@@ -252,11 +328,18 @@ class ModelDbIOConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_param_count_and_sequence(self) -> "ModelDbIOConfig":
-        """Validate query_params count and placeholder sequence.
+        """
+        Validate query_params count and placeholder sequence.
 
         Ensures:
-        1. query_params count matches the highest $N placeholder
-        2. Placeholders are sequential starting from $1 (no gaps like $1, $3 missing $2)
+            1. query_params count matches the highest $N placeholder
+            2. Placeholders are sequential starting from $1 (no gaps like $1, $3 missing $2)
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ModelOnexError: If param count mismatches or placeholders have gaps.
         """
         # Find all $N placeholders (where N is a number)
         matches = self._PLACEHOLDER_PATTERN.findall(self.query_template)
@@ -329,7 +412,18 @@ class ModelDbIOConfig(BaseModel):
 
     @model_validator(mode="after")
     def validate_read_only_semantics(self) -> "ModelDbIOConfig":
-        """Enforce read_only semantics: only select operations allowed when read_only=True."""
+        """
+        Enforce read_only semantics: only select operations allowed when read_only=True.
+
+        Read-only mode enables database optimizations but restricts operations
+        to SELECT queries only.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ModelOnexError: If read_only=True with non-select operation.
+        """
         if self.read_only and self.operation != "select":
             raise ModelOnexError(
                 message=f"read_only=True only allows 'select' operation, "
@@ -362,21 +456,32 @@ class ModelKafkaIOConfig(BaseModel):
     and messages may be lost silently. This configuration requires explicit
     opt-in via the acks_zero_acknowledged field.
 
+    Attributes:
+        handler_type: Discriminator field identifying this as a Kafka handler.
+        topic: Kafka topic to produce messages to.
+        payload_template: Message payload template with ${} placeholders.
+        partition_key_template: Template for partition key (affects message ordering).
+        headers: Kafka message headers with optional ${} placeholders.
+        timeout_ms: Producer timeout in milliseconds (1s - 10min).
+        acks: Acknowledgment level (0=none, 1=leader, all=all replicas).
+        acks_zero_acknowledged: Explicit opt-in for acks=0 mode.
+        compression: Compression codec for message payloads.
+
     Example:
-        config = ModelKafkaIOConfig(
-            topic="user-events",
-            payload_template='{"user_id": "${input.user_id}", "action": "${input.action}"}',
-            partition_key_template="${input.user_id}",
-            acks="all",
-        )
+        >>> config = ModelKafkaIOConfig(
+        ...     topic="user-events",
+        ...     payload_template='{"user_id": "${input.user_id}", "action": "${input.action}"}',
+        ...     partition_key_template="${input.user_id}",
+        ...     acks="all",
+        ... )
 
     Example with acks=0 (fire-and-forget, use with caution):
-        config = ModelKafkaIOConfig(
-            topic="metrics",
-            payload_template='{"metric": "${input.name}", "value": ${input.value}}',
-            acks="0",
-            acks_zero_acknowledged=True,  # Required explicit opt-in
-        )
+        >>> config = ModelKafkaIOConfig(
+        ...     topic="metrics",
+        ...     payload_template='{"metric": "${input.name}", "value": ${input.value}}',
+        ...     acks="0",
+        ...     acks_zero_acknowledged=True,  # Required explicit opt-in
+        ... )
     """
 
     handler_type: Literal[EnumEffectHandlerType.KAFKA] = Field(
@@ -438,6 +543,12 @@ class ModelKafkaIOConfig(BaseModel):
         Kafka acks=0 (fire-and-forget) provides no delivery guarantees and messages
         may be lost silently. This validator ensures users explicitly acknowledge
         this risk by setting acks_zero_acknowledged=True.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ModelOnexError: If acks=0 without acks_zero_acknowledged=True.
         """
         if self.acks == "0":
             # Always emit a warning when acks=0 is used
@@ -478,6 +589,12 @@ class ModelKafkaIOConfig(BaseModel):
         The acks_zero_acknowledged field is only meaningful when acks="0".
         Setting it to True with acks="1" or acks="all" is a configuration error
         that creates confusing state. This validator ensures consistent configuration.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ModelOnexError: If acks_zero_acknowledged=True with acks != "0".
         """
         if self.acks != "0" and self.acks_zero_acknowledged:
             raise ModelOnexError(
@@ -513,21 +630,32 @@ class ModelFilesystemIOConfig(BaseModel):
     For move/copy operations, both file_path_template (source) and
     destination_path_template (target) are required.
 
+    Attributes:
+        handler_type: Discriminator field identifying this as a Filesystem handler.
+        file_path_template: File path with ${} placeholders (source for move/copy).
+        destination_path_template: Destination path for move/copy operations.
+        operation: Filesystem operation type (read, write, delete, move, copy).
+        timeout_ms: Operation timeout in milliseconds (1s - 10min).
+        atomic: Use atomic operations (write to temp, then rename).
+        create_dirs: Create parent directories if they don't exist.
+        encoding: Text encoding for file content.
+        mode: File permission mode (e.g., '0644').
+
     Example (write):
-        config = ModelFilesystemIOConfig(
-            file_path_template="/data/output/${input.date}/${input.filename}.json",
-            operation="write",
-            atomic=True,
-            create_dirs=True,
-        )
+        >>> config = ModelFilesystemIOConfig(
+        ...     file_path_template="/data/output/${input.date}/${input.filename}.json",
+        ...     operation="write",
+        ...     atomic=True,
+        ...     create_dirs=True,
+        ... )
 
     Example (move):
-        config = ModelFilesystemIOConfig(
-            file_path_template="/data/inbox/${input.filename}",
-            destination_path_template="/data/archive/${input.date}/${input.filename}",
-            operation="move",
-            create_dirs=True,
-        )
+        >>> config = ModelFilesystemIOConfig(
+        ...     file_path_template="/data/inbox/${input.filename}",
+        ...     destination_path_template="/data/archive/${input.date}/${input.filename}",
+        ...     operation="move",
+        ...     create_dirs=True,
+        ... )
     """
 
     handler_type: Literal[EnumEffectHandlerType.FILESYSTEM] = Field(
@@ -588,6 +716,12 @@ class ModelFilesystemIOConfig(BaseModel):
         Atomic operations (write to temp file, then rename) only make sense for
         write operations. Enabling atomic=True for read/delete/move/copy operations
         is a configuration error and will raise a validation error.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ModelOnexError: If atomic=True for non-write operations.
         """
         if self.atomic and self.operation != "write":
             raise ModelOnexError(
@@ -614,6 +748,12 @@ class ModelFilesystemIOConfig(BaseModel):
         Move and copy operations require both a source path (file_path_template)
         and a destination path (destination_path_template). Without the destination,
         the operation would fail at runtime.
+
+        Returns:
+            The validated model instance.
+
+        Raises:
+            ModelOnexError: If move/copy operation without destination_path_template.
         """
         operations_requiring_destination = {"move", "copy"}
         if (

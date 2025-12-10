@@ -1,0 +1,598 @@
+---
+# ===========================================================================
+# WARNING: v1.0 PER-OPERATION CONFIG LIMITATION
+# ===========================================================================
+# Per-operation configs (retry_policy, circuit_breaker, response_handling)
+# are PARSED but NOT HONORED in v1.0. Only NODE-LEVEL/SUBCONTRACT-LEVEL
+# defaults are applied during execution.
+#
+# What this means for you:
+# - retry_policy defined per-operation: IGNORED (uses default_retry_policy)
+# - circuit_breaker defined per-operation: IGNORED (uses default_circuit_breaker)
+# - response_handling.extract_fields: PARSED but NOT automatically applied
+#
+# Workarounds:
+# 1. Set your desired defaults at subcontract level (default_retry_policy, etc.)
+# 2. Implement custom response processing in your handler
+#
+# This will be fully implemented in v2.0. Tracking: OMN-467
+# ===========================================================================
+
+# Example: Contract-Driven NodeEffect - Filesystem Operations
+#
+# This example demonstrates the v1.0 NodeEffect contract-driven filesystem handler
+# for file operations with atomic writes, directory management, and error handling.
+#
+# USE CASE: Document Management System
+# - Write user documents with atomic operations
+# - Read document contents with encoding support
+# - Create directory structures for organization
+# - Move/rename files with conflict handling
+# - List directory contents with filtering
+# - Delete files with validation
+#
+# Node Implementation (minimal code needed):
+#   class NodeDocumentFilesystemEffect(NodeEffect):
+#       pass  # All filesystem logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - Atomic file writes (write-then-move pattern)
+# - File reading with encoding detection
+# - Directory creation with parent support
+# - File move/rename operations
+# - Directory listing with pattern matching
+# - File deletion with safety checks
+# - Path templating from input data
+# - Permission handling
+#
+# DATA PROTECTION NOTE:
+# This example stores document content that may contain user-generated data.
+# When implementing in production:
+# - Ensure compliance with applicable data protection regulations (GDPR, CCPA, etc.)
+# - Implement appropriate filesystem access controls and permissions
+# - Consider encryption at rest for sensitive documents
+# - Implement proper backup and retention policies
+# - Review and follow your organization's data handling policies
+#
+# v1.0 Contract Schema Version
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# CONTRACT IDENTIFICATION
+# ---------------------------------------------------------------------------
+
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+node_type: effect
+
+# ---------------------------------------------------------------------------
+# EFFECT SUBCONTRACT: Defines filesystem operations
+# ---------------------------------------------------------------------------
+
+effect_operations:
+  # Schema version for forward compatibility - must use dict format for ModelSemVer
+  version: {major: 1, minor: 0, patch: 0}
+
+  # Unique subcontract name (required by ModelEffectSubcontract)
+  subcontract_name: "filesystem_operations_effect"
+
+  # Execute operations sequentially for proper dependency handling
+  # Example: Create directory -> Write file -> Read file
+  execution_mode: sequential_abort
+
+  # NOTE: Timeouts are configured per-operation in the io_config.timeout_ms field
+  # There is no global operation_timeout_ms in ModelEffectSubcontract
+
+  # ---------------------------------------------------------------------------
+  # OPERATIONS: Sequential list of filesystem operations
+  # ---------------------------------------------------------------------------
+  # V1.0 LIMITATION: Per-operation configs (retry_policy, circuit_breaker,
+  # response_handling) are PARSED but use SUBCONTRACT-LEVEL DEFAULTS only.
+  # Per-operation overrides will be honored in v2.0. See: OMN-467
+  # ---------------------------------------------------------------------------
+
+  operations:
+    # =========================================================================
+    # OPERATION 1: CREATE DIRECTORY STRUCTURE
+    # =========================================================================
+    # Creates a directory structure for organizing documents.
+    # Demonstrates directory creation by writing a marker file with create_dirs=true.
+    #
+    # Handler Type: Filesystem
+    # Operation: WRITE
+    # Purpose: Ensure target directory exists before writing files
+    # Input: Directory path from operation_data, plus marker file content
+    # Output: Created marker file path and metadata
+    #
+    # NOTE: Pure directory creation is not directly supported. Instead, we write
+    # a small marker file (e.g., .directory_created) with create_dirs=true.
+    # This ensures the directory structure is created atomically.
+    # The content for the marker file comes from input.directory_marker_content
+    # or defaults to a timestamp.
+
+    - operation_name: create_user_directory
+      description: "Creates directory structure for user documents by writing a marker file"
+
+      # Mark as idempotent: creating existing directory is a no-op
+      idempotent: true
+
+      # I/O configuration for filesystem handler
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
+      # Fields are direct children of io_config (no filesystem_config wrapper)
+      #
+      # IMPORTANT: Write operations require content from input.
+      # The content for the marker file MUST be provided in operation_data as
+      # "directory_marker_content" or "file_content". The handler will use
+      # this content when writing the file. See Example Input section below.
+      io_config:
+        handler_type: filesystem
+
+        # File path template with ${} placeholders
+        # We write a hidden marker file to ensure the directory is created
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}/.directory_created"
+
+        # Operation type: read, write, delete, move, copy
+        # NOTE: Write operation with create_dirs=true ensures directory exists
+        operation: write
+
+        # Timeout in milliseconds (1s - 10min)
+        timeout_ms: 5000
+
+        # Create parent directories if they don't exist
+        create_dirs: true
+
+        # File encoding (used for write operations)
+        encoding: "utf-8"
+
+        # Non-atomic write for marker file (not critical)
+        atomic: false
+
+        # File permission mode for the marker file
+        mode: "0644"
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: linear
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.0
+
+      response_handling:
+        extract_fields:
+          # Path of created marker file (directory is parent)
+          marker_path: "$.path"
+          # Size of marker file
+          size_bytes: "$.size_bytes"
+          # Whether marker file was created or already existed
+          created: "$.created"
+
+        # Fail operation if response is empty (marker file creation should always return)
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
+
+
+    # =========================================================================
+    # OPERATION 2: WRITE FILE (Atomic Write)
+    # =========================================================================
+    # Writes a file using atomic write-then-move pattern.
+    # Demonstrates safe file writing with encoding and permissions.
+    #
+    # Handler Type: Filesystem
+    # Operation: WRITE
+    # Purpose: Save document content atomically
+    # Input: File content and metadata from operation_data
+    # Output: Written file path and metadata
+
+    - operation_name: write_document
+      description: "Writes document file with atomic operation"
+
+      # Mark as idempotent: atomic writes ensure consistent content on retry
+      idempotent: true
+
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
+      io_config:
+        handler_type: filesystem
+
+        # File path template with ${} placeholders
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}/${input.document_id}.json"
+
+        # Operation type: read, write, delete, move, copy
+        operation: write
+
+        # Timeout in milliseconds
+        timeout_ms: 10000
+
+        # Use atomic write (write to temp file, then rename)
+        atomic: true
+
+        # Create parent directories if they don't exist
+        create_dirs: true
+
+        # File encoding
+        encoding: "utf-8"
+
+        # File permission mode (e.g., '0644')
+        mode: "0644"
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: linear
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.0
+
+      response_handling:
+        extract_fields:
+          file_path: "$.path"
+          size_bytes: "$.size_bytes"
+          checksum: "$.checksum"
+          created: "$.created"
+          overwritten: "$.overwritten"
+          backup_path: "$.backup_path"
+        fail_on_empty: false
+        extraction_engine: jsonpath
+
+
+    # =========================================================================
+    # OPERATION 3: READ FILE
+    # =========================================================================
+    # Reads a file with encoding detection and size limits.
+    # Demonstrates safe file reading with validation.
+    #
+    # Handler Type: Filesystem
+    # Operation: READ
+    # Purpose: Retrieve document content
+    # Input: File path from operation_data
+    # Output: File content and metadata
+
+    - operation_name: read_document
+      description: "Reads document file with encoding detection"
+
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
+      io_config:
+        handler_type: filesystem
+
+        # File path template with ${} placeholders
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}/${input.document_id}.json"
+
+        # Operation type: read, write, delete, move, copy
+        operation: read
+
+        # Timeout in milliseconds
+        timeout_ms: 5000
+
+        # File encoding
+        encoding: "utf-8"
+
+        # Atomic and create_dirs not applicable for read operations
+        atomic: false
+        create_dirs: false
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 3
+        backoff_strategy: linear
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.0
+
+      response_handling:
+        extract_fields:
+          file_path: "$.path"
+          content: "$.content"
+          size_bytes: "$.size_bytes"
+          checksum: "$.checksum"
+          encoding: "$.encoding"
+          modified_at: "$.modified_at"
+        fail_on_empty: false
+        extraction_engine: jsonpath
+
+
+    # =========================================================================
+    # OPERATION 4: MOVE FILE
+    # =========================================================================
+    # Moves or renames a file with conflict handling.
+    # Demonstrates file relocation and archiving patterns.
+    #
+    # Handler Type: Filesystem
+    # Operation: MOVE
+    # Purpose: Archive or reorganize documents
+    # Input: Source and destination paths from operation_data
+    # Output: New file path and metadata
+
+    - operation_name: archive_document
+      description: "Moves document to archive directory"
+
+      # Mark as idempotent: move operation with overwrite-on-exists semantics
+      idempotent: true
+
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
+      io_config:
+        handler_type: filesystem
+
+        # Source file path template
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}/${input.document_id}.json"
+
+        # Destination path template (required for move/copy operations)
+        destination_path_template: "/data/archives/${input.tenant_id}/users/${input.user_id}/${input.archive_year}/${input.document_id}.json"
+
+        # Operation type: read, write, delete, move, copy
+        operation: move
+
+        # Timeout in milliseconds
+        timeout_ms: 10000
+
+        # Create destination directory if it doesn't exist
+        create_dirs: true
+
+        # Atomic and encoding not applicable for move operations
+        atomic: false
+        encoding: "utf-8"
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: linear
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.0
+
+      response_handling:
+        extract_fields:
+          source_path: "$.source_path"
+          destination_path: "$.destination_path"
+          renamed: "$.renamed"
+          final_path: "$.final_path"
+        fail_on_empty: false
+        extraction_engine: jsonpath
+
+
+    # =========================================================================
+    # OPERATION 5: LIST DIRECTORY
+    # =========================================================================
+    # Lists files in a directory with pattern matching and filtering.
+    # Demonstrates directory scanning with metadata collection.
+    #
+    # Handler Type: Filesystem
+    # Operation: LIST
+    # Purpose: Enumerate documents for user
+    # Input: Directory path from operation_data
+    # Output: List of files with metadata
+
+    - operation_name: list_user_documents
+      description: "Lists all documents in user directory"
+
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
+      # For directory listing, use 'read' operation on directory path
+      io_config:
+        handler_type: filesystem
+
+        # Directory path template to list
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}"
+
+        # Operation type: read, write, delete, move, copy
+        # NOTE: Directory listing uses 'read' operation on a directory path
+        operation: read
+
+        # Timeout in milliseconds
+        timeout_ms: 5000
+
+        # File encoding (not used for directory listing)
+        encoding: "utf-8"
+
+        # Not applicable for read operations
+        atomic: false
+        create_dirs: false
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: linear
+        base_delay_ms: 1000
+        max_delay_ms: 5000
+        jitter_factor: 0.0
+
+      response_handling:
+        # NOTE: extract_fields only supports extracting primitive values (strings, numbers, booleans).
+        # Complex nested arrays like "files" must be accessed from the full response object
+        # in the operation result (response_data), not through extract_fields.
+        # To get the file list, access: result.result_data["operations"]["list_user_documents"]["response_data"]["files"]
+        extract_fields:
+          directory_path: "$.directory_path"
+          file_count: "$.file_count"
+          total_size_bytes: "$.total_size_bytes"
+
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
+
+
+    # =========================================================================
+    # OPERATION 6: DELETE FILE
+    # =========================================================================
+    # Deletes a file with safety checks and validation.
+    # Demonstrates safe file deletion with confirmation.
+    #
+    # Handler Type: Filesystem
+    # Operation: DELETE
+    # Purpose: Remove obsolete documents
+    # Input: File path from operation_data
+    # Output: Deletion confirmation
+
+    - operation_name: delete_document
+      description: "Deletes document file with safety checks"
+
+      # NOTE: Uses flat structure matching ModelFilesystemIOConfig schema
+      io_config:
+        handler_type: filesystem
+
+        # File path template to delete
+        file_path_template: "/data/documents/${input.tenant_id}/users/${input.user_id}/${input.document_id}.json"
+
+        # Operation type: read, write, delete, move, copy
+        operation: delete
+
+        # Timeout in milliseconds
+        timeout_ms: 5000
+
+        # File encoding (not used for delete)
+        encoding: "utf-8"
+
+        # Not applicable for delete operations
+        atomic: false
+        create_dirs: false
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 1  # Minimal retry for deletion
+        backoff_strategy: linear
+        base_delay_ms: 1000
+        max_delay_ms: 3000
+        jitter_factor: 0.0
+
+      response_handling:
+        extract_fields:
+          file_path: "$.path"
+          deleted: "$.deleted"
+          moved_to_trash: "$.moved_to_trash"
+          trash_path: "$.trash_path"
+        fail_on_empty: false
+        extraction_engine: jsonpath
+
+
+# ---------------------------------------------------------------------------
+# EXAMPLE INPUT/OUTPUT
+# ---------------------------------------------------------------------------
+
+# Example Input (ModelEffectInput.operation_data):
+# NOTE: Content for write operations must be provided via "file_content" or "content" key.
+# For create_user_directory, provide "directory_marker_content" with the marker file content.
+# {
+#   "tenant_id": "tenant_001",
+#   "user_id": "usr_12345",
+#   "document_id": "doc_abc123",
+#   "document_title": "Project Proposal",
+#   "timestamp": "2024-12-08T12:00:00Z",
+#   "directory_marker_content": "{\"created_at\": \"2024-12-08T12:00:00Z\"}",  # For marker file
+#   "file_content": "This is the document content...",  # Required for write operations
+#   "author_id": "usr_12345",
+#   "created_at": "2024-12-08T12:00:00Z",
+#   "content_type": "application/json",
+#   "size_bytes": 4096,
+#   "checksum": "abc123def456...",
+#   "version": 1,
+#   "archive_year": "2024",
+#   "expected_size": 4096,
+#   "expected_checksum": "abc123def456..."
+# }
+
+# Example Output (ModelEffectOutput.result_data):
+# NOTE: extract_fields only extracts primitive values. Complex data like file arrays
+# must be accessed from the full operation response, not extracted_fields.
+# {
+#   "operations": {
+#     "create_user_directory": {
+#       "success": true,
+#       "extracted_fields": {
+#         "marker_path": "/data/documents/tenant_001/users/usr_12345/.directory_created",
+#         "size_bytes": 28,
+#         "created": true
+#       }
+#     },
+#     "write_document": {
+#       "success": true,
+#       "extracted_fields": {
+#         "file_path": "/data/documents/tenant_001/users/usr_12345/doc_abc123.json",
+#         "size_bytes": 4096,
+#         "checksum": "abc123def456...",
+#         "created": true,
+#         "overwritten": false
+#       }
+#     },
+#     "read_document": {
+#       "success": true,
+#       "extracted_fields": {
+#         "file_path": "/data/documents/tenant_001/users/usr_12345/doc_abc123.json",
+#         "content": "{...}",
+#         "size_bytes": 4096,
+#         "checksum": "abc123def456..."
+#       }
+#     },
+#     "list_user_documents": {
+#       "success": true,
+#       "extracted_fields": {
+#         "directory_path": "/data/documents/tenant_001/users/usr_12345",
+#         "file_count": 15,
+#         "total_size_bytes": 61440
+#       }
+#       # NOTE: Full file list available in response_data, not extracted_fields
+#     }
+#   }
+# }
+
+# ---------------------------------------------------------------------------
+# USAGE EXAMPLE
+# ---------------------------------------------------------------------------
+
+# import yaml
+# from omnibase_core.nodes import NodeEffect
+# from omnibase_core.models import ModelEffectInput
+# from omnibase_core.models.contracts.subcontracts import ModelEffectSubcontract
+#
+# # Load contract
+# with open("filesystem_operations.yaml") as f:
+#     contract_data = yaml.safe_load(f)
+#
+# # Create node
+# class NodeDocumentFilesystemEffect(NodeEffect):
+#     pass
+#
+# # Instantiate node with container, then inject the contract
+# node = NodeDocumentFilesystemEffect(container)
+# node.effect_subcontract = ModelEffectSubcontract(**contract_data["effect_operations"])
+#
+# # Execute filesystem operations
+# # NOTE: directory_marker_content is required for create_user_directory operation
+# # file_content is required for write_document operation
+# input_data = ModelEffectInput(
+#     operation_data={
+#         "tenant_id": "tenant_001",
+#         "user_id": "usr_12345",
+#         "document_id": "doc_abc123",
+#         "directory_marker_content": "{\"created_at\": \"2024-12-08T12:00:00Z\"}",
+#         "file_content": "This is the document content..."
+#     }
+# )
+#
+# result = await node.process(input_data)
+# print(result.result_data["operations"]["write_document"]["extracted_fields"]["file_path"])
+
+# ---------------------------------------------------------------------------
+# CONTRACT METADATA
+# ---------------------------------------------------------------------------
+
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: "ONEX Framework Team"
+  description: |
+    Contract-driven filesystem operations for document management.
+    Demonstrates atomic writes, reads, directory operations, and safe deletion.
+  tags:
+    - effect
+    - filesystem
+    - file-operations
+    - document-management
+    - example
+  documentation_url: "https://docs.onex.ai/effect/filesystem-operations"

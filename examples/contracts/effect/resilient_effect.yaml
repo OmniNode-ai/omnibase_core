@@ -1,0 +1,486 @@
+---
+# ===========================================================================
+# WARNING: v1.0 PER-OPERATION CONFIG LIMITATION
+# ===========================================================================
+# Per-operation configs (retry_policy, circuit_breaker, response_handling)
+# are PARSED but NOT HONORED in v1.0. Only NODE-LEVEL/SUBCONTRACT-LEVEL
+# defaults are applied during execution.
+#
+# What this means for you:
+# - retry_policy defined per-operation: IGNORED (uses default_retry_policy)
+# - circuit_breaker defined per-operation: IGNORED (uses default_circuit_breaker)
+# - response_handling.extract_fields: PARSED but NOT automatically applied
+#
+# Workarounds:
+# 1. Set your desired defaults at subcontract level (default_retry_policy, etc.)
+# 2. Implement custom response processing in your handler
+#
+# This will be fully implemented in v2.0. Tracking: OMN-467
+# ===========================================================================
+
+# Example: Contract-Driven NodeEffect - Full Resilience Pattern
+#
+# This example demonstrates the v1.0 NodeEffect contract-driven resilience features
+# combining circuit breakers, retries, timeouts, and observability for production workloads.
+#
+# USE CASE: Payment Processing with Maximum Resilience
+# - Process payments through external payment gateway
+# - Verify payment status with idempotency
+# - Record payment transaction in database
+# - Publish payment event to message queue
+# - Full circuit breaker protection
+# - Comprehensive retry policies
+# - Timeout protection at all levels
+# - Complete observability
+#
+# Node Implementation (minimal code needed):
+#   class NodePaymentProcessingEffect(NodeEffect):
+#       pass  # All resilience logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - Circuit breaker with failure threshold and timeout
+# - Exponential backoff with jitter
+# - Operation-level and handler-level timeouts
+# - Idempotent operations with deduplication
+# - Request/response tracing and correlation
+# - Comprehensive metrics and logging
+# - Error handling and fallback strategies
+# - Rate limiting and throttling
+#
+# DATA PROTECTION NOTE:
+# This example includes fields that may contain Personally Identifiable Information (PII)
+# and Payment Card Industry (PCI) data such as customer_email, payment_method_token,
+# and transaction details. When implementing in production:
+# - Ensure PCI-DSS compliance for payment data handling
+# - Ensure compliance with applicable data protection regulations (GDPR, CCPA, etc.)
+# - Never log payment tokens, card details, or sensitive customer data
+# - Implement appropriate encryption for data in transit and at rest
+# - Follow tokenization best practices for payment methods
+# - Review and follow your organization's data handling and PCI compliance policies
+#
+# 📚 For comprehensive security guidance, see: SECURITY.md in this directory
+#
+# v1.0 Contract Schema Version
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# CONTRACT IDENTIFICATION
+# ---------------------------------------------------------------------------
+
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+node_type: effect
+
+# ---------------------------------------------------------------------------
+# EFFECT SUBCONTRACT: Defines resilient external operations
+# ---------------------------------------------------------------------------
+
+effect_operations:
+  # Schema version for forward compatibility - must use dict format for ModelSemVer
+  version: {major: 1, minor: 0, patch: 0}
+
+  # Unique subcontract name (required by ModelEffectSubcontract)
+  subcontract_name: "resilient_payment_effect"
+
+  # Sequential execution with abort-on-failure for payment consistency
+  execution_mode: sequential_abort
+
+  # Default circuit breaker configuration for all operations
+  # Operations can override this at the operation level
+  default_circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    success_threshold: 2
+    timeout_ms: 30000
+    half_open_requests: 2
+
+  # NOTE: The following fields are documented but NOT part of the current
+  # ModelEffectSubcontract schema. They are included as comments for
+  # future reference when implementing these features:
+  #
+  # operation_timeout_ms: 60000  # Global timeout for entire operation chain
+  #
+  # global_rate_limit:  # Rate limiting is not yet supported at subcontract level
+  #   enabled: true
+  #   max_requests_per_second: 100
+  #   burst_capacity: 150
+  #   strategy: token_bucket
+
+  # ---------------------------------------------------------------------------
+  # OPERATIONS: Resilient payment processing operations
+  # ---------------------------------------------------------------------------
+  # V1.0 LIMITATION: Per-operation configs (retry_policy, circuit_breaker,
+  # response_handling) are PARSED but use SUBCONTRACT-LEVEL DEFAULTS only.
+  # Per-operation overrides will be honored in v2.0. See: OMN-467
+  # ---------------------------------------------------------------------------
+
+  operations:
+    # =========================================================================
+    # OPERATION 1: PROCESS PAYMENT (HTTP with Full Resilience)
+    # =========================================================================
+    # Initiates payment through external gateway with maximum resilience.
+    # Demonstrates HTTP operation with circuit breaker, retries, and timeouts.
+    #
+    # Handler Type: HTTP
+    # Purpose: Process payment with external payment gateway
+    # Input: Payment details from operation_data
+    # Output: Payment transaction ID and status
+
+    - operation_name: process_payment
+      description: "Processes payment through external gateway with full resilience"
+
+      # Mark as idempotent: we use X-Idempotency-Key header for payment deduplication
+      idempotent: true
+
+      # NOTE: Uses flat structure matching ModelHttpIOConfig schema
+      # Fields are direct children of io_config (no http_config wrapper)
+      io_config:
+        handler_type: http
+
+        method: POST
+
+        url_template: "https://api.payment-gateway.example.com/v1/payments"
+
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+          Authorization: "Bearer ${input.payment_api_token}"
+          X-Correlation-ID: "${input.correlation_id}"
+          # Idempotency key for safe retries
+          X-Idempotency-Key: "${input.idempotency_key}"
+          # Request ID for tracing
+          X-Request-ID: "${input.request_id}"
+          # API version
+          X-API-Version: "2024-01"
+
+        body_template: |
+          {
+            "amount": ${input.amount_cents},
+            "currency": "${input.currency}",
+            "payment_method": {
+              "type": "${input.payment_method_type}",
+              "token": "${input.payment_method_token}"
+            },
+            "customer": {
+              "id": "${input.customer_id}",
+              "email": "${input.customer_email}"
+            },
+            "order": {
+              "id": "${input.order_id}",
+              "description": "${input.order_description}"
+            },
+            "metadata": {
+              "tenant_id": "${input.tenant_id}",
+              "user_id": "${input.user_id}",
+              "correlation_id": "${input.correlation_id}"
+            }
+          }
+
+        # Request timeout (shorter than operation timeout)
+        timeout_ms: 15000
+
+        follow_redirects: true
+
+        verify_ssl: true
+
+      # Circuit breaker for this specific operation
+      circuit_breaker:
+        enabled: true
+
+        # Operation-specific thresholds
+        failure_threshold: 3
+        success_threshold: 2
+        timeout_ms: 60000
+        half_open_requests: 1
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      # NOTE: Conservative retries for payment mutations
+      retry_policy:
+        enabled: true
+        max_retries: 3
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 30000
+        jitter_factor: 0.1
+
+      # Response handling with validation
+      response_handling:
+        success_codes:
+          - 200  # OK
+          - 201  # Created
+          - 202  # Accepted (async processing)
+
+        extract_fields:
+          transaction_id: "$.id"
+          payment_status: "$.status"
+          amount_cents: "$.amount"
+          currency: "$.currency"
+          created_at: "$.created_at"
+          gateway_reference: "$.gateway_reference"
+          # Extract error details if present
+          error_code: "$.error.code"
+          error_message: "$.error.message"
+
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
+
+    # =========================================================================
+    # OPERATION 2: VERIFY PAYMENT STATUS (HTTP GET with Polling)
+    # =========================================================================
+    # Verifies payment status with polling for async processing.
+    # Demonstrates idempotent status check with retry logic.
+    #
+    # Handler Type: HTTP
+    # Purpose: Confirm payment status with gateway
+    # Input: Transaction ID from previous operation
+    # Output: Final payment status
+
+    - operation_name: verify_payment_status
+      description: "Verifies payment status with polling and resilience"
+
+      # NOTE: Uses flat structure matching ModelHttpIOConfig schema
+      io_config:
+        handler_type: http
+
+        method: GET
+
+        # URL with transaction ID from previous operation
+        url_template: "https://api.payment-gateway.example.com/v1/payments/${input.transaction_id}"
+
+        headers:
+          Accept: "application/json"
+          Authorization: "Bearer ${input.payment_api_token}"
+          X-Correlation-ID: "${input.correlation_id}"
+          X-Request-ID: "${input.request_id}"
+
+        # No body_template for GET requests
+
+        timeout_ms: 10000
+
+        follow_redirects: true
+
+        verify_ssl: true
+
+      circuit_breaker:
+        enabled: true
+        failure_threshold: 5
+        success_threshold: 2
+        timeout_ms: 30000
+        half_open_requests: 1
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      # More retries for GET operations
+      retry_policy:
+        enabled: true
+        max_retries: 5
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
+
+      response_handling:
+        success_codes:
+          - 200
+
+        extract_fields:
+          transaction_id: "$.id"
+          payment_status: "$.status"
+          final_amount_cents: "$.amount"
+          gateway_status: "$.gateway_status"
+          completed_at: "$.completed_at"
+
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
+
+
+    # =========================================================================
+    # OPERATION 3: RECORD PAYMENT TRANSACTION (Database with Transaction)
+    # =========================================================================
+    # Records payment transaction in database with full ACID guarantees.
+    # Demonstrates database operation with transaction and resilience.
+    #
+    # Handler Type: DB
+    # Purpose: Persist payment record with transaction
+    # Input: Payment data from previous operations
+    # Output: Database record ID
+
+    - operation_name: record_payment_transaction
+      description: "Records payment in database with transaction and resilience"
+
+      # Mark as idempotent: we use transaction_id as natural key preventing duplicates
+      idempotent: true
+
+      # NOTE: Uses flat structure matching ModelDbIOConfig schema
+      # Fields are direct children of io_config (no db_config wrapper)
+      io_config:
+        handler_type: db
+
+        operation: insert
+
+        connection_name: "payment_db_pool"
+
+        query_template: |
+          INSERT INTO payment_transactions (
+            transaction_id,
+            order_id,
+            customer_id,
+            amount_cents,
+            currency,
+            status,
+            gateway_reference,
+            created_at,
+            completed_at,
+            metadata
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+          )
+          RETURNING id, created_at
+
+        # Parameters bound in order: $1=transaction_id, $2=order_id, etc.
+        # These reference data from previous operations and current input
+        query_params:
+          - "${previous.process_payment.transaction_id}"
+          - "${input.order_id}"
+          - "${input.customer_id}"
+          - "${previous.verify_payment_status.final_amount_cents}"
+          - "${input.currency}"
+          - "${previous.verify_payment_status.payment_status}"
+          - "${previous.process_payment.gateway_reference}"
+          - "${previous.process_payment.created_at}"
+          - "${previous.verify_payment_status.completed_at}"
+          - "${input.metadata}"
+
+        timeout_ms: 15000
+
+        read_only: false
+
+      circuit_breaker:
+        enabled: true
+        failure_threshold: 3
+        success_threshold: 2
+        timeout_ms: 60000
+        half_open_requests: 1
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
+
+      response_handling:
+        extract_fields:
+          record_id: "$.id"
+          created_at: "$.created_at"
+
+        # Database INSERT should always return a row
+        fail_on_empty: true
+
+        extraction_engine: jsonpath
+
+
+    # =========================================================================
+    # OPERATION 4: PUBLISH PAYMENT EVENT (Kafka with Guaranteed Delivery)
+    # =========================================================================
+    # Publishes payment event to message queue with guaranteed delivery.
+    # Demonstrates Kafka operation with idempotence and resilience.
+    #
+    # Handler Type: Kafka
+    # Purpose: Notify downstream systems of payment completion
+    # Input: Payment data from all previous operations
+    # Output: Message offset and partition
+
+    - operation_name: publish_payment_event
+      description: "Publishes payment event to Kafka with guaranteed delivery"
+
+      # Mark as idempotent: we use idempotent producer and X-Idempotency-Key header
+      idempotent: true
+
+      # NOTE: Uses flat structure matching ModelKafkaIOConfig schema
+      # Fields are direct children of io_config (no kafka_config wrapper)
+      io_config:
+        handler_type: kafka
+
+        topic: "payments.events.completed"
+
+        payload_template: |
+          {
+            "event_type": "payment.completed",
+            "event_version": "1.0.0",
+            "timestamp": "${input.timestamp}",
+            "transaction_id": "${previous.process_payment.transaction_id}",
+            "order_id": "${input.order_id}",
+            "customer_id": "${input.customer_id}",
+            "amount_cents": ${previous.verify_payment_status.final_amount_cents},
+            "currency": "${input.currency}",
+            "status": "${previous.verify_payment_status.payment_status}",
+            "correlation_id": "${input.correlation_id}"
+          }
+
+        partition_key_template: "${input.customer_id}"
+
+        headers:
+          X-Correlation-ID: "${input.correlation_id}"
+          X-Event-Type: "payment.completed"
+          X-Idempotency-Key: "${input.idempotency_key}"
+
+        timeout_ms: 30000
+
+        # Maximum durability
+        acks: "all"
+
+        compression: snappy
+
+      circuit_breaker:
+        enabled: true
+        failure_threshold: 3
+        success_threshold: 2
+        timeout_ms: 60000
+        half_open_requests: 1
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 5
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 30000
+        jitter_factor: 0.1
+
+      response_handling:
+        extract_fields:
+          partition: "$.partition"
+          offset: "$.offset"
+          timestamp: "$.timestamp"
+
+        # Kafka produce may not return metadata in all ack modes
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
+
+
+# ---------------------------------------------------------------------------
+# CONTRACT METADATA
+# ---------------------------------------------------------------------------
+
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: "ONEX Framework Team"
+  description: |
+    Comprehensive resilience pattern for payment processing.
+    Demonstrates circuit breakers, retries, timeouts, and observability.
+  tags:
+    - effect
+    - resilience
+    - circuit-breaker
+    - payment-processing
+    - production-ready
+    - example
+  documentation_url: "https://docs.onex.ai/effect/resilient-effect"

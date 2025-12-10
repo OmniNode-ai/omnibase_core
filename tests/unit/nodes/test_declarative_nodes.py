@@ -2,11 +2,22 @@
 Unit tests for declarative node base classes.
 
 Tests NodeReducer and NodeOrchestrator for YAML-driven execution.
+
+This module tests:
+- NodeReducer initialization, FSM state management, and workflow processing
+- NodeOrchestrator initialization, workflow definition handling, and step execution
+- Integration of multiple node components together
+
+Note: Tests marked @pytest.mark.integration test multi-component workflows
+but run with mocked dependencies for speed.
 """
 
 from uuid import uuid4
 
 import pytest
+
+# Module-level pytest marker for all tests in this file
+pytestmark = pytest.mark.unit
 
 from omnibase_core.enums.enum_reducer_types import EnumReductionType
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
@@ -135,7 +146,6 @@ def simple_workflow_definition() -> ModelWorkflowDefinition:
     )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
 class TestNodeReducer:
     """Test declarative reducer node."""
@@ -295,7 +305,6 @@ class TestNodeReducer:
         assert node.is_complete()
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
 class TestNodeOrchestrator:
     """Test declarative orchestrator node."""
@@ -461,10 +470,20 @@ class TestNodeOrchestrator:
         assert order[1] == step2_id  # Step 2 second
 
 
-@pytest.mark.unit
+@pytest.mark.integration
 @pytest.mark.timeout(60)
 class TestDeclarativeNodesIntegration:
-    """Integration tests for declarative nodes."""
+    """Integration tests for declarative nodes.
+
+    Note: These tests are in tests/unit/ for convenience but test integration
+    of multiple node components together (reducer workflows, orchestrator steps).
+    They test multi-component workflows but run fast with mocked dependencies.
+
+    Markers applied:
+    - ``@pytest.mark.integration``: Tests multi-component workflows
+    - ``@pytest.mark.timeout(60)``: Prevents test hangs
+    - Module-level ``pytestmark = pytest.mark.unit`` also applies
+    """
 
     @pytest.mark.asyncio
     async def test_reducer_full_workflow(

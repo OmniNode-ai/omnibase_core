@@ -1,8 +1,11 @@
 """
-NodeEffect - Side Effect Management Node for 4-Node Architecture.
+NodeEffect - Contract-driven effect node for external I/O operations.
 
-Specialized node type for managing side effects and external interactions with
-transaction support, retry policies, and circuit breaker patterns.
+Contract-driven implementation using ModelEffectSubcontract for declarative I/O.
+Zero custom Python code required - all effect logic defined in YAML contracts.
+
+VERSION: 2.0.0
+STABILITY GUARANTEE: Effect subcontract interface is stable.
 
 Key Capabilities:
 - Side-effect management with external interaction focus
@@ -11,43 +14,53 @@ Key Capabilities:
 - Retry policies and circuit breaker patterns
 - Event bus publishing for state changes
 - Atomic file operations for data integrity
+
+.. versionchanged:: 0.4.0
+    Refactored from code-driven to contract-driven implementation.
+
+Author: ONEX Framework Team
 """
 
-import asyncio
-import time
-from collections.abc import AsyncIterator, Callable
-from contextlib import asynccontextmanager
-from pathlib import Path
-from typing import Any
-from uuid import UUID, uuid4
+import warnings
+from uuid import UUID
 
+from omnibase_core.constants.constants_effect import DEFAULT_OPERATION_TIMEOUT_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_effect_types import (
-    EnumCircuitBreakerState,
-    EnumEffectType,
-    EnumTransactionState,
-)
-from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.infrastructure.node_config_provider import NodeConfigProvider
+from omnibase_core.enums.enum_effect_types import EnumTransactionState
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.contracts.subcontracts.model_effect_subcontract import (
+    ModelEffectSubcontract,
+)
 from omnibase_core.models.effect.model_effect_input import ModelEffectInput
 from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.infrastructure.model_effect_transaction import (
-    ModelEffectTransaction,
+
+# Error messages
+_ERR_EFFECT_SUBCONTRACT_NOT_LOADED = "Effect subcontract not loaded"
+
+# Warning messages for v1.0 limitations
+_WARN_PER_OP_CONFIG_NOT_HONORED = (
+    "v1.0 LIMITATION: Per-operation '{config_name}' detected for operation "
+    "'{operation_name}' but will NOT be applied. Only subcontract-level defaults "
+    "are honored in v1.0. This will be fully implemented in v2.0. See: OMN-467"
 )
 
 
-class NodeEffect(NodeCoreBase):
+class NodeEffect(NodeCoreBase, MixinEffectExecution):
     """
-    Side effect management node for external interactions.
+    Contract-driven effect node for external I/O operations.
 
-    Implements managed side effects with transaction support, retry policies,
-    and circuit breaker patterns. Handles I/O operations, file management,
-    event emission, and external service interactions.
+    Enables creating effect nodes entirely from YAML contracts without custom Python code.
+    Effect operations, retry policies, circuit breakers, and transaction boundaries
+    are all defined declaratively in effect subcontracts.
+
+    Pattern:
+        class NodeMyEffect(NodeEffect):
+            # No custom code needed - driven entirely by YAML contract
+            pass
 
     .. versionadded:: 0.4.0
         Primary EFFECT node implementation for ONEX 4-node architecture.
@@ -62,968 +75,460 @@ class NodeEffect(NodeCoreBase):
     - Event bus integration for state changes
     - Performance monitoring and logging
 
+    Contract Injection:
+        The node requires an effect subcontract to be provided. Two approaches:
+
+        1. **Manual Injection** (recommended for testing/simple usage):
+            ```python
+            node = NodeMyEffect(container)
+            node.effect_subcontract = ModelEffectSubcontract(...)
+            ```
+
+        2. **Automatic Loading** (for production with YAML contracts):
+            - Use `MixinContractMetadata` to auto-load from YAML files
+            - The mixin provides `self.contract` with effect_operations field
+            - See `docs/guides/contracts/` for contract loading patterns
+
+    Example YAML Contract:
+        ```yaml
+        effect_operations:
+          version:
+            major: 1
+            minor: 0
+            patch: 0
+          subcontract_name: user_api_effect
+          description: "Create user via REST API"
+          # execution_mode controls failure handling behavior:
+          #   - sequential_abort: Stop on first failure, raise immediately (default)
+          #   - sequential_continue: Run all operations, report all outcomes
+          # Note: v1.0 only supports single-operation effects.
+          execution_mode: sequential_abort
+
+          default_retry_policy:
+            max_retries: 3
+            backoff_strategy: exponential
+            base_delay_ms: 1000
+
+          operations:
+            - operation_name: create_user
+              description: "POST user to API"
+              io_config:
+                handler_type: http
+                url_template: "https://api.example.com/users"
+                method: POST
+                body_template: '{"name": "${input.name}"}'
+                timeout_ms: 5000
+              response_handling:
+                success_codes: [200, 201]
+                extract_fields:
+                  user_id: "$.id"
+        ```
+
+    Usage:
+        ```python
+        from omnibase_core.nodes import NodeEffect
+        from omnibase_core.models.effect import ModelEffectInput
+        from omnibase_core.enums.enum_effect_types import EnumEffectType
+
+        # Create effect node
+        node = NodeMyEffect(container)
+        node.effect_subcontract = effect_subcontract  # Or auto-loaded from contract
+
+        # Execute effect - effect_type and operation_data are required fields
+        # Note: The 'operations' key in operation_data is populated automatically
+        # from effect_subcontract.operations by the process() method.
+        # Caller-provided data in operation_data is used for template resolution
+        # (e.g., ${input.name} will resolve to "John Doe").
+        #
+        # Merge Strategy (caller-takes-precedence):
+        # - Subcontract defaults (default_retry_policy, default_circuit_breaker,
+        #   transaction) provide baseline configuration
+        # - Caller-provided values in ModelEffectInput take precedence
+        # - Per-operation configs (response_handling, retry_policy, circuit_breaker)
+        #   are serialized into operation_data["operations"] for handler access
+        result = await node.process(ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={
+                # Template resolution context - values used in ${input.field} templates
+                "name": "John Doe",
+                "email": "john@example.com",
+            },
+            # Optional: override retry behavior (caller values take precedence)
+            # retry_enabled=True,  # Default: True
+            # max_retries=5,  # Overrides subcontract.default_retry_policy.max_retries
+            # circuit_breaker_enabled=True,  # Overrides subcontract.default_circuit_breaker
+        ))
+
+        # Access result
+        if result.transaction_state == EnumTransactionState.COMMITTED:
+            print(f"Success: {result.result}")
+        else:
+            print(f"Failed: {result.metadata}")
+
+        # Example with minimal required fields:
+        result = await node.process(ModelEffectInput(
+            effect_type=EnumEffectType.FILE_OPERATION,
+            operation_data={"path": "/data/output.json"},
+        ))
+        ```
+
     Thread Safety:
-        - Circuit breaker state NOT thread-safe (failure counts, timers)
-        - Transactions NOT shareable across threads
-        - Create separate instances per thread for concurrent effects
-        - See docs/THREADING.md for production guidelines and mitigation strategies
+        WARNING: NodeEffect instances are NOT thread-safe. Do not share
+        instances across threads. Each thread should create its own instance.
+
+        For debugging, set ONEX_DEBUG_THREAD_SAFETY=1 to enable runtime
+        thread affinity checks that will raise ModelOnexError if cross-thread
+        access is detected. See docs/guides/THREADING.md for details.
+
+        Technical notes:
+        - Circuit breaker state is process-local and NOT thread-safe
+        - Each thread should have its own NodeEffect instance
+
+    v1.0 Limitations:
+        Per-operation configs (response_handling, retry_policy, circuit_breaker,
+        transaction_config) are parsed from YAML but not yet fully honored.
+        Only subcontract-level defaults are applied. See process() docstring
+        for details on what is and is not supported in v1.0.
+
+    See Also:
+        - :class:`MixinEffectExecution`: Provides execute_effect() implementation
+        - :class:`ModelEffectSubcontract`: Effect contract specification
+        - docs/architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md: Full specification
+
+    .. versionchanged:: 0.4.0
+        Refactored to contract-driven pattern using MixinEffectExecution.
     """
 
-    # Type annotations for attributes set via object.__setattr__()
-    default_timeout_ms: int
-    default_retry_delay_ms: int
-    max_concurrent_effects: int
-    active_transactions: dict[UUID, ModelEffectTransaction]
-    circuit_breakers: dict[str, ModelCircuitBreaker]
-    effect_handlers: dict[
-        EnumEffectType, Callable[[dict[str, Any], ModelEffectTransaction | None], Any]
-    ]
-    effect_semaphore: asyncio.Semaphore
-    _active_effects_count: int
-    effect_metrics: dict[str, dict[str, float]]
-    on_rollback_failure: (
-        Callable[[ModelEffectTransaction, list[ModelOnexError]], None] | None
-    )
+    # Type annotations for attributes
+    effect_subcontract: ModelEffectSubcontract | None
+    _circuit_breakers: dict[UUID, ModelCircuitBreaker]
 
-    def __init__(
-        self,
-        container: ModelONEXContainer,
-        on_rollback_failure: (
-            Callable[[ModelEffectTransaction, list[ModelOnexError]], None] | None
-        ) = None,
-    ) -> None:
+    def __init__(self, container: ModelONEXContainer) -> None:
         """
-        Initialize NodeEffect with ModelONEXContainer dependency injection.
+        Initialize NodeEffect with container dependency injection.
 
         Args:
-            container: ONEX container for dependency injection
-            on_rollback_failure: Optional callback invoked on rollback failures.
-                                 Useful for alerting, metrics, or custom recovery logic.
-                                 Signature: (transaction, errors) -> None
+            container: ONEX container for dependency injection and service resolution
 
-        Raises:
-            ModelOnexError: If container is invalid or initialization fails
+        Note:
+            After construction, set `effect_subcontract` before calling `process()`.
+            Alternatively, use contract auto-loading via MixinContractMetadata.
         """
         super().__init__(container)
 
-        # Use object.__setattr__() to bypass Pydantic validation for internal state
-        # Effect-specific configuration (defaults, overridden in _initialize_node_resources)
-        # These defaults are used if ProtocolNodeConfiguration is not available
-        object.__setattr__(self, "default_timeout_ms", 30000)
-        object.__setattr__(self, "default_retry_delay_ms", 1000)
-        object.__setattr__(self, "max_concurrent_effects", 10)
+        # Effect subcontract - set after construction or via contract loading
+        object.__setattr__(self, "effect_subcontract", None)
 
-        # ModelEffectTransaction management
-        object.__setattr__(self, "active_transactions", {})
-
-        # Circuit breakers for external services
-        object.__setattr__(self, "circuit_breakers", {})
-
-        # Effect handlers registry
-        object.__setattr__(self, "effect_handlers", {})
-
-        # Semaphore for limiting concurrent effects
-        object.__setattr__(
-            self, "effect_semaphore", asyncio.Semaphore(self.max_concurrent_effects)
-        )
-
-        # Track active effects count (don't access semaphore._value)
-        object.__setattr__(self, "_active_effects_count", 0)
-
-        # Effect-specific metrics
-        object.__setattr__(self, "effect_metrics", {})
-
-        # Rollback failure callback
-        object.__setattr__(self, "on_rollback_failure", on_rollback_failure)
-
-        # Register built-in effect handlers
-        self._register_builtin_effect_handlers()
-
-    async def execute_effect(
-        self,
-        contract: Any,  # ModelContractEffect - imported in method to avoid circular dependency
-    ) -> ModelEffectOutput:
-        """
-        Execute effect based on contract specification.
-
-        REQUIRED INTERFACE: This public method implements the ModelContractEffect interface
-        per ONEX guidelines. Subclasses implementing custom effect nodes should override
-        this method or use the default contract-to-input conversion.
-
-        Args:
-            contract: Effect contract specifying the operation configuration
-
-        Returns:
-            ModelEffectOutput: Operation results with transaction status and metadata
-
-        Raises:
-            ModelOnexError: If effect execution fails or contract is invalid
-        """
-        # Import here to avoid circular dependency
-        from omnibase_core.models.contracts.model_contract_effect import (
-            ModelContractEffect,
-        )
-
-        if not isinstance(contract, ModelContractEffect):
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Invalid contract type - must be ModelContractEffect",
-                context={
-                    "node_id": str(self.node_id),
-                    "provided_type": type(contract).__name__,
-                },
-            )
-
-        # Convert contract to ModelEffectInput
-        effect_input = self._contract_to_input(contract)
-
-        # Execute via existing process() method
-        return await self.process(effect_input)
-
-    def _contract_to_input(
-        self, contract: Any
-    ) -> ModelEffectInput:  # ModelContractEffect
-        """
-        Convert ModelContractEffect to ModelEffectInput.
-
-        Args:
-            contract: Effect contract to convert
-
-        Returns:
-            ModelEffectInput: Input model for process() method
-
-        Raises:
-            ModelOnexError: If contract has no I/O operations or conversion fails
-        """
-        if not contract.io_operations:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Contract must have at least one I/O operation",
-                context={"node_id": str(self.node_id)},
-            )
-
-        # Use the first I/O operation as the primary operation
-        primary_operation = contract.io_operations[0]
-
-        # Map operation type to EnumEffectType
-        effect_type = self._map_operation_type_to_effect_type(
-            primary_operation.operation_type
-        )
-
-        # Build operation data from contract
-        operation_data: dict[str, Any] = {
-            "operation_type": primary_operation.operation_type,
-            "atomic": primary_operation.atomic,
-            "backup_enabled": primary_operation.backup_enabled,
-            "permissions": primary_operation.permissions,
-            "recursive": primary_operation.recursive,
-            "buffer_size": primary_operation.buffer_size,
-            "timeout_seconds": primary_operation.timeout_seconds,
-            "validation_enabled": primary_operation.validation_enabled,
-        }
-
-        # Merge input state data into operation_data (infrastructure patterns)
-        # This allows file_path and other operation-specific data to be accessible
-        if contract.input_state:
-            operation_data.update(contract.input_state)
-
-        # Add output state and actions if present
-        if contract.output_state:
-            operation_data["output_state"] = contract.output_state
-        if contract.actions:
-            operation_data["actions"] = contract.actions
-
-        # Create ModelEffectInput from contract configuration
-        return ModelEffectInput(
-            effect_type=effect_type,
-            operation_data=operation_data,
-            operation_id=contract.execution_id,
-            transaction_enabled=contract.transaction_management.enabled,
-            retry_enabled=(contract.retry_policies.max_attempts > 1),
-            max_retries=contract.retry_policies.max_attempts,
-            retry_delay_ms=contract.retry_policies.base_delay_ms,
-            circuit_breaker_enabled=contract.retry_policies.circuit_breaker_enabled,
-            timeout_ms=primary_operation.timeout_seconds * 1000,
-            metadata={
-                "correlation_id": str(contract.correlation_id),
-                "idempotent": contract.idempotent_operations,
-                "audit_trail_enabled": contract.audit_trail_enabled,
-                "contract_name": contract.name,
-                "contract_version": str(contract.version),
-            },
-        )
-
-    def _map_operation_type_to_effect_type(self, operation_type: str) -> EnumEffectType:
-        """
-        Map contract operation type to EnumEffectType.
-
-        Args:
-            operation_type: Operation type from contract (e.g., "file_write", "db_query")
-
-        Returns:
-            EnumEffectType: Mapped effect type enum value
-
-        Raises:
-            ModelOnexError: If operation type cannot be mapped
-        """
-        # Map common operation types to EnumEffectType values
-        operation_type_lower = operation_type.lower()
-
-        if any(
-            op in operation_type_lower
-            for op in ["file", "read", "write", "delete", "move"]
-        ):
-            return EnumEffectType.FILE_OPERATION
-
-        if any(op in operation_type_lower for op in ["event", "emit", "publish"]):
-            return EnumEffectType.EVENT_EMISSION
-
-        # Default to FILE_OPERATION for unknown types
-        # This allows custom operation types to be handled by registered handlers
-        emit_log_event(
-            LogLevel.WARNING,
-            f"Unknown operation type '{operation_type}', defaulting to FILE_OPERATION",
-            {"node_id": str(self.node_id), "operation_type": operation_type},
-        )
-        return EnumEffectType.FILE_OPERATION
+        # Process-local circuit breaker state keyed by operation_id.
+        # operation_id is stable per operation definition (from the contract),
+        # providing consistent circuit breaker state across requests.
+        # NOT thread-safe - each thread needs its own NodeEffect instance.
+        object.__setattr__(self, "_circuit_breakers", {})
 
     async def process(self, input_data: ModelEffectInput) -> ModelEffectOutput:
         """
-        REQUIRED: Execute side effect operation.
+        Execute effect operations defined in the subcontract.
+
+        REQUIRED: This method implements the NodeEffect interface for contract-driven
+        effect execution. All effect logic is driven by the effect_subcontract.
+
+        Operation Source:
+            Operations are sourced from self.effect_subcontract.operations and
+            transformed into operation_data["operations"] format before delegation
+            to the mixin. This transformation:
+            1. Serializes each ModelEffectOperation to dict format
+            2. Merges per-operation retry_policy/circuit_breaker with subcontract defaults
+            3. Includes response_handling, timeout, and other operation configs
+            4. Preserves all operation metadata for handler access
+
+            Callers can also pre-populate operation_data["operations"] directly to
+            bypass this transformation (advanced usage for custom operation sources).
+
+        Timeout Behavior:
+            Timeouts are checked at the start of each retry attempt, not during
+            operation execution. This means an operation that starts before the
+            timeout may complete even if it exceeds the overall timeout window.
+            For strict timeout enforcement during execution, handlers should
+            implement their own timeout logic (e.g., HTTP client timeouts).
+
+        Note:
+            **v1.0 Limitation - Per-Operation Configs Not Yet Honored**
+
+            Per-operation configuration settings (response_handling, retry_policy,
+            circuit_breaker, transaction_config) are parsed from the YAML contract
+            and serialized into operation_data["operations"]. However, in v1.0,
+            these per-operation settings are NOT YET fully honored by the effect
+            execution pipeline:
+
+            - **response_handling**: Parsed and included in operation_config, but
+              handlers only receive ResolvedIOContext. Field extraction via
+              extract_fields is available as a utility (_extract_response_fields)
+              but not automatically applied. Callers must implement their own
+              response processing logic.
+
+            - **retry_policy** (per-operation): Parsed but NOT wired to the retry
+              loop. Only subcontract-level default_retry_policy (applied to
+              input_data.max_retries and retry_delay_ms) is honored.
+
+            - **circuit_breaker** (per-operation): Parsed but NOT wired to circuit
+              breaker checks. Only input_data.circuit_breaker_enabled is checked,
+              using a default ModelCircuitBreaker configuration.
+
+            - **transaction_config**: Subcontract-level only; per-operation
+              transaction boundaries are not supported.
+
+            Future versions will wire these configurations to handlers or adjust
+            the handler contract to receive full operation_config. See
+            docs/architecture/CONTRACT_DRIVEN_NODEEFFECT_V1_0.md for the v1.0
+            specification and planned enhancements.
 
         Args:
-            input_data: Strongly typed effect input with configuration
+            input_data: Effect input containing operation_data for template resolution
 
         Returns:
-            Strongly typed effect output with transaction status
+            ModelEffectOutput with operation results, timing, and transaction state
 
         Raises:
-            ModelOnexError: If side effect execution fails
+            ModelOnexError: If effect_subcontract is not loaded or execution fails
         """
-        start_time = time.perf_counter()
-        transaction: ModelEffectTransaction | None = None
-        retry_count = 0
+        # Thread safety check (zero overhead when disabled)
+        self._check_thread_safety()
 
-        try:
-            self._validate_effect_input(input_data)
-
-            # Check circuit breaker if enabled
-            if input_data.circuit_breaker_enabled:
-                circuit_breaker = self._get_circuit_breaker(
-                    input_data.effect_type.value
-                )
-                if not circuit_breaker.should_allow_request():
-                    raise ModelOnexError(
-                        error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                        message=f"Circuit breaker open for {input_data.effect_type.value}",
-                        context={
-                            "node_id": str(self.node_id),
-                            "operation_id": str(input_data.operation_id),
-                            "effect_type": input_data.effect_type.value,
-                        },
-                    )
-
-            # Create transaction if enabled
-            if input_data.transaction_enabled:
-                transaction = ModelEffectTransaction(input_data.operation_id)
-                transaction.state = EnumTransactionState.ACTIVE
-                self.active_transactions[input_data.operation_id] = transaction
-
-            # Execute with semaphore limit and retry logic
-            async with self.effect_semaphore:
-                self._active_effects_count += 1
-                try:
-                    result, retry_count = await self._execute_with_retry(
-                        input_data, transaction
-                    )
-                finally:
-                    self._active_effects_count -= 1
-
-            # Commit transaction if successful
-            if transaction:
-                await transaction.commit()
-                del self.active_transactions[input_data.operation_id]
-
-            processing_time = (time.perf_counter() - start_time) * 1000
-
-            # Record success in circuit breaker
-            if input_data.circuit_breaker_enabled:
-                self._get_circuit_breaker(input_data.effect_type.value).record_success()
-
-            # Update metrics
-            await self._update_effect_metrics(
-                input_data.effect_type.value, processing_time, True
-            )
-            await self._update_processing_metrics(processing_time, True)
-
-            return ModelEffectOutput(
-                result=result,
-                operation_id=input_data.operation_id,
-                effect_type=input_data.effect_type,
-                transaction_state=(
-                    transaction.state if transaction else EnumTransactionState.COMMITTED
-                ),
-                processing_time_ms=processing_time,
-                retry_count=retry_count,
-                side_effects_applied=(
-                    [str(op) for op in transaction.operations] if transaction else []
-                ),
-                metadata={
-                    "timeout_ms": input_data.timeout_ms,
-                    "transaction_enabled": input_data.transaction_enabled,
-                    "circuit_breaker_enabled": input_data.circuit_breaker_enabled,
-                },
-            )
-
-        except Exception as e:
-            processing_time = (time.perf_counter() - start_time) * 1000
-
-            # Rollback transaction if active
-            if transaction:
-                success, rollback_errors = await transaction.rollback()
-
-                if not success:
-                    # Rollback failed - this is CRITICAL
-                    emit_log_event(
-                        LogLevel.ERROR,
-                        f"Transaction rollback failed with {len(rollback_errors)} errors",
-                        {
-                            "node_id": str(self.node_id),
-                            "operation_id": str(input_data.operation_id),
-                            "transaction_id": str(transaction.transaction_id),
-                            "rollback_errors": [str(err) for err in rollback_errors],
-                            "original_error": str(e),
-                        },
-                    )
-
-                    # Invoke callback for critical failures if configured
-                    if self.on_rollback_failure:
-                        try:
-                            self.on_rollback_failure(transaction, rollback_errors)
-                        except Exception as callback_error:
-                            emit_log_event(
-                                LogLevel.ERROR,
-                                f"Rollback failure callback raised exception: {callback_error!s}",
-                                {
-                                    "node_id": str(self.node_id),
-                                    "transaction_id": str(transaction.transaction_id),
-                                    "callback_error": str(callback_error),
-                                },
-                            )
-
-                    # Update rollback failure metrics
-                    await self._update_rollback_failure_metrics(
-                        transaction, rollback_errors
-                    )
-
-                    # Chain the rollback errors to the original exception
-                    raise ModelOnexError(
-                        error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                        message="Effect failed AND rollback failed (data may be inconsistent)",
-                        node_id=str(self.node_id),
-                        operation_id=str(input_data.operation_id),
-                        original_error=str(e),
-                        rollback_errors=[str(err) for err in rollback_errors],
-                        transaction_id=str(transaction.transaction_id),
-                        effect_type=input_data.effect_type.value,
-                    ) from e
-
-                if input_data.operation_id in self.active_transactions:
-                    del self.active_transactions[input_data.operation_id]
-
-            # Record failure in circuit breaker
-            if input_data.circuit_breaker_enabled:
-                self._get_circuit_breaker(input_data.effect_type.value).record_failure()
-
-            # Update error metrics
-            await self._update_effect_metrics(
-                input_data.effect_type.value, processing_time, False
-            )
-            await self._update_processing_metrics(processing_time, False)
-
+        if self.effect_subcontract is None:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                message=f"Effect execution failed: {e!s}",
-                context={
-                    "node_id": str(self.node_id),
-                    "operation_id": str(input_data.operation_id),
-                    "effect_type": input_data.effect_type.value,
-                },
-            ) from e
-
-    @asynccontextmanager
-    async def transaction_context(
-        self, operation_id: UUID | None = None
-    ) -> AsyncIterator[ModelEffectTransaction]:
-        """
-        Async context manager for transaction handling with rollback failure detection.
-
-        Args:
-            operation_id: Optional operation identifier (UUID)
-
-        Yields:
-            ModelEffectTransaction: Active transaction instance
-
-        Raises:
-            ModelOnexError: If rollback fails during exception handling
-        """
-        transaction_id = operation_id or uuid4()
-        transaction = ModelEffectTransaction(transaction_id)
-        transaction.state = EnumTransactionState.ACTIVE
-
-        try:
-            self.active_transactions[transaction_id] = transaction
-            yield transaction
-            await transaction.commit()
-        except Exception as e:
-            success, rollback_errors = await transaction.rollback()
-
-            if not success:
-                emit_log_event(
-                    LogLevel.ERROR,
-                    f"Transaction context rollback failed with {len(rollback_errors)} errors",
-                    {
-                        "node_id": str(self.node_id),
-                        "transaction_id": str(transaction_id),
-                        "rollback_errors": [str(err) for err in rollback_errors],
-                    },
-                )
-
-                # Update rollback failure metrics
-                await self._update_rollback_failure_metrics(
-                    transaction, rollback_errors
-                )
-
-                # Invoke callback if configured
-                if self.on_rollback_failure:
-                    try:
-                        self.on_rollback_failure(transaction, rollback_errors)
-                    except Exception as callback_error:
-                        emit_log_event(
-                            LogLevel.ERROR,
-                            f"Rollback failure callback raised exception: {callback_error!s}",
-                            {
-                                "node_id": str(self.node_id),
-                                "transaction_id": str(transaction_id),
-                                "callback_error": str(callback_error),
-                            },
-                        )
-
-                # Re-raise with context about rollback failure
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                    message="Transaction failed AND rollback failed (data may be inconsistent)",
-                    node_id=str(self.node_id),
-                    transaction_id=str(transaction_id),
-                    original_error=str(e),
-                    rollback_errors=[str(err) for err in rollback_errors],
-                ) from e
-
-            raise
-        finally:
-            if transaction_id in self.active_transactions:
-                del self.active_transactions[transaction_id]
-
-    async def execute_file_operation(
-        self,
-        operation_type: str,
-        file_path: str | Path,
-        data: Any | None = None,
-        atomic: bool = True,
-    ) -> dict[str, Any]:
-        """
-        Execute atomic file operation for work ticket management.
-
-        Args:
-            operation_type: Type of file operation (read, write, move, delete)
-            file_path: Path to target file
-            data: Data for write operations
-            atomic: Whether to use atomic operations
-
-        Returns:
-            Operation result with file metadata
-
-        Raises:
-            ModelOnexError: If file operation fails
-        """
-        effect_input = ModelEffectInput(
-            effect_type=EnumEffectType.FILE_OPERATION,
-            operation_data={
-                "operation_type": operation_type,
-                "file_path": str(file_path),
-                "data": data,
-                "atomic": atomic,
-            },
-            transaction_enabled=atomic,
-            retry_enabled=True,
-            max_retries=3,
-        )
-
-        result = await self.process(effect_input)
-        return dict(result.result) if isinstance(result.result, dict) else {}
-
-    async def emit_state_change_event(
-        self,
-        event_type: str,
-        payload: dict[str, Any],
-        correlation_id: UUID | None = None,
-    ) -> bool:
-        """
-        Emit state change event to event bus.
-
-        Args:
-            event_type: Type of event to emit
-            payload: Event payload data
-            correlation_id: Optional correlation ID
-
-        Returns:
-            True if event was emitted successfully
-
-        Raises:
-            ModelOnexError: If event emission fails
-        """
-        effect_input = ModelEffectInput(
-            effect_type=EnumEffectType.EVENT_EMISSION,
-            operation_data={
-                "event_type": event_type,
-                "payload": payload,
-                "correlation_id": str(correlation_id) if correlation_id else None,
-            },
-            transaction_enabled=False,
-            retry_enabled=True,
-            max_retries=2,
-        )
-
-        result = await self.process(effect_input)
-        return bool(result.result)
-
-    async def get_effect_metrics(self) -> dict[str, dict[str, float]]:
-        """Get detailed effect performance metrics."""
-        circuit_breaker_metrics = {}
-        for service_name, cb in self.circuit_breakers.items():
-            circuit_breaker_metrics[f"circuit_breaker_{service_name}"] = {
-                "state": float(
-                    1 if cb.state == EnumCircuitBreakerState.CLOSED.value else 0
-                ),
-                "failure_count": float(cb.failure_count),
-                "is_open": float(
-                    1 if cb.state == EnumCircuitBreakerState.OPEN.value else 0
-                ),
-            }
-
-        # Merge stored transaction metrics with real-time transaction stats
-        transaction_mgmt_metrics = self.effect_metrics.get(
-            "transaction_management", {}
-        ).copy()
-        transaction_mgmt_metrics.update(
-            {
-                "active_transactions": float(len(self.active_transactions)),
-                "max_concurrent_effects": float(self.max_concurrent_effects),
-                "active_effects": float(self._active_effects_count),
-                "semaphore_available": float(
-                    self.max_concurrent_effects - self._active_effects_count
-                ),
-            }
-        )
-
-        return {
-            **self.effect_metrics,
-            **circuit_breaker_metrics,
-            "transaction_management": transaction_mgmt_metrics,
-        }
-
-    async def _initialize_node_resources(self) -> None:
-        """Initialize effect-specific resources."""
-        # Load configuration from NodeConfigProvider if available
-        config = self.container.get_service_optional(NodeConfigProvider)
-        if config:
-            # Load timeout configurations
-            default_timeout_value = await config.get_timeout_ms(
-                "effect.default_timeout_ms", default_ms=self.default_timeout_ms
-            )
-            retry_delay_value = await config.get_timeout_ms(
-                "effect.default_retry_delay_ms", default_ms=self.default_retry_delay_ms
-            )
-
-            # Load performance configurations
-            max_concurrent_value = await config.get_performance_config(
-                "effect.max_concurrent_effects", default=self.max_concurrent_effects
-            )
-
-            # Update configuration values with type checking
-            if isinstance(default_timeout_value, int):
-                self.default_timeout_ms = default_timeout_value
-            if isinstance(retry_delay_value, int):
-                self.default_retry_delay_ms = retry_delay_value
-            if isinstance(max_concurrent_value, (int, float)):
-                self.max_concurrent_effects = int(max_concurrent_value)
-                # Update semaphore with new value
-                self.effect_semaphore = asyncio.Semaphore(self.max_concurrent_effects)
-
-            emit_log_event(
-                LogLevel.INFO,
-                "NodeEffect loaded configuration from NodeConfigProvider",
-                {
-                    "node_id": str(self.node_id),
-                    "default_timeout_ms": self.default_timeout_ms,
-                    "default_retry_delay_ms": self.default_retry_delay_ms,
-                    "max_concurrent_effects": self.max_concurrent_effects,
-                },
-            )
-
-        emit_log_event(
-            LogLevel.INFO,
-            "NodeEffect resources initialized",
-            {
-                "node_id": str(self.node_id),
-                "max_concurrent_effects": self.max_concurrent_effects,
-                "default_timeout_ms": self.default_timeout_ms,
-            },
-        )
-
-    async def _cleanup_node_resources(self) -> None:
-        """Cleanup effect-specific resources with rollback failure handling."""
-        for transaction_id, transaction in list(self.active_transactions.items()):
-            success, rollback_errors = await transaction.rollback()
-
-            if success:
-                emit_log_event(
-                    LogLevel.WARNING,
-                    f"Rolled back active transaction during cleanup: {transaction_id}",
-                    {
-                        "node_id": str(self.node_id),
-                        "transaction_id": str(transaction_id),
-                    },
-                )
-            else:
-                emit_log_event(
-                    LogLevel.ERROR,
-                    f"Failed to rollback transaction during cleanup with {len(rollback_errors)} errors",
-                    {
-                        "node_id": str(self.node_id),
-                        "transaction_id": str(transaction_id),
-                        "rollback_errors": [str(e) for e in rollback_errors],
-                    },
-                )
-
-                # Update metrics for cleanup rollback failures
-                await self._update_rollback_failure_metrics(
-                    transaction, rollback_errors
-                )
-
-        self.active_transactions.clear()
-
-        emit_log_event(
-            LogLevel.INFO,
-            "NodeEffect resources cleaned up",
-            {"node_id": str(self.node_id)},
-        )
-
-    def _validate_effect_input(self, input_data: ModelEffectInput) -> None:
-        """Validate effect input data."""
-        super()._validate_input_data(input_data)
-
-        if not isinstance(input_data.effect_type, EnumEffectType):
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Effect type must be valid EnumEffectType enum",
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message=_ERR_EFFECT_SUBCONTRACT_NOT_LOADED,
                 context={"node_id": str(self.node_id)},
             )
 
-    def _get_circuit_breaker(self, service_name: str) -> ModelCircuitBreaker:
-        """Get or create circuit breaker for service."""
-        if service_name not in self.circuit_breakers:
-            self.circuit_breakers[service_name] = ModelCircuitBreaker()
-        return self.circuit_breakers[service_name]
+        # Map subcontract-level defaults to ModelEffectInput fields
+        # This ensures the mixin receives properly configured input with:
+        # - Retry settings from default_retry_policy
+        # - Circuit breaker settings from default_circuit_breaker
+        # - Transaction settings from default_transaction_config
+        #
+        # Merge Strategy (caller-takes-precedence):
+        # - Subcontract defaults provide baseline configuration
+        # - Caller-provided values in input_data take precedence over subcontract defaults
+        # - This allows callers to override contract defaults for specific use cases
+        #   while still benefiting from sensible defaults when not specified
+        #
+        # Detection of caller-provided values:
+        # - We compare against ModelEffectInput's Pydantic field defaults
+        # - If value differs from the field default, caller explicitly set it
+        # - This approach uses Pydantic introspection to avoid hardcoded defaults
+        #
+        # IMPORTANT LIMITATION: If caller explicitly sets a value that equals the
+        # model default (e.g., max_retries=3), the subcontract default will be applied
+        # instead. This is a detection limitation - we cannot distinguish "caller set
+        # to default value" from "caller omitted and Pydantic used default". If you
+        # need precise control, ensure caller values differ from ModelEffectInput
+        # defaults, or set subcontract defaults to match desired fallback values.
+        default_retry = self.effect_subcontract.default_retry_policy
+        default_cb = self.effect_subcontract.default_circuit_breaker
+        default_tx = self.effect_subcontract.transaction
 
-    async def _execute_with_retry(
-        self, input_data: ModelEffectInput, transaction: ModelEffectTransaction | None
-    ) -> tuple[Any, int]:
-        """Execute effect with retry logic.
+        # Get ModelEffectInput field defaults for comparison
+        # This uses Pydantic's model_fields to get declared defaults
+        model_defaults = {
+            name: field.default
+            for name, field in ModelEffectInput.model_fields.items()
+            if field.default is not None
+        }
 
-        Returns:
-            Tuple of (result, retry_count) where retry_count is the actual number of retries performed
-        """
-        retry_count = 0
-        last_exception: Exception = ModelOnexError(
-            error_code=EnumCoreErrorCode.OPERATION_FAILED,
-            message="No retries executed",
-        )
+        # Build update dict with subcontract defaults (caller-takes-precedence)
+        input_updates: dict[str, object] = {}
 
-        while retry_count <= input_data.max_retries:
-            try:
-                result = await self._execute_effect(input_data, transaction)
+        # Retry policy: apply subcontract defaults only if caller used defaults
+        # Caller-provided values take precedence over subcontract defaults
+        if input_data.retry_enabled:
+            # Only apply subcontract max_retries if caller didn't explicitly set it
+            if input_data.max_retries == model_defaults.get("max_retries", 3):
+                input_updates["max_retries"] = default_retry.max_retries
+            # Only apply subcontract retry_delay_ms if caller didn't explicitly set it
+            if input_data.retry_delay_ms == model_defaults.get("retry_delay_ms", 1000):
+                input_updates["retry_delay_ms"] = default_retry.base_delay_ms
 
-                return (result, retry_count)
+        # Circuit breaker: enable if subcontract specifies it AND caller didn't disable
+        # Caller explicitly setting circuit_breaker_enabled=False takes precedence
+        if default_cb.enabled:
+            # Only enable if caller used the default (False)
+            if input_data.circuit_breaker_enabled == model_defaults.get(
+                "circuit_breaker_enabled", False
+            ):
+                input_updates["circuit_breaker_enabled"] = True
 
-            except Exception as e:
-                last_exception = e
-                retry_count += 1
+        # Transaction: enable if subcontract specifies AND caller hasn't explicitly disabled
+        # Note: transaction_enabled defaults to True in ModelEffectInput, so this check
+        # effectively validates the caller hasn't set transaction_enabled=False.
+        # We don't need to apply an update if both agree (True), but we include it
+        # for consistency with the pattern and to support future default changes.
+        if default_tx.enabled and input_data.transaction_enabled:
+            input_updates["transaction_enabled"] = True
 
-                if not input_data.retry_enabled or retry_count > input_data.max_retries:
-                    raise
+        # Apply updates if any
+        if input_updates:
+            input_data = input_data.model_copy(update=input_updates)
 
-                # Exponential backoff
-                delay_ms = input_data.retry_delay_ms * (2 ** (retry_count - 1))
-                await asyncio.sleep(delay_ms / 1000.0)
+        # Transform effect_subcontract.operations into operation_data format
+        # The mixin expects operations in input_data.operation_data["operations"]
+        # This transformation bridges the contract (YAML) and execution (mixin)
+        if "operations" not in input_data.operation_data:
+            # Serialize subcontract operations to the format expected by the mixin
+            operations: list[dict[str, object]] = []
+            for op in self.effect_subcontract.operations:
+                # Timeout fallback: use operation-specific timeout if defined,
+                # otherwise fall back to DEFAULT_OPERATION_TIMEOUT_MS (30s).
+                # NOTE: We intentionally do NOT use max_delay_ms (max delay between
+                # retries) as a fallback because it has different semantics.
+                # For precise control, always set operation_timeout_ms explicitly
+                # in the operation definition.
+                timeout_ms = op.operation_timeout_ms or DEFAULT_OPERATION_TIMEOUT_MS
 
-                emit_log_event(
-                    LogLevel.WARNING,
-                    f"Effect retry {retry_count}/{input_data.max_retries}: {e!s}",
-                    {
-                        "node_id": str(self.node_id),
-                        "operation_id": str(input_data.operation_id),
-                    },
-                )
+                # Merge operation-level overrides with subcontract defaults
+                # Operation retry_policy/circuit_breaker override subcontract defaults
+                # Note: transaction_config is subcontract-level only (not per-operation)
+                op_retry = op.retry_policy or default_retry
+                op_cb = op.circuit_breaker or default_cb
+                op_tx = default_tx
 
-        raise last_exception
+                # v1.0 LIMITATION: Emit runtime warnings when per-operation configs
+                # are detected. These configs are parsed but NOT honored in v1.0.
+                # Only subcontract-level defaults are applied during execution.
+                if op.retry_policy is not None:
+                    warnings.warn(
+                        _WARN_PER_OP_CONFIG_NOT_HONORED.format(
+                            config_name="retry_policy",
+                            operation_name=op.operation_name,
+                        ),
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                if op.circuit_breaker is not None:
+                    warnings.warn(
+                        _WARN_PER_OP_CONFIG_NOT_HONORED.format(
+                            config_name="circuit_breaker",
+                            operation_name=op.operation_name,
+                        ),
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                if op.response_handling is not None:
+                    warnings.warn(
+                        _WARN_PER_OP_CONFIG_NOT_HONORED.format(
+                            config_name="response_handling",
+                            operation_name=op.operation_name,
+                        ),
+                        UserWarning,
+                        stacklevel=2,
+                    )
 
-    async def _execute_effect(
-        self, input_data: ModelEffectInput, transaction: ModelEffectTransaction | None
-    ) -> Any:
-        """Execute the actual effect operation."""
-        effect_type = input_data.effect_type
+                op_dict: dict[str, object] = {
+                    "operation_name": op.operation_name,
+                    "description": op.description,
+                    "io_config": (
+                        op.io_config.model_dump()
+                        if hasattr(op.io_config, "model_dump")
+                        else op.io_config
+                    ),
+                    "operation_timeout_ms": timeout_ms,
+                    # Include response handling for field extraction
+                    "response_handling": (
+                        op.response_handling.model_dump()
+                        if hasattr(op.response_handling, "model_dump")
+                        else {}
+                    ),
+                    # Include merged retry/circuit breaker/transaction configs
+                    "retry_policy": (
+                        op_retry.model_dump() if hasattr(op_retry, "model_dump") else {}
+                    ),
+                    "circuit_breaker": (
+                        op_cb.model_dump() if hasattr(op_cb, "model_dump") else {}
+                    ),
+                    "transaction_config": (
+                        op_tx.model_dump() if hasattr(op_tx, "model_dump") else {}
+                    ),
+                }
+                # TODO (v2.0): Per-operation configs (response_handling, retry_policy,
+                # circuit_breaker) are serialized into operation_data but NOT YET
+                # wired to the execution pipeline. Only subcontract-level defaults
+                # are honored. See process() docstring "v1.0 Limitation" note.
+                operations.append(op_dict)
 
-        if effect_type in self.effect_handlers:
-            handler = self.effect_handlers[effect_type]
-            return await handler(input_data.operation_data, transaction)
-
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.OPERATION_FAILED,
-            message=f"No handler registered for effect type: {effect_type.value}",
-            context={"node_id": str(self.node_id), "effect_type": effect_type.value},
-        )
-
-    async def _update_effect_metrics(
-        self, effect_type: str, processing_time_ms: float, success: bool
-    ) -> None:
-        """Update effect-specific metrics."""
-        if effect_type not in self.effect_metrics:
-            self.effect_metrics[effect_type] = {
-                "total_operations": 0.0,
-                "success_count": 0.0,
-                "error_count": 0.0,
-                "avg_processing_time_ms": 0.0,
-                "min_processing_time_ms": float("inf"),
-                "max_processing_time_ms": 0.0,
+            # Create new input_data with operations populated
+            updated_operation_data = {
+                **input_data.operation_data,
+                "operations": operations,
             }
+            input_data = input_data.model_copy(
+                update={"operation_data": updated_operation_data}
+            )
 
-        metrics = self.effect_metrics[effect_type]
-        metrics["total_operations"] += 1
+        # Delegate to mixin's execute_effect which handles:
+        # - Sequential operation execution
+        # - Template resolution
+        # - Retry with idempotency awareness (using subcontract defaults)
+        # - Circuit breaker management (using subcontract defaults)
+        #
+        # NOTE: Transaction boundaries and response field extraction are NOT
+        # automatically handled by the mixin. Callers must implement these
+        # if needed. See MixinEffectExecution._extract_response_fields() for
+        # field extraction utility.
+        return await self.execute_effect(input_data)
 
-        if success:
-            metrics["success_count"] += 1
-        else:
-            metrics["error_count"] += 1
-
-        metrics["min_processing_time_ms"] = min(
-            metrics["min_processing_time_ms"], processing_time_ms
-        )
-        metrics["max_processing_time_ms"] = max(
-            metrics["max_processing_time_ms"], processing_time_ms
-        )
-
-        total_ops = metrics["total_operations"]
-        current_avg = metrics["avg_processing_time_ms"]
-        metrics["avg_processing_time_ms"] = (
-            current_avg * (total_ops - 1) + processing_time_ms
-        ) / total_ops
-
-    async def _update_rollback_failure_metrics(
-        self, transaction: ModelEffectTransaction, rollback_errors: list[ModelOnexError]
-    ) -> None:
+    def get_circuit_breaker(self, operation_id: UUID) -> ModelCircuitBreaker:
         """
-        Update metrics for rollback failures.
+        Get or create circuit breaker for an operation.
+
+        Circuit breakers are keyed by operation_id and maintain
+        process-local state for failure tracking and recovery.
+
+        Default Configuration:
+            Uses ModelCircuitBreaker.create_resilient() which provides production-ready
+            defaults (failure_threshold=10, success_threshold=5, timeout_seconds=120).
+            This aligns with MixinEffectExecution._check_circuit_breaker() for
+            consistent behavior between NodeEffect and the mixin.
 
         Args:
-            transaction: Transaction that experienced rollback failures
-            rollback_errors: List of errors encountered during rollback
+            operation_id: Unique identifier for the operation being protected
 
-        Metrics Updated:
-            - transaction.rollback_failures_total: Total count of rollback failures
-            - transaction.failed_operation_count: Histogram of failed operation counts per transaction
+        Returns:
+            ModelCircuitBreaker instance for the operation with resilient defaults
+
+        Note:
+            Circuit breakers are NOT thread-safe. Each thread should use
+            its own NodeEffect instance.
+
+            When ONEX_DEBUG_THREAD_SAFETY=1 is set, this method validates
+            thread safety at runtime.
         """
-        # Initialize transaction metrics if not exists
-        if "transaction_management" not in self.effect_metrics:
-            self.effect_metrics["transaction_management"] = {
-                "rollback_failures_total": 0.0,
-                "failed_operation_count_min": float("inf"),
-                "failed_operation_count_max": 0.0,
-                "failed_operation_count_avg": 0.0,
-                "failed_operation_count_samples": 0.0,
-            }
+        # Thread safety check (zero overhead when disabled)
+        self._check_thread_safety()
 
-        tx_metrics = self.effect_metrics["transaction_management"]
+        if operation_id not in self._circuit_breakers:
+            # Use create_resilient() for production-ready defaults, matching mixin behavior
+            self._circuit_breakers[operation_id] = (
+                ModelCircuitBreaker.create_resilient()
+            )
+        return self._circuit_breakers[operation_id]
 
-        # Increment total rollback failures
-        tx_metrics["rollback_failures_total"] += 1
+    def reset_circuit_breakers(self) -> None:
+        """
+        Reset all circuit breakers to closed state.
 
-        # Update failed operation count histogram
-        failed_count = len(rollback_errors)
-        tx_metrics["failed_operation_count_min"] = min(
-            tx_metrics["failed_operation_count_min"], float(failed_count)
-        )
-        tx_metrics["failed_operation_count_max"] = max(
-            tx_metrics["failed_operation_count_max"], float(failed_count)
-        )
+        Useful for testing or after a system recovery. Clears all
+        circuit breaker state, allowing operations to proceed normally.
+        """
+        self._circuit_breakers.clear()
 
-        # Update average
-        samples = tx_metrics["failed_operation_count_samples"]
-        current_avg = tx_metrics["failed_operation_count_avg"]
-        new_samples = samples + 1
-        tx_metrics["failed_operation_count_avg"] = (
-            current_avg * samples + failed_count
-        ) / new_samples
-        tx_metrics["failed_operation_count_samples"] = new_samples
+    async def _initialize_node_resources(self) -> None:  # stub-ok
+        """Initialize effect-specific resources.
 
-        emit_log_event(
-            LogLevel.INFO,
-            "Rollback failure metrics updated",
-            {
-                "transaction_id": str(transaction.transaction_id),
-                "failed_operations": failed_count,
-                "total_rollback_failures": tx_metrics["rollback_failures_total"],
-            },
-        )
+        Circuit breakers are lazily initialized on first use via get_circuit_breaker().
+        No additional resources needed for contract-driven execution.
+        """
 
-    def _register_builtin_effect_handlers(self) -> None:
-        """Register built-in effect handlers."""
-
-        async def file_operation_handler(
-            operation_data: dict[str, Any], transaction: ModelEffectTransaction | None
-        ) -> dict[str, Any]:
-            """Handle file operations with atomic guarantees."""
-            operation_type = operation_data["operation_type"]
-            file_path = Path(operation_data["file_path"])
-            data = operation_data.get("data")
-            atomic = operation_data.get("atomic", True)
-
-            result = {"operation_type": operation_type, "file_path": str(file_path)}
-
-            if operation_type == "read":
-                if not file_path.exists():
-                    raise ModelOnexError(
-                        error_code=EnumCoreErrorCode.RESOURCE_UNAVAILABLE,
-                        message=f"File not found: {file_path}",
-                        context={"file_path": str(file_path)},
-                    )
-
-                with open(file_path, encoding="utf-8") as f:
-                    content = f.read()
-                result["content"] = content
-                result["size_bytes"] = len(content.encode("utf-8"))
-
-            elif operation_type == "write":
-                if atomic:
-                    # Capture state before write to enable proper rollback
-                    pre_existed = file_path.exists()
-                    prev_content: str | None = None
-                    if pre_existed:
-                        with open(file_path, encoding="utf-8") as f:
-                            prev_content = f.read()
-
-                    temp_path = file_path.with_suffix(file_path.suffix + ".tmp")
-                    try:
-                        with open(temp_path, "w", encoding="utf-8") as f:
-                            f.write(str(data))
-                        temp_path.replace(file_path)
-
-                        if transaction:
-
-                            def rollback_write() -> None:
-                                # Restore previous content if file existed, delete if it didn't
-                                if pre_existed and prev_content is not None:
-                                    with open(file_path, "w", encoding="utf-8") as f:
-                                        f.write(prev_content)
-                                elif file_path.exists():
-                                    file_path.unlink()
-
-                            transaction.add_operation(
-                                "write",
-                                {"file_path": str(file_path)},
-                                rollback_write,
-                            )
-
-                    except Exception:
-                        if temp_path.exists():
-                            temp_path.unlink()
-                        raise
-                else:
-                    with open(file_path, "w", encoding="utf-8") as f:
-                        f.write(str(data))
-
-                result["bytes_written"] = len(str(data).encode("utf-8"))
-
-            elif operation_type == "delete":
-                if file_path.exists():
-                    backup_content = None
-                    if transaction:
-                        with open(file_path, encoding="utf-8") as f:
-                            backup_content = f.read()
-
-                    file_path.unlink()
-                    result["deleted"] = True
-
-                    if transaction and backup_content is not None:
-
-                        def rollback_delete() -> None:
-                            with open(file_path, "w", encoding="utf-8") as f:
-                                f.write(backup_content)
-
-                        transaction.add_operation(
-                            "delete",
-                            {"file_path": str(file_path)},
-                            rollback_delete,
-                        )
-                else:
-                    result["deleted"] = False
-
-            else:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Unknown file operation: {operation_type}",
-                    context={"operation_type": operation_type},
-                )
-
-            return result
-
-        async def event_emission_handler(
-            operation_data: dict[str, Any], _transaction: ModelEffectTransaction | None
-        ) -> bool:
-            """Handle event emission to event bus."""
-            event_type = operation_data["event_type"]
-            payload = operation_data["payload"]
-            correlation_id = operation_data.get("correlation_id")
-
-            try:
-                event_bus: Any = self.container.get_service("event_bus")  # type: ignore[arg-type]
-                if not event_bus:
-                    emit_log_event(
-                        LogLevel.WARNING,
-                        "Event bus not available, skipping event emission",
-                        {"event_type": event_type},
-                    )
-                    return False
-
-                if hasattr(event_bus, "emit_event"):
-                    await event_bus.emit_event(
-                        event_type=event_type,
-                        payload=payload,
-                        correlation_id=UUID(correlation_id) if correlation_id else None,
-                    )
-                    return True
-
-                return False
-
-            except (
-                Exception
-            ) as e:  # fallback-ok: event emission is non-critical, graceful failure
-                emit_log_event(
-                    LogLevel.ERROR,
-                    f"Event emission failed: {e!s}",
-                    {"event_type": event_type, "error": str(e)},
-                )
-                return False
-
-        self.effect_handlers[EnumEffectType.FILE_OPERATION] = file_operation_handler
-        self.effect_handlers[EnumEffectType.EVENT_EMISSION] = event_emission_handler
+    async def _cleanup_node_resources(self) -> None:
+        """Cleanup effect-specific resources."""
+        # Clear circuit breaker state
+        self._circuit_breakers.clear()

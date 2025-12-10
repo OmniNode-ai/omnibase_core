@@ -27,6 +27,28 @@ class ModelEffectResponseHandling(BaseModel):
         - dotpath: Simple dot-notation syntax ($.field.subfield). No external
             dependencies. Suitable for straightforward field access.
 
+    Security Considerations:
+        Field extraction paths are subject to security controls:
+
+        1. **Path Depth Limit**: Dotpath extraction enforces a maximum traversal
+           depth of 10 levels (DEFAULT_MAX_FIELD_EXTRACTION_DEPTH). Paths exceeding
+           this limit return None, preventing denial-of-service via deeply nested
+           or maliciously crafted paths. JSONPath extraction does not have this
+           limit but relies on jsonpath-ng's implementation.
+
+        2. **Character Validation**: Dotpath extraction validates paths against
+           SAFE_FIELD_PATTERN (^[a-zA-Z0-9_.]+$), rejecting paths containing:
+           - Special characters (parentheses, brackets, semicolons)
+           - Injection patterns (__import__, eval(), etc.)
+           - Path traversal attempts (../)
+
+        3. **Type Safety**: Only primitive types (str, int, float, bool, None)
+           are extracted. Complex objects (dicts, lists) are rejected to prevent
+           accidental data exposure.
+
+        These controls are enforced in MixinEffectExecution._extract_field()
+        and _extract_response_fields().
+
     Attributes:
         success_codes: HTTP status codes considered successful. Operations
             returning other codes are treated as failures. Defaults to
@@ -51,6 +73,8 @@ class ModelEffectResponseHandling(BaseModel):
 
     See Also:
         - ModelEffectOperation.response_handling: Per-operation response handling
+        - constants_effect.DEFAULT_MAX_FIELD_EXTRACTION_DEPTH: Depth limit constant
+        - constants_effect.SAFE_FIELD_PATTERN: Path validation pattern
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
